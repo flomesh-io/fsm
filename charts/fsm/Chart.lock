@@ -1,9 +1,0 @@
-dependencies:
-- name: contour
-  repository: https://charts.bitnami.com/bitnami
-  version: 8.0.4
-- name: fsm
-  repository: https://charts.flomesh.io
-  version: 0.2.4
-digest: sha256:0d982bc1997978750f16f07b2d0e081820104a7e109a158bf91f0e4a6a430b0f
-generated: "2023-04-25T10:41:46.431046+08:00"
