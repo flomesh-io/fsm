@@ -1,0 +1,18 @@
+{{- if .Values.fsm.deployJaeger }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: jaeger
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-jaeger
+spec:
+  selector:
+    app: fsm-jaeger
+  ports:
+  - protocol: TCP
+    # Service port and target port are the same
+    port: {{ .Values.fsm.tracing.port }}
+  type: ClusterIP
+{{- end }}

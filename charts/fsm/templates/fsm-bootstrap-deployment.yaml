@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fsm-bootstrap
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-bootstrap
+    meshName: {{ .Values.fsm.meshName }}
+spec:
+  replicas: {{ .Values.fsm.fsmBootstrap.replicaCount }}
+  selector:
+    matchLabels:
+      app: fsm-bootstrap
+  template:
+    metadata:
+      labels:
+        {{- include "fsm.labels" . | nindent 8 }}
+        app: fsm-bootstrap
+  {{- if .Values.fsm.fsmBootstrap.podLabels }}
+  {{- toYaml .Values.fsm.fsmBootstrap.podLabels | nindent 8 }}
+  {{- end }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9091'
+    spec:
+      {{- if .Values.fsm.fsmBootstrap.affinity }}
+      affinity:
+      {{- toYaml .Values.fsm.fsmBootstrap.affinity | nindent 8 }}
+      {{- end }}
+      priorityClassName: system-node-critical
+      serviceAccountName: {{ .Release.Name }}
+      {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+      {{- include "restricted.securityContext" . | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: fsm-bootstrap
+          image: "{{ include "fsmBootstrap.image" . }}"
+          imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+          ports:
+            - name: "crdconversion"
+              containerPort: 9443
+            - name: "metrics"
+              containerPort: 9091
+          command: ['/fsm-bootstrap']
+          args: [
+            "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
+            "--fsm-namespace", "{{ include "fsm.namespace" . }}",
+            "--fsm-version", "{{ .Chart.AppVersion }}",
+            "--ca-bundle-secret-name", "{{.Values.fsm.caBundleSecretName}}",
+            "--certificate-manager", "{{.Values.fsm.certificateProvider.kind}}",
+            "--trust-domain", "{{.Values.fsm.trustDomain}}",
+            "--enable-mesh-root-certificate={{.Values.fsm.featureFlags.enableMeshRootCertificate}}",
+            {{ if eq .Values.fsm.certificateProvider.kind "vault" }}
+            "--vault-host", "{{.Values.fsm.vault.host}}",
+            "--vault-port", "{{.Values.fsm.vault.port}}",
+            "--vault-protocol", "{{.Values.fsm.vault.protocol}}",
+            "--vault-token", "{{.Values.fsm.vault.token}}",
+            "--vault-token-secret-name",  "{{ .Values.fsm.vault.secret.name }}",
+            "--vault-token-secret-key",  "{{ .Values.fsm.vault.secret.key }}",
+            {{- end }}
+            "--cert-manager-issuer-name", "{{.Values.fsm.certmanager.issuerName}}",
+            "--cert-manager-issuer-kind", "{{.Values.fsm.certmanager.issuerKind}}",
+            "--cert-manager-issuer-group", "{{.Values.fsm.certmanager.issuerGroup}}",
+            "--enable-reconciler={{.Values.fsm.enableReconciler}}",
+          ]
+          resources:
+            limits:
+              cpu: "{{.Values.fsm.fsmBootstrap.resource.limits.cpu}}"
+              memory: "{{.Values.fsm.fsmBootstrap.resource.limits.memory}}"
+            requests:
+              cpu: "{{.Values.fsm.fsmBootstrap.resource.requests.cpu}}"
+              memory: "{{.Values.fsm.fsmBootstrap.resource.requests.memory}}"
+          readinessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 9091
+          livenessProbe:
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /healthz
+              port: 9091
+          env:
+            # The BOOTSTRAP_POD_NAME env variable sets pod name dynamically, used by fsm-bootstrap to register events
+            - name: BOOTSTRAP_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+    {{- if .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}
+    {{- end }}
+      {{- if .Values.fsm.fsmBootstrap.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.fsm.fsmBootstrap.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.fsm.fsmBootstrap.tolerations }}
+      tolerations:
+      {{- toYaml .Values.fsm.fsmBootstrap.tolerations | nindent 8 }}
+      {{- end }}

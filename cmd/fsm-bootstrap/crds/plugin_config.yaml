@@ -1,0 +1,101 @@
+# Custom Resource Definition (CRD) for FSM's PluginConfig specification.
+#
+# Copyright Flomesh Service Mesh authors.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pluginconfigs.plugin.flomesh.io
+  labels:
+    app.kubernetes.io/name : "flomesh.io"
+spec:
+  group: plugin.flomesh.io
+  scope: Namespaced
+  names:
+    kind: PluginConfig
+    listKind: PluginConfigList
+    shortNames:
+      - picfg
+    singular: pluginconfig
+    plural: pluginconfigs
+  conversion:
+    strategy: None
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - plugin
+                - destinationRefs
+                - config
+              properties:
+                plugin:
+                  description: Plugin is the name of plugin.
+                  type: string
+                destinationRefs:
+                  description: DestinationRefs is the destination references of plugin.
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - kind
+                      - name
+                      - namespace
+                    properties:
+                      kind:
+                        description: Kind of this target.
+                        type: string
+                        enum:
+                          - Service
+                      name:
+                        description: Name of this target.
+                        type: string
+                      namespace:
+                        description: Namespace of this target.
+                        type: string
+                    minimum: 1
+                    maximum: 65535
+                config:
+                  description: Config is the config of plugin.
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                matches:
+                  description: The resource references a plugin config should match on.
+                  type: array
+                  items:
+                    type: object
+                    required: ['apiGroup', 'kind', 'name']
+                    properties:
+                      apiGroup:
+                        description: API group for the resource being referenced.
+                        type: string
+                      kind:
+                        description: Type of resource being referenced.
+                        type: string
+                      name:
+                        description: Name of resource being referenced.
+                        type: string
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+      subresources:
+        # status enables the status subresource
+        status: {}

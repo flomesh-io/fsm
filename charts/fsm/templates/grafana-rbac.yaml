@@ -1,0 +1,38 @@
+{{- if .Values.fsm.deployGrafana}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-grafana
+  name: fsm-grafana
+  namespace: {{ include "fsm.namespace" . }}
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-grafana
+  name: {{.Release.Name}}-grafana
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Release.Name}}-grafana
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-grafana
+subjects:
+  - kind: ServiceAccount
+    name: fsm-grafana
+    namespace: {{ include "fsm.namespace" . }}
+roleRef:
+  kind: ClusterRole
+  name: {{.Release.Name}}-grafana
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

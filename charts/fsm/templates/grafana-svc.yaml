@@ -1,0 +1,20 @@
+{{- if .Values.fsm.deployGrafana}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fsm-grafana
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-grafana
+spec:
+  ports:
+    - port: {{.Values.fsm.grafana.port}}
+      name: grafana-dashboard
+{{- if .Values.fsm.grafana.enableRemoteRendering}}
+    - port: 8081
+      name: grafana-renderer
+{{- end }}
+  selector:
+    app: fsm-grafana
+{{- end }}

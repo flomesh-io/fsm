@@ -1,0 +1,168 @@
+# Custom Resource Definition (CRD) for FSM's PluginChain specification.
+#
+# Copyright Flomesh Service Mesh authors.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: pluginchains.plugin.flomesh.io
+  labels:
+    app.kubernetes.io/name : "flomesh.io"
+spec:
+  group: plugin.flomesh.io
+  scope: Namespaced
+  names:
+    kind: PluginChain
+    listKind: PluginChainList
+    shortNames:
+      - pichn
+    singular: pluginchain
+    plural: pluginchains
+  conversion:
+    strategy: None
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - chains
+                - selectors
+              properties:
+                chains:
+                  description: Chains defines the plugins within chains.
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - name
+                      - plugins
+                    properties:
+                      name:
+                        description: Name defines the name of chain.
+                        type: string
+                        enum:
+                          - inbound-tcp
+                          - inbound-http
+                          - outbound-http
+                          - outbound-tcp
+                      plugins:
+                        description: Plugins defines the plugins within chain.
+                        type: array
+                        items:
+                          type: string
+                        minimum: 1
+                        maximum: 65535
+                    minimum: 1
+                    maximum: 65535
+                selectors:
+                  description: Selectors defines the selectors of chains.
+                  type: object
+                  properties:
+                    podSelector:
+                      description: PodSelector for pods. Existing pods are selected by this will be the ones affected by this plugin chain.
+                      type: object
+                      properties:
+                        matchLabels:
+                          description: matchLabels is a map of {key,value} pairs.
+                          type: object
+                          additionalProperties:
+                            type: string
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector requirements.
+                          type: array
+                          items:
+                            type: object
+                            required: ['key', 'operator', 'values']
+                            properties:
+                              key:
+                                description: key is the label key that the selector applies to.
+                                type: string
+                              operator:
+                                description: operator represents a key's relationship to a set of values.
+                                type: string
+                                enum:
+                                  - In
+                                  - NotIn
+                                  - Exists
+                                  - DoesNotExist
+                              values:
+                                description: values is an array of string values.
+                                type: array
+                                items:
+                                  type: string
+                                minimum: 1
+                                maximum: 65535
+                    namespaceSelector:
+                      description: NamespaceSelector for namespaces. Existing pods are selected by this will be the ones affected by this plugin chain.
+                      type: object
+                      properties:
+                        matchLabels:
+                          description: matchLabels is a map of {key,value} pairs.
+                          type: object
+                          additionalProperties:
+                            type: string
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector requirements.
+                          type: array
+                          items:
+                            type: object
+                            required: [ 'key', 'operator', 'values' ]
+                            properties:
+                              key:
+                                description: key is the label key that the selector applies to.
+                                type: string
+                              operator:
+                                description: operator represents a key's relationship to a set of values.
+                                type: string
+                                enum:
+                                  - In
+                                  - NotIn
+                                  - Exists
+                                  - DoesNotExist
+                              values:
+                                description: values is an array of string values.
+                                type: array
+                                items:
+                                  type: string
+                                minimum: 1
+                                maximum: 65535
+                matches:
+                  description: The resource references a plugin chain should match on.
+                  type: array
+                  items:
+                    type: object
+                    required: ['apiGroup', 'kind', 'name']
+                    properties:
+                      apiGroup:
+                        description: API group for the resource being referenced.
+                        type: string
+                      kind:
+                        description: Type of resource being referenced.
+                        type: string
+                      name:
+                        description: Name of resource being referenced.
+                        type: string
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+      subresources:
+        # status enables the status subresource
+        status: {}

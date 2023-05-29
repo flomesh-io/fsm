@@ -1,0 +1,46 @@
+{{- if .Values.fsm.featureFlags.enableMeshRootCertificate }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: preset-mesh-root-certificate
+  namespace: {{ include "fsm.namespace" . }}
+data:
+  preset-mesh-root-certificate.json: |
+    {
+      "trustDomain": {{.Values.fsm.trustDomain | mustToJson}},
+      "provider": {
+        {{- if eq (.Values.fsm.certificateProvider.kind | lower) "tresor"}}
+        "tresor": {
+          "ca": {
+            "secretRef": {
+              "name": {{.Values.fsm.caBundleSecretName | mustToJson}},
+              "namespace": "{{include "fsm.namespace" .}}"
+            }
+          }
+        }
+        {{- end}}
+        {{- if eq (.Values.fsm.certificateProvider.kind | lower) "cert-manager"}}
+        "certManager": {
+          "issuerName": {{.Values.fsm.certmanager.issuerName | mustToJson}},
+          "issuerKind": {{.Values.fsm.certmanager.issuerKind | mustToJson}},
+          "issuerGroup": {{.Values.fsm.certmanager.issuerGroup | mustToJson}}
+        }
+        {{- end}}
+        {{- if eq (.Values.fsm.certificateProvider.kind | lower) "vault"}}
+        "vault": {
+          "token": {
+            "secretKeyRef": {
+              "name": {{.Values.fsm.vault.secret.name | mustToJson}},
+              "key": {{.Values.fsm.vault.secret.key | mustToJson}},
+              "namespace": "{{include "fsm.namespace" .}}"
+            }
+          },
+          "host": {{.Values.fsm.vault.host | mustToJson}},
+          "role": {{.Values.fsm.vault.role | mustToJson}},
+          "protocol": {{.Values.fsm.vault.protocol | mustToJson}},
+          "port": {{.Values.fsm.vault.port | mustToJson}}
+        }
+        {{- end}}
+      }
+    }
+{{- end}}

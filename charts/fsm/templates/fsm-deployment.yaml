@@ -1,0 +1,210 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fsm-controller
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-controller
+    meshName: {{ .Values.fsm.meshName }}
+    {{ if .Values.fsm.enforceSingleMesh }}enforceSingleMesh: "true"{{ end }}
+spec:
+  {{- if not .Values.fsm.fsmController.autoScale.enable }}
+  replicas: {{ .Values.fsm.fsmController.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: fsm-controller
+      codebase: "{{ .Values.fsm.repoServer.codebase }}"
+  template:
+    metadata:
+      labels:
+        {{- include "fsm.labels" . | nindent 8 }}
+        app: fsm-controller
+        codebase: "{{ .Values.fsm.repoServer.codebase }}"
+  {{- if .Values.fsm.fsmController.podLabels }}
+  {{- toYaml .Values.fsm.fsmController.podLabels | nindent 8 }}
+  {{- end }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9091'
+    spec:
+      {{- if .Values.fsm.fsmController.affinity }}
+      affinity:
+      {{- toYaml .Values.fsm.fsmController.affinity | nindent 8 }}
+      {{- end }}
+      priorityClassName: system-node-critical
+      serviceAccountName: {{ .Release.Name }}
+      {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+      {{- include "restricted.securityContext" . | nindent 6 }}
+      {{- end }}
+      initContainers:
+        - name: init-fsm-controller
+          image: {{ .Values.fsm.curlImage }}
+          command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+      containers:
+        {{- range .Values.fsm.sidecarDrivers }}
+        {{- if eq .sidecarName $.Values.fsm.sidecarClass }}
+        {{- if eq .sidecarName "pipy" }}
+        {{- if not $.Values.fsm.repoServer.standalone }}
+        - name: fsm-pipy-repo
+          image: {{ $.Values.fsm.repoServer.image }}
+          imagePullPolicy: {{ $.Values.fsm.image.pullPolicy }}
+          ports:
+            - name: "pipy-admin-port"
+              containerPort: {{ .proxyServerPort }}
+          command: ['pipy']
+          args: [
+              "--admin-port={{ .proxyServerPort }}",
+          ]
+          readinessProbe:
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 6060
+          livenessProbe:
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 6060
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
+        - name: fsm-controller
+          image: "{{ include "fsmController.image" . }}"
+          imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+          ports:
+            - name: "admin-port"
+              containerPort: 15000
+            - name: "metrics"
+              containerPort: 9091
+          command: ['/fsm-controller']
+          args: [
+            "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
+            "--fsm-namespace", "{{ include "fsm.namespace" . }}",
+            "--fsm-version", "{{ .Chart.AppVersion }}",
+            "--fsm-service-account", "{{ .Release.Name }}",
+            "--mesh-name", "{{.Values.fsm.meshName}}",
+            "--validator-webhook-config", "{{ include "fsm.validatorWebhookConfigName" . }}",
+            "--ca-bundle-secret-name", "{{.Values.fsm.caBundleSecretName}}",
+            "--certificate-manager", "{{.Values.fsm.certificateProvider.kind}}",
+            "--trust-domain", "{{.Values.fsm.trustDomain}}",
+            "--enable-mesh-root-certificate={{.Values.fsm.featureFlags.enableMeshRootCertificate}}",
+            {{ if eq .Values.fsm.certificateProvider.kind "vault" }}
+            "--vault-host", "{{ required "fsm.vault.host is required when fsm.certificateProvider.kind==vault" .Values.fsm.vault.host }}",
+            "--vault-port", "{{.Values.fsm.vault.port}}",
+            "--vault-protocol", "{{.Values.fsm.vault.protocol}}",
+            {{ if and (empty .Values.fsm.vault.secret.name) (empty .Values.fsm.vault.secret.key) }}
+            "--vault-token", "{{ required "fsm.vault.token is required when fsm.certificateProvider.kind==vault and fsm.vault.secret.name and fsm.vault.secret.key are empty" .Values.fsm.vault.token }}",
+            {{- end }}
+            {{ if empty .Values.fsm.vault.token }}
+            "--vault-token-secret-name",  "{{ required "fsm.vault.secret.name is required when fsm.certificateProvider.kind==vault and fsm.vault.token is empty" .Values.fsm.vault.secret.name }}",
+            "--vault-token-secret-key",  "{{ required "fsm.vault.secret.key is required when fsm.certificateProvider.kind==vault and fsm.vault.token is empty" .Values.fsm.vault.secret.key }}",
+            {{- end }}
+            {{- end }}
+            "--cert-manager-issuer-name", "{{.Values.fsm.certmanager.issuerName}}",
+            "--cert-manager-issuer-kind", "{{.Values.fsm.certmanager.issuerKind}}",
+            "--cert-manager-issuer-group", "{{.Values.fsm.certmanager.issuerGroup}}",
+            "--enable-reconciler={{.Values.fsm.enableReconciler}}",
+            "--validate-traffic-target={{.Values.smi.validateTrafficTarget}}",
+          ]
+          resources:
+            limits:
+              cpu: "{{.Values.fsm.fsmController.resource.limits.cpu}}"
+              memory: "{{.Values.fsm.fsmController.resource.limits.memory}}"
+            requests:
+              cpu: "{{.Values.fsm.fsmController.resource.requests.cpu}}"
+              memory: "{{.Values.fsm.fsmController.resource.requests.memory}}"
+          readinessProbe:
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /health/ready
+              port: 9091
+          livenessProbe:
+            initialDelaySeconds: 1
+            timeoutSeconds: 5
+            httpGet:
+              scheme: HTTP
+              path: /health/alive
+              port: 9091
+          env:
+            # The CONTROLLER_POD_NAME env variable sets pod name dynamically, used by fsm-controller to register events
+            - name: CONTROLLER_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: FSM_DEFAULT_SIDECAR_CLASS
+              value: "{{ .Values.fsm.sidecarClass }}"
+      {{- if .Values.fsm.enableFluentbit }}
+        - name: {{ .Values.fsm.fluentBit.name }}
+          image: {{ .Values.fsm.fluentBit.registry }}/fluent-bit:{{ .Values.fsm.fluentBit.tag }}
+          imagePullPolicy: {{ .Values.fsm.fluentBit.pullPolicy }}
+          env:
+          {{- if .Values.fsm.fluentBit.enableProxySupport }}
+          - name: HTTP_PROXY
+            valueFrom:
+              secretKeyRef:
+                name: proxy-config
+                key: HTTP_PROXY
+          - name: HTTPS_PROXY
+            valueFrom:
+              secretKeyRef:
+                name: proxy-config
+                key: HTTPS_PROXY
+          {{- end }}
+          - name: CONTROLLER_POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+          {{- include "fluentbit.securityContext" . | nindent 10 }}
+          {{- end }}
+          volumeMounts:
+          - name: config
+            mountPath: /fluent-bit/etc
+            readOnly: true
+          - name: var-log-containers
+            mountPath: /var/log/containers
+            readOnly: true
+          - name: var-log-pods
+            mountPath: /var/log/pods
+            readOnly: true
+          - name: var-lib-containers
+            mountPath: /var/lib/docker/containers
+            readOnly: true
+       {{- end }}
+    {{- if .Values.fsm.enableFluentbit }}
+      volumes:
+      - name: config
+        configMap:
+          name: fluentbit-configmap
+      - name: var-log-containers
+        hostPath:
+          path: /var/log/containers
+      - name: var-log-pods
+        hostPath:
+          path: /var/log/pods
+      - name: var-lib-containers
+        hostPath:
+          path: /var/lib/docker/containers
+    {{- end }}
+    {{- if .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}
+    {{- end }}
+      {{- if .Values.fsm.fsmController.nodeSelector }}
+      nodeSelector:
+      {{- toYaml .Values.fsm.fsmController.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.fsm.fsmController.tolerations }}
+      tolerations:
+      {{- toYaml .Values.fsm.fsmController.tolerations | nindent 8 }}
+      {{- end }}

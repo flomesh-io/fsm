@@ -1,0 +1,14 @@
+{{- if .Values.fsm.injector.enablePodDisruptionBudget }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: fsm-injector-pdb
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    app: fsm-injector
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fsm-injector
+{{- end }}

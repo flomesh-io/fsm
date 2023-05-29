@@ -1,0 +1,15 @@
+ARG GO_VERSION
+FROM --platform=$BUILDPLATFORM golang:$GO_VERSION AS builder
+ARG LDFLAGS
+ARG TARGETOS
+ARG TARGETARCH
+
+WORKDIR /fsm
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-bootstrap -ldflags "$LDFLAGS" ./cmd/fsm-bootstrap
+
+FROM gcr.io/distroless/static
+COPY --from=builder /fsm/fsm-bootstrap /
+COPY ./cmd/fsm-bootstrap/crds /fsm-crds/

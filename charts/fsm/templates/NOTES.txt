@@ -1,0 +1,1 @@
+Congratulations! The FSM control plane has been installed in your Kubernetes cluster!

@@ -1,0 +1,19 @@
+{{- if .Values.fsm.deployPrometheus }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fsm-prometheus
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+  annotations:
+    prometheus.io/port: "{{.Values.fsm.prometheus.port}}"
+    prometheus.io/scrape: "true"
+spec:
+  ports:
+  - port: {{.Values.fsm.prometheus.port}}
+    protocol: TCP
+    targetPort: {{.Values.fsm.prometheus.port}}
+  selector:
+    app: fsm-prometheus
+{{- end }}

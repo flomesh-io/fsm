@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  labels:
+    testing: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      testing: test
+  template:
+    metadata:
+      labels:
+        testing: test
+    spec:
+      {{- with .Values.fsm.imagePullSecrets }}
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        kubernetes.io/os: linux
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      containers:
+        - name: test
+          image: "{{ .Values.fsm.image.registry }}/test:{{ .Chart.AppVersion}}"
+          imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP

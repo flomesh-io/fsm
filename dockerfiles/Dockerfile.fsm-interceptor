@@ -1,0 +1,32 @@
+ARG GO_VERSION
+
+FROM golang:$GO_VERSION as gobuild
+
+WORKDIR /app
+
+ADD go.mod .
+ADD go.sum .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    go mod download
+
+ADD . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o ./dist/fsm-interceptor -ldflags "$LDFLAGS" ./cmd/fsm-interceptor/fsm-interceptor.go
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o ./dist/fsm-cni -ldflags "$LDFLAGS" ./cmd/fsm-interceptor/fsm-cni/fsm-cni.go
+
+FROM flomesh/ebpf:base20.04
+
+WORKDIR /app
+
+COPY bpf bpf
+COPY Makefile.CNI Makefile
+COPY --from=gobuild /app/dist/fsm-interceptor fsm-interceptor
+COPY --from=gobuild /app/dist/fsm-cni fsm-cni
+
+CMD /app/fsm-interceptor
