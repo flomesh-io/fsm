@@ -45,7 +45,7 @@ jobs:
         uses: docker/build-push-action@v4.1.1
         with:
           context: .
-          file: ./dockerfiles/pipy/Dockerfile
+          file: ./dockerfiles/Dockerfile.pipy-nonroot
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
