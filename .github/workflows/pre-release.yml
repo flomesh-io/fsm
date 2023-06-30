@@ -126,13 +126,13 @@ jobs:
         id: [ "sidecar-init", "controller", "injector", "crds", "bootstrap", "preinstall", "healthcheck", "interceptor" ]
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.1.0
+        uses: docker/setup-qemu-action@v2.2.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.6.0
+        uses: docker/setup-buildx-action@v2.7.0
 
       - name: Login to DockerHub
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v2.2.0
         with:
           username: ${{ secrets.RELEASE_DOCKER_USER }}
           password: ${{ secrets.RELEASE_DOCKER_PASS }}
@@ -144,7 +144,7 @@ jobs:
 
       - name: Docker meta - ${{ matrix.id }}
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v4.4.0
+        uses: crazy-max/ghaction-docker-meta@v4.6.0
         with:
           images: ${{ secrets.RELEASE_REGISTRY }}/fsm-${{ matrix.id }}
           tags: |
@@ -158,7 +158,7 @@ jobs:
           echo "GIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build and Push - ${{ matrix.id }}
-        uses: docker/build-push-action@v4.1.0
+        uses: docker/build-push-action@v4.1.1
         with:
           context: .
           file: ./dockerfiles/Dockerfile.fsm-${{ matrix.id }}
@@ -179,13 +179,13 @@ jobs:
         id: [ "bookbuyer", "bookthief", "bookstore", "bookwarehouse", "tcp-echo-server", "tcp-client" ]
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.1.0
+        uses: docker/setup-qemu-action@v2.2.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2.6.0
+        uses: docker/setup-buildx-action@v2.7.0
 
       - name: Login to DockerHub
-        uses: docker/login-action@v2.1.0
+        uses: docker/login-action@v2.2.0
         with:
           username: ${{ secrets.RELEASE_DOCKER_USER }}
           password: ${{ secrets.RELEASE_DOCKER_PASS }}
@@ -197,7 +197,7 @@ jobs:
 
       - name: Docker meta - ${{ matrix.id }}
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v4.4.0
+        uses: crazy-max/ghaction-docker-meta@v4.6.0
         with:
           images: ${{ secrets.RELEASE_REGISTRY }}/fsm-demo-${{ matrix.id }}
           tags: |
@@ -206,7 +206,7 @@ jobs:
             latest=false
 
       - name: Build and Push - ${{ matrix.id }}
-        uses: docker/build-push-action@v4.1.0
+        uses: docker/build-push-action@v4.1.1
         with:
           context: .
           file: ./dockerfiles/Dockerfile.demo
