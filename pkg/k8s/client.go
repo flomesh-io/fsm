@@ -413,7 +413,7 @@ func (c client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 	}
 
 	if len(pods) == 0 {
-		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+		log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("Did not find Pod with label %s = %s in namespace %s",
 				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
 		return nil, errDidNotFindPodForUUID
