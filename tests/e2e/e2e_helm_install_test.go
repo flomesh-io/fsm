@@ -35,7 +35,7 @@ var _ = FSMDescribe("Test fsm control plane installation with Helm",
 				Expect(spec.Sidecar.LogLevel).To(Equal("error"))
 				Expect(spec.Observability.EnableDebugServer).To(BeFalse())
 				Expect(spec.Observability.Tracing.Enable).To(BeFalse())
-				Expect(spec.Certificate.ServiceCertValidityDuration).To(Equal("365d"))
+				Expect(spec.Certificate.ServiceCertValidityDuration).To(Equal("24h"))
 
 				Expect(Td.DeleteHelmRelease(release, namespace)).To(Succeed())
 			})

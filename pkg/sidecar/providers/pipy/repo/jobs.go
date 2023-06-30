@@ -259,15 +259,17 @@ func certs(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf, proxyServices []ser
 						sans = append(sans, k8s.GetHostnamesForService(proxySvc, true)...)
 					}
 				}
-
-				sidecarCert, certErr := s.certManager.IssueCertificate(cnPrefix, certificate.Service,
-					certificate.SubjectAlternativeNames(sans...),
-					certificate.ValidityDurationProvided(&certValidityPeriod))
-				if certErr != nil {
-					proxy.SidecarCert = nil
-				} else {
-					sidecarCert.Expiration = certExpiration
-					proxy.SidecarCert = sidecarCert
+				for {
+					sidecarCert, certErr := s.certManager.IssueCertificate(cnPrefix, certificate.Service,
+						certificate.SubjectAlternativeNames(sans...),
+						certificate.ValidityDurationProvided(&certValidityPeriod))
+					if certErr != nil {
+						log.Err(certErr).Msgf("error IssueCertificate for cnPrefix:%s", cnPrefix)
+					} else if !s.certManager.ShouldRotate(sidecarCert) {
+						proxy.SidecarCert = sidecarCert
+						break
+					}
+					time.Sleep(time.Second * 5)
 				}
 			}
 		} else {
@@ -322,6 +324,10 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 	if proxy.SidecarCert != nil {
 		pipyConf.Certificate = &Certificate{
 			Expiration: proxy.SidecarCert.Expiration.Format("2006-01-02 15:04:05"),
+			CommonName: &proxy.SidecarCert.CommonName,
+			CertChain:  string(proxy.SidecarCert.CertChain),
+			PrivateKey: string(proxy.SidecarCert.PrivateKey),
+			IssuingCA:  string(proxy.SidecarCert.IssuingCA),
 		}
 	}
 	bytes, jsonErr := json.Marshal(pipyConf)
@@ -338,12 +344,6 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				pipyConf.Ts = &ts
 				version := fmt.Sprintf("%d", codebaseCurV)
 				pipyConf.Version = &version
-				if proxy.SidecarCert != nil {
-					pipyConf.Certificate.CommonName = &proxy.SidecarCert.CommonName
-					pipyConf.Certificate.CertChain = string(proxy.SidecarCert.CertChain)
-					pipyConf.Certificate.PrivateKey = string(proxy.SidecarCert.PrivateKey)
-					pipyConf.Certificate.IssuingCA = string(proxy.SidecarCert.IssuingCA)
-				}
 				bytes, _ = json.MarshalIndent(pipyConf, "", " ")
 				_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
 					{
@@ -364,11 +364,15 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				_, _ = repoClient.Delete(codebase)
 			} else {
 				proxy.ETag = codebaseCurV
-				log.Log().Str("Proxy", proxy.GetCNPrefix()).
-					Str("ID", fmt.Sprintf("%d", proxy.ID)).
-					Str("codebasePreV", fmt.Sprintf("%d", codebasePreV)).
-					Str("codebaseCurV", fmt.Sprintf("%d", codebaseCurV)).
-					Msg("config.json")
+				certificateExpiration := ""
+				if pipyConf.Certificate != nil {
+					certificateExpiration = pipyConf.Certificate.Expiration
+				}
+				log.Log().Str("ID", fmt.Sprintf("%05d", proxy.ID)).
+					Str("codebasePreV", fmt.Sprintf("%020d", codebasePreV)).
+					Str("codebaseCurV", fmt.Sprintf("%020d", codebaseCurV)).
+					Str("CertificateExpiration", certificateExpiration).
+					Msg(proxy.GetCNPrefix())
 			}
 		}
 	}

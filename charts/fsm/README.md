@@ -62,7 +62,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.caBundleSecretName | string | `"fsm-ca-bundle"` | The Kubernetes secret name to store CA bundle for the root CA used in FSM |
 | fsm.certificateProvider.certKeyBitSize | int | `2048` | Certificate key bit size for data plane certificates issued to workloads to communicate over mTLS |
 | fsm.certificateProvider.kind | string | `"tresor"` | The Certificate manager type: `tresor`, `vault` or `cert-manager` |
-| fsm.certificateProvider.serviceCertValidityDuration | string | `"365d"` | Service certificate validity duration for certificate issued to workloads to communicate over mTLS |
+| fsm.certificateProvider.serviceCertValidityDuration | string | `"24h"` | Service certificate validity duration for certificate issued to workloads to communicate over mTLS |
 | fsm.certmanager.issuerGroup | string | `"cert-manager.io"` | cert-manager issuer group |
 | fsm.certmanager.issuerKind | string | `"Issuer"` | cert-manager issuer kind |
 | fsm.certmanager.issuerName | string | `"fsm-ca"` | cert-manager issuer namecert-manager issuer name |
