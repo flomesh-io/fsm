@@ -164,4 +164,4 @@ Open a pull request against the `main` branch to update the `version` field in `
 
 Here is a diagram to illustrate the git branching strategy and workflow in the release process:
 
-![FSM git branching strategy](../img/fsm-git-release.jpg)
+![FSM git branching strategy](../docs/images/fsm-git-release.jpg)

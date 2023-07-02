@@ -110,7 +110,7 @@ sudo mv ./fsm /usr/local/bin/fsm
 ```shell
 $ fsm install
 ```
-![FSM Install Demo](img/fsm-install-demo.gif "FSM Install Demo")
+![FSM Install Demo](docs/images/fsm-install-demo.gif "FSM Install Demo")
 
 See the [installation guide](https://fsm-docs.flomesh.io/docs/guides/install/) for more detailed options.
 
