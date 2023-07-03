@@ -60,7 +60,7 @@ fsm:
   sidecarDrivers:
     - sidecarName: pipy
       # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.90.1-87
+      sidecarImage: lomesh/pipy-nightly:latest
       # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
       proxyServerPort: 6060
   # -- Curl image for control plane init container
@@ -69,7 +69,7 @@ fsm:
   # -- Pipy RepoServer
   repoServer:
     # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.90.1-87
+    image: flomesh/pipy-repo-nightly:latest
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed

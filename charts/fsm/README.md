@@ -324,15 +324,15 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.endpoint | string | `""` | Remote logging's API path where the spans will be sent to |
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
-| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.90.1-87","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo-nightly:latest","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
-| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.90.1-87"` | Image used for Pipy RepoServer |
+| fsm.repoServer.image | string | `"flomesh/pipy-repo-nightly:latest"` | Image used for Pipy RepoServer |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
-| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.1-87","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
+| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"lomesh/pipy-nightly:latest","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
 | fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
-| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.1-87"` | Sidecar image for Linux workloads |
+| fsm.sidecarDrivers[0].sidecarImage | string | `"lomesh/pipy-nightly:latest"` | Sidecar image for Linux workloads |
 | fsm.sidecarImage | string | `""` | Sidecar image for Linux workloads |
 | fsm.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md |
