@@ -20,7 +20,7 @@
 .pipeline()
 .handleStreamStart(
   () => (
-    __target = __cluster && targetBalancers.get(__cluster)?.next?.()?.id,
+    __target = __cluster && targetBalancers.get(__cluster)?.borrow?.()?.id,
     !__target && (specEnableEgress || __port?.TcpServiceRouteRules?.AllowedEgressTraffic) && (
       __target = __inbound.destinationAddress + ':' + __inbound.destinationPort,
       __cluster = {name: __target},

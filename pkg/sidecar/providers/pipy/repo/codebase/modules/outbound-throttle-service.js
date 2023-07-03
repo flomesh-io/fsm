@@ -1,7 +1,7 @@
 ((
   { initRateLimit } = pipy.solve('utils.js'),
   { rateLimitCounter } = pipy.solve('metrics.js'),
-  rateLimitedCounter = rateLimitCounter.withLabels('throttle-route'),
+  rateLimitedCounter = rateLimitCounter.withLabels('throttle-service'),
   rateLimitCache = new algo.Cache(initRateLimit),
 ) => (
 
@@ -11,12 +11,12 @@ pipy({
 })
 
 .import({
-  __route: 'inbound-http-routing',
+  __service: 'outbound-http-routing',
 })
 
 .pipeline()
 .branch(
-  () => _rateLimit = rateLimitCache.get(__route?.RateLimit), (
+  () => _rateLimit = rateLimitCache.get(__service?.RateLimit), (
     $=>$.branch(
       () => _rateLimit.backlog > 0, (
         $=>$.branch(

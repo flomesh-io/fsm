@@ -20,7 +20,7 @@
 .pipeline()
 .handleStreamStart(
   () => (
-    (_targetObject = targetBalancers.get(__cluster)?.next?.()) && (
+    (_targetObject = targetBalancers.get(__cluster)?.borrow?.()) && (
       __metricLabel = __cluster.name,
       __target = _targetObject.id
     )
