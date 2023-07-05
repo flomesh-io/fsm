@@ -64,6 +64,8 @@ const (
 	Endpoints InformerKey = "Endpoints"
 	// ServiceAccounts lookup identifier
 	ServiceAccounts InformerKey = "ServiceAccounts"
+	// EndpointSlices lookup identifier
+	EndpointSlices InformerKey = "EndpointSlices"
 )
 
 // client is the type used to represent the k8s client for the native k8s resources

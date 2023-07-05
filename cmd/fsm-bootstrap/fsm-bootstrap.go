@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 	"strconv"
 
 	"github.com/spf13/pflag"
@@ -120,6 +121,7 @@ func init() {
 
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = admissionv1.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
 }
 
 func main() {

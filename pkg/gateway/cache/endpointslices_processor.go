@@ -1,0 +1,63 @@
+package cache
+
+import (
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type EndpointSlicesProcessor struct {
+}
+
+func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+	eps, ok := obj.(*discoveryv1.EndpointSlice)
+	if !ok {
+		klog.Errorf("unexpected object type %T", obj)
+		return false
+	}
+
+	owner := metav1.GetControllerOf(eps)
+	if owner == nil {
+		return false
+	}
+
+	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
+	_, found := cache.endpointslices[svcKey]
+	if !found {
+		cache.endpointslices[svcKey] = make(map[client.ObjectKey]struct{})
+	}
+	cache.endpointslices[svcKey][utils.ObjectKey(eps)] = struct{}{}
+
+	return cache.isRoutableService(svcKey)
+}
+
+func (p *EndpointSlicesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+	eps, ok := obj.(*discoveryv1.EndpointSlice)
+	if !ok {
+		klog.Errorf("unexpected object type %T", obj)
+		return false
+	}
+
+	owner := metav1.GetControllerOf(eps)
+	if owner == nil {
+		return false
+	}
+
+	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
+	slices, found := cache.endpointslices[svcKey]
+	if !found {
+		return false
+	}
+
+	sliceKey := utils.ObjectKey(eps)
+	_, found = slices[sliceKey]
+	delete(cache.endpointslices[svcKey], sliceKey)
+
+	if len(cache.endpointslices[svcKey]) == 0 {
+		delete(cache.endpointslices, svcKey)
+	}
+
+	return found
+}

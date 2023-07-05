@@ -32,6 +32,8 @@ import (
 	pluginInformers "github.com/flomesh-io/fsm/pkg/gen/client/plugin/informers/externalversions"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	policyInformers "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions"
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	gatewayApiInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
 )
 
 // InformerCollectionOption is a function that modifies an informer collection
@@ -42,6 +44,7 @@ func NewInformerCollection(meshName string, stop <-chan struct{}, opts ...Inform
 	ic := &InformerCollection{
 		meshName:  meshName,
 		informers: map[InformerKey]cache.SharedIndexInformer{},
+		listers:   &Lister{},
 	}
 
 	// Execute all of the given options (e.g. set clients, set custom stores, etc.)
@@ -78,6 +81,14 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyServiceAccount] = v1api.ServiceAccounts().Informer()
 		ic.informers[InformerKeyPod] = v1api.Pods().Informer()
 		ic.informers[InformerKeyEndpoints] = v1api.Endpoints().Informer()
+		ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
+		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
+		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
+		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+
+		ic.listers.Service = v1api.Services().Lister()
+		ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
+		ic.listers.Secret = v1api.Secrets().Lister()
 	}
 }
 
@@ -152,6 +163,26 @@ func WithNetworkingClient(networkingClient networkingClientset.Interface) Inform
 		informerFactory := networkingInformers.NewSharedInformerFactory(networkingClient, DefaultKubeEventResyncInterval)
 
 		ic.informers[InformerKeyIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
+	}
+}
+
+func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyGatewayApiGatewayClass] = informerFactory.Gateway().V1beta1().GatewayClasses().Informer()
+		ic.informers[InformerKeyGatewayApiGateway] = informerFactory.Gateway().V1beta1().Gateways().Informer()
+		ic.informers[InformerKeyGatewayApiHTTPRoute] = informerFactory.Gateway().V1beta1().HTTPRoutes().Informer()
+		ic.informers[InformerKeyGatewayApiGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
+		ic.informers[InformerKeyGatewayApiTCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
+		ic.informers[InformerKeyGatewayApiTLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
+
+		ic.listers.GatewayClass = informerFactory.Gateway().V1beta1().GatewayClasses().Lister()
+		ic.listers.Gateway = informerFactory.Gateway().V1beta1().Gateways().Lister()
+		ic.listers.HTTPRoute = informerFactory.Gateway().V1beta1().HTTPRoutes().Lister()
+		ic.listers.GRPCRoute = informerFactory.Gateway().V1alpha2().GRPCRoutes().Lister()
+		ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
+		ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
 	}
 }
 
@@ -254,7 +285,11 @@ func (ic *InformerCollection) List(informerKey InformerKey) []interface{} {
 }
 
 // IsMonitoredNamespace returns a boolean indicating if the namespace is among the list of monitored namespaces
-func (ic InformerCollection) IsMonitoredNamespace(namespace string) bool {
+func (ic *InformerCollection) IsMonitoredNamespace(namespace string) bool {
 	_, exists, _ := ic.informers[InformerKeyNamespace].GetStore().GetByKey(namespace)
 	return exists
+}
+
+func (ic *InformerCollection) GetListers() *Lister {
+	return ic.listers
 }

@@ -21,6 +21,7 @@ import (
 	extensionsClientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,6 +35,7 @@ import (
 	networkingClientset "github.com/flomesh-io/fsm/pkg/gen/client/networking/clientset/versioned"
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 
@@ -139,6 +141,7 @@ func init() {
 
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = admissionv1.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -213,6 +216,7 @@ func main() {
 	smiTrafficSplitClientSet := smiTrafficSplitClient.NewForConfigOrDie(kubeConfig)
 	smiTrafficSpecClientSet := smiTrafficSpecClient.NewForConfigOrDie(kubeConfig)
 	smiTrafficTargetClientSet := smiAccessClient.NewForConfigOrDie(kubeConfig)
+	gatewayAPIClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
 		informers.WithKubeClient(kubeClient),
@@ -222,6 +226,7 @@ func main() {
 		informers.WithPluginClient(pluginClient),
 		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
+		informers.WithGatewayAPIClient(gatewayAPIClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")

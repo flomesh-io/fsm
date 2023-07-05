@@ -79,6 +79,12 @@ const (
 	// FSMBootstrapName is the name of the FSM Bootstrap.
 	FSMBootstrapName = "fsm-bootstrap"
 
+	// FSMIngressName is the name of the FSM Ingress.
+	FSMIngressName = "fsm-ingress"
+
+	// FSMGatewayName is the name of the FSM Gateway.
+	FSMGatewayName = "fsm-gateway"
+
 	// ProxyServerPort is the port on which the Pipy Repo Service (ADS) listens for new connections from sidecar proxies
 	ProxyServerPort = 6060
 
@@ -339,4 +345,38 @@ const (
 
 	//TrafficInterceptionModeNone defines the none traffic interception mode
 	TrafficInterceptionModeNone = "none"
+)
+
+// Gateway API constants
+const (
+	GatewayController = "flomesh.io/gateway-controller"
+
+	GatewayPrefix                       = "gateway.flomesh.io"
+	GatewayMTLSAnnotation               = GatewayPrefix + "/mtls"
+	GatewayUpstreamSSLNameAnnotation    = GatewayPrefix + "/upstream-ssl-name"
+	GatewayUpstreamSSLSecretAnnotation  = GatewayPrefix + "/upstream-ssl-secret"
+	GatewayUpstreamSSLVerifyAnnotation  = GatewayPrefix + "/upstream-ssl-verify"
+	GatewayTLSVerifyClientAnnotation    = GatewayPrefix + "/tls-verify-client"
+	GatewayTLSVerifyDepthAnnotation     = GatewayPrefix + "/tls-verify-depth"
+	GatewayTLSTrustedCASecretAnnotation = GatewayPrefix + "/tls-trusted-ca-secret"
+	GatewayBackendProtocolAnnotation    = GatewayPrefix + "/upstream-protocol"
+
+	GatewayMutatingWebhookPath        = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayValidatingWebhookPath      = "/validate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayClassMutatingWebhookPath   = "/mutate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	HTTPRouteMutatingWebhookPath      = "/mutate-gateway-networking-k8s-io-v1beta1-httproute"
+	HTTPRouteValidatingWebhookPath    = "/validate-gateway-networking-k8s-io-v1beta1-httproute"
+	GRPCRouteMutatingWebhookPath      = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	GRPCRouteValidatingWebhookPath    = "/validate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	TCPRouteMutatingWebhookPath       = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"
+	TCPRouteValidatingWebhookPath     = "/validate-gateway-networking-k8s-io-v1alpha2-tcproute"
+	TLSRouteMutatingWebhookPath       = "/mutate-gateway-networking-k8s-io-v1alpha2-tlsroute"
+	TLSRouteValidatingWebhookPath     = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
+)
+
+// PIPY Repo constants
+const (
+	DefaultPipyRepoApiPath = "/api/v1/repo"
+	DefaultPipyFileApiPath = "/api/v1/repo-files"
 )

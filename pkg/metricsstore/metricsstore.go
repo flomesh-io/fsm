@@ -63,6 +63,18 @@ type MetricsStore struct {
 	AdmissionWebhookResponseTotal *prometheus.CounterVec
 
 	/*
+	 * Ingress metrics
+	 */
+	// IngressBroadcastEventCount is the metric for the total number of IngressBroadcast events published
+	IngressBroadcastEventCount prometheus.Counter
+
+	/*
+	 * GatewayAPI metrics
+	 */
+	// GatewayBroadcastEventCounter is the metric for the total number of GatewayBroadcast events published
+	GatewayBroadcastEventCounter prometheus.Counter
+
+	/*
 	 * Certificate metrics
 	 */
 	// CertIssuedCount is the metric counter for the number of certificates issued

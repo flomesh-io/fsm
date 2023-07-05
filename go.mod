@@ -1,6 +1,6 @@
 module github.com/flomesh-io/fsm
 
-go 1.19
+go 1.20
 
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
@@ -54,6 +54,7 @@ require (
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 	sigs.k8s.io/controller-runtime v0.14.1
 	sigs.k8s.io/kind v0.14.0
+	sigs.k8s.io/gateway-api v0.7.1
 )
 
 require (

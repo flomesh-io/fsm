@@ -2,6 +2,10 @@ package informers
 
 import (
 	"errors"
+	"k8s.io/client-go/listers/core/v1"
+	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 	"time"
 
 	"k8s.io/client-go/tools/cache"
@@ -19,8 +23,12 @@ const (
 	InformerKeyPod InformerKey = "Pod"
 	// InformerKeyEndpoints is the InformerKey for a Endpoints informer
 	InformerKeyEndpoints InformerKey = "Endpoints"
+	// InformerKeyEndpointSlices is the InformerKey for a EndpointSlices informer
+	InformerKeyEndpointSlices InformerKey = "EndpointSlices"
 	// InformerKeyServiceAccount is the InformerKey for a ServiceAccount informer
 	InformerKeyServiceAccount InformerKey = "ServiceAccount"
+	// InformerKeySecret is the InformerKey for a Secret informer
+	InformerKeySecret InformerKey = "Secret"
 
 	// InformerKeyTrafficSplit is the InformerKey for a TrafficSplit informer
 	InformerKeyTrafficSplit InformerKey = "TrafficSplit"
@@ -65,6 +73,24 @@ const (
 	InformerKeyPluginChain InformerKey = "PluginChain"
 	// InformerKeyPluginConfig is the InformerKey for a PluginConfig informer
 	InformerKeyPluginConfig InformerKey = "PluginConfig"
+
+	// InformerKeyK8sIngressClass is the InformerKey for a k8s IngressClass informer
+	InformerKeyK8sIngressClass InformerKey = "IngressClass-k8s"
+	// InformerKeyK8sIngress is the InformerKey for a k8s Ingress informer
+	InformerKeyK8sIngress InformerKey = "Ingress-k8s"
+
+	// InformerKeyGatewayApiGatewayClass is the InformerKey for a GatewayClass informer
+	InformerKeyGatewayApiGatewayClass InformerKey = "GatewayClass-gwapi"
+	// InformerKeyGatewayApiGateway is the InformerKey for a Gateway informer
+	InformerKeyGatewayApiGateway InformerKey = "Gateway-gwapi"
+	// InformerKeyGatewayApiHTTPRoute is the InformerKey for a HTTPRoute informer
+	InformerKeyGatewayApiHTTPRoute InformerKey = "HTTPRoute-gwapi"
+	// InformerKeyGatewayApiGRPCRoute is the InformerKey for a GRPCRoute informer
+	InformerKeyGatewayApiGRPCRoute InformerKey = "GRPCRoute-gwapi"
+	// InformerKeyGatewayApiTLSRoute is the InformerKey for a IngressClass informer
+	InformerKeyGatewayApiTLSRoute InformerKey = "TLSRoute-gwapi"
+	// InformerKeyGatewayApiTCPRoute is the InformerKey for a IngressClass informer
+	InformerKeyGatewayApiTCPRoute InformerKey = "TCPRoute-gwapi"
 )
 
 const (
@@ -84,5 +110,17 @@ var (
 // type should only be passed around as a pointer
 type InformerCollection struct {
 	informers map[InformerKey]cache.SharedIndexInformer
+	listers   *Lister
 	meshName  string
+}
+type Lister struct {
+	Service       v1.ServiceLister
+	EndpointSlice discoveryv1.EndpointSliceLister
+	Secret        v1.SecretLister
+	GatewayClass  gwv1beta1.GatewayClassLister
+	Gateway       gwv1beta1.GatewayLister
+	HTTPRoute     gwv1beta1.HTTPRouteLister
+	GRPCRoute     gwv1alpha2.GRPCRouteLister
+	TLSRoute      gwv1alpha2.TLSRouteLister
+	TCPRoute      gwv1alpha2.TCPRouteLister
 }

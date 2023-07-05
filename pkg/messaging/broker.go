@@ -26,21 +26,41 @@ const (
 	// proxyUpdateMaxWindow is the max window duration used to batch proxy update events, and is
 	// the max amount of time a proxy update event can be held for batching before being dispatched.
 	proxyUpdateMaxWindow = 10 * time.Second
+
+	// ingressUpdateSlidingWindow is the sliding window duration used to batch ingress update events
+	ingressUpdateSlidingWindow = 2 * time.Second
+
+	// ingressUpdateMaxWindow is the max window duration used to batch ingress update events, and is
+	// the max amount of time an ingress update event can be held for batching before being dispatched.
+	ingressUpdateMaxWindow = 10 * time.Second
+
+	// gatewayUpdateSlidingWindow is the sliding window duration used to batch gateway update events
+	gatewayUpdateSlidingWindow = 2 * time.Second
+
+	// gatewayUpdateMaxWindow is the max window duration used to batch gateway update events, and is
+	// the max amount of time a gateway update event can be held for batching before being dispatched.
+	gatewayUpdateMaxWindow = 10 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
 // to process events added to the workqueue.
 func NewBroker(stopCh <-chan struct{}) *Broker {
 	b := &Broker{
-		queue:             workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
-		proxyUpdatePubSub: pubsub.New(10240),
-		proxyUpdateCh:     make(chan proxyUpdateEvent),
-		kubeEventPubSub:   pubsub.New(10240),
-		certPubSub:        pubsub.New(10240),
+		queue:               workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
+		proxyUpdatePubSub:   pubsub.New(10240),
+		proxyUpdateCh:       make(chan proxyUpdateEvent),
+		ingressUpdatePubSub: pubsub.New(10240),
+		ingressUpdateCh:     make(chan ingressUpdateEvent),
+		gatewayUpdatePubSub: pubsub.New(10240),
+		gatewayUpdateCh:     make(chan gatewayUpdateEvent),
+		kubeEventPubSub:     pubsub.New(10240),
+		certPubSub:          pubsub.New(10240),
 	}
 
 	go b.runWorkqueueProcessor(stopCh)
 	go b.runProxyUpdateDispatcher(stopCh)
+	go b.runIngressUpdateDispatcher(stopCh)
+	go b.runGatewayUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -64,6 +84,16 @@ func (b *Broker) GetProxyUpdatePubSub() *pubsub.PubSub {
 	return b.proxyUpdatePubSub
 }
 
+// GetIngressUpdatePubSub returns the PubSub instance corresponding to proxy update events
+func (b *Broker) GetIngressUpdatePubSub() *pubsub.PubSub {
+	return b.ingressUpdatePubSub
+}
+
+// GetGatewayUpdatePubSub returns the PubSub instance corresponding to proxy update events
+func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
+	return b.gatewayUpdatePubSub
+}
+
 // GetKubeEventPubSub returns the PubSub instance corresponding to k8s events
 func (b *Broker) GetKubeEventPubSub() *pubsub.PubSub {
 	return b.kubeEventPubSub
@@ -84,6 +114,30 @@ func (b *Broker) GetTotalQProxyEventCount() uint64 {
 // to subscribed proxies
 func (b *Broker) GetTotalDispatchedProxyEventCount() uint64 {
 	return atomic.LoadUint64(&b.totalDispatchedProxyEventCount)
+}
+
+// GetTotalQIngressEventCount returns the total number of events read from the workqueue
+// pertaining to ingress updates
+func (b *Broker) GetTotalQIngressEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalQIngressEventCount)
+}
+
+// GetTotalDispatchedIngressEventCount returns the total number of events dispatched
+// to subscribed ingresses
+func (b *Broker) GetTotalDispatchedIngressEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalDispatchedIngressEventCount)
+}
+
+// GetTotalQGatewayEventCount returns the total number of events read from the workqueue
+// pertaining to gateway updates
+func (b *Broker) GetTotalQGatewayEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalQGatewayEventCount)
+}
+
+// GetTotalDispatchedGatewayEventCount returns the total number of events dispatched
+// to subscribed gateways
+func (b *Broker) GetTotalDispatchedGatewayEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalDispatchedGatewayEventCount)
 }
 
 // runWorkqueueProcessor starts a goroutine to process events from the workqueue until
@@ -208,9 +262,215 @@ func (b *Broker) runProxyUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+// runIngressUpdateDispatcher runs the dispatcher responsible for batching
+// ingress update events received in close proximity.
+// It batches ingress update events with the use of 2 timers:
+// 1. Sliding window timer that resets when an ingress update event is received
+// 2. Max window timer that caps the max duration a sliding window can be reset to
+// When either of the above timers expire, the ingress update event is published
+// on the dedicated pub-sub instance.
+func (b *Broker) runIngressUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether an ingress update event is pending
+	// from being published on the pub-sub. An ingress update event will
+	// be held for 'ingressUpdateSlidingWindow' duration to be able to
+	// coalesce multiple ingress update events within that duration, before
+	// it is dispatched on the pub-sub. The 'ingressUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'ingressUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering ingress update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many ingresses update events within the 'ingressUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of ingress update events batched per dispatch
+
+	var event ingressUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.ingressUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Ingress update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No ingress update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(ingressUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(ingressUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// An ingress update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(ingressUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.ingressUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedIngressEventCount, 1)
+			metricsstore.DefaultMetricsStore.IngressBroadcastEventCount.Inc()
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.ingressUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedIngressEventCount, 1)
+			metricsstore.DefaultMetricsStore.IngressBroadcastEventCount.Inc()
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Ingress update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
+// runGatewayUpdateDispatcher runs the dispatcher responsible for batching
+// gateway update events received in close proximity.
+// It batches gateway update events with the use of 2 timers:
+// 1. Sliding window timer that resets when a gateway update event is received
+// 2. Max window timer that caps the max duration a sliding window can be reset to
+// When either of the above timers expire, the gateway update event is published
+// on the dedicated pub-sub instance.
+func (b *Broker) runGatewayUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a gateway update event is pending
+	// from being published on the pub-sub. A gateway update event will
+	// be held for 'gatewayUpdateSlidingWindow' duration to be able to
+	// coalesce multiple gateway update events within that duration, before
+	// it is dispatched on the pub-sub. The 'gatewayUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'gatewayUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering gateway update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many gateway update events within the 'gatewayUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of gateway update events batched per dispatch
+
+	var event gatewayUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.gatewayUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Gateway update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No gateway update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(gatewayUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(gatewayUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A gateway update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(gatewayUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.gatewayUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedGatewayEventCount, 1)
+			metricsstore.DefaultMetricsStore.GatewayBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.gatewayUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedGatewayEventCount, 1)
+			metricsstore.DefaultMetricsStore.GatewayBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Proxy update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
-// 1. If the event must update a proxy, it publishes a proxy update message
+// 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
 // 2. Processes other internal control plane events
 // 3. Updates metrics associated with the event
 func (b *Broker) processEvent(msg events.PubSubMessage) {
@@ -228,6 +488,38 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 			// Pass the broadcast event to the dispatcher routine, that coalesces
 			// multiple broadcasts received in close proximity.
 			b.proxyUpdateCh <- *event
+		}
+	}
+
+	// Update ingress if applicable
+	if event := getIngressUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update ingress", msg.Kind)
+		atomic.AddUint64(&b.totalQIngressEventCount, 1)
+		if event.topic != announcements.IngressUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more proxies.
+			b.ingressUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedIngressEventCount, 1)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.ingressUpdateCh <- *event
+		}
+	}
+
+	// Update gateways if applicable
+	if event := getGatewayUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update gateways", msg.Kind)
+		atomic.AddUint64(&b.totalQGatewayEventCount, 1)
+		if event.topic != announcements.GatewayUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more proxies.
+			b.gatewayUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedGatewayEventCount, 1)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.gatewayUpdateCh <- *event
 		}
 	}
 
@@ -380,6 +672,87 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		}
 		return nil
 
+	default:
+		return nil
+	}
+}
+
+// getIngressUpdateEvent returns a ingressUpdateEvent type indicating whether the given PubSubMessage should
+// result in an ingress configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in an ingress update event.
+func getIngressUpdateEvent(msg events.PubSubMessage) *ingressUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		//
+		// Endpoint event
+		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
+		// Service event
+		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated,
+		// k8s Ingress event
+		announcements.IngressAdded, announcements.IngressDeleted, announcements.IngressUpdated,
+		// k8s IngressClass event
+		announcements.IngressClassAdded, announcements.IngressClassDeleted, announcements.IngressClassUpdated,
+		//
+		// MultiCluster events
+		//
+		// ServiceImport event
+		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated:
+
+		return &ingressUpdateEvent{
+			msg:   msg,
+			topic: announcements.IngressUpdate.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getGatewayUpdateEvent returns a gatewayUpdateEvent type indicating whether the given PubSubMessage should
+// result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a gateway update event.
+func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		//
+		// Endpoint event
+		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
+		// EndpointSlices event
+		announcements.EndpointSlicesAdded, announcements.EndpointSlicesDeleted, announcements.EndpointSlicesUpdated,
+		// Service event
+		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated,
+		// Secret event
+		announcements.SecretAdded, announcements.SecretUpdated, announcements.SecretDeleted,
+
+		//
+		// GatewayAPI events
+		//
+		// Gateway event
+		announcements.GatewayApiGatewayAdded, announcements.GatewayApiGatewayDeleted, announcements.GatewayApiGatewayUpdated,
+		// GatewayClass event
+		announcements.GatewayApiGatewayClassAdded, announcements.GatewayApiGatewayClassDeleted, announcements.GatewayApiGatewayClassUpdated,
+		// HTTPRoute event
+		announcements.GatewayApiHTTPRouteAdded, announcements.GatewayApiHTTPRouteDeleted, announcements.GatewayApiHTTPRouteUpdated,
+		// GRPCRoute event
+		announcements.GatewayApiGRPCRouteAdded, announcements.GatewayApiGRPCRouteDeleted, announcements.GatewayApiGRPCRouteUpdated,
+		// TLSCRoute event
+		announcements.GatewayApiTLSRouteAdded, announcements.GatewayApiTLSRouteDeleted, announcements.GatewayApiTLSRouteUpdated,
+		// TCPRoute event
+		announcements.GatewayApiTCPRouteAdded, announcements.GatewayApiTCPRouteDeleted, announcements.GatewayApiTCPRouteUpdated,
+
+		//
+		// MultiCluster events
+		//
+		// ServiceImport event
+		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated:
+
+		return &gatewayUpdateEvent{
+			msg:   msg,
+			topic: announcements.GatewayUpdate.String(),
+		}
 	default:
 		return nil
 	}

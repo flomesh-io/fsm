@@ -3,6 +3,7 @@ package client
 
 import (
 	"fmt"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"net/http"
 	"strconv"
 	"strings"
@@ -401,4 +402,33 @@ func (p *PipyRepoClient) IsRepoUp() (success bool, err error) {
 		return
 	}
 	return
+}
+
+func (p *PipyRepoClient) CodebaseExists(path string) bool {
+	exists, _, _ := p.isCodebaseExists(path)
+
+	return exists
+}
+
+func (p *PipyRepoClient) GetFile(path string) (string, error) {
+	resp, err := p.httpClient.R().
+		Get(fullFileApiPath(path))
+
+	if err != nil {
+		log.Error().Msgf("Failed to get path %q, error: %s", path, err.Error())
+		return "", err
+	}
+
+	result := string(resp.Body())
+	log.Info().Msgf("Content of %q:\n\n\n%s\n\n\n", path, result)
+
+	return result, nil
+}
+
+func fullRepoApiPath(path string) string {
+	return fmt.Sprintf("%s%s", constants.DefaultPipyRepoApiPath, path)
+}
+
+func fullFileApiPath(path string) string {
+	return fmt.Sprintf("%s%s", constants.DefaultPipyFileApiPath, path)
 }
