@@ -42,11 +42,11 @@ pipy({
   () => void (
     forwardMatches && (
       (
-        egw = forwardMatches[__port?.EgressForwardGateway || '*']?.next?.()?.id,
+        egw = forwardMatches[__port?.EgressForwardGateway || '*']?.borrow?.()?.id,
       ) => (
         egw && (
           _egressType = forwardEgressGateways?.[egw]?.mode || 'http2tunnel',
-          _egressEndpoint = forwardEgressGateways?.[egw]?.balancer?.next?.()?.id
+          _egressEndpoint = forwardEgressGateways?.[egw]?.balancer?.borrow?.()?.id
         )
       )
     )()

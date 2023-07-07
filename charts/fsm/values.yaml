@@ -60,7 +60,7 @@ fsm:
   sidecarDrivers:
     - sidecarName: pipy
       # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.90.1-87
+      sidecarImage: flomesh/pipy:0.90.2-14
       # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
       proxyServerPort: 6060
   # -- Curl image for control plane init container
@@ -69,7 +69,7 @@ fsm:
   # -- Pipy RepoServer
   repoServer:
     # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.90.1-87
+    image: flomesh/pipy-repo:0.90.2-14
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -295,7 +295,7 @@ fsm:
     # -- The Certificate manager type: `tresor`, `vault` or `cert-manager`
     kind: tresor
     # -- Service certificate validity duration for certificate issued to workloads to communicate over mTLS
-    serviceCertValidityDuration: 365d
+    serviceCertValidityDuration: 24h
     # -- Certificate key bit size for data plane certificates issued to workloads to communicate over mTLS
     certKeyBitSize: 2048
 

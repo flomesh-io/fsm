@@ -11,7 +11,7 @@ pipy({
 })
 
 .import({
-  __route: 'inbound-http-routing',
+  __route: 'outbound-http-routing',
 })
 
 .pipeline()

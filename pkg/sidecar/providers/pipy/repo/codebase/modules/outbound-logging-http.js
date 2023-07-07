@@ -22,7 +22,7 @@ pipy({
 .handleMessage(
   msg => (
     loggingEnabled && (
-      _loggingData = makeLoggingData(msg, __inbound.destinationAddress, __inbound.destinationPort, __inbound.remoteAddress, __inbound.remotePort),
+      _loggingData = makeLoggingData(msg, __inbound.destinationAddress, __inbound.destinationPort, __inbound.remoteAddress, __inbound.remotePort, true),
       _loggingData ? sampledCounter1.increase() : sampledCounter0.increase()
     )
   )

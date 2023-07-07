@@ -20,6 +20,7 @@
     initRateLimit: rateLimit => (
       rateLimit?.Local ? (
         {
+          count: 0,
           backlog: rateLimit.Local.Backlog || 0,
           quota: new algo.Quota(
             rateLimit.Local.Burst || rateLimit.Local.Requests || 0,
