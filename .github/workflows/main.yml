@@ -203,7 +203,7 @@ jobs:
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: rm -rf /tmp/test*
 
-  e2etest_5-8:
+  e2etest_5-6:
     name: Go test e2e
     runs-on: ubuntu-latest
     needs: build
@@ -211,7 +211,7 @@ jobs:
       matrix:
         k8s_version: [""]
         focus: [""]
-        bucket: [5, 6, 7, 8]
+        bucket: [5, 6]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
@@ -254,7 +254,7 @@ jobs:
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: rm -rf /tmp/test*
 
-  e2etest_9-12:
+  e2etest_7:
     name: Go test e2e
     runs-on: ubuntu-latest
     needs: build
@@ -262,7 +262,58 @@ jobs:
       matrix:
         k8s_version: [""]
         focus: [""]
-        bucket: [9, 10, 11, 12]
+        bucket: [7]
+    env:
+      CTR_TAG: ${{ github.sha }}
+      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build test dependencies
+        env:
+          DOCKER_BUILDX_OUTPUT: type=docker
+        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+      - name: Run tests
+        id: test
+        env:
+          K8S_NAMESPACE: "fsm-system"
+        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        continue-on-error: true
+      - name: Set Logs name
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: |
+          if [[ -n "${{ matrix.k8s_version }}" ]]; then
+            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
+          fi
+      - name: Upload test logs
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: /tmp/test**/*
+      - name: Check continue tests
+        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
+        run: exit 1
+      - name: Clean tests
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: rm -rf /tmp/test*
+
+  e2etest_8-11:
+    name: Go test e2e
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        k8s_version: [""]
+        focus: [""]
+        bucket: [8, 9, 10, 11]
         include:
           - k8s_version: v1.19.11
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
@@ -270,6 +321,57 @@ jobs:
           - k8s_version: v1.25.1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+    env:
+      CTR_TAG: ${{ github.sha }}
+      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build test dependencies
+        env:
+          DOCKER_BUILDX_OUTPUT: type=docker
+        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+      - name: Run tests
+        id: test
+        env:
+          K8S_NAMESPACE: "fsm-system"
+        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        continue-on-error: true
+      - name: Set Logs name
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: |
+          if [[ -n "${{ matrix.k8s_version }}" ]]; then
+            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
+          fi
+      - name: Upload test logs
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: /tmp/test**/*
+      - name: Check continue tests
+        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
+        run: exit 1
+      - name: Clean tests
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: rm -rf /tmp/test*
+
+  e2etest_12:
+    name: Go test e2e
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        k8s_version: [""]
+        focus: [""]
+        bucket: [12]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
