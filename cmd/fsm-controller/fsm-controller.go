@@ -41,6 +41,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/certificate/providers"
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/debugger"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
@@ -78,6 +79,7 @@ var (
 	meshName                   string // An ID that uniquely identifies an FSM instance
 	fsmNamespace               string
 	fsmServiceAccount          string
+	deriveNamespace            string
 	validatorWebhookConfigName string
 	caBundleSecretName         string
 	fsmMeshConfigName          string
@@ -137,6 +139,8 @@ func init() {
 	flags.BoolVar(&enableReconciler, "enable-reconciler", false, "Enable reconciler for CDRs, mutating webhook and validating webhook")
 	flags.BoolVar(&validateTrafficTarget, "validate-traffic-target", true, "Enable traffic target validation")
 
+	flags.StringVar(&deriveNamespace, "derive-namespace", "", "derive namespace")
+
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = admissionv1.AddToScheme(scheme)
 }
@@ -179,6 +183,8 @@ func main() {
 	networkingClient := networkingClientset.NewForConfigOrDie(kubeConfig)
 
 	k8s.SetTrustDomain(trustDomain)
+
+	connector.SetSyncCloudNamespace(deriveNamespace)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-controller pod resource
 	controllerPod, err := getFSMControllerPod(kubeClient)

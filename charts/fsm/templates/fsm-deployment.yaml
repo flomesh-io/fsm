@@ -94,6 +94,7 @@ spec:
             "--ca-bundle-secret-name", "{{.Values.fsm.caBundleSecretName}}",
             "--certificate-manager", "{{.Values.fsm.certificateProvider.kind}}",
             "--trust-domain", "{{.Values.fsm.trustDomain}}",
+            "--derive-namespace={{.Values.fsm.cloudConnector.deriveNamespace}}",
             "--enable-mesh-root-certificate={{.Values.fsm.featureFlags.enableMeshRootCertificate}}",
             {{ if eq .Values.fsm.certificateProvider.kind "vault" }}
             "--vault-host", "{{ required "fsm.vault.host is required when fsm.certificateProvider.kind==vault" .Values.fsm.vault.host }}",

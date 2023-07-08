@@ -58,6 +58,15 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fsm-consul-conector image */}}
+{{- define "fsmConsulConnector.image" -}}
+{{- if .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConsulConnector .Values.fsm.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConsulConnector .Values.fsm.image.digest.fsmInjector -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Sidecar init image */}}
 {{- define "fsmSidecarInit.image" -}}
 {{- if .Values.fsm.image.tag -}}

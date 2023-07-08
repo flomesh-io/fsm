@@ -176,6 +176,7 @@
                 "trafficInterceptionMode",
                 "enableEgress",
                 "enableReconciler",
+                "deployConsulConnector",
                 "deployPrometheus",
                 "deployGrafana",
                 "enableFluentbit",
@@ -193,6 +194,7 @@
                 "fsmInterceptor",
                 "enablePrivilegedInitContainer",
                 "injector",
+                "cloudConnector",
                 "fsmBootstrap",
                 "featureFlags"
             ],
@@ -343,7 +345,8 @@
                                 "fsmCRDs",
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
-                                "fsmInterceptor"
+                                "fsmInterceptor",
+                                "fsmConsulConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -393,6 +396,12 @@
                                     "type": "string",
                                     "title": "fsm-interceptor's image name",
                                     "description": "fsm-interceptor container's image name."
+                                },
+                                "fsmConsulConnector": {
+                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConsulConnector",
+                                    "type": "string",
+                                    "title": "fsm-consul-connector's image name",
+                                    "description": "fsm-consul-connector container's image name."
                                 }
                             }
                         },
@@ -428,7 +437,8 @@
                                 "fsmBootstrap",
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
-                                "fsmInterceptor"
+                                "fsmInterceptor",
+                                "fsmConsulConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -478,6 +488,12 @@
                                     "type": "string",
                                     "title": "fsm-interceptor's image digest",
                                     "description": "fsm-interceptor container's image digest."
+                                },
+                                "fsmConsulConnector": {
+                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConsulConnector",
+                                    "type": "string",
+                                    "title": "fsm-consul-connector's image digest",
+                                    "description": "fsm-consul-connector container's image digest."
                                 }
                             }
                         }
@@ -802,6 +818,15 @@
                     "type": "boolean",
                     "title": "The enableReconciler schema",
                     "description": "Indicates whether FSM's reconciler should be enabled or not.",
+                    "examples": [
+                        false
+                    ]
+                },
+                "deployConsulConnector": {
+                    "$id": "#/properties/fsm/properties/deployConsulConnector",
+                    "type": "boolean",
+                    "title": "The deployConsulConnector schema",
+                    "description": "Indicates whether Consul Connector should be installed and configured as part of the fsm control plane.",
                     "examples": [
                         false
                     ]
@@ -1318,6 +1343,103 @@
                     },
                     "additionalProperties": false
                 },
+                "cloudConnector": {
+                    "$id": "#/properties/fsm/properties/cloudConnector",
+                    "type": "object",
+                    "title": "The consul connector schema",
+                    "description": "Consul connector configurations",
+                    "required": [
+                        "deriveNamespace",
+                        "replicaCount",
+                        "resource"
+                    ],
+                    "properties": {
+                        "deriveNamespace": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/deriveNamespace",
+                            "type": "string",
+                            "title": "The derive namespace",
+                            "description": "The derive Namespace"
+                        },
+                        "replicaCount": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/replicaCount",
+                            "type": "integer",
+                            "title": "The replicaCount schema",
+                            "description": "The number of replicas of the fsm-consul-connector pod.",
+                            "examples": [
+                                1
+                            ]
+                        },
+                        "resource": {
+                            "$ref": "#/definitions/containerResources"
+                        },
+                        "podLabels": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/podLabels",
+                            "type": "object",
+                            "title": "The podLabels schema",
+                            "description": "Labels for the fsm-consul-connector pod.",
+                            "default": {}
+                        },
+                        "enablePodDisruptionBudget": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/enablePodDisruptionBudget",
+                            "type": "boolean",
+                            "title": "The enablePodDisruptionBudget schema",
+                            "description": "Indicates whether Pod Disruption Budget should be enabled or not.",
+                            "examples": [
+                                false
+                            ]
+                        },
+                        "autoScale": {
+                            "$ref": "#/definitions/autoScale"
+                        },
+                        "affinity": {
+                            "type": "object"
+                        },
+                        "nodeSelector": {
+                            "type": "object"
+                        },
+                        "tolerations": {
+                            "type": "array"
+                        },
+                        "consul": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/consul",
+                            "type": "object",
+                            "title": "The config schema",
+                            "properties": {
+                                "httpAddr": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/httpAddr",
+                                    "type": "string",
+                                    "title": "The http address of Consul Service",
+                                    "description": "Http address of Consul Service"
+                                },
+                                "filterTag": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/filterTag",
+                                    "type": "string",
+                                    "title": "The Tag Filter",
+                                    "description": "The Tag Filter"
+                                },
+                                "prefixTag": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/prefixTag",
+                                    "type": "string",
+                                    "title": "The Prefix Tag",
+                                    "description": "The Prefix Tag"
+                                },
+                                "suffixTag": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/suffixTag",
+                                    "type": "string",
+                                    "title": "The Suffix Tag",
+                                    "description": "The Suffix Tag"
+                                },
+                                "passingOnly": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/passingOnly",
+                                    "type": "boolean",
+                                    "title": "Passing Only",
+                                    "description": "Passing Only"
+                                }
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "fsmBootstrap": {
                     "$id": "#/properties/fsm/properties/fsmBootstrap",
                     "type": "object",
@@ -1379,7 +1501,8 @@
                         "enableSnapshotCacheMode",
                         "enableRetryPolicy",
                         "enablePluginPolicy",
-                        "enableMeshRootCertificate"
+                        "enableMeshRootCertificate",
+                        "enableHostIPDefaultRoute"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -1468,6 +1591,15 @@
                             "type": "boolean",
                             "title": "Enable the MeshRootCertificate",
                             "description": "Enable the MeshRootCertificate to configure the FSM certificate provider.",
+                            "examples": [
+                                false
+                            ]
+                        },
+                        "enableHostIPDefaultRoute": {
+                            "$id": "#/properties/fsm/properties/featureFlags/properties/enableHostIPDefaultRoute",
+                            "type": "boolean",
+                            "title": "Enable the HostIPDefaultRoute",
+                            "description": "Enable the HostIPDefaultRoute.",
                             "examples": [
                                 false
                             ]

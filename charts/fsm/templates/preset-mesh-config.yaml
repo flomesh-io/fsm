@@ -70,7 +70,8 @@ data:
         "enableAccessCertPolicy": {{.Values.fsm.featureFlags.enableAccessCertPolicy | mustToJson}},
         "enableSidecarActiveHealthChecks": {{.Values.fsm.featureFlags.enableSidecarActiveHealthChecks | mustToJson}},
         "enableRetryPolicy": {{.Values.fsm.featureFlags.enableRetryPolicy | mustToJson}},
-        "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}}
+        "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}},
+        "enableHostIPDefaultRoute": {{.Values.fsm.featureFlags.enableHostIPDefaultRoute | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }}
     }

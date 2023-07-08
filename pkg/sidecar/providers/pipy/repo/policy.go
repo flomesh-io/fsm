@@ -57,6 +57,13 @@ func (p *PipyConf) setEnableSidecarActiveHealthChecks(enableSidecarActiveHealthC
 	return
 }
 
+func (p *PipyConf) setEnableHostIPDefaultRoute(enableHostIPDefaultRoute bool) (update bool) {
+	if update = p.Spec.FeatureFlags.EnableHostIPDefaultRoute != enableHostIPDefaultRoute; update {
+		p.Spec.FeatureFlags.EnableHostIPDefaultRoute = enableHostIPDefaultRoute
+	}
+	return
+}
+
 func (p *PipyConf) setEnableEgress(enableEgress bool) (update bool) {
 	if update = p.Spec.Traffic.EnableEgress != enableEgress; update {
 		p.Spec.Traffic.EnableEgress = enableEgress

@@ -2,15 +2,18 @@ package registry
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // ProxyServiceMapper knows how to map Sidecar instances to services.
@@ -84,17 +87,25 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 	svcList := kubeController.ListServices()
 
 	for _, svc := range svcList {
-		if svc.Namespace != pod.Namespace {
-			continue
-		}
-		svcRawSelector := svc.Spec.Selector
-		// service has no selectors, we do not need to match against the pod label
-		if len(svcRawSelector) == 0 {
-			continue
-		}
-		selector := labels.Set(svcRawSelector).AsSelector()
-		if selector.Matches(labels.Set(pod.Labels)) {
-			serviceList = append(serviceList, *svc)
+		if connector.IsSyncCloudNamespace(svc.Namespace) {
+			if len(svc.Annotations) > 0 {
+				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointSddrAnnotation, utils.IP2Int(net.ParseIP(pod.Status.PodIP).To4()))]; exists {
+					serviceList = append(serviceList, *svc)
+				}
+			}
+		} else {
+			if svc.Namespace != pod.Namespace {
+				continue
+			}
+			svcRawSelector := svc.Spec.Selector
+			// service has no selectors, we do not need to match against the pod label
+			if len(svcRawSelector) == 0 {
+				continue
+			}
+			selector := labels.Set(svcRawSelector).AsSelector()
+			if selector.Matches(labels.Set(pod.Labels)) {
+				serviceList = append(serviceList, *svc)
+			}
 		}
 	}
 

@@ -175,7 +175,7 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 	// Check if the service has been given Cluster IP
 	kubeService := c.multiclusterController.GetService(svc)
 	if kubeService == nil {
-		log.Info().Msgf("No k8s services found for MeshService %s", svc)
+		log.Info().Msgf("No mcs services found for MeshService %s", svc)
 		return nil
 	}
 

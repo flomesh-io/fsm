@@ -199,8 +199,12 @@ docker-build-fsm-healthcheck:
 docker-build-fsm-interceptor:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-interceptor:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-interceptor --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
-TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
-FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-interceptor
+.PHONY: docker-build-fsm-consul-connector
+docker-build-fsm-consul-connector:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-consul-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-consul-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
+
+TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector
+FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 
 .PHONY: docker-build-fsm

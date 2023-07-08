@@ -48,7 +48,6 @@ spec:
             spec:
               type: object
               required:
-                - backends
                 - sources
               properties:
                 backends:

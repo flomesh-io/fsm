@@ -75,10 +75,41 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cleanup.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
 | fsm.cleanup.nodeSelector | object | `{}` |  |
 | fsm.cleanup.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].key | string | `"kubernetes.io/arch"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].operator | string | `"In"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
+| fsm.cloudConnector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
+| fsm.cloudConnector.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].key | string | `"app"` |  |
+| fsm.cloudConnector.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].operator | string | `"In"` |  |
+| fsm.cloudConnector.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-injector"` |  |
+| fsm.cloudConnector.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
+| fsm.cloudConnector.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
+| fsm.cloudConnector.autoScale | object | `{"cpu":{"targetAverageUtilization":80},"enable":false,"maxReplicas":5,"memory":{"targetAverageUtilization":80},"minReplicas":1}` | Auto scale configuration |
+| fsm.cloudConnector.autoScale.cpu.targetAverageUtilization | int | `80` | Average target CPU utilization (%) |
+| fsm.cloudConnector.autoScale.enable | bool | `false` | Enable Autoscale |
+| fsm.cloudConnector.autoScale.maxReplicas | int | `5` | Maximum replicas for autoscale |
+| fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
+| fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
+| fsm.cloudConnector.consul.filterTag | string | `""` |  |
+| fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
+| fsm.cloudConnector.consul.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.consul.prefixTag | string | `""` |  |
+| fsm.cloudConnector.consul.suffixTag | string | `""` |  |
+| fsm.cloudConnector.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
+| fsm.cloudConnector.nodeSelector | object | `{}` |  |
+| fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
+| fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
+| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"0.5","memory":"64M"},"requests":{"cpu":"0.3","memory":"64M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
+| fsm.deployConsulConnector | bool | `false` | Deploy Consul Connector with FSM installation |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |
@@ -93,6 +124,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableAccessControlPolicy | bool | `false` | Enables FSM's AccessControl policy API. When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends |
 | fsm.featureFlags.enableAsyncProxyServiceMapping | bool | `false` | Enable async proxy-service mapping |
 | fsm.featureFlags.enableEgressPolicy | bool | `true` | Enable FSM's Egress policy API. When enabled, fine grained control over Egress (external) traffic is enforced |
+| fsm.featureFlags.enableHostIPDefaultRoute | bool | `false` | Eneable HostIPDefaultRoute |
 | fsm.featureFlags.enableIngressBackendPolicy | bool | `true` | Enables FSM's IngressBackend policy API. When enabled, FSM will use the IngressBackend API allow ingress traffic to mesh backends |
 | fsm.featureFlags.enableMeshRootCertificate | bool | `false` | Enable the MeshRootCertificate to configure the FSM certificate provider |
 | fsm.featureFlags.enablePluginPolicy | bool | `false` | Enable Plugin Policy for extend |
@@ -186,18 +218,20 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.port | int | `3000` | Grafana service's port |
 | fsm.grafana.rendererImage | string | `"grafana/grafana-image-renderer:3.2.1"` | Image used for Grafana Renderer |
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmController":"","fsmHealthcheck":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmHealthcheck":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
+| fsm.image.digest.fsmConsulConnector | string | `""` | fsm-consul-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmInjector | string | `""` | fsm-injector's image digest |
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmController":"fsm-controller","fsmHealthcheck":"fsm-healthcheck","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmHealthcheck":"fsm-healthcheck","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
+| fsm.image.name.fsmConsulConnector | string | `"fsm-consul-connector"` | fsm-consul-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmInjector | string | `"fsm-injector"` | fsm-injector's image name |
