@@ -42,6 +42,9 @@ type Configurator interface {
 	// IsPermissiveTrafficPolicyMode determines whether we are in "allow-all" mode or SMI policy (block by default) mode
 	IsPermissiveTrafficPolicyMode() bool
 
+	// GetServiceAccessMode returns the service access mode
+	GetServiceAccessMode() string
+
 	// IsEgressEnabled determines whether egress is globally enabled in the mesh or not
 	IsEgressEnabled() bool
 

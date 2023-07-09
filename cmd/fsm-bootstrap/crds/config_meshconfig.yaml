@@ -242,6 +242,13 @@ spec:
                     enablePermissiveTrafficPolicyMode:
                       description: True for allowing traffic to flow between client and service pods within the mesh without SMI traffic policies, i.e. no traffic policy enforcement in the mesh. If set to false, enables deny-all traffic policy in mesh i.e. an SMI Traffic Target is necessary for services to communicate.
                       type: boolean
+                    serviceAccessMode:
+                      description: True for allowing traffic to flow between client and service pods within the mesh without SMI traffic policies, i.e. no traffic policy enforcement in the mesh. If set to false, enables deny-all traffic policy in mesh i.e. an SMI Traffic Target is necessary for services to communicate.
+                      type: string
+                      enum:
+                        - ip
+                        - domain
+                        - mixed
                     inboundExternalAuthorization:
                       description: Configures external authorization for inbound and ingress connections.
                       type: object
@@ -601,6 +608,13 @@ spec:
                     enablePermissiveTrafficPolicyMode:
                       description: True for allowing traffic to flow between client and service pods within the mesh without SMI traffic policies, i.e. no traffic policy enforcement in the mesh. If set to false, enables deny-all traffic policy in mesh i.e. an SMI Traffic Target is necessary for services to communicate.
                       type: boolean
+                    serviceAccessMode:
+                      description: True for allowing traffic to flow between client and service pods within the mesh without SMI traffic policies, i.e. no traffic policy enforcement in the mesh. If set to false, enables deny-all traffic policy in mesh i.e. an SMI Traffic Target is necessary for services to communicate.
+                      type: string
+                      enum:
+                        - ip
+                        - domain
+                        - mixed
                     inboundExternalAuthorization:
                       description: Configures external authorization for inbound and ingress connections.
                       type: object

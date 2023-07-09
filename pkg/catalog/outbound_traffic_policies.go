@@ -139,7 +139,16 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		}
 
 		// Create a route to access the upstream service via it's hostnames and upstream weighted clusters
-		httpHostNamesForServicePort := k8s.GetHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace)
+		var httpHostNamesForServicePort []string
+		sam := mc.configurator.GetServiceAccessMode()
+		if sam == constants.ServiceAccessModeDomain || sam == constants.ServiceAccessModeMixed {
+			httpHostNamesForServicePort = k8s.GetHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace)
+		}
+		if sam == constants.ServiceAccessModeIp || sam == constants.ServiceAccessModeMixed {
+			for _, endp := range endpoints {
+				httpHostNamesForServicePort = append(httpHostNamesForServicePort, endp.IP.String())
+			}
+		}
 		outboundTrafficPolicy := trafficpolicy.NewOutboundTrafficPolicy(meshSvc.FQDN(), httpHostNamesForServicePort)
 		retryPolicy := mc.GetRetryPolicy(downstreamIdentity, meshSvc)
 

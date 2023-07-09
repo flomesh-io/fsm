@@ -24,6 +24,7 @@ data:
         "interceptionMode": {{.Values.fsm.trafficInterceptionMode | mustToJson}},
         "enableEgress": {{.Values.fsm.enableEgress | mustToJson}},
         "enablePermissiveTrafficPolicyMode": {{.Values.fsm.enablePermissiveTrafficPolicy | mustToJson}},
+        "serviceAccessMode": {{.Values.fsm.serviceAccessMode | mustToJson}},
         "outboundPortExclusionList": {{.Values.fsm.outboundPortExclusionList | mustToJson}},
         "inboundPortExclusionList": {{.Values.fsm.inboundPortExclusionList | mustToJson}},
         "outboundIPRangeExclusionList": {{.Values.fsm.outboundIPRangeExclusionList | mustToJson}},

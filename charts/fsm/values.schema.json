@@ -173,6 +173,7 @@
                 "caBundleSecretName",
                 "enableDebugServer",
                 "enablePermissiveTrafficPolicy",
+                "serviceAccessMode",
                 "trafficInterceptionMode",
                 "enableEgress",
                 "enableReconciler",
@@ -788,6 +789,15 @@
                     "description": "Indicates whether permissive traffic policy should be enabled or not.",
                     "examples": [
                         false
+                    ]
+                },
+                "serviceAccessMode": {
+                    "$id": "#/properties/fsm/properties/serviceAccessMode",
+                    "type": "string",
+                    "title": "The serviceAccessMode schema",
+                    "description": "Indicates service access mode.",
+                    "examples": [
+                        "domain"
                     ]
                 },
                 "trafficInterceptionMode": {

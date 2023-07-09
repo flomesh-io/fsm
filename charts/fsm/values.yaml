@@ -382,6 +382,9 @@ fsm:
   # -- Enable permissive traffic policy mode
   enablePermissiveTrafficPolicy: true
 
+  # -- Service access mode
+  serviceAccessMode: domain
+
   # -- Traffic interception mode in the mesh
   trafficInterceptionMode: iptables
 
