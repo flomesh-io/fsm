@@ -342,8 +342,8 @@ const (
 )
 
 const (
-	//ServiceAccessModeIp defines the ip service access mode
-	ServiceAccessModeIp = "ip"
+	//ServiceAccessModeIP defines the ip service access mode
+	ServiceAccessModeIP = "ip"
 
 	//ServiceAccessModeDomain defines the domain service access mode
 	ServiceAccessModeDomain = "domain"

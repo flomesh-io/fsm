@@ -185,7 +185,7 @@ type AllowedEndpoints map[Address]ServiceName
 // FeatureFlags represents the flags of feature
 type FeatureFlags struct {
 	EnableSidecarActiveHealthChecks bool
-	EnableHostIPDefaultRoute        bool
+	EnableAutoDefaultRoute          bool
 }
 
 // TrafficSpec represents the spec of traffic

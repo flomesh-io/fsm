@@ -1512,7 +1512,7 @@
                         "enableRetryPolicy",
                         "enablePluginPolicy",
                         "enableMeshRootCertificate",
-                        "enableHostIPDefaultRoute"
+                        "enableAutoDefaultRoute"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -1605,11 +1605,11 @@
                                 false
                             ]
                         },
-                        "enableHostIPDefaultRoute": {
-                            "$id": "#/properties/fsm/properties/featureFlags/properties/enableHostIPDefaultRoute",
+                        "enableAutoDefaultRoute": {
+                            "$id": "#/properties/fsm/properties/featureFlags/properties/enableAutoDefaultRoute",
                             "type": "boolean",
-                            "title": "Enable the HostIPDefaultRoute",
-                            "description": "Enable the HostIPDefaultRoute.",
+                            "title": "Enable the AutoDefaultRoute",
+                            "description": "Enable the AutoDefaultRoute.",
                             "examples": [
                                 false
                             ]

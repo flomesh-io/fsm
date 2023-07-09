@@ -72,7 +72,7 @@ data:
         "enableSidecarActiveHealthChecks": {{.Values.fsm.featureFlags.enableSidecarActiveHealthChecks | mustToJson}},
         "enableRetryPolicy": {{.Values.fsm.featureFlags.enableRetryPolicy | mustToJson}},
         "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}},
-        "enableHostIPDefaultRoute": {{.Values.fsm.featureFlags.enableHostIPDefaultRoute | mustToJson}}
+        "enableAutoDefaultRoute": {{.Values.fsm.featureFlags.enableAutoDefaultRoute | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }}
     }

@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -139,16 +140,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		}
 
 		// Create a route to access the upstream service via it's hostnames and upstream weighted clusters
-		var httpHostNamesForServicePort []string
-		sam := mc.configurator.GetServiceAccessMode()
-		if sam == constants.ServiceAccessModeDomain || sam == constants.ServiceAccessModeMixed {
-			httpHostNamesForServicePort = k8s.GetHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace)
-		}
-		if sam == constants.ServiceAccessModeIp || sam == constants.ServiceAccessModeMixed {
-			for _, endp := range endpoints {
-				httpHostNamesForServicePort = append(httpHostNamesForServicePort, endp.IP.String())
-			}
-		}
+		httpHostNamesForServicePort := mc.getHostnamesForService(meshSvc, downstreamSvcAccount, endpoints)
 		outboundTrafficPolicy := trafficpolicy.NewOutboundTrafficPolicy(meshSvc.FQDN(), httpHostNamesForServicePort)
 		retryPolicy := mc.GetRetryPolicy(downstreamIdentity, meshSvc)
 
@@ -182,6 +174,20 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		HTTPRouteConfigsPerPort: routeConfigPerPort,
 		ServicesResolvableSet:   servicesResolvableSet,
 	}
+}
+
+func (mc *MeshCatalog) getHostnamesForService(meshSvc service.MeshService, downstreamSvcAccount identity.K8sServiceAccount, endpoints []endpoint.Endpoint) []string {
+	var httpHostNamesForServicePort []string
+	sam := mc.configurator.GetServiceAccessMode()
+	if len(sam) == 0 || sam == constants.ServiceAccessModeDomain || sam == constants.ServiceAccessModeMixed {
+		httpHostNamesForServicePort = k8s.GetHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace)
+	}
+	if len(sam) == 0 || sam == constants.ServiceAccessModeIP || sam == constants.ServiceAccessModeMixed {
+		for _, endp := range endpoints {
+			httpHostNamesForServicePort = append(httpHostNamesForServicePort, endp.IP.String())
+		}
+	}
+	return httpHostNamesForServicePort
 }
 
 func (mc *MeshCatalog) getWildCardRouteUpstreamClusters(hasTrafficSplitWildCard bool, routeMatches []*trafficpolicy.HTTPRouteMatchWithWeightedClusters) []service.WeightedCluster {

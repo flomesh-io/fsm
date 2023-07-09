@@ -57,9 +57,9 @@ func (p *PipyConf) setEnableSidecarActiveHealthChecks(enableSidecarActiveHealthC
 	return
 }
 
-func (p *PipyConf) setEnableHostIPDefaultRoute(enableHostIPDefaultRoute bool) (update bool) {
-	if update = p.Spec.FeatureFlags.EnableHostIPDefaultRoute != enableHostIPDefaultRoute; update {
-		p.Spec.FeatureFlags.EnableHostIPDefaultRoute = enableHostIPDefaultRoute
+func (p *PipyConf) setEnableAutoDefaultRoute(enableAutoDefaultRoute bool) (update bool) {
+	if update = p.Spec.FeatureFlags.EnableAutoDefaultRoute != enableAutoDefaultRoute; update {
+		p.Spec.FeatureFlags.EnableAutoDefaultRoute = enableAutoDefaultRoute
 	}
 	return
 }

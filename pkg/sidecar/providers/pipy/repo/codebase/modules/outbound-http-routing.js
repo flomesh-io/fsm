@@ -90,7 +90,7 @@
             vh = portConfig?.HttpHostPort2Service?.[host],
             newHost,
           ) => (
-            !vh && config?.Spec?.FeatureFlags?.EnableHostIPDefaultRoute && (
+            !vh && config?.Spec?.FeatureFlags?.EnableAutoDefaultRoute && (
               newHost = vh = portConfig?.HttpHostPort2Service?.[Object.keys(portConfig.HttpHostPort2Service)[0]]
             ),
             { handler: serviceHandlers.get(vh), newHost }

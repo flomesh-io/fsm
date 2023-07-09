@@ -299,8 +299,8 @@ type FeatureFlags struct {
 	// EnablePluginPolicy defines if plugin policy is enabled.
 	EnablePluginPolicy bool `json:"enablePluginPolicy"`
 
-	// EnableHostIPDefaultRoute defines if host ip default route is enabled.
-	EnableHostIPDefaultRoute bool `json:"enableHostIPDefaultRoute"`
+	// EnableAutoDefaultRoute defines if auto default route is enabled.
+	EnableAutoDefaultRoute bool `json:"enableAutoDefaultRoute"`
 }
 
 // SidecarDriverSpec is the type to represent FSM's sidecar driver define.
