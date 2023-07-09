@@ -43,9 +43,9 @@
               (path, headers) => matchPath(path) && headerRules.every(([k, v]) => v.test(headers[k] || '')) && (
                 __route = config,
                 __service = service,
-                __cluster = clusterCache.get(balancer.next({})?.id),
+                __cluster = clusterCache.get(balancer.borrow({})?.id),
                 failoverBalancer && (
-                  _failoverCluster = clusterCache.get(failoverBalancer.next({})?.id)
+                  _failoverCluster = clusterCache.get(failoverBalancer.borrow({})?.id)
                 ),
                 true
               )
@@ -53,9 +53,9 @@
               (path) => matchPath(path) && (
                 __route = config,
                 __service = service,
-                __cluster = clusterCache.get(balancer.next({})?.id),
+                __cluster = clusterCache.get(balancer.borrow({})?.id),
                 failoverBalancer && (
-                  _failoverCluster = clusterCache.get(failoverBalancer.next({})?.id)
+                  _failoverCluster = clusterCache.get(failoverBalancer.borrow({})?.id)
                 ),
                 true
               )
@@ -85,15 +85,31 @@
       ),
 
       hostHandlers = new algo.Cache(
-        (host) => serviceHandlers.get(portConfig?.HttpHostPort2Service?.[host])
+        (host) => (
+          (
+            vh = portConfig?.HttpHostPort2Service?.[host],
+            newHost,
+          ) => (
+            !vh && config?.Spec?.FeatureFlags?.EnableHostIPDefaultRoute && (
+              newHost = vh = portConfig?.HttpHostPort2Service?.[Object.keys(portConfig.HttpHostPort2Service)[0]]
+            ),
+            { handler: serviceHandlers.get(vh), newHost }
+          )
+        )()
       ),
     ) => (
       (msg) => (
         (
           head = msg.head,
           headers = head.headers,
+          svcStruct = hostHandlers.get(headers.host),
         ) => (
-          hostHandlers.get(headers.host)(head.method, head.path, headers)
+          svcStruct.handler && (
+            svcStruct.newHost && (
+              headers.host = svcStruct.newHost
+            ),
+            svcStruct.handler(head.method, head.path, headers)
+          )
         )
       )()
     )
