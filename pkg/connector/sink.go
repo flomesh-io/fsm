@@ -173,8 +173,8 @@ func (s *Sink) Upsert(key string, raw interface{}) error {
 								//endpointSubset.Ports = []apiv1.EndpointPort{{Name: service.Name, Port: int32(port)}}
 								ported = true
 							}
-							if strings.HasPrefix(k, MeshEndpointSddrAnnotation) {
-								ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointSddrAnnotation))
+							if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
+								ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
 								ipInt, _ := strconv.Atoi(ipIntStr)
 								ip := utils.Int2IP4(uint32(ipInt))
 								endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
@@ -319,23 +319,13 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					MeshServiceSyncAnnotation: "false",
+					MeshServiceSyncAnnotation:           "false",
+					CloudServiceInheritedFromAnnotation: cloudName,
 				}
 
 				ports := make([]int, 0)
 				for _, port := range microSvcPorts {
-					existPort := false
-					if len(svc.Spec.Ports) > 0 {
-						for _, specPort := range svc.Spec.Ports {
-							if specPort.Port == int32(port.Port) &&
-								specPort.Name == fmt.Sprintf("%s%d", port.AppProtocol, port.Port) &&
-								*specPort.AppProtocol == port.AppProtocol {
-								existPort = true
-								break
-							}
-						}
-					}
-					if !existPort {
+					if exists := s.existPort(svc, port); !exists {
 						specPort := apiv1.ServicePort{
 							Name:       fmt.Sprintf("%s%d", port.AppProtocol, port.Port),
 							Protocol:   apiv1.ProtocolTCP,
@@ -353,7 +343,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					ports = append(ports, port.Port)
 				}
 				for _, addr := range microSvcAddrs {
-					svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointSddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+					svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 				}
 				if preHv == s.serviceHash(svc) {
 					log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
@@ -370,7 +360,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						MeshServiceSyncAnnotation: "false",
+						MeshServiceSyncAnnotation:           "false",
+						CloudServiceInheritedFromAnnotation: cloudName,
 					},
 				},
 
@@ -402,7 +393,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 			}
 			for _, addr := range microSvcAddrs {
-				createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointSddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+				createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 			}
 
 			if preHv == s.serviceHash(createSvc) {
@@ -428,6 +419,19 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	}
 
 	return createSvcs, updateSvcs, deleteSvcs
+}
+
+func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort) bool {
+	if len(svc.Spec.Ports) > 0 {
+		for _, specPort := range svc.Spec.Ports {
+			if specPort.Port == int32(port.Port) &&
+				specPort.Name == fmt.Sprintf("%s%d", port.AppProtocol, port.Port) &&
+				*specPort.AppProtocol == port.AppProtocol {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // namespace returns the K8S namespace to setup the resource watchers in.

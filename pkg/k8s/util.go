@@ -35,6 +35,8 @@ func GetHostnamesForService(svc service.MeshService, localNamespace bool) []stri
 	}
 
 	hostnames = append(hostnames, []string{
+		svc.Name,                                 // service
+		fmt.Sprintf("%s:%d", svc.Name, svc.Port), // service:port
 		fmt.Sprintf("%s.%s", svc.Name, svc.Namespace),                  // service.namespace
 		fmt.Sprintf("%s.%s:%d", svc.Name, svc.Namespace, svc.Port),     // service.namespace:port
 		fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace),              // service.namespace.svc

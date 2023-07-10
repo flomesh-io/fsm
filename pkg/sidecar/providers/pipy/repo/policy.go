@@ -206,7 +206,7 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 		}
 		for ipRange := range trafficMatch.SourceIPRanges {
 			ingressIP := strings.TrimSuffix(string(ipRange), "/32")
-			p.AllowedEndpoints[ingressIP] = "Ingress Controller"
+			p.AllowedEndpoints[ingressIP] = "Ingress/Accessor"
 		}
 	}
 	return ready

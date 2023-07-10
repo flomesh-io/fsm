@@ -20,6 +20,7 @@ import (
 	policyv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -309,6 +310,11 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 			Namespace: svc.Namespace,
 			Name:      svc.Name,
 			Port:      uint16(portSpec.Port),
+		}
+		if len(svc.Annotations) > 0 {
+			if inheritedFrom, ok := svc.Annotations[connector.CloudServiceInheritedFromAnnotation]; ok {
+				meshSvc.CloudInheritedFrom = inheritedFrom
+			}
 		}
 
 		// attempt to parse protocol from port name

@@ -7,11 +7,13 @@ const (
 	CloudSourcedServiceLabel = "cloud-sourced-service"
 	// CloudServiceLabel defines cloud service label
 	CloudServiceLabel = "cloud-service"
+	// CloudServiceInheritedFromAnnotation defines cloud service inherited annotation
+	CloudServiceInheritedFromAnnotation = "flomesh.io/cloud-service-inherited-from"
 
 	// MeshServiceSyncAnnotation defines mesh service sync annotation
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
-	// MeshEndpointSddrAnnotation defines mesh endpoint addr annotation
-	MeshEndpointSddrAnnotation = "flomesh.io/cloud-endpoint-addr"
+	// MeshEndpointAddrAnnotation defines mesh endpoint addr annotation
+	MeshEndpointAddrAnnotation = "flomesh.io/cloud-endpoint-addr"
 )
 
 // MicroSvcName defines string as microservice name
