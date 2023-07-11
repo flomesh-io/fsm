@@ -104,16 +104,19 @@ func (s *Sink) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	s.trigger() // Any service change probably requires syncing
 }
 
-// Informer implements the controller.Resource interface.
-// It tells Kubernetes that we want to watch for changes to Services.
-func (s *Sink) Informer() cache.SharedIndexInformer {
+// Ready wait util ready
+func (s *Sink) Ready() {
 	for {
 		if ns, err := s.KubeClient.CoreV1().Namespaces().Get(s.Ctx, s.namespace(), metav1.GetOptions{}); err == nil && ns != nil {
 			break
 		}
 		time.Sleep(5 * time.Second)
 	}
+}
 
+// ServiceInformer implements the controller.Resource interface.
+// It tells Kubernetes that we want to watch for changes to Services.
+func (s *Sink) ServiceInformer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
@@ -125,6 +128,24 @@ func (s *Sink) Informer() cache.SharedIndexInformer {
 			},
 		},
 		&apiv1.Service{},
+		0,
+		cache.Indexers{},
+	)
+}
+
+// EndpointsInformer tells Kubernetes that we want to watch for changes to Endpoints.
+func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
+		&cache.ListWatch{
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return s.KubeClient.CoreV1().Endpoints(s.namespace()).List(s.Ctx, options)
+			},
+
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return s.KubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.Ctx, options)
+			},
+		},
+		&apiv1.Endpoints{},
 		0,
 		cache.Indexers{},
 	)
@@ -185,13 +206,13 @@ func (s *Sink) Upsert(key string, raw interface{}) error {
 							s.endpointsHashMap[service.Name] = s.serviceHash(service)
 							break
 						} else {
-							log.Warn().Msgf("error update endpoints, name:%s", service.Name)
+							log.Warn().Msgf("warn update endpoints, name:%s", service.Name)
 						}
 					} else {
 						log.Warn().Msgf("not getting endpoints, name:%s", service.Name)
 					}
 				} else {
-					log.Warn().Msgf("error getting endpoint, name:%s", service.Name)
+					log.Warn().Msgf("warn getting endpoint, name:%s", service.Name)
 				}
 				time.Sleep(time.Second * 2)
 			}
@@ -271,23 +292,21 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deleteSvcs {
 			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
-				log.Warn().Msgf("error deleting service, name:%s error:%v", name, err)
+				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
 			}
 		}
 
 		for _, svc := range updateSvcs {
 			_, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{})
 			if err != nil {
-				log.Warn().Msgf("error updating service, name:%s error:%v", svc.Name, err)
-				//bytes, _ := json.MarshalIndent(svc, "", " ")
-				//fmt.Println(string(bytes))
+				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 
 		for _, svc := range createSvcs {
 			_, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{})
 			if err != nil {
-				log.Warn().Msgf("error creating service, name:%s error:%v", svc.Name, err)
+				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 	}

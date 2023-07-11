@@ -146,7 +146,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		}
 
 		// Create a route to access the upstream service via it's hostnames and upstream weighted clusters
-		httpHostNamesForServicePort := mc.getHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace, endpoints)
+		httpHostNamesForServicePort := mc.getHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace || len(meshSvc.CloudInheritedFrom) > 0, endpoints)
 		outboundTrafficPolicy := trafficpolicy.NewOutboundTrafficPolicy(meshSvc.FQDN(), httpHostNamesForServicePort)
 		retryPolicy := mc.GetRetryPolicy(downstreamIdentity, meshSvc)
 
