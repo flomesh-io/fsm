@@ -38,11 +38,12 @@ var (
 // NewSink creates a new mesh sink
 func NewSink(ctx context.Context, kubeClient kubernetes.Interface) *Sink {
 	sink := Sink{
-		Ctx:              ctx,
-		KubeClient:       kubeClient,
-		keyToName:        make(map[string]string),
-		endpointsHashMap: make(map[string]uint64),
-		serviceMapCache:  make(map[string]*apiv1.Service),
+		Ctx:                ctx,
+		KubeClient:         kubeClient,
+		serviceKeyToName:   make(map[string]string),
+		serviceMapCache:    make(map[string]*apiv1.Service),
+		serviceHashMap:     make(map[string]uint64),
+		endpointsKeyToName: make(map[string]string),
 	}
 	return &sink
 }
@@ -72,18 +73,24 @@ type Sink struct {
 	// because Kube names must be lowercase.
 	sourceServices map[string]string
 
-	// keyToName maps from Kube controller keys to Kube service names.
+	// serviceKeyToName maps from Kube controller keys to Kube service names.
 	// Controller keys are in the form <kube namespace>/<kube svc name>
 	// e.g. default/foo, and are the keys Kube uses to inform that something
 	// changed.
-	keyToName map[string]string
-
-	endpointsHashMap map[string]uint64
+	serviceKeyToName map[string]string
 
 	// serviceMapCache is a subset of serviceMap. It holds all Kube services
 	// that were created by this sync process. Keys are Kube service names.
 	// It's populated from Kubernetes data.
 	serviceMapCache map[string]*apiv1.Service
+
+	serviceHashMap map[string]uint64
+
+	// endpointsKeyToName maps from Kube controller keys to Kube endpoints names.
+	// Controller keys are in the form <kube namespace>/<kube endpoints name>
+	// e.g. default/foo, and are the keys Kube uses to inform that something
+	// changed.
+	endpointsKeyToName map[string]string
 
 	triggerCh chan struct{}
 }
@@ -151,12 +158,12 @@ func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
 	)
 }
 
-// Upsert implements the controller.Resource interface.
-func (s *Sink) Upsert(key string, raw interface{}) error {
+// UpsertService implements the controller.Resource interface.
+func (s *Sink) UpsertService(key string, raw interface{}) error {
 	// We expect a Service. If it isn't a service then just ignore it.
 	service, ok := raw.(*apiv1.Service)
 	if !ok {
-		log.Warn().Msgf("upsert got invalid type, raw:%v", raw)
+		log.Warn().Msgf("UpsertService got invalid type, raw:%v", raw)
 		return nil
 	}
 
@@ -165,71 +172,94 @@ func (s *Sink) Upsert(key string, raw interface{}) error {
 
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by service name.
-	s.keyToName[key] = service.Name
+	s.serviceKeyToName[key] = service.Name
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
 	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == "true" {
 		s.serviceMapCache[service.Name] = service
-		if len(service.Annotations) > 0 {
-			for {
-				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
-				if endpoints, err := eptClient.Get(s.Ctx, service.Name, metav1.GetOptions{}); err == nil {
-					if endpoints != nil {
-						endpoints.Labels[CloudServiceLabel] = service.Name
-						endpointSubset := apiv1.EndpointSubset{}
-						ported := false
-						for k := range service.Annotations {
-							if !ported {
-								if len(service.Spec.Ports) > 0 {
-									for _, port := range service.Spec.Ports {
-										endpointSubset.Ports = append(endpointSubset.Ports, apiv1.EndpointPort{
-											Name:        port.Name,
-											Port:        port.Port,
-											Protocol:    port.Protocol,
-											AppProtocol: port.AppProtocol,
-										})
-									}
-								}
-								//endpointSubset.Ports = []apiv1.EndpointPort{{Name: service.Name, Port: int32(port)}}
-								ported = true
-							}
-							if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
-								ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
-								ipInt, _ := strconv.Atoi(ipIntStr)
-								ip := utils.Int2IP4(uint32(ipInt))
-								endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
-							}
-						}
-						endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
-						if _, err = eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err == nil {
-							s.endpointsHashMap[service.Name] = s.serviceHash(service)
-							break
-						} else {
-							log.Warn().Msgf("warn update endpoints, name:%s", service.Name)
-						}
-					} else {
-						log.Warn().Msgf("not getting endpoints, name:%s", service.Name)
-					}
-				} else {
-					log.Warn().Msgf("warn getting endpoint, name:%s", service.Name)
-				}
-				time.Sleep(time.Second * 2)
-			}
-		}
 		s.trigger() // Always trigger sync
 	}
 
-	log.Info().Msgf("upsert, key:%s", key)
+	log.Info().Msgf("UpsertService, key:%s", key)
 	return nil
 }
 
-// Delete implements the controller.Resource interface.
-func (s *Sink) Delete(key string, _ interface{}) error {
+// UpsertEndpoints implements the controller.Resource interface.
+func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
+	// We expect a Service. If it isn't a service then just ignore it.
+	endpoints, ok := raw.(*apiv1.Endpoints)
+	if !ok {
+		log.Warn().Msgf("UpsertEndpoints got invalid type, raw:%v", raw)
+		return nil
+	}
+
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	name, ok := s.keyToName[key]
+	// Store all the key to name mappings. We need this because the key
+	// is opaque but we want to do all the lookups by endpoints name.
+	s.endpointsKeyToName[key] = endpoints.Name
+
+	servicePtr, exists := s.serviceMapCache[endpoints.Name]
+	if exists {
+		service := *servicePtr
+		if len(endpoints.Annotations) > 0 {
+			svcVersion := endpoints.Annotations[CloudServiceResourceVersionAnnotation]
+			if strings.EqualFold(svcVersion, service.ObjectMeta.ResourceVersion) {
+				return nil
+			}
+		}
+		if len(service.Annotations) > 0 {
+			endpoints.Labels[CloudServiceLabel] = service.Name
+			endpointSubset := apiv1.EndpointSubset{}
+			ported := false
+			for k := range service.Annotations {
+				if !ported {
+					if len(service.Spec.Ports) > 0 {
+						for _, port := range service.Spec.Ports {
+							endpointSubset.Ports = append(endpointSubset.Ports, apiv1.EndpointPort{
+								Name:        port.Name,
+								Port:        port.Port,
+								Protocol:    port.Protocol,
+								AppProtocol: port.AppProtocol,
+							})
+						}
+					}
+					ported = true
+				}
+				if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
+					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
+					ipInt, _ := strconv.Atoi(ipIntStr)
+					ip := utils.Int2IP4(uint32(ipInt))
+					endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
+				}
+			}
+			if len(endpointSubset.Addresses) > 0 {
+				endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
+				if len(endpoints.Annotations) == 0 {
+					endpoints.Annotations = make(map[string]string)
+				}
+				endpoints.Annotations[CloudServiceResourceVersionAnnotation] = service.ObjectMeta.ResourceVersion
+				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
+				if _, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
+					log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
+					return err
+				}
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("error update endpoints, name:%s", endpoints.Name)
+}
+
+// DeleteService implements the controller.Resource interface.
+func (s *Sink) DeleteService(key string, _ interface{}) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	name, ok := s.serviceKeyToName[key]
 	if !ok {
 		// This is a weird scenario, but in unit tests we've seen this happen
 		// in cases where the delete happens very quickly after the create.
@@ -239,8 +269,7 @@ func (s *Sink) Delete(key string, _ interface{}) error {
 		return nil
 	}
 
-	delete(s.keyToName, key)
-	delete(s.endpointsHashMap, name)
+	delete(s.serviceKeyToName, key)
 	delete(s.serviceMapCache, name)
 
 	// If the service that is deleted is part of cloud services, then
@@ -249,7 +278,23 @@ func (s *Sink) Delete(key string, _ interface{}) error {
 		s.trigger()
 	}
 
-	log.Info().Msgf("delete, key:%s name:%s", key, name)
+	log.Info().Msgf("delete service, key:%s name:%s", key, name)
+	return nil
+}
+
+// DeleteEndpoints implements the controller.Resource interface.
+func (s *Sink) DeleteEndpoints(key string, _ interface{}) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	name, ok := s.endpointsKeyToName[key]
+	if !ok {
+		return nil
+	}
+
+	delete(s.endpointsKeyToName, key)
+
+	log.Info().Msgf("delete endpoints, key:%s name:%s", key, name)
 	return nil
 }
 
@@ -328,7 +373,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 			if !strings.EqualFold(string(microSvcName), cloudName) {
 				extendServices[string(microSvcName)] = cloudDNS
 			}
-			preHv := s.endpointsHashMap[string(microSvcName)]
+			preHv := s.serviceHashMap[string(microSvcName)]
 			// If this is an already registered service, then update it
 			if svc, ok := s.serviceMapCache[string(microSvcName)]; ok {
 				if svc.Spec.ExternalName == cloudDNS {

@@ -57,6 +57,12 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 	// Create an informer so we can keep track of all endpoints changes.
 	c.endpointsInformer = c.Resource.EndpointsInformer()
 
+	go c.syncService(stopCh)
+
+	go c.syncEndpoints(stopCh)
+}
+
+func (c *Controller) syncService(stopCh <-chan struct{}) {
 	// Create a queue for storing items to process from the informer.
 	var queueOnce sync.Once
 	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -71,14 +77,14 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 			// convert the resource object into a key (in this case
 			// we are just doing it in the format of 'namespace/name')
 			key, err := cache.MetaNamespaceKeyFunc(obj)
-			log.Debug().Msgf("queue op add key:%s", key)
+			log.Debug().Msgf("queue op add service key:%s", key)
 			if err == nil {
 				queue.Add(Event{Key: key, Obj: obj})
 			}
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(newObj)
-			log.Debug().Msgf("queue op update key:%s", key)
+			log.Debug().Msgf("queue op update service key:%s", key)
 			if err == nil {
 				queue.Add(Event{Key: key, Obj: newObj})
 			}
@@ -86,7 +92,95 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 		DeleteFunc: c.informerDeleteHandler(queue),
 	})
 	if err != nil {
-		log.Err(err).Msg("error adding informer event handlers")
+		log.Err(err).Msg("error adding service informer event handlers")
+	}
+
+	// If the type is a background syncer, then we startup the background
+	// process.
+	if bg, ok := c.Resource.(Backgrounder); ok {
+		ctx, cancelF := context.WithCancel(context.Background())
+
+		// Run the backgrounder
+		doneCh := make(chan struct{})
+		go func() {
+			defer close(doneCh)
+			bg.Run(ctx.Done())
+		}()
+
+		// Start a goroutine that automatically closes the context when we stop
+		go func() {
+			select {
+			case <-stopCh:
+				cancelF()
+
+			case <-ctx.Done():
+				// Cancelled outside
+			}
+		}()
+
+		// When we exit, close the context so the backgrounder ends
+		defer func() {
+			cancelF()
+			<-doneCh
+		}()
+	}
+
+	// Run the informer to start requesting resources
+	go func() {
+		c.serviceInformer.Run(stopCh)
+
+		// We have to shut down the queue here if we stop so that
+		// wait.Until stops below too. We can't wait until the defer at
+		// the top since wait.Until will block.
+		queueOnce.Do(shutdown)
+	}()
+
+	// Initial sync
+	if !cache.WaitForCacheSync(stopCh, c.serviceInformer.HasSynced) {
+		utilruntime.HandleError(fmt.Errorf("error syncing service cache"))
+		return
+	}
+	log.Debug().Msg("initial service cache sync complete")
+
+	// run the runWorker method every second with a stop channel
+	wait.Until(func() {
+		for c.processSingleService(queue, c.serviceInformer) {
+			// Process
+		}
+	}, time.Second, stopCh)
+}
+
+func (c *Controller) syncEndpoints(stopCh <-chan struct{}) {
+	// Create a queue for storing items to process from the informer.
+	var queueOnce sync.Once
+	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	shutdown := func() { queue.ShutDown() }
+	defer queueOnce.Do(shutdown)
+
+	// Add an event handler when data is received from the informer. The
+	// event handlers here will block the informer so we just offload them
+	// immediately into a workqueue.
+	_, err := c.endpointsInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			// convert the resource object into a key (in this case
+			// we are just doing it in the format of 'namespace/name')
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			log.Debug().Msgf("queue op add endpoints key:%s", key)
+			if err == nil {
+				queue.Add(Event{Key: key, Obj: obj})
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(newObj)
+			log.Debug().Msgf("queue op update endpoints key:%s", key)
+			if err == nil {
+				queue.Add(Event{Key: key, Obj: newObj})
+			}
+		},
+		DeleteFunc: c.informerDeleteHandler(queue),
+	})
+	if err != nil {
+		log.Err(err).Msg("error adding endpoints informer event handlers")
 	}
 
 	// If the type is a background syncer, then we startup the background
@@ -122,11 +216,6 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 	// Run the informer to start requesting resources
 	go func() {
 		c.endpointsInformer.Run(stopCh)
-	}()
-
-	// Run the informer to start requesting resources
-	go func() {
-		c.serviceInformer.Run(stopCh)
 
 		// We have to shut down the queue here if we stop so that
 		// wait.Until stops below too. We can't wait until the defer at
@@ -135,41 +224,74 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 	}()
 
 	// Initial sync
-	if !cache.WaitForCacheSync(stopCh, c.serviceInformer.HasSynced, c.endpointsInformer.HasSynced) {
-		utilruntime.HandleError(fmt.Errorf("error syncing cache"))
+	if !cache.WaitForCacheSync(stopCh, c.endpointsInformer.HasSynced) {
+		utilruntime.HandleError(fmt.Errorf("error syncing endpoints cache"))
 		return
 	}
-	log.Debug().Msg("initial cache sync complete")
+	log.Debug().Msg("initial endpoints cache sync complete")
 
 	// run the runWorker method every second with a stop channel
 	wait.Until(func() {
-		for c.processSingle(queue, c.serviceInformer, c.endpointsInformer) {
+		for c.processSingleEndpoints(queue, c.endpointsInformer) {
 			// Process
 		}
 	}, time.Second, stopCh)
 }
 
-// HasSynced implements cache.Controller.
-func (c *Controller) HasSynced() bool {
-	if c.serviceInformer == nil {
+func (c *Controller) processSingleService(
+	queue workqueue.RateLimitingInterface,
+	serviceInformer cache.SharedIndexInformer) bool {
+	// Fetch the next item
+	rawEvent, quit := queue.Get()
+	if quit {
 		return false
 	}
+	defer queue.Done(rawEvent)
 
-	return c.serviceInformer.HasSynced()
-}
-
-// LastSyncResourceVersion implements cache.Controller.
-func (c *Controller) LastSyncResourceVersion() string {
-	if c.serviceInformer == nil {
-		return ""
+	event, ok := rawEvent.(Event)
+	if !ok {
+		log.Warn().Msgf("processSingleService: dropping event with unexpected type, event:%s", rawEvent)
+		return true
 	}
 
-	return c.serviceInformer.LastSyncResourceVersion()
+	// Get the item from the informer to ensure we have the most up-to-date
+	// copy.
+	key := event.Key
+	serviceItem, serviceExists, serviceErr := serviceInformer.GetIndexer().GetByKey(key)
+
+	// If we got the item successfully, call the proper method
+	if serviceErr == nil {
+		log.Debug().Msgf("processing service object, key:%s exists:%v", key, serviceExists)
+		log.Trace().Msgf("processing service object, object:%v", serviceItem)
+		if !serviceExists {
+			// In the case of deletes, the item is no longer in the cache so
+			// we use the copy we got at the time of the event (event.Obj).
+			serviceErr = c.Resource.DeleteService(key, event.Obj)
+		} else {
+			serviceErr = c.Resource.UpsertService(key, serviceItem)
+		}
+
+		if serviceErr == nil {
+			queue.Forget(rawEvent)
+		}
+	}
+
+	if serviceErr != nil {
+		if queue.NumRequeues(event) < 5 {
+			log.Err(serviceErr).Msgf("failed processing service item, retrying key:%s", key)
+			queue.AddRateLimited(rawEvent)
+		} else {
+			log.Err(serviceErr).Msgf("failed processing service item, no more retries, key:%s", key)
+			queue.Forget(rawEvent)
+			utilruntime.HandleError(serviceErr)
+		}
+	}
+
+	return true
 }
 
-func (c *Controller) processSingle(
+func (c *Controller) processSingleEndpoints(
 	queue workqueue.RateLimitingInterface,
-	serviceInformer cache.SharedIndexInformer,
 	endpointsInformer cache.SharedIndexInformer) bool {
 	// Fetch the next item
 	rawEvent, quit := queue.Get()
@@ -180,41 +302,40 @@ func (c *Controller) processSingle(
 
 	event, ok := rawEvent.(Event)
 	if !ok {
-		log.Warn().Msgf("processSingle: dropping event with unexpected type, event:%s", rawEvent)
+		log.Warn().Msgf("processSingleEndpoints: dropping event with unexpected type, event:%s", rawEvent)
 		return true
 	}
 
 	// Get the item from the informer to ensure we have the most up-to-date
 	// copy.
 	key := event.Key
-	serviceItem, serviceExists, serviceErr := serviceInformer.GetIndexer().GetByKey(key)
-	_, endpointsExists, endpointsErr := endpointsInformer.GetIndexer().GetByKey(key)
+	endpointsItem, endpointsExists, endpointsErr := endpointsInformer.GetIndexer().GetByKey(key)
 
 	// If we got the item successfully, call the proper method
-	if serviceErr == nil && endpointsErr == nil && endpointsExists {
-		log.Debug().Msgf("processing object, key:%s exists:%v", key, serviceExists)
-		log.Trace().Msgf("processing object, object:%v", serviceItem)
-		if !serviceExists {
+	if endpointsErr == nil {
+		log.Debug().Msgf("processing endpoints object, key:%s exists:%v", key, endpointsExists)
+		log.Trace().Msgf("processing endpoints object, object:%v", endpointsItem)
+		if !endpointsExists {
 			// In the case of deletes, the item is no longer in the cache so
 			// we use the copy we got at the time of the event (event.Obj).
-			serviceErr = c.Resource.Delete(key, event.Obj)
+			endpointsErr = c.Resource.DeleteEndpoints(key, event.Obj)
 		} else {
-			serviceErr = c.Resource.Upsert(key, serviceItem)
+			endpointsErr = c.Resource.UpsertEndpoints(key, endpointsItem)
 		}
 
-		if serviceErr == nil {
+		if endpointsErr == nil {
 			queue.Forget(rawEvent)
 		}
 	}
 
-	if serviceErr != nil || endpointsErr != nil || !endpointsExists {
+	if endpointsErr != nil {
 		if queue.NumRequeues(event) < 5 {
-			log.Err(serviceErr).Msgf("failed processing item, retrying key:%s", key)
+			log.Err(endpointsErr).Msgf("failed processing endpoints item, retrying key:%s", key)
 			queue.AddRateLimited(rawEvent)
 		} else {
-			log.Err(serviceErr).Msgf("failed processing item, no more retries, key:%s", key)
+			log.Err(endpointsErr).Msgf("failed processing endpoints item, no more retries, key:%s", key)
 			queue.Forget(rawEvent)
-			utilruntime.HandleError(serviceErr)
+			utilruntime.HandleError(endpointsErr)
 		}
 	}
 

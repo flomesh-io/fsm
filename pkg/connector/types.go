@@ -9,6 +9,8 @@ const (
 	CloudServiceLabel = "cloud-service"
 	// CloudServiceInheritedFromAnnotation defines cloud service inherited annotation
 	CloudServiceInheritedFromAnnotation = "flomesh.io/cloud-service-inherited-from"
+	// CloudServiceResourceVersionAnnotation defines cloud service resource version
+	CloudServiceResourceVersionAnnotation = "flomesh.io/cloud-service-resource-version"
 
 	// MeshServiceSyncAnnotation defines mesh service sync annotation
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"

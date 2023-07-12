@@ -4,12 +4,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// ResourceUpsertFunc is the callback types for when a resource is inserted or updated.
-type ResourceUpsertFunc func(string, interface{}) error
-
-// ResourceDeleteFunc is the callback types for when a resource is deleted.
-type ResourceDeleteFunc func(string, interface{}) error
-
 // Resource should be implemented by anything that should be watchable
 // by Controller. The Resource needs to be aware of how to create the Informer
 // that is responsible for making API calls as well as what to do on Upsert
@@ -28,15 +22,27 @@ type Resource interface {
 	// holds blocking queries to K8S and stores data in a local store.
 	EndpointsInformer() cache.SharedIndexInformer
 
-	// Upsert is the callback called when processing the queue
+	// UpsertService is the callback called when processing the queue
 	// of changes from the Informer. If an error is returned, the given item
 	// will be retried.
-	Upsert(key string, obj interface{}) error
-	// Delete is called on object deletion.
+	UpsertService(key string, obj interface{}) error
+
+	// DeleteService is called on object deletion.
 	// obj is the last known state of the object before deletion. In some
 	// cases, it may not be up to date with the latest state of the object.
 	// If an error is returned, the given item will be retried.
-	Delete(key string, obj interface{}) error
+	DeleteService(key string, obj interface{}) error
+
+	// UpsertEndpoints is the callback called when processing the queue
+	// of changes from the Informer. If an error is returned, the given item
+	// will be retried.
+	UpsertEndpoints(key string, obj interface{}) error
+
+	// DeleteEndpoints is called on object deletion.
+	// obj is the last known state of the object before deletion. In some
+	// cases, it may not be up to date with the latest state of the object.
+	// If an error is returned, the given item will be retried.
+	DeleteEndpoints(key string, obj interface{}) error
 }
 
 // Backgrounder should be implemented by a Resource that requires additional
