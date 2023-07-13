@@ -239,13 +239,10 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 					log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
 					return err
 				}
-				fmt.Println(fmt.Sprintf("success update endpoints, name:%s", endpoints.Name))
 				return nil
 			}
 		}
 	}
-
-	fmt.Println(fmt.Sprintf("error update endpoints, name:%s", endpoints.Name))
 	return fmt.Errorf("error update endpoints, name:%s", endpoints.Name)
 }
 
