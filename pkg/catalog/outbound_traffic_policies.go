@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+
 	mapset "github.com/deckarep/golang-set"
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
 	"k8s.io/apimachinery/pkg/types"

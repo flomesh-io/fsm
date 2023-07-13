@@ -4,7 +4,6 @@ package consul
 import (
 	"context"
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/hashicorp/consul/api"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
