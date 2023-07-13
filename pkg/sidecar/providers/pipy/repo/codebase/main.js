@@ -47,7 +47,7 @@
 .branch(
   Boolean(os.env.LOCAL_DNS_PROXY), (
     $=>$
-    .listen('127.0.0.153:5300', { protocol: 'udp', transparent: true })
+    .listen('127.0.0.153:5300', { protocol: 'udp' })
     .chain(['dns-main.js'])
   )
 )
