@@ -204,12 +204,6 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 	servicePtr, exists := s.serviceMapCache[endpoints.Name]
 	if exists {
 		service := *servicePtr
-		if len(endpoints.Annotations) > 0 {
-			svcVersion := endpoints.Annotations[CloudServiceResourceVersionAnnotation]
-			if strings.EqualFold(svcVersion, service.ObjectMeta.ResourceVersion) {
-				return nil
-			}
-		}
 		if len(service.Annotations) > 0 {
 			endpoints.Labels[CloudServiceLabel] = service.Name
 			endpointSubset := apiv1.EndpointSubset{}
@@ -240,17 +234,18 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				if len(endpoints.Annotations) == 0 {
 					endpoints.Annotations = make(map[string]string)
 				}
-				endpoints.Annotations[CloudServiceResourceVersionAnnotation] = service.ObjectMeta.ResourceVersion
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
 				if _, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
 					log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
 					return err
 				}
+				fmt.Println(fmt.Sprintf("success update endpoints, name:%s", endpoints.Name))
 				return nil
 			}
 		}
 	}
 
+	fmt.Println(fmt.Sprintf("error update endpoints, name:%s", endpoints.Name))
 	return fmt.Errorf("error update endpoints, name:%s", endpoints.Name)
 }
 
@@ -365,11 +360,11 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for cloudName, cloudDNS := range s.sourceServices {
-		microSvcNames, microSvcPorts, microSvcAddrs := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
-		if len(microSvcNames) == 0 || len(microSvcPorts) == 0 || len(microSvcAddrs) == 0 {
+		svcMetaMap := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
+		if len(svcMetaMap) == 0 {
 			continue
 		}
-		for _, microSvcName := range microSvcNames {
+		for microSvcName, svcMeta := range svcMetaMap {
 			if !strings.EqualFold(string(microSvcName), cloudName) {
 				extendServices[string(microSvcName)] = cloudDNS
 			}
@@ -388,25 +383,25 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 				}
 
 				ports := make([]int, 0)
-				for _, port := range microSvcPorts {
-					if exists := s.existPort(svc, port); !exists {
+				for port, appProtocol := range svcMeta.Ports {
+					if exists := s.existPort(svc, port, appProtocol); !exists {
 						specPort := apiv1.ServicePort{
-							Name:       fmt.Sprintf("%s%d", port.AppProtocol, port.Port),
+							Name:       fmt.Sprintf("%s%d", appProtocol, port),
 							Protocol:   apiv1.ProtocolTCP,
-							Port:       int32(port.Port),
-							TargetPort: intstr.FromInt(port.Port),
+							Port:       int32(port),
+							TargetPort: intstr.FromInt(int(port)),
 						}
-						if port.AppProtocol == constants.ProtocolHTTP {
+						if appProtocol == constants.ProtocolHTTP {
 							specPort.AppProtocol = &protocolHTTP
 						}
-						if port.AppProtocol == constants.ProtocolGRPC {
+						if appProtocol == constants.ProtocolGRPC {
 							specPort.AppProtocol = &protocolGRPC
 						}
 						svc.Spec.Ports = append(svc.Spec.Ports, specPort)
 					}
-					ports = append(ports, port.Port)
+					ports = append(ports, int(port))
 				}
-				for _, addr := range microSvcAddrs {
+				for addr := range svcMeta.Addresses {
 					svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 				}
 				if preHv == s.serviceHash(svc) {
@@ -441,22 +436,22 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 			}
 
 			ports := make([]int, 0)
-			for _, port := range microSvcPorts {
+			for port, appProtocol := range svcMeta.Ports {
 				specPort := apiv1.ServicePort{
-					Name:       fmt.Sprintf("%s%d", port.AppProtocol, port.Port),
+					Name:       fmt.Sprintf("%s%d", appProtocol, port),
 					Protocol:   apiv1.ProtocolTCP,
-					Port:       int32(port.Port),
-					TargetPort: intstr.FromInt(port.Port),
+					Port:       int32(port),
+					TargetPort: intstr.FromInt(int(port)),
 				}
-				if port.AppProtocol == constants.ProtocolHTTP {
+				if appProtocol == constants.ProtocolHTTP {
 					specPort.AppProtocol = &protocolHTTP
 				}
-				if port.AppProtocol == constants.ProtocolGRPC {
+				if appProtocol == constants.ProtocolGRPC {
 					specPort.AppProtocol = &protocolGRPC
 				}
 				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 			}
-			for _, addr := range microSvcAddrs {
+			for addr := range svcMeta.Addresses {
 				createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 			}
 
@@ -485,12 +480,12 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	return createSvcs, updateSvcs, deleteSvcs
 }
 
-func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort) bool {
+func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
-			if specPort.Port == int32(port.Port) &&
-				specPort.Name == fmt.Sprintf("%s%d", port.AppProtocol, port.Port) &&
-				*specPort.AppProtocol == port.AppProtocol {
+			if specPort.Port == int32(port) &&
+				specPort.Name == fmt.Sprintf("%s%d", appProtocol, port) &&
+				*specPort.AppProtocol == string(appProtocol) {
 				return true
 			}
 		}

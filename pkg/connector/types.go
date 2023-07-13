@@ -9,8 +9,6 @@ const (
 	CloudServiceLabel = "cloud-service"
 	// CloudServiceInheritedFromAnnotation defines cloud service inherited annotation
 	CloudServiceInheritedFromAnnotation = "flomesh.io/cloud-service-inherited-from"
-	// CloudServiceResourceVersionAnnotation defines cloud service resource version
-	CloudServiceResourceVersionAnnotation = "flomesh.io/cloud-service-resource-version"
 
 	// MeshServiceSyncAnnotation defines mesh service sync annotation
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
@@ -28,14 +26,19 @@ type MicroSvcDomainName string
 type MicroEndpointAddr string
 
 // MicroSvcPort defines int as micro service port
-type MicroSvcPort struct {
-	Name        string
-	Port        int
-	AppProtocol string
+type MicroSvcPort int
+
+// MicroSvcAppProtocol defines app protocol
+type MicroSvcAppProtocol string
+
+// MicroSvcMeta defines micro service meta
+type MicroSvcMeta struct {
+	Ports     map[MicroSvcPort]MicroSvcAppProtocol
+	Addresses map[MicroEndpointAddr]uint8
 }
 
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) ([]MicroSvcName, []MicroSvcPort, []MicroEndpointAddr)
+	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta
 }

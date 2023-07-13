@@ -2,8 +2,6 @@ package catalog
 
 import (
 	"fmt"
-	"strings"
-
 	mapset "github.com/deckarep/golang-set"
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
 	"k8s.io/apimachinery/pkg/types"
@@ -46,9 +44,9 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 	// For each service, build the traffic policies required to access it.
 	// It is important to aggregate HTTP route configs by the service's port.
 	for _, meshSvc := range mc.ListOutboundServicesForIdentity(downstreamIdentity) {
-		if len(meshSvc.CloudInheritedFrom) > 0 && !strings.EqualFold(meshSvc.Name, meshSvc.CloudInheritedFrom) {
-			continue
-		}
+		//if len(meshSvc.CloudInheritedFrom) > 0 && !strings.EqualFold(meshSvc.Name, meshSvc.CloudInheritedFrom) {
+		//	continue
+		//}
 		meshSvc := meshSvc // To prevent loop variable memory aliasing in for loop
 
 		egressEnabled, egressPolicyGetted, egressPolicy = mc.enableEgressSrviceForIdentity(downstreamIdentity, egressPolicyGetted, egressPolicy, meshSvc)

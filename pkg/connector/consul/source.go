@@ -4,6 +4,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/hashicorp/consul/api"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
@@ -94,28 +94,23 @@ func (s *Source) Run(ctx context.Context) {
 }
 
 // Aggregate micro services
-func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connector.MicroSvcDomainName) ([]connector.MicroSvcName, []connector.MicroSvcPort, []connector.MicroEndpointAddr) {
+func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connector.MicroSvcDomainName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
 	serviceEntries, _, err := s.ConsulClient.Health().Service(string(svcName), s.FilterTag, s.PassingOnly, nil)
 	if err != nil {
 		log.Err(err).Msgf("can't retrieve consul service, name:%s", string(svcName))
-		return nil, nil, nil
+		return nil
 	}
 	log.Info().Msgf("PassingOnly:%v FilterTag:%v len(serviceEntries):%d", s.PassingOnly, s.FilterTag, len(serviceEntries))
 	if len(serviceEntries) == 0 {
-		return nil, nil, nil
+		return nil
 	}
 
-	svcNames := make([]connector.MicroSvcName, 0)
-	svcNames = append(svcNames, svcName)
-
-	svcPorts := make([]connector.MicroSvcPort, 0)
-	svcAddrs := make([]connector.MicroEndpointAddr, 0)
+	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
 
 	for _, svc := range serviceEntries {
-		svcPorts = append(svcPorts, connector.MicroSvcPort{
-			Port:        svc.Service.Port,
-			AppProtocol: constants.ProtocolHTTP,
-		})
+		httpPort := svc.Service.Port
+		grpcPort := 0
+		svcNames := []connector.MicroSvcName{connector.MicroSvcName(svc.Service.Service)}
 		if len(svc.Service.Tags) > 0 {
 			svcPrefix := ""
 			svcSuffix := ""
@@ -136,11 +131,8 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 				}
 				if strings.HasPrefix(tag, "gRPC.port=") {
 					if segs := strings.Split(tag, "="); len(segs) == 2 {
-						if grpcPort, convErr := strconv.Atoi(segs[1]); convErr == nil {
-							svcPorts = append(svcPorts, connector.MicroSvcPort{
-								Port:        grpcPort,
-								AppProtocol: constants.ProtocolGRPC,
-							})
+						if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
+							grpcPort = port
 						}
 					}
 				}
@@ -156,7 +148,20 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 				svcNames = append(svcNames, connector.MicroSvcName(extSvcName))
 			}
 		}
-		svcAddrs = append(svcAddrs, connector.MicroEndpointAddr(svc.Service.Address))
+		for _, serviceName := range svcNames {
+			svcMeta, exists := svcMetaMap[serviceName]
+			if !exists {
+				svcMeta = new(connector.MicroSvcMeta)
+				svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
+				svcMeta.Addresses = make(map[connector.MicroEndpointAddr]uint8)
+				svcMetaMap[serviceName] = svcMeta
+			}
+			svcMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.MicroSvcAppProtocol(constants.ProtocolHTTP)
+			if grpcPort > 0 {
+				svcMeta.Ports[connector.MicroSvcPort(grpcPort)] = connector.MicroSvcAppProtocol(constants.ProtocolGRPC)
+			}
+			svcMeta.Addresses[connector.MicroEndpointAddr(svc.Service.Address)] = 1
+		}
 	}
-	return svcNames, svcPorts, svcAddrs
+	return svcMetaMap
 }
