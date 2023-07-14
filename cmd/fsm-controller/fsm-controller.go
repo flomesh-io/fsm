@@ -283,7 +283,9 @@ func main() {
 
 	if cfg.IsGatewayApiEnabled() {
 		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, msgBroker, cfg)
-		gatewayController.Start()
+		if err := gatewayController.Start(); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Gateway Controller")
+		}
 	}
 
 	kubeProvider := kube.NewClient(k8sClient, cfg)

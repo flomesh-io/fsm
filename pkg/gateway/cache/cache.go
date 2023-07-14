@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	"sync"
 )
 
 type GatewayCache struct {
@@ -39,6 +40,8 @@ type GatewayCache struct {
 	grpcroutes     map[client.ObjectKey]struct{}
 	tcproutes      map[client.ObjectKey]struct{}
 	tlsroutes      map[client.ObjectKey]struct{}
+
+	mutex *sync.RWMutex
 }
 
 func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
@@ -71,6 +74,8 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		grpcroutes: make(map[client.ObjectKey]struct{}),
 		tcproutes:  make(map[client.ObjectKey]struct{}),
 		tlsroutes:  make(map[client.ObjectKey]struct{}),
+
+		mutex: new(sync.RWMutex),
 	}
 }
 
@@ -234,6 +239,9 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 }
 
 func (c *GatewayCache) BuildConfigs() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	configs := make(map[string]*route.ConfigSpec)
 
 	for ns, key := range c.gateways {

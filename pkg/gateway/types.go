@@ -2,6 +2,7 @@
 package gateway
 
 import (
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
@@ -17,6 +18,7 @@ type client struct {
 	kubeClient kubernetes.Interface
 	msgBroker  *messaging.Broker
 	cache      Cache
+	cfg        configurator.Configurator
 }
 
 // Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
@@ -53,6 +55,7 @@ const (
 type Cache interface {
 	Insert(obj interface{}) bool
 	Delete(obj interface{}) bool
+	BuildConfigs()
 }
 
 type Listener struct {

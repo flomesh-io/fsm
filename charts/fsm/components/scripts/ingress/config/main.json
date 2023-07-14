@@ -1,0 +1,41 @@
+{
+  "http": {
+    "enabled": true,
+    "listen": 8000
+  },
+
+  "tls": {
+    "enabled": false,
+    "listen": 8443,
+    "mTLS": false,
+    "certificate": {}
+  },
+
+  "sslPassthrough": {
+    "enabled": false,
+    "upstreamPort": 443
+  },
+
+  "detectProtocol": true,
+
+  "plugins": [
+    "plugins/reject-http.js",
+    "plugins/protocol.js",
+    "plugins/router.js",
+    "plugins/balancer.js",
+    "plugins/default.js"
+  ],
+
+  "logging": {
+    "enabled": false,
+    "url": "http://localhost:8123/ping",
+    "headers": {},
+    "token": "",
+    "batch": {
+      "size": 1000,
+      "separator": "\n"
+    }
+  },
+
+  "version": 1
+}

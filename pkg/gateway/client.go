@@ -4,6 +4,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/gateway/cache"
+	"github.com/flomesh-io/fsm/pkg/gateway/repo"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -26,6 +27,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		informers:  informerCollection,
 		kubeClient: kubeClient,
 		msgBroker:  msgBroker,
+		cfg:        cfg,
 		cache:      cache.NewGatewayCache(informerCollection, kubeClient, cfg),
 	}
 
@@ -157,7 +159,8 @@ func (c *client) initTCPRoutesMonitor(informerKey fsminformers.InformerKey) {
 
 func (c *client) Start() error {
 	// Start broadcast listener thread
-	go c.broadcastListener()
+	s := repo.NewServer(c.cfg, c.msgBroker, c.cache)
+	go s.BroadcastListener()
 
 	return nil
 }
