@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -173,6 +174,7 @@ func (s *Sink) UpsertService(key string, raw interface{}) error {
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by service name.
 	s.serviceKeyToName[key] = service.Name
+	s.serviceHashMap[service.Name] = s.serviceHash(service)
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
@@ -398,6 +400,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					}
 					ports = append(ports, int(port))
 				}
+				sort.Ints(ports)
 				for addr := range svcMeta.Addresses {
 					svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 				}
@@ -448,6 +451,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 				}
 				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 			}
+			sort.Ints(ports)
 			for addr := range svcMeta.Addresses {
 				createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 			}
