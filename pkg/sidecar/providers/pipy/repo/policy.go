@@ -57,6 +57,13 @@ func (p *PipyConf) setEnableSidecarActiveHealthChecks(enableSidecarActiveHealthC
 	return
 }
 
+func (p *PipyConf) setEnableAutoDefaultRoute(enableAutoDefaultRoute bool) (update bool) {
+	if update = p.Spec.FeatureFlags.EnableAutoDefaultRoute != enableAutoDefaultRoute; update {
+		p.Spec.FeatureFlags.EnableAutoDefaultRoute = enableAutoDefaultRoute
+	}
+	return
+}
+
 func (p *PipyConf) setEnableEgress(enableEgress bool) (update bool) {
 	if update = p.Spec.Traffic.EnableEgress != enableEgress; update {
 		p.Spec.Traffic.EnableEgress = enableEgress
@@ -199,7 +206,7 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 		}
 		for ipRange := range trafficMatch.SourceIPRanges {
 			ingressIP := strings.TrimSuffix(string(ipRange), "/32")
-			p.AllowedEndpoints[ingressIP] = "Ingress Controller"
+			p.AllowedEndpoints[ingressIP] = "Ingress/Accessor"
 		}
 	}
 	return ready
@@ -304,7 +311,13 @@ func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, 
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
-	otm.HTTPHostPort2Service[hostPort] = ruleName
+	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
+		if len(ruleName) < len(preRuleName) {
+			otm.HTTPHostPort2Service[hostPort] = ruleName
+		}
+	} else {
+		otm.HTTPHostPort2Service[hostPort] = ruleName
+	}
 }
 
 func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPRouteRuleName) *InboundHTTPRouteRules {

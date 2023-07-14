@@ -1,0 +1,16 @@
+{{- if .Values.fsm.deployConsulConnector }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fsm-consul-connector
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-consul-connector
+spec:
+  ports:
+    - name: consul-connector
+      port: 9090
+  selector:
+    app: fsm-consul-connector
+{{- end }}

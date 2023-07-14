@@ -20,6 +20,7 @@ import (
 	policyv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -310,6 +311,11 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 			Name:      svc.Name,
 			Port:      uint16(portSpec.Port),
 		}
+		if len(svc.Annotations) > 0 {
+			if inheritedFrom, ok := svc.Annotations[connector.CloudServiceInheritedFromAnnotation]; ok {
+				meshSvc.CloudInheritedFrom = inheritedFrom
+			}
+		}
 
 		// attempt to parse protocol from port name
 		// Order of Preference is:
@@ -413,7 +419,7 @@ func (c client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 	}
 
 	if len(pods) == 0 {
-		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+		log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
 			Msgf("Did not find Pod with label %s = %s in namespace %s",
 				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
 		return nil, errDidNotFindPodForUUID

@@ -167,15 +167,16 @@ func (c *Client) ListRetryPolicies(source identity.K8sServiceAccount) []*policyV
 
 // GetAccessControlPolicy returns the AccessControl policy for the given backend MeshService
 func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyV1alpha1.AccessControl {
-	for _, aclIface := range c.informers.List(informers.InformerKeyAccessControl) {
+	aclIfaces := c.informers.List(informers.InformerKeyAccessControl)
+	for _, aclIface := range aclIfaces {
 		acl := aclIface.(*policyV1alpha1.AccessControl)
 
 		if acl.Namespace != svc.Namespace {
 			continue
 		}
 
-		// Return the first IngressBackend corresponding to the given MeshService.
-		// Multiple IngressBackend policies for the same backend will be prevented
+		// Return the first AccessControlBackend corresponding to the given MeshService.
+		// Multiple AccessControlBackend policies for the same backend will be prevented
 		// using a validating webhook.
 		for _, backend := range acl.Spec.Backends {
 			// we need to check ports to allow ingress to multiple ports on the same svc
@@ -184,7 +185,12 @@ func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyV1alpha1
 			}
 		}
 	}
-
+	for _, aclIface := range aclIfaces {
+		acl := aclIface.(*policyV1alpha1.AccessControl)
+		if len(acl.Spec.Backends) == 0 {
+			return acl
+		}
+	}
 	return nil
 }
 

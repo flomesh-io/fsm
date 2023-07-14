@@ -25,7 +25,7 @@
 .pipeline()
 .handleStreamStart(
   () => (
-    (_clusterName = clusterBalancers.get(__port?.TcpServiceRouteRules?.TargetClusters)?.next?.()?.id) && (
+    (_clusterName = clusterBalancers.get(__port?.TcpServiceRouteRules?.TargetClusters)?.borrow?.()?.id) && (
       __cluster = clusterCache.get(_clusterName)
     )
   )

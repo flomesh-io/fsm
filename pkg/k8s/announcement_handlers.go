@@ -50,6 +50,10 @@ func WatchAndUpdateProxyBootstrapSecret(kubeClient kubernetes.Interface, msgBrok
 			podUUID := addedPodObj.GetLabels()[constants.SidecarUniqueIDLabelName]
 			podName := addedPodObj.GetName()
 			namespace := addedPodObj.GetNamespace()
+			if len(podUUID) == 0 {
+				log.Info().Msgf("Ignored Pod %s/%s, not managed by fsm.", namespace, podName)
+				continue
+			}
 			secretName := fmt.Sprintf("sidecar-bootstrap-config-%s", podUUID)
 
 			secret, err := kubeClient.CoreV1().Secrets(namespace).Get(context.Background(), secretName, metav1.GetOptions{})
