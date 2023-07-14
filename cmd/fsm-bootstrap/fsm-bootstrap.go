@@ -31,7 +31,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubectl/pkg/util"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/health"
 
@@ -303,7 +303,7 @@ func (b *bootstrap) createDefaultMeshConfig() error {
 	if err != nil {
 		return err
 	}
-	if _, err = b.configClient.ConfigV1alpha2().MeshConfigs(b.namespace).Create(context.TODO(), defaultMeshConfig, metav1.CreateOptions{}); err == nil {
+	if _, err = b.configClient.ConfigV1alpha3().MeshConfigs(b.namespace).Create(context.TODO(), defaultMeshConfig, metav1.CreateOptions{}); err == nil {
 		log.Info().Msgf("MeshConfig (%s) created in namespace %s", meshConfigName, b.namespace)
 		return nil
 	}
@@ -317,7 +317,7 @@ func (b *bootstrap) createDefaultMeshConfig() error {
 }
 
 func (b *bootstrap) ensureMeshConfig() error {
-	config, err := b.configClient.ConfigV1alpha2().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
+	config, err := b.configClient.ConfigV1alpha3().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		// create a default mesh config since it was not found
 		return b.createDefaultMeshConfig()
@@ -331,7 +331,7 @@ func (b *bootstrap) ensureMeshConfig() error {
 		if err := util.CreateApplyAnnotation(config, unstructured.UnstructuredJSONScheme); err != nil {
 			return err
 		}
-		if _, err := b.configClient.ConfigV1alpha2().MeshConfigs(b.namespace).Update(context.TODO(), config, metav1.UpdateOptions{}); err != nil {
+		if _, err := b.configClient.ConfigV1alpha3().MeshConfigs(b.namespace).Update(context.TODO(), config, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -385,18 +385,18 @@ func validateCLIParams() error {
 	return nil
 }
 
-func buildDefaultMeshConfig(presetMeshConfigMap *corev1.ConfigMap) (*configv1alpha2.MeshConfig, error) {
+func buildDefaultMeshConfig(presetMeshConfigMap *corev1.ConfigMap) (*configv1alpha3.MeshConfig, error) {
 	presetMeshConfig := presetMeshConfigMap.Data[presetMeshConfigJSONKey]
-	presetMeshConfigSpec := configv1alpha2.MeshConfigSpec{}
+	presetMeshConfigSpec := configv1alpha3.MeshConfigSpec{}
 	err := json.Unmarshal([]byte(presetMeshConfig), &presetMeshConfigSpec)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error converting preset-mesh-config json string to meshConfig object")
 	}
 
-	config := &configv1alpha2.MeshConfig{
+	config := &configv1alpha3.MeshConfig{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MeshConfig",
-			APIVersion: "config.flomesh.io/configv1alpha2",
+			APIVersion: "config.flomesh.io/configv1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: meshConfigName,
@@ -408,7 +408,7 @@ func buildDefaultMeshConfig(presetMeshConfigMap *corev1.ConfigMap) (*configv1alp
 }
 
 func (b *bootstrap) ensureMeshRootCertificate() error {
-	meshRootCertificateList, err := b.configClient.ConfigV1alpha2().MeshRootCertificates(b.namespace).List(context.TODO(), metav1.ListOptions{})
+	meshRootCertificateList, err := b.configClient.ConfigV1alpha3().MeshRootCertificates(b.namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -433,7 +433,7 @@ func (b *bootstrap) createMeshRootCertificate() error {
 	if err != nil {
 		return err
 	}
-	createdMRC, err := b.configClient.ConfigV1alpha2().MeshRootCertificates(b.namespace).Create(context.TODO(), defaultMeshRootCertificate, metav1.CreateOptions{})
+	createdMRC, err := b.configClient.ConfigV1alpha3().MeshRootCertificates(b.namespace).Create(context.TODO(), defaultMeshRootCertificate, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		log.Info().Msgf("MeshRootCertificate already exists in %s. Skip creating.", b.namespace)
 		return nil
@@ -442,11 +442,11 @@ func (b *bootstrap) createMeshRootCertificate() error {
 		return err
 	}
 
-	createdMRC.Status = configv1alpha2.MeshRootCertificateStatus{
+	createdMRC.Status = configv1alpha3.MeshRootCertificateStatus{
 		State: constants.MRCStateActive,
 	}
 
-	_, err = b.configClient.ConfigV1alpha2().MeshRootCertificates(b.namespace).UpdateStatus(context.Background(), createdMRC, metav1.UpdateOptions{})
+	_, err = b.configClient.ConfigV1alpha3().MeshRootCertificates(b.namespace).UpdateStatus(context.Background(), createdMRC, metav1.UpdateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		log.Info().Msgf("MeshRootCertificate status already exists in %s. Skip creating.", b.namespace)
 	}
@@ -459,18 +459,18 @@ func (b *bootstrap) createMeshRootCertificate() error {
 	return nil
 }
 
-func buildMeshRootCertificate(presetMeshRootCertificateConfigMap *corev1.ConfigMap) (*configv1alpha2.MeshRootCertificate, error) {
+func buildMeshRootCertificate(presetMeshRootCertificateConfigMap *corev1.ConfigMap) (*configv1alpha3.MeshRootCertificate, error) {
 	presetMeshRootCertificate := presetMeshRootCertificateConfigMap.Data[presetMeshRootCertificateJSONKey]
-	presetMeshRootCertificateSpec := configv1alpha2.MeshRootCertificateSpec{}
+	presetMeshRootCertificateSpec := configv1alpha3.MeshRootCertificateSpec{}
 	err := json.Unmarshal([]byte(presetMeshRootCertificate), &presetMeshRootCertificateSpec)
 	if err != nil {
 		return nil, fmt.Errorf("error converting preset-mesh-root-certificate json string to MeshRootCertificate object: %w", err)
 	}
 
-	mrc := &configv1alpha2.MeshRootCertificate{
+	mrc := &configv1alpha3.MeshRootCertificate{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MeshRootCertificate",
-			APIVersion: "config.flomesh.io/configv1alpha2",
+			APIVersion: "config.flomesh.io/configv1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: meshRootCertificateName,

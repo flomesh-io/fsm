@@ -1,9 +1,9 @@
 package cache
 
 import (
-	"context"
 	"fmt"
-	svcimpv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/serviceimport/v1alpha1"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/gateway/route"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -21,9 +22,9 @@ import (
 )
 
 type GatewayCache struct {
-	client     client.Client
 	repoClient *repo.PipyRepoClient
 	informers  *informers.InformerCollection
+	kubeClient kubernetes.Interface
 
 	processors map[ProcessorType]Processor
 
@@ -40,10 +41,11 @@ type GatewayCache struct {
 	tlsroutes      map[client.ObjectKey]struct{}
 }
 
-func NewGatewayCache(informerCollection *informers.InformerCollection, repoClient *repo.PipyRepoClient) *GatewayCache {
+func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
 	return &GatewayCache{
-		repoClient: repoClient,
+		repoClient: repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
 		informers:  informerCollection,
+		kubeClient: kubeClient,
 
 		processors: map[ProcessorType]Processor{
 			ServicesProcessorType:       &ServicesProcessor{},
@@ -98,7 +100,7 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 	switch obj.(type) {
 	case *corev1.Service:
 		return c.processors[ServicesProcessorType]
-	case *svcimpv1alpha1.ServiceImport:
+	case *mcsv1alpha1.ServiceImport:
 		return c.processors[ServiceImportsProcessorType]
 	//case *corev1.Endpoints:
 	//	return c.processors[EndpointsProcessorType]
@@ -255,10 +257,8 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 	}
 
-	mc := c.configStore.MeshConfig.GetConfig()
-	//parentPath := mc.GetDefaultGatewaysPath()
 	for ns, cfg := range configs {
-		gatewayPath := mc.GatewayCodebasePath(ns)
+		gatewayPath := utils.GatewayCodebasePath(ns)
 		if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
 			continue
 		}
@@ -293,7 +293,8 @@ func (c *GatewayCache) BuildConfigs() {
 				},
 			}
 
-			if err := c.repoClient.Batch(batches); err != nil {
+			// FIXME: version should be integer
+			if _, err := c.repoClient.Batch(cfg.Version, batches); err != nil {
 				klog.Errorf("Sync gateway config to repo failed: %s", err)
 				return
 			}
@@ -396,10 +397,12 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwpkg.Listener) []r
 	certs := make([]route.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == "Secret" && string(*ref.Group) == "" {
-			secret := &corev1.Secret{}
-			key := secretKey(gw, ref)
-			if err := c.client.Get(context.TODO(), key, secret); err != nil {
-				klog.Errorf("Failed to get Secret %s: %s", key, err)
+			ns := getSecretRefNamespace(gw, ref)
+			name := string(ref.Name)
+			secret, err := c.informers.GetListers().Secret.Secrets(ns).Get(name)
+
+			if err != nil {
+				klog.Errorf("Failed to get Secret %s/%s: %s", ns, name, err)
 				continue
 			}
 

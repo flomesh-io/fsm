@@ -11,8 +11,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
-// Client is the type used to represent the Kubernetes Client for the gateway.networking.k8s.io API group
-type Client struct {
+// client is the type used to represent the Kubernetes client for the gateway.networking.k8s.io API group
+type client struct {
 	informers  *informers.InformerCollection
 	kubeClient kubernetes.Interface
 	msgBroker  *messaging.Broker
@@ -21,6 +21,9 @@ type Client struct {
 
 // Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
 type Controller interface {
+	// Start runs the backend broadcast listener
+	Start() error
+
 	//// GetEffectiveGatewayClass returns the active and accepted gatewayclasses
 	//GetEffectiveGatewayClass() *gwv1beta1.GatewayClass
 	//

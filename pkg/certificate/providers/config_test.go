@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	fakeConfigClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/fake"
@@ -188,15 +188,15 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			providerNamespace: "fsm-system",
 			cfg:               mockConfigurator,
 			kubeClient:        fake.NewSimpleClientset(),
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Tresor: &v1alpha2.TresorProviderSpec{
-							CA: v1alpha2.TresorCASpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Tresor: &v1alpha3.TresorProviderSpec{
+							CA: v1alpha3.TresorCASpec{
 								SecretRef: v1.SecretReference{
 									Name:      "fsm-ca-bundle",
 									Namespace: "fsm-system",
@@ -205,7 +205,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -217,15 +217,15 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			cfg:               mockConfigurator,
 			kubeClient:        fake.NewSimpleClientset(),
 			expectError:       true,
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Tresor: &v1alpha2.TresorProviderSpec{
-							CA: v1alpha2.TresorCASpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Tresor: &v1alpha3.TresorProviderSpec{
+							CA: v1alpha3.TresorCASpec{
 								SecretRef: v1.SecretReference{
 									Name:      "",
 									Namespace: "",
@@ -234,7 +234,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -246,21 +246,21 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			cfg:               mockConfigurator,
 			providerNamespace: "fsm-system",
 			options:           CertManagerOptions{IssuerName: "test-name", IssuerKind: "ClusterIssuer", IssuerGroup: "cert-manager.io"},
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						CertManager: &v1alpha2.CertManagerProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						CertManager: &v1alpha3.CertManagerProviderSpec{
 							IssuerName:  "test-name",
 							IssuerKind:  "ClusterIssuer",
 							IssuerGroup: "cert-manager.io",
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -270,14 +270,14 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			options:     VaultOptions{},
 			kubeClient:  fake.NewSimpleClientset(),
 			expectError: true,
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Vault: &v1alpha2.VaultProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Vault: &v1alpha3.VaultProviderSpec{
 							Host:     "",
 							Port:     0,
 							Role:     "",
@@ -285,7 +285,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -301,14 +301,14 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			},
 			cfg:        mockConfigurator,
 			kubeClient: fake.NewSimpleClientset(),
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Vault: &v1alpha2.VaultProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Vault: &v1alpha3.VaultProviderSpec{
 							Host:     "vault.default.svs.cluster.local",
 							Port:     8200,
 							Role:     "role",
@@ -316,7 +316,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -341,20 +341,20 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 					"token": []byte("secret"),
 				},
 			}),
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Vault: &v1alpha2.VaultProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Vault: &v1alpha3.VaultProviderSpec{
 							Host:     "vault.default.svc.cluster.local",
 							Role:     "role",
 							Port:     8200,
 							Protocol: "http",
-							Token: v1alpha2.VaultTokenSpec{
-								SecretKeyRef: v1alpha2.SecretKeyReferenceSpec{
+							Token: v1alpha3.VaultTokenSpec{
+								SecretKeyRef: v1alpha3.SecretKeyReferenceSpec{
 									Name:      "secret",
 									Namespace: "fsm-system",
 									Key:       "token",
@@ -363,7 +363,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -381,14 +381,14 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			expectError: true,
 			cfg:         mockConfigurator,
 			kubeClient:  fake.NewSimpleClientset(),
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Vault: &v1alpha2.VaultProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Vault: &v1alpha3.VaultProviderSpec{
 							Host:     "vault.default.svs.cluster.local",
 							Port:     8200,
 							Role:     "role",
@@ -396,7 +396,7 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -409,21 +409,21 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 			},
 			cfg:        mockConfigurator,
 			kubeClient: fake.NewSimpleClientset(),
-			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha2.MeshRootCertificate{
+			configClient: fakeConfigClientset.NewSimpleClientset(&v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						CertManager: &v1alpha2.CertManagerProviderSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						CertManager: &v1alpha3.CertManagerProviderSpec{
 							IssuerName:  "",
 							IssuerKind:  "test-kind",
 							IssuerGroup: "cert-manager.io",
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			}),
@@ -488,13 +488,13 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 
 	testCases := []struct {
 		name         string
-		secretKeyRef *v1alpha2.SecretKeyReferenceSpec
+		secretKeyRef *v1alpha3.SecretKeyReferenceSpec
 		kubeClient   kubernetes.Interface
 		expectError  bool
 	}{
 		{
 			name: "No Vault token secret",
-			secretKeyRef: &v1alpha2.SecretKeyReferenceSpec{
+			secretKeyRef: &v1alpha3.SecretKeyReferenceSpec{
 				Name:      "fsm-vault-token",
 				Namespace: "fsm-system",
 				Key:       "token",
@@ -504,7 +504,7 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 		},
 		{
 			name: "Invalid Vault token secret",
-			secretKeyRef: &v1alpha2.SecretKeyReferenceSpec{
+			secretKeyRef: &v1alpha3.SecretKeyReferenceSpec{
 				Name:      "fsm-vault-token",
 				Namespace: "fsm-system",
 				Key:       "token",
@@ -514,7 +514,7 @@ func TestGetHashiVaultFSMToken(t *testing.T) {
 		},
 		{
 			name: "Valid Vault token secret",
-			secretKeyRef: &v1alpha2.SecretKeyReferenceSpec{
+			secretKeyRef: &v1alpha3.SecretKeyReferenceSpec{
 				Name:      "fsm-vault-token",
 				Namespace: "fsm-system",
 				Key:       "token",

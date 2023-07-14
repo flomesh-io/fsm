@@ -20,6 +20,7 @@ import (
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha1"
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -59,6 +60,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Config().V1alpha2().MeshConfigs().Informer()}, nil
 	case v1alpha2.SchemeGroupVersion.WithResource("meshrootcertificates"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Config().V1alpha2().MeshRootCertificates().Informer()}, nil
+
+		// Group=config.flomesh.io, Version=v1alpha3
+	case v1alpha3.SchemeGroupVersion.WithResource("meshconfigs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Config().V1alpha3().MeshConfigs().Informer()}, nil
+	case v1alpha3.SchemeGroupVersion.WithResource("meshrootcertificates"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Config().V1alpha3().MeshRootCertificates().Informer()}, nil
 
 	}
 

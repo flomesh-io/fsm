@@ -1,7 +1,10 @@
 // Package constants defines the constants that are used by multiple other packages within FSM.
 package constants
 
-import "time"
+import (
+	"text/template"
+	"time"
+)
 
 const (
 	// WildcardIPAddr is a string constant.
@@ -377,6 +380,76 @@ const (
 
 // PIPY Repo constants
 const (
+	DefaultPipyRepoPath    = "/repo"
 	DefaultPipyRepoApiPath = "/api/v1/repo"
 	DefaultPipyFileApiPath = "/api/v1/repo-files"
+	DefaultServiceBasePath = "/base/services"
+	DefaultIngressBasePath = "/base/ingress"
+	DefaultGatewayBasePath = "/base/gateways"
+)
+
+// MultiCluster constants
+const (
+	MultiClustersPrefix            = "multicluster.flomesh.io"
+	MultiClustersServiceExportHash = MultiClustersPrefix + "/export-hash"
+	//MultiClustersConnectorMode     = MultiClustersPrefix + "/connector-mode"
+	//MultiClustersExported          = MultiClustersPrefix + "/export"
+	//MultiClustersExportedName      = MultiClustersPrefix + "/export-name"
+
+	// MultiClusterLabelServiceName is used to indicate the name of multi-cluster service
+	// that an EndpointSlice belongs to.
+	MultiClusterLabelServiceName = MultiClustersPrefix + "/service-name"
+
+	// MultiClusterLabelSourceCluster is used to indicate the name of the cluster in which an exported resource exists.
+	MultiClusterLabelSourceCluster = MultiClustersPrefix + "/source-cluster"
+
+	// MultiClusterDerivedServiceAnnotation is set on a ServiceImport to reference the
+	// derived Service that represents the imported service for kube-proxy.
+	MultiClusterDerivedServiceAnnotation = MultiClustersPrefix + "/derived-service"
+
+	ClusterTpl = "{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}"
+
+	ClusterMutatingWebhookPath               = "/mutate-flomesh-io-v1alpha1-cluster"
+	ClusterValidatingWebhookPath             = "/validate-flomesh-io-v1alpha1-cluster"
+	ServiceImportMutatingWebhookPath         = "/mutate-flomesh-io-v1alpha1-serviceimport"
+	ServiceImportValidatingWebhookPath       = "/validate-flomesh-io-v1alpha1-serviceimport"
+	ServiceExportMutatingWebhookPath         = "/mutate-flomesh-io-v1alpha1-serviceexport"
+	ServiceExportValidatingWebhookPath       = "/validate-flomesh-io-v1alpha1-serviceexport"
+	GlobalTrafficPolicyMutatingWebhookPath   = "/mutate-flomesh-io-v1alpha1-globaltrafficpolicy"
+	GlobalTrafficPolicyValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-globaltrafficpolicy"
+)
+
+// FLB constants
+const (
+	FlbPrefix                      = "flb.flomesh.io"
+	FlbEnabledAnnotation           = FlbPrefix + "/enabled"
+	FlbClusterAnnotation           = FlbPrefix + "/cluster"
+	FlbAddressPoolAnnotation       = FlbPrefix + "/address-pool"
+	FlbDesiredIPAnnotation         = FlbPrefix + "/desired-ip"
+	FlbMaxConnectionsAnnotation    = FlbPrefix + "/max-connections"
+	FlbReadTimeoutAnnotation       = FlbPrefix + "/read-timeout"
+	FlbWriteTimeoutAnnotation      = FlbPrefix + "/write-timeout"
+	FlbIdleTimeoutAnnotation       = FlbPrefix + "/idle-timeout"
+	FlbAlgoAnnotation              = FlbPrefix + "/algo"
+	FLBSecretKeyBaseUrl            = "baseUrl"
+	FLBSecretKeyUsername           = "username"
+	FLBSecretKeyPassword           = "password"
+	FLBSecretKeyDefaultCluster     = "defaultCluster"
+	FLBSecretKeyDefaultAddressPool = "defaultAddressPool"
+	FLBSecretKeyDefaultAlgo        = "defaultAlgo"
+
+	FLBServiceMutatingWebhookPath   = "/mutate-flb-core-v1-service"
+	FLBServiceValidatingWebhookPath = "/validate-flb-core-v1-service"
+	FLBSecretMutatingWebhookPath    = "/mutate-flb-core-v1-secret"
+	FLBSecretValidatingWebhookPath  = "/validate-flb-core-v1-secret"
+)
+
+var (
+	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
+	//ProxyProfileParentPathTemplate = template.Must(template.New("ProxyProfileParentPathTemplate").Parse(DefaultProxyProfileParentPathTpl))
+	//ProxyProfilePathTemplate       = template.Must(template.New("ProxyProfilePathTemplate").Parse(DefaultProxyProfilePathTpl))
+	//SidecarPathTemplate            = template.Must(template.New("SidecarPathTemplate").Parse(DefaultSidecarPathTpl))
+	//IngressPathTemplate            = template.Must(template.New("IngressPathTemplate").Parse(DefaultIngressPathTpl))
+	//NamespacedIngressPathTemplate  = template.Must(template.New("NamespacedIngressPathTemplate").Parse(DefaultNamespacedIngressPathTpl))
+	//ServicePathTemplate            = template.Must(template.New("ServicePathTemplate").Parse(DefaultServicePathTpl))
 )

@@ -6,7 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/auth"
@@ -28,7 +28,7 @@ type Client struct {
 // Configurator is the controller interface for K8s namespaces
 type Configurator interface {
 	// GetMeshConfig returns the MeshConfig resource corresponding to the control plane
-	GetMeshConfig() configv1alpha2.MeshConfig
+	GetMeshConfig() configv1alpha3.MeshConfig
 
 	// GetFSMNamespace returns the namespace in which FSM controller pod resides
 	GetFSMNamespace() string
@@ -144,8 +144,38 @@ type Configurator interface {
 	GetInboundExternalAuthConfig() auth.ExtAuthConfig
 
 	// GetFeatureFlags returns FSM's feature flags
-	GetFeatureFlags() configv1alpha2.FeatureFlags
+	GetFeatureFlags() configv1alpha3.FeatureFlags
 
 	// GetGlobalPluginChains returns plugin chains
 	GetGlobalPluginChains() map[string][]trafficpolicy.Plugin
+
+	// IsGatewayApiEnabled returns whether GatewayAPI is enabled
+	IsGatewayApiEnabled() bool
+
+	// IsIngressEnabled returns whether Ingress is enabled
+	IsIngressEnabled() bool
+
+	// IsNamespacedIngressEnabled returns whether Namespaced Ingress is enabled
+	IsNamespacedIngressEnabled() bool
+
+	// IsServiceLBEnabled returns whether ServiceLB is enabled
+	IsServiceLBEnabled() bool
+
+	// IsFLBEnabled returns whether FLB is enabled
+	IsFLBEnabled() bool
+
+	// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
+	IsMultiClusterControlPlane() bool
+
+	// PipyImage returns the pipy image
+	PipyImage() string
+
+	// PipyRepoImage returns the pipy-repo image
+	PipyRepoImage() string
+
+	// PipyNonrootImage string returns the pipy-nonroot image
+	PipyNonrootImage() string
+
+	// ServiceLbImage string returns the service-lb image
+	ServiceLbImage() string
 }

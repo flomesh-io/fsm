@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
 	"github.com/flomesh-io/fsm/pkg/certificate/providers/tresor"
@@ -23,7 +23,7 @@ const (
 
 type fakeMRCClient struct{}
 
-func (c *fakeMRCClient) GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertificate) (certificate.Issuer, pem.RootCertificate, error) {
+func (c *fakeMRCClient) GetCertIssuerForMRC(mrc *v1alpha3.MeshRootCertificate) (certificate.Issuer, pem.RootCertificate, error) {
 	rootCertCountry := "US"
 	rootCertLocality := "CA"
 	ca, err := tresor.NewCA("Fake Tresor CN", 1*time.Hour, rootCertCountry, rootCertLocality, rootCertOrganization)
@@ -35,9 +35,9 @@ func (c *fakeMRCClient) GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertificate) (
 }
 
 // List returns the single, pre-generated MRC. It is intended to implement the certificate.MRCClient interface.
-func (c *fakeMRCClient) List() ([]*v1alpha2.MeshRootCertificate, error) {
+func (c *fakeMRCClient) List() ([]*v1alpha3.MeshRootCertificate, error) {
 	// return single empty object in the list.
-	return []*v1alpha2.MeshRootCertificate{{Spec: v1alpha2.MeshRootCertificateSpec{TrustDomain: "fake.example.com"}}}, nil
+	return []*v1alpha3.MeshRootCertificate{{Spec: v1alpha3.MeshRootCertificateSpec{TrustDomain: "fake.example.com"}}}, nil
 }
 
 func (c *fakeMRCClient) Watch(ctx context.Context) (<-chan certificate.MRCEvent, error) {
@@ -45,15 +45,15 @@ func (c *fakeMRCClient) Watch(ctx context.Context) (<-chan certificate.MRCEvent,
 	go func() {
 		ch <- certificate.MRCEvent{
 			Type: certificate.MRCEventAdded,
-			MRC: &v1alpha2.MeshRootCertificate{
+			MRC: &v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
-					Provider: v1alpha2.ProviderSpec{
-						Tresor: &v1alpha2.TresorProviderSpec{
-							CA: v1alpha2.TresorCASpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
+					Provider: v1alpha3.ProviderSpec{
+						Tresor: &v1alpha3.TresorProviderSpec{
+							CA: v1alpha3.TresorCASpec{
 								SecretRef: v1.SecretReference{
 									Name:      "fsm-ca-bundle",
 									Namespace: "fsm-system",
@@ -63,7 +63,7 @@ func (c *fakeMRCClient) Watch(ctx context.Context) (<-chan certificate.MRCEvent,
 					},
 					TrustDomain: "cluster.local",
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			},

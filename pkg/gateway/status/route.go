@@ -28,12 +28,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -42,20 +41,17 @@ import (
 )
 
 type RouteStatusProcessor struct {
-	Fctx       *fctx.FsmContext
-	KubeClient kubernetes.Clientset
+	informers *informers.InformerCollection
 }
 
 func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route client.Object) ([]gwv1beta1.RouteParentStatus, error) {
-	gatewayList := &gwv1beta1.GatewayList{}
-	if err := p.Fctx.List(ctx, gatewayList); err != nil {
-		return nil, err
-	}
+	gatewayList := p.informers.List(informers.InformerKeyGatewayApiGateway)
 
 	activeGateways := make([]*gwv1beta1.Gateway, 0)
-	for _, gw := range gatewayList.Items {
-		if gwutils.IsActiveGateway(&gw) {
-			activeGateways = append(activeGateways, &gw)
+	for _, gw := range gatewayList {
+		gw := gw.(*gwv1beta1.Gateway)
+		if gwutils.IsActiveGateway(gw) {
+			activeGateways = append(activeGateways, gw)
 		}
 	}
 

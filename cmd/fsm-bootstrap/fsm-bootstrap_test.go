@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	fakeKube "k8s.io/client-go/kubernetes/fake"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	fakeConfig "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/fake"
@@ -20,15 +20,15 @@ import (
 
 var testNamespace = "test-namespace"
 
-var testMeshConfig = &configv1alpha2.MeshConfig{
+var testMeshConfig = &configv1alpha3.MeshConfig{
 	ObjectMeta: metav1.ObjectMeta{
 		Namespace: testNamespace,
 		Name:      meshConfigName,
 	},
-	Spec: configv1alpha2.MeshConfigSpec{},
+	Spec: configv1alpha3.MeshConfigSpec{},
 }
 
-var testMeshConfigWithLastAppliedAnnotation = &configv1alpha2.MeshConfig{
+var testMeshConfigWithLastAppliedAnnotation = &configv1alpha3.MeshConfig{
 	ObjectMeta: metav1.ObjectMeta{
 		Namespace: testNamespace,
 		Name:      meshConfigName,
@@ -36,7 +36,7 @@ var testMeshConfigWithLastAppliedAnnotation = &configv1alpha2.MeshConfig{
 			"kubectl.kubernetes.io/last-applied-configuration": `{"metadata":{"name":"fsm-mesh-config","namespace":"test-namespace","creationTimestamp":null},"spec":{}}`,
 		},
 	},
-	Spec: configv1alpha2.MeshConfigSpec{},
+	Spec: configv1alpha3.MeshConfigSpec{},
 }
 
 var testPresetMeshConfigMap = &corev1.ConfigMap{
@@ -89,13 +89,13 @@ var testPresetMeshConfigMap = &corev1.ConfigMap{
 	},
 }
 
-var testMeshRootCertificate = &configv1alpha2.MeshRootCertificate{
+var testMeshRootCertificate = &configv1alpha3.MeshRootCertificate{
 	ObjectMeta: metav1.ObjectMeta{
 		Namespace: testNamespace,
 		Name:      meshRootCertificateName,
 	},
-	Spec: configv1alpha2.MeshRootCertificateSpec{},
-	Status: configv1alpha2.MeshRootCertificateStatus{
+	Spec: configv1alpha3.MeshRootCertificateSpec{},
+	Status: configv1alpha3.MeshRootCertificateStatus{
 		State: constants.MRCStateActive,
 	},
 }
@@ -248,7 +248,7 @@ func TestCreateDefaultMeshConfig(t *testing.T) {
 			err := b.createDefaultMeshConfig()
 			assert.Equal(tc.expectErr, err != nil)
 
-			_, err = b.configClient.ConfigV1alpha2().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
+			_, err = b.configClient.ConfigV1alpha3().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
 			assert.Equal(tc.expectDefaultMeshConfig, err == nil)
 		})
 	}
@@ -304,7 +304,7 @@ func TestEnsureMeshConfig(t *testing.T) {
 			err := b.ensureMeshConfig()
 			assert.Equal(tc.expectErr, err != nil)
 			if !tc.expectErr {
-				config, err := b.configClient.ConfigV1alpha2().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
+				config, err := b.configClient.ConfigV1alpha3().MeshConfigs(b.namespace).Get(context.TODO(), meshConfigName, metav1.GetOptions{})
 				assert.Nil(err)
 				assert.Contains(config.Annotations, "kubectl.kubernetes.io/last-applied-configuration")
 			}
@@ -363,7 +363,7 @@ func TestCreateMeshRootCertificate(t *testing.T) {
 				assert.Error(err)
 			}
 
-			mrc, err := b.configClient.ConfigV1alpha2().MeshRootCertificates(b.namespace).Get(context.TODO(), meshRootCertificateName, metav1.GetOptions{})
+			mrc, err := b.configClient.ConfigV1alpha3().MeshRootCertificates(b.namespace).Get(context.TODO(), meshRootCertificateName, metav1.GetOptions{})
 			if tc.expectDefaultMeshRootCertificate {
 				assert.NoError(err)
 				assert.Equal(constants.MRCStateActive, mrc.Status.State)
@@ -417,7 +417,7 @@ func TestEnsureMeshRootCertificate(t *testing.T) {
 			err := b.ensureMeshRootCertificate()
 			assert.Equal(tc.expectErr, err != nil)
 
-			_, err = b.configClient.ConfigV1alpha2().MeshRootCertificates(b.namespace).Get(context.TODO(), meshRootCertificateName, metav1.GetOptions{})
+			_, err = b.configClient.ConfigV1alpha3().MeshRootCertificates(b.namespace).Get(context.TODO(), meshRootCertificateName, metav1.GetOptions{})
 			assert.Equal(tc.expectErr, err != nil)
 		})
 	}

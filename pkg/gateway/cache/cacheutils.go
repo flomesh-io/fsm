@@ -13,25 +13,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
-func secretKey(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) client.ObjectKey {
-	ns := ""
+func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) string {
 	if secretRef.Namespace == nil {
-		ns = gw.Namespace
-	} else {
-		ns = string(*secretRef.Namespace)
+		return gw.Namespace
 	}
 
-	name := string(secretRef.Name)
-
-	return client.ObjectKey{
-		Namespace: ns,
-		Name:      name,
-	}
+	return string(*secretRef.Namespace)
 }
 
 func generateHttpRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRuleSpec {

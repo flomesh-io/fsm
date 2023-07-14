@@ -3,13 +3,13 @@ package providers
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 )
 
 // List returns the single, pre-generated MRC. It is intended to implement the certificate.MRCClient interface.
-func (c *MRCCompatClient) List() ([]*v1alpha2.MeshRootCertificate, error) {
-	return []*v1alpha2.MeshRootCertificate{
+func (c *MRCCompatClient) List() ([]*v1alpha3.MeshRootCertificate, error) {
+	return []*v1alpha3.MeshRootCertificate{
 		c.mrc,
 	}, nil
 }

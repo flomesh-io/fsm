@@ -7,12 +7,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/flomesh-io/fsm/pkg/gateway"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
 
+	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
+	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 	smiAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
 	smiTrafficSpecClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/specs/clientset/versioned"
 	smiTrafficSplitClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/split/clientset/versioned"
@@ -142,6 +145,8 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = admissionv1.AddToScheme(scheme)
 	_ = gwscheme.AddToScheme(scheme)
+	_ = mcscheme.AddToScheme(scheme)
+	_ = nsigscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -269,6 +274,11 @@ func main() {
 	policyController := policy.NewPolicyController(informerCollection, kubeClient, k8sClient, msgBroker)
 	pluginController := plugin.NewPluginController(informerCollection, kubeClient, k8sClient, msgBroker)
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
+
+	if cfg.IsGatewayApiEnabled() {
+		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, msgBroker, cfg)
+		gatewayController.Start()
+	}
 
 	kubeProvider := kube.NewClient(k8sClient, cfg)
 	multiclusterProvider := fsm.NewClient(multiclusterController, cfg)

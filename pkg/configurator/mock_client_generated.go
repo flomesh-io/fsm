@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	auth "github.com/flomesh-io/fsm/pkg/auth"
 	trafficpolicy "github.com/flomesh-io/fsm/pkg/trafficpolicy"
 	gomock "github.com/golang/mock/gomock"
@@ -95,10 +95,10 @@ func (mr *MockConfiguratorMockRecorder) GetFSMNamespace() *gomock.Call {
 }
 
 // GetFeatureFlags mocks base method.
-func (m *MockConfigurator) GetFeatureFlags() v1alpha2.FeatureFlags {
+func (m *MockConfigurator) GetFeatureFlags() v1alpha3.FeatureFlags {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeatureFlags")
-	ret0, _ := ret[0].(v1alpha2.FeatureFlags)
+	ret0, _ := ret[0].(v1alpha3.FeatureFlags)
 	return ret0
 }
 
@@ -207,10 +207,10 @@ func (mr *MockConfiguratorMockRecorder) GetMaxDataPlaneConnections() *gomock.Cal
 }
 
 // GetMeshConfig mocks base method.
-func (m *MockConfigurator) GetMeshConfig() v1alpha2.MeshConfig {
+func (m *MockConfigurator) GetMeshConfig() v1alpha3.MeshConfig {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMeshConfig")
-	ret0, _ := ret[0].(v1alpha2.MeshConfig)
+	ret0, _ := ret[0].(v1alpha3.MeshConfig)
 	return ret0
 }
 

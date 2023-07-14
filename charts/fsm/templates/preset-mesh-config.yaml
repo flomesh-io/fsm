@@ -7,7 +7,14 @@ data:
   preset-mesh-config.json: |
     {
       "clusterSet": {
-        "properties": []
+        "properties": [],
+        "isManaged": false,
+        "uid": "",
+        "region": "default",
+        "zone": "default",
+        "group": "default",
+        "name": "local",
+        "controlPlaneUID": ""
       },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
@@ -72,5 +79,37 @@ data:
         "enableRetryPolicy": {{.Values.fsm.featureFlags.enableRetryPolicy | mustToJson}},
         "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}}
       },
-      "pluginChains": {{.Values.fsm.pluginChains | mustToJson }}
+      "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
+      "ingress": {
+        "enabled": {{ and .Values.fsm.ingress.enabled (not .Values.fsm.gatewayApi.enabled )}},
+        "namespaced": {{ .Values.fsm.ingress.namespaced }},
+        "http": {
+          "enabled": {{ .Values.fsm.ingress.http.enabled }},
+          "bind": {{ .Values.fsm.ingress.http.port }},
+          "listen": {{ .Values.fsm.ingress.http.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.ingress.http.nodePort }}
+        },
+        "tls": {
+          "enabled": {{ .Values.fsm.ingress.tls.enabled }},
+          "bind": {{ .Values.fsm.ingress.tls.port }},
+          "listen": {{ .Values.fsm.ingress.tls.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.ingress.tls.nodePort }},
+          "mTLS": {{ .Values.fsm.ingress.tls.mTLS }},
+          "sslPassthrough": {
+            "enabled": {{ .Values.fsm.ingress.tls.sslPassthrough.enabled }},
+            "upstreamPort": {{ .Values.fsm.ingress.tls.sslPassthrough.upstreamPort }}
+          }
+        }
+      },
+      "gatewayAPI": {
+        "enabled": {{ and .Values.fsm.gatewayApi.enabled (not .Values.fsm.ingress.enabled) }}
+      },
+      "serviceLB": {
+        "enabled": {{ .Values.fsm.serviceLB.enabled }}
+      },
+      "flb": {
+        "enabled": {{ .Values.fsm.flb.enabled }},
+        "strictMode": {{ .Values.fsm.flb.strictMode }},
+        "secretName": "{{ .Values.fsm.flb.secretName }}"
+      }
     }

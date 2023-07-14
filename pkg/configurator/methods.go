@@ -10,7 +10,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -38,7 +38,7 @@ const (
 // The functions in this file implement the configurator.Configurator interface
 
 // GetMeshConfig returns the MeshConfig resource corresponding to the control plane
-func (c *Client) GetMeshConfig() configv1alpha2.MeshConfig {
+func (c *Client) GetMeshConfig() configv1alpha3.MeshConfig {
 	return c.getMeshConfig()
 }
 
@@ -47,7 +47,7 @@ func (c *Client) GetFSMNamespace() string {
 	return c.fsmNamespace
 }
 
-func marshalConfigToJSON(config configv1alpha2.MeshConfigSpec) (string, error) {
+func marshalConfigToJSON(config configv1alpha3.MeshConfigSpec) (string, error) {
 	bytes, err := json.MarshalIndent(&config, "", "    ")
 	if err != nil {
 		return "", err
@@ -398,7 +398,7 @@ func (c *Client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
 }
 
 // GetFeatureFlags returns FSM's feature flags
-func (c *Client) GetFeatureFlags() configv1alpha2.FeatureFlags {
+func (c *Client) GetFeatureFlags() configv1alpha3.FeatureFlags {
 	return c.getMeshConfig().Spec.FeatureFlags
 }
 
@@ -465,4 +465,58 @@ func (c *Client) GetGlobalPluginChains() map[string][]trafficpolicy.Plugin {
 	pluginChainMap["outbound-tcp"] = outboundTCPChains
 	pluginChainMap["outbound-http"] = outboundHTTPChains
 	return pluginChainMap
+}
+
+// IsGatewayApiEnabled returns whether GatewayAPI is enabled
+func (c *Client) IsGatewayApiEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.Enabled && !mcSpec.Ingress.Enabled
+}
+
+// IsIngressEnabled returns whether Ingress is enabled
+func (c *Client) IsIngressEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ingress.Enabled && !mcSpec.GatewayAPI.Enabled
+}
+
+// IsNamespacedIngressEnabled returns whether Namespaced Ingress is enabled
+func (c *Client) IsNamespacedIngressEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return c.IsIngressEnabled() && mcSpec.Ingress.Namespaced
+}
+
+// IsServiceLBEnabled returns whether ServiceLB is enabled
+func (c *Client) IsServiceLBEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.ServiceLB.Enabled
+}
+
+// IsFLBEnabled returns whether FLB is enabled
+func (c *Client) IsFLBEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.FLB.Enabled
+}
+
+// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
+func (c *Client) IsMultiClusterControlPlane() bool {
+	clusterSet := c.getMeshConfig().Spec.ClusterSet
+
+	return clusterSet.ControlPlaneUID == "" ||
+		clusterSet.UID == clusterSet.ControlPlaneUID
+}
+
+func (c *Client) PipyImage() string {
+	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
+}
+
+func (c *Client) PipyRepoImage() string {
+	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
+}
+
+func (c *Client) PipyNonrootImage() string {
+	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
+}
+
+func (c *Client) ServiceLbImage() string {
+	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.KlipperLbImage)
 }

@@ -38,7 +38,7 @@ ROOT_PACKAGE="github.com/flomesh-io/fsm"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
 # get code-generator version from go.sum
-CODEGEN_VERSION="v0.26.0" # Must match k8s.io/client-go version defined in go.mod
+CODEGEN_VERSION="v0.26.6" # Must match k8s.io/client-go version defined in go.mod
 CODEGEN_PKG="$(echo `go env GOPATH`/pkg/mod/k8s.io/code-generator@${CODEGEN_VERSION})"
 
 echo ">>> using codegen: ${CODEGEN_PKG}"
@@ -72,7 +72,7 @@ function generate_client() {
 }
 
 echo "##### Generating config.flomesh.io client ######"
-generate_client "config" "v1alpha1,v1alpha2"
+generate_client "config" "v1alpha1,v1alpha2,v1alpha3"
 
 echo "##### Generating policy.flomesh.io client ######"
 generate_client "policy" "v1alpha1"
@@ -85,3 +85,6 @@ generate_client "multicluster" "v1alpha1"
 
 echo "##### Generating flomesh.io plugin client ######"
 generate_client "plugin" "v1alpha1"
+
+echo "##### Generating flomesh.io NamespacedIngress client ######"
+generate_client "namespacedingress" "v1alpha1"

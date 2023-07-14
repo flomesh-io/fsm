@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/certificate/castorage/k8s"
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
@@ -57,16 +57,16 @@ func NewCertificateManager(ctx context.Context, kubeClient kubernetes.Interface,
 			KeyBitSize:      cfg.GetCertKeyBitSize(),
 			caExtractorFunc: getCA,
 		},
-		mrc: &v1alpha2.MeshRootCertificate{
+		mrc: &v1alpha3.MeshRootCertificate{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "legacy-compat",
 				Namespace: providerNamespace,
 			},
-			Spec: v1alpha2.MeshRootCertificateSpec{
+			Spec: v1alpha3.MeshRootCertificateSpec{
 				Provider:    option.AsProviderSpec(),
 				TrustDomain: trustDomain,
 			},
-			Status: v1alpha2.MeshRootCertificateStatus{
+			Status: v1alpha3.MeshRootCertificateStatus{
 				State: constants.MRCStateActive,
 			},
 		},
@@ -104,7 +104,7 @@ func NewCertificateManagerFromMRC(ctx context.Context, kubeClient kubernetes.Int
 }
 
 // GetCertIssuerForMRC returns a certificate.Issuer generated from the provided MRC.
-func (c *MRCProviderGenerator) GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertificate) (certificate.Issuer, pem.RootCertificate, error) {
+func (c *MRCProviderGenerator) GetCertIssuerForMRC(mrc *v1alpha3.MeshRootCertificate) (certificate.Issuer, pem.RootCertificate, error) {
 	p := mrc.Spec.Provider
 	var issuer certificate.Issuer
 	var err error
@@ -132,7 +132,7 @@ func (c *MRCProviderGenerator) GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertifi
 }
 
 // getTresorFSMCertificateManager returns a certificate manager instance with Tresor as the certificate provider
-func (c *MRCProviderGenerator) getTresorFSMCertificateManager(mrc *v1alpha2.MeshRootCertificate) (certificate.Issuer, error) {
+func (c *MRCProviderGenerator) getTresorFSMCertificateManager(mrc *v1alpha3.MeshRootCertificate) (certificate.Issuer, error) {
 	var err error
 	var rootCert *certificate.Certificate
 
@@ -171,7 +171,7 @@ func (c *MRCProviderGenerator) getTresorFSMCertificateManager(mrc *v1alpha2.Mesh
 }
 
 // getHashiVaultFSMCertificateManager returns a certificate manager instance with Hashi Vault as the certificate provider
-func (c *MRCProviderGenerator) getHashiVaultFSMCertificateManager(mrc *v1alpha2.MeshRootCertificate) (certificate.Issuer, error) {
+func (c *MRCProviderGenerator) getHashiVaultFSMCertificateManager(mrc *v1alpha3.MeshRootCertificate) (certificate.Issuer, error) {
 	provider := mrc.Spec.Provider.Vault
 
 	// A Vault address would have the following shape: "http://vault.default.svc.cluster.local:8200"
@@ -201,7 +201,7 @@ func (c *MRCProviderGenerator) getHashiVaultFSMCertificateManager(mrc *v1alpha2.
 }
 
 // getHashiVaultFSMToken returns the Hashi Vault token from the secret specified in the provided secret key reference
-func getHashiVaultFSMToken(secretKeyRef *v1alpha2.SecretKeyReferenceSpec, kubeClient kubernetes.Interface) (string, error) {
+func getHashiVaultFSMToken(secretKeyRef *v1alpha3.SecretKeyReferenceSpec, kubeClient kubernetes.Interface) (string, error) {
 	tokenSecret, err := kubeClient.CoreV1().Secrets(secretKeyRef.Namespace).Get(context.TODO(), secretKeyRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error retrieving Hashi Vault token secret %s/%s: %w", secretKeyRef.Namespace, secretKeyRef.Name, err)
@@ -216,7 +216,7 @@ func getHashiVaultFSMToken(secretKeyRef *v1alpha2.SecretKeyReferenceSpec, kubeCl
 }
 
 // getCertManagerFSMCertificateManager returns a certificate manager instance with cert-manager as the certificate provider
-func (c *MRCProviderGenerator) getCertManagerFSMCertificateManager(mrc *v1alpha2.MeshRootCertificate) (certificate.Issuer, error) {
+func (c *MRCProviderGenerator) getCertManagerFSMCertificateManager(mrc *v1alpha3.MeshRootCertificate) (certificate.Issuer, error) {
 	provider := mrc.Spec.Provider.CertManager
 	client, err := cmversionedclient.NewForConfig(c.kubeConfig)
 	if err != nil {

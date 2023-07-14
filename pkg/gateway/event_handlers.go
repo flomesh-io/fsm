@@ -12,23 +12,19 @@ import (
 )
 
 // observeFilter returns true for YES observe and false for NO do not pay attention to this
-// This filter could be added optionally by anything using GetEventHandlerFuncs()
-type observeFilter func(obj interface{}) bool
+// This filter could be added optionally by anything using getEventHandlerFuncs()
+type observeFilter func(oldObj, newObj interface{}) bool
 
-// GetEventHandlerFuncs returns the ResourceEventHandlerFuncs object used to receive events when a k8s
+// getEventHandlerFuncs returns the ResourceEventHandlerFuncs object used to receive events when a k8s
 // object is added/updated/deleted.
-func GetEventHandlerFuncs(shouldObserveUpsert, shouldObserveDelete observeFilter, eventTypes k8s.EventTypes, msgBroker *messaging.Broker) cache.ResourceEventHandlerFuncs {
-	if shouldObserveUpsert == nil {
-		shouldObserveUpsert = func(obj interface{}) bool { return true }
-	}
-
-	if shouldObserveDelete == nil {
-		shouldObserveDelete = func(obj interface{}) bool { return true }
+func getEventHandlerFuncs(shouldObserve observeFilter, eventTypes k8s.EventTypes, msgBroker *messaging.Broker) cache.ResourceEventHandlerFuncs {
+	if shouldObserve == nil {
+		shouldObserve = func(oldObj, newObj interface{}) bool { return true }
 	}
 
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			if !shouldObserveUpsert(obj) {
+			if !shouldObserve(nil, obj) {
 				return
 			}
 			logResourceEvent(log, eventTypes.Add, obj)
@@ -42,7 +38,7 @@ func GetEventHandlerFuncs(shouldObserveUpsert, shouldObserveDelete observeFilter
 		},
 
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			if !shouldObserveUpsert(newObj) {
+			if !shouldObserve(oldObj, newObj) {
 				return
 			}
 			logResourceEvent(log, eventTypes.Update, newObj)
@@ -56,7 +52,7 @@ func GetEventHandlerFuncs(shouldObserveUpsert, shouldObserveDelete observeFilter
 		},
 
 		DeleteFunc: func(obj interface{}) {
-			if !shouldObserveDelete(obj) {
+			if !shouldObserve(obj, nil) {
 				return
 			}
 			logResourceEvent(log, eventTypes.Delete, obj)

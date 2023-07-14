@@ -2,6 +2,7 @@ package route
 
 import (
 	"fmt"
+	commons "github.com/flomesh-io/fsm/pkg/apis"
 	"k8s.io/apimachinery/pkg/types"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -55,15 +56,22 @@ type Defaults struct {
 }
 
 type Listener struct {
-	Protocol gwv1beta1.ProtocolType `json:"Protocol"`
-	Port     gwv1beta1.PortNumber   `json:"Port"`
-	Listen   gwv1beta1.PortNumber
-	TLS      *TLS `json:"TLS,omitempty"`
+	Protocol           gwv1beta1.ProtocolType `json:"Protocol"`
+	Port               gwv1beta1.PortNumber   `json:"Port"`
+	Listen             gwv1beta1.PortNumber   `json:"Listen"`
+	TLS                *TLS                   `json:"TLS,omitempty"`
+	AccessControlLists *AccessControlLists    `json:"AccessControlLists,omitempty"`
+	BpsLimit           *int64                 `json:"bpsLimit,omitempty"`
+}
+
+type AccessControlLists struct {
+	Blacklist []string `json:"blacklist,omitempty"`
+	Whitelist []string `json:"whitelist,omitempty"`
 }
 
 type TLS struct {
 	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
-	MTLS         bool                  `json:"mTLS"`
+	MTLS         bool                  `json:"mTLS,omitempty"`
 	Certificates []Certificate         `json:"Certificates,omitempty"`
 }
 
@@ -149,32 +157,31 @@ type GRPCMethod struct {
 }
 
 type RateLimit struct {
-	Backlog              int             `json:"Backlog"`
-	Requests             int             `json:"Requests"`
-	Burst                int             `json:"Burst"`
-	StatTimeWindow       int             `json:"StatTimeWindow"`
-	ResponseStatusCode   int             `json:"ResponseStatusCode"`
-	ResponseHeadersToAdd []NameValuePair `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
-}
-
-type NameValuePair struct {
-	Name  string `json:"Name"`
-	Value string `json:"Value"`
+	Backlog              int               `json:"Backlog"`
+	Requests             int               `json:"Requests"`
+	Burst                int               `json:"Burst"`
+	StatTimeWindow       int               `json:"StatTimeWindow"`
+	ResponseStatusCode   int               `json:"ResponseStatusCode"`
+	ResponseHeadersToAdd map[string]string `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
 type PassthroughRouteMapping map[string]string
 
 type ServiceConfig struct {
-	Endpoints          map[string]Endpoint `json:"Endpoints"`
-	Filters            []Filter            `json:"Filters,omitempty" hash:"set"`
-	ConnectionSettings *ConnectionSettings `json:"ConnectionSettings,omitempty"`
-	RetryPolicy        *RetryPolicy        `json:"RetryPolicy,omitempty"`
-	UpstreamCert       *UpstreamCert       `json:"UpstreamCert,omitempty"`
+	Endpoints          map[string]Endpoint   `json:"Endpoints"`
+	Filters            []Filter              `json:"Filters,omitempty" hash:"set"`
+	ConnectionSettings *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
+	RetryPolicy        *RetryPolicy          `json:"RetryPolicy,omitempty"`
+	MTLS               bool                  `json:"mTLS,omitempty"`
+	UpstreamCert       *UpstreamCert         `json:"UpstreamCert,omitempty"`
+	SessionSticky      bool                  `json:"SessionSticky,omitempty"`
+	LoadBalancer       *commons.AlgoBalancer `json:"LoadBalancer,omitempty"`
 }
 
 type Endpoint struct {
 	Weight       int               `json:"Weight"`
 	Tags         map[string]string `json:"Tags,omitempty"`
+	MTLS         bool              `json:"mTLS,omitempty"`
 	UpstreamCert *UpstreamCert     `json:"UpstreamCert,omitempty"`
 }
 

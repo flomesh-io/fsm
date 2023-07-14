@@ -3,12 +3,11 @@ package certificate
 import (
 	"context"
 	"fmt"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -20,15 +19,15 @@ var (
 
 type fakeMRCClient struct{}
 
-func (c *fakeMRCClient) GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertificate) (Issuer, pem.RootCertificate, error) {
+func (c *fakeMRCClient) GetCertIssuerForMRC(mrc *v1alpha3.MeshRootCertificate) (Issuer, pem.RootCertificate, error) {
 	return &fakeIssuer{}, pem.RootCertificate("rootCA"), nil
 }
 
 // List returns the single, pre-generated MRC. It is intended to implement the certificate.MRCClient interface.
-func (c *fakeMRCClient) List() ([]*v1alpha2.MeshRootCertificate, error) {
+func (c *fakeMRCClient) List() ([]*v1alpha3.MeshRootCertificate, error) {
 	// return single empty object in the list.
-	return []*v1alpha2.MeshRootCertificate{{
-		Spec: v1alpha2.MeshRootCertificateSpec{
+	return []*v1alpha3.MeshRootCertificate{{
+		Spec: v1alpha3.MeshRootCertificateSpec{
 			TrustDomain: "fake.domain.com",
 		},
 	}}, nil
@@ -39,16 +38,16 @@ func (c *fakeMRCClient) Watch(ctx context.Context) (<-chan MRCEvent, error) {
 	go func() {
 		ch <- MRCEvent{
 			Type: MRCEventAdded,
-			MRC: &v1alpha2.MeshRootCertificate{
+			MRC: &v1alpha3.MeshRootCertificate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "fsm-mesh-root-certificate",
 					Namespace: "fsm-system",
 				},
-				Spec: v1alpha2.MeshRootCertificateSpec{
+				Spec: v1alpha3.MeshRootCertificateSpec{
 					TrustDomain: "fake.domain.com",
-					Provider: v1alpha2.ProviderSpec{
-						Tresor: &v1alpha2.TresorProviderSpec{
-							CA: v1alpha2.TresorCASpec{
+					Provider: v1alpha3.ProviderSpec{
+						Tresor: &v1alpha3.TresorProviderSpec{
+							CA: v1alpha3.TresorCASpec{
 								SecretRef: v1.SecretReference{
 									Name:      "fsm-ca-bundle",
 									Namespace: "fsm-system",
@@ -57,7 +56,7 @@ func (c *fakeMRCClient) Watch(ctx context.Context) (<-chan MRCEvent, error) {
 						},
 					},
 				},
-				Status: v1alpha2.MeshRootCertificateStatus{
+				Status: v1alpha3.MeshRootCertificateStatus{
 					State: constants.MRCStateActive,
 				},
 			},

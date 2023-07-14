@@ -178,7 +178,7 @@ func (cmd *trafficPolicyCheckCmd) getMeshedPod(namespace, podName string) (*core
 func (cmd *trafficPolicyCheckCmd) isPermissiveModeEnabled() (bool, error) {
 	fsmNamespace := settings.Namespace()
 
-	meshConfig, err := cmd.meshConfigClient.ConfigV1alpha2().MeshConfigs(fsmNamespace).Get(context.TODO(), defaultFsmMeshConfigName, metav1.GetOptions{})
+	meshConfig, err := cmd.meshConfigClient.ConfigV1alpha3().MeshConfigs(fsmNamespace).Get(context.TODO(), defaultFsmMeshConfigName, metav1.GetOptions{})
 
 	if err != nil {
 		return false, fmt.Errorf("Error fetching MeshConfig %s: %w", defaultFsmMeshConfigName, err)

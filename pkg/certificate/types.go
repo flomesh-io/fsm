@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 )
@@ -122,11 +122,11 @@ type Manager struct {
 
 // MRCClient is an interface that can watch for changes to the MRC. It is typically backed by a k8s informer.
 type MRCClient interface {
-	List() ([]*v1alpha2.MeshRootCertificate, error)
+	List() ([]*v1alpha3.MeshRootCertificate, error)
 	MRCEventBroker
 
 	// GetCertIssuerForMRC returns an Issuer based on the provided MRC.
-	GetCertIssuerForMRC(mrc *v1alpha2.MeshRootCertificate) (Issuer, pem.RootCertificate, error)
+	GetCertIssuerForMRC(mrc *v1alpha3.MeshRootCertificate) (Issuer, pem.RootCertificate, error)
 }
 
 // MRCEventType is a type alias for a string describing the type of MRC event
@@ -136,7 +136,7 @@ type MRCEventType string
 type MRCEvent struct {
 	Type MRCEventType
 	// The last observed version of the MRC as of the time of this event
-	MRC *v1alpha2.MeshRootCertificate
+	MRC *v1alpha3.MeshRootCertificate
 }
 
 var (

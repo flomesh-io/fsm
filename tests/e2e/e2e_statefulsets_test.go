@@ -15,7 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	. "github.com/flomesh-io/fsm/tests/framework"
 )
 
@@ -29,7 +29,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 		Context("Statefulsets", func() {
 			It("pods succeed while establishing consensus", func() {
 				// Install FSM (with proxyMode = podIP)
-				Expect(Td.InstallFSM(Td.GetFSMInstallOpts(WithLocalProxyMode(v1alpha2.LocalProxyModePodIP)))).To(Succeed())
+				Expect(Td.InstallFSM(Td.GetFSMInstallOpts(WithLocalProxyMode(configv1alpha3.LocalProxyModePodIP)))).To(Succeed())
 
 				const testNS = "zookeeper"
 

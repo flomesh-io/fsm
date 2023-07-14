@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -37,15 +37,15 @@ func TestProvisionIngressGatewayCert(t *testing.T) {
 
 	testCases := []struct {
 		name                string
-		meshConfig          configv1alpha2.MeshConfig
+		meshConfig          configv1alpha3.MeshConfig
 		expectSecretToExist bool
 		expectErr           bool
 	}{
 		{
 			name: "ingress gateway cert spec does not exist",
-			meshConfig: configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
+			meshConfig: configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
 						IngressGateway: nil,
 					},
 				},
@@ -55,10 +55,10 @@ func TestProvisionIngressGatewayCert(t *testing.T) {
 		},
 		{
 			name: "ingress gateway cert spec exists",
-			meshConfig: configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
-						IngressGateway: &configv1alpha2.IngressGatewayCertSpec{
+			meshConfig: configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
+						IngressGateway: &configv1alpha3.IngressGatewayCertSpec{
 							SubjectAltNames:  []string{"foo.bar.cluster.local"},
 							ValidityDuration: "1h",
 							Secret:           testSecret,
@@ -71,10 +71,10 @@ func TestProvisionIngressGatewayCert(t *testing.T) {
 		},
 		{
 			name: "ingress gateway cert spec has no SAN",
-			meshConfig: configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
-						IngressGateway: &configv1alpha2.IngressGatewayCertSpec{
+			meshConfig: configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
+						IngressGateway: &configv1alpha3.IngressGatewayCertSpec{
 							SubjectAltNames:  nil,
 							ValidityDuration: "1h",
 							Secret:           testSecret,
@@ -140,12 +140,12 @@ func TestCreateAndStoreGatewayCert(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		certSpec  configv1alpha2.IngressGatewayCertSpec
+		certSpec  configv1alpha3.IngressGatewayCertSpec
 		expectErr bool
 	}{
 		{
 			name: "valid spec",
-			certSpec: configv1alpha2.IngressGatewayCertSpec{
+			certSpec: configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "1h",
 				Secret:           testSecret,
@@ -154,7 +154,7 @@ func TestCreateAndStoreGatewayCert(t *testing.T) {
 		},
 		{
 			name: "invalid SAN",
-			certSpec: configv1alpha2.IngressGatewayCertSpec{
+			certSpec: configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  nil,
 				ValidityDuration: "1h",
 				Secret:           testSecret,
@@ -163,7 +163,7 @@ func TestCreateAndStoreGatewayCert(t *testing.T) {
 		},
 		{
 			name: "invalid validity duration",
-			certSpec: configv1alpha2.IngressGatewayCertSpec{
+			certSpec: configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "foobar",
 				Secret:           testSecret,
@@ -172,7 +172,7 @@ func TestCreateAndStoreGatewayCert(t *testing.T) {
 		},
 		{
 			name: "invalid secret, name or namepace not specified",
-			certSpec: configv1alpha2.IngressGatewayCertSpec{
+			certSpec: configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "1h",
 				Secret: corev1.SecretReference{
@@ -210,9 +210,9 @@ func TestHandleCertificateChange(t *testing.T) {
 
 	testCases := []struct {
 		name                string
-		previousCertSpec    *configv1alpha2.IngressGatewayCertSpec
-		previousMeshConfig  *configv1alpha2.MeshConfig
-		updatedMeshConfig   *configv1alpha2.MeshConfig
+		previousCertSpec    *configv1alpha3.IngressGatewayCertSpec
+		previousMeshConfig  *configv1alpha3.MeshConfig
+		updatedMeshConfig   *configv1alpha3.MeshConfig
 		stopChan            chan struct{}
 		expectCertRotation  bool
 		expectSecretToExist bool
@@ -221,10 +221,10 @@ func TestHandleCertificateChange(t *testing.T) {
 			name:               "setting spec when not previously set",
 			previousCertSpec:   nil,
 			previousMeshConfig: nil,
-			updatedMeshConfig: &configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
-						IngressGateway: &configv1alpha2.IngressGatewayCertSpec{
+			updatedMeshConfig: &configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
+						IngressGateway: &configv1alpha3.IngressGatewayCertSpec{
 							SubjectAltNames:  []string{"foo.bar.cluster.local"},
 							ValidityDuration: "1h",
 							Secret:           testSecret,
@@ -237,16 +237,16 @@ func TestHandleCertificateChange(t *testing.T) {
 		},
 		{
 			name: "MeshConfig updated but certificate spec remains the same",
-			previousCertSpec: &configv1alpha2.IngressGatewayCertSpec{
+			previousCertSpec: &configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "1h",
 				Secret:           testSecret,
 			},
 			previousMeshConfig: nil,
-			updatedMeshConfig: &configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
-						IngressGateway: &configv1alpha2.IngressGatewayCertSpec{
+			updatedMeshConfig: &configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
+						IngressGateway: &configv1alpha3.IngressGatewayCertSpec{
 							SubjectAltNames:  []string{"foo.bar.cluster.local"},
 							ValidityDuration: "1h",
 							Secret:           testSecret,
@@ -259,16 +259,16 @@ func TestHandleCertificateChange(t *testing.T) {
 		},
 		{
 			name: "MeshConfig and certificate spec updated",
-			previousCertSpec: &configv1alpha2.IngressGatewayCertSpec{
+			previousCertSpec: &configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "1h",
 				Secret:           testSecret,
 			},
 			previousMeshConfig: nil,
-			updatedMeshConfig: &configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
-						IngressGateway: &configv1alpha2.IngressGatewayCertSpec{
+			updatedMeshConfig: &configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
+						IngressGateway: &configv1alpha3.IngressGatewayCertSpec{
 							SubjectAltNames:  []string{"foo.bar.cluster.local"},
 							ValidityDuration: "2h",
 							Secret:           testSecret,
@@ -281,15 +281,15 @@ func TestHandleCertificateChange(t *testing.T) {
 		},
 		{
 			name: "Certificate spec is unset to remove certificate",
-			previousCertSpec: &configv1alpha2.IngressGatewayCertSpec{
+			previousCertSpec: &configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "1h",
 				Secret:           testSecret,
 			},
 			previousMeshConfig: nil,
-			updatedMeshConfig: &configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Certificate: configv1alpha2.CertificateSpec{
+			updatedMeshConfig: &configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Certificate: configv1alpha3.CertificateSpec{
 						IngressGateway: nil,
 					},
 				},
@@ -299,7 +299,7 @@ func TestHandleCertificateChange(t *testing.T) {
 		},
 		{
 			name: "Secret for rotated certificate is updated",
-			previousCertSpec: &configv1alpha2.IngressGatewayCertSpec{
+			previousCertSpec: &configv1alpha3.IngressGatewayCertSpec{
 				SubjectAltNames:  []string{"foo.bar.cluster.local"},
 				ValidityDuration: "5s",
 				Secret:           testSecret,

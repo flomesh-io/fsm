@@ -48,7 +48,7 @@ import (
 	"sigs.k8s.io/kind/pkg/cluster"
 	"sigs.k8s.io/kind/pkg/cluster/nodeutils"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyV1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	policyV1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
@@ -277,7 +277,7 @@ nodeRegistration:
 
 	configClient, err := configClientset.NewForConfig(kubeConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create %s client: %w", configv1alpha2.SchemeGroupVersion, err)
+		return fmt.Errorf("failed to create %s client: %w", configv1alpha3.SchemeGroupVersion, err)
 	}
 
 	policyClient, err := policyV1alpha1Client.NewForConfig(kubeConfig)
@@ -321,7 +321,7 @@ nodeRegistration:
 }
 
 // WithLocalProxyMode sets the LocalProxyMode for FSM
-func WithLocalProxyMode(mode configv1alpha2.LocalProxyMode) InstallFsmOpt {
+func WithLocalProxyMode(mode configv1alpha3.LocalProxyMode) InstallFsmOpt {
 	return func(opts *InstallFSMOpts) {
 		opts.LocalProxyMode = mode
 	}
@@ -425,7 +425,7 @@ func (td *FsmTestData) LoadImagesToKind(imageNames []string) error {
 	return nil
 }
 
-func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha2.MeshConfig) *configv1alpha2.MeshConfig {
+func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.MeshConfig) *configv1alpha3.MeshConfig {
 	meshConfig.Spec.Traffic.EnableEgress = instOpts.EgressEnabled
 	meshConfig.Spec.Traffic.EnablePermissiveTrafficPolicyMode = instOpts.EnablePermissiveMode
 	meshConfig.Spec.Traffic.OutboundPortExclusionList = []int{}
@@ -617,8 +617,8 @@ func (td *FsmTestData) RestartFSMController(instOpts InstallFSMOpts) error {
 }
 
 // GetMeshConfig is a wrapper to get a MeshConfig by name in a particular namespace
-func (td *FsmTestData) GetMeshConfig(namespace string) (*configv1alpha2.MeshConfig, error) {
-	meshConfig, err := td.ConfigClient.ConfigV1alpha2().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
+func (td *FsmTestData) GetMeshConfig(namespace string) (*configv1alpha3.MeshConfig, error) {
+	meshConfig, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
 
 	if err != nil {
 		return nil, err
@@ -628,7 +628,7 @@ func (td *FsmTestData) GetMeshConfig(namespace string) (*configv1alpha2.MeshConf
 
 // GetSidecarClass is a wrapper to get sidecarClass in a particular namespace
 func (td *FsmTestData) GetSidecarClass(namespace string) (string, error) {
-	meshConfig, err := td.ConfigClient.ConfigV1alpha2().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
+	meshConfig, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
 
 	if err != nil {
 		return "", err
@@ -941,8 +941,8 @@ func (td *FsmTestData) installCertManager(instOpts InstallFSMOpts) error {
 }
 
 // UpdateFSMConfig updates FSM MeshConfig
-func (td *FsmTestData) UpdateFSMConfig(meshConfig *configv1alpha2.MeshConfig) (*configv1alpha2.MeshConfig, error) {
-	updated, err := td.ConfigClient.ConfigV1alpha2().MeshConfigs(td.FsmNamespace).Update(context.TODO(), meshConfig, metav1.UpdateOptions{})
+func (td *FsmTestData) UpdateFSMConfig(meshConfig *configv1alpha3.MeshConfig) (*configv1alpha3.MeshConfig, error) {
+	updated, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(td.FsmNamespace).Update(context.TODO(), meshConfig, metav1.UpdateOptions{})
 
 	if err != nil {
 		td.T.Logf("UpdateFSMConfig(): %s", err)
