@@ -54,6 +54,9 @@ type MeshService struct {
 
 	// ServiceImportUID is the uid of service import
 	ServiceImportUID types.UID
+
+	// CloudInheritedFrom is the cloud service Inherited From
+	CloudInheritedFrom string
 }
 
 // NamespacedKey is the key (i.e. namespace + ProviderKey()) with which to lookup the backing service within the provider

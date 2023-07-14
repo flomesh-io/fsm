@@ -361,6 +361,20 @@ func (mr *MockConfiguratorMockRecorder) GetRepoServerIPAddr() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoServerIPAddr", reflect.TypeOf((*MockConfigurator)(nil).GetRepoServerIPAddr))
 }
 
+// GetServiceAccessMode mocks base method.
+func (m *MockConfigurator) GetServiceAccessMode() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServiceAccessMode")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetServiceAccessMode indicates an expected call of GetServiceAccessMode.
+func (mr *MockConfiguratorMockRecorder) GetServiceAccessMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccessMode", reflect.TypeOf((*MockConfigurator)(nil).GetServiceAccessMode))
+}
+
 // GetServiceCertValidityPeriod mocks base method.
 func (m *MockConfigurator) GetServiceCertValidityPeriod() time.Duration {
 	m.ctrl.T.Helper()

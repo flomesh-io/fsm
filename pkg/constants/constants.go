@@ -82,12 +82,6 @@ const (
 	// FSMBootstrapName is the name of the FSM Bootstrap.
 	FSMBootstrapName = "fsm-bootstrap"
 
-	// FSMIngressName is the name of the FSM Ingress.
-	FSMIngressName = "fsm-ingress"
-
-	// FSMGatewayName is the name of the FSM Gateway.
-	FSMGatewayName = "fsm-gateway"
-
 	// ProxyServerPort is the port on which the Pipy Repo Service (ADS) listens for new connections from sidecar proxies
 	ProxyServerPort = 6060
 
@@ -348,6 +342,17 @@ const (
 
 	//TrafficInterceptionModeNone defines the none traffic interception mode
 	TrafficInterceptionModeNone = "none"
+)
+
+const (
+	//ServiceAccessModeIP defines the ip service access mode
+	ServiceAccessModeIP = "ip"
+
+	//ServiceAccessModeDomain defines the domain service access mode
+	ServiceAccessModeDomain = "domain"
+
+	//ServiceAccessModeMixed defines the mixed service access mode
+	ServiceAccessModeMixed = "mixed"
 )
 
 // Gateway API constants

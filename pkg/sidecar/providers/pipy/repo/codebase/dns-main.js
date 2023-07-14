@@ -30,11 +30,11 @@
   })
 
   .pipeline()
-  .replaceMessage(
-    msg => (
+  .replaceData(
+    dat => (
       _response = null,
       ((dns, answer) => (
-        dns = DNS.decode(msg.body),
+        dns = DNS.decode(dat),
         (dns?.question?.[0]?.type === 'A') && (
           (answer = dnsRecordSets[dns?.question?.[0]?.name]) && (
             dns.qr = 1,
@@ -49,19 +49,19 @@
             dns.answer = answer,
             dns.authority = [],
             dns.additional = [],
-            _response = new Message(DNS.encode(dns))
+            _response = new Data(DNS.encode(dns))
           )
         )
       ))(),
-      _response ? _response : msg
+      _response ? _response : dat
     )
   )
   .branch(
     () => !Boolean(_response), $ => $
       .connect(() => dnsSvcAddress, { protocol: 'udp' })
-      .replaceMessage(
-        msg => ((dns, name, type, nsname, fake = false) => (
-          dns = DNS.decode(msg.body),
+      .replaceData(
+        dat => ((dns, name, type, nsname, fake = false) => (
+          dns = DNS.decode(dat),
 
           (dns?.rcode === 3 || (!Boolean(dns?.answer) && !Boolean(dns?.authority))) && (
             name = dns?.question?.[0]?.name,
@@ -128,7 +128,7 @@
             )
           ),
 
-          fake ? new Message(DNS.encode(dns)) : msg
+          fake ? new Data(DNS.encode(dns)) : dat
         ))()
       ),
     $ => $

@@ -143,6 +143,9 @@ type TrafficSpec struct {
 	// EnablePermissiveTrafficPolicyMode defines a boolean indicating if permissive traffic policy mode is enabled mesh-wide.
 	EnablePermissiveTrafficPolicyMode bool `json:"enablePermissiveTrafficPolicyMode"`
 
+	// ServiceAccessMode defines a string indicating service access mode.
+	ServiceAccessMode string `json:"serviceAccessMode"`
+
 	// InboundExternalAuthorization defines a ruleset that, if enabled, will configure a remote external authorization endpoint
 	// for all inbound and ingress traffic in the mesh.
 	InboundExternalAuthorization ExternalAuthzSpec `json:"inboundExternalAuthorization,omitempty"`
@@ -295,6 +298,9 @@ type FeatureFlags struct {
 
 	// EnablePluginPolicy defines if plugin policy is enabled.
 	EnablePluginPolicy bool `json:"enablePluginPolicy"`
+
+	// EnableAutoDefaultRoute defines if auto default route is enabled.
+	EnableAutoDefaultRoute bool `json:"enableAutoDefaultRoute"`
 }
 
 // SidecarDriverSpec is the type to represent FSM's sidecar driver define.

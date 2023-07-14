@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.0.0"
+    tag: "1.0.1"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
@@ -31,6 +31,8 @@ fsm:
       fsmHealthcheck: fsm-healthcheck
       # -- fsm-interceptor's image name
       fsmInterceptor: fsm-interceptor
+      # -- fsm-consul-connector's image name
+      fsmConsulConnector: fsm-consul-connector
     # -- Image digest (defaults to latest compatible tag)
     digest:
       # -- fsm-controller's image digest
@@ -49,6 +51,8 @@ fsm:
       fsmHealthcheck: ""
       # -- fsm-interceptor's image digest
       fsmInterceptor: ""
+      # -- fsm-consul-connector's image digest
+      fsmConsulConnector: ""
 
   # -- `fsm-controller` image pull secret
   imagePullSecrets: [ ]
@@ -60,7 +64,7 @@ fsm:
   sidecarDrivers:
     - sidecarName: pipy
       # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.90.1-87
+      sidecarImage: flomesh/pipy:0.90.2-33
       # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
       proxyServerPort: 6060
   # -- Curl image for control plane init container
@@ -69,7 +73,7 @@ fsm:
   # -- Pipy RepoServer
   repoServer:
     # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.90.1-87
+    image: flomesh/pipy-repo:0.90.2-33
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -295,7 +299,7 @@ fsm:
     # -- The Certificate manager type: `tresor`, `vault` or `cert-manager`
     kind: tresor
     # -- Service certificate validity duration for certificate issued to workloads to communicate over mTLS
-    serviceCertValidityDuration: 365d
+    serviceCertValidityDuration: 24h
     # -- Certificate key bit size for data plane certificates issued to workloads to communicate over mTLS
     certKeyBitSize: 2048
 
@@ -378,6 +382,9 @@ fsm:
   # -- Enable permissive traffic policy mode
   enablePermissiveTrafficPolicy: true
 
+  # -- Service access mode
+  serviceAccessMode: domain
+
   # -- Traffic interception mode in the mesh
   trafficInterceptionMode: iptables
 
@@ -386,6 +393,9 @@ fsm:
 
   # -- Enable reconciler for FSM's CRDs and mutating webhook
   enableReconciler: false
+
+  # -- Deploy Consul Connector with FSM installation
+  deployConsulConnector: false
 
   # -- Deploy Prometheus with FSM installation
   deployPrometheus: false
@@ -613,6 +623,82 @@ fsm:
   enablePrivilegedInitContainer: false
 
   #
+  # -- FSM's cloud connector parameters
+  cloudConnector:
+    deriveNamespace: ""
+    consul:
+      httpAddr: 127.0.0.1:8500
+      passingOnly: true
+      filterTag: ""
+      prefixTag: ""
+      suffixTag: ""
+
+    # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
+    replicaCount: 1
+    # -- Sidecar injector's container resource parameters
+    resource:
+      limits:
+        cpu: "0.5"
+        memory: "64M"
+      requests:
+        cpu: "0.3"
+        memory: "64M"
+    # -- Sidecar injector's pod labels
+    podLabels: { }
+    # -- Enable Pod Disruption Budget
+    enablePodDisruptionBudget: false
+    # -- Auto scale configuration
+    autoScale:
+      # -- Enable Autoscale
+      enable: false
+      # -- Minimum replicas for autoscale
+      minReplicas: 1
+      # -- Maximum replicas for autoscale
+      maxReplicas: 5
+      cpu:
+        # -- Average target CPU utilization (%)
+        targetAverageUtilization: 80
+      memory:
+        # -- Average target memory utilization (%)
+        targetAverageUtilization: 80
+
+    ## Node labels for pod assignment
+    ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+    nodeSelector: { }
+
+    ## Affinity settings for pod assignment
+    ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+                    - arm64
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fsm-injector
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+
+    # -- Node tolerations applied to control plane pods.
+    # The specified tolerations allow pods to schedule onto nodes with matching taints.
+    tolerations: [ ]
+
+  #
   # -- Feature flags for experimental features
   featureFlags:
     # -- Enable FSM's Egress policy API.
@@ -638,6 +724,8 @@ fsm:
     enablePluginPolicy: false
     # -- Enable the MeshRootCertificate to configure the FSM certificate provider
     enableMeshRootCertificate: false
+    # -- Eneable AutoDefaultRoute
+    enableAutoDefaultRoute: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.

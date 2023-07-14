@@ -78,6 +78,11 @@ func (c *Client) IsPermissiveTrafficPolicyMode() bool {
 	return c.getMeshConfig().Spec.Traffic.EnablePermissiveTrafficPolicyMode
 }
 
+// GetServiceAccessMode tells us which service access mode,
+func (c *Client) GetServiceAccessMode() string {
+	return c.getMeshConfig().Spec.Traffic.ServiceAccessMode
+}
+
 // IsEgressEnabled determines whether egress is globally enabled in the mesh or not.
 func (c *Client) IsEgressEnabled() bool {
 	return c.getMeshConfig().Spec.Traffic.EnableEgress

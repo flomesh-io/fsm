@@ -19,24 +19,22 @@ pipy({
   () => _rateLimit = rateLimitCache.get(__service?.RateLimit), (
     $=>$.branch(
       () => _rateLimit.backlog > 0, (
-        $=>$.mux(() => _rateLimit, () => ({ maxQueue: _rateLimit.backlog })).to(
-          $=>$
-          .onStart(({ sessionCount }) => void (_overflow = (sessionCount > 1)))
-          .branch(
-            () => _overflow, (
-              $=>$
-              .replaceData()
-              .replaceMessage(
-                () => (
-                  rateLimitedCounter.increase(),
-                  [_rateLimit.response, new StreamEnd]
-                )
+        $=>$.branch(
+          () => _rateLimit.count > _rateLimit.backlog, (
+            $=>$
+            .replaceData()
+            .replaceMessage(
+              () => (
+                rateLimitedCounter.increase(),
+                [_rateLimit.response, new StreamEnd]
               )
-            ), (
-              $=>$
-              .throttleMessageRate(() => _rateLimit.quota)
-              .demux().to($=>$.chain())
             )
+          ), (
+            $=>$
+            .handleMessageStart(() => _rateLimit.count++)
+            .throttleMessageRate(() => _rateLimit.quota, {blockInput: false})
+            .chain()
+            .handleMessageStart(() => _rateLimit.count--)
           )
         )
       ), (

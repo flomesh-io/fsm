@@ -26,6 +26,9 @@ rules:
     verbs: ["get", "list", "create"]
 
   - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["create", "update", "delete"]
+  - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "watch"]
   - apiGroups: [""]
