@@ -226,7 +226,7 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				}
 				if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
 					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
-					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err != nil {
+					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
 						ip := utils.Int2IP4(uint32(ipInt))
 						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
 					}
