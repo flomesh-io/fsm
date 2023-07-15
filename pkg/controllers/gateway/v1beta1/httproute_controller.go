@@ -26,9 +26,9 @@ package v1beta1
 
 import (
 	"context"
-	"github.com/flomesh-io/fsm-classic/controllers"
-	fctx "github.com/flomesh-io/fsm-classic/pkg/context"
-	"github.com/flomesh-io/fsm-classic/pkg/gateway/status"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -39,15 +39,15 @@ import (
 
 type httpRouteReconciler struct {
 	recorder        record.EventRecorder
-	fctx            *fctx.FsmContext
+	fctx            *fctx.ControllerContext
 	statusProcessor *status.RouteStatusProcessor
 }
 
-func NewHTTPRouteReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Fctx: ctx},
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 

@@ -426,16 +426,18 @@ const (
 
 // FLB constants
 const (
-	FlbPrefix                      = "flb.flomesh.io"
-	FlbEnabledAnnotation           = FlbPrefix + "/enabled"
-	FlbClusterAnnotation           = FlbPrefix + "/cluster"
-	FlbAddressPoolAnnotation       = FlbPrefix + "/address-pool"
-	FlbDesiredIPAnnotation         = FlbPrefix + "/desired-ip"
-	FlbMaxConnectionsAnnotation    = FlbPrefix + "/max-connections"
-	FlbReadTimeoutAnnotation       = FlbPrefix + "/read-timeout"
-	FlbWriteTimeoutAnnotation      = FlbPrefix + "/write-timeout"
-	FlbIdleTimeoutAnnotation       = FlbPrefix + "/idle-timeout"
-	FlbAlgoAnnotation              = FlbPrefix + "/algo"
+	FlbPrefix                   = "flb.flomesh.io"
+	FlbEnabledAnnotation        = FlbPrefix + "/enabled"
+	FlbClusterAnnotation        = FlbPrefix + "/cluster"
+	FlbAddressPoolAnnotation    = FlbPrefix + "/address-pool"
+	FlbDesiredIPAnnotation      = FlbPrefix + "/desired-ip"
+	FlbMaxConnectionsAnnotation = FlbPrefix + "/max-connections"
+	FlbReadTimeoutAnnotation    = FlbPrefix + "/read-timeout"
+	FlbWriteTimeoutAnnotation   = FlbPrefix + "/write-timeout"
+	FlbIdleTimeoutAnnotation    = FlbPrefix + "/idle-timeout"
+	FlbAlgoAnnotation           = FlbPrefix + "/algo"
+	FlbSecretLabel              = FlbPrefix + "/config"
+
 	FLBSecretKeyBaseUrl            = "baseUrl"
 	FLBSecretKeyUsername           = "username"
 	FLBSecretKeyPassword           = "password"

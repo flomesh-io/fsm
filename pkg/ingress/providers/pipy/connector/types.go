@@ -22,34 +22,29 @@
  * SOFTWARE.
  */
 
-package context
+package connector
 
 import (
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/gateway"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	"time"
 )
 
-type ControllerContext struct {
-	client.Client
-	Manager            manager.Manager
-	Scheme             *runtime.Scheme
-	KubeClient         kubernetes.Interface
-	GatewayAPIClient   gwclient.Interface
-	Config             configurator.Configurator
-	InformerCollection *fsminformers.InformerCollection
-	CertificateManager *certificate.Manager
-	RepoClient         *repo.PipyRepoClient
-	Broker             *messaging.Broker
-	EventHandler       gateway.Controller
-	StopCh             <-chan struct{}
-	FsmNamespace       string
+type Connector struct {
+	cache      *cache.Cache
+	kubeClient kubernetes.Interface
+	cfg        configurator.Configurator
+	broker     *messaging.Broker
+}
+
+func NewConnector(kubeClient kubernetes.Interface, broker *messaging.Broker, certMgr *certificate.Manager, cfg configurator.Configurator, resyncPeriod time.Duration) *Connector {
+	return &Connector{
+		kubeClient: kubeClient,
+		cache:      cache.NewCache(kubeClient, cfg, broker, certMgr, resyncPeriod),
+		cfg:        cfg,
+		broker:     broker,
+	}
 }

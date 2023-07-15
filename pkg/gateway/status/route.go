@@ -41,11 +41,11 @@ import (
 )
 
 type RouteStatusProcessor struct {
-	informers *informers.InformerCollection
+	Informers *informers.InformerCollection
 }
 
 func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route client.Object) ([]gwv1beta1.RouteParentStatus, error) {
-	gatewayList := p.informers.List(informers.InformerKeyGatewayApiGateway)
+	gatewayList := p.Informers.List(informers.InformerKeyGatewayApiGateway)
 
 	activeGateways := make([]*gwv1beta1.Gateway, 0)
 	for _, gw := range gatewayList {

@@ -27,8 +27,8 @@ package servicelb
 import (
 	"context"
 	_ "embed"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/sidecar/driver"
+	"github.com/flomesh-io/fsm/controllers"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -41,15 +41,13 @@ import (
 // NodeReconciler reconciles a Node object
 type nodeReconciler struct {
 	recorder record.EventRecorder
-	fctx     *driver.ControllerContext
-	client.Client
+	fctx     *fctx.FsmContext
 }
 
-func NewNodeReconciler(ctx *driver.ControllerContext) controllers.Reconciler {
+func NewNodeReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
 	return &nodeReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceLB"),
 		fctx:     ctx,
-		Client:   ctx.Manager.GetClient(),
 	}
 }
 
@@ -65,7 +63,7 @@ func NewNodeReconciler(ctx *driver.ControllerContext) controllers.Reconciler {
 func (r *nodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Node instance
 	node := &corev1.Node{}
-	if err := r.Get(
+	if err := r.fctx.Get(
 		ctx,
 		req.NamespacedName,
 		node,
@@ -97,7 +95,7 @@ func (r *nodeReconciler) updateDaemonSets(ctx context.Context) error {
 	klog.V(5).Infof("Updating DaemonSets due to node labels change ...")
 
 	daemonsets := &appv1.DaemonSetList{}
-	if err := r.List(
+	if err := r.fctx.List(
 		ctx,
 		daemonsets,
 		client.InNamespace(corev1.NamespaceAll),
@@ -113,7 +111,7 @@ func (r *nodeReconciler) updateDaemonSets(ctx context.Context) error {
 			daemonsetNodeLabel: "true",
 		}
 		ds.Labels[nodeSelectorLabel] = "true"
-		if err := r.Update(ctx, &ds); err != nil {
+		if err := r.fctx.Update(ctx, &ds); err != nil {
 			return err
 		}
 	}

@@ -26,15 +26,15 @@ package flb
 
 import (
 	"context"
-	"github.com/flomesh-io/fsm-classic/pkg/kube"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
 
-func IsFlbEnabled(svc *corev1.Service, api *kube.K8sAPI) bool {
+func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	if svc == nil {
 		return false
 	}
@@ -46,7 +46,7 @@ func IsFlbEnabled(svc *corev1.Service, api *kube.K8sAPI) bool {
 	// if service doesn't have flb.flomesh.io/enabled annotation
 	if svc.Annotations == nil || svc.Annotations[constants.FlbEnabledAnnotation] == "" {
 		// check ns annotation
-		ns, err := api.Client.CoreV1().
+		ns, err := kubeClient.CoreV1().
 			Namespaces().
 			Get(context.TODO(), svc.Namespace, metav1.GetOptions{})
 

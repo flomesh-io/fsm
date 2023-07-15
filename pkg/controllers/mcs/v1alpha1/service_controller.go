@@ -27,9 +27,9 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
-	svcimpv1alpha1 "github.com/flomesh-io/fsm-classic/apis/serviceimport/v1alpha1"
-	"github.com/flomesh-io/fsm-classic/controllers"
-	fctx "github.com/flomesh-io/fsm-classic/pkg/context"
+	svcimpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceimport/v1alpha1"
+	"github.com/flomesh-io/fsm/controllers"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

@@ -22,34 +22,42 @@
  * SOFTWARE.
  */
 
-package context
+package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/gateway"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	ingresspipy "github.com/flomesh-io/fsm-classic/pkg/ingress"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
-type ControllerContext struct {
-	client.Client
-	Manager            manager.Manager
-	Scheme             *runtime.Scheme
-	KubeClient         kubernetes.Interface
-	GatewayAPIClient   gwclient.Interface
-	Config             configurator.Configurator
-	InformerCollection *fsminformers.InformerCollection
-	CertificateManager *certificate.Manager
-	RepoClient         *repo.PipyRepoClient
-	Broker             *messaging.Broker
-	EventHandler       gateway.Controller
-	StopCh             <-chan struct{}
-	FsmNamespace       string
+func (c *Cache) OnIngressClassv1Add(class *networkingv1.IngressClass) {
+	c.updateDefaultIngressClass(class, class.Name)
+}
+
+func (c *Cache) OnIngressClassv1Update(oldClass, class *networkingv1.IngressClass) {
+	if oldClass.ResourceVersion == class.ResourceVersion {
+		return
+	}
+
+	c.updateDefaultIngressClass(class, class.Name)
+}
+
+func (c *Cache) OnIngressClassv1Delete(class *networkingv1.IngressClass) {
+	// if the default IngressClass is deleted, set the DefaultIngressClass variable to empty
+	c.updateDefaultIngressClass(class, ingresspipy.NoDefaultIngressClass)
+}
+
+func (c *Cache) OnIngressClassv1Synced() {
+	c.mu.Lock()
+	c.ingressClassesSynced = true
+	c.setInitialized(c.ingressesSynced && c.servicesSynced && c.endpointsSynced && c.serviceImportSynced)
+	c.mu.Unlock()
+
+	c.syncRoutes()
+}
+
+func (c *Cache) updateDefaultIngressClass(class *networkingv1.IngressClass, className string) {
+	isDefault, ok := class.GetAnnotations()[ingresspipy.IngressClassAnnotationKey]
+	if ok && isDefault == "true" {
+		ingresspipy.DefaultIngressClass = className
+	}
 }

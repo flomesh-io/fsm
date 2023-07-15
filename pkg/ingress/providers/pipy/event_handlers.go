@@ -1,4 +1,4 @@
-package gateway
+package pipy
 
 import (
 	"github.com/flomesh-io/fsm/pkg/k8s"

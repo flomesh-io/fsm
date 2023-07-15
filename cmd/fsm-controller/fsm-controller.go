@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"strings"
 	"time"
 
@@ -375,6 +376,14 @@ func main() {
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating reconciler client to reconcile validating webhook")
 		}
+	}
+
+	manager, err := ctrl.NewManager(kubeConfig, ctrl.Options{
+		Scheme: scheme,
+	})
+	if err != nil {
+		log.Error().Msgf("could not create manager: %s", err)
+		os.Exit(1)
 	}
 
 	<-stop

@@ -28,15 +28,14 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/flomesh-io/fsm-classic/controllers"
-	"github.com/flomesh-io/fsm-classic/pkg/commons"
-	"github.com/flomesh-io/fsm-classic/pkg/config"
-	fctx "github.com/flomesh-io/fsm-classic/pkg/context"
-	gwpkg "github.com/flomesh-io/fsm-classic/pkg/gateway"
-	"github.com/flomesh-io/fsm-classic/pkg/gateway/utils"
-	gwutils "github.com/flomesh-io/fsm-classic/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm-classic/pkg/helm"
-	"github.com/flomesh-io/fsm-classic/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+	"github.com/flomesh-io/fsm/pkg/helm"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -76,14 +75,14 @@ type gatewayValues struct {
 
 type gatewayReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
 func init() {
 	activeGateways = make(map[string]*gwv1beta1.Gateway)
 }
 
-func NewGatewayReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Gateway"),
 		fctx:     ctx,
@@ -126,7 +125,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var effectiveGatewayClass *gwv1beta1.GatewayClass
 	for idx, cls := range gatewayClasses.Items {
-		if utils.IsEffectiveGatewayClass(&cls) {
+		if gwutils.IsEffectiveGatewayClass(&cls) {
 			effectiveGatewayClass = &gatewayClasses.Items[idx]
 			break
 		}
@@ -170,12 +169,12 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	statusChangedGateways := make([]*gwv1beta1.Gateway, 0)
 	for i := range validGateways {
 		if i == 0 {
-			if !utils.IsAcceptedGateway(validGateways[i]) {
+			if !gwutils.IsAcceptedGateway(validGateways[i]) {
 				r.setAccepted(validGateways[i])
 				statusChangedGateways = append(statusChangedGateways, validGateways[i])
 			}
 		} else {
-			if utils.IsAcceptedGateway(validGateways[i]) {
+			if gwutils.IsAcceptedGateway(validGateways[i]) {
 				r.setUnaccepted(validGateways[i])
 				statusChangedGateways = append(statusChangedGateways, validGateways[i])
 			}
@@ -184,7 +183,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// in case of effective GatewayClass changed or spec.GatewayClassName was changed
 	for i := range invalidGateways {
-		if utils.IsAcceptedGateway(invalidGateways[i]) {
+		if gwutils.IsAcceptedGateway(invalidGateways[i]) {
 			r.setUnaccepted(invalidGateways[i])
 			statusChangedGateways = append(statusChangedGateways, invalidGateways[i])
 		}
@@ -281,7 +280,7 @@ func (r *gatewayReconciler) updateListenerStatus(ctx context.Context, gateway *g
 	}
 
 	oldHash := gateway.Annotations["gateway.flomesh.io/listeners-hash"]
-	hash := util.SimpleHash(gateway.Spec.Listeners)
+	hash := utils.SimpleHash(gateway.Spec.Listeners)
 
 	if oldHash != hash {
 		gateway.Annotations["gateway.flomesh.io/listeners-hash"] = hash
@@ -377,36 +376,36 @@ func supportedRouteGroupKindsByProtocol(protocol gwv1beta1.ProtocolType) []gwv1b
 	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "HTTPRoute",
 			},
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "GRPCRoute",
 			},
 		}
 	case gwv1beta1.TLSProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "TLSRoute",
 			},
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "TCPRoute",
 			},
 		}
 	case gwv1beta1.TCPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "TCPRoute",
 			},
 		}
 	case gwv1beta1.UDPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: utils.GroupPointer("gateway.networking.k8s.io"),
+				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
 				Kind:  "UDPRoute",
 			},
 		}
@@ -426,8 +425,8 @@ func gatewayAddresses(activeGateway *gwv1beta1.Gateway, lbSvc *corev1.Service) [
 	sort.Strings(existingHostnames)
 	sort.Strings(expectedHostnames)
 
-	ipChanged := !util.StringsEqual(expectedIPs, existingIPs)
-	hostnameChanged := !util.StringsEqual(expectedHostnames, existingHostnames)
+	ipChanged := !utils.StringsEqual(expectedIPs, existingIPs)
+	hostnameChanged := !utils.StringsEqual(expectedHostnames, existingHostnames)
 	if !ipChanged && !hostnameChanged {
 		return nil
 	}
@@ -459,7 +458,7 @@ func (r *gatewayReconciler) updateStatus(ctx context.Context, gw *gwv1beta1.Gate
 		return ctrl.Result{}, err
 	}
 
-	if utils.IsAcceptedGateway(gw) {
+	if gwutils.IsAcceptedGateway(gw) {
 		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
 	} else {
 		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Rejected", "Gateway in unaccepted due to it's not the oldest in namespace %s or its gatewayClassName is incorrect", gw.Namespace)
@@ -537,7 +536,7 @@ func (r *gatewayReconciler) findActiveGatewayByNamespace(ctx context.Context, na
 	}
 
 	for _, gw := range gatewayList.Items {
-		if utils.IsActiveGateway(&gw) {
+		if gwutils.IsActiveGateway(&gw) {
 			return &gw, ctrl.Result{}, nil
 		}
 	}
@@ -550,7 +549,7 @@ func isSameGateway(oldGateway, newGateway *gwv1beta1.Gateway) bool {
 }
 
 func (r *gatewayReconciler) applyGateway(gateway *gwv1beta1.Gateway) (ctrl.Result, error) {
-	mc := r.fctx.ConfigStore.MeshConfig.GetConfig()
+	mc := r.fctx.Config
 
 	result, err := r.deriveCodebases(gateway, mc)
 	if err != nil {
@@ -571,22 +570,22 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1beta1.Gateway) (ctrl.Resul
 	return r.deployGateway(gateway, mc)
 }
 
-func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, mc *config.MeshConfig) (ctrl.Result, error) {
-	gwPath := mc.GatewayCodebasePath(gw.Namespace)
-	parentPath := mc.GetDefaultGatewaysPath()
-	if err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
+func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
+	gwPath := utils.GatewayCodebasePath(gw.Namespace)
+	parentPath := utils.GetDefaultGatewaysPath()
+	if _, err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) updateConfig(gw *gwv1beta1.Gateway, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *gatewayReconciler) updateConfig(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
 	// TODO: update pipy repo
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
 	releaseName := fmt.Sprintf("fsm-gateway-%s", gw.Namespace)
 	kubeVersion := &chartutil.KubeVersion{
 		Version: fmt.Sprintf("v%s.%s.0", "1", "21"),
@@ -602,7 +601,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc *config.Mesh
 	return ctrl.Result{}, nil
 }
 
-func resolveValues(object metav1.Object, mc *config.MeshConfig) (map[string]interface{}, error) {
+func resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
 	gateway, ok := object.(*gwv1beta1.Gateway)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of *gwv1beta1.Gateway", object)
@@ -629,7 +628,7 @@ func resolveValues(object metav1.Object, mc *config.MeshConfig) (map[string]inte
 		"fsm.gatewayApi.enabled=true",
 		"fsm.ingress.enabled=false",
 		fmt.Sprintf("fsm.image.repository=%s", mc.Images.Repository),
-		fmt.Sprintf("fsm.namespace=%s", mc.GetMeshNamespace()),
+		fmt.Sprintf("fsm.namespace=%s", mc.GetFSMNamespace()),
 	}
 
 	for _, ov := range overrides {
@@ -673,7 +672,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
-			gatewayClass, err := r.fctx.K8sAPI.GatewayAPIClient.
+			gatewayClass, err := r.fctx.GatewayAPIClient.
 				GatewayV1beta1().
 				GatewayClasses().
 				Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})
@@ -682,8 +681,8 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
-			if gatewayClass.Spec.ControllerName != commons.GatewayController {
-				klog.Warningf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, commons.GatewayController)
+			if gatewayClass.Spec.ControllerName != constants.GatewayController {
+				klog.Warningf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 				return false
 			}
 
@@ -699,7 +698,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 					return false
 				}
 
-				return gatewayClass.Spec.ControllerName == commons.GatewayController
+				return gatewayClass.Spec.ControllerName == constants.GatewayController
 			})),
 		).
 		Complete(r)
@@ -712,7 +711,7 @@ func (r *gatewayReconciler) gatewayClassToGateways(obj client.Object) []reconcil
 		return nil
 	}
 
-	if utils.IsEffectiveGatewayClass(gatewayClass) {
+	if gwutils.IsEffectiveGatewayClass(gatewayClass) {
 		var gateways gwv1beta1.GatewayList
 		if err := r.fctx.List(context.TODO(), &gateways); err != nil {
 			klog.Error("error listing gateways: %s", err)

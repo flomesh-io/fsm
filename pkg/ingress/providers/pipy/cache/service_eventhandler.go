@@ -22,34 +22,33 @@
  * SOFTWARE.
  */
 
-package context
+package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/gateway"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
 )
 
-type ControllerContext struct {
-	client.Client
-	Manager            manager.Manager
-	Scheme             *runtime.Scheme
-	KubeClient         kubernetes.Interface
-	GatewayAPIClient   gwclient.Interface
-	Config             configurator.Configurator
-	InformerCollection *fsminformers.InformerCollection
-	CertificateManager *certificate.Manager
-	RepoClient         *repo.PipyRepoClient
-	Broker             *messaging.Broker
-	EventHandler       gateway.Controller
-	StopCh             <-chan struct{}
-	FsmNamespace       string
+func (c *Cache) OnServiceAdd(service *corev1.Service) {
+	c.OnServiceUpdate(nil, service)
+}
+
+func (c *Cache) OnServiceUpdate(oldService, service *corev1.Service) {
+	if c.serviceChanges.Update(oldService, service) && c.isInitialized() {
+		klog.V(5).Infof("Detects service change, syncing...")
+		c.Sync()
+	}
+}
+
+func (c *Cache) OnServiceDelete(service *corev1.Service) {
+	c.OnServiceUpdate(service, nil)
+}
+
+func (c *Cache) OnServiceSynced() {
+	c.mu.Lock()
+	c.servicesSynced = true
+	c.setInitialized(c.serviceImportSynced && c.endpointsSynced && c.ingressesSynced && c.ingressClassesSynced)
+	c.mu.Unlock()
+
+	c.syncRoutes()
 }

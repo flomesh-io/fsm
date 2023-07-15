@@ -510,12 +510,18 @@ func (c *Client) IsMultiClusterControlPlane() bool {
 		clusterSet.UID == clusterSet.ControlPlaneUID
 }
 
+func (c *Client) GetImageRegistry() string {
+
+}
+
 func (c *Client) PipyImage() string {
+	mcSpec := c.getMeshConfig().Spec
+	mcSpec.
 	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
 }
 
 func (c *Client) PipyRepoImage() string {
-	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
+	return c.getrepo
 }
 
 func (c *Client) PipyNonrootImage() string {
@@ -524,4 +530,12 @@ func (c *Client) PipyNonrootImage() string {
 
 func (c *Client) ServiceLbImage() string {
 	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.KlipperLbImage)
+}
+
+func (c *Client) GetFLBSecretName() string {
+	return c.getMeshConfig().Spec.FLB.SecretName
+}
+
+func (c *Client) IsFLBStrictModeEnabled() bool {
+	return c.getMeshConfig().Spec.FLB.StrictMode
 }

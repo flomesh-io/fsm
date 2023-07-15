@@ -167,8 +167,17 @@ type Configurator interface {
 	// IsFLBEnabled returns whether FLB is enabled
 	IsFLBEnabled() bool
 
+	// GetFLBSecretName returns the secret name of FLB
+	GetFLBSecretName() string
+
+	// IsFLBStrictModeEnabled returns whether FLB Strict Mode is enabled
+	IsFLBStrictModeEnabled() bool
+
 	// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
 	IsMultiClusterControlPlane() bool
+
+	// GetImageRegistry returns the image registry
+	GetImageRegistry() string
 
 	// PipyImage returns the pipy image
 	PipyImage() string

@@ -56,6 +56,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.14.6
 	sigs.k8s.io/gateway-api v0.7.1
 	sigs.k8s.io/kind v0.14.0
+	github.com/sethvargo/go-retry v0.2.3
 )
 
 require (

@@ -27,11 +27,11 @@ package v1beta1
 import (
 	"context"
 	"fmt"
-	"github.com/flomesh-io/fsm-classic/apis/gateway"
-	"github.com/flomesh-io/fsm-classic/controllers"
-	"github.com/flomesh-io/fsm-classic/pkg/commons"
-	fctx "github.com/flomesh-io/fsm-classic/pkg/context"
-	"github.com/flomesh-io/fsm-classic/pkg/gateway/utils"
+	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -49,10 +49,10 @@ import (
 
 type gatewayClassReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewGatewayClassReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
 		fctx:     ctx,
@@ -96,7 +96,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result, err
 	}
 
-	gatewayClassList, err := r.fctx.K8sAPI.GatewayAPIClient.GatewayV1beta1().
+	gatewayClassList, err := r.fctx.GatewayAPIClient.GatewayV1beta1().
 		GatewayClasses().
 		List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -148,7 +148,7 @@ func (r *gatewayClassReconciler) updateStatus(ctx context.Context, class *gwv1be
 }
 
 func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1beta1.GatewayClass) {
-	if gatewayClass.Spec.ControllerName == commons.GatewayController {
+	if gatewayClass.Spec.ControllerName == constants.GatewayController {
 		r.setAccepted(gatewayClass)
 	} else {
 		r.setRejected(gatewayClass)
@@ -243,7 +243,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return false
 		}
 
-		return gatewayClass.Spec.ControllerName == commons.GatewayController
+		return gatewayClass.Spec.ControllerName == constants.GatewayController
 	})
 
 	return ctrl.NewControllerManagedBy(mgr).

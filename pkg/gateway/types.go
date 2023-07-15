@@ -6,6 +6,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	"time"
 
@@ -23,26 +24,10 @@ type client struct {
 
 // Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
 type Controller interface {
+	cache.ResourceEventHandler
+
 	// Start runs the backend broadcast listener
 	Start() error
-
-	//// GetEffectiveGatewayClass returns the active and accepted gatewayclasses
-	//GetEffectiveGatewayClass() *gwv1beta1.GatewayClass
-	//
-	//// GetEffectiveGateways lists effective gateways attached to effective GatewayClass
-	//GetEffectiveGateways() []*gwv1beta1.Gateway
-	//
-	//// GetHTTPRoutes lists httproutes
-	//GetHTTPRoutes() []*gwv1beta1.HTTPRoute
-	//
-	//// GetGRPCRoutes lists grpcroutes
-	//GetGRPCRoutes() []*gwv1alpha2.GRPCRoute
-	//
-	//// GetTLSRoutes lists tlsroutes
-	//GetTLSRoutes() []*gwv1alpha2.TLSRoute
-	//
-	//// GetTCPRoutes lists tcproutes
-	//GetTCPRoutes() []*gwv1alpha2.TCPRoute
 }
 
 const (

@@ -22,34 +22,29 @@
  * SOFTWARE.
  */
 
-package context
+package pipy
 
 import (
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/gateway"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/klog/v2"
 )
 
-type ControllerContext struct {
-	client.Client
-	Manager            manager.Manager
-	Scheme             *runtime.Scheme
-	KubeClient         kubernetes.Interface
-	GatewayAPIClient   gwclient.Interface
-	Config             configurator.Configurator
-	InformerCollection *fsminformers.InformerCollection
-	CertificateManager *certificate.Manager
-	RepoClient         *repo.PipyRepoClient
-	Broker             *messaging.Broker
-	EventHandler       gateway.Controller
-	StopCh             <-chan struct{}
-	FsmNamespace       string
+func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
+	// 1. with annotation or IngressClass
+	ingressClass, ok := ing.GetAnnotations()[IngressAnnotationKey]
+	if !ok && ing.Spec.IngressClassName != nil {
+		ingressClass = *ing.Spec.IngressClassName
+	}
+
+	defaultClass := DefaultIngressClass
+	klog.V(3).Infof("IngressClassName/IngressAnnotation = %s", ingressClass)
+	klog.V(3).Infof("DefaultIngressClass = %s, and IngressPipyClass = %s", defaultClass, IngressPipyClass)
+
+	// 2. empty IngressClass, and pipy is the default IngressClass or no default at all
+	if len(ingressClass) == 0 && (defaultClass == IngressPipyClass || len(defaultClass) == 0) {
+		return true
+	}
+
+	// 3. with IngressClass
+	return ingressClass == IngressPipyClass
 }

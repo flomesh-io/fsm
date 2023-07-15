@@ -33,6 +33,10 @@ fsm:
       fsmInterceptor: fsm-interceptor
       # -- fsm-consul-connector's image name
       fsmConsulConnector: fsm-consul-connector
+      # -- fsm-ingress's image name
+      fsmIngress: fsm-ingress
+      # -- fsm-gateway's image name
+      fsmGateway: fsm-gateway
     # -- Image digest (defaults to latest compatible tag)
     digest:
       # -- fsm-controller's image digest
@@ -53,6 +57,10 @@ fsm:
       fsmInterceptor: ""
       # -- fsm-consul-connector's image digest
       fsmConsulConnector: ""
+      # -- fsm-ingress's image digest
+      fsmIngress: ""
+      # -- fsm-gateway's image digest
+      fsmGateway: ""
 
   # -- `fsm-controller` image pull secret
   imagePullSecrets: [ ]
@@ -69,6 +77,9 @@ fsm:
       proxyServerPort: 6060
   # -- Curl image for control plane init container
   curlImage: curlimages/curl
+
+  serviceLBImage: flomesh/mirrored-klipper-lb:v0.3.5
+
 
   # -- Pipy RepoServer
   repoServer:

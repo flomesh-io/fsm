@@ -27,9 +27,9 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
-	"github.com/flomesh-io/fsm-classic/controllers"
-	"github.com/flomesh-io/fsm-classic/pkg/commons"
-	fctx "github.com/flomesh-io/fsm-classic/pkg/context"
+	"github.com/flomesh-io/fsm/controllers"
+	"github.com/flomesh-io/fsm/pkg/commons"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
