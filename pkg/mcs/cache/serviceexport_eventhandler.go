@@ -27,8 +27,8 @@ package cache
 import (
 	"context"
 	"fmt"
-	svcexpv1alpha1 "github.com/flomesh-io/fsm-classic/apis/serviceexport/v1alpha1"
-	mcsevent "github.com/flomesh-io/fsm-classic/pkg/mcs/event"
+	svcexpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceexport/v1alpha1"
+	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"

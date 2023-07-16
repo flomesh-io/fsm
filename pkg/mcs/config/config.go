@@ -26,8 +26,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/flomesh-io/fsm-classic/pkg/commons"
-	"github.com/flomesh-io/fsm-classic/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/commons"
+	"github.com/flomesh-io/fsm/pkg/util"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/klog/v2"

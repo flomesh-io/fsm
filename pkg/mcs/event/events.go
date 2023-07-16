@@ -25,8 +25,8 @@
 package event
 
 import (
-	"github.com/flomesh-io/fsm-classic/pkg/mcs/config"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/mcs/config"
 	corev1 "k8s.io/api/core/v1"
 )
 

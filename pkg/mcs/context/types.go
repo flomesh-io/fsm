@@ -26,7 +26,7 @@ package context
 
 import (
 	"context"
-	"github.com/flomesh-io/fsm-classic/pkg/mcs/config"
+	"github.com/flomesh-io/fsm/pkg/mcs/config"
 	"k8s.io/client-go/rest"
 	"time"
 )

@@ -26,9 +26,9 @@ package controller
 
 import (
 	"fmt"
-	svcexpv1alpha1 "github.com/flomesh-io/fsm-classic/apis/serviceexport/v1alpha1"
-	svcexpv1alpha1informers "github.com/flomesh-io/fsm-classic/pkg/generated/informers/externalversions/serviceexport/v1alpha1"
-	svcexpv1alpha1lister "github.com/flomesh-io/fsm-classic/pkg/generated/listers/serviceexport/v1alpha1"
+	svcexpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceexport/v1alpha1"
+	svcexpv1alpha1informers "github.com/flomesh-io/fsm/pkg/generated/informers/externalversions/serviceexport/v1alpha1"
+	svcexpv1alpha1lister "github.com/flomesh-io/fsm/pkg/generated/listers/serviceexport/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"

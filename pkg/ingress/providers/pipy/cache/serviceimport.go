@@ -26,8 +26,8 @@ package cache
 
 import (
 	"fmt"
-	"github.com/flomesh-io/fsm-classic/pkg/ingress/controller"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/ingress/controller"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

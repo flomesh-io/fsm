@@ -25,7 +25,7 @@
 package cache
 
 import (
-	ingresspipy "github.com/flomesh-io/fsm-classic/pkg/ingress"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress"
 	networkingv1 "k8s.io/api/networking/v1"
 )
 

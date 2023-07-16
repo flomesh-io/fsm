@@ -26,8 +26,8 @@ package cache
 
 import (
 	"fmt"
-	commons "github.com/flomesh-io/fsm-classic/apis"
-	repocfg "github.com/flomesh-io/fsm-classic/pkg/route"
+	commons "github.com/flomesh-io/fsm/apis"
+	repocfg "github.com/flomesh-io/fsm/pkg/route"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
