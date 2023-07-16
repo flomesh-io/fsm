@@ -460,3 +460,24 @@ var (
 	//NamespacedIngressPathTemplate  = template.Must(template.New("NamespacedIngressPathTemplate").Parse(DefaultNamespacedIngressPathTpl))
 	//ServicePathTemplate            = template.Must(template.New("ServicePathTemplate").Parse(DefaultServicePathTpl))
 )
+
+const (
+	IngressPipyController     = "flomesh.io/ingress-pipy"
+	IngressPipyClass          = "pipy"
+	NoDefaultIngressClass     = ""
+	IngressAnnotationKey      = "kubernetes.io/ingress.class"
+	IngressClassAnnotationKey = "ingressclass.kubernetes.io/is-default-class"
+
+	PipyIngressAnnotationPrefix             = "pipy.ingress.kubernetes.io"
+	PipyIngressAnnotationRewriteFrom        = PipyIngressAnnotationPrefix + "/rewrite-target-from"
+	PipyIngressAnnotationRewriteTo          = PipyIngressAnnotationPrefix + "/rewrite-target-to"
+	PipyIngressAnnotationSessionSticky      = PipyIngressAnnotationPrefix + "/session-sticky"
+	PipyIngressAnnotationLoadBalancer       = PipyIngressAnnotationPrefix + "/lb-type"
+	PipyIngressAnnotationUpstreamSSLName    = PipyIngressAnnotationPrefix + "/upstream-ssl-name"
+	PipyIngressAnnotationUpstreamSSLSecret  = PipyIngressAnnotationPrefix + "/upstream-ssl-secret"
+	PipyIngressAnnotationUpstreamSSLVerify  = PipyIngressAnnotationPrefix + "/upstream-ssl-verify"
+	PipyIngressAnnotationTLSVerifyClient    = PipyIngressAnnotationPrefix + "/tls-verify-client"
+	PipyIngressAnnotationTLSVerifyDepth     = PipyIngressAnnotationPrefix + "/tls-verify-depth"
+	PipyIngressAnnotationTLSTrustedCASecret = PipyIngressAnnotationPrefix + "/tls-trusted-ca-secret"
+	PipyIngressAnnotationBackendProtocol    = PipyIngressAnnotationPrefix + "/upstream-protocol"
+)

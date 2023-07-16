@@ -27,9 +27,9 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
-	svcimpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceimport/v1alpha1"
-	"github.com/flomesh-io/fsm/controllers"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -42,10 +42,10 @@ import (
 // serviceReconciler reconciles a Service object
 type serviceReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewServiceReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewServiceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Service"),
 		fctx:     ctx,
@@ -69,7 +69,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	svcImport := &svcimpv1alpha1.ServiceImport{}
+	svcImport := &mcsv1alpha1.ServiceImport{}
 	if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: req.Namespace, Name: importName}, svcImport); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -89,7 +89,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func serviceImportOwner(refs []metav1.OwnerReference) string {
 	for _, ref := range refs {
-		if ref.APIVersion == svcimpv1alpha1.SchemeGroupVersion.String() && ref.Kind == serviceImportKind {
+		if ref.APIVersion == mcsv1alpha1.SchemeGroupVersion.String() && ref.Kind == serviceImportKind {
 			return ref.Name
 		}
 	}

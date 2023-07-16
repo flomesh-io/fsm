@@ -27,9 +27,9 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
-	"github.com/flomesh-io/fsm/controllers"
-	"github.com/flomesh-io/fsm/pkg/commons"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -41,10 +41,10 @@ import (
 // endpointSliceReconciler reconciles an EndpointSlice object
 type endpointSliceReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewEndpointSliceReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewEndpointSliceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &endpointSliceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("EndpointSlice"),
 		fctx:     ctx,
@@ -63,13 +63,13 @@ func (r *endpointSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Ensure the EndpointSlice is labelled to match the ServiceImport's derived
 	// Service.
-	serviceName := derivedName(types.NamespacedName{Namespace: epSlice.Namespace, Name: epSlice.Labels[commons.MultiClusterLabelServiceName]})
+	serviceName := derivedName(types.NamespacedName{Namespace: epSlice.Namespace, Name: epSlice.Labels[constants.MultiClusterLabelServiceName]})
 	if epSlice.Labels[discoveryv1.LabelServiceName] == serviceName {
 		return ctrl.Result{}, nil
 	}
 
 	epSlice.Labels[discoveryv1.LabelServiceName] = serviceName
-	epSlice.Labels[commons.MultiClusterLabelServiceName] = serviceName
+	epSlice.Labels[constants.MultiClusterLabelServiceName] = serviceName
 	if err := r.fctx.Update(ctx, epSlice); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -84,7 +84,7 @@ func shouldIgnoreEndpointSlice(epSlice *discoveryv1.EndpointSlice) bool {
 		return true
 	}
 
-	if epSlice.Labels[commons.MultiClusterLabelServiceName] == "" {
+	if epSlice.Labels[constants.MultiClusterLabelServiceName] == "" {
 		return true
 	}
 

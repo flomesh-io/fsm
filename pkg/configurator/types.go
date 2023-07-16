@@ -176,6 +176,15 @@ type Configurator interface {
 	// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
 	IsMultiClusterControlPlane() bool
 
+	// IsManaged returns whether the current cluster is managed by multicluster control plane
+	IsManaged() bool
+
+	// GetClusterUID returns the UID of the cluster
+	GetClusterUID() string
+
+	// GetMultiClusterControlPlaneUID returns the UID of the control plane if it's managed, or empty if not managed
+	GetMultiClusterControlPlaneUID() string
+
 	// GetImageRegistry returns the image registry
 	GetImageRegistry() string
 

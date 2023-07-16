@@ -28,10 +28,10 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/flomesh-io/fsm/controllers"
-	"github.com/flomesh-io/fsm/pkg/config"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,10 +52,10 @@ import (
 // ServiceReconciler reconciles a Service object
 type serviceReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewServiceReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewServiceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceLB"),
 		fctx:     ctx,
@@ -91,7 +91,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	mc := r.fctx.ConfigStore.MeshConfig.GetConfig()
+	mc := r.fctx.Config
 
 	if err := r.deployDaemonSet(ctx, svc, mc); err != nil {
 		return ctrl.Result{}, err
@@ -104,7 +104,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Service, mc *config.MeshConfig) error {
+func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) error {
 	klog.V(5).Infof("Going to deploy DaemonSet ...")
 
 	if !mc.IsServiceLBEnabled() || svc.DeletionTimestamp != nil || svc.Spec.Type != corev1.ServiceTypeLoadBalancer || svc.Spec.ClusterIP == "" || svc.Spec.ClusterIP == "None" {
@@ -124,7 +124,7 @@ func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Ser
 		}
 
 		klog.V(5).Infof("Creating/updating DaemonSet[%s/%s] ...", ds.Namespace, ds.Name)
-		result, err := util.CreateOrUpdate(ctx, r.fctx.Client, ds)
+		result, err := utils.CreateOrUpdate(ctx, r.fctx.Client, ds)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Ser
 
 func (r *serviceReconciler) deleteDaemonSet(ctx context.Context, svc *corev1.Service) error {
 	name := generateName(svc)
-	if err := r.fctx.K8sAPI.Client.AppsV1().
+	if err := r.fctx.KubeClient.AppsV1().
 		DaemonSets(svc.Namespace).
 		Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
@@ -152,7 +152,7 @@ func (r *serviceReconciler) deleteDaemonSet(ctx context.Context, svc *corev1.Ser
 	return nil
 }
 
-func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Service, mc *config.MeshConfig) (*appv1.DaemonSet, error) {
+func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) (*appv1.DaemonSet, error) {
 	klog.V(5).Infof("Creating a new DaemonSet template ...")
 
 	name := generateName(svc)
@@ -204,7 +204,7 @@ func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Servic
 		container := corev1.Container{
 			Name:            portName,
 			Image:           mc.ServiceLbImage(),
-			ImagePullPolicy: util.ImagePullPolicyByTag(mc.ServiceLbImage()),
+			ImagePullPolicy: utils.ImagePullPolicyByTag(mc.ServiceLbImage()),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          portName,
@@ -285,7 +285,7 @@ func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Servic
 	return ds, nil
 }
 
-func (r *serviceReconciler) updateService(ctx context.Context, svc *corev1.Service, mc *config.MeshConfig) error {
+func (r *serviceReconciler) updateService(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) error {
 	if !mc.IsServiceLBEnabled() || svc.DeletionTimestamp != nil || svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return r.removeFinalizer(ctx, svc)
 	}
@@ -312,7 +312,7 @@ func (r *serviceReconciler) updateService(ctx context.Context, svc *corev1.Servi
 	sort.Strings(expectedIPs)
 	sort.Strings(existingIPs)
 
-	if util.StringsEqual(expectedIPs, existingIPs) {
+	if utils.StringsEqual(expectedIPs, existingIPs) {
 		return nil
 	}
 

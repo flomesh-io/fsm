@@ -27,10 +27,10 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
-	svcimpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceimport/v1alpha1"
-	"github.com/flomesh-io/fsm/controllers"
-	"github.com/flomesh-io/fsm/pkg/commons"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,10 +44,10 @@ import (
 // serviceImportReconciler reconciles a ServiceImport object
 type serviceImportReconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewServiceImportReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewServiceImportReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceImportReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceImport"),
 		fctx:     ctx,
@@ -55,7 +55,7 @@ func NewServiceImportReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
 }
 
 func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	svcImport := &svcimpv1alpha1.ServiceImport{}
+	svcImport := &mcsv1alpha1.ServiceImport{}
 	if err := r.fctx.Get(
 		ctx,
 		req.NamespacedName,
@@ -78,16 +78,16 @@ func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// Ensure the existence of the derived service
-	if svcImport.Annotations[commons.MultiClusterDerivedServiceAnnotation] == "" {
+	if svcImport.Annotations[constants.MultiClusterDerivedServiceAnnotation] == "" {
 		if svcImport.Annotations == nil {
 			svcImport.Annotations = make(map[string]string)
 		}
 
-		svcImport.Annotations[commons.MultiClusterDerivedServiceAnnotation] = req.Name
+		svcImport.Annotations[constants.MultiClusterDerivedServiceAnnotation] = req.Name
 		if err := r.fctx.Update(ctx, svcImport); err != nil {
 			return ctrl.Result{}, err
 		}
-		klog.Infof("Added annotation %s=%s", commons.MultiClusterDerivedServiceAnnotation, req.Name)
+		klog.Infof("Added annotation %s=%s", constants.MultiClusterDerivedServiceAnnotation, req.Name)
 
 		return ctrl.Result{}, nil
 	}
@@ -129,7 +129,7 @@ func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return ctrl.Result{}, nil
 }
 
-func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcImport *svcimpv1alpha1.ServiceImport) (*corev1.Service, error) {
+func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcImport *mcsv1alpha1.ServiceImport) (*corev1.Service, error) {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: svcImport.Namespace,
@@ -138,7 +138,7 @@ func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcI
 				{
 					Name:       svcImport.Name,
 					Kind:       serviceImportKind,
-					APIVersion: svcimpv1alpha1.SchemeGroupVersion.String(),
+					APIVersion: mcsv1alpha1.SchemeGroupVersion.String(),
 					UID:        svcImport.UID,
 				},
 			},
@@ -183,7 +183,7 @@ func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcI
 	return svc, nil
 }
 
-func servicePorts(svcImport *svcimpv1alpha1.ServiceImport) []corev1.ServicePort {
+func servicePorts(svcImport *mcsv1alpha1.ServiceImport) []corev1.ServicePort {
 	ports := make([]corev1.ServicePort, len(svcImport.Spec.Ports))
 	for i, p := range svcImport.Spec.Ports {
 		ports[i] = corev1.ServicePort{
@@ -196,21 +196,21 @@ func servicePorts(svcImport *svcimpv1alpha1.ServiceImport) []corev1.ServicePort 
 	return ports
 }
 
-func shouldIgnoreImport(svcImport *svcimpv1alpha1.ServiceImport) bool {
+func shouldIgnoreImport(svcImport *mcsv1alpha1.ServiceImport) bool {
 	if svcImport.DeletionTimestamp != nil {
 		return true
 	}
 
-	if svcImport.Spec.Type != svcimpv1alpha1.ClusterSetIP {
+	if svcImport.Spec.Type != mcsv1alpha1.ClusterSetIP {
 		return true
 	}
 
 	return false
 }
 
-func isAlreadyOwnerOfService(svcImport *svcimpv1alpha1.ServiceImport, svcOwnerRefs []metav1.OwnerReference) bool {
+func isAlreadyOwnerOfService(svcImport *mcsv1alpha1.ServiceImport, svcOwnerRefs []metav1.OwnerReference) bool {
 	for _, ref := range svcOwnerRefs {
-		if ref.APIVersion == svcimpv1alpha1.SchemeGroupVersion.String() && ref.Kind == svcImport.Kind {
+		if ref.APIVersion == mcsv1alpha1.SchemeGroupVersion.String() && ref.Kind == svcImport.Kind {
 			return ref.Name == svcImport.Name
 		}
 	}
@@ -221,6 +221,6 @@ func isAlreadyOwnerOfService(svcImport *svcimpv1alpha1.ServiceImport, svcOwnerRe
 // SetupWithManager sets up the controller with the Manager.
 func (r *serviceImportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&svcimpv1alpha1.ServiceImport{}).
+		For(&mcsv1alpha1.ServiceImport{}).
 		Complete(r)
 }

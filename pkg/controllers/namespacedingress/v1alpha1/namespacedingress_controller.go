@@ -28,12 +28,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	nsigv1alpha1 "github.com/flomesh-io/fsm/apis/namespacedingress/v1alpha1"
-	"github.com/flomesh-io/fsm/controllers"
-	"github.com/flomesh-io/fsm/pkg/config"
-	"github.com/flomesh-io/fsm/pkg/config/utils"
+	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/helm"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -54,10 +54,10 @@ var (
 // NamespacedIngressReconciler reconciles a NamespacedIngress object
 type reconciler struct {
 	recorder record.EventRecorder
-	fctx     *fctx.FsmContext
+	fctx     *fctx.ControllerContext
 }
 
-func NewReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &reconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("NamespacedIngress"),
 		fctx:     ctx,
@@ -78,7 +78,7 @@ type namespacedIngressValues struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	mc := r.fctx.ConfigStore.MeshConfig.GetConfig()
+	mc := r.fctx.Config
 
 	klog.Infof("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.Ingress.Enabled, mc.Ingress.Namespaced)
 	if !mc.IsNamespacedIngressEnabled() {
@@ -127,7 +127,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func resolveValues(object metav1.Object, mc *config.MeshConfig) (map[string]interface{}, error) {
+func resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
 	nsig, ok := object.(*nsigv1alpha1.NamespacedIngress)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of nsigv1alpha1.NamespacedIngress", object)
@@ -150,7 +150,7 @@ func resolveValues(object metav1.Object, mc *config.MeshConfig) (map[string]inte
 	overrides := []string{
 		"fsm.ingress.namespaced=true",
 		fmt.Sprintf("fsm.image.repository=%s", mc.Images.Repository),
-		fmt.Sprintf("fsm.namespace=%s", mc.GetMeshNamespace()),
+		fmt.Sprintf("fsm.namespace=%s", mc.GetFSMNamespace()),
 	}
 
 	for _, ov := range overrides {
@@ -162,22 +162,22 @@ func resolveValues(object metav1.Object, mc *config.MeshConfig) (map[string]inte
 	return finalValues, nil
 }
 
-func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, mc configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
 
-	ingressPath := mc.NamespacedIngressCodebasePath(nsig.Namespace)
-	parentPath := mc.IngressCodebasePath()
-	if err := repoClient.DeriveCodebase(ingressPath, parentPath); err != nil {
+	ingressPath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
+	parentPath := utils.IngressCodebasePath()
+	if _, err := repoClient.DeriveCodebase(ingressPath, parentPath); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc configurator.Configurator) (ctrl.Result, error) {
 	if mc.IsNamespacedIngressEnabled() && nsig.Spec.TLS.Enabled {
 		repoClient := r.fctx.RepoClient
-		basepath := mc.NamespacedIngressCodebasePath(nsig.Namespace)
+		basepath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
 
 		if nsig.Spec.TLS.SSLPassthrough.Enabled {
 			// SSL passthrough

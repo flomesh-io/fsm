@@ -28,17 +28,16 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	clusterv1alpha1 "github.com/flomesh-io/fsm/apis/cluster/v1alpha1"
-	svcexpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceexport/v1alpha1"
-	"github.com/flomesh-io/fsm/controllers"
-	"github.com/flomesh-io/fsm/pkg/commons"
-	"github.com/flomesh-io/fsm/pkg/config"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 	mcscfg "github.com/flomesh-io/fsm/pkg/mcs/config"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
 	cctx "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
-	"github.com/flomesh-io/fsm/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -58,7 +57,7 @@ import (
 // ClusterReconciler reconciles a Cluster object
 type reconciler struct {
 	recorder    record.EventRecorder
-	fctx        *fctx.FsmContext
+	fctx        *fctx.ControllerContext
 	backgrounds map[string]*connectorBackground
 	stopCh      chan struct{}
 	mu          sync.Mutex
@@ -69,12 +68,12 @@ type connectorBackground struct {
 	connector *conn.Connector
 }
 
-func NewReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
+func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &reconciler{
 		recorder:    ctx.Manager.GetEventRecorderFor("Cluster"),
 		fctx:        ctx,
 		backgrounds: make(map[string]*connectorBackground),
-		stopCh:      util.RegisterOSExitHandlers(),
+		stopCh:      utils.RegisterOSExitHandlers(),
 	}
 
 	go r.processEvent(r.fctx.Broker, r.stopCh)
@@ -93,7 +92,7 @@ func NewReconciler(ctx *fctx.FsmContext) controllers.Reconciler {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// Fetch the Cluster instance
-	cluster := &clusterv1alpha1.Cluster{}
+	cluster := &mcsv1alpha1.Cluster{}
 	if err := r.fctx.Get(
 		ctx,
 		client.ObjectKey{Name: req.Name},
@@ -117,7 +116,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.destroyConnector(cluster)
 	}
 
-	mc := r.fctx.ConfigStore.MeshConfig.GetConfig()
+	mc := r.fctx.Config
 
 	result, err := r.deriveCodebases(mc)
 	if err != nil {
@@ -145,10 +144,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func clusterHash(cluster *clusterv1alpha1.Cluster) string {
-	return util.SimpleHash(
+func clusterHash(cluster *mcsv1alpha1.Cluster) string {
+	return utils.SimpleHash(
 		struct {
-			spec            clusterv1alpha1.ClusterSpec
+			spec            mcsv1alpha1.ClusterSpec
 			resourceVersion string
 			generation      int64
 			uuid            string
@@ -161,30 +160,30 @@ func clusterHash(cluster *clusterv1alpha1.Cluster) string {
 	)
 }
 
-func (r *reconciler) deriveCodebases(mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) deriveCodebases(mc configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
 
-	defaultServicesPath := mc.GetDefaultServicesPath()
-	if err := repoClient.DeriveCodebase(defaultServicesPath, commons.DefaultServiceBasePath); err != nil {
+	defaultServicesPath := utils.GetDefaultServicesPath()
+	if _, err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
-	defaultIngressPath := mc.GetDefaultIngressPath()
-	if err := repoClient.DeriveCodebase(defaultIngressPath, commons.DefaultIngressBasePath); err != nil {
+	defaultIngressPath := utils.GetDefaultIngressPath()
+	if _, err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) createConnector(ctx context.Context, cluster *clusterv1alpha1.Cluster, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) createConnector(ctx context.Context, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	return r.newConnector(ctx, cluster, mc)
 }
 
-func (r *reconciler) recreateConnector(ctx context.Context, bg *connectorBackground, cluster *clusterv1alpha1.Cluster, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) recreateConnector(ctx context.Context, bg *connectorBackground, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -194,7 +193,7 @@ func (r *reconciler) recreateConnector(ctx context.Context, bg *connectorBackgro
 	return r.newConnector(ctx, cluster, mc)
 }
 
-func (r *reconciler) destroyConnector(cluster *clusterv1alpha1.Cluster) {
+func (r *reconciler) destroyConnector(cluster *mcsv1alpha1.Cluster) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -205,7 +204,7 @@ func (r *reconciler) destroyConnector(cluster *clusterv1alpha1.Cluster) {
 	}
 }
 
-func (r *reconciler) newConnector(ctx context.Context, cluster *clusterv1alpha1.Cluster, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	key := cluster.Key()
 
 	kubeconfig, result, err := getKubeConfig(cluster)
@@ -226,7 +225,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *clusterv1alpha1.
 		Hash:            clusterHash(cluster),
 	}
 	_, cancel := context.WithCancel(&background)
-	stop := util.RegisterExitHandlers(cancel)
+	stop := utils.RegisterExitHandlers(cancel)
 	background.Cancel = cancel
 	background.StopCh = stop
 
@@ -265,7 +264,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *clusterv1alpha1.
 	//return ctrl.Result{}, nil
 }
 
-func getKubeConfig(cluster *clusterv1alpha1.Cluster) (*rest.Config, ctrl.Result, error) {
+func getKubeConfig(cluster *mcsv1alpha1.Cluster) (*rest.Config, ctrl.Result, error) {
 	//if cluster.Spec.IsInCluster {
 	//	kubeconfig, err := rest.InClusterConfig()
 	//	if err != nil {
@@ -278,7 +277,7 @@ func getKubeConfig(cluster *clusterv1alpha1.Cluster) (*rest.Config, ctrl.Result,
 	//}
 }
 
-func remoteKubeConfig(cluster *clusterv1alpha1.Cluster) (*rest.Config, ctrl.Result, error) {
+func remoteKubeConfig(cluster *mcsv1alpha1.Cluster) (*rest.Config, ctrl.Result, error) {
 	// use the current context in kubeconfig
 	kubeconfig, err := clientcmd.BuildConfigFromKubeconfigGetter("", func() (*clientcmdapi.Config, error) {
 		cfg, err := clientcmd.Load([]byte(cluster.Spec.Kubeconfig))
@@ -296,7 +295,7 @@ func remoteKubeConfig(cluster *clusterv1alpha1.Cluster) (*rest.Config, ctrl.Resu
 	return kubeconfig, ctrl.Result{}, nil
 }
 
-func (r *reconciler) connectorConfig(cluster *clusterv1alpha1.Cluster, mc *config.MeshConfig) (*mcscfg.ConnectorConfig, error) {
+func (r *reconciler) connectorConfig(cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (*mcscfg.ConnectorConfig, error) {
 	//if cluster.Spec.IsInCluster {
 	//	return config.NewConnectorConfig(
 	//		mc.Cluster.Region,
@@ -316,7 +315,7 @@ func (r *reconciler) connectorConfig(cluster *clusterv1alpha1.Cluster, mc *confi
 		cluster.Name,
 		cluster.Spec.GatewayHost,
 		cluster.Spec.GatewayPort,
-		mc.Cluster.UID,
+		mc.GetClusterUID(),
 	)
 	//}
 }
@@ -331,9 +330,9 @@ func (r *reconciler) processEvent(broker *mcsevent.Broker, stop <-chan struct{})
 
 		select {
 		case msg, ok := <-svcExportCreatedCh:
-			mc := r.fctx.ConfigStore.MeshConfig.GetConfig()
+			mc := r.fctx.Config
 			// ONLY Control Plane takes care of the federation of service export/import
-			if mc.IsManaged && mc.Cluster.ControlPlaneUID != "" && mc.Cluster.UID != mc.Cluster.ControlPlaneUID {
+			if mc.IsManaged() && mc.GetMultiClusterControlPlaneUID() != "" && mc.GetClusterUID() != mc.GetMultiClusterControlPlaneUID() {
 				klog.V(5).Infof("Ignore processing ServiceExportCreated event due to cluster is managed and not a control plane ...")
 				continue
 			}
@@ -358,11 +357,11 @@ func (r *reconciler) processEvent(broker *mcsevent.Broker, stop <-chan struct{})
 
 			// check ServiceExport Status, Invalid and Conflict ServiceExport is ignored
 			export := svcExportEvt.ServiceExport
-			if metautil.IsStatusConditionFalse(export.Status.Conditions, string(svcexpv1alpha1.ServiceExportValid)) {
+			if metautil.IsStatusConditionFalse(export.Status.Conditions, string(mcsv1alpha1.ServiceExportValid)) {
 				klog.Warningf("ServiceExport %v is ignored due to Valid status is false", export)
 				continue
 			}
-			if metautil.IsStatusConditionTrue(export.Status.Conditions, string(svcexpv1alpha1.ServiceExportConflict)) {
+			if metautil.IsStatusConditionTrue(export.Status.Conditions, string(mcsv1alpha1.ServiceExportConflict)) {
 				klog.Warningf("ServiceExport %v is ignored due to Conflict status is true", export)
 				continue
 			}
@@ -454,9 +453,9 @@ func (r *reconciler) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEve
 	)
 }
 
-func (r *reconciler) successJoinClusterSet(ctx context.Context, cluster *clusterv1alpha1.Cluster, mc *config.MeshConfig) (ctrl.Result, error) {
+func (r *reconciler) successJoinClusterSet(ctx context.Context, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	metautil.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
-		Type:               string(clusterv1alpha1.ClusterManaged),
+		Type:               string(mcsv1alpha1.ClusterManaged),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: cluster.Generation,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
@@ -471,9 +470,9 @@ func (r *reconciler) successJoinClusterSet(ctx context.Context, cluster *cluster
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) failedJoinClusterSet(ctx context.Context, cluster *clusterv1alpha1.Cluster, err string) (ctrl.Result, error) {
+func (r *reconciler) failedJoinClusterSet(ctx context.Context, cluster *mcsv1alpha1.Cluster, err string) (ctrl.Result, error) {
 	metautil.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
-		Type:               string(clusterv1alpha1.ClusterManaged),
+		Type:               string(mcsv1alpha1.ClusterManaged),
 		Status:             metav1.ConditionFalse,
 		ObservedGeneration: cluster.Generation,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
@@ -491,7 +490,7 @@ func (r *reconciler) failedJoinClusterSet(ctx context.Context, cluster *clusterv
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&clusterv1alpha1.Cluster{}).
+		For(&mcsv1alpha1.Cluster{}).
 		Owns(&corev1.Secret{}).
 		Owns(&appv1.Deployment{}).
 		Complete(r)
