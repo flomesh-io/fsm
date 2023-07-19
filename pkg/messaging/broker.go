@@ -523,6 +523,22 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 		}
 	}
 
+	// Update mcs if applicable
+	if event := getMCSUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update mcs", msg.Kind)
+		atomic.AddUint64(&b.totalQMCSEventCount, 1)
+		if event.topic != announcements.MCSUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more proxies.
+			b.mcsUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedMCSEventCount, 1)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.mcsUpdateCh <- *event
+		}
+	}
+
 	// Publish event to other interested clients, e.g. log level changes, debug server on/off etc.
 	b.kubeEventPubSub.Pub(msg, msg.Kind.String())
 
@@ -753,6 +769,32 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		return &gatewayUpdateEvent{
 			msg:   msg,
 			topic: announcements.GatewayUpdate.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getMCSUpdateEvent returns a mcsUpdateEvent type indicating whether the given PubSubMessage should
+// result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a gateway update event.
+func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// MultiCluster events
+		//
+		// ServiceImport event
+		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
+		// ServiceExport event
+		announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
+		// MultiCluster ServiceExport event
+		announcements.MultiClusterServiceExportCreated, announcements.MultiClusterServiceExportDeleted,
+		announcements.MultiClusterServiceExportAccepted, announcements.MultiClusterServiceExportRejected:
+
+		return &mcsUpdateEvent{
+			msg:   msg,
+			topic: announcements.MCSUpdate.String(),
 		}
 	default:
 		return nil

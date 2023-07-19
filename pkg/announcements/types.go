@@ -19,6 +19,9 @@ const (
 	// GatewayUpdate is the event kind used to trigger an update to subscribed gateways
 	GatewayUpdate Kind = "gateway-update"
 
+	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
+	MCSUpdate Kind = "mcs-update"
+
 	// PodAdded is the type of announcement emitted when we observe an addition of a Kubernetes Pod
 	PodAdded Kind = "pod-added"
 
