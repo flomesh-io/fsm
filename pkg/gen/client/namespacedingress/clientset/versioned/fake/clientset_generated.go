@@ -17,8 +17,8 @@ package fake
 
 import (
 	clientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
-	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1"
-	fakenamespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1/fake"
+	flomeshv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1"
+	fakeflomeshv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -76,7 +76,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// NamespacedingressV1alpha1 retrieves the NamespacedingressV1alpha1Client
-func (c *Clientset) NamespacedingressV1alpha1() namespacedingressv1alpha1.NamespacedingressV1alpha1Interface {
-	return &fakenamespacedingressv1alpha1.FakeNamespacedingressV1alpha1{Fake: &c.Fake}
+// FlomeshV1alpha1 retrieves the FlomeshV1alpha1Client
+func (c *Clientset) FlomeshV1alpha1() flomeshv1alpha1.FlomeshV1alpha1Interface {
+	return &fakeflomeshv1alpha1.FakeFlomeshV1alpha1{Fake: &c.Fake}
 }

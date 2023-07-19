@@ -720,7 +720,7 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		// K8s native resource events
 		//
 		// Endpoint event
-		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
+		//announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
 		// EndpointSlices event
 		announcements.EndpointSlicesAdded, announcements.EndpointSlicesDeleted, announcements.EndpointSlicesUpdated,
 		// Service event

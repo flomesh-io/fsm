@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/gateway/repo"
@@ -42,6 +43,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 	// Initialize informers
 	for _, informerKey := range []fsminformers.InformerKey{
 		fsminformers.InformerKeyService,
+		fsminformers.InformerKeyServiceImport,
 		fsminformers.InformerKeyEndpointSlices,
 		fsminformers.InformerKeySecret,
 		fsminformers.InformerKeyGatewayApiGatewayClass,
@@ -154,6 +156,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 	switch obj.(type) {
 	case *corev1.Service:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyService)
+	case *mcsv1alpha1.ServiceImport:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyServiceImport)
 	case *discoveryv1.EndpointSlice:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpointSlices)
 	case *corev1.Secret:
@@ -182,6 +186,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.ServiceAdded,
 			Update: announcements.ServiceUpdated,
 			Delete: announcements.ServiceDeleted,
+		}
+	case fsminformers.InformerKeyServiceImport:
+		return &k8s.EventTypes{
+			Add:    announcements.ServiceImportAdded,
+			Update: announcements.ServiceImportUpdated,
+			Delete: announcements.ServiceImportDeleted,
 		}
 	case fsminformers.InformerKeyEndpointSlices:
 		return &k8s.EventTypes{

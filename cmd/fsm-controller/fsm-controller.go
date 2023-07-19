@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/gateway"
+	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
 	"net/http"
 	"os"
 	"path"
@@ -238,6 +239,7 @@ func main() {
 		informers.WithPluginClient(pluginClient),
 		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
+		informers.WithIngressClient(kubeClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
 	)
 	if err != nil {
@@ -281,6 +283,13 @@ func main() {
 	policyController := policy.NewPolicyController(informerCollection, kubeClient, k8sClient, msgBroker)
 	pluginController := plugin.NewPluginController(informerCollection, kubeClient, k8sClient, msgBroker)
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
+
+	if cfg.IsIngressEnabled() {
+		ingressController := pipy.NewIngressController(informerCollection, kubeClient, msgBroker, cfg, certManager)
+		if err := ingressController.Start(); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Ingress Controller")
+		}
+	}
 
 	if cfg.IsGatewayApiEnabled() {
 		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, msgBroker, cfg)

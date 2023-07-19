@@ -27,20 +27,18 @@ package cache
 import (
 	"context"
 	"fmt"
-	apicommons "github.com/flomesh-io/fsm/apis"
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/certificate/utils"
-	"github.com/flomesh-io/fsm/pkg/commons"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress"
-	"github.com/flomesh-io/fsm/pkg/ingress/controller"
-	"github.com/flomesh-io/fsm/pkg/kube"
-	repocfg "github.com/flomesh-io/fsm/pkg/route"
-	"github.com/flomesh-io/fsm/pkg/util"
+	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/klog/v2"
 	"reflect"
@@ -56,7 +54,7 @@ type BaseIngressInfo struct {
 	backend        ServicePortName
 	rewrite        []string // rewrite in format: ["^/flomesh/?", "/"],  first element is from, second is to
 	sessionSticky  bool
-	lbType         apicommons.AlgoBalancer
+	lbType         apiconstants.AlgoBalancer
 	upstream       *repocfg.UpstreamSpec
 	certificate    *repocfg.CertificateSpec
 	isTLS          bool
@@ -96,7 +94,7 @@ func (info BaseIngressInfo) SessionSticky() bool {
 	return info.sessionSticky
 }
 
-func (info BaseIngressInfo) LBType() apicommons.AlgoBalancer {
+func (info BaseIngressInfo) LBType() apiconstants.AlgoBalancer {
 	return info.lbType
 }
 
@@ -174,19 +172,19 @@ type ingressChange struct {
 }
 
 type IngressChangeTracker struct {
-	lock        sync.Mutex
-	items       map[types.NamespacedName]*ingressChange
-	controllers *controller.Controllers
-	k8sAPI      *kube.K8sAPI
-	recorder    events.EventRecorder
+	lock       sync.Mutex
+	items      map[types.NamespacedName]*ingressChange
+	kubeClient kubernetes.Interface
+	informers  *fsminformers.InformerCollection
+	recorder   events.EventRecorder
 }
 
-func NewIngressChangeTracker(k8sAPI *kube.K8sAPI, controllers *controller.Controllers, recorder events.EventRecorder, mgr certificate.Manager) *IngressChangeTracker {
+func NewIngressChangeTracker(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, recorder events.EventRecorder) *IngressChangeTracker {
 	return &IngressChangeTracker{
-		items:       make(map[types.NamespacedName]*ingressChange),
-		controllers: controllers,
-		k8sAPI:      k8sAPI,
-		recorder:    recorder,
+		items:      make(map[types.NamespacedName]*ingressChange),
+		kubeClient: kubeClient,
+		informers:  informers,
+		recorder:   recorder,
 	}
 }
 
@@ -276,7 +274,7 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 	}
 
 	ingressMap := make(IngressMap)
-	ingKey := kube.MetaNamespaceKey(ing)
+	ingKey := ingresspipy.MetaNamespaceKey(ing)
 
 	for _, rule := range ing.Spec.Rules {
 		if rule.HTTP == nil {
@@ -371,14 +369,14 @@ func (ict *IngressChangeTracker) findService(namespace string, service *networki
 	svcName := fmt.Sprintf("%s/%s", namespace, service.Name)
 
 	// first, find in local store
-	svc, exists, err := ict.controllers.Service.Store.GetByKey(svcName)
+	svc, exists, err := ict.informers.GetByKey(fsminformers.InformerKeyService, svcName)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		klog.Warningf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
 		// if not exists in local, retrieve it from remote API server, this's Plan-B, should seldom happns
-		svc, err = ict.k8sAPI.Client.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
+		svc, err = ict.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -475,16 +473,16 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	// enrich LB type
 	lbValue := ing.Annotations[ingresspipy.PipyIngressAnnotationLoadBalancer]
 	if lbValue == "" {
-		lbValue = string(apicommons.RoundRobinLoadBalancer)
+		lbValue = string(apiconstants.RoundRobinLoadBalancer)
 	}
 
-	balancer := apicommons.AlgoBalancer(lbValue)
+	balancer := apiconstants.AlgoBalancer(lbValue)
 	switch balancer {
-	case apicommons.RoundRobinLoadBalancer, apicommons.LeastWorkLoadBalancer, apicommons.HashingLoadBalancer:
+	case apiconstants.RoundRobinLoadBalancer, apiconstants.LeastWorkLoadBalancer, apiconstants.HashingLoadBalancer:
 		info.lbType = balancer
 	default:
 		klog.Errorf("%q is ignored, as it's not a supported Load Balancer type, uses default RoundRobinLoadBalancer.", lbValue)
-		info.lbType = apicommons.RoundRobinLoadBalancer
+		info.lbType = apiconstants.RoundRobinLoadBalancer
 	}
 
 	// Upstream SNI
@@ -500,7 +498,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	upstreamSSLSecret := ing.Annotations[ingresspipy.PipyIngressAnnotationUpstreamSSLSecret]
 	if upstreamSSLSecret != "" {
 
-		ns, name, err := util.SecretNamespaceAndName(upstreamSSLSecret, ing)
+		ns, name, err := utils.SecretNamespaceAndName(upstreamSSLSecret, ing)
 		if err == nil {
 			if info.upstream == nil {
 				info.upstream = &repocfg.UpstreamSpec{}
@@ -557,7 +555,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 	trustedCASecret := ing.Annotations[ingresspipy.PipyIngressAnnotationTLSTrustedCASecret]
 	if trustedCASecret != "" {
-		ns, name, err := util.SecretNamespaceAndName(trustedCASecret, ing)
+		ns, name, err := utils.SecretNamespaceAndName(trustedCASecret, ing)
 		if err == nil {
 			info.trustedCA = ict.fetchSSLCert(ing, ns, name)
 		} else {
@@ -636,7 +634,7 @@ func (ict *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, nam
 	}
 
 	klog.V(5).Infof("Fetching secret %s/%s ...", ns, name)
-	secret, err := ict.controllers.Secret.Lister.Secrets(ns).Get(name)
+	secret, err := ict.informers.GetListers().Secret.Secrets(ns).Get(name)
 
 	if err != nil {
 		klog.Errorf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)
@@ -644,8 +642,8 @@ func (ict *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, nam
 	}
 
 	return &repocfg.CertificateSpec{
-		Cert: string(secret.Data[commons.TLSCertName]),
-		Key:  string(secret.Data[commons.TLSPrivateKeyName]),
-		CA:   string(secret.Data[commons.RootCACertName]),
+		Cert: string(secret.Data[constants.TLSCertName]),
+		Key:  string(secret.Data[constants.TLSPrivateKeyName]),
+		CA:   string(secret.Data[constants.RootCACertName]),
 	}
 }

@@ -27,7 +27,7 @@ package cache
 import (
 	"fmt"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/ingress/controller"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -80,7 +80,7 @@ type ServiceImportChangeTracker struct {
 	enrichServiceImportInfo enrichServiceImportInfoFunc
 	enrichEndpointInfo      enrichMultiClusterEndpointFunc
 	recorder                events.EventRecorder
-	controllers             *controller.Controllers
+	informers               fsminformers.InformerCollection
 }
 
 type ServiceImportMap map[ServicePortName]ServicePort
@@ -119,14 +119,14 @@ func (sct *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.Serv
 	return info
 }
 
-func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, controllers *controller.Controllers) *ServiceImportChangeTracker {
+func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, informers *fsminformers.InformerCollection) *ServiceImportChangeTracker {
 	return &ServiceImportChangeTracker{
 		items:                   make(map[types.NamespacedName]*serviceImportChange),
 		endpointItems:           make(map[types.NamespacedName]*multiClusterEndpointsChange),
 		enrichServiceImportInfo: enrichServiceImportInfo,
 		enrichEndpointInfo:      enrichEndpointInfo,
 		recorder:                recorder,
-		controllers:             controllers,
+		informers:               informers,
 	}
 }
 
@@ -258,7 +258,7 @@ func (sct *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1al
 }
 
 func (sct *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.ServiceImport) (*corev1.Service, bool) {
-	svc, err := sct.controllers.Service.Lister.Services(svcImp.Namespace).Get(svcImp.Name)
+	svc, err := sct.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, false

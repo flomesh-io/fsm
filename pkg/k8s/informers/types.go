@@ -2,8 +2,10 @@ package informers
 
 import (
 	"errors"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	"k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
+	networkingv1 "k8s.io/client-go/listers/networking/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 	"time"
@@ -113,14 +115,19 @@ type InformerCollection struct {
 	listers   *Lister
 	meshName  string
 }
+
 type Lister struct {
-	Service       v1.ServiceLister
-	EndpointSlice discoveryv1.EndpointSliceLister
-	Secret        v1.SecretLister
-	GatewayClass  gwv1beta1.GatewayClassLister
-	Gateway       gwv1beta1.GatewayLister
-	HTTPRoute     gwv1beta1.HTTPRouteLister
-	GRPCRoute     gwv1alpha2.GRPCRouteLister
-	TLSRoute      gwv1alpha2.TLSRouteLister
-	TCPRoute      gwv1alpha2.TCPRouteLister
+	Service         v1.ServiceLister
+	ServiceImport   mcsv1alpha1.ServiceImportLister
+	Endpoints       v1.EndpointsLister
+	EndpointSlice   discoveryv1.EndpointSliceLister
+	Secret          v1.SecretLister
+	GatewayClass    gwv1beta1.GatewayClassLister
+	Gateway         gwv1beta1.GatewayLister
+	HTTPRoute       gwv1beta1.HTTPRouteLister
+	GRPCRoute       gwv1alpha2.GRPCRouteLister
+	TLSRoute        gwv1alpha2.TLSRouteLister
+	TCPRoute        gwv1alpha2.TCPRouteLister
+	K8sIngressClass networkingv1.IngressClassLister
+	K8sIngress      networkingv1.IngressLister
 }

@@ -21,17 +21,17 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeNamespacedingressV1alpha1 struct {
+type FakeFlomeshV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeNamespacedingressV1alpha1) NamespacedIngresses(namespace string) v1alpha1.NamespacedIngressInterface {
+func (c *FakeFlomeshV1alpha1) NamespacedIngresses(namespace string) v1alpha1.NamespacedIngressInterface {
 	return &FakeNamespacedIngresses{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeNamespacedingressV1alpha1) RESTClient() rest.Interface {
+func (c *FakeFlomeshV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

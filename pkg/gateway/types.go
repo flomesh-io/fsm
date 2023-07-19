@@ -18,8 +18,8 @@ type client struct {
 	informers  *informers.InformerCollection
 	kubeClient kubernetes.Interface
 	msgBroker  *messaging.Broker
-	cache      Cache
 	cfg        configurator.Configurator
+	cache      Cache
 }
 
 // Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group

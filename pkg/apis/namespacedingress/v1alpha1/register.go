@@ -22,10 +22,6 @@
  * SOFTWARE.
  */
 
-// +kubebuilder:object:generate=true
-// +k8s:deepcopy-gen=package,register
-// +groupName=flomesh.io
-
 package v1alpha1
 
 import (

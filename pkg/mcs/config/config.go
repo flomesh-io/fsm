@@ -26,8 +26,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/commons"
-	"github.com/flomesh-io/fsm/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/klog/v2"
@@ -51,7 +51,7 @@ func NewConnectorConfig(
 	gatewayPort int32,
 	controlPlaneUID string,
 ) (*ConnectorConfig, error) {
-	clusterKey := util.EvaluateTemplate(commons.ClusterIDTemplate, struct {
+	clusterKey := utils.EvaluateTemplate(constants.ClusterIDTemplate, struct {
 		Region  string
 		Zone    string
 		Group   string

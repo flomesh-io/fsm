@@ -25,7 +25,6 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/ingress/controller"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
@@ -90,15 +89,13 @@ type EndpointChangeTracker struct {
 	items              map[types.NamespacedName]*endpointsChange
 	enrichEndpointInfo enrichEndpointFunc
 	recorder           events.EventRecorder
-	controllers        *controller.Controllers
 }
 
-func NewEndpointChangeTracker(enrichEndpointInfo enrichEndpointFunc, recorder events.EventRecorder, controllers *controller.Controllers) *EndpointChangeTracker {
+func NewEndpointChangeTracker(enrichEndpointInfo enrichEndpointFunc, recorder events.EventRecorder) *EndpointChangeTracker {
 	return &EndpointChangeTracker{
 		items:              make(map[types.NamespacedName]*endpointsChange),
 		enrichEndpointInfo: enrichEndpointInfo,
 		recorder:           recorder,
-		controllers:        controllers,
 	}
 }
 

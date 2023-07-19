@@ -29,13 +29,13 @@ import (
 
 // FakeNamespacedIngresses implements NamespacedIngressInterface
 type FakeNamespacedIngresses struct {
-	Fake *FakeNamespacedingressV1alpha1
+	Fake *FakeFlomeshV1alpha1
 	ns   string
 }
 
-var namespacedingressesResource = schema.GroupVersionResource{Group: "namespacedingress", Version: "v1alpha1", Resource: "namespacedingresses"}
+var namespacedingressesResource = schema.GroupVersionResource{Group: "flomesh.io", Version: "v1alpha1", Resource: "namespacedingresses"}
 
-var namespacedingressesKind = schema.GroupVersionKind{Group: "namespacedingress", Version: "v1alpha1", Kind: "NamespacedIngress"}
+var namespacedingressesKind = schema.GroupVersionKind{Group: "flomesh.io", Version: "v1alpha1", Kind: "NamespacedIngress"}
 
 // Get takes name of the namespacedIngress, and returns the corresponding namespacedIngress object, and an error if there is any.
 func (c *FakeNamespacedIngresses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NamespacedIngress, err error) {

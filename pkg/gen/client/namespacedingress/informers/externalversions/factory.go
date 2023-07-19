@@ -240,9 +240,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	Namespacedingress() namespacedingress.Interface
+	Flomesh() namespacedingress.Interface
 }
 
-func (f *sharedInformerFactory) Namespacedingress() namespacedingress.Interface {
+func (f *sharedInformerFactory) Flomesh() namespacedingress.Interface {
 	return namespacedingress.New(f, f.namespace, f.tweakListOptions)
 }

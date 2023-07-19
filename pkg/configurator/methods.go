@@ -521,7 +521,8 @@ func (c *Client) PipyImage() string {
 }
 
 func (c *Client) PipyRepoImage() string {
-	return c.getrepo
+	mcSpec := c.getMeshConfig().Spec
+	return
 }
 
 func (c *Client) PipyNonrootImage() string {
@@ -538,4 +539,16 @@ func (c *Client) GetFLBSecretName() string {
 
 func (c *Client) IsFLBStrictModeEnabled() bool {
 	return c.getMeshConfig().Spec.FLB.StrictMode
+}
+
+func (c *Client) IsManaged() bool {
+	return c.getMeshConfig().Spec.ClusterSet.IsManaged
+}
+
+func (c *Client) GetClusterUID() string {
+	return c.getMeshConfig().Spec.ClusterSet.UID
+}
+
+func (c *Client) GetMultiClusterControlPlaneUID() string {
+	return c.getMeshConfig().Spec.ClusterSet.ControlPlaneUID
 }

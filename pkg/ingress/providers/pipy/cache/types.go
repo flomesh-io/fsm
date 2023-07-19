@@ -26,8 +26,8 @@ package cache
 
 import (
 	"fmt"
-	commons "github.com/flomesh-io/fsm/apis"
-	repocfg "github.com/flomesh-io/fsm/pkg/route"
+	commons "github.com/flomesh-io/fsm/pkg/apis"
+	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -43,14 +43,14 @@ type Route interface {
 	SessionSticky() bool
 	LBType() commons.AlgoBalancer
 	UpstreamSSLName() string
-	UpstreamSSLCert() *repocfg.CertificateSpec
+	UpstreamSSLCert() *route.CertificateSpec
 	UpstreamSSLVerify() bool
-	Certificate() *repocfg.CertificateSpec
+	Certificate() *route.CertificateSpec
 	IsTLS() bool
 	IsWildcardHost() bool
 	VerifyClient() bool
 	VerifyDepth() int
-	TrustedCA() *repocfg.CertificateSpec
+	TrustedCA() *route.CertificateSpec
 	Protocol() string
 }
 

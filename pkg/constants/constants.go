@@ -453,12 +453,14 @@ const (
 
 var (
 	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
-	//ProxyProfileParentPathTemplate = template.Must(template.New("ProxyProfileParentPathTemplate").Parse(DefaultProxyProfileParentPathTpl))
-	//ProxyProfilePathTemplate       = template.Must(template.New("ProxyProfilePathTemplate").Parse(DefaultProxyProfilePathTpl))
-	//SidecarPathTemplate            = template.Must(template.New("SidecarPathTemplate").Parse(DefaultSidecarPathTpl))
-	//IngressPathTemplate            = template.Must(template.New("IngressPathTemplate").Parse(DefaultIngressPathTpl))
-	//NamespacedIngressPathTemplate  = template.Must(template.New("NamespacedIngressPathTemplate").Parse(DefaultNamespacedIngressPathTpl))
-	//ServicePathTemplate            = template.Must(template.New("ServicePathTemplate").Parse(DefaultServicePathTpl))
+)
+
+const (
+	KubernetesEndpointSliceServiceNameLabel = "kubernetes.io/service-name"
+	RootCACertName                          = "ca.crt"
+	RootCAPrivateKeyName                    = "ca.key"
+	TLSCertName                             = "tls.crt"
+	TLSPrivateKeyName                       = "tls.key"
 )
 
 const (

@@ -219,6 +219,18 @@ const (
 	// ServiceExportUpdated is the type of announcement emitted when we observe an update to serviceexports.flomesh.io
 	ServiceExportUpdated Kind = "serviceexport-updated"
 
+	// MultiClusterServiceExportCreated is the type of announcement emitted when we observe a creation to serviceexports.flomesh.io
+	MultiClusterServiceExportCreated Kind = "mcs-serviceexport-created"
+
+	// MultiClusterServiceExportDeleted the type of announcement emitted when we observe a deletion of serviceexports.flomesh.io
+	MultiClusterServiceExportDeleted Kind = "mcs-serviceexport-deleted"
+
+	// MultiClusterServiceExportAccepted is the type of announcement emitted when we observe an accept to serviceexports.flomesh.io
+	MultiClusterServiceExportAccepted Kind = "mcs-serviceexport-accepted"
+
+	// MultiClusterServiceExportRejected is the type of announcement emitted when we observe a rejection to serviceexports.flomesh.io
+	MultiClusterServiceExportRejected Kind = "mcs-serviceexport-rejected"
+
 	// ServiceImportAdded is the type of announcement emitted when we observe an addition of serviceimports.flomesh.io
 	ServiceImportAdded Kind = "serviceimport-added"
 

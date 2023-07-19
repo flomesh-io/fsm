@@ -26,9 +26,9 @@ package controller
 
 import (
 	"fmt"
-	svcexpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceexport/v1alpha1"
-	svcexpv1alpha1informers "github.com/flomesh-io/fsm/pkg/generated/informers/externalversions/serviceexport/v1alpha1"
-	svcexpv1alpha1lister "github.com/flomesh-io/fsm/pkg/generated/listers/serviceexport/v1alpha1"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	mcsv1alpha1informers "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions/multicluster/v1alpha1"
+	mcsv1alpha1lister "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
@@ -36,9 +36,9 @@ import (
 )
 
 type ServiceExportHandler interface {
-	OnServiceExportAdd(serviceExport *svcexpv1alpha1.ServiceExport)
-	OnServiceExportUpdate(oldServiceExport, serviceExport *svcexpv1alpha1.ServiceExport)
-	OnServiceExportDelete(serviceExport *svcexpv1alpha1.ServiceExport)
+	OnServiceExportAdd(serviceExport *mcsv1alpha1.ServiceExport)
+	OnServiceExportUpdate(oldServiceExport, serviceExport *mcsv1alpha1.ServiceExport)
+	OnServiceExportDelete(serviceExport *mcsv1alpha1.ServiceExport)
 	OnServiceExportSynced()
 }
 
@@ -46,7 +46,7 @@ type ServiceExportController struct {
 	Informer     cache.SharedIndexInformer
 	Store        ServiceExportStore
 	HasSynced    cache.InformerSynced
-	Lister       svcexpv1alpha1lister.ServiceExportLister
+	Lister       mcsv1alpha1lister.ServiceExportLister
 	eventHandler ServiceExportHandler
 }
 
@@ -54,7 +54,7 @@ type ServiceExportStore struct {
 	cache.Store
 }
 
-func (l *ServiceExportStore) ByKey(key string) (*svcexpv1alpha1.ServiceExport, error) {
+func (l *ServiceExportStore) ByKey(key string) (*mcsv1alpha1.ServiceExport, error) {
 	s, exists, err := l.GetByKey(key)
 	if err != nil {
 		return nil, err
@@ -62,10 +62,10 @@ func (l *ServiceExportStore) ByKey(key string) (*svcexpv1alpha1.ServiceExport, e
 	if !exists {
 		return nil, fmt.Errorf("no object matching key %q in local store", key)
 	}
-	return s.(*svcexpv1alpha1.ServiceExport), nil
+	return s.(*mcsv1alpha1.ServiceExport), nil
 }
 
-func NewServiceExportControllerWithEventHandler(serviceExportInformer svcexpv1alpha1informers.ServiceExportInformer, resyncPeriod time.Duration, handler ServiceExportHandler) *ServiceExportController {
+func NewServiceExportControllerWithEventHandler(serviceExportInformer mcsv1alpha1informers.ServiceExportInformer, resyncPeriod time.Duration, handler ServiceExportHandler) *ServiceExportController {
 	informer := serviceExportInformer.Informer()
 
 	result := &ServiceExportController{
@@ -107,7 +107,7 @@ func (c *ServiceExportController) Run(stopCh <-chan struct{}) {
 }
 
 func (c *ServiceExportController) handleAddServiceExport(obj interface{}) {
-	export, ok := obj.(*svcexpv1alpha1.ServiceExport)
+	export, ok := obj.(*mcsv1alpha1.ServiceExport)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("unexpected object type: %v", obj))
 		return
@@ -120,12 +120,12 @@ func (c *ServiceExportController) handleAddServiceExport(obj interface{}) {
 }
 
 func (c *ServiceExportController) handleUpdateServiceExport(oldObj, newObj interface{}) {
-	oldExport, ok := oldObj.(*svcexpv1alpha1.ServiceExport)
+	oldExport, ok := oldObj.(*mcsv1alpha1.ServiceExport)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("unexpected object type: %v", oldObj))
 		return
 	}
-	export, ok := newObj.(*svcexpv1alpha1.ServiceExport)
+	export, ok := newObj.(*mcsv1alpha1.ServiceExport)
 	if !ok {
 		runtime.HandleError(fmt.Errorf("unexpected object type: %v", newObj))
 		return
@@ -138,14 +138,14 @@ func (c *ServiceExportController) handleUpdateServiceExport(oldObj, newObj inter
 }
 
 func (c *ServiceExportController) handleDeleteServiceExport(obj interface{}) {
-	export, ok := obj.(*svcexpv1alpha1.ServiceExport)
+	export, ok := obj.(*mcsv1alpha1.ServiceExport)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			runtime.HandleError(fmt.Errorf("unexpected object type: %v", obj))
 			return
 		}
-		if export, ok = tombstone.Obj.(*svcexpv1alpha1.ServiceExport); !ok {
+		if export, ok = tombstone.Obj.(*mcsv1alpha1.ServiceExport); !ok {
 			runtime.HandleError(fmt.Errorf("unexpected object type: %v", obj))
 			return
 		}

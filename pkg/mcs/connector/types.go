@@ -27,36 +27,45 @@ package connector
 import (
 	"context"
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/commons"
-	"github.com/flomesh-io/fsm/pkg/config"
-	"github.com/flomesh-io/fsm/pkg/kube"
-	"github.com/flomesh-io/fsm/pkg/mcs/cache"
+	"github.com/flomesh-io/fsm/pkg/announcements"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/k8s"
+	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
+	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/version"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	k8scache "k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
 type Connector struct {
 	context    context.Context
-	k8sAPI     *kube.K8sAPI
-	cache      *cache.Cache
-	clusterCfg *config.Store
-	broker     *mcsevent.Broker
+	kubeClient kubernetes.Interface
+	cfg        configurator.Configurator
+	broker     *messaging.Broker
 }
 
-func NewConnector(ctx context.Context, broker *mcsevent.Broker, resyncPeriod time.Duration) (*Connector, error) {
+func NewConnector(ctx context.Context, broker *messaging.Broker, resyncPeriod time.Duration) (*Connector, error) {
 	connectorCtx := ctx.(*conn.ConnectorContext)
 
-	k8sAPI, err := kube.NewAPIForConfig(connectorCtx.KubeConfig, 30*time.Second)
+	kubeClient, err := kubernetes.NewForConfig(connectorCtx.KubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	if !version.IsSupportedK8sVersion(k8sAPI) {
+	if !version.IsSupportedK8sVersion(kubeClient) {
 		err := fmt.Errorf("kubernetes server version %s is not supported, requires at least %s",
 			version.ServerVersion.String(), version.MinK8sVersion.String())
 		klog.Error(err)
@@ -64,30 +73,170 @@ func NewConnector(ctx context.Context, broker *mcsevent.Broker, resyncPeriod tim
 		return nil, err
 	}
 
-	clusterCfg := config.NewStore(k8sAPI)
-	mc := clusterCfg.MeshConfig.GetConfig()
+	configClient, err := configClientset.NewForConfig(connectorCtx.KubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	multiclusterClient, err := multiclusterClientset.NewForConfig(connectorCtx.KubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	informerCollection, err := informers.NewInformerCollection(meshName, connectorCtx.StopCh,
+		informers.WithKubeClient(kubeClient),
+		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
+		informers.WithMultiClusterClient(multiclusterClient),
+	)
+	if err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
+	}
+
+	mc := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, broker)
+
+	connector := &Connector{
+		context:    connectorCtx,
+		kubeClient: kubeClient,
+		cfg:        mc,
+		broker:     broker,
+	}
+
+	for _, informerKey := range []informers.InformerKey{
+		informers.InformerKeyServiceExport,
+	} {
+		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
+			informerCollection.AddEventHandler(informerKey, connector.getEventHandlerFuncs(eventTypes))
+		}
+	}
 
 	// checks if fsm is installed in the cluster, this's a MUST otherwise it doesn't work
-	_, err = k8sAPI.Client.AppsV1().
-		Deployments(mc.GetMeshNamespace()).
-		Get(context.TODO(), commons.ManagerDeploymentName, metav1.GetOptions{})
+	_, err = kubeClient.AppsV1().
+		Deployments(mc.GetFSMNamespace()).
+		Get(context.TODO(), constants.FSMControllerName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			klog.Error("FSM Control Plane is not installed or not in a proper state, please check it.")
 			return nil, err
 		}
 
-		klog.Errorf("Get FSM manager component %s/%s error: %s", mc.GetMeshNamespace(), commons.ManagerDeploymentName, err)
+		klog.Errorf("Get FSM controller component %s/%s error: %s", mc.GetFSMNamespace(), constants.FSMControllerName, err)
 		return nil, err
 	}
 
-	connectorCache := cache.NewCache(connectorCtx, k8sAPI, clusterCfg, broker, resyncPeriod)
+	return connector, nil
+}
 
-	return &Connector{
-		context:    connectorCtx,
-		k8sAPI:     k8sAPI,
-		cache:      connectorCache,
-		clusterCfg: clusterCfg,
-		broker:     broker,
-	}, nil
+func getEventTypesByInformerKey(informerKey informers.InformerKey) *k8s.EventTypes {
+	switch informerKey {
+	case informers.InformerKeyService:
+		return &k8s.EventTypes{
+			Add:    announcements.ServiceExportAdded,
+			Update: announcements.ServiceExportUpdated,
+			Delete: announcements.ServiceExportDeleted,
+		}
+	}
+
+	return nil
+}
+
+func (c *Connector) getEventHandlerFuncs(eventTypes *k8s.EventTypes) k8scache.ResourceEventHandlerFuncs {
+	return k8scache.ResourceEventHandlerFuncs{
+		AddFunc:    c.onAddFunc(eventTypes),
+		UpdateFunc: c.onUpdateFunc(eventTypes),
+		DeleteFunc: c.onDeleteFunc(eventTypes),
+	}
+}
+
+func (c *Connector) onAddFunc(eventTypes *k8s.EventTypes) func(obj interface{}) {
+	return func(obj interface{}) {
+		switch obj := obj.(type) {
+		case *mcsv1alpha1.ServiceExport:
+			c.onUpdateFunc(eventTypes)(nil, obj)
+		}
+	}
+}
+
+func (c *Connector) onUpdateFunc(eventTypes *k8s.EventTypes) func(oldObj, newObj interface{}) {
+	return func(oldObj, newObj interface{}) {
+		switch obj := newObj.(type) {
+		case *mcsv1alpha1.ServiceExport:
+			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorConfig := connectorCtx.ConnectorConfig
+
+			if !c.cfg.IsManaged() {
+				klog.Warningf("[%s] Cluster is not managed, ignore processing ServiceExport %s", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
+				return
+			}
+
+			svc, err := c.getService(obj)
+			if err != nil {
+				klog.Errorf("[%s] Ignore processing ServiceExport %s due to get service failed", c.connectorConfig.Key(), client.ObjectKeyFromObject(export))
+				return
+			}
+
+			c.broker.GetQueue().AddRateLimited(events.PubSubMessage{
+				Kind:   announcements.MultiClusterServiceExportCreated,
+				OldObj: nil,
+				NewObj: &mcsevent.ServiceExportEvent{
+					Geo:           connectorConfig,
+					ServiceExport: obj,
+					Service:       svc,
+				},
+			})
+		}
+	}
+}
+
+func (c *Connector) onDeleteFunc(eventTypes *k8s.EventTypes) func(obj interface{}) {
+	return func(obj interface{}) {
+		switch obj := obj.(type) {
+		case *mcsv1alpha1.ServiceExport:
+			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorConfig := connectorCtx.ConnectorConfig
+
+			if !c.cfg.IsManaged() {
+				klog.Warningf("[%s] Cluster is not managed, ignore processing ServiceExport %s", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
+				return
+			}
+
+			svc, err := c.getService(obj)
+			if err != nil {
+				klog.Errorf("[%s] Ignore processing ServiceExport %s due to get service failed", c.connectorConfig.Key(), client.ObjectKeyFromObject(export))
+				return
+			}
+
+			c.broker.GetQueue().AddRateLimited(events.PubSubMessage{
+				Kind:   announcements.MultiClusterServiceExportDeleted,
+				OldObj: nil,
+				NewObj: &mcsevent.ServiceExportEvent{
+					Geo:           connectorConfig,
+					ServiceExport: obj,
+					Service:       svc,
+				},
+			})
+		}
+	}
+}
+
+func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Service, error) {
+	connectorCtx := c.context.(*conn.ConnectorContext)
+	connectorConfig := connectorCtx.ConnectorConfig
+	klog.V(5).Infof("[%s] Getting service %s/%s", connectorConfig.Key(), export.Namespace, export.Name)
+
+	svc, err := c.kubeClient.CoreV1().
+		Services(export.Namespace).
+		Get(context.TODO(), export.Name, metav1.GetOptions{})
+
+	if err != nil {
+		klog.Errorf("[%s] Failed to get svc %s/%s, %s", connectorConfig.Key(), export.Namespace, export.Name, err)
+		return nil, err
+	}
+
+	if svc.Spec.Type == corev1.ServiceTypeExternalName {
+		msg := fmt.Sprintf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name)
+		klog.Errorf(msg)
+		return nil, fmt.Errorf(msg)
+	}
+
+	return svc, nil
 }

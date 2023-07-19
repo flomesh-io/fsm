@@ -26,6 +26,7 @@ package pipy
 
 import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"k8s.io/client-go/kubernetes"
@@ -39,6 +40,7 @@ type client struct {
 	kubeClient kubernetes.Interface
 	msgBroker  *messaging.Broker
 	cfg        configurator.Configurator
+	cache      *cache.Cache
 }
 
 // Controller is the interface for the functionality provided by the resources part of the networking.k8s.io API group

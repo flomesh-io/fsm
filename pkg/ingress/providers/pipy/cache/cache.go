@@ -27,24 +27,18 @@ package cache
 import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/config"
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	fsminformers "github.com/flomesh-io/fsm/pkg/generated/informers/externalversions"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress"
-	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/controller"
-	"github.com/flomesh-io/fsm/pkg/messaging"
-	repocfg "github.com/flomesh-io/fsm/pkg/route"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/flomesh-io/fsm/pkg/util"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/klog/v2"
-	"k8s.io/kubernetes/pkg/util/async"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -55,8 +49,7 @@ type Cache struct {
 	kubeClient kubernetes.Interface
 	recorder   events.EventRecorder
 	cfg        configurator.Configurator
-	broker     *messaging.Broker
-	certMgr    *certificate.Manager
+	informers  *fsminformers.InformerCollection
 
 	serviceChanges       *ServiceChangeTracker
 	endpointsChanges     *EndpointChangeTracker
@@ -78,103 +71,47 @@ type Cache struct {
 	serviceImportSynced  bool
 	initialized          int32
 
-	syncRunner *async.BoundedFrequencyRunner
-	repoClient *repo.PipyRepoClient
-
-	controllers *controller.Controllers
+	repoClient  *repo.PipyRepoClient
 	broadcaster events.EventBroadcaster
 
 	ingressRoutesVersion string
 	serviceRoutesVersion string
 }
 
-func NewCache(kubeClient kubernetes.Interface, mc configurator.Configurator, broker *messaging.Broker, certMgr *certificate.Manager, resyncPeriod time.Duration) *Cache {
+func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
 	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, "fsm-cluster-connector-local")
 
 	c := &Cache{
 		kubeClient:               kubeClient,
 		recorder:                 recorder,
-		cfg:                      mc,
+		cfg:                      cfg,
+		informers:                informers,
 		serviceMap:               make(ServiceMap),
 		serviceImportMap:         make(ServiceImportMap),
 		endpointsMap:             make(EndpointsMap),
 		ingressMap:               make(IngressMap),
 		multiClusterEndpointsMap: make(MultiClusterEndpointsMap),
-		repoClient:               repo.NewRepoClient(mc.GetRepoServerIPAddr(), uint16(mc.GetProxyServerPort())),
+		repoClient:               repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
 		broadcaster:              eventBroadcaster,
-		broker:                   broker,
-		certMgr:                  certMgr,
 	}
 
-	informerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient, resyncPeriod)
-	serviceController := controller.NewServiceControllerWithEventHandler(
-		informerFactory.Core().V1().Services(),
-		resyncPeriod,
-		c,
-	)
-	endpointsController := controller.NewEndpointsControllerWithEventHandler(
-		informerFactory.Core().V1().Endpoints(),
-		resyncPeriod,
-		c,
-	)
-	ingressClassV1Controller := controller.NewIngressClassv1ControllerWithEventHandler(
-		informerFactory.Networking().V1().IngressClasses(),
-		resyncPeriod,
-		c,
-	)
-	ingressV1Controller := controller.NewIngressv1ControllerWithEventHandler(
-		informerFactory.Networking().V1().Ingresses(),
-		resyncPeriod,
-		c,
-	)
-	secretController := controller.NewSecretControllerWithEventHandler(
-		informerFactory.Core().V1().Secrets(),
-		resyncPeriod,
-		nil,
-	)
-
-	fsmInformerFactory := fsminformers.NewSharedInformerFactoryWithOptions(api.FlomeshClient, resyncPeriod)
-	serviceImportController := controller.NewServiceImportControllerWithEventHandler(
-		fsmInformerFactory.Serviceimport().V1alpha1().ServiceImports(),
-		resyncPeriod,
-		c,
-	)
-
-	c.controllers = &controller.Controllers{
-		Service:        serviceController,
-		Endpoints:      endpointsController,
-		Ingressv1:      ingressV1Controller,
-		IngressClassv1: ingressClassV1Controller,
-		ServiceImport:  serviceImportController,
-		Secret:         secretController,
-	}
-
-	c.serviceChanges = NewServiceChangeTracker(enrichServiceInfo, recorder, c.controllers, c.k8sAPI)
-	c.serviceImportChanges = NewServiceImportChangeTracker(enrichServiceImportInfo, nil, recorder, c.controllers)
-	c.endpointsChanges = NewEndpointChangeTracker(nil, recorder, c.controllers)
-	c.ingressChanges = NewIngressChangeTracker(api, c.controllers, recorder, certMgr)
-
-	// FIXME: make it configurable
-	minSyncPeriod := 5 * time.Second
-	syncPeriod := 30 * time.Second
-	burstSyncs := 5
-	c.syncRunner = async.NewBoundedFrequencyRunner("sync-runner-local", c.syncRoutes, minSyncPeriod, syncPeriod, burstSyncs)
+	c.serviceChanges = NewServiceChangeTracker(enrichServiceInfo, recorder, kubeClient, informers)
+	c.serviceImportChanges = NewServiceImportChangeTracker(enrichServiceImportInfo, nil, recorder, informers)
+	c.endpointsChanges = NewEndpointChangeTracker(nil, recorder)
+	c.ingressChanges = NewIngressChangeTracker(kubeClient, informers, recorder)
 
 	return c
 }
 
-func (c *Cache) GetControllers() *controller.Controllers {
-	return c.controllers
-}
-
-func (c *Cache) GetBroadcaster() events.EventBroadcaster {
-	return c.broadcaster
-}
-
-func (c *Cache) GetRecorder() events.EventRecorder {
-	return c.recorder
-}
+//
+//func (c *Cache) GetBroadcaster() events.EventBroadcaster {
+//	return c.broadcaster
+//}
+//
+//func (c *Cache) GetRecorder() events.EventRecorder {
+//	return c.recorder
+//}
 
 func (c *Cache) setInitialized(value bool) {
 	var initialized int32
@@ -188,16 +125,7 @@ func (c *Cache) isInitialized() bool {
 	return atomic.LoadInt32(&c.initialized) > 0
 }
 
-func (c *Cache) Sync() {
-	c.syncRunner.Run()
-}
-
-// SyncLoop runs periodic work.  This is expected to run as a goroutine or as the main loop of the app.  It does not return.
-func (c *Cache) SyncLoop(stopCh <-chan struct{}) {
-	c.syncRunner.Loop(stopCh)
-}
-
-func (c *Cache) syncRoutes() {
+func (c *Cache) SyncRoutes() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -218,12 +146,12 @@ func (c *Cache) syncRoutes() {
 
 	klog.V(3).InfoS("Start syncing rules ...")
 
-	mc := c.clusterCfg.MeshConfig.GetConfig()
+	mc := c.cfg
 
 	serviceRoutes := c.buildServiceRoutes()
 	klog.V(5).Infof("Service Routes:\n %v", serviceRoutes)
 
-	exists := c.repoClient.CodebaseExists(mc.GetDefaultServicesPath())
+	exists := c.repoClient.CodebaseExists(utils.GetDefaultServicesPath())
 	if !exists {
 		c.serviceRoutesVersion = fmt.Sprintf("%d", time.Now().UnixMilli())
 	}
@@ -232,7 +160,7 @@ func (c *Cache) syncRoutes() {
 		batches := serviceBatches(serviceRoutes, mc)
 		if batches != nil {
 			go func() {
-				if err := c.repoClient.Batch(batches); err != nil {
+				if _, err := c.repoClient.Batch(batches); err != nil {
 					klog.Errorf("Sync service routes to repo failed: %s", err)
 					return
 				}
@@ -248,7 +176,7 @@ func (c *Cache) syncRoutes() {
 
 	ingressRoutes := c.buildIngressConfig()
 	klog.V(5).Infof("Ingress Routes:\n %v", ingressRoutes)
-	exists = c.repoClient.CodebaseExists(mc.GetDefaultIngressPath())
+	exists = c.repoClient.CodebaseExists(utils.GetDefaultIngressPath())
 	if !exists {
 		c.ingressRoutesVersion = fmt.Sprintf("%d", time.Now().UnixMilli())
 	}
@@ -257,7 +185,7 @@ func (c *Cache) syncRoutes() {
 		batches := c.ingressBatches(ingressRoutes, mc)
 		if batches != nil {
 			go func() {
-				if err := c.repoClient.Batch(batches); err != nil {
+				if _, err := c.repoClient.Batch(batches); err != nil {
 					klog.Errorf("Sync ingress routes to repo failed: %s", err)
 					return
 				}
@@ -272,7 +200,7 @@ func (c *Cache) syncRoutes() {
 func (c *Cache) refreshIngress() {
 	klog.V(5).Infof("Refreshing Ingress Map ...")
 
-	ingresses, err := c.controllers.Ingressv1.Lister.
+	ingresses, err := c.informers.GetListers().K8sIngress.
 		Ingresses(corev1.NamespaceAll).
 		List(labels.Everything())
 	if err != nil {
@@ -352,14 +280,14 @@ func (c *Cache) buildIngressConfig() repocfg.IngressData {
 		}
 	}
 
-	ingressConfig.Hash = util.SimpleHash(ingressConfig)
+	ingressConfig.Hash = utils.SimpleHash(ingressConfig)
 
 	return ingressConfig
 }
 
-func (c *Cache) ingressBatches(ingressData repocfg.IngressData, mc *config.MeshConfig) []repo.Batch {
+func (c *Cache) ingressBatches(ingressData repocfg.IngressData, mc configurator.Configurator) []repo.Batch {
 	batch := repo.Batch{
-		Basepath: mc.GetDefaultIngressPath(),
+		Basepath: utils.GetDefaultIngressPath(),
 		Items:    []repo.BatchItem{},
 	}
 
@@ -497,13 +425,13 @@ func (c *Cache) buildServiceRoutes() repocfg.ServiceRoute {
 			}
 		}
 	}
-	serviceRoutes.Hash = util.SimpleHash(serviceRoutes)
+	serviceRoutes.Hash = utils.SimpleHash(serviceRoutes)
 
 	return serviceRoutes
 }
 
-func serviceBatches(serviceRoutes repocfg.ServiceRoute, mc *config.MeshConfig) []repo.Batch {
-	registry := repo.ServiceRegistry{Services: repo.ServiceRegistryEntry{}}
+func serviceBatches(serviceRoutes repocfg.ServiceRoute, mc configurator.Configurator) []repo.Batch {
+	registry := repocfg.ServiceRegistry{Services: repocfg.ServiceRegistryEntry{}}
 
 	for _, route := range serviceRoutes.Routes {
 		addrs := addresses(route)
@@ -514,7 +442,7 @@ func serviceBatches(serviceRoutes repocfg.ServiceRoute, mc *config.MeshConfig) [
 	}
 
 	batch := repo.Batch{
-		Basepath: mc.GetDefaultServicesPath(),
+		Basepath: utils.GetDefaultServicesPath(),
 		Items:    []repo.BatchItem{},
 	}
 

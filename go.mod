@@ -8,14 +8,14 @@ require (
 	github.com/axw/gocov v1.0.0
 	github.com/containerd/containerd v1.6.15 // indirect
 	github.com/cskr/pubsub v1.0.2
-	github.com/deckarep/golang-set v1.7.1
+	github.com/deckarep/golang-set/v2 v2.1.0
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.3
 	github.com/golangci/golangci-lint v1.32.2
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -60,7 +60,7 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible
 	github.com/hashicorp/vault v1.12.7
 	github.com/hashicorp/vault/sdk v0.6.1-0.20230427140652-b4b396ffc14f
 	github.com/klauspost/compress v1.15.6 // indirect
@@ -73,17 +73,21 @@ require (
 )
 
 require (
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.19.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/cilium/ebpf v0.10.0
 	github.com/containernetworking/cni v1.1.1
+	github.com/deckarep/golang-set v1.8.0
 	github.com/florianl/go-tc v0.4.2
 	github.com/fsnotify/fsnotify v1.6.0
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/consul v1.15.3
 	github.com/hashicorp/consul/api v1.21.0
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	k8s.io/klog/v2 v2.100.1
@@ -132,6 +136,7 @@ require (
 	github.com/axiomhq/hyperloglog v0.0.0-20220105174342-98591331716a // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
+	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/bombsimon/wsl/v3 v3.1.0 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
@@ -272,7 +277,6 @@ require (
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/joyent/triton-go v1.7.1-0.20200416154420-6801d15b779f // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/keybase/go-crypto v0.0.0-20190403132359-d65b6b94177f // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -412,6 +416,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiserver v0.26.6 // indirect
 	k8s.io/component-base v0.26.6 // indirect
+	k8s.io/component-helpers v0.26.6 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/helm v2.14.3+incompatible // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect

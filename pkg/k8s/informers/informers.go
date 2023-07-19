@@ -89,6 +89,7 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.Endpoints = v1api.Endpoints().Lister()
 	}
 }
 
@@ -154,6 +155,8 @@ func WithMultiClusterClient(multiclusterClient multiclusterClientset.Interface) 
 		ic.informers[InformerKeyServiceExport] = informerFactory.Flomesh().V1alpha1().ServiceExports().Informer()
 		ic.informers[InformerKeyServiceImport] = informerFactory.Flomesh().V1alpha1().ServiceImports().Informer()
 		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Flomesh().V1alpha1().GlobalTrafficPolicies().Informer()
+
+		ic.listers.ServiceImport = informerFactory.Flomesh().V1alpha1().ServiceImports().Lister()
 	}
 }
 
@@ -163,6 +166,19 @@ func WithNetworkingClient(networkingClient networkingClientset.Interface) Inform
 		informerFactory := networkingInformers.NewSharedInformerFactory(networkingClient, DefaultKubeEventResyncInterval)
 
 		ic.informers[InformerKeyIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
+	}
+}
+
+// WithIngressClient sets the networking client for the InformerCollection
+func WithIngressClient(kubeClient kubernetes.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := informers.NewSharedInformerFactory(kubeClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
+		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
+
+		ic.listers.K8sIngressClass = informerFactory.Networking().V1().IngressClasses().Lister()
+		ic.listers.K8sIngress = informerFactory.Networking().V1().Ingresses().Lister()
 	}
 }
 

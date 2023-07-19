@@ -26,7 +26,6 @@ package pipy
 
 import (
 	"github.com/blang/semver"
-	"github.com/flomesh-io/fsm/pkg/commons"
 )
 
 var (
@@ -36,7 +35,7 @@ var (
 )
 
 const (
-	IngressPipyController     = commons.AnnotationPrefix + "/ingress-pipy"
+	IngressPipyController     = "flomesh.io/ingress-pipy"
 	IngressPipyClass          = "pipy"
 	NoDefaultIngressClass     = ""
 	IngressAnnotationKey      = "kubernetes.io/ingress.class"

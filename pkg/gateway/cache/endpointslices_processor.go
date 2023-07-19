@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,12 +19,16 @@ func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 		return false
 	}
 
-	owner := metav1.GetControllerOf(eps)
-	if owner == nil {
+	if len(eps.Labels) == 0 {
 		return false
 	}
 
-	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
+	svcName := eps.Labels[constants.KubernetesEndpointSliceServiceNameLabel]
+	if len(svcName) == 0 {
+		return false
+	}
+
+	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: svcName}
 	_, found := cache.endpointslices[svcKey]
 	if !found {
 		cache.endpointslices[svcKey] = make(map[client.ObjectKey]struct{})

@@ -27,8 +27,7 @@ package connector
 import (
 	"context"
 	"fmt"
-	svcexpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceexport/v1alpha1"
-	svcimpv1alpha1 "github.com/flomesh-io/fsm/apis/serviceimport/v1alpha1"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	retry "github.com/sethvargo/go-retry"
@@ -238,7 +237,7 @@ func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}
 	}
 }
 
-func (c *Connector) ServiceImportExists(svcExp *svcexpv1alpha1.ServiceExport) bool {
+func (c *Connector) ServiceImportExists(svcExp *mcsv1alpha1.ServiceExport) bool {
 	ctx := c.context.(*conn.ConnectorContext)
 
 	if _, err := c.k8sAPI.FlomeshClient.ServiceimportV1alpha1().
@@ -257,10 +256,10 @@ func (c *Connector) ServiceImportExists(svcExp *svcexpv1alpha1.ServiceExport) bo
 	return true
 }
 
-func (c *Connector) ValidateServiceExport(svcExp *svcexpv1alpha1.ServiceExport, service *corev1.Service) error {
+func (c *Connector) ValidateServiceExport(svcExp *mcsv1alpha1.ServiceExport, service *corev1.Service) error {
 	ctx := c.context.(*conn.ConnectorContext)
 	clusterKey := ctx.ClusterKey
-	localSvc, err := c.k8sAPI.Client.CoreV1().
+	localSvc, err := c.kubeClient.CoreV1().
 		Services(svcExp.Namespace).
 		Get(context.TODO(), svcExp.Name, metav1.GetOptions{})
 
@@ -441,7 +440,7 @@ func (c *Connector) newServiceImport(export *mcsevent.ServiceExportEvent) *svcim
 	}
 }
 
-func newEndpoint(export *mcsevent.ServiceExportEvent, r svcexpv1alpha1.ServiceExportRule, host string, ip net.IP, port int32) svcimpv1alpha1.Endpoint {
+func newEndpoint(export *mcsevent.ServiceExportEvent, r mcsv1alpha1.ServiceExportRule, host string, ip net.IP, port int32) svcimpv1alpha1.Endpoint {
 	return svcimpv1alpha1.Endpoint{
 		ClusterKey: export.ClusterKey(),
 		//Targets: []string{
@@ -545,7 +544,7 @@ func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEven
 		c.cache.GetRecorder().Eventf(exp, nil, corev1.EventTypeWarning, "Rejected", "ServiceExport %s/%s is invalid, %s", exp.Namespace, exp.Name, reason)
 
 		metautil.SetStatusCondition(&exp.Status.Conditions, metav1.Condition{
-			Type:               string(svcexpv1alpha1.ServiceExportConflict),
+			Type:               string(mcsv1alpha1.ServiceExportConflict),
 			Status:             metav1.ConditionTrue,
 			ObservedGeneration: exp.Generation,
 			LastTransitionTime: metav1.Time{Time: time.Now()},

@@ -26,12 +26,13 @@ package cache
 
 import (
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/controller"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/klog/v2"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
@@ -78,8 +79,8 @@ type ServiceChangeTracker struct {
 	items             map[types.NamespacedName]*serviceChange
 	enrichServiceInfo enrichServiceInfoFunc
 	recorder          events.EventRecorder
-	controllers       *controller.Controllers
-	k8sAPI            *kube.K8sAPI
+	informers         fsminformers.InformerCollection
+	kubeClient        kubernetes.Interface
 }
 
 type ServiceMap map[ServicePortName]ServicePort
@@ -145,13 +146,13 @@ func (sct *ServiceChangeTracker) newBaseServiceInfo(port *corev1.ServicePort, se
 	return nil
 }
 
-func NewServiceChangeTracker(enrichServiceInfo enrichServiceInfoFunc, recorder events.EventRecorder, controllers *controller.Controllers, api *kube.K8sAPI) *ServiceChangeTracker {
+func NewServiceChangeTracker(enrichServiceInfo enrichServiceInfoFunc, recorder events.EventRecorder, kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection) *ServiceChangeTracker {
 	return &ServiceChangeTracker{
 		items:             make(map[types.NamespacedName]*serviceChange),
 		enrichServiceInfo: enrichServiceInfo,
 		recorder:          recorder,
-		controllers:       controllers,
-		k8sAPI:            api,
+		informers:         informers,
+		kubeClient:        kubeClient,
 	}
 }
 
@@ -247,7 +248,7 @@ func (sct *ServiceChangeTracker) shouldSkipService(svc *corev1.Service) bool {
 }
 
 func (sct *ServiceChangeTracker) serviceImportExists(svc *corev1.Service) bool {
-	_, err := sct.controllers.ServiceImport.Lister.
+	_, err := sct.informers.GetListers().ServiceImport.
 		ServiceImports(svc.Namespace).
 		Get(svc.Name)
 	if err != nil {

@@ -26,6 +26,7 @@ package pipy
 
 import (
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 )
 
@@ -47,4 +48,13 @@ func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 
 	// 3. with IngressClass
 	return ingressClass == IngressPipyClass
+}
+
+func MetaNamespaceKey(obj interface{}) string {
+	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+	if err != nil {
+		klog.Warning(err)
+	}
+
+	return key
 }

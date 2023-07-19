@@ -4,6 +4,7 @@ import (
 	"fmt"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/gateway/route"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -722,7 +723,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 
 			selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"kubernetes.io/service-name": svc.Name,
+					constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
 				},
 			})
 			if err != nil {
