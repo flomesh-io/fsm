@@ -3,6 +3,7 @@ package informers
 import (
 	"errors"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
+	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
 	"k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
@@ -81,6 +82,9 @@ const (
 	// InformerKeyK8sIngress is the InformerKey for a k8s Ingress informer
 	InformerKeyK8sIngress InformerKey = "Ingress-k8s"
 
+	// InformerKeyNamespacedIngress is the InformerKey for a NamespacedIngress informer
+	InformerKeyNamespacedIngress InformerKey = "NamespacedIngress"
+
 	// InformerKeyGatewayApiGatewayClass is the InformerKey for a GatewayClass informer
 	InformerKeyGatewayApiGatewayClass InformerKey = "GatewayClass-gwapi"
 	// InformerKeyGatewayApiGateway is the InformerKey for a Gateway informer
@@ -117,17 +121,18 @@ type InformerCollection struct {
 }
 
 type Lister struct {
-	Service         v1.ServiceLister
-	ServiceImport   mcsv1alpha1.ServiceImportLister
-	Endpoints       v1.EndpointsLister
-	EndpointSlice   discoveryv1.EndpointSliceLister
-	Secret          v1.SecretLister
-	GatewayClass    gwv1beta1.GatewayClassLister
-	Gateway         gwv1beta1.GatewayLister
-	HTTPRoute       gwv1beta1.HTTPRouteLister
-	GRPCRoute       gwv1alpha2.GRPCRouteLister
-	TLSRoute        gwv1alpha2.TLSRouteLister
-	TCPRoute        gwv1alpha2.TCPRouteLister
-	K8sIngressClass networkingv1.IngressClassLister
-	K8sIngress      networkingv1.IngressLister
+	Service           v1.ServiceLister
+	ServiceImport     mcsv1alpha1.ServiceImportLister
+	Endpoints         v1.EndpointsLister
+	EndpointSlice     discoveryv1.EndpointSliceLister
+	Secret            v1.SecretLister
+	GatewayClass      gwv1beta1.GatewayClassLister
+	Gateway           gwv1beta1.GatewayLister
+	HTTPRoute         gwv1beta1.HTTPRouteLister
+	GRPCRoute         gwv1alpha2.GRPCRouteLister
+	TLSRoute          gwv1alpha2.TLSRouteLister
+	TCPRoute          gwv1alpha2.TCPRouteLister
+	K8sIngressClass   networkingv1.IngressClassLister
+	K8sIngress        networkingv1.IngressLister
+	NamespacedIngress nsigv1alpha1.NamespacedIngressLister
 }

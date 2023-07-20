@@ -463,6 +463,14 @@ const (
 	TLSPrivateKeyName                       = "tls.key"
 )
 
+// NamespacedIngress constants
+const (
+	NamespacedIngressMutatingWebhookPath   = "/mutate-flomesh-io-v1alpha1-namespacedingress"
+	NamespacedIngressValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-namespacedingress"
+	IngressMutatingWebhookPath             = "/mutate-networking-v1-ingress"
+	IngressValidatingWebhookPath           = "/validate-networking-v1-ingress"
+)
+
 const (
 	IngressPipyController     = "flomesh.io/ingress-pipy"
 	IngressPipyClass          = "pipy"

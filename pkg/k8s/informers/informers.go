@@ -26,6 +26,8 @@ import (
 	configInformers "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	multiclusterInformers "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions"
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+	nsigInformers "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/informers/externalversions"
 	networkingClientset "github.com/flomesh-io/fsm/pkg/gen/client/networking/clientset/versioned"
 	networkingInformers "github.com/flomesh-io/fsm/pkg/gen/client/networking/informers/externalversions"
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
@@ -170,7 +172,7 @@ func WithNetworkingClient(networkingClient networkingClientset.Interface) Inform
 }
 
 // WithIngressClient sets the networking client for the InformerCollection
-func WithIngressClient(kubeClient kubernetes.Interface) InformerCollectionOption {
+func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset.Interface) InformerCollectionOption {
 	return func(ic *InformerCollection) {
 		informerFactory := informers.NewSharedInformerFactory(kubeClient, DefaultKubeEventResyncInterval)
 
@@ -179,6 +181,11 @@ func WithIngressClient(kubeClient kubernetes.Interface) InformerCollectionOption
 
 		ic.listers.K8sIngressClass = informerFactory.Networking().V1().IngressClasses().Lister()
 		ic.listers.K8sIngress = informerFactory.Networking().V1().Ingresses().Lister()
+
+		nsigInformerFactory := nsigInformers.NewSharedInformerFactory(nsigClient, DefaultKubeEventResyncInterval)
+		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Informer()
+
+		ic.listers.NamespacedIngress = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Lister()
 	}
 }
 

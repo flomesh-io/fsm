@@ -1,4 +1,4 @@
-// Package webhook implements utility routines related to Kubernetes' admission webhooks.
+// Package webhook implements utility routines related to Kubernetes' admission webhook.
 package webhook
 
 import (
