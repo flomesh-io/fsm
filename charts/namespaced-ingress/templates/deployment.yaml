@@ -1,0 +1,175 @@
+{{- if (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if (or .Values.nsig.spec.http.enabled .Values.nsig.spec.tls.enabled)}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "fsm-ingress-%s" .Values.nsig.metadata.namespace }}
+  namespace: {{ .Values.nsig.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+    meshName: {{ .Values.fsm.meshName }}
+spec:
+  replicas: {{ default 1 .Values.nsig.spec.replicas }}
+  selector:
+    matchLabels:
+      app: fsm-ingress
+      ingress.flomesh.io/namespaced: "true"
+      ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: fsm-ingress
+        ingress.flomesh.io/namespaced: "true"
+        ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+        {{- with .Values.nsig.spec.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nsig.spec.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      initContainers:
+      - name: wait-manager
+        image: {{ .Values.fsm.curlImage }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - curl
+          - {{ printf "http://%s:8081/healthz" (include "fsm.manager.host" .) }}
+          - --connect-timeout
+          - "2"
+          - --retry
+          - "50"
+          - --retry-connrefused
+          - --retry-delay
+          - "5"
+        {{- with .Values.nsig.spec.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      containers:
+      - name: ingress
+        image: {{ include "fsmIngress.image" . }}
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ default .Values.fsm.fsmIngress.http.containerPort .Values.nsig.spec.http.port.targetPort }}
+          - name: https
+            containerPort: {{ default .Values.fsm.fsmIngress.tls.containerPort .Values.nsig.spec.tls.port.targetPort }}
+          - name: health
+            containerPort: 8081
+        args:
+          - --verbosity={{ default .Values.fsm.fsmIngress.logLevel .Values.nsig.spec.logLevel }},
+          - --fsm-namespace={{ .Values.fsm.fsmNamespace }},
+          - --fsm-version={{ .Chart.AppVersion }},
+        env:
+          - name: FSM_NAMESPACE
+            value: {{ .Values.fsm.fsmNamespace }}
+          - name: FSM_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: FSM_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- with .Values.nsig.spec.env }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- if .Values.nsig.spec.resources }}
+        resources:
+          {{- toYaml .Values.nsig.spec.resources | nindent 10 }}
+        {{- else }}
+        {{- with .Values.fsm.fsmIngress.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- end }}
+        {{- with .Values.fsm.fsmIngress.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: {{ include "fsm.namespaced-ingress.heath.port" . }}
+        readinessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: {{ include "fsm.namespaced-ingress.heath.port" . }}
+      terminationGracePeriodSeconds: 60
+      {{- with .Values.fsm.fsmIngress.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
+      {{- with .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.nsig.spec.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.nsig.spec.nodeSelector | nindent 8 }}
+      {{- else }}
+      {{- with .Values.fsm.fsmIngress.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.nsig.spec.affinity }}
+      affinity:
+        {{- toYaml .Values.nsig.spec.affinity | nindent 8 }}
+      {{- else }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - fsm-ingress
+                    - key: ingress.flomesh.io/namespaced
+                      operator: In
+                      values:
+                        - "true"
+                    - key: ingress.flomesh.io/ns
+                      operator: In
+                      values:
+                        - {{ .Values.nsig.metadata.namespace }}
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- end }}
+      {{- if .Values.nsig.spec.tolerations }}
+      tolerations:
+        {{- toYaml .Values.nsig.spec.tolerations | nindent 8 }}
+      {{- else }}
+      {{- with .Values.fsm.fsmIngress.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

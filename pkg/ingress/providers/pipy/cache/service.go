@@ -79,7 +79,7 @@ type ServiceChangeTracker struct {
 	items             map[types.NamespacedName]*serviceChange
 	enrichServiceInfo enrichServiceInfoFunc
 	recorder          events.EventRecorder
-	informers         fsminformers.InformerCollection
+	informers         *fsminformers.InformerCollection
 	kubeClient        kubernetes.Interface
 }
 

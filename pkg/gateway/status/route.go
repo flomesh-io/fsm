@@ -28,7 +28,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -56,31 +55,31 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route cli
 	}
 
 	if len(activeGateways) > 0 {
-		var params *gateway.ComputeParams = nil
+		var params *computeParams = nil
 		switch route := route.(type) {
 		case *gwv1beta1.HTTPRoute:
-			params = &gateway.ComputeParams{
+			params = &computeParams{
 				ParentRefs:      route.Spec.ParentRefs,
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
 			}
 		case *gwv1alpha2.GRPCRoute:
-			params = &gateway.ComputeParams{
+			params = &computeParams{
 				ParentRefs:      route.Spec.ParentRefs,
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
 			}
 		case *gwv1alpha2.TLSRoute:
-			params = &gateway.ComputeParams{
+			params = &computeParams{
 				ParentRefs:      route.Spec.ParentRefs,
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
 			}
 		case *gwv1alpha2.TCPRoute:
-			params = &gateway.ComputeParams{
+			params = &computeParams{
 				ParentRefs:      route.Spec.ParentRefs,
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
@@ -101,7 +100,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route cli
 
 func (p *RouteStatusProcessor) computeRouteParentStatus(
 	activeGateways []*gwv1beta1.Gateway,
-	params *gateway.ComputeParams,
+	params *computeParams,
 ) []gwv1beta1.RouteParentStatus {
 	status := make([]gwv1beta1.RouteParentStatus, 0)
 

@@ -120,3 +120,21 @@ securityContext:
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmInterceptor .Values.fsm.image.digest.fsmController -}}
 {{- end -}}
 {{- end -}}
+
+{{/* fsm-ingress image */}}
+{{- define "fsmIngress.image" -}}
+{{- if .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmIngress .Values.fsm.image.digest.fsmIngress -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-gateway image */}}
+{{- define "fsmGateway.image" -}}
+{{- if .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.digest.fsmGateway -}}
+{{- end -}}
+{{- end -}}

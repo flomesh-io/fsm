@@ -3,8 +3,8 @@ package cache
 import (
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/gateway/route"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -299,9 +299,9 @@ func generateTcpRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) route.RouteRule {
 func allowedListeners(
 	parentRef gwv1beta1.ParentReference,
 	routeGvk schema.GroupVersionKind,
-	validListeners []gwpkg.Listener,
-) []gwpkg.Listener {
-	var selectedListeners []gwpkg.Listener
+	validListeners []gwtypes.Listener,
+) []gwtypes.Listener {
+	var selectedListeners []gwtypes.Listener
 	for _, validListener := range validListeners {
 		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
 			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
@@ -313,7 +313,7 @@ func allowedListeners(
 		return nil
 	}
 
-	var allowedListeners []gwpkg.Listener
+	var allowedListeners []gwtypes.Listener
 	for _, selectedListener := range selectedListeners {
 		if !selectedListener.AllowsKind(routeGvk) {
 			continue

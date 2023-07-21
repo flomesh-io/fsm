@@ -2,6 +2,7 @@
 package constants
 
 import (
+	"github.com/blang/semver"
 	"text/template"
 	"time"
 )
@@ -456,11 +457,14 @@ var (
 )
 
 const (
-	KubernetesEndpointSliceServiceNameLabel = "kubernetes.io/service-name"
-	RootCACertName                          = "ca.crt"
-	RootCAPrivateKeyName                    = "ca.key"
-	TLSCertName                             = "tls.crt"
-	TLSPrivateKeyName                       = "tls.key"
+	KubernetesEndpointSliceServiceNameLabel   = "kubernetes.io/service-name"
+	RootCACertName                            = "ca.crt"
+	RootCAPrivateKeyName                      = "ca.key"
+	TLSCertName                               = "tls.crt"
+	TLSPrivateKeyName                         = "tls.key"
+	DefaultWebhookServiceName                 = "fsm-webhook-service"
+	DefaultMutatingWebhookConfigurationName   = "flomesh-mutating-webhook-configuration"
+	DefaultValidatingWebhookConfigurationName = "flomesh-validating-webhook-configuration"
 )
 
 // NamespacedIngress constants
@@ -490,4 +494,11 @@ const (
 	PipyIngressAnnotationTLSVerifyDepth     = PipyIngressAnnotationPrefix + "/tls-verify-depth"
 	PipyIngressAnnotationTLSTrustedCASecret = PipyIngressAnnotationPrefix + "/tls-trusted-ca-secret"
 	PipyIngressAnnotationBackendProtocol    = PipyIngressAnnotationPrefix + "/upstream-protocol"
+)
+
+var (
+	DefaultIngressClass                 = ""
+	MinK8sVersionForIngressV1           = semver.Version{Major: 1, Minor: 19, Patch: 0}
+	MinK8sVersionForIngressV1beta1      = semver.Version{Major: 1, Minor: 16, Patch: 0}
+	MinK8sVersionForIngressClassV1beta1 = semver.Version{Major: 1, Minor: 18, Patch: 0}
 )

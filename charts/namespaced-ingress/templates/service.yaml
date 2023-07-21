@@ -1,0 +1,45 @@
+{{- if (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if (or .Values.nsig.spec.http.enabled .Values.nsig.spec.tls.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "fsm-ingress-%s" .Values.nsig.metadata.namespace }}
+  namespace: {{ .Values.nsig.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+    {{- with .Values.nsig.spec.serviceLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.nsig.spec.serviceAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ default "LoadBalancer" .Values.nsig.spec.serviceType }}
+  {{- $setNodePorts := (or (eq .Values.nsig.spec.serviceType "NodePort") (eq .Values.nsig.spec.serviceType "LoadBalancer")) }}
+  ports:
+  {{- if .Values.nsig.spec.http.enabled }}
+  - name: http
+    port: {{ default .Values.fsm.fsmIngress.http.port .Values.nsig.spec.http.port.port }}
+    protocol: {{ default "TCP" .Values.nsig.spec.tls.port.protocol }}
+    targetPort: {{ default .Values.fsm.fsmIngress.http.containerPort .Values.nsig.spec.http.port.targetPort }}
+    {{- if (and $setNodePorts (not (empty .Values.nsig.spec.http.port.nodePort))) }}
+    nodePort: {{ .Values.nsig.spec.http.port.nodePort }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.nsig.spec.tls.enabled }}
+  - name: https
+    port: {{ default .Values.fsm.fsmIngress.tls.port .Values.nsig.spec.tls.port.port }}
+    protocol: {{ default "TCP" .Values.nsig.spec.tls.port.protocol }}
+    targetPort: {{ default .Values.fsm.fsmIngress.tls.containerPort .Values.nsig.spec.tls.port.targetPort }}
+    {{- if (and $setNodePorts (not (empty .Values.nsig.spec.tls.port.nodePort))) }}
+    nodePort: {{ .Values.nsig.spec.tls.port.nodePort }}
+    {{- end }}
+  {{- end }}
+  selector:
+    app: fsm-ingress
+    ingress.flomesh.io/namespaced: "true"
+    ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+{{- end }}
+{{- end }}

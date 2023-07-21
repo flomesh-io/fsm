@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"github.com/mitchellh/hashstructure/v2"
@@ -26,9 +25,9 @@ func SimpleHash(obj interface{}) string {
 	return fmt.Sprintf("%x", hash)
 }
 
-func Hash(data []byte) string {
-	return fmt.Sprintf("%x", sha256.Sum256(data))
-}
+//func Hash(data []byte) string {
+//	return fmt.Sprintf("%x", sha256.Sum256(data))
+//}
 
 func GetBytes(key interface{}) ([]byte, error) {
 	var buf bytes.Buffer

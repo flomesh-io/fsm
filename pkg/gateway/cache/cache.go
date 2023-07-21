@@ -5,8 +5,8 @@ import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/gateway/route"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
@@ -332,7 +332,7 @@ func (c *GatewayCache) defaults() route.Defaults {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener) []route.Listener {
+func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener) []route.Listener {
 	listeners := make([]route.Listener, 0)
 	for _, l := range validListeners {
 		listener := route.Listener{
@@ -351,7 +351,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwpkg.L
 	return listeners
 }
 
-func (c *GatewayCache) listenPort(l gwpkg.Listener) gwv1beta1.PortNumber {
+func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
 	if l.Port < 1024 {
 		return l.Port + 60000
 	}
@@ -359,7 +359,7 @@ func (c *GatewayCache) listenPort(l gwpkg.Listener) gwv1beta1.PortNumber {
 	return l.Port
 }
 
-func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwpkg.Listener) *route.TLS {
+func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *route.TLS {
 	switch l.Protocol {
 	case gwv1beta1.HTTPSProtocolType:
 		// Terminate
@@ -387,7 +387,7 @@ func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwpkg.Listener) *route.TLS {
 	return nil
 }
 
-func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwpkg.Listener) *route.TLS {
+func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener) *route.TLS {
 	return &route.TLS{
 		TLSModeType:  gwv1beta1.TLSModeTerminate,
 		MTLS:         isMTLSEnabled(gw),
@@ -402,7 +402,7 @@ func (c *GatewayCache) tlsPassthroughCfg() *route.TLS {
 	}
 }
 
-func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwpkg.Listener) []route.Certificate {
+func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) []route.Certificate {
 	certs := make([]route.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == "Secret" && string(*ref.Group) == "" {
@@ -431,7 +431,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwpkg.Listener) []r
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener) (map[int32]route.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener) (map[int32]route.RouteRule, map[string]serviceInfo) {
 	rules := make(map[int32]route.RouteRule)
 	services := make(map[string]serviceInfo)
 
@@ -474,7 +474,7 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwpkg.
 	return rules, services
 }
 
-func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]route.RouteRule) {
+func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -510,7 +510,7 @@ func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, ht
 	}
 }
 
-func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]route.RouteRule) {
+func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range grpcRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -546,7 +546,7 @@ func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, gr
 	}
 }
 
-func processTlsRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]route.RouteRule) {
+func processTlsRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -593,7 +593,7 @@ func processTlsRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, tls
 	}
 }
 
-func processTcpRoute(gw *gwv1beta1.Gateway, validListeners []gwpkg.Listener, tcpRoute *gwv1alpha2.TCPRoute, rules map[int32]route.RouteRule) {
+func processTcpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tcpRoute *gwv1alpha2.TCPRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range tcpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue

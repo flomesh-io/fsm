@@ -1,0 +1,128 @@
+{{- if and .Values.fsm.ingress.enabled (not .Values.fsm.gatewayApi.enabled ) (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if and (not .Values.fsm.ingress.namespaced) (or .Values.fsm.ingress.http.enabled .Values.fsm.ingress.tls.enabled) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fsm.ingress.name }}
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.ingress-pipy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.fsm.ingress.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "fsm.ingress-pipy.selectorLabels" . | nindent 6 }}
+      ingress.flomesh.io/namespaced: {{ .Values.fsm.ingress.namespaced | quote }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      {{- with .Values.fsm.ingress.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "fsm.ingress-pipy.labels" . | nindent 8 }}
+        {{- include "fsm.ingress-pipy.selectorLabels" . | nindent 8 }}
+        ingress.flomesh.io/namespaced: {{ .Values.fsm.ingress.namespaced | quote }}
+        {{- with .Values.fsm.ingress.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      initContainers:
+      - name: wait-manager
+        image: {{ include "fsm.curl.image" . }}
+        imagePullPolicy: IfNotPresent
+        {{- with .Values.fsm.ingress.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        command:
+          - curl
+          - {{ printf "http://%s:8081/healthz" (include "fsm.manager.host" .) }}
+          - --connect-timeout
+          - "2"
+          - --retry
+          - "100"
+          - --retry-connrefused
+          - --retry-delay
+          - "5"
+      containers:
+      - name: ingress
+        image: {{ include "fsm.ingress-pipy.image" . }}
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+        ports:
+        {{- if and .Values.fsm.ingress.http.enabled (and (not (empty .Values.fsm.ingress.http.port)) (not (empty .Values.fsm.ingress.http.containerPort))) }}
+        - name: http
+          containerPort: {{ .Values.fsm.ingress.http.containerPort }}
+        {{- end }}
+        {{- if and .Values.fsm.ingress.tls.enabled (and (not (empty .Values.fsm.ingress.tls.port)) (not (empty .Values.fsm.ingress.tls.containerPort))) }}
+        - name: https
+          containerPort: {{ .Values.fsm.ingress.tls.containerPort }}
+        {{- end }}
+        - name: health
+          containerPort: 8081
+        args:
+        - --v={{ .Values.fsm.logLevel }}
+        resources:
+          {{- toYaml .Values.fsm.ingress.resources | nindent 10 }}
+        env:
+        {{- include "fsm.common-env" . | nindent 8 }}
+        {{- with .Values.fsm.ingress.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.fsm.ingress.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: {{ include "fsm.ingress-pipy.heath.port" . }}
+        readinessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: {{ include "fsm.ingress-pipy.heath.port" . }}
+      terminationGracePeriodSeconds: 60
+      {{- with .Values.fsm.ingress.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fsm.serviceAccountName" . }}
+      {{- with .Values.fsm.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.fsm.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.fsm.affinity.enabled }}
+      affinity:
+        {{- with .Values.fsm.affinity.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: flomesh.io/app
+                  operator: In
+                  values:
+                  - {{ .Values.fsm.ingress.name }}
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      {{- end }}
+      {{- with .Values.fsm.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

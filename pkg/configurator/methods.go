@@ -478,6 +478,12 @@ func (c *Client) IsGatewayApiEnabled() bool {
 	return mcSpec.GatewayAPI.Enabled && !mcSpec.Ingress.Enabled
 }
 
+// GetGatewayApiLogLevel returns log level of FSM Gateway
+func (c *Client) GetGatewayApiLogLevel() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.LogLevel
+}
+
 // IsIngressEnabled returns whether Ingress is enabled
 func (c *Client) IsIngressEnabled() bool {
 	mcSpec := c.getMeshConfig().Spec
@@ -511,26 +517,13 @@ func (c *Client) IsMultiClusterControlPlane() bool {
 }
 
 func (c *Client) GetImageRegistry() string {
-
-}
-
-func (c *Client) PipyImage() string {
 	mcSpec := c.getMeshConfig().Spec
-	mcSpec.
-	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
-}
-
-func (c *Client) PipyRepoImage() string {
-	mcSpec := c.getMeshConfig().Spec
-	return
-}
-
-func (c *Client) PipyNonrootImage() string {
-	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.PipyImage)
+	return mcSpec.Image.Registry
 }
 
 func (c *Client) ServiceLbImage() string {
-	return fmt.Sprintf("%s/%s", c.Images.Repository, c.Images.KlipperLbImage)
+	mcSpec := c.getMeshConfig().Spec
+	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.Image.ServiceLBImage)
 }
 
 func (c *Client) GetFLBSecretName() string {

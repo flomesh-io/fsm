@@ -47,6 +47,12 @@ type Processor interface {
 	Delete(obj interface{}, cache *GatewayCache) bool
 }
 
+type Cache interface {
+	Insert(obj interface{}) bool
+	Delete(obj interface{}) bool
+	BuildConfigs()
+}
+
 type serviceInfo struct {
 	svcPortName route.ServicePortName
 	filters     []route.Filter

@@ -80,7 +80,7 @@ type namespacedIngressValues struct {
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	mc := r.fctx.Config
 
-	klog.Infof("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.Ingress.Enabled, mc.Ingress.Namespaced)
+	klog.Infof("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
 	if !mc.IsNamespacedIngressEnabled() {
 		klog.Warning("Ingress is not enabled or Ingress mode is not Namespace, ignore processing NamespacedIngress...")
 		return ctrl.Result{}, nil
@@ -149,7 +149,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 
 	overrides := []string{
 		"fsm.ingress.namespaced=true",
-		fmt.Sprintf("fsm.image.repository=%s", mc.Images.Repository),
+		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
 		fmt.Sprintf("fsm.namespace=%s", mc.GetFSMNamespace()),
 	}
 

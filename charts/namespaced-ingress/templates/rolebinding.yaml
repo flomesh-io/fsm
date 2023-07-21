@@ -1,0 +1,51 @@
+{{- if and .Values.fsm.ingress.enabled .Values.fsm.ingress.namespaced (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fsm-namespaced-ingress-rolebinding
+  namespace: {{ .Values.nsig.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fsm-namespaced-ingress-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
+    namespace: {{ .Values.nsig.metadata.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "fsm-mesh-config-rolebinding-%s" .Values.nsig.metadata.namespace }}
+  namespace: {{ .Values.fsm.fsmNamespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fsm-mesh-config-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
+    namespace: {{ .Values.nsig.metadata.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "fsm-mesh-config-clusterrolebinding-%s" .Values.nsig.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fsm-mesh-config-clusterrole
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
+    namespace: {{ .Values.nsig.metadata.namespace }}
+{{- end }}

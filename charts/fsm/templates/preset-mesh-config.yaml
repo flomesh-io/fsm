@@ -9,7 +9,7 @@ data:
       "clusterSet": {
         "properties": [],
         "isManaged": false,
-        "uid": "",
+        "uid": "{{ uuidv4 }}",
         "region": "default",
         "zone": "default",
         "group": "default",
@@ -85,6 +85,7 @@ data:
       "ingress": {
         "enabled": {{ and .Values.fsm.ingress.enabled (not .Values.fsm.gatewayApi.enabled )}},
         "namespaced": {{ .Values.fsm.ingress.namespaced }},
+        "logLevel": "{{ .Values.fsm.ingress.logLevel }}",
         "http": {
           "enabled": {{ .Values.fsm.ingress.http.enabled }},
           "bind": {{ .Values.fsm.ingress.http.port }},
@@ -104,7 +105,8 @@ data:
         }
       },
       "gatewayAPI": {
-        "enabled": {{ and .Values.fsm.gatewayApi.enabled (not .Values.fsm.ingress.enabled) }}
+        "enabled": {{ and .Values.fsm.gatewayApi.enabled (not .Values.fsm.ingress.enabled) }},
+        "logLevel": "{{ .Values.fsm.gatewayApi.logLevel }}"
       },
       "serviceLB": {
         "enabled": {{ .Values.fsm.serviceLB.enabled }}

@@ -29,8 +29,8 @@ import (
 	"fmt"
 	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -452,14 +452,14 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	klog.V(5).Infof("Annotations of Ingress %s/%s: %v", ing.Namespace, ing.Name, ing.Annotations)
 
 	// enrich rewrite if exists
-	rewriteFrom := ing.Annotations[ingresspipy.PipyIngressAnnotationRewriteFrom]
-	rewriteTo := ing.Annotations[ingresspipy.PipyIngressAnnotationRewriteTo]
+	rewriteFrom := ing.Annotations[constants.PipyIngressAnnotationRewriteFrom]
+	rewriteTo := ing.Annotations[constants.PipyIngressAnnotationRewriteTo]
 	if rewriteFrom != "" && rewriteTo != "" {
 		info.rewrite = []string{rewriteFrom, rewriteTo}
 	}
 
 	// enrich session sticky
-	sticky := ing.Annotations[ingresspipy.PipyIngressAnnotationSessionSticky]
+	sticky := ing.Annotations[constants.PipyIngressAnnotationSessionSticky]
 	switch strings.ToLower(sticky) {
 	case "yes", "true", "1", "on":
 		info.sessionSticky = true
@@ -471,7 +471,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// enrich LB type
-	lbValue := ing.Annotations[ingresspipy.PipyIngressAnnotationLoadBalancer]
+	lbValue := ing.Annotations[constants.PipyIngressAnnotationLoadBalancer]
 	if lbValue == "" {
 		lbValue = string(apiconstants.RoundRobinLoadBalancer)
 	}
@@ -486,7 +486,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Upstream SNI
-	upstreamSSLName := ing.Annotations[ingresspipy.PipyIngressAnnotationUpstreamSSLName]
+	upstreamSSLName := ing.Annotations[constants.PipyIngressAnnotationUpstreamSSLName]
 	if upstreamSSLName != "" {
 		if info.upstream == nil {
 			info.upstream = &repocfg.UpstreamSpec{}
@@ -495,7 +495,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Upstream SSL Secret
-	upstreamSSLSecret := ing.Annotations[ingresspipy.PipyIngressAnnotationUpstreamSSLSecret]
+	upstreamSSLSecret := ing.Annotations[constants.PipyIngressAnnotationUpstreamSSLSecret]
 	if upstreamSSLSecret != "" {
 
 		ns, name, err := utils.SecretNamespaceAndName(upstreamSSLSecret, ing)
@@ -510,7 +510,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Upstream SSL Verify
-	upstreamSSLVerify := ing.Annotations[ingresspipy.PipyIngressAnnotationUpstreamSSLVerify]
+	upstreamSSLVerify := ing.Annotations[constants.PipyIngressAnnotationUpstreamSSLVerify]
 	if info.upstream == nil {
 		info.upstream = &repocfg.UpstreamSpec{}
 	}
@@ -525,7 +525,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Verify Client
-	verifyClient := ing.Annotations[ingresspipy.PipyIngressAnnotationTLSVerifyClient]
+	verifyClient := ing.Annotations[constants.PipyIngressAnnotationTLSVerifyClient]
 	switch strings.ToLower(verifyClient) {
 	case "yes", "true", "1", "on":
 		info.verifyClient = true
@@ -537,7 +537,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Verify Depth
-	verifyDepth := ing.Annotations[ingresspipy.PipyIngressAnnotationTLSVerifyDepth]
+	verifyDepth := ing.Annotations[constants.PipyIngressAnnotationTLSVerifyDepth]
 	if verifyDepth == "" {
 		verifyDepth = "1"
 	}
@@ -545,7 +545,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	if err == nil {
 		info.verifyDepth = depth
 	} else {
-		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-depth of Ingress %s/%s, setting verify depth to 1", ing.Annotations[ingresspipy.PipyIngressAnnotationTLSVerifyDepth], ing.Namespace, ing.Name)
+		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-depth of Ingress %s/%s, setting verify depth to 1", ing.Annotations[constants.PipyIngressAnnotationTLSVerifyDepth], ing.Namespace, ing.Name)
 		info.verifyDepth = 1
 	}
 
@@ -553,7 +553,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	if info.certificate != nil && info.certificate.CA != "" {
 		info.trustedCA = info.certificate
 	}
-	trustedCASecret := ing.Annotations[ingresspipy.PipyIngressAnnotationTLSTrustedCASecret]
+	trustedCASecret := ing.Annotations[constants.PipyIngressAnnotationTLSTrustedCASecret]
 	if trustedCASecret != "" {
 		ns, name, err := utils.SecretNamespaceAndName(trustedCASecret, ing)
 		if err == nil {
@@ -564,7 +564,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	}
 
 	// Backend Protocol
-	backendProtocol := strings.ToUpper(ing.Annotations[ingresspipy.PipyIngressAnnotationBackendProtocol])
+	backendProtocol := strings.ToUpper(ing.Annotations[constants.PipyIngressAnnotationBackendProtocol])
 	if info.upstream == nil {
 		info.upstream = &repocfg.UpstreamSpec{}
 	}

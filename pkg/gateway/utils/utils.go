@@ -27,7 +27,7 @@ package utils
 import (
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
-	gwpkg "github.com/flomesh-io/fsm/pkg/gateway"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,20 +107,20 @@ func GroupPointer(group string) *gwv1beta1.Group {
 	return &result
 }
 
-func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwpkg.Listener {
+func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 	listeners := make(map[gwv1beta1.SectionName]gwv1beta1.Listener)
 	for _, listener := range gw.Spec.Listeners {
 		listeners[listener.Name] = listener
 	}
 
-	validListeners := make([]gwpkg.Listener, 0)
+	validListeners := make([]gwtypes.Listener, 0)
 	for _, status := range gw.Status.Listeners {
 		if IsListenerAccepted(status) && IsListenerProgrammed(status) {
 			l, ok := listeners[status.Name]
 			if !ok {
 				continue
 			}
-			validListeners = append(validListeners, gwpkg.Listener{
+			validListeners = append(validListeners, gwtypes.Listener{
 				Listener:       l,
 				SupportedKinds: status.SupportedKinds,
 			})
@@ -134,10 +134,10 @@ func GetAllowedListeners(
 	parentRef gwv1beta1.ParentReference,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
-	validListeners []gwpkg.Listener,
+	validListeners []gwtypes.Listener,
 	routeParentStatus gwv1beta1.RouteParentStatus,
-) []gwpkg.Listener {
-	var selectedListeners []gwpkg.Listener
+) []gwtypes.Listener {
+	var selectedListeners []gwtypes.Listener
 	for _, validListener := range validListeners {
 		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
 			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
@@ -158,7 +158,7 @@ func GetAllowedListeners(
 		return nil
 	}
 
-	var allowedListeners []gwpkg.Listener
+	var allowedListeners []gwtypes.Listener
 	for _, selectedListener := range selectedListeners {
 		if !selectedListener.AllowsKind(routeGvk) {
 			continue

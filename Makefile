@@ -1,4 +1,6 @@
 #!make
+include VERSION
+export $(shell sed 's/=.*//' VERSION)
 
 TARGETS      := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 BINNAME      ?= fsm
@@ -15,13 +17,15 @@ ifeq ($(shell uname),Darwin)
 	SHA256 = shasum -a 256
 endif
 
+BUILD_DIR = bin
+
 VERSION ?= dev
-BUILD_DATE ?=
+BUILD_DATE ?= $(shell date +%Y-%m-%d-%H:%M-%Z)
 GIT_SHA=$$(git rev-parse HEAD)
 BUILD_DATE_VAR := github.com/flomesh-io/fsm/pkg/version.BuildDate
 BUILD_VERSION_VAR := github.com/flomesh-io/fsm/pkg/version.Version
 BUILD_GITCOMMIT_VAR := github.com/flomesh-io/fsm/pkg/version.GitCommit
-DOCKER_GO_VERSION = 1.19
+DOCKER_GO_VERSION = 1.20
 DOCKER_BUILDX_PLATFORM ?= linux/amd64
 # Value for the --output flag on docker buildx build.
 # https://docs.docker.com/engine/reference/commandline/buildx_build/#output
@@ -59,7 +63,16 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="codegen/boilerplate.go.txt" paths="./..."
+
+.PHONY: build
+build: generate go-fmt go-vet ## Build commands with release args, the result will be optimized.
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
+
+.PHONY: build/fsm-bootstrap build/fsm-connector build/fsm-controller build/fsm-gateway build/fsm-healthcheck build/fsm-ingress build/fsm-injector build/fsm-interceptor build/fsm-preinstall
+build/fsm-bootstrap build/fsm-connector build/fsm-controller build/fsm-gateway build/fsm-healthcheck build/fsm-ingress build/fsm-injector build/fsm-interceptor build/fsm-preinstall:
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR)/$(@F) -ldflags ${LDFLAGS} ./cmd/$(@F)
 
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
@@ -70,6 +83,18 @@ cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/
 
 helm-update-dep:
 	helm dependency update charts/fsm/
+
+.PHONY: package-scripts
+package-scripts: ## Tar all repo initializing scripts
+	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
+
+.PHONY: charts-tgz-rel
+charts-tgz-rel: helm
+	export PACKAGED_APP_VERSION=$(APP_VERSION) HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
+
+.PHONY: charts-tgz-dev
+charts-tgz-dev: helm
+	export PACKAGED_APP_VERSION=$(APP_VERSION)-dev HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -309,6 +334,19 @@ dist:
 
 .PHONY: release-artifacts
 release-artifacts: build-cross dist
+
+.PHONY: release
+VERSION_REGEXP := ^v[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)\.[0-9]+)?$
+release: ## Create a release tag, push to git repository and trigger the release workflow.
+ifeq (,$(RELEASE_VERSION))
+	$(error "RELEASE_VERSION must be set to tag HEAD")
+endif
+ifeq (,$(shell [[ "$(RELEASE_VERSION)" =~ $(VERSION_REGEXP) ]] && echo 1))
+	$(error "Version $(RELEASE_VERSION) must match regexp $(VERSION_REGEXP)")
+endif
+	git tag --sign --message "$(PROJECT_NAME) $(RELEASE_VERSION)" $(RELEASE_VERSION)
+	git verify-tag --verbose $(RELEASE_VERSION)
+	git push origin --tags
 
 # -------------------------------------------
 #  Build Dependencies below

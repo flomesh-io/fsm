@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.fsm.configmaps.repoInit.name }}
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+binaryData:
+  scripts.tar.gz: |
+{{ (.Files.Get "components/scripts.tar.gz") | b64enc | indent 4}}

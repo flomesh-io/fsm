@@ -625,10 +625,9 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 	finalValues := gwValues.AsMap()
 
 	overrides := []string{
-		"fsm.gatewayApi.enabled=true",
-		"fsm.ingress.enabled=false",
-		fmt.Sprintf("fsm.image.repository=%s", mc.Images.Repository),
-		fmt.Sprintf("fsm.namespace=%s", mc.GetFSMNamespace()),
+		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
+		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
+		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetGatewayApiLogLevel()),
 	}
 
 	for _, ov := range overrides {

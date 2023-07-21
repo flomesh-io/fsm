@@ -1,0 +1,28 @@
+{{- if and .Values.fsm.ingress.enabled (not .Values.fsm.gatewayApi.enabled ) (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if not .Values.fsm.repo.preProvision.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pipy-repo
+  namespace: {{ include "fsm.namespace" . }}
+  annotations:
+    pipy.ingress.kubernetes.io/rewrite-target-from: ^/mesh/?
+    pipy.ingress.kubernetes.io/rewrite-target-to: /
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.fsm.ingress.className }}
+  ingressClassName: {{ .Values.fsm.ingress.className }}
+  {{- end }}
+  rules:
+  - http:
+      paths:
+      - path: /mesh
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.fsm.services.repo.name }}
+            port:
+              number: {{ .Values.fsm.services.repo.port }}
+{{- end }}
+{{- end }}

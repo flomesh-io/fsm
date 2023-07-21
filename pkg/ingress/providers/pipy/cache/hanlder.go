@@ -2,7 +2,7 @@ package cache
 
 import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 )
@@ -77,7 +77,7 @@ func (c *Cache) OnDelete(obj interface{}) bool {
 		return c.OnUpdate(obj, nil)
 	case *networkingv1.IngressClass:
 		// if the default IngressClass is deleted, set the DefaultIngressClass variable to empty
-		updateDefaultIngressClass(obj, ingresspipy.NoDefaultIngressClass)
+		updateDefaultIngressClass(obj, constants.NoDefaultIngressClass)
 		return true
 	}
 
@@ -85,8 +85,8 @@ func (c *Cache) OnDelete(obj interface{}) bool {
 }
 
 func updateDefaultIngressClass(class *networkingv1.IngressClass, className string) {
-	isDefault, ok := class.GetAnnotations()[ingresspipy.IngressClassAnnotationKey]
+	isDefault, ok := class.GetAnnotations()[constants.IngressClassAnnotationKey]
 	if ok && isDefault == "true" {
-		ingresspipy.DefaultIngressClass = className
+		constants.DefaultIngressClass = className
 	}
 }

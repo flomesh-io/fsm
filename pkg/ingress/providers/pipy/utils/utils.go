@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 
-package pipy
+package utils
 
 import (
+	"github.com/flomesh-io/fsm/pkg/constants"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
@@ -32,22 +33,22 @@ import (
 
 func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 	// 1. with annotation or IngressClass
-	ingressClass, ok := ing.GetAnnotations()[IngressAnnotationKey]
+	ingressClass, ok := ing.GetAnnotations()[constants.IngressAnnotationKey]
 	if !ok && ing.Spec.IngressClassName != nil {
 		ingressClass = *ing.Spec.IngressClassName
 	}
 
-	defaultClass := DefaultIngressClass
+	defaultClass := constants.DefaultIngressClass
 	klog.V(3).Infof("IngressClassName/IngressAnnotation = %s", ingressClass)
-	klog.V(3).Infof("DefaultIngressClass = %s, and IngressPipyClass = %s", defaultClass, IngressPipyClass)
+	klog.V(3).Infof("DefaultIngressClass = %s, and IngressPipyClass = %s", defaultClass, constants.IngressPipyClass)
 
 	// 2. empty IngressClass, and pipy is the default IngressClass or no default at all
-	if len(ingressClass) == 0 && (defaultClass == IngressPipyClass || len(defaultClass) == 0) {
+	if len(ingressClass) == 0 && (defaultClass == constants.IngressPipyClass || len(defaultClass) == 0) {
 		return true
 	}
 
 	// 3. with IngressClass
-	return ingressClass == IngressPipyClass
+	return ingressClass == constants.IngressPipyClass
 }
 
 func MetaNamespaceKey(obj interface{}) string {

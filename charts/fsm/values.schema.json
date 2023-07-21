@@ -170,6 +170,7 @@
                 "sidecarDrivers",
                 "pluginChains",
                 "curlImage",
+                "serviceLBImage",
                 "caBundleSecretName",
                 "enableDebugServer",
                 "enablePermissiveTrafficPolicy",
@@ -659,6 +660,15 @@
                     "description": "The curl image for control plane init containers.",
                     "examples": [
                         "curlimages/curl"
+                    ]
+                },
+                "serviceLBImage": {
+                    "$id": "#/properties/fsm/properties/serviceLBImage",
+                    "type": "string",
+                    "title": "The serviceLBImage schema",
+                    "description": "The serviceLB image for control plane.",
+                    "examples": [
+                        "flomesh/mirrored-klipper-lb:v0.3.5"
                     ]
                 },
                 "repoServer": {

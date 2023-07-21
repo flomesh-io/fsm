@@ -2,7 +2,7 @@ package repo
 
 import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/gateway"
+	"github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
@@ -20,11 +20,11 @@ type Server struct {
 	workQueues *workerpool.WorkerPool
 	//kubeController  k8s.Controller
 	msgBroker       *messaging.Broker
-	cache           gateway.Cache
+	cache           cache.Cache
 	retryProxiesJob func()
 }
 
-func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache gateway.Cache) *Server {
+func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache cache.Cache) *Server {
 	return &Server{
 		//fsmNamespace: fsmNamespace,
 		cfg: cfg,

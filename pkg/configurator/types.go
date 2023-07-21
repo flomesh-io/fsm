@@ -155,6 +155,9 @@ type Configurator interface {
 	// IsGatewayApiEnabled returns whether GatewayAPI is enabled
 	IsGatewayApiEnabled() bool
 
+	// GetGatewayApiLogLevel returns log level of FSM Gateway
+	GetGatewayApiLogLevel() string
+
 	// IsIngressEnabled returns whether Ingress is enabled
 	IsIngressEnabled() bool
 
@@ -188,14 +191,14 @@ type Configurator interface {
 	// GetImageRegistry returns the image registry
 	GetImageRegistry() string
 
-	// PipyImage returns the pipy image
-	PipyImage() string
-
-	// PipyRepoImage returns the pipy-repo image
-	PipyRepoImage() string
-
-	// PipyNonrootImage string returns the pipy-nonroot image
-	PipyNonrootImage() string
+	//// PipyImage returns the pipy image
+	//PipyImage() string
+	//
+	//// PipyRepoImage returns the pipy-repo image
+	//PipyRepoImage() string
+	//
+	//// PipyNonrootImage string returns the pipy-nonroot image
+	//PipyNonrootImage() string
 
 	// ServiceLbImage string returns the service-lb image
 	ServiceLbImage() string

@@ -25,7 +25,7 @@
 package admission
 
 import (
-	"github.com/flomesh-io/fsm-classic/pkg/commons"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,7 +37,7 @@ func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook) 
 
 	return &admissionregv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: commons.DefaultMutatingWebhookConfigurationName,
+			Name: constants.DefaultMutatingWebhookConfigurationName,
 		},
 		Webhooks: webhooks,
 	}
@@ -50,7 +50,7 @@ func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebho
 
 	return &admissionregv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: commons.DefaultValidatingWebhookConfigurationName,
+			Name: constants.DefaultValidatingWebhookConfigurationName,
 		},
 		Webhooks: webhooks,
 	}

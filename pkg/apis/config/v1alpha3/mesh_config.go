@@ -59,6 +59,9 @@ type MeshConfigSpec struct {
 
 	// FLB defines the configurations of FLB features.
 	FLB FLBSpec `json:"flb,omitempty"`
+
+	// Image defines the configurations of Image info
+	Image ImageSpec `json:"image"`
 }
 
 // LocalProxyMode is a type alias representing the way the sidecar proxies to the main application
@@ -416,10 +419,20 @@ type PluginChainSpec struct {
 type IngressSpec struct {
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
+
 	// +kubebuilder:default=false
 	Namespaced bool `json:"namespaced"`
-	HTTP       HTTP `json:"http"`
-	TLS        TLS  `json:"tls"`
+
+	// +kubebuilder:default=info
+	LogLevel string `json:"logLevel"`
+
+	// +kubebuilder:default={enabled: true, bind: 80, listen: 8000, nodePort: 30508}
+	// +optional
+	HTTP *HTTP `json:"http"`
+
+	// +kubebuilder:default={enabled: true, bind: 443, listen: 8443, nodePort: 30607, mTLS: false}
+	// +optional
+	TLS *TLS `json:"tls"`
 }
 
 type HTTP struct {
@@ -446,7 +459,7 @@ type TLS struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
 
-	// +kubebuilder:default=80
+	// +kubebuilder:default=443
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	Bind int32 `json:"bind" validate:"gte=1,lte=65535"`
@@ -462,8 +475,11 @@ type TLS struct {
 	NodePort int32 `json:"nodePort" validate:"gte=0,lte=65535"`
 
 	// +kubebuilder:default=false
-	MTLS           bool           `json:"mTLS"`
-	SSLPassthrough SSLPassthrough `json:"sslPassthrough"`
+	MTLS bool `json:"mTLS"`
+
+	// +kubebuilder:default={enabled: false, upstreamPort: 443}
+	// +optional
+	SSLPassthrough *SSLPassthrough `json:"sslPassthrough"`
 }
 
 type SSLPassthrough struct {
@@ -479,6 +495,9 @@ type SSLPassthrough struct {
 type GatewayAPISpec struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:default=info
+	LogLevel string `json:"logLevel"`
 }
 
 type ServiceLBSpec struct {
@@ -489,8 +508,18 @@ type ServiceLBSpec struct {
 type FLBSpec struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
+
 	// +kubebuilder:default=false
 	StrictMode bool `json:"strictMode"`
+
 	// +kubebuilder:default=fsm-flb-secret
 	SecretName string `json:"secretName"`
+}
+
+type ImageSpec struct {
+	// +kubebuilder:default=flomesh
+	Registry string `json:"registry"`
+
+	// +kubebuilder:default=mirrored-klipper-lb:v0.3.5
+	ServiceLBImage string `json:"serviceLBImage"`
 }

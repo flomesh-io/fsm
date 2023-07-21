@@ -80,7 +80,7 @@ type ServiceImportChangeTracker struct {
 	enrichServiceImportInfo enrichServiceImportInfoFunc
 	enrichEndpointInfo      enrichMultiClusterEndpointFunc
 	recorder                events.EventRecorder
-	informers               fsminformers.InformerCollection
+	informers               *fsminformers.InformerCollection
 }
 
 type ServiceImportMap map[ServicePortName]ServicePort
