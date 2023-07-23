@@ -9,6 +9,7 @@ import (
 // from one service source to one or more destination services.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 type Retry struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

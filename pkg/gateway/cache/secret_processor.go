@@ -27,7 +27,6 @@ package cache
 import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
 )
 
 type SecretProcessor struct {
@@ -36,7 +35,7 @@ type SecretProcessor struct {
 func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
@@ -49,7 +48,7 @@ func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 func (p *SecretProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 

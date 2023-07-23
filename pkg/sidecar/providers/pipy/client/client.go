@@ -99,7 +99,7 @@ func NewRepoClientWithAPIBaseURLAndTransport(serverAddr string, serverPort uint1
 	return repo
 }
 
-func (p *PipyRepoClient) isCodebaseExists(codebaseName string) (success bool, codebase *Codebase, err error) {
+func (p *PipyRepoClient) codebaseExists(codebaseName string) (success bool, codebase *Codebase, err error) {
 	var resp *resty.Response
 
 	resp, err = p.httpClient.R().
@@ -296,7 +296,7 @@ func (p *PipyRepoClient) Batch(version string, batches []Batch) (success bool, e
 		//log.Info().Msgf("batch.Basepath = %q", batch.Basepath)
 		var codebaseV string
 		var codebase *Codebase
-		success, codebase, err = p.isCodebaseExists(batch.Basepath)
+		success, codebase, err = p.codebaseExists(batch.Basepath)
 		if err != nil {
 			return
 		}
@@ -345,14 +345,14 @@ func (p *PipyRepoClient) DeriveCodebase(codebaseName, base string, version uint6
 	var codebase *Codebase
 
 	baseCodebase := strings.TrimPrefix(base, "/")
-	success, codebase, err = p.isCodebaseExists(baseCodebase)
+	success, codebase, err = p.codebaseExists(baseCodebase)
 	if err != nil || !success || codebase == nil {
 		success = false
 		log.Error().Msgf("Codebase %q not exists, ignore deriving[%s] ...", baseCodebase, codebaseName)
 		p.lock.Lock()
 		defer p.lock.Unlock()
 		if p.Restore != nil {
-			retrySuccess, retryCodebase, retryErr := p.isCodebaseExists(baseCodebase)
+			retrySuccess, retryCodebase, retryErr := p.codebaseExists(baseCodebase)
 			if retryErr != nil || !retrySuccess || retryCodebase == nil {
 				restoreErr := p.Restore()
 				if restoreErr != nil {
@@ -363,7 +363,7 @@ func (p *PipyRepoClient) DeriveCodebase(codebaseName, base string, version uint6
 		return
 	}
 
-	success, codebase, err = p.isCodebaseExists(codebaseName)
+	success, codebase, err = p.codebaseExists(codebaseName)
 	if err != nil || !success {
 		success = false
 		return
@@ -404,7 +404,7 @@ func (p *PipyRepoClient) IsRepoUp() (success bool, err error) {
 }
 
 func (p *PipyRepoClient) CodebaseExists(path string) bool {
-	exists, _, _ := p.isCodebaseExists(path)
+	exists, _, _ := p.codebaseExists(path)
 
 	return exists
 }

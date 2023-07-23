@@ -10,7 +10,6 @@ import (
 	"hash/fnv"
 	"io"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 )
 
@@ -18,7 +17,7 @@ func SimpleHash(obj interface{}) string {
 	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, nil)
 
 	if err != nil {
-		klog.Errorf("Not able convert Data to hash, error: %s", err.Error())
+		log.Error().Msgf("Not able convert Data to hash, error: %s", err.Error())
 		return ""
 	}
 

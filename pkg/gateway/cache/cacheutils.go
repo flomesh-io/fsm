@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -390,7 +389,7 @@ func mergeL7RouteRule(rule1 route.L7RouteRule, rule2 route.L7RouteRule) route.L7
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:
-					klog.Errorf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
+					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
 				}
 			case route.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
@@ -398,7 +397,7 @@ func mergeL7RouteRule(rule1 route.L7RouteRule, rule2 route.L7RouteRule) route.L7
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:
-					klog.Errorf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
+					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
 				}
 			}
 		} else {

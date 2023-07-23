@@ -33,7 +33,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -74,7 +73,7 @@ func (r *endpointSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	klog.Info("added label", discoveryv1.LabelServiceName, serviceName)
+	log.Info().Msg("added label", discoveryv1.LabelServiceName, serviceName)
 
 	return ctrl.Result{}, nil
 }

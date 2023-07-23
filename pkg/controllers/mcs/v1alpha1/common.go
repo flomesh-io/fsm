@@ -25,6 +25,7 @@
 package v1alpha1
 
 import (
+	"github.com/flomesh-io/fsm/pkg/logger"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -39,3 +40,7 @@ func derivedName(name types.NamespacedName) string {
 
 	return name.Name
 }
+
+var (
+	log = logger.New("mcs-v1alpha1-controller")
+)

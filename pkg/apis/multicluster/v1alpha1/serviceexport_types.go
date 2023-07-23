@@ -128,6 +128,7 @@ const (
 // +kubebuilder:printcolumn:name="Valid",type="string",priority=0,JSONPath=".status.conditions[?(@.type=='Valid')].status"
 // +kubebuilder:printcolumn:name="Conflict",type="string",priority=0,JSONPath=".status.conditions[?(@.type=='Conflict')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
 // ServiceExport is the Schema for the ServiceExports API
 type ServiceExport struct {

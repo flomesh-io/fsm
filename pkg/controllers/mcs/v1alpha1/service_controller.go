@@ -34,7 +34,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -82,7 +81,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.fctx.Update(ctx, svcImport); err != nil {
 		return ctrl.Result{}, err
 	}
-	klog.Infof("Updated ServiceImport %s/%s, ClusterIP: %s", req.Namespace, importName, svc.Spec.ClusterIP)
+	log.Info().Msgf("Updated ServiceImport %s/%s, ClusterIP: %s", req.Namespace, importName, svc.Spec.ClusterIP)
 
 	return ctrl.Result{}, nil
 }

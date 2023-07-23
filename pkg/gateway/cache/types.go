@@ -24,7 +24,10 @@
 
 package cache
 
-import "github.com/flomesh-io/fsm/pkg/gateway/route"
+import (
+	"github.com/flomesh-io/fsm/pkg/gateway/route"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
 
 type ProcessorType string
 
@@ -62,3 +65,7 @@ type endpointInfo struct {
 	address string
 	port    int32
 }
+
+var (
+	log = logger.New("fsm-gateway-cache")
+)

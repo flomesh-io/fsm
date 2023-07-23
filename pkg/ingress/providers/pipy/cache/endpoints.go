@@ -28,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/klog/v2"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 	utilnet "k8s.io/utils/net"
 	"net"
@@ -126,7 +125,7 @@ func (ect *EndpointChangeTracker) Update(previous, current *corev1.Endpoints) bo
 		delete(ect.items, namespacedName)
 	} else {
 		for spn, eps := range change.current {
-			klog.V(2).Infof("Service port %s updated: %d endpoints", spn, len(eps))
+			log.Info().Msgf("Service port %s updated: %d endpoints", spn, len(eps))
 		}
 	}
 
@@ -167,7 +166,7 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endp
 		for i := range ss.Ports {
 			port := &ss.Ports[i]
 			if port.Port == 0 {
-				klog.Warningf("ignoring invalid endpoint port %s", port.Name)
+				log.Warn().Msgf("ignoring invalid endpoint port %s", port.Name)
 				continue
 			}
 			svcPortName := ServicePortName{
@@ -178,7 +177,7 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endp
 			for i := range ss.Addresses {
 				addr := &ss.Addresses[i]
 				if addr.IP == "" {
-					klog.Warningf("ignoring invalid endpoint port %s with empty host", port.Name)
+					log.Warn().Msgf("ignoring invalid endpoint port %s with empty host", port.Name)
 					continue
 				}
 
@@ -187,7 +186,7 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endp
 					continue
 				}
 
-				klog.V(5).Infof("Address = %v", addr)
+				log.Info().Msgf("Address = %v", addr)
 
 				baseEndpointInfo := newBaseEndpointInfo(addr.IP, int(port.Port), nodename(addr), addr.Hostname)
 				if ect.enrichEndpointInfo != nil {
@@ -197,7 +196,7 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endp
 				}
 			}
 
-			klog.V(3).Infof("Setting endpoints for %q to %v", svcPortName, formatEndpointsList(endpointsMap[svcPortName]))
+			log.Info().Msgf("Setting endpoints for %q to %v", svcPortName, formatEndpointsList(endpointsMap[svcPortName]))
 		}
 	}
 

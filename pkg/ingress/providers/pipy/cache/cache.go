@@ -31,6 +31,7 @@ import (
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +39,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/klog/v2"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -77,6 +77,10 @@ type Cache struct {
 	ingressRoutesVersion string
 	serviceRoutesVersion string
 }
+
+var (
+	log = logger.New("fsm-ingress-cache")
+)
 
 func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
 	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
@@ -130,42 +134,42 @@ func (c *Cache) SyncRoutes() {
 	defer c.mu.Unlock()
 
 	c.serviceMap.Update(c.serviceChanges)
-	klog.V(5).Infof("Service Map: %v", c.serviceMap)
+	log.Info().Msgf("Service Map: %v", c.serviceMap)
 
 	c.serviceImportMap.Update(c.serviceImportChanges)
-	klog.V(5).Infof("ServiceImport Map: %v", c.serviceImportMap)
+	log.Info().Msgf("ServiceImport Map: %v", c.serviceImportMap)
 
 	c.multiClusterEndpointsMap.Update(c.serviceImportChanges)
-	klog.V(5).Infof("MultiCluster Endpoints Map: %v", c.multiClusterEndpointsMap)
+	log.Info().Msgf("MultiCluster Endpoints Map: %v", c.multiClusterEndpointsMap)
 
 	c.endpointsMap.Update(c.endpointsChanges)
-	klog.V(5).Infof("Endpoints Map: %v", c.endpointsMap)
+	log.Info().Msgf("Endpoints Map: %v", c.endpointsMap)
 
 	c.ingressMap.Update(c.ingressChanges)
-	klog.V(5).Infof("Ingress Map: %v", c.ingressMap)
+	log.Info().Msgf("Ingress Map: %v", c.ingressMap)
 
-	klog.V(3).InfoS("Start syncing rules ...")
+	log.Info().Msgf("Start syncing rules ...")
 
 	mc := c.cfg
 
 	serviceRoutes := c.buildServiceRoutes()
-	klog.V(5).Infof("Service Routes:\n %v", serviceRoutes)
+	log.Info().Msgf("Service Routes:\n %v", serviceRoutes)
 
 	exists := c.repoClient.CodebaseExists(utils.GetDefaultServicesPath())
 	if !exists {
 		c.serviceRoutesVersion = fmt.Sprintf("%d", time.Now().UnixMilli())
 	}
 	if c.serviceRoutesVersion != serviceRoutes.Hash && exists {
-		klog.V(5).Infof("Service Routes changed, old hash=%q, new hash=%q", c.serviceRoutesVersion, serviceRoutes.Hash)
+		log.Info().Msgf("Service Routes changed, old hash=%q, new hash=%q", c.serviceRoutesVersion, serviceRoutes.Hash)
 		batches := serviceBatches(serviceRoutes, mc)
 		if batches != nil {
 			go func() {
 				if _, err := c.repoClient.Batch(batches); err != nil {
-					klog.Errorf("Sync service routes to repo failed: %s", err)
+					log.Error().Msgf("Sync service routes to repo failed: %s", err)
 					return
 				}
 
-				klog.V(5).Infof("Updating service routes version ...")
+				log.Info().Msgf("Updating service routes version ...")
 				c.serviceRoutesVersion = serviceRoutes.Hash
 			}()
 		}
@@ -175,22 +179,22 @@ func (c *Cache) SyncRoutes() {
 	}
 
 	ingressRoutes := c.buildIngressConfig()
-	klog.V(5).Infof("Ingress Routes:\n %v", ingressRoutes)
+	log.Info().Msgf("Ingress Routes:\n %v", ingressRoutes)
 	exists = c.repoClient.CodebaseExists(utils.GetDefaultIngressPath())
 	if !exists {
 		c.ingressRoutesVersion = fmt.Sprintf("%d", time.Now().UnixMilli())
 	}
 	if c.ingressRoutesVersion != ingressRoutes.Hash && exists {
-		klog.V(5).Infof("Ingress Routes changed, old hash=%q, new hash=%q", c.ingressRoutesVersion, ingressRoutes.Hash)
+		log.Info().Msgf("Ingress Routes changed, old hash=%q, new hash=%q", c.ingressRoutesVersion, ingressRoutes.Hash)
 		batches := c.ingressBatches(ingressRoutes, mc)
 		if batches != nil {
 			go func() {
 				if _, err := c.repoClient.Batch(batches); err != nil {
-					klog.Errorf("Sync ingress routes to repo failed: %s", err)
+					log.Error().Msgf("Sync ingress routes to repo failed: %s", err)
 					return
 				}
 
-				klog.V(5).Infof("Updating ingress routes version ...")
+				log.Info().Msgf("Updating ingress routes version ...")
 				c.ingressRoutesVersion = ingressRoutes.Hash
 			}()
 		}
@@ -198,13 +202,13 @@ func (c *Cache) SyncRoutes() {
 }
 
 func (c *Cache) refreshIngress() {
-	klog.V(5).Infof("Refreshing Ingress Map ...")
+	log.Info().Msgf("Refreshing Ingress Map ...")
 
 	ingresses, err := c.informers.GetListers().K8sIngress.
 		Ingresses(corev1.NamespaceAll).
 		List(labels.Everything())
 	if err != nil {
-		klog.Errorf("Failed to list all ingresses: %s", err)
+		log.Error().Msgf("Failed to list all ingresses: %s", err)
 	}
 
 	for _, ing := range ingresses {
@@ -257,7 +261,7 @@ func (c *Cache) buildIngressConfig() repocfg.IngressData {
 		for _, e := range c.endpointsMap[svcName] {
 			ep, ok := e.(*BaseEndpointInfo)
 			if !ok {
-				klog.ErrorS(nil, "Failed to cast BaseEndpointInfo", "endpoint", e.String())
+				log.Error().Msgf("Failed to cast BaseEndpointInfo, endpoint: %s", e.String())
 				continue
 			}
 
@@ -397,7 +401,7 @@ func (c *Cache) buildServiceRoutes() repocfg.ServiceRoute {
 					serviceRoutes.Routes = append(serviceRoutes.Routes, sr)
 				}
 			} else {
-				klog.ErrorS(nil, "Failed to cast serviceInfo", "svcName", svcName.String())
+				log.Error().Msgf("Failed to cast serviceInfo, svcName: %s", svcName.String())
 			}
 		}
 

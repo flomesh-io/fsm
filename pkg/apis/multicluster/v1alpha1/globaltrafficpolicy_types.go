@@ -65,6 +65,7 @@ type GlobalTrafficPolicyStatus struct {
 // +kubebuilder:resource:shortName=gtp,scope=Namespaced
 // +kubebuilder:printcolumn:name="LB Type",type="string",priority=0,JSONPath=".spec.lbType"
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
 // GlobalTrafficPolicy is the Schema for the GlobalTrafficPolicys API
 type GlobalTrafficPolicy struct {

@@ -46,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"os"
 	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -133,11 +132,11 @@ func main() {
 
 	// codebase URL
 	url := codebase(cfg)
-	klog.Infof("Gateway Repo = %q", url)
+	log.Info().Msgf("Gateway Repo = %q", url)
 
 	// calculate pipy spawn
 	spawn := calcPipySpawn(kubeClient)
-	klog.Infof("PIPY SPAWN = %d", spawn)
+	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
 	startPipy(spawn, url)
 

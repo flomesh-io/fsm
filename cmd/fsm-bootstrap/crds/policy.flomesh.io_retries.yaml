@@ -1,0 +1,115 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: retries.policy.flomesh.io
+spec:
+  group: policy.flomesh.io
+  names:
+    kind: Retry
+    listKind: RetryList
+    plural: retries
+    singular: retry
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Retry is the type used to represent a Retry policy. A Retry policy
+          authorizes retries to failed attempts for outbound traffic from one service
+          source to one or more destination services.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Retry policy specification
+            properties:
+              destinations:
+                description: Destinations defines the list of destinations the Retry
+                  policy applies to.
+                items:
+                  description: RetrySrcDstSpec is the type used to represent the Destination
+                    in the list of Destinations and the Source specified in the Retry
+                    policy specification.
+                  properties:
+                    kind:
+                      description: Kind defines the kind for the Src/Dst in the Retry
+                        policy.
+                      type: string
+                    name:
+                      description: Name defines the name of the Src/Dst for the given
+                        Kind.
+                      type: string
+                    namespace:
+                      description: Namespace defines the namespace for the given Src/Dst.
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  - namespace
+                  type: object
+                type: array
+              retryPolicy:
+                description: RetryPolicy defines the retry policy the Retry policy
+                  applies.
+                properties:
+                  numRetries:
+                    description: NumRetries defines the max number of retries to attempt.
+                    format: int32
+                    type: integer
+                  perTryTimeout:
+                    description: PerTryTimeout defines the time allowed for a retry
+                      before it's considered a failed attempt.
+                    type: string
+                  retryBackoffBaseInterval:
+                    description: RetryBackoffBaseInterval defines the base interval
+                      for exponential retry backoff.
+                    type: string
+                  retryOn:
+                    description: RetryOn defines the policies to retry on, delimited
+                      by comma.
+                    type: string
+                required:
+                - retryOn
+                type: object
+              source:
+                description: Source defines the source the Retry policy applies to.
+                properties:
+                  kind:
+                    description: Kind defines the kind for the Src/Dst in the Retry
+                      policy.
+                    type: string
+                  name:
+                    description: Name defines the name of the Src/Dst for the given
+                      Kind.
+                    type: string
+                  namespace:
+                    description: Namespace defines the namespace for the given Src/Dst.
+                    type: string
+                required:
+                - kind
+                - name
+                - namespace
+                type: object
+            required:
+            - destinations
+            - retryPolicy
+            - source
+            type: object
+        type: object
+    served: true
+    storage: true

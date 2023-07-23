@@ -30,19 +30,18 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"k8s.io/klog/v2"
 )
 
 func ConvertPEMCertToX509(pemCrt []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(pemCrt)
 	if block == nil {
-		klog.Error("No valid certificate in PEM")
+		log.Error().Msgf("No valid certificate in PEM")
 		return nil, fmt.Errorf("no valid certificate in PEM")
 	}
 
 	x509Cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		klog.Errorf("failed to convert PEM certificate to x509, %s ", err.Error())
+		log.Error().Msgf("failed to convert PEM certificate to x509, %s ", err.Error())
 		return nil, err
 	}
 	return x509Cert, nil
@@ -51,13 +50,13 @@ func ConvertPEMCertToX509(pemCrt []byte) (*x509.Certificate, error) {
 func ConvertPEMPrivateKeyToX509(pemKey []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemKey)
 	if block == nil {
-		klog.Error("No valid private key in PEM")
+		log.Error().Msgf("No valid private key in PEM")
 		return nil, fmt.Errorf("no valid private key in PEM")
 	}
 
 	x509Key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		klog.Errorf("failed to convert PEM private key to x509, %s ", err.Error())
+		log.Error().Msgf("failed to convert PEM private key to x509, %s ", err.Error())
 		return nil, err
 	}
 

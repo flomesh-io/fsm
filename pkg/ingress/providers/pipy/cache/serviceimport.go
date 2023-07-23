@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/klog/v2"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 	"reflect"
 	"sync"
@@ -100,7 +99,7 @@ type serviceImportInfo struct {
 }
 
 func (sct *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport) *BaseServiceInfo {
-	klog.V(5).Infof("ServiceImport %s/%s, Port %s", svcImp.Namespace, svcImp.Name, port.String())
+	log.Info().Msgf("ServiceImport %s/%s, Port %s", svcImp.Namespace, svcImp.Name, port.String())
 
 	clusterIP := ""
 	svc, exists := sct.serviceExists(svcImp)
@@ -160,7 +159,7 @@ func (sct *ServiceImportChangeTracker) Update(previous, current *mcsv1alpha1.Ser
 	if reflect.DeepEqual(change.previous, change.current) {
 		delete(sct.items, namespacedName)
 	} else {
-		klog.V(2).Infof("Service %s updated: %d ports", namespacedName, len(change.current))
+		log.Info().Msgf("Service %s updated: %d ports", namespacedName, len(change.current))
 	}
 
 	// Endpoints change
@@ -175,7 +174,7 @@ func (sct *ServiceImportChangeTracker) Update(previous, current *mcsv1alpha1.Ser
 		delete(sct.endpointItems, namespacedName)
 	} else {
 		for spn, eps := range epChange.current {
-			klog.V(2).Infof("Service port %s updated: %d endpoints", spn, len(eps))
+			log.Info().Msgf("Service port %s updated: %d endpoints", spn, len(eps))
 		}
 	}
 
@@ -203,9 +202,9 @@ func (sm *ServiceImportMap) merge(other ServiceImportMap) sets.String {
 		existingPorts.Insert(svcPortName.String())
 		_, exists := (*sm)[svcPortName]
 		if !exists {
-			klog.V(1).Infof("Adding new service port %q at %s", svcPortName, info.String())
+			log.Info().Msgf("Adding new service port %q at %s", svcPortName, info.String())
 		} else {
-			klog.V(1).Infof("Updating existing service port %q at %s", svcPortName, info.String())
+			log.Info().Msgf("Updating existing service port %q at %s", svcPortName, info.String())
 		}
 		(*sm)[svcPortName] = info
 	}
@@ -224,10 +223,10 @@ func (sm *ServiceImportMap) unmerge(other ServiceImportMap) {
 	for svcPortName := range other {
 		_, exists := (*sm)[svcPortName]
 		if exists {
-			klog.V(1).Infof("Removing service port %q", svcPortName)
+			log.Info().Msgf("Removing service port %q", svcPortName)
 			delete(*sm, svcPortName)
 		} else {
-			klog.Errorf("Service port %q doesn't exists", svcPortName)
+			log.Error().Msgf("Service port %q doesn't exists", svcPortName)
 		}
 	}
 }
@@ -297,7 +296,7 @@ func (sct *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alph
 				endpointsMap[svcPortName] = append(endpointsMap[svcPortName], baseEndpointInfo)
 			}
 		}
-		klog.V(3).Infof("Setting endpoints for %q to %#v", svcPortName, formatEndpointsList(endpointsMap[svcPortName]))
+		log.Info().Msgf("Setting endpoints for %q to %#v", svcPortName, formatEndpointsList(endpointsMap[svcPortName]))
 	}
 
 	return endpointsMap

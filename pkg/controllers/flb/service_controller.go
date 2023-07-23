@@ -33,6 +33,7 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/flb"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	retry "github.com/sethvargo/go-retry"
@@ -44,7 +45,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	"net"
 	"net/http"
 	"reflect"
@@ -110,8 +110,12 @@ type FlbResponse struct {
 	LBIPs []string `json:"LBIPs"`
 }
 
+var (
+	log = logger.New("flb-service-controller")
+)
+
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	klog.V(5).Infof("Creating FLB service reconciler ...")
+	log.Info().Msgf("Creating FLB service reconciler ...")
 
 	mc := ctx.Config
 	if !mc.IsFLBEnabled() {
@@ -173,11 +177,11 @@ func getDefaultSetting(api kubernetes.Interface, mc configurator.Configurator) (
 		return nil, fmt.Errorf("secret %s/%s doesn't have required label %s=true", mc.GetFSMNamespace(), mc.GetFLBSecretName(), constants.FlbSecretLabel)
 	}
 
-	klog.V(5).Infof("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
+	log.Info().Msgf("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
 
-	klog.V(5).Infof("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseUrl]))
-	klog.V(5).Infof("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
-	klog.V(5).Infof("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
+	log.Info().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseUrl]))
+	log.Info().Msgf("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
+	log.Info().Msgf("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
 
 	return newSetting(secret), nil
 }
@@ -276,12 +280,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Infof("Service %s/%s resource not found. Ignoring since object must be deleted", req.Namespace, req.Name)
+			log.Info().Msgf("Service %s/%s resource not found. Ignoring since object must be deleted", req.Namespace, req.Name)
 
 			// get svc from cache as it's not found, we don't have enough info to pop out
 			svc, ok := r.cache[req.NamespacedName]
 			if !ok {
-				klog.Warningf("Service %s not found in cache", req.NamespacedName)
+				log.Warn().Msgf("Service %s not found in cache", req.NamespacedName)
 				return ctrl.Result{}, nil
 			}
 
@@ -296,12 +300,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get Service, %#v", err)
+		log.Error().Msgf("Failed to get Service, %#v", err)
 		return ctrl.Result{}, err
 	}
 
 	if flb.IsFlbEnabled(svc, r.fctx.KubeClient) {
-		klog.V(5).Infof("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
+		log.Info().Msgf("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
 
 		r.cache[req.NamespacedName] = svc.DeepCopy()
 		mc := r.fctx.Config
@@ -366,15 +370,15 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, nil
 		}
 
-		klog.V(5).Infof("Annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
+		log.Info().Msgf("Annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
 		if newAnnotations := r.computeServiceAnnotations(svc); newAnnotations != nil {
 			svc.Annotations = newAnnotations
 			if err := r.fctx.Update(ctx, svc); err != nil {
-				klog.Errorf("Failed update annotations of service %s/%s: %s", svc.Namespace, svc.Name, err)
+				log.Error().Msgf("Failed update annotations of service %s/%s: %s", svc.Namespace, svc.Name, err)
 				return ctrl.Result{}, err
 			}
 
-			klog.V(5).Infof("After updating, annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
+			log.Info().Msgf("After updating, annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
 		}
 
 		return r.createOrUpdateFlbEntry(ctx, svc)
@@ -385,7 +389,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *reconciler) computeServiceAnnotations(svc *corev1.Service) map[string]string {
 	setting := r.settings[svc.Namespace]
-	klog.V(5).Infof("Setting for Namespace %q: %v", svc.Namespace, setting)
+	log.Info().Msgf("Setting for Namespace %q: %v", svc.Namespace, setting)
 
 	svcCopy := svc.DeepCopy()
 	if svcCopy.Annotations == nil {
@@ -442,14 +446,14 @@ func secretHasRequiredLabel(secret *corev1.Secret) bool {
 	case "no", "false", "0", "n", "f", "":
 		return false
 	default:
-		klog.Warningf("%s doesn't have a valid value: %q", constants.FlbSecretLabel, value)
+		log.Warn().Msgf("%s doesn't have a valid value: %q", constants.FlbSecretLabel, value)
 		return false
 	}
 }
 
 func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
 	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		klog.V(5).Infof("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
+		log.Info().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
 
 		result := make(map[string][]string)
 		for _, port := range svc.Spec.Ports {
@@ -471,7 +475,7 @@ func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service
 }
 
 func (r *reconciler) createOrUpdateFlbEntry(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
-	klog.V(3).Infof("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
+	log.Info().Msgf("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
 
 	mc := r.fctx.Config
 
@@ -480,7 +484,7 @@ func (r *reconciler) createOrUpdateFlbEntry(ctx context.Context, svc *corev1.Ser
 		return ctrl.Result{}, err
 	}
 
-	klog.V(5).Infof("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
+	log.Info().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
 
 	params := getFlbParameters(svc)
 	resp, err := r.updateFLB(svc, params, endpoints, false)
@@ -494,7 +498,7 @@ func (r *reconciler) createOrUpdateFlbEntry(ctx context.Context, svc *corev1.Ser
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, fmt.Errorf("FLB hasn't assigned any external IP for service %s/%s", svc.Namespace, svc.Name)
 	}
 
-	klog.V(5).Infof("External IPs assigned by FLB: %#v", resp)
+	log.Info().Msgf("External IPs assigned by FLB: %#v", resp)
 
 	if err := r.updateService(ctx, svc, mc, resp.LBIPs); err != nil {
 		return ctrl.Result{}, err
@@ -578,7 +582,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 	if r.settings[svc.Namespace].token == "" {
 		token, err := r.loginFLB(svc.Namespace)
 		if err != nil {
-			klog.Errorf("Login to FLB failed: %s", err)
+			log.Error().Msgf("Login to FLB failed: %s", err)
 			defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "LoginFailed", "Login to FLB failed: %s", err)
 
 			return nil, err
@@ -598,7 +602,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 			if statusCode == http.StatusUnauthorized {
 				token, err := r.loginFLB(svc.Namespace)
 				if err != nil {
-					klog.Errorf("Login to FLB failed: %s", err)
+					log.Error().Msgf("Login to FLB failed: %s", err)
 					defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "LoginFailed", "Login to FLB failed: %s", err)
 
 					return err
@@ -616,7 +620,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 
 		return nil
 	}); err != nil {
-		klog.Errorf("failed to update FLB: %s", err)
+		log.Error().Msgf("failed to update FLB: %s", err)
 		defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "UpdateFLBFailed", "Failed to update FLB: %s", err)
 
 		return nil, err
@@ -649,7 +653,7 @@ func (r *reconciler) invokeFlbApi(namespace string, params map[string]string, re
 	}
 
 	if err != nil {
-		klog.Errorf("error happened while trying to update FLB, %s", err.Error())
+		log.Error().Msgf("error happened while trying to update FLB, %s", err.Error())
 		return nil, -1, err
 	}
 
@@ -658,7 +662,7 @@ func (r *reconciler) invokeFlbApi(namespace string, params map[string]string, re
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		klog.Errorf("FLB server responsed with StatusCode: %d", resp.StatusCode())
+		log.Error().Msgf("FLB server responsed with StatusCode: %d", resp.StatusCode())
 		return nil, resp.StatusCode(), fmt.Errorf("%d: %s", resp.StatusCode(), string(resp.Body()))
 	}
 
@@ -674,12 +678,12 @@ func (r *reconciler) loginFLB(namespace string) (string, error) {
 		Post(flbAuthApiPath)
 
 	if err != nil {
-		klog.Errorf("error happened while trying to login FLB, %s", err.Error())
+		log.Error().Msgf("error happened while trying to login FLB, %s", err.Error())
 		return "", err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		klog.Errorf("FLB server responsed with StatusCode: %d", resp.StatusCode())
+		log.Error().Msgf("FLB server responsed with StatusCode: %d", resp.StatusCode())
 		return "", fmt.Errorf("StatusCode: %d", resp.StatusCode())
 	}
 
@@ -792,7 +796,7 @@ func getValidAlgo(value string) string {
 	case "rr", "lc", "ch":
 		return value
 	default:
-		klog.Warningf("Invalid ALGO value %q, will use 'rr' as default", value)
+		log.Warn().Msgf("Invalid ALGO value %q, will use 'rr' as default", value)
 		return "rr"
 	}
 }
@@ -824,7 +828,7 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *reconciler) isInterestedService(obj client.Object) bool {
 	svc, ok := obj.(*corev1.Service)
 	if !ok {
-		klog.Infof("unexpected object type: %T", obj)
+		log.Info().Msgf("unexpected object type: %T", obj)
 		return false
 	}
 
@@ -838,7 +842,7 @@ func (r *reconciler) endpointsToService(ep client.Object) []reconcile.Request {
 		client.ObjectKeyFromObject(ep),
 		svc,
 	); err != nil {
-		klog.Errorf("failed to get service %s/%s: %s", ep.GetNamespace(), ep.GetName(), err)
+		log.Error().Msgf("failed to get service %s/%s: %s", ep.GetNamespace(), ep.GetName(), err)
 		return nil
 	}
 
@@ -863,7 +867,7 @@ func (r *reconciler) servicesByNamespace(ns client.Object) []reconcile.Request {
 		List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
-		klog.Errorf("failed to list services in ns %s: %s", ns.GetName(), err)
+		log.Error().Msgf("failed to list services in ns %s: %s", ns.GetName(), err)
 		return nil
 	}
 

@@ -33,6 +33,7 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/helm"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -40,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -49,6 +49,10 @@ import (
 var (
 	//go:embed chart.tgz
 	chartSource []byte
+)
+
+var (
+	log = logger.New("namespacedingress-v1alpha1-controller")
 )
 
 // NamespacedIngressReconciler reconciles a NamespacedIngress object
@@ -80,9 +84,9 @@ type namespacedIngressValues struct {
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	mc := r.fctx.Config
 
-	klog.Infof("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
+	log.Info().Msgf("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
 	if !mc.IsNamespacedIngressEnabled() {
-		klog.Warning("Ingress is not enabled or Ingress mode is not Namespace, ignore processing NamespacedIngress...")
+		log.Warn().Msgf("Ingress is not enabled or Ingress mode is not Namespace, ignore processing NamespacedIngress...")
 		return ctrl.Result{}, nil
 	}
 
@@ -96,11 +100,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("[NSIG] NamespacedIngress resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("[NSIG] NamespacedIngress resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get NamespacedIngress, %v", err)
+		log.Error().Msgf("Failed to get NamespacedIngress, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -133,13 +137,13 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 		return nil, fmt.Errorf("object %v is not type of nsigv1alpha1.NamespacedIngress", object)
 	}
 
-	klog.V(5).Infof("[NSIG] Resolving Values ...")
+	log.Info().Msgf("[NSIG] Resolving Values ...")
 
 	nsigBytes, err := ghodssyaml.Marshal(&namespacedIngressValues{NamespacedIngress: nsig})
 	if err != nil {
 		return nil, fmt.Errorf("convert NamespacedIngress to yaml, err = %v", err)
 	}
-	klog.V(5).Infof("\n\nNSIG VALUES YAML:\n\n\n%s\n\n", string(nsigBytes))
+	log.Info().Msgf("\n\nNSIG VALUES YAML:\n\n\n%s\n\n", string(nsigBytes))
 	nsigValues, err := chartutil.ReadValues(nsigBytes)
 	if err != nil {
 		return nil, err

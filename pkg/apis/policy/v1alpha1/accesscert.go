@@ -8,6 +8,7 @@ import (
 // AccessCert is the type used to represent an AccessCert policy.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 type AccessCert struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

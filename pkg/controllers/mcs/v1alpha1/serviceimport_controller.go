@@ -36,7 +36,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -65,11 +64,11 @@ func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("[ServiceImport] ServiceImport resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("[ServiceImport] ServiceImport resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get ServiceImport, %v", err)
+		log.Error().Msgf("Failed to get ServiceImport, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -87,7 +86,7 @@ func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if err := r.fctx.Update(ctx, svcImport); err != nil {
 			return ctrl.Result{}, err
 		}
-		klog.Infof("Added annotation %s=%s", constants.MultiClusterDerivedServiceAnnotation, req.Name)
+		log.Info().Msgf("Added annotation %s=%s", constants.MultiClusterDerivedServiceAnnotation, req.Name)
 
 		return ctrl.Result{}, nil
 	}
@@ -178,7 +177,7 @@ func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcI
 		return nil, err
 	}
 
-	klog.Infof("Created service %s/%s", svc.Namespace, svc.Name)
+	log.Info().Msgf("Created service %s/%s", svc.Namespace, svc.Name)
 
 	return svc, nil
 }

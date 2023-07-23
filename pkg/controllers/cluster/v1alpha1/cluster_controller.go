@@ -33,10 +33,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	mcscfg "github.com/flomesh-io/fsm/pkg/mcs/config"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
 	cctx "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
+	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +49,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
@@ -67,6 +68,10 @@ type connectorBackground struct {
 	context   cctx.ConnectorContext
 	connector *conn.Connector
 }
+
+var (
+	log = logger.New("cluster-v1alpha1-controller")
+)
 
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &reconciler{
@@ -102,13 +107,13 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("Cluster resource not found. Stopping the connector and remove the reference.")
+			log.Info().Msgf("Cluster resource not found. Stopping the connector and remove the reference.")
 			r.destroyConnector(cluster)
 
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get Cluster, %v", err)
+		log.Error().Msgf("Failed to get Cluster, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -124,10 +129,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	key := cluster.Key()
-	klog.V(5).Infof("Cluster key is %s", key)
+	log.Info().Msgf("Cluster key is %s", key)
 	bg, exists := r.backgrounds[key]
 	if exists && bg.context.Hash != clusterHash(cluster) {
-		klog.V(5).Infof("Background context of cluster [%s] exists, ")
+		log.Info().Msgf("Background context of cluster [%s] exists, ")
 		// exists and the spec changed, then stop it and start a new one
 		if result, err = r.recreateConnector(ctx, bg, cluster, mc); err != nil {
 			return result, err
@@ -138,7 +143,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return result, err
 		}
 	} else {
-		klog.V(2).Infof("The connector %s already exists and the spec doesn't change", key)
+		log.Warn().Msgf("The connector %s already exists and the spec doesn't change", key)
 	}
 
 	return ctrl.Result{}, nil
@@ -209,7 +214,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 
 	kubeconfig, result, err := getKubeConfig(cluster)
 	if err != nil {
-		klog.Errorf("Failed to get kubeconfig for cluster %q: %s", cluster.Key(), err)
+		log.Error().Msgf("Failed to get kubeconfig for cluster %q: %s", cluster.Key(), err)
 		return result, err
 	}
 
@@ -229,9 +234,9 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 	background.Cancel = cancel
 	background.StopCh = stop
 
-	connector, err := conn.NewConnector(&background, r.fctx.Broker, 15*time.Minute)
+	connector, err := conn.NewConnector(&background, r.fctx.Broker)
 	if err != nil {
-		klog.Errorf("Failed to create connector for cluster %q: %s", cluster.Key(), err)
+		log.Error().Msgf("Failed to create connector for cluster %q: %s", cluster.Key(), err)
 		return ctrl.Result{}, err
 	}
 
@@ -247,7 +252,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 		if err := connector.Run(stop); err != nil {
 			success = false
 			errorMsg = err.Error()
-			klog.Errorf("Failed to run connector for cluster %q: %s", cluster.Key(), err)
+			log.Error().Msgf("Failed to run connector for cluster %q: %s", cluster.Key(), err)
 			close(stop)
 			delete(r.backgrounds, key)
 		}
@@ -320,7 +325,7 @@ func (r *reconciler) connectorConfig(cluster *mcsv1alpha1.Cluster, mc configurat
 	//}
 }
 
-func (r *reconciler) processEvent(broker *mcsevent.Broker, stop <-chan struct{}) {
+func (r *reconciler) processEvent(broker *messaging.Broker, stop <-chan struct{}) {
 	msgBus := broker.GetMessageBus()
 	svcExportCreatedCh := msgBus.Sub(string(mcsevent.ServiceExportCreated))
 	defer broker.Unsub(msgBus, svcExportCreatedCh)
@@ -333,42 +338,42 @@ func (r *reconciler) processEvent(broker *mcsevent.Broker, stop <-chan struct{})
 			mc := r.fctx.Config
 			// ONLY Control Plane takes care of the federation of service export/import
 			if mc.IsManaged() && mc.GetMultiClusterControlPlaneUID() != "" && mc.GetClusterUID() != mc.GetMultiClusterControlPlaneUID() {
-				klog.V(5).Infof("Ignore processing ServiceExportCreated event due to cluster is managed and not a control plane ...")
+				log.Info().Msgf("Ignore processing ServiceExportCreated event due to cluster is managed and not a control plane ...")
 				continue
 			}
 
 			if !ok {
-				klog.Warningf("Channel closed for ServiceExport")
+				log.Warn().Msgf("Channel closed for ServiceExport")
 				continue
 			}
-			klog.V(5).Infof("Received event ServiceExportCreated %v", msg)
+			log.Info().Msgf("Received event ServiceExportCreated %v", msg)
 
 			e, ok := msg.(mcsevent.Message)
 			if !ok {
-				klog.Errorf("Received unexpected message %T on channel, expected Message", e)
+				log.Error().Msgf("Received unexpected message %T on channel, expected Message", e)
 				continue
 			}
 
 			svcExportEvt, ok := e.NewObj.(*mcsevent.ServiceExportEvent)
 			if !ok {
-				klog.Errorf("Received unexpected object %T, expected *event.ServiceExportEvent", svcExportEvt)
+				log.Error().Msgf("Received unexpected object %T, expected *event.ServiceExportEvent", svcExportEvt)
 				continue
 			}
 
 			// check ServiceExport Status, Invalid and Conflict ServiceExport is ignored
 			export := svcExportEvt.ServiceExport
 			if metautil.IsStatusConditionFalse(export.Status.Conditions, string(mcsv1alpha1.ServiceExportValid)) {
-				klog.Warningf("ServiceExport %v is ignored due to Valid status is false", export)
+				log.Warn().Msgf("ServiceExport %v is ignored due to Valid status is false", export)
 				continue
 			}
 			if metautil.IsStatusConditionTrue(export.Status.Conditions, string(mcsv1alpha1.ServiceExportConflict)) {
-				klog.Warningf("ServiceExport %v is ignored due to Conflict status is true", export)
+				log.Warn().Msgf("ServiceExport %v is ignored due to Conflict status is true", export)
 				continue
 			}
 
 			r.processServiceExportCreatedEvent(svcExportEvt)
 		case <-stop:
-			klog.Infof("Received stop signal.")
+			log.Warn().Msgf("Received stop signal.")
 			return
 		}
 	}
@@ -380,15 +385,15 @@ func (r *reconciler) processServiceExportCreatedEvent(svcExportEvt *mcsevent.Ser
 
 	export := svcExportEvt.ServiceExport
 	if r.isFirstTimeExport(svcExportEvt) {
-		klog.V(5).Infof("[%s] ServiceExport %s/%s is exported first in the cluster set, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+		log.Info().Msgf("[%s] ServiceExport %s/%s is exported first in the cluster set, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 		r.acceptServiceExport(svcExportEvt)
 	} else {
 		valid, err := r.isValidServiceExport(svcExportEvt)
 		if valid {
-			klog.V(5).Infof("[%s] ServiceExport %s/%s is valid, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+			log.Info().Msgf("[%s] ServiceExport %s/%s is valid, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 			r.acceptServiceExport(svcExportEvt)
 		} else {
-			klog.V(5).Infof("[%s] ServiceExport %s/%s is invalid, will be rejected", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+			log.Info().Msgf("[%s] ServiceExport %s/%s is invalid, will be rejected", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 			r.rejectServiceExport(svcExportEvt, err)
 		}
 	}
@@ -401,7 +406,7 @@ func (r *reconciler) isFirstTimeExport(event *mcsevent.ServiceExportEvent) bool 
 		//	continue
 		//}
 		if bg.connector.ServiceImportExists(export) {
-			klog.Warningf("[%s] ServiceExport %s/%s exists in Cluster %s", event.Geo.Key(), export.Namespace, export.Name, bg.context.ClusterKey)
+			log.Warn().Msgf("[%s] ServiceExport %s/%s exists in Cluster %s", event.Geo.Key(), export.Namespace, export.Name, bg.context.ClusterKey)
 			return false
 		}
 	}
@@ -423,7 +428,7 @@ func (r *reconciler) isValidServiceExport(svcExportEvt *mcsevent.ServiceExportEv
 		}
 
 		if err := bg.connector.ValidateServiceExport(svcExportEvt.ServiceExport, svcExportEvt.Service); err != nil {
-			klog.Warningf("[%s] ServiceExport %s/%s has conflict in Cluster %s", svcExportEvt.Geo.Key(), export.Namespace, export.Name, connectorContext.ClusterKey)
+			log.Warn().Msgf("[%s] ServiceExport %s/%s has conflict in Cluster %s", svcExportEvt.Geo.Key(), export.Namespace, export.Name, connectorContext.ClusterKey)
 			return false, err
 		}
 	}

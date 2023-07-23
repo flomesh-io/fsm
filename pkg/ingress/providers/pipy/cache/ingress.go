@@ -40,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/klog/v2"
 	"reflect"
 	"strconv"
 	"strings"
@@ -262,7 +261,7 @@ func (ict *IngressChangeTracker) Update(previous, current *networkingv1.Ingress)
 	if reflect.DeepEqual(change.previous, change.current) {
 		delete(ict.items, namespacedName)
 	} else {
-		klog.V(2).Infof("Ingress %s updated: %d rules", namespacedName, len(change.current))
+		log.Info().Msgf("Ingress %s updated: %d rules", namespacedName, len(change.current))
 	}
 
 	return len(ict.items) > 0
@@ -284,17 +283,17 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 		for _, path := range rule.HTTP.Paths {
 			if path.Backend.Service == nil {
 				// skip non-service backends
-				klog.V(3).Infof("Ingress %q and path %q does not contain a service backend", ingKey, path.Path)
+				log.Info().Msgf("Ingress %q and path %q does not contain a service backend", ingKey, path.Path)
 				continue
 			}
 
 			svcPortName := ict.servicePortName(ing.Namespace, path.Backend.Service)
 			// in case of error or unexpected condition, ignore it
 			if svcPortName == nil {
-				klog.Warningf("svcPortName is nil for Namespace: %q,  Path: %v", ing.Namespace, path)
+				log.Warn().Msgf("svcPortName is nil for Namespace: %q,  Path: %v", ing.Namespace, path)
 				continue
 			}
-			klog.V(5).Infof("ServicePortName %q", svcPortName.String())
+			log.Info().Msgf("ServicePortName %q", svcPortName.String())
 
 			baseIngInfo := ict.newBaseIngressInfo(rule, path, *svcPortName)
 			if baseIngInfo == nil {
@@ -309,13 +308,13 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 
 			// already exists, first one wins
 			if _, ok := ingressMap[routeKey]; ok {
-				klog.Warningf("Duplicate route for tuple: %q", routeKey.String())
+				log.Warn().Msgf("Duplicate route for tuple: %q", routeKey.String())
 				continue
 			}
 
 			ingressMap[routeKey] = ict.enrichIngressInfo(&rule, ing, baseIngInfo)
 
-			klog.V(5).Infof("Route %q is linked to rule %v", routeKey.String(), ingressMap[routeKey])
+			log.Info().Msgf("Route %q is linked to rule %v", routeKey.String(), ingressMap[routeKey])
 		}
 	}
 
@@ -336,7 +335,7 @@ func (ict *IngressChangeTracker) servicePortName(namespace string, service *netw
 
 			svc, err := ict.findService(namespace, service)
 			if err != nil {
-				klog.Errorf("Not able to find service %s from anywhere, %v", namespacedSvcName.String(), err)
+				log.Error().Msgf("Not able to find service %s from anywhere, %v", namespacedSvcName.String(), err)
 				return nil
 			}
 
@@ -374,15 +373,15 @@ func (ict *IngressChangeTracker) findService(namespace string, service *networki
 		return nil, err
 	}
 	if !exists {
-		klog.Warningf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
+		log.Warn().Msgf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
 		// if not exists in local, retrieve it from remote API server, this's Plan-B, should seldom happns
 		svc, err = ict.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
-		klog.V(5).Infof("Found service %q from API server.", svcName)
+		log.Info().Msgf("Found service %q from API server.", svcName)
 	} else {
-		klog.V(5).Infof("Found service %q in local store.", svcName)
+		log.Info().Msgf("Found service %q in local store.", svcName)
 	}
 	return svc.(*corev1.Service), nil
 }
@@ -433,23 +432,23 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 		info.isTLS = true
 
 		secretName := ict.getTLSSecretName(rule, ing)
-		klog.V(5).Infof("secret name = %q ...", secretName)
+		log.Info().Msgf("secret name = %q ...", secretName)
 		if secretName != "" {
 			cert := ict.fetchSSLCert(ing, ing.Namespace, secretName)
 
 			if cert != nil && cert.Cert != "" && cert.Key != "" {
-				klog.V(5).Infof("Found certificate for host %q from secret %s/%s", rule.Host, ing.Namespace, secretName)
+				log.Info().Msgf("Found certificate for host %q from secret %s/%s", rule.Host, ing.Namespace, secretName)
 				info.certificate = cert
 			}
 		}
 	}
 
 	if ing.Annotations == nil {
-		klog.Warningf("Ingress %s/%s doesn't have any annotations", ing.Namespace, ing.Name)
+		log.Warn().Msgf("Ingress %s/%s doesn't have any annotations", ing.Namespace, ing.Name)
 		return info
 	}
 
-	klog.V(5).Infof("Annotations of Ingress %s/%s: %v", ing.Namespace, ing.Name, ing.Annotations)
+	log.Info().Msgf("Annotations of Ingress %s/%s: %v", ing.Namespace, ing.Name, ing.Annotations)
 
 	// enrich rewrite if exists
 	rewriteFrom := ing.Annotations[constants.PipyIngressAnnotationRewriteFrom]
@@ -466,7 +465,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	case "no", "false", "0", "off", "":
 		info.sessionSticky = false
 	default:
-		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/session-sticky of Ingress %s/%s, setting session sticky to false", sticky, ing.Namespace, ing.Name)
+		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/session-sticky of Ingress %s/%s, setting session sticky to false", sticky, ing.Namespace, ing.Name)
 		info.sessionSticky = false
 	}
 
@@ -481,7 +480,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	case apiconstants.RoundRobinLoadBalancer, apiconstants.LeastWorkLoadBalancer, apiconstants.HashingLoadBalancer:
 		info.lbType = balancer
 	default:
-		klog.Errorf("%q is ignored, as it's not a supported Load Balancer type, uses default RoundRobinLoadBalancer.", lbValue)
+		log.Error().Msgf("%q is ignored, as it's not a supported Load Balancer type, uses default RoundRobinLoadBalancer.", lbValue)
 		info.lbType = apiconstants.RoundRobinLoadBalancer
 	}
 
@@ -505,7 +504,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 			}
 			info.upstream.SSLCert = ict.fetchSSLCert(ing, ns, name)
 		} else {
-			klog.Errorf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-secret of Ingress %s/%s: %s", upstreamSSLSecret, ing.Namespace, ing.Name, err)
+			log.Error().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-secret of Ingress %s/%s: %s", upstreamSSLSecret, ing.Namespace, ing.Name, err)
 		}
 	}
 
@@ -520,7 +519,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	case "no", "false", "0", "off", "":
 		info.upstream.SSLVerify = false
 	default:
-		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-verify of Ingress %s/%s, setting upstream-ssl-verify to false", upstreamSSLVerify, ing.Namespace, ing.Name)
+		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-verify of Ingress %s/%s, setting upstream-ssl-verify to false", upstreamSSLVerify, ing.Namespace, ing.Name)
 		info.upstream.SSLVerify = false
 	}
 
@@ -532,7 +531,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	case "no", "false", "0", "off", "":
 		info.verifyClient = false
 	default:
-		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-client of Ingress %s/%s, setting verify client to false", verifyClient, ing.Namespace, ing.Name)
+		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-client of Ingress %s/%s, setting verify client to false", verifyClient, ing.Namespace, ing.Name)
 		info.verifyClient = false
 	}
 
@@ -545,7 +544,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	if err == nil {
 		info.verifyDepth = depth
 	} else {
-		klog.Warningf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-depth of Ingress %s/%s, setting verify depth to 1", ing.Annotations[constants.PipyIngressAnnotationTLSVerifyDepth], ing.Namespace, ing.Name)
+		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-depth of Ingress %s/%s, setting verify depth to 1", ing.Annotations[constants.PipyIngressAnnotationTLSVerifyDepth], ing.Namespace, ing.Name)
 		info.verifyDepth = 1
 	}
 
@@ -559,7 +558,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 		if err == nil {
 			info.trustedCA = ict.fetchSSLCert(ing, ns, name)
 		} else {
-			klog.Errorf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-trusted-ca-secret of Ingress %s/%s: %s", trustedCASecret, ing.Namespace, ing.Name, err)
+			log.Error().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-trusted-ca-secret of Ingress %s/%s: %s", trustedCASecret, ing.Namespace, ing.Name, err)
 		}
 	}
 
@@ -599,22 +598,22 @@ func (ict *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule
 			continue
 		} else {
 			if cert.Cert == "" || cert.Key == "" {
-				klog.Warningf("Empty Certificate/PrivateKey from secret %s/%s", ing.Namespace, tls.SecretName)
+				log.Warn().Msgf("Empty Certificate/PrivateKey from secret %s/%s", ing.Namespace, tls.SecretName)
 				continue
 			}
 
 			x509Cert, err := utils.ConvertPEMCertToX509([]byte(cert.Cert))
 			if err != nil {
-				klog.Warningf("Failed to convert PEM cert to X509: %s", err)
+				log.Warn().Msgf("Failed to convert PEM cert to X509: %s", err)
 				continue
 			}
 
 			if err := x509Cert.VerifyHostname(host); err != nil {
-				klog.Warningf("Failed validating SSL certificate %s/%s for host %q: %v", ing.Namespace, tls.SecretName, host, err)
+				log.Warn().Msgf("Failed validating SSL certificate %s/%s for host %q: %v", ing.Namespace, tls.SecretName, host, err)
 				continue
 			}
 
-			klog.V(5).Infof("Found SSL certificate matching host %q: %s/%s", host, ing.Namespace, tls.SecretName)
+			log.Info().Msgf("Found SSL certificate matching host %q: %s/%s", host, ing.Namespace, tls.SecretName)
 			return tls.SecretName
 		}
 	}
@@ -624,20 +623,20 @@ func (ict *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule
 
 func (ict *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, name string) *repocfg.CertificateSpec {
 	if ns == "" {
-		klog.Warningf("namespace is empty, will use Ingress's namespace")
+		log.Warn().Msgf("namespace is empty, will use Ingress's namespace")
 		ns = ing.Namespace
 	}
 
 	if name == "" {
-		klog.Errorf("Secret name is empty of Ingress %s/%s", ing.Namespace, ing.Name)
+		log.Error().Msgf("Secret name is empty of Ingress %s/%s", ing.Namespace, ing.Name)
 		return nil
 	}
 
-	klog.V(5).Infof("Fetching secret %s/%s ...", ns, name)
+	log.Info().Msgf("Fetching secret %s/%s ...", ns, name)
 	secret, err := ict.informers.GetListers().Secret.Secrets(ns).Get(name)
 
 	if err != nil {
-		klog.Errorf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)
+		log.Error().Msgf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)
 		return nil
 	}
 

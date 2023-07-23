@@ -30,7 +30,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/klog/v2"
 	"net"
 )
 
@@ -76,7 +75,7 @@ func NewConnectorConfig(
 	isDNSName := false
 	if ipErrs := validation.IsValidIPv4Address(field.NewPath(""), gatewayHost); len(ipErrs) > 0 {
 		// Not IPv4 address
-		klog.Warningf("%q is NOT a valid IPv4 address: %v", gatewayHost, ipErrs)
+		log.Warn().Msgf("%q is NOT a valid IPv4 address: %v", gatewayHost, ipErrs)
 		if dnsErrs := validation.IsDNS1123Subdomain(gatewayHost); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return nil, fmt.Errorf("invalid DNS name or IP %q: %v", gatewayHost, dnsErrs)
@@ -92,7 +91,7 @@ func NewConnectorConfig(
 		if err != nil {
 			return nil, fmt.Errorf("%q cannot be resolved to IP, %s", gatewayHost, err)
 		}
-		klog.Infof("%q is resolved to IP: %s", gatewayHost, ipAddr.IP)
+		log.Info().Msgf("%q is resolved to IP: %s", gatewayHost, ipAddr.IP)
 		gwIPv4 = ipAddr.IP.To4()
 	} else {
 		gwIPv4 = net.ParseIP(gatewayHost).To4()

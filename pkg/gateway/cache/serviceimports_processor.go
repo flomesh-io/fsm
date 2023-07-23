@@ -3,7 +3,6 @@ package cache
 import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"k8s.io/klog/v2"
 )
 
 type ServiceImportsProcessor struct {
@@ -12,7 +11,7 @@ type ServiceImportsProcessor struct {
 func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +24,7 @@ func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) b
 func (p *ServiceImportsProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 

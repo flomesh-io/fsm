@@ -163,6 +163,7 @@ type SourceStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=simp,scope=Namespaced
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
 // ServiceImport is the Schema for the ServiceImports API
 type ServiceImport struct {

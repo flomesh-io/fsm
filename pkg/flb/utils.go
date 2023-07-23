@@ -31,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 )
 
 func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
@@ -51,7 +50,7 @@ func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 			Get(context.TODO(), svc.Namespace, metav1.GetOptions{})
 
 		if err != nil {
-			klog.Errorf("Failed to get namespace %q: %s", svc.Namespace, err)
+			log.Error().Msgf("Failed to get namespace %q: %s", svc.Namespace, err)
 			return false
 		}
 
@@ -59,11 +58,11 @@ func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 			return false
 		}
 
-		klog.V(5).Infof("Found annotation %q on Namespace %q", constants.FlbEnabledAnnotation, ns.Name)
+		log.Info().Msgf("Found annotation %q on Namespace %q", constants.FlbEnabledAnnotation, ns.Name)
 		return utils.ParseEnabled(ns.Annotations[constants.FlbEnabledAnnotation])
 	}
 
 	// parse svc annotation
-	klog.V(5).Infof("Found annotation %q on Service %s/%s", constants.FlbEnabledAnnotation, svc.Namespace, svc.Name)
+	log.Info().Msgf("Found annotation %q on Service %s/%s", constants.FlbEnabledAnnotation, svc.Namespace, svc.Name)
 	return utils.ParseEnabled(svc.Annotations[constants.FlbEnabledAnnotation])
 }

@@ -37,7 +37,6 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +69,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("GatewayClass resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("GatewayClass resource not found. Ignoring since object must be deleted")
 			r.fctx.EventHandler.OnDelete(&gwv1beta1.GatewayClass{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
@@ -80,7 +79,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get GatewayClass, %v", err)
+		log.Error().Msgf("Failed to get GatewayClass, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -100,7 +99,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		GatewayClasses().
 		List(ctx, metav1.ListOptions{})
 	if err != nil {
-		klog.Errorf("failed list gatewayclasses: %s", err)
+		log.Error().Msgf("failed list gatewayclasses: %s", err)
 		return ctrl.Result{}, err
 	}
 
@@ -239,7 +238,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	gwclsPrct := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		gatewayClass, ok := object.(*gwv1beta1.GatewayClass)
 		if !ok {
-			klog.Infof("unexpected object type: %T", object)
+			log.Info().Msgf("unexpected object type: %T", object)
 			return false
 		}
 

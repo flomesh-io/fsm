@@ -35,12 +35,12 @@ set -o pipefail
 DIR=$(cd $(dirname "${BASH_SOURCE}")/.. && pwd -P)
 echo "Current DIR is ${DIR}"
 
-CLI_PATH=cli/cmd
+CLI_PATH=cmd/cli
 FSM_CHART_PATH=charts/fsm
 NAMESPACED_INGRESS_CHART_PATH=charts/namespaced-ingress
-NAMESPACED_INGRESS_CONTROLLER_PATH=controllers/namespacedingress/v1alpha1
+NAMESPACED_INGRESS_CONTROLLER_PATH=pkg/controllers/namespacedingress/v1alpha1
 GATEWAY_CHART_PATH=charts/gateway
-GATEWAY_CONTROLLER_PATH=controllers/gateway/v1beta1
+GATEWAY_CONTROLLER_PATH=pkg/controllers/gateway/v1beta1
 
 
 ########################################################

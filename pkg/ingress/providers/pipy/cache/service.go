@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
-	"k8s.io/klog/v2"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 	"net"
 	"reflect"
@@ -92,7 +91,7 @@ type serviceInfo struct {
 }
 
 func (sct *ServiceChangeTracker) newBaseServiceInfo(port *corev1.ServicePort, service *corev1.Service) *BaseServiceInfo {
-	klog.V(5).Infof("Service %s/%s, Type: %q, Port %s", service.Namespace, service.Name, service.Spec.Type, port.String())
+	log.Info().Msgf("Service %s/%s, Type: %q, Port %s", service.Namespace, service.Name, service.Spec.Type, port.String())
 	switch service.Spec.Type {
 	case corev1.ServiceTypeClusterIP:
 		// ONLY supports IPv4 for now
@@ -111,20 +110,20 @@ func (sct *ServiceChangeTracker) newBaseServiceInfo(port *corev1.ServicePort, se
 		externalName := service.Spec.ExternalName
 
 		if externalName == "localhost" {
-			klog.Errorf("Use localhost name %s as External Name in %s/%s", externalName, service.Namespace, service.Name)
+			log.Error().Msgf("Use localhost name %s as External Name in %s/%s", externalName, service.Namespace, service.Name)
 			return nil
 		}
 
 		ip := net.ParseIP(externalName)
 		if ip != nil && ip.IsLoopback() {
-			klog.Errorf("External Name %s is resolved to Loopback IP in %s/%s", externalName, service.Namespace, service.Name)
+			log.Error().Msgf("External Name %s is resolved to Loopback IP in %s/%s", externalName, service.Namespace, service.Name)
 			return nil
 		}
 
 		if ip == nil {
 			externalName := strings.TrimSuffix(externalName, ".")
 			if errs := validation.IsDNS1123Subdomain(externalName); len(errs) > 0 {
-				klog.Errorf("Invalid DNS name %q: %v", service.Spec.ExternalName, errs)
+				log.Error().Msgf("Invalid DNS name %q: %v", service.Spec.ExternalName, errs)
 				return nil
 			}
 		}
@@ -185,7 +184,7 @@ func (sct *ServiceChangeTracker) Update(previous, current *corev1.Service) bool 
 	if reflect.DeepEqual(change.previous, change.current) {
 		delete(sct.items, namespacedName)
 	} else {
-		klog.V(2).Infof("Service %s updated: %d ports", namespacedName, len(change.current))
+		log.Info().Msgf("Service %s updated: %d ports", namespacedName, len(change.current))
 	}
 
 	return len(sct.items) > 0
@@ -238,7 +237,7 @@ func (sct *ServiceChangeTracker) shouldSkipService(svc *corev1.Service) bool {
 	switch svc.Spec.Type {
 	// ignore NodePort and LoadBalancer service
 	case corev1.ServiceTypeNodePort, corev1.ServiceTypeLoadBalancer:
-		klog.V(2).Infof("Service %s/%s is ignored due to type is %q", svc.Namespace, svc.Name, svc.Spec.Type)
+		log.Info().Msgf("Service %s/%s is ignored due to type is %q", svc.Namespace, svc.Name, svc.Spec.Type)
 		return true
 	}
 
@@ -254,11 +253,11 @@ func (sct *ServiceChangeTracker) serviceImportExists(svc *corev1.Service) bool {
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// do nothing, not exists, go ahead and check svc
-			klog.V(5).Infof("ServiceImport %s/%s doesn't exist", svc.Namespace, svc.Name)
+			log.Info().Msgf("ServiceImport %s/%s doesn't exist", svc.Namespace, svc.Name)
 			return false
 		}
 
-		klog.Warningf("Failed to get ServiceImport %s/%s, %s", svc.Namespace, svc.Name, err)
+		log.Warn().Msgf("Failed to get ServiceImport %s/%s, %s", svc.Namespace, svc.Name, err)
 
 		return false
 	}
@@ -283,9 +282,9 @@ func (sm *ServiceMap) merge(other ServiceMap) sets.String {
 		existingPorts.Insert(svcPortName.String())
 		_, exists := (*sm)[svcPortName]
 		if !exists {
-			klog.V(1).Infof("Adding new service port %q at %s", svcPortName, info.String())
+			log.Info().Msgf("Adding new service port %q at %s", svcPortName, info.String())
 		} else {
-			klog.V(1).Infof("Updating existing service port %q at %s", svcPortName, info.String())
+			log.Info().Msgf("Updating existing service port %q at %s", svcPortName, info.String())
 		}
 		(*sm)[svcPortName] = info
 	}
@@ -304,10 +303,10 @@ func (sm *ServiceMap) unmerge(other ServiceMap) {
 	for svcPortName := range other {
 		_, exists := (*sm)[svcPortName]
 		if exists {
-			klog.V(1).Infof("Removing service port %q", svcPortName)
+			log.Info().Msgf("Removing service port %q", svcPortName)
 			delete(*sm, svcPortName)
 		} else {
-			klog.Errorf("Service port %q doesn't exists", svcPortName)
+			log.Error().Msgf("Service port %q doesn't exists", svcPortName)
 		}
 	}
 }

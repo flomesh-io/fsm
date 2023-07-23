@@ -178,6 +178,7 @@ type NamespacedIngressStatus struct {
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 // +kubebuilder:resource:shortName=nsig,scope=Namespaced
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
 // NamespacedIngress is the Schema for the NamespacedIngresss API
 type NamespacedIngress struct {

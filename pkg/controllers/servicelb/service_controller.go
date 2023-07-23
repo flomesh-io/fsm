@@ -38,7 +38,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	"k8s.io/utils/net"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -83,11 +82,11 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("Service resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("Service resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get Service, %v", err)
+		log.Error().Msgf("Failed to get Service, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -105,10 +104,10 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) error {
-	klog.V(5).Infof("Going to deploy DaemonSet ...")
+	log.Info().Msgf("Going to deploy DaemonSet ...")
 
 	if !mc.IsServiceLBEnabled() || svc.DeletionTimestamp != nil || svc.Spec.Type != corev1.ServiceTypeLoadBalancer || svc.Spec.ClusterIP == "" || svc.Spec.ClusterIP == "None" {
-		klog.V(5).Infof("Deleting DaemonSet ...")
+		log.Info().Msgf("Deleting DaemonSet ...")
 		return r.deleteDaemonSet(ctx, svc)
 	}
 
@@ -118,12 +117,12 @@ func (r *serviceReconciler) deployDaemonSet(ctx context.Context, svc *corev1.Ser
 	}
 
 	if ds != nil {
-		klog.V(5).Infof("Setting controller reference, Owner Service[%s/%s], DaemonSet[%s/%s] ...", svc.Namespace, svc.Namespace, ds.Namespace, ds.Name)
+		log.Info().Msgf("Setting controller reference, Owner Service[%s/%s], DaemonSet[%s/%s] ...", svc.Namespace, svc.Namespace, ds.Namespace, ds.Name)
 		if err := ctrl.SetControllerReference(svc, ds, r.fctx.Scheme); err != nil {
 			return err
 		}
 
-		klog.V(5).Infof("Creating/updating DaemonSet[%s/%s] ...", ds.Namespace, ds.Name)
+		log.Info().Msgf("Creating/updating DaemonSet[%s/%s] ...", ds.Namespace, ds.Name)
 		result, err := utils.CreateOrUpdate(ctx, r.fctx.Client, ds)
 		if err != nil {
 			return err
@@ -153,7 +152,7 @@ func (r *serviceReconciler) deleteDaemonSet(ctx context.Context, svc *corev1.Ser
 }
 
 func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) (*appv1.DaemonSet, error) {
-	klog.V(5).Infof("Creating a new DaemonSet template ...")
+	log.Info().Msgf("Creating a new DaemonSet template ...")
 
 	name := generateName(svc)
 	intOne := intstr.FromInt(1)

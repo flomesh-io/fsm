@@ -10,6 +10,7 @@ import (
 // ingress traffic from one or more sources.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 type IngressBackend struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

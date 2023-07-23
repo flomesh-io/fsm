@@ -37,7 +37,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	k8scache "k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
 	"net"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,24 +54,24 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 	}
 
 	if c.cache.GetBroadcaster() != nil && c.k8sAPI.EventClient != nil {
-		klog.V(3).Infof("[%s] Starting broadcaster ......", connectorCfg.Key())
+		log.Info().Msgf("[%s] Starting broadcaster ......", connectorCfg.Key())
 		c.cache.GetBroadcaster().StartRecordingToSink(stopCh)
 	}
 
 	// register event handlers
-	klog.V(3).Infof("[%s] Registering event handlers ......", connectorCfg.Key())
-	controllers := c.cache.GetControllers()
-	go controllers.ServiceExport.Run(stopCh)
+	//log.Info().Msgf("[%s] Registering event handlers ......", connectorCfg.Key())
+	//controllers := c.cache.GetControllers()
+	//go controllers.ServiceExport.Run(stopCh)
 
 	// start the ServiceExport Informer
-	klog.V(3).Infof("[%s] Starting ServiceExport informer ......", connectorCfg.Key())
+	log.Info().Msgf("[%s] Starting ServiceExport informer ......", connectorCfg.Key())
 	go controllers.ServiceExport.Informer.Run(stopCh)
 	if !k8scache.WaitForCacheSync(stopCh, controllers.ServiceExport.HasSynced) {
 		runtime.HandleError(fmt.Errorf("[%s] timed out waiting for ServiceExport to sync", connectorCfg.Key()))
 	}
 
 	// Sleep for a while, so that there's enough time for processing
-	klog.V(5).Infof("[%s] Sleep for a while ......", connectorCfg.Key())
+	log.Info().Msgf("[%s] Sleep for a while ......", connectorCfg.Key())
 	time.Sleep(1 * time.Second)
 
 	// register event handler
@@ -90,32 +89,29 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 func (c *Connector) updateConfigsOfManagedCluster() error {
 	ctx := c.context.(*conn.ConnectorContext)
 	connectorCfg := ctx.ConnectorConfig
-	klog.V(5).Infof("[%s] updating config .... ", connectorCfg.Key())
+	log.Info().Msgf("[%s] updating config .... ", connectorCfg.Key())
 
-	//if !connectorCfg.IsInCluster() {
-	mcClient := c.clusterCfg.MeshConfig
-	mc := mcClient.GetConfig()
-
-	if mc.IsManaged && mc.Cluster.ControlPlaneUID != "" {
-		if mc.Cluster.ControlPlaneUID != connectorCfg.ControlPlaneUID() {
+	if c.cfg.IsManaged() && c.cfg.GetMultiClusterControlPlaneUID() != "" {
+		if c.cfg.GetMultiClusterControlPlaneUID() != connectorCfg.ControlPlaneUID() {
 			return fmt.Errorf("cluster %s is already managed, cannot join the MultiCluster", connectorCfg.Key())
 		} else {
-			klog.Infof("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
+			log.Info().Msgf("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
 		}
 	} else {
-		mc.IsManaged = true
-		mc.Cluster.Region = connectorCfg.Region()
-		mc.Cluster.Zone = connectorCfg.Zone()
-		mc.Cluster.Group = connectorCfg.Group()
-		mc.Cluster.Name = connectorCfg.Name()
-		mc.Cluster.ControlPlaneUID = connectorCfg.ControlPlaneUID()
+		mc := c.cfg.GetMeshConfig()
+		mc.Spec.ClusterSet.IsManaged = true
+		mc.Spec.ClusterSet.Region = connectorCfg.Region()
+		mc.Spec.ClusterSet.Zone = connectorCfg.Zone()
+		mc.Spec.ClusterSet.Group = connectorCfg.Group()
+		mc.Spec.ClusterSet.Name = connectorCfg.Name()
+		mc.Spec.ClusterSet.ControlPlaneUID = connectorCfg.ControlPlaneUID()
 
-		if _, err := mcClient.UpdateConfig(mc); err != nil {
+		if _, err := c.configClient.ConfigV1alpha3().
+			MeshConfigs(mc.Namespace).
+			Update(ctx, &mc, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
-
 	}
-	//}
 
 	return nil
 }
@@ -123,7 +119,7 @@ func (c *Connector) updateConfigsOfManagedCluster() error {
 func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}) {
 	ctx := c.context.(*conn.ConnectorContext)
 	connectorCfg := ctx.ConnectorConfig
-	klog.V(5).Infof("[%s] start to processing events .... ", connectorCfg.Key())
+	log.Info().Msgf("[%s] start to processing events .... ", connectorCfg.Key())
 
 	msgBus := broker.GetMessageBus()
 
@@ -139,20 +135,20 @@ func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}
 		select {
 		case msg, ok := <-svcExportDeletedCh:
 			if !ok {
-				klog.Warningf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
+				log.Warn().Msgf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
 				continue
 			}
-			klog.V(5).Infof("[%s] received event ServiceExportDeleted %v", connectorCfg.Key(), msg)
+			log.Info().Msgf("[%s] received event ServiceExportDeleted %v", connectorCfg.Key(), msg)
 
 			e, ok := msg.(mcsevent.Message)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
+				log.Error().Msgf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
 				continue
 			}
 
 			svcExportEvt, ok := e.OldObj.(*mcsevent.ServiceExportEvent)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
+				log.Error().Msgf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
 				continue
 			}
 
@@ -165,25 +161,25 @@ func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}
 
 					return nil
 				}); err != nil {
-					klog.Errorf("[%s] Failed to delete ServiceImport %s/%s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name)
+					log.Error().Msgf("[%s] Failed to delete ServiceImport %s/%s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name)
 				}
 			}()
 		case msg, ok := <-svcExportAcceptedCh:
 			if !ok {
-				klog.Warningf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
+				log.Warn().Msgf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
 				continue
 			}
-			klog.V(5).Infof("[%s] received event ServiceExportAccepted %v", connectorCfg.Key(), msg)
+			log.Info().Msgf("[%s] received event ServiceExportAccepted %v", connectorCfg.Key(), msg)
 
 			e, ok := msg.(mcsevent.Message)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
+				log.Error().Msgf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
 				continue
 			}
 
 			svcExportEvt, ok := e.NewObj.(*mcsevent.ServiceExportEvent)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
+				log.Error().Msgf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
 				continue
 			}
 
@@ -196,25 +192,25 @@ func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}
 
 					return nil
 				}); err != nil {
-					klog.Errorf("[%s] Failed to upsert ServiceImport %s/%s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name)
+					log.Error().Msgf("[%s] Failed to upsert ServiceImport %s/%s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name)
 				}
 			}()
 		case msg, ok := <-svcExportRejectedCh:
 			if !ok {
-				klog.Warningf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
+				log.Warn().Msgf("[%s] Channel closed for ServiceExport", connectorCfg.Key())
 				continue
 			}
-			klog.V(5).Infof("[%s] received event ServiceExportRejected %v", connectorCfg.Key(), msg)
+			log.Info().Msgf("[%s] received event ServiceExportRejected %v", connectorCfg.Key(), msg)
 
 			e, ok := msg.(mcsevent.Message)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
+				log.Error().Msgf("[%s] Received unexpected message %T on channel, expected Message", connectorCfg.Key(), e)
 				continue
 			}
 
 			svcExportEvt, ok := e.NewObj.(*mcsevent.ServiceExportEvent)
 			if !ok {
-				klog.Errorf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
+				log.Error().Msgf("[%s] Received unexpected object %T, expected *mcsevent.ServiceExportEvent", connectorCfg.Key(), svcExportEvt)
 				continue
 			}
 
@@ -227,11 +223,11 @@ func (c *Connector) processEvent(broker *mcsevent.Broker, stopCh <-chan struct{}
 
 					return nil
 				}); err != nil {
-					klog.Errorf("[%s] Failed to handle Reject Event of ServiceExport %s/%s: %s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name, err)
+					log.Error().Msgf("[%s] Failed to handle Reject Event of ServiceExport %s/%s: %s", connectorCfg.Key(), svcExportEvt.ServiceExport.Namespace, svcExportEvt.ServiceExport.Name, err)
 				}
 			}()
 		case <-stopCh:
-			klog.Infof("[%s] Received stop signal.", connectorCfg.Key())
+			log.Info().Msgf("[%s] Received stop signal.", connectorCfg.Key())
 			return
 		}
 	}
@@ -244,15 +240,15 @@ func (c *Connector) ServiceImportExists(svcExp *mcsv1alpha1.ServiceExport) bool 
 		ServiceImports(svcExp.Namespace).
 		Get(context.TODO(), svcExp.Name, metav1.GetOptions{}); err != nil {
 		if errors.IsNotFound(err) {
-			klog.V(5).Infof("[%s] ServiceImport %s/%s doesn't exist", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+			log.Info().Msgf("[%s] ServiceImport %s/%s doesn't exist", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 			return false
 		}
 
-		klog.Errorf("[%s] Failed to get of ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+		log.Error().Msgf("[%s] Failed to get of ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 		return true
 	}
 
-	klog.V(5).Infof("[%s] ServiceImport %s/%s already exists", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+	log.Info().Msgf("[%s] ServiceImport %s/%s already exists", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	return true
 }
 
@@ -266,7 +262,7 @@ func (c *Connector) ValidateServiceExport(svcExp *mcsv1alpha1.ServiceExport, ser
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// If not found this svc in the cluster, then there' no conflict possibility
-			klog.V(5).Infof("[%s] Service %s/%s doesn't exist, no conflict", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+			log.Info().Msgf("[%s] Service %s/%s doesn't exist, no conflict", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 			return nil
 		}
 		return fmt.Errorf("[%s] Failed get Service %s/%s: %s", clusterKey, svcExp.Namespace, svcExp.Name, err)
@@ -288,7 +284,7 @@ func (c *Connector) upsertServiceImport(export *mcsevent.ServiceExportEvent) err
 	exportClusterKey := export.ClusterKey()
 	svcExp := export.ServiceExport
 	if exportClusterKey == ctx.ClusterKey {
-		klog.Warningf("[%s] ServiceExport %s/%s is ignored as it occurs in same cluster", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+		log.Warn().Msgf("[%s] ServiceExport %s/%s is ignored as it occurs in same cluster", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 		return nil
 	}
 
@@ -296,17 +292,17 @@ func (c *Connector) upsertServiceImport(export *mcsevent.ServiceExportEvent) err
 	if err != nil {
 		return err
 	}
-	klog.V(5).Infof("[%s] Created/Found ServiceImport %s/%s: %v", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, imp)
+	log.Info().Msgf("[%s] Created/Found ServiceImport %s/%s: %v", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, imp)
 
 	//ports := make([]svcimpv1alpha1.ServicePort, 0)
 	for idx, p := range imp.Spec.Ports {
-		klog.V(5).Infof("[%s] processing port %d, len(endpoints)=%d", ctx.ClusterKey, p.Port, len(p.Endpoints))
+		log.Info().Msgf("[%s] processing port %d, len(endpoints)=%d", ctx.ClusterKey, p.Port, len(p.Endpoints))
 		endpoints := make([]svcimpv1alpha1.Endpoint, 0)
 		if len(p.Endpoints) == 0 {
 			for _, r := range svcExp.Spec.Rules {
 				if r.PortNumber == p.Port {
 					ep := newEndpoint(export, r, export.Geo.GatewayHost(), export.Geo.GatewayIP(), export.Geo.GatewayPort())
-					klog.V(5).Infof("[%s] processing port %d, ep=%v", ctx.ClusterKey, p.Port, ep)
+					log.Info().Msgf("[%s] processing port %d, ep=%v", ctx.ClusterKey, p.Port, ep)
 					endpoints = append(endpoints, ep)
 				}
 			}
@@ -316,7 +312,7 @@ func (c *Connector) upsertServiceImport(export *mcsevent.ServiceExportEvent) err
 				if r.PortNumber == p.Port {
 					// copy
 					for _, ep := range p.Endpoints {
-						klog.V(5).Infof("[%s] processing port %d, existing ep=%v", ctx.ClusterKey, p.Port, ep)
+						log.Info().Msgf("[%s] processing port %d, existing ep=%v", ctx.ClusterKey, p.Port, ep)
 						epMap[ep.ClusterKey] = *ep.DeepCopy()
 					}
 
@@ -326,22 +322,22 @@ func (c *Connector) upsertServiceImport(export *mcsevent.ServiceExportEvent) err
 			}
 
 			for _, ep := range epMap {
-				klog.V(5).Infof("[%s] port %d, endpoint entry=%v", ctx.ClusterKey, p.Port, ep)
+				log.Info().Msgf("[%s] port %d, endpoint entry=%v", ctx.ClusterKey, p.Port, ep)
 				endpoints = append(endpoints, ep)
 			}
 		}
 
 		imp.Spec.Ports[idx].Endpoints = endpoints
-		klog.V(5).Infof("[%s] len of endpoints of port %d is %d", ctx.ClusterKey, p.Port, len(imp.Spec.Ports[idx].Endpoints))
+		log.Info().Msgf("[%s] len of endpoints of port %d is %d", ctx.ClusterKey, p.Port, len(imp.Spec.Ports[idx].Endpoints))
 	}
 	imp.Spec.ServiceAccountName = svcExp.Spec.ServiceAccountName
-	klog.V(5).Infof("[%s] After merging, ServiceImport %s/%s: %v", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, imp)
+	log.Info().Msgf("[%s] After merging, ServiceImport %s/%s: %v", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, imp)
 
-	klog.V(5).Infof("[%s] updating ServiceImport %s/%s ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+	log.Info().Msgf("[%s] updating ServiceImport %s/%s ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	if _, err := c.k8sAPI.FlomeshClient.ServiceimportV1alpha1().
 		ServiceImports(svcExp.Namespace).
 		Update(context.TODO(), imp, metav1.UpdateOptions{}); err != nil {
-		klog.Errorf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+		log.Error().Msgf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 		return err
 	}
 
@@ -365,9 +361,9 @@ func (c *Connector) getOrCreateServiceImport(export *mcsevent.ServiceExportEvent
 		Namespaces().
 		Create(context.TODO(), ns, metav1.CreateOptions{}); err != nil {
 		if errors.IsAlreadyExists(err) {
-			klog.V(5).Infof("[%s] Namespace %q exists", ctx.ClusterKey, svcExp.Namespace)
+			log.Info().Msgf("[%s] Namespace %q exists", ctx.ClusterKey, svcExp.Namespace)
 		} else {
-			klog.Errorf("[%s] Failed to create Namespace %q: %s", ctx.ClusterKey, svcExp.Namespace, err)
+			log.Error().Msgf("[%s] Failed to create Namespace %q: %s", ctx.ClusterKey, svcExp.Namespace, err)
 			return nil, err
 		}
 	}
@@ -382,23 +378,23 @@ func (c *Connector) getOrCreateServiceImport(export *mcsevent.ServiceExportEvent
 		Create(context.TODO(), imp, metav1.CreateOptions{})
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
-			klog.V(5).Infof("[%s] ServiceImport %s/%s already exists, getting it ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+			log.Info().Msgf("[%s] ServiceImport %s/%s already exists, getting it ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 			imp, err = c.k8sAPI.FlomeshClient.ServiceimportV1alpha1().
 				ServiceImports(svcExp.Namespace).
 				Get(context.TODO(), svcExp.Name, metav1.GetOptions{})
 			if err != nil {
-				klog.Errorf("[%s] Failed to get ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+				log.Error().Msgf("[%s] Failed to get ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 				return nil, err
 			}
 
 			return imp, nil
 		}
 
-		klog.Errorf("[%s] Failed to create ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+		log.Error().Msgf("[%s] Failed to create ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 		return nil, err
 	}
 
-	klog.V(5).Infof("[%s] ServiceImport %s/%s is created successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+	log.Info().Msgf("[%s] ServiceImport %s/%s is created successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	return imp, nil
 }
 
@@ -460,7 +456,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 	exportClusterKey := export.ClusterKey()
 	svcExp := export.ServiceExport
 	if exportClusterKey == ctx.ClusterKey {
-		klog.Warningf("[%s] ServiceExport %s/%s is ignored as it occurs in same cluster", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+		log.Warn().Msgf("[%s] ServiceExport %s/%s is ignored as it occurs in same cluster", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 		return nil
 	}
 
@@ -470,7 +466,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 
 	if err != nil {
 		if errors.IsNotFound(err) {
-			klog.Warningf("[%s] ServiceImport %s had been deleted.", ctx.ClusterKey, client.ObjectKeyFromObject(svcExp))
+			log.Warn().Msgf("[%s] ServiceImport %s had been deleted.", ctx.ClusterKey, client.ObjectKeyFromObject(svcExp))
 			return nil
 		}
 
@@ -478,7 +474,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 	}
 
 	if imp.DeletionTimestamp != nil {
-		klog.Warningf("[%s] ServiceImport %s/%s is being deleted, ignore it", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+		log.Warn().Msgf("[%s] ServiceImport %s/%s is being deleted, ignore it", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 		return nil
 	}
 
@@ -509,18 +505,18 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 		if _, err := c.k8sAPI.FlomeshClient.ServiceimportV1alpha1().
 			ServiceImports(svcExp.Namespace).
 			Update(context.TODO(), imp, metav1.UpdateOptions{}); err != nil {
-			klog.Errorf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+			log.Error().Msgf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 			return err
 		}
-		klog.V(5).Infof("[%s] ServiceImport %s/%s is updated successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+		log.Info().Msgf("[%s] ServiceImport %s/%s is updated successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	} else {
 		if err := c.k8sAPI.FlomeshClient.ServiceimportV1alpha1().
 			ServiceImports(svcExp.Namespace).
 			Delete(context.TODO(), svcExp.Name, metav1.DeleteOptions{}); err != nil {
-			klog.Errorf("[%s] Failed to delete ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
+			log.Error().Msgf("[%s] Failed to delete ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
 			return err
 		}
-		klog.V(5).Infof("[%s] ServiceImport %s/%s is deleted successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
+		log.Info().Msgf("[%s] ServiceImport %s/%s is deleted successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	}
 
 	return nil
@@ -537,7 +533,7 @@ func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEven
 			ServiceExports(export.Namespace).
 			Get(context.TODO(), export.Name, metav1.GetOptions{})
 		if err != nil {
-			klog.Errorf("[%s] Failed to get ServiceExport %s/%s: %s", ctx.ClusterKey, export.Namespace, export.Name, err)
+			log.Error().Msgf("[%s] Failed to get ServiceExport %s/%s: %s", ctx.ClusterKey, export.Namespace, export.Name, err)
 			return err
 		}
 
@@ -555,7 +551,7 @@ func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEven
 		if _, err := c.k8sAPI.FlomeshClient.ServiceexportV1alpha1().
 			ServiceExports(export.Namespace).
 			UpdateStatus(context.TODO(), exp, metav1.UpdateOptions{}); err != nil {
-			klog.Errorf("[%s] Failed to update status of ServiceExport %s/%s: %s", ctx.ClusterKey, exp.Namespace, exp.Name, err)
+			log.Error().Msgf("[%s] Failed to update status of ServiceExport %s/%s: %s", ctx.ClusterKey, exp.Namespace, exp.Name, err)
 			return err
 		}
 	}

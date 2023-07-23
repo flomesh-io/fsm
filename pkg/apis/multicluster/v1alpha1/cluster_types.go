@@ -116,6 +116,7 @@ const (
 // +kubebuilder:printcolumn:name="Managed",type="string",priority=0,JSONPath=".status.conditions[?(@.type=='Managed')].status"
 // +kubebuilder:printcolumn:name="Managed Age",type="date",priority=0,JSONPath=".status.conditions[?(@.type=='Managed')].lastTransitionTime"
 // +kubebuilder:printcolumn:name="Age",type="date",priority=0,JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
 // Cluster is the Schema for the clusters API
 type Cluster struct {

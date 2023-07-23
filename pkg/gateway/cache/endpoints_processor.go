@@ -3,7 +3,6 @@ package cache
 import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
 )
 
 type EndpointsProcessor struct {
@@ -12,7 +11,7 @@ type EndpointsProcessor struct {
 func (p *EndpointsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
@@ -25,7 +24,7 @@ func (p *EndpointsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 func (p *EndpointsProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
-		klog.Errorf("unexpected object type %T", obj)
+		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 

@@ -46,7 +46,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -100,7 +99,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			klog.V(3).Info("Gateway resource not found. Ignoring since object must be deleted")
+			log.Info().Msgf("Gateway resource not found. Ignoring since object must be deleted")
 			r.fctx.EventHandler.OnDelete(&gwv1beta1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
@@ -109,7 +108,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		klog.Errorf("Failed to get Gateway, %v", err)
+		log.Error().Msgf("Failed to get Gateway, %v", err)
 		return ctrl.Result{}, err
 	}
 
@@ -132,14 +131,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if effectiveGatewayClass == nil {
-		klog.Warningf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
+		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
 	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
 	gatewayList := &gwv1beta1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(gateway.Namespace)); err != nil {
-		klog.Errorf("Failed to list all gateways in namespace %s: %s", gateway.Namespace, err)
+		log.Error().Msgf("Failed to list all gateways in namespace %s: %s", gateway.Namespace, err)
 		return ctrl.Result{}, err
 	}
 
@@ -255,7 +254,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// if there's any previous active gateways and has been assigned addresses, clean it up
 		gatewayList := &gwv1beta1.GatewayList{}
 		if err := r.fctx.List(ctx, gatewayList, client.InNamespace(activeGateway.Namespace)); err != nil {
-			klog.Errorf("Failed to list all gateways in namespace %s: %s", activeGateway.Namespace, err)
+			log.Error().Msgf("Failed to list all gateways in namespace %s: %s", activeGateway.Namespace, err)
 			return ctrl.Result{}, err
 		}
 
@@ -531,7 +530,7 @@ func addressesToStrings(addresses []gwv1beta1.GatewayAddress) []string {
 func (r *gatewayReconciler) findActiveGatewayByNamespace(ctx context.Context, namespace string) (*gwv1beta1.Gateway, ctrl.Result, error) {
 	gatewayList := &gwv1beta1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(namespace)); err != nil {
-		klog.Errorf("Failed to list all gateways in namespace %s: %s", namespace, err)
+		log.Error().Msgf("Failed to list all gateways in namespace %s: %s", namespace, err)
 		return nil, ctrl.Result{}, err
 	}
 
@@ -607,7 +606,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 		return nil, fmt.Errorf("object %v is not type of *gwv1beta1.Gateway", object)
 	}
 
-	klog.V(5).Infof("[GW] Resolving Values ...")
+	log.Info().Msgf("[GW] Resolving Values ...")
 
 	gwBytes, err := ghodssyaml.Marshal(&gatewayValues{
 		Gateway:   gateway,
@@ -616,7 +615,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 	if err != nil {
 		return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)
 	}
-	klog.V(5).Infof("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
+	log.Info().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
 	gwValues, err := chartutil.ReadValues(gwBytes)
 	if err != nil {
 		return nil, err
@@ -667,7 +666,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&gwv1beta1.Gateway{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			gateway, ok := obj.(*gwv1beta1.Gateway)
 			if !ok {
-				klog.Errorf("unexpected object type %T", obj)
+				log.Error().Msgf("unexpected object type %T", obj)
 				return false
 			}
 
@@ -676,12 +675,12 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				GatewayClasses().
 				Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})
 			if err != nil {
-				klog.Errorf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
+				log.Error().Msgf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
 				return false
 			}
 
 			if gatewayClass.Spec.ControllerName != constants.GatewayController {
-				klog.Warningf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
+				log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 				return false
 			}
 
@@ -693,7 +692,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 				gatewayClass, ok := obj.(*gwv1beta1.GatewayClass)
 				if !ok {
-					klog.Errorf("unexpected object type: %T", obj)
+					log.Error().Msgf("unexpected object type: %T", obj)
 					return false
 				}
 
@@ -706,14 +705,14 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *gatewayReconciler) gatewayClassToGateways(obj client.Object) []reconcile.Request {
 	gatewayClass, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
-		klog.Errorf("unexpected object type: %T", obj)
+		log.Error().Msgf("unexpected object type: %T", obj)
 		return nil
 	}
 
 	if gwutils.IsEffectiveGatewayClass(gatewayClass) {
 		var gateways gwv1beta1.GatewayList
 		if err := r.fctx.List(context.TODO(), &gateways); err != nil {
-			klog.Error("error listing gateways: %s", err)
+			log.Error().Msgf("error listing gateways: %s", err)
 			return nil
 		}
 

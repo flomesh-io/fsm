@@ -28,6 +28,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"k8s.io/client-go/kubernetes"
 	"time"
@@ -39,6 +40,10 @@ type Connector struct {
 	cfg        configurator.Configurator
 	broker     *messaging.Broker
 }
+
+var (
+	log = logger.New("fsm-ingress-connector")
+)
 
 func NewConnector(kubeClient kubernetes.Interface, broker *messaging.Broker, certMgr *certificate.Manager, cfg configurator.Configurator, resyncPeriod time.Duration) *Connector {
 	return &Connector{

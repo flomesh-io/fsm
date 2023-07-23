@@ -16,7 +16,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -195,7 +194,7 @@ func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectK
 	if ref.Group != nil {
 		switch string(*ref.Group) {
 		case "", "flomesh.io":
-			klog.V(5).Infof("Ref group is %q", string(*ref.Group))
+			log.Info().Msgf("Ref group is %q", string(*ref.Group))
 		default:
 			return false
 		}
@@ -204,7 +203,7 @@ func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectK
 	if ref.Kind != nil {
 		switch string(*ref.Kind) {
 		case "Service", "ServiceImport":
-			klog.V(5).Infof("Ref kind is %q", string(*ref.Kind))
+			log.Info().Msgf("Ref kind is %q", string(*ref.Kind))
 		default:
 			return false
 		}
@@ -279,13 +278,13 @@ func (c *GatewayCache) BuildConfigs() {
 
 		if jsonVersion == cfg.Version {
 			// config not changed, ignore updating
-			klog.V(5).Infof("%s/config.json doesn't change, ignore updating...", gatewayPath)
+			log.Info().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
 			continue
 		}
 
 		go func(cfg *route.ConfigSpec) {
 			//if err := c.repoClient.DeriveCodebase(gatewayPath, parentPath); err != nil {
-			//	klog.Errorf("Gateway codebase %q failed to derive codebase %q: %s", gatewayPath, parentPath, err)
+			//	log.Error().Msgf("Gateway codebase %q failed to derive codebase %q: %s", gatewayPath, parentPath, err)
 			//	return
 			//}
 
@@ -304,7 +303,7 @@ func (c *GatewayCache) BuildConfigs() {
 
 			// FIXME: version should be integer
 			if _, err := c.repoClient.Batch(cfg.Version, batches); err != nil {
-				klog.Errorf("Sync gateway config to repo failed: %s", err)
+				log.Error().Msgf("Sync gateway config to repo failed: %s", err)
 				return
 			}
 		}(cfg)
@@ -316,7 +315,7 @@ func (c *GatewayCache) getVersionOfConfigJson(basepath string) (string, error) {
 
 	json, err := c.repoClient.GetFile(path)
 	if err != nil {
-		klog.Errorf("Get %q from pipy repo error: %s", path, err)
+		log.Error().Msgf("Get %q from pipy repo error: %s", path, err)
 		return "", err
 	}
 
@@ -411,7 +410,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 			secret, err := c.informers.GetListers().Secret.Secrets(ns).Get(name)
 
 			if err != nil {
-				klog.Errorf("Failed to get Secret %s/%s: %s", ns, name, err)
+				log.Error().Msgf("Failed to get Secret %s/%s: %s", ns, name, err)
 				continue
 			}
 
@@ -727,13 +726,13 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 				},
 			})
 			if err != nil {
-				klog.Errorf("Failed to convert LabelSelector to Selector: %s", err)
+				log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
 				continue
 			}
 
 			endpointSliceList, err := c.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
 			if err != nil {
-				klog.Errorf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
+				log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
 				continue
 			}
 
@@ -743,13 +742,13 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 
 			svcPort, err := getServicePort(svc, svcInfo.svcPortName.Port)
 			if err != nil {
-				klog.Errorf("Failed to get ServicePort: %s", err)
+				log.Error().Msgf("Failed to get ServicePort: %s", err)
 				continue
 			}
 
 			filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
 			if len(filteredSlices) == 0 {
-				klog.Errorf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
+				log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
 				continue
 			}
 

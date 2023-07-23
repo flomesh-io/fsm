@@ -9,6 +9,7 @@ import (
 // by the mesh control plane
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:storageversion
 type MeshRootCertificate struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

@@ -3,8 +3,6 @@ package version
 import (
 	"github.com/blang/semver"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
-	"os"
 	"strings"
 )
 
@@ -21,7 +19,7 @@ var (
 func getServerVersion(kubeClient kubernetes.Interface) (semver.Version, error) {
 	serverVersion, err := kubeClient.Discovery().ServerVersion()
 	if err != nil {
-		klog.Error(err, "unable to get Server Version")
+		log.Error().Msgf("unable to get Server Version: %s", err)
 		return semver.Version{Major: 0, Minor: 0, Patch: 0}, err
 	}
 
@@ -37,8 +35,8 @@ func detectServerVersion(kubeClient kubernetes.Interface) {
 	if ServerVersion.EQ(semver.Version{Major: 0, Minor: 0, Patch: 0}) {
 		ver, err := getServerVersion(kubeClient)
 		if err != nil {
-			klog.Error(err, "unable to get server version")
-			os.Exit(1)
+			log.Error().Msgf("unable to get server version: %s", err)
+			panic(err)
 		}
 
 		ServerVersion = ver

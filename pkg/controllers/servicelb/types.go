@@ -24,6 +24,8 @@
 
 package servicelb
 
+import "github.com/flomesh-io/fsm/pkg/logger"
+
 const (
 	finalizerName          = "servicelb.flomesh.io/daemonset"
 	svcNameLabel           = "servicelb.flomesh.io/svcname"
@@ -31,4 +33,8 @@ const (
 	daemonsetNodeLabel     = "servicelb.flomesh.io/enablelb"
 	daemonsetNodePoolLabel = "servicelb.flomesh.io/lbpool"
 	nodeSelectorLabel      = "servicelb.flomesh.io/nodeselector"
+)
+
+var (
+	log = logger.New("servicelb-controller")
 )

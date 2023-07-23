@@ -41,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -62,19 +61,19 @@ func RenderChart(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error loading chart for installation: %s", err)
 	}
-	klog.V(5).Infof("[HELM UTIL] Chart = %v", chart)
+	log.Info().Msgf("[HELM UTIL] Chart = %v", chart)
 
 	values, err := resolveValues(object, mc)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error resolve values for installation: %s", err)
 	}
-	klog.V(5).Infof("[HELM UTIL] Values = %s", values)
+	log.Info().Msgf("[HELM UTIL] Values = %s", values)
 
 	rel, err := installClient.Run(chart, values)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error install %s/%s: %s", object.GetNamespace(), object.GetName(), err)
 	}
-	klog.V(5).Infof("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
+	log.Info().Msgf("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
 
 	if result, err := applyChartYAMLs(object, rel, client, scheme); err != nil {
 		return result, err
@@ -86,11 +85,11 @@ func RenderChart(
 func helmClient(releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
 	configFlags := &genericclioptions.ConfigFlags{Namespace: &namespace}
 
-	klog.V(5).Infof("[HELM UTIL] Initializing Helm Action Config ...")
+	log.Info().Msgf("[HELM UTIL] Initializing Helm Action Config ...")
 	actionConfig := new(action.Configuration)
-	_ = actionConfig.Init(configFlags, namespace, "secret", klog.Infof)
+	_ = actionConfig.Init(configFlags, namespace, "secret", log.Info().Msgf)
 
-	klog.V(5).Infof("[HELM UTIL] Creating Helm Install Client ...")
+	log.Info().Msgf("[HELM UTIL] Creating Helm Install Client ...")
 	installClient := helm.NewInstall(actionConfig)
 	installClient.ReleaseName = releaseName
 	installClient.Namespace = namespace
@@ -110,34 +109,34 @@ func applyChartYAMLs(owner metav1.Object, rel *release.Release, client client.Cl
 			if err == io.EOF {
 				break
 			} else {
-				klog.Errorf("Error reading yaml: %s", err)
+				log.Error().Msgf("Error reading yaml: %s", err)
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}
 		}
 
-		klog.V(5).Infof("[HELM UTIL] Processing YAML : \n\n%s\n\n", string(buf))
+		log.Info().Msgf("[HELM UTIL] Processing YAML : \n\n%s\n\n", string(buf))
 		obj, err := utils.DecodeYamlToUnstructured(buf)
 		if err != nil {
-			klog.Errorf("Error decoding YAML to Unstructured object: %s", err)
+			log.Error().Msgf("Error decoding YAML to Unstructured object: %s", err)
 			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
-		klog.V(5).Infof("[HELM UTIL] Unstructured Object = \n\n%v\n\n", obj)
+		log.Info().Msgf("[HELM UTIL] Unstructured Object = \n\n%v\n\n", obj)
 
 		if isValidOwner(owner, obj) {
 			if err = ctrl.SetControllerReference(owner, obj, scheme); err != nil {
-				klog.Errorf("Error setting controller reference: %s", err)
+				log.Error().Msgf("Error setting controller reference: %s", err)
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}
-			klog.V(5).Infof("[HELM UTIL] Resource %s/%s, Owner: %v", obj.GetNamespace(), obj.GetName(), obj.GetOwnerReferences())
+			log.Info().Msgf("[HELM UTIL] Resource %s/%s, Owner: %v", obj.GetNamespace(), obj.GetName(), obj.GetOwnerReferences())
 		}
 
 		result, err := utils.CreateOrUpdate(context.TODO(), client, obj)
 		if err != nil {
-			klog.Errorf("Error creating/updating object: %s", err)
+			log.Error().Msgf("Error creating/updating object: %s", err)
 			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
 
-		klog.V(5).Infof("[HELM UTIL] Successfully %s object: %v", result, obj)
+		log.Info().Msgf("[HELM UTIL] Successfully %s object: %v", result, obj)
 	}
 
 	return ctrl.Result{}, nil
@@ -148,11 +147,11 @@ func isValidOwner(owner, object metav1.Object) bool {
 	if ownerNs != "" {
 		objNs := object.GetNamespace()
 		if objNs == "" {
-			klog.Warningf("cluster-scoped resource must not have a namespace-scoped owner, owner's namespace %s", ownerNs)
+			log.Warn().Msgf("cluster-scoped resource must not have a namespace-scoped owner, owner's namespace %s", ownerNs)
 			return false
 		}
 		if ownerNs != objNs {
-			klog.Warningf("cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", owner.GetNamespace(), object.GetNamespace())
+			log.Warn().Msgf("cross-namespace owner references are disallowed, owner's namespace %s, obj's namespace %s", owner.GetNamespace(), object.GetNamespace())
 			return false
 		}
 	}

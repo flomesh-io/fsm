@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	k8scache "k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
 	"time"
 )
 
@@ -36,12 +35,12 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 	errCh := make(chan error)
 
 	if c.cache.GetBroadcaster() != nil && c.kubeClient != nil {
-		klog.V(3).Infof("Starting broadcaster ......")
+		log.Info().Msgf("Starting broadcaster ......")
 		c.cache.GetBroadcaster().StartRecordingToSink(stopCh)
 	}
 
 	// register event handlers
-	klog.V(3).Infof("Registering event handlers ......")
+	log.Info().Msgf("Registering event handlers ......")
 	controllers := c.cache.GetControllers()
 
 	go controllers.Service.Run(stopCh)
@@ -52,13 +51,13 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 	go controllers.Secret.Run(stopCh)
 
 	// start the informers manually
-	klog.V(3).Infof("Starting informers(svc, ep & ingress class) ......")
+	log.Info().Msgf("Starting informers(svc, ep & ingress class) ......")
 	go controllers.Service.Informer.Run(stopCh)
 	go controllers.Endpoints.Informer.Run(stopCh)
 	go controllers.Secret.Informer.Run(stopCh)
 	go controllers.IngressClassv1.Informer.Run(stopCh)
 
-	klog.V(3).Infof("Waiting for caches to be synced ......")
+	log.Info().Msgf("Waiting for caches to be synced ......")
 	// Ingress depends on service & enpoints, they must be synced first
 	if !k8scache.WaitForCacheSync(stopCh,
 		controllers.Endpoints.HasSynced,
@@ -74,18 +73,18 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 	}
 
 	// start the ServiceImport Informer
-	klog.V(3).Infof("Starting ServiceImport informer ......")
+	log.Info().Msgf("Starting ServiceImport informer ......")
 	go controllers.ServiceImport.Informer.Run(stopCh)
 	if !k8scache.WaitForCacheSync(stopCh, controllers.ServiceImport.HasSynced) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for ServiceExport to sync"))
 	}
 
 	// Sleep for a while, so that there's enough time for processing
-	klog.V(5).Infof("Sleep for a while ......")
+	log.Info().Msgf("Sleep for a while ......")
 	time.Sleep(1 * time.Second)
 
 	// start the Ingress Informer
-	klog.V(3).Infof("Starting ingress informer ......")
+	log.Info().Msgf("Starting ingress informer ......")
 	go controllers.Ingressv1.Informer.Run(stopCh)
 	if !k8scache.WaitForCacheSync(stopCh, controllers.Ingressv1.HasSynced) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for ingress caches to sync"))

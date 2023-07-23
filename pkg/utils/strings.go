@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"k8s.io/klog/v2"
 	"strings"
 )
 
@@ -13,7 +12,7 @@ func ParseEnabled(enabled string) bool {
 		return false
 	}
 
-	klog.Warningf("invalid syntax: %s, will be treated as false", enabled)
+	log.Warn().Msgf("invalid syntax: %s, will be treated as false", enabled)
 
 	return false
 }

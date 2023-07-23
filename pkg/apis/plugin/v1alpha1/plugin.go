@@ -7,6 +7,7 @@ import (
 // Plugin is the type used to represent a Plugin policy.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 type Plugin struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

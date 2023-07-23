@@ -26,9 +26,13 @@ package utils
 
 import (
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/logger"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
+)
+
+var (
+	log = logger.New("fsm-ingress-utils")
 )
 
 func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
@@ -39,8 +43,8 @@ func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 	}
 
 	defaultClass := constants.DefaultIngressClass
-	klog.V(3).Infof("IngressClassName/IngressAnnotation = %s", ingressClass)
-	klog.V(3).Infof("DefaultIngressClass = %s, and IngressPipyClass = %s", defaultClass, constants.IngressPipyClass)
+	log.Info().Msgf("IngressClassName/IngressAnnotation = %s", ingressClass)
+	log.Info().Msgf("DefaultIngressClass = %s, and IngressPipyClass = %s", defaultClass, constants.IngressPipyClass)
 
 	// 2. empty IngressClass, and pipy is the default IngressClass or no default at all
 	if len(ingressClass) == 0 && (defaultClass == constants.IngressPipyClass || len(defaultClass) == 0) {
@@ -54,7 +58,7 @@ func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 func MetaNamespaceKey(obj interface{}) string {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {
-		klog.Warning(err)
+		log.Warn().Err(err)
 	}
 
 	return key

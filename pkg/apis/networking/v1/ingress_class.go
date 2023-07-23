@@ -37,6 +37,7 @@ type AlgoBalancer string
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 type IngressClass struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.

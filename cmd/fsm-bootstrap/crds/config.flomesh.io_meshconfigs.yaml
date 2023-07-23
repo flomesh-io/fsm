@@ -1,0 +1,1905 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: meshconfigs.config.flomesh.io
+spec:
+  group: config.flomesh.io
+  names:
+    kind: MeshConfig
+    listKind: MeshConfigList
+    plural: meshconfigs
+    singular: meshconfig
+  scope: Namespaced
+  versions:
+  - deprecated: true
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: MeshConfig is the type used to represent the mesh configuration.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the MeshConfig specification.
+            properties:
+              certificate:
+                description: Certificate defines the certificate management configurations
+                  for a mesh instance.
+                properties:
+                  certKeyBitSize:
+                    description: CertKeyBitSize defines the certicate key bit size.
+                    type: integer
+                  ingressGateway:
+                    description: IngressGateway defines the certificate specification
+                      for an ingress gateway.
+                    properties:
+                      secret:
+                        description: Secret defines the secret in which the certificate
+                          is stored.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      subjectAltNames:
+                        description: SubjectAltNames defines the Subject Alternative
+                          Names (domain names and IP addresses) secured by the certificate.
+                        items:
+                          type: string
+                        type: array
+                      validityDuration:
+                        description: ValidityDuration defines the validity duration
+                          of the certificate.
+                        type: string
+                    required:
+                    - secret
+                    - subjectAltNames
+                    - validityDuration
+                    type: object
+                  serviceCertValidityDuration:
+                    description: ServiceCertValidityDuration defines the service certificate
+                      validity duration.
+                    type: string
+                type: object
+              clusterSet:
+                description: ClusterSetSpec defines the configurations of cluster.
+                properties:
+                  properties:
+                    description: Properties defines properties for cluster.
+                    items:
+                      description: ClusterPropertySpec is the type to represent cluster
+                        property.
+                      properties:
+                        name:
+                          description: Name defines the name of cluster property.
+                          type: string
+                        value:
+                          description: Value defines the name of cluster property.
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                required:
+                - properties
+                type: object
+              featureFlags:
+                description: FeatureFlags defines the feature flags for a mesh instance.
+                properties:
+                  enableAccessCertPolicy:
+                    description: EnableAccessCertPolicy defines if FSM can issue certificates
+                      for external services..
+                    type: boolean
+                  enableAccessControlPolicy:
+                    description: EnableAccessControlPolicy defines if FSM will use
+                      the AccessControl API to allow access control traffic to service
+                      mesh backends.
+                    type: boolean
+                  enableAsyncProxyServiceMapping:
+                    description: EnableAsyncProxyServiceMapping defines if FSM will
+                      map proxies to services asynchronously.
+                    type: boolean
+                  enableAutoDefaultRoute:
+                    description: EnableAutoDefaultRoute defines if auto default route
+                      is enabled.
+                    type: boolean
+                  enableEgressPolicy:
+                    description: EnableEgressPolicy defines if FSM's Egress policy
+                      is enabled.
+                    type: boolean
+                  enableIngressBackendPolicy:
+                    description: EnableIngressBackendPolicy defines if FSM will use
+                      the IngressBackend API to allow ingress traffic to service mesh
+                      backends.
+                    type: boolean
+                  enablePluginPolicy:
+                    description: EnablePluginPolicy defines if plugin policy is enabled.
+                    type: boolean
+                  enableRetryPolicy:
+                    description: EnableRetryPolicy defines if retry policy is enabled.
+                    type: boolean
+                  enableSidecarActiveHealthChecks:
+                    description: EnableSidecarActiveHealthChecks defines if FSM will
+                      sidecar active health checks between services allowed to communicate.
+                    type: boolean
+                  enableSnapshotCacheMode:
+                    description: EnableSnapshotCacheMode defines if XDS server starts
+                      with snapshot cache.
+                    type: boolean
+                required:
+                - enableAccessCertPolicy
+                - enableAccessControlPolicy
+                - enableAsyncProxyServiceMapping
+                - enableAutoDefaultRoute
+                - enableEgressPolicy
+                - enableIngressBackendPolicy
+                - enablePluginPolicy
+                - enableRetryPolicy
+                - enableSidecarActiveHealthChecks
+                - enableSnapshotCacheMode
+                type: object
+              observability:
+                description: Observalility defines the observability configurations
+                  for a mesh instance.
+                properties:
+                  enableDebugServer:
+                    description: EnableDebugServer defines if the debug endpoint on
+                      the FSM controller pod is enabled.
+                    type: boolean
+                  fsmLogLevel:
+                    description: FSMLogLevel defines the log level for FSM control
+                      plane logs.
+                    type: string
+                  remoteLogging:
+                    description: RemoteLogging defines FSM's remot logging configuration.
+                    properties:
+                      address:
+                        description: Address defines the remote logging's hostname.
+                        type: string
+                      authorization:
+                        description: Authorization defines the access entity that
+                          allows to authorize someone in remote logging service.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for remote logging.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for remote
+                          logging requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the remote loggings port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: number
+                    required:
+                    - enable
+                    type: object
+                  tracing:
+                    description: Tracing defines FSM's tracing configuration.
+                    properties:
+                      address:
+                        description: Address defines the tracing collectio's hostname.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for tracing.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for tracing
+                          requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the tracing collector's port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: number
+                    required:
+                    - enable
+                    type: object
+                required:
+                - enableDebugServer
+                type: object
+              pluginChains:
+                description: PluginChains defines the default plugin chains.
+                properties:
+                  inbound-http:
+                    description: InboundHTTPChains defines inbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  inbound-tcp:
+                    description: InboundTCPChains defines inbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-http:
+                    description: OutboundHTTPChains defines outbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-tcp:
+                    description: OutboundTCPChains defines outbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                required:
+                - inbound-http
+                - inbound-tcp
+                - outbound-http
+                - outbound-tcp
+                type: object
+              repoServer:
+                description: RepoServer defines the configurations of pipy repo server.
+                properties:
+                  codebase:
+                    description: Codebase is the folder used by fsmController
+                    type: string
+                  ipaddr:
+                    description: IPAddr of the pipy repo server
+                    type: string
+                required:
+                - codebase
+                - ipaddr
+                type: object
+              sidecar:
+                description: Sidecar defines the configurations of the proxy sidecar
+                  in a mesh.
+                properties:
+                  configResyncInterval:
+                    description: ConfigResyncInterval defines the resync interval
+                      for regular proxy broadcast updates.
+                    type: string
+                  enablePrivilegedInitContainer:
+                    description: EnablePrivilegedInitContainer defines a boolean indicating
+                      whether the init container for a meshed pod should run as privileged.
+                    type: boolean
+                  initContainerImage:
+                    description: InitContainerImage defines the container image used
+                      for the init container injected to meshed pods.
+                    type: string
+                  logLevel:
+                    description: LogLevel defines the logging level for the sidecar's
+                      logs. Non developers should generally never set this value.
+                      In production environments the LogLevel should be set to error.
+                    type: string
+                  maxDataPlaneConnections:
+                    description: MaxDataPlaneConnections defines the maximum allowed
+                      data plane connections from a proxy sidecar to the FSM controller.
+                    type: integer
+                  resources:
+                    description: Resources defines the compute resources for the sidecar.
+                    properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                  sidecarClass:
+                    description: SidecarClass defines the container provider used
+                      for the proxy sidecar.
+                    type: string
+                  sidecarDrivers:
+                    description: SidecarDrivers defines the sidecar supported.
+                    items:
+                      description: SidecarDriverSpec is the type to represent FSM's
+                        sidecar driver define.
+                      properties:
+                        initContainerImage:
+                          description: InitContainerImage defines the container image
+                            used for the init container injected to meshed pods.
+                          type: string
+                        proxyServerPort:
+                          description: ProxyServerPort is the port on which the Discovery
+                            Service listens for new connections from Sidecars
+                          format: int32
+                          type: integer
+                        sidecarDisabledMTLS:
+                          description: SidecarDisabledMTLS defines if mTLS are disabled.
+                          type: boolean
+                        sidecarImage:
+                          description: SidecarImage defines the container image used
+                            for the proxy sidecar.
+                          type: string
+                        sidecarName:
+                          description: SidecarName defines the name of the sidecar
+                            driver.
+                          type: string
+                      required:
+                      - proxyServerPort
+                      - sidecarDisabledMTLS
+                      type: object
+                    type: array
+                  sidecarImage:
+                    description: SidecarImage defines the container image used for
+                      the proxy sidecar.
+                    type: string
+                required:
+                - enablePrivilegedInitContainer
+                type: object
+              traffic:
+                description: Traffic defines the traffic management configurations
+                  for a mesh instance.
+                properties:
+                  enableEgress:
+                    description: EnableEgress defines a boolean indicating if mesh-wide
+                      Egress is enabled.
+                    type: boolean
+                  enablePermissiveTrafficPolicyMode:
+                    description: EnablePermissiveTrafficPolicyMode defines a boolean
+                      indicating if permissive traffic policy mode is enabled mesh-wide.
+                    type: boolean
+                  inboundExternalAuthorization:
+                    description: InboundExternalAuthorization defines a ruleset that,
+                      if enabled, will configure a remote external authorization endpoint
+                      for all inbound and ingress traffic in the mesh.
+                    properties:
+                      address:
+                        description: Address defines the remote address of the external
+                          authorization endpoint.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the external
+                          authorization policy is to be enabled.
+                        type: boolean
+                      failureModeAllow:
+                        description: FailureModeAllow defines a boolean indicating
+                          if traffic should be allowed on a failure to get a response
+                          against the external authorization endpoint.
+                        type: boolean
+                      port:
+                        description: Port defines the destination port of the remote
+                          external authorization endpoint.
+                        type: integer
+                      statPrefix:
+                        description: StatPrefix defines a prefix for the stats sink
+                          for this external authorization policy.
+                        type: string
+                      timeout:
+                        description: Timeout defines the timeout in which a response
+                          from the external authorization endpoint. is expected to
+                          execute.
+                        type: string
+                    required:
+                    - enable
+                    - failureModeAllow
+                    type: object
+                  inboundPortExclusionList:
+                    description: InboundPortExclusionList defines a global list of
+                      ports to exclude from inbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  interceptionMode:
+                    description: InterceptionMode defines a string indicating which
+                      traffic interception mode is used.
+                    type: string
+                  outboundIPRangeExclusionList:
+                    description: OutboundIPRangeExclusionList defines a global list
+                      of IP address ranges to exclude from outbound traffic interception
+                      by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundPortExclusionList:
+                    description: OutboundPortExclusionList defines a global list of
+                      ports to exclude from outbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  serviceAccessMode:
+                    description: ServiceAccessMode defines a string indicating service
+                      access mode.
+                    type: string
+                required:
+                - enableEgress
+                - enablePermissiveTrafficPolicyMode
+                - inboundPortExclusionList
+                - interceptionMode
+                - outboundIPRangeExclusionList
+                - outboundPortExclusionList
+                - serviceAccessMode
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: false
+  - deprecated: true
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: MeshConfig is the type used to represent the mesh configuration.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the MeshConfig specification.
+            properties:
+              certificate:
+                description: Certificate defines the certificate management configurations
+                  for a mesh instance.
+                properties:
+                  certKeyBitSize:
+                    description: CertKeyBitSize defines the certicate key bit size.
+                    type: integer
+                  ingressGateway:
+                    description: IngressGateway defines the certificate specification
+                      for an ingress gateway.
+                    properties:
+                      secret:
+                        description: Secret defines the secret in which the certificate
+                          is stored.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      subjectAltNames:
+                        description: SubjectAltNames defines the Subject Alternative
+                          Names (domain names and IP addresses) secured by the certificate.
+                        items:
+                          type: string
+                        type: array
+                      validityDuration:
+                        description: ValidityDuration defines the validity duration
+                          of the certificate.
+                        type: string
+                    required:
+                    - secret
+                    - subjectAltNames
+                    - validityDuration
+                    type: object
+                  serviceCertValidityDuration:
+                    description: ServiceCertValidityDuration defines the service certificate
+                      validity duration.
+                    type: string
+                type: object
+              clusterSet:
+                description: ClusterSetSpec defines the configurations of cluster.
+                properties:
+                  properties:
+                    description: Properties defines properties for cluster.
+                    items:
+                      description: ClusterPropertySpec is the type to represent cluster
+                        property.
+                      properties:
+                        name:
+                          description: Name defines the name of cluster property.
+                          type: string
+                        value:
+                          description: Value defines the name of cluster property.
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                required:
+                - properties
+                type: object
+              featureFlags:
+                description: FeatureFlags defines the feature flags for a mesh instance.
+                properties:
+                  enableAccessCertPolicy:
+                    description: EnableAccessCertPolicy defines if FSM can issue certificates
+                      for external services..
+                    type: boolean
+                  enableAccessControlPolicy:
+                    description: EnableAccessControlPolicy defines if FSM will use
+                      the AccessControl API to allow access control traffic to service
+                      mesh backends.
+                    type: boolean
+                  enableAsyncProxyServiceMapping:
+                    description: EnableAsyncProxyServiceMapping defines if FSM will
+                      map proxies to services asynchronously.
+                    type: boolean
+                  enableAutoDefaultRoute:
+                    description: EnableAutoDefaultRoute defines if auto default route
+                      is enabled.
+                    type: boolean
+                  enableEgressPolicy:
+                    description: EnableEgressPolicy defines if FSM's Egress policy
+                      is enabled.
+                    type: boolean
+                  enableIngressBackendPolicy:
+                    description: EnableIngressBackendPolicy defines if FSM will use
+                      the IngressBackend API to allow ingress traffic to service mesh
+                      backends.
+                    type: boolean
+                  enablePluginPolicy:
+                    description: EnablePluginPolicy defines if plugin policy is enabled.
+                    type: boolean
+                  enableRetryPolicy:
+                    description: EnableRetryPolicy defines if retry policy is enabled.
+                    type: boolean
+                  enableSidecarActiveHealthChecks:
+                    description: EnableSidecarActiveHealthChecks defines if FSM will
+                      Sidecar active health checks between services allowed to communicate.
+                    type: boolean
+                  enableSnapshotCacheMode:
+                    description: EnableSnapshotCacheMode defines if XDS server starts
+                      with snapshot cache.
+                    type: boolean
+                required:
+                - enableAccessCertPolicy
+                - enableAccessControlPolicy
+                - enableAsyncProxyServiceMapping
+                - enableAutoDefaultRoute
+                - enableEgressPolicy
+                - enableIngressBackendPolicy
+                - enablePluginPolicy
+                - enableRetryPolicy
+                - enableSidecarActiveHealthChecks
+                - enableSnapshotCacheMode
+                type: object
+              observability:
+                description: Observalility defines the observability configurations
+                  for a mesh instance.
+                properties:
+                  enableDebugServer:
+                    description: EnableDebugServer defines if the debug endpoint on
+                      the FSM controller pod is enabled.
+                    type: boolean
+                  fsmLogLevel:
+                    description: FSMLogLevel defines the log level for FSM control
+                      plane logs.
+                    type: string
+                  remoteLogging:
+                    description: RemoteLogging defines FSM's remote logging configuration.
+                    properties:
+                      address:
+                        description: Address defines the remote logging's hostname.
+                        type: string
+                      authorization:
+                        description: Authorization defines the access entity that
+                          allows to authorize someone in remote logging service.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for remote logging.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for remote
+                          logging requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the remote logging's port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                  tracing:
+                    description: Tracing defines FSM's tracing configuration.
+                    properties:
+                      address:
+                        description: Address defines the tracing collectio's hostname.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for tracing.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for tracing
+                          requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the tracing collector's port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                required:
+                - enableDebugServer
+                type: object
+              pluginChains:
+                description: PluginChains defines the default plugin chains.
+                properties:
+                  inbound-http:
+                    description: InboundHTTPChains defines inbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  inbound-tcp:
+                    description: InboundTCPChains defines inbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-http:
+                    description: OutboundHTTPChains defines outbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-tcp:
+                    description: OutboundTCPChains defines outbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                required:
+                - inbound-http
+                - inbound-tcp
+                - outbound-http
+                - outbound-tcp
+                type: object
+              repoServer:
+                description: RepoServer defines the configurations of pipy repo server.
+                properties:
+                  codebase:
+                    description: Codebase is the folder used by fsmController
+                    type: string
+                  ipaddr:
+                    description: IPAddr of the pipy repo server
+                    type: string
+                required:
+                - codebase
+                - ipaddr
+                type: object
+              sidecar:
+                description: Sidecar defines the configurations of the proxy sidecar
+                  in a mesh.
+                properties:
+                  cipherSuites:
+                    description: CipherSuites defines a list of ciphers that listener
+                      supports when negotiating TLS 1.0-1.2. This setting has no effect
+                      when negotiating TLS 1.3. For valid cipher names, see the latest
+                      OpenSSL ciphers manual page. E.g. https://www.openssl.org/docs/man1.1.1/apps/ciphers.html.
+                    items:
+                      type: string
+                    type: array
+                  configResyncInterval:
+                    description: ConfigResyncInterval defines the resync interval
+                      for regular proxy broadcast updates.
+                    type: string
+                  ecdhCurves:
+                    description: ECDHCurves defines a list of ECDH curves that TLS
+                      connection supports. If not specified, the curves are [X25519,
+                      P-256] for non-FIPS build and P-256 for builds using BoringSSL
+                      FIPS.
+                    items:
+                      type: string
+                    type: array
+                  enablePrivilegedInitContainer:
+                    description: EnablePrivilegedInitContainer defines a boolean indicating
+                      whether the init container for a meshed pod should run as privileged.
+                    type: boolean
+                  initContainerImage:
+                    description: InitContainerImage defines the container image used
+                      for the init container injected to meshed pods.
+                    type: string
+                  localDNSProxy:
+                    description: LocalDNSProxy improves the performance of your computer
+                      by caching the responses coming from your DNS servers
+                    properties:
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for local DNS Proxy.
+                        type: boolean
+                      primaryUpstreamDNSServerIPAddr:
+                        description: PrimaryUpstreamDNSServerIPAddr defines a primary
+                          upstream DNS server for local DNS Proxy.
+                        type: string
+                      secondaryUpstreamDNSServerIPAddr:
+                        description: SecondaryUpstreamDNSServerIPAddr defines a secondary
+                          upstream DNS server for local DNS Proxy.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                  localProxyMode:
+                    description: LocalProxyMode defines the network interface the
+                      proxy will use to send traffic to the backend service application.
+                      Acceptable values are [`Localhost`, `PodIP`]. The default is
+                      `Localhost`
+                    type: string
+                  logLevel:
+                    description: LogLevel defines the logging level for the sidecar's
+                      logs. Non developers should generally never set this value.
+                      In production environments the LogLevel should be set to error.
+                    type: string
+                  maxDataPlaneConnections:
+                    description: MaxDataPlaneConnections defines the maximum allowed
+                      data plane connections from a proxy sidecar to the FSM controller.
+                    type: integer
+                  resources:
+                    description: Resources defines the compute resources for the sidecar.
+                    properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                  sidecarClass:
+                    description: SidecarClass defines the class used for the proxy
+                      sidecar.
+                    type: string
+                  sidecarDrivers:
+                    description: SidecarDrivers defines the sidecar supported.
+                    items:
+                      description: SidecarDriverSpec is the type to represent FSM's
+                        sidecar driver define.
+                      properties:
+                        initContainerImage:
+                          description: InitContainerImage defines the container image
+                            used for the init container injected to meshed pods.
+                          type: string
+                        proxyServerPort:
+                          description: ProxyServerPort is the port on which the Discovery
+                            Service listens for new connections from Sidecars
+                          format: int32
+                          type: integer
+                        sidecarDisabledMTLS:
+                          description: SidecarDisabledMTLS defines whether mTLS is
+                            disabled.
+                          type: boolean
+                        sidecarImage:
+                          description: SidecarImage defines the container image used
+                            for the proxy sidecar.
+                          type: string
+                        sidecarName:
+                          description: SidecarName defines the name of the sidecar
+                            driver.
+                          type: string
+                      required:
+                      - proxyServerPort
+                      - sidecarDisabledMTLS
+                      type: object
+                    type: array
+                  sidecarImage:
+                    description: SidecarImage defines the container image used for
+                      the proxy sidecar.
+                    type: string
+                  tlsMaxProtocolVersion:
+                    description: TLSMaxProtocolVersion defines the maximum TLS protocol
+                      version that the sidecar supports. Valid TLS protocol versions
+                      are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
+                    type: string
+                  tlsMinProtocolVersion:
+                    description: TLSMinProtocolVersion defines the minimum TLS protocol
+                      version that the sidecar supports. Valid TLS protocol versions
+                      are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
+                    type: string
+                required:
+                - enablePrivilegedInitContainer
+                type: object
+              traffic:
+                description: Traffic defines the traffic management configurations
+                  for a mesh instance.
+                properties:
+                  enableEgress:
+                    description: EnableEgress defines a boolean indicating if mesh-wide
+                      Egress is enabled.
+                    type: boolean
+                  enablePermissiveTrafficPolicyMode:
+                    description: EnablePermissiveTrafficPolicyMode defines a boolean
+                      indicating if permissive traffic policy mode is enabled mesh-wide.
+                    type: boolean
+                  inboundExternalAuthorization:
+                    description: InboundExternalAuthorization defines a ruleset that,
+                      if enabled, will configure a remote external authorization endpoint
+                      for all inbound and ingress traffic in the mesh.
+                    properties:
+                      address:
+                        description: Address defines the remote address of the external
+                          authorization endpoint.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the external
+                          authorization policy is to be enabled.
+                        type: boolean
+                      failureModeAllow:
+                        description: FailureModeAllow defines a boolean indicating
+                          if traffic should be allowed on a failure to get a response
+                          against the external authorization endpoint.
+                        type: boolean
+                      port:
+                        description: Port defines the destination port of the remote
+                          external authorization endpoint.
+                        type: integer
+                      statPrefix:
+                        description: StatPrefix defines a prefix for the stats sink
+                          for this external authorization policy.
+                        type: string
+                      timeout:
+                        description: Timeout defines the timeout in which a response
+                          from the external authorization endpoint. is expected to
+                          execute.
+                        type: string
+                    required:
+                    - enable
+                    - failureModeAllow
+                    type: object
+                  inboundPortExclusionList:
+                    description: InboundPortExclusionList defines a global list of
+                      ports to exclude from inbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  interceptionMode:
+                    description: InterceptionMode defines a string indicating which
+                      traffic interception mode is used.
+                    type: string
+                  networkInterfaceExclusionList:
+                    description: NetworkInterfaceExclusionList defines a global list
+                      of network interface names to exclude from inbound and outbound
+                      traffic interception by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundIPRangeExclusionList:
+                    description: OutboundIPRangeExclusionList defines a global list
+                      of IP address ranges to exclude from outbound traffic interception
+                      by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundIPRangeInclusionList:
+                    description: OutboundIPRangeInclusionList defines a global list
+                      of IP address ranges to include for outbound traffic interception
+                      by the sidecar proxy. IP addresses outside this range will be
+                      excluded from outbound traffic interception by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundPortExclusionList:
+                    description: OutboundPortExclusionList defines a global list of
+                      ports to exclude from outbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  serviceAccessMode:
+                    description: ServiceAccessMode defines a string indicating service
+                      access mode.
+                    type: string
+                required:
+                - enableEgress
+                - enablePermissiveTrafficPolicyMode
+                - inboundPortExclusionList
+                - interceptionMode
+                - networkInterfaceExclusionList
+                - outboundIPRangeExclusionList
+                - outboundIPRangeInclusionList
+                - outboundPortExclusionList
+                - serviceAccessMode
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: false
+  - name: v1alpha3
+    schema:
+      openAPIV3Schema:
+        description: MeshConfig is the type used to represent the mesh configuration.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the MeshConfig specification.
+            properties:
+              certificate:
+                description: Certificate defines the certificate management configurations
+                  for a mesh instance.
+                properties:
+                  certKeyBitSize:
+                    description: CertKeyBitSize defines the certicate key bit size.
+                    type: integer
+                  ingressGateway:
+                    description: IngressGateway defines the certificate specification
+                      for an ingress gateway.
+                    properties:
+                      secret:
+                        description: Secret defines the secret in which the certificate
+                          is stored.
+                        properties:
+                          name:
+                            description: name is unique within a namespace to reference
+                              a secret resource.
+                            type: string
+                          namespace:
+                            description: namespace defines the space within which
+                              the secret name must be unique.
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      subjectAltNames:
+                        description: SubjectAltNames defines the Subject Alternative
+                          Names (domain names and IP addresses) secured by the certificate.
+                        items:
+                          type: string
+                        type: array
+                      validityDuration:
+                        description: ValidityDuration defines the validity duration
+                          of the certificate.
+                        type: string
+                    required:
+                    - secret
+                    - subjectAltNames
+                    - validityDuration
+                    type: object
+                  serviceCertValidityDuration:
+                    description: ServiceCertValidityDuration defines the service certificate
+                      validity duration.
+                    type: string
+                type: object
+              clusterSet:
+                description: ClusterSetSpec defines the configurations of cluster.
+                properties:
+                  controlPlaneUID:
+                    description: ControlPlaneUID defines the unique ID of the control
+                      plane cluster, in case it's managed
+                    type: string
+                  group:
+                    default: default
+                    description: Group defines Group of cluster.
+                    type: string
+                  isManaged:
+                    default: false
+                    description: IsManaged defines if the cluster is managed.
+                    type: boolean
+                  name:
+                    description: Name defines Name of cluster.
+                    type: string
+                  properties:
+                    description: Properties defines properties for cluster.
+                    items:
+                      description: ClusterPropertySpec is the type to represent cluster
+                        property.
+                      properties:
+                        name:
+                          description: Name defines the name of cluster property.
+                          type: string
+                        value:
+                          description: Value defines the name of cluster property.
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    type: array
+                  region:
+                    default: default
+                    description: Region defines Region of cluster.
+                    type: string
+                  uid:
+                    description: UID defines Unique ID of cluster.
+                    type: string
+                  zone:
+                    default: default
+                    description: Zone defines Zone of cluster.
+                    type: string
+                required:
+                - controlPlaneUID
+                - isManaged
+                - name
+                - properties
+                - uid
+                type: object
+              featureFlags:
+                description: FeatureFlags defines the feature flags for a mesh instance.
+                properties:
+                  enableAccessCertPolicy:
+                    description: EnableAccessCertPolicy defines if FSM can issue certificates
+                      for external services..
+                    type: boolean
+                  enableAccessControlPolicy:
+                    description: EnableAccessControlPolicy defines if FSM will use
+                      the AccessControl API to allow access control traffic to service
+                      mesh backends.
+                    type: boolean
+                  enableAsyncProxyServiceMapping:
+                    description: EnableAsyncProxyServiceMapping defines if FSM will
+                      map proxies to services asynchronously.
+                    type: boolean
+                  enableAutoDefaultRoute:
+                    description: EnableAutoDefaultRoute defines if auto default route
+                      is enabled.
+                    type: boolean
+                  enableEgressPolicy:
+                    description: EnableEgressPolicy defines if FSM's Egress policy
+                      is enabled.
+                    type: boolean
+                  enableIngressBackendPolicy:
+                    description: EnableIngressBackendPolicy defines if FSM will use
+                      the IngressBackend API to allow ingress traffic to service mesh
+                      backends.
+                    type: boolean
+                  enablePluginPolicy:
+                    description: EnablePluginPolicy defines if plugin policy is enabled.
+                    type: boolean
+                  enableRetryPolicy:
+                    description: EnableRetryPolicy defines if retry policy is enabled.
+                    type: boolean
+                  enableSidecarActiveHealthChecks:
+                    description: EnableSidecarActiveHealthChecks defines if FSM will
+                      Sidecar active health checks between services allowed to communicate.
+                    type: boolean
+                  enableSnapshotCacheMode:
+                    description: EnableSnapshotCacheMode defines if XDS server starts
+                      with snapshot cache.
+                    type: boolean
+                required:
+                - enableAccessCertPolicy
+                - enableAccessControlPolicy
+                - enableAsyncProxyServiceMapping
+                - enableAutoDefaultRoute
+                - enableEgressPolicy
+                - enableIngressBackendPolicy
+                - enablePluginPolicy
+                - enableRetryPolicy
+                - enableSidecarActiveHealthChecks
+                - enableSnapshotCacheMode
+                type: object
+              flb:
+                description: FLB defines the configurations of FLB features.
+                properties:
+                  enabled:
+                    default: false
+                    type: boolean
+                  secretName:
+                    default: fsm-flb-secret
+                    type: string
+                  strictMode:
+                    default: false
+                    type: boolean
+                required:
+                - enabled
+                - secretName
+                - strictMode
+                type: object
+              gatewayAPI:
+                description: GatewayAPI defines the configurations of GatewayAPI features.
+                properties:
+                  enabled:
+                    default: false
+                    type: boolean
+                  logLevel:
+                    default: info
+                    type: string
+                required:
+                - enabled
+                - logLevel
+                type: object
+              image:
+                description: Image defines the configurations of Image info
+                properties:
+                  registry:
+                    default: flomesh
+                    type: string
+                  serviceLBImage:
+                    default: mirrored-klipper-lb:v0.3.5
+                    type: string
+                required:
+                - registry
+                - serviceLBImage
+                type: object
+              ingress:
+                description: Ingress defines the configurations of Ingress features.
+                properties:
+                  enabled:
+                    default: true
+                    type: boolean
+                  http:
+                    default:
+                      bind: 80
+                      enabled: true
+                      listen: 8000
+                      nodePort: 30508
+                    properties:
+                      bind:
+                        default: 80
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      enabled:
+                        default: true
+                        type: boolean
+                      listen:
+                        default: 8000
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      nodePort:
+                        default: 30508
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                    required:
+                    - bind
+                    - enabled
+                    - listen
+                    - nodePort
+                    type: object
+                  logLevel:
+                    default: info
+                    type: string
+                  namespaced:
+                    default: false
+                    type: boolean
+                  tls:
+                    default:
+                      bind: 443
+                      enabled: true
+                      listen: 8443
+                      mTLS: false
+                      nodePort: 30607
+                    properties:
+                      bind:
+                        default: 443
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      enabled:
+                        default: false
+                        type: boolean
+                      listen:
+                        default: 8443
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      mTLS:
+                        default: false
+                        type: boolean
+                      nodePort:
+                        default: 30607
+                        format: int32
+                        maximum: 65535
+                        minimum: 1
+                        type: integer
+                      sslPassthrough:
+                        default:
+                          enabled: false
+                          upstreamPort: 443
+                        properties:
+                          enabled:
+                            default: false
+                            type: boolean
+                          upstreamPort:
+                            default: 443
+                            format: int32
+                            maximum: 65535
+                            minimum: 1
+                            type: integer
+                        required:
+                        - enabled
+                        - upstreamPort
+                        type: object
+                    required:
+                    - bind
+                    - enabled
+                    - listen
+                    - mTLS
+                    - nodePort
+                    type: object
+                required:
+                - enabled
+                - logLevel
+                - namespaced
+                type: object
+              observability:
+                description: Observalility defines the observability configurations
+                  for a mesh instance.
+                properties:
+                  enableDebugServer:
+                    description: EnableDebugServer defines if the debug endpoint on
+                      the FSM controller pod is enabled.
+                    type: boolean
+                  fsmLogLevel:
+                    description: FSMLogLevel defines the log level for FSM control
+                      plane logs.
+                    type: string
+                  remoteLogging:
+                    description: RemoteLogging defines FSM's remote logging configuration.
+                    properties:
+                      address:
+                        description: Address defines the remote logging's hostname.
+                        type: string
+                      authorization:
+                        description: Authorization defines the access entity that
+                          allows to authorize someone in remote logging service.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for remote logging.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for remote
+                          logging requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the remote logging's port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                  tracing:
+                    description: Tracing defines FSM's tracing configuration.
+                    properties:
+                      address:
+                        description: Address defines the tracing collectio's hostname.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for tracing.
+                        type: boolean
+                      endpoint:
+                        description: Endpoint defines the API endpoint for tracing
+                          requests sent to the collector.
+                        type: string
+                      port:
+                        description: Port defines the tracing collector's port.
+                        type: integer
+                      sampledFraction:
+                        description: SampledFraction defines the sampled fraction.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                required:
+                - enableDebugServer
+                type: object
+              pluginChains:
+                description: PluginChains defines the default plugin chains.
+                properties:
+                  inbound-http:
+                    description: InboundHTTPChains defines inbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  inbound-tcp:
+                    description: InboundTCPChains defines inbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-http:
+                    description: OutboundHTTPChains defines outbound http chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                  outbound-tcp:
+                    description: OutboundTCPChains defines outbound tcp chains
+                    items:
+                      description: PluginChainSpec is the type to represent plugin
+                        chain.
+                      properties:
+                        disable:
+                          description: Disable defines the visibility of plugin
+                          type: boolean
+                        plugin:
+                          description: Plugin defines the name of plugin
+                          type: string
+                        priority:
+                          description: Priority defines the priority of plugin
+                          type: number
+                      required:
+                      - disable
+                      - plugin
+                      - priority
+                      type: object
+                    type: array
+                required:
+                - inbound-http
+                - inbound-tcp
+                - outbound-http
+                - outbound-tcp
+                type: object
+              repoServer:
+                description: RepoServer defines the configurations of pipy repo server.
+                properties:
+                  codebase:
+                    description: Codebase is the folder used by fsmController
+                    type: string
+                  ipaddr:
+                    description: IPAddr of the pipy repo server
+                    type: string
+                required:
+                - codebase
+                - ipaddr
+                type: object
+              serviceLB:
+                description: ServiceLB defines the configurations of ServiceLBServiceLB
+                  features.
+                properties:
+                  enabled:
+                    default: false
+                    type: boolean
+                required:
+                - enabled
+                type: object
+              sidecar:
+                description: Sidecar defines the configurations of the proxy sidecar
+                  in a mesh.
+                properties:
+                  cipherSuites:
+                    description: CipherSuites defines a list of ciphers that listener
+                      supports when negotiating TLS 1.0-1.2. This setting has no effect
+                      when negotiating TLS 1.3. For valid cipher names, see the latest
+                      OpenSSL ciphers manual page. E.g. https://www.openssl.org/docs/man1.1.1/apps/ciphers.html.
+                    items:
+                      type: string
+                    type: array
+                  configResyncInterval:
+                    description: ConfigResyncInterval defines the resync interval
+                      for regular proxy broadcast updates.
+                    type: string
+                  ecdhCurves:
+                    description: ECDHCurves defines a list of ECDH curves that TLS
+                      connection supports. If not specified, the curves are [X25519,
+                      P-256] for non-FIPS build and P-256 for builds using BoringSSL
+                      FIPS.
+                    items:
+                      type: string
+                    type: array
+                  enablePrivilegedInitContainer:
+                    description: EnablePrivilegedInitContainer defines a boolean indicating
+                      whether the init container for a meshed pod should run as privileged.
+                    type: boolean
+                  initContainerImage:
+                    description: InitContainerImage defines the container image used
+                      for the init container injected to meshed pods.
+                    type: string
+                  localDNSProxy:
+                    description: LocalDNSProxy improves the performance of your computer
+                      by caching the responses coming from your DNS servers
+                    properties:
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for local DNS Proxy.
+                        type: boolean
+                      primaryUpstreamDNSServerIPAddr:
+                        description: PrimaryUpstreamDNSServerIPAddr defines a primary
+                          upstream DNS server for local DNS Proxy.
+                        type: string
+                      secondaryUpstreamDNSServerIPAddr:
+                        description: SecondaryUpstreamDNSServerIPAddr defines a secondary
+                          upstream DNS server for local DNS Proxy.
+                        type: string
+                    required:
+                    - enable
+                    type: object
+                  localProxyMode:
+                    description: LocalProxyMode defines the network interface the
+                      proxy will use to send traffic to the backend service application.
+                      Acceptable values are [`Localhost`, `PodIP`]. The default is
+                      `Localhost`
+                    type: string
+                  logLevel:
+                    description: LogLevel defines the logging level for the sidecar's
+                      logs. Non developers should generally never set this value.
+                      In production environments the LogLevel should be set to error.
+                    type: string
+                  maxDataPlaneConnections:
+                    description: MaxDataPlaneConnections defines the maximum allowed
+                      data plane connections from a proxy sidecar to the FSM controller.
+                    type: integer
+                  resources:
+                    description: Resources defines the compute resources for the sidecar.
+                    properties:
+                      claims:
+                        description: "Claims lists the names of resources, defined
+                          in spec.resourceClaims, that are used by this container.
+                          \n This is an alpha field and requires enabling the DynamicResourceAllocation
+                          feature gate. \n This field is immutable. It can only be
+                          set for containers."
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: Name must match the name of one entry in
+                                pod.spec.resourceClaims of the Pod where this field
+                                is used. It makes that resource available inside a
+                                container.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                        type: object
+                    type: object
+                  sidecarClass:
+                    description: SidecarClass defines the class used for the proxy
+                      sidecar.
+                    type: string
+                  sidecarDrivers:
+                    description: SidecarDrivers defines the sidecar supported.
+                    items:
+                      description: SidecarDriverSpec is the type to represent FSM's
+                        sidecar driver define.
+                      properties:
+                        initContainerImage:
+                          description: InitContainerImage defines the container image
+                            used for the init container injected to meshed pods.
+                          type: string
+                        proxyServerPort:
+                          description: ProxyServerPort is the port on which the Discovery
+                            Service listens for new connections from Sidecars
+                          format: int32
+                          type: integer
+                        sidecarDisabledMTLS:
+                          description: SidecarDisabledMTLS defines whether mTLS is
+                            disabled.
+                          type: boolean
+                        sidecarImage:
+                          description: SidecarImage defines the container image used
+                            for the proxy sidecar.
+                          type: string
+                        sidecarName:
+                          description: SidecarName defines the name of the sidecar
+                            driver.
+                          type: string
+                      required:
+                      - proxyServerPort
+                      - sidecarDisabledMTLS
+                      type: object
+                    type: array
+                  sidecarImage:
+                    description: SidecarImage defines the container image used for
+                      the proxy sidecar.
+                    type: string
+                  tlsMaxProtocolVersion:
+                    description: TLSMaxProtocolVersion defines the maximum TLS protocol
+                      version that the sidecar supports. Valid TLS protocol versions
+                      are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
+                    type: string
+                  tlsMinProtocolVersion:
+                    description: TLSMinProtocolVersion defines the minimum TLS protocol
+                      version that the sidecar supports. Valid TLS protocol versions
+                      are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
+                    type: string
+                required:
+                - enablePrivilegedInitContainer
+                type: object
+              traffic:
+                description: Traffic defines the traffic management configurations
+                  for a mesh instance.
+                properties:
+                  enableEgress:
+                    description: EnableEgress defines a boolean indicating if mesh-wide
+                      Egress is enabled.
+                    type: boolean
+                  enablePermissiveTrafficPolicyMode:
+                    description: EnablePermissiveTrafficPolicyMode defines a boolean
+                      indicating if permissive traffic policy mode is enabled mesh-wide.
+                    type: boolean
+                  inboundExternalAuthorization:
+                    description: InboundExternalAuthorization defines a ruleset that,
+                      if enabled, will configure a remote external authorization endpoint
+                      for all inbound and ingress traffic in the mesh.
+                    properties:
+                      address:
+                        description: Address defines the remote address of the external
+                          authorization endpoint.
+                        type: string
+                      enable:
+                        description: Enable defines a boolean indicating if the external
+                          authorization policy is to be enabled.
+                        type: boolean
+                      failureModeAllow:
+                        description: FailureModeAllow defines a boolean indicating
+                          if traffic should be allowed on a failure to get a response
+                          against the external authorization endpoint.
+                        type: boolean
+                      port:
+                        description: Port defines the destination port of the remote
+                          external authorization endpoint.
+                        type: integer
+                      statPrefix:
+                        description: StatPrefix defines a prefix for the stats sink
+                          for this external authorization policy.
+                        type: string
+                      timeout:
+                        description: Timeout defines the timeout in which a response
+                          from the external authorization endpoint. is expected to
+                          execute.
+                        type: string
+                    required:
+                    - enable
+                    - failureModeAllow
+                    type: object
+                  inboundPortExclusionList:
+                    description: InboundPortExclusionList defines a global list of
+                      ports to exclude from inbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  interceptionMode:
+                    description: InterceptionMode defines a string indicating which
+                      traffic interception mode is used.
+                    type: string
+                  networkInterfaceExclusionList:
+                    description: NetworkInterfaceExclusionList defines a global list
+                      of network interface names to exclude from inbound and outbound
+                      traffic interception by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundIPRangeExclusionList:
+                    description: OutboundIPRangeExclusionList defines a global list
+                      of IP address ranges to exclude from outbound traffic interception
+                      by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundIPRangeInclusionList:
+                    description: OutboundIPRangeInclusionList defines a global list
+                      of IP address ranges to include for outbound traffic interception
+                      by the sidecar proxy. IP addresses outside this range will be
+                      excluded from outbound traffic interception by the sidecar proxy.
+                    items:
+                      type: string
+                    type: array
+                  outboundPortExclusionList:
+                    description: OutboundPortExclusionList defines a global list of
+                      ports to exclude from outbound traffic interception by the sidecar
+                      proxy.
+                    items:
+                      type: integer
+                    type: array
+                  serviceAccessMode:
+                    description: ServiceAccessMode defines a string indicating service
+                      access mode.
+                    type: string
+                required:
+                - enableEgress
+                - enablePermissiveTrafficPolicyMode
+                - inboundPortExclusionList
+                - interceptionMode
+                - networkInterfaceExclusionList
+                - outboundIPRangeExclusionList
+                - outboundIPRangeInclusionList
+                - outboundPortExclusionList
+                - serviceAccessMode
+                type: object
+            required:
+            - image
+            type: object
+        type: object
+    served: true
+    storage: true
