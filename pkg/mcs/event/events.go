@@ -30,28 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type EventType string
-
-const (
-	ServiceExportCreated  EventType = "service.export.created"
-	ServiceExportDeleted  EventType = "service.export.deleted"
-	ServiceExportAccepted EventType = "service.export.accepted"
-	ServiceExportRejected EventType = "service.export.rejected"
-)
-
-type Message struct {
-	Kind   EventType
-	OldObj interface{}
-	NewObj interface{}
-}
-
-//type GeoInfo struct {
-//	Region  string
-//	Zone    string
-//	Group   string
-//	Cluster string
-//}
-
 type ServiceExportEvent struct {
 	Geo           *config.ConnectorConfig
 	ServiceExport *mcsv1alpha1.ServiceExport
@@ -63,24 +41,3 @@ type ServiceExportEvent struct {
 func (e *ServiceExportEvent) ClusterKey() string {
 	return e.Geo.Key()
 }
-
-//func NewServiceExportMessage(eventType EventType, geo *config.ConnectorConfig, serviceExport *mcsv1alpha1.ServiceExport, svc *corev1.Service, data map[string]interface{}) *Message {
-//	obj := ServiceExportEvent{Geo: geo, ServiceExport: serviceExport, Service: svc, Data: data}
-//
-//	switch eventType {
-//	case ServiceExportAccepted, ServiceExportCreated, ServiceExportRejected:
-//		return &Message{
-//			Kind:   eventType,
-//			OldObj: nil,
-//			NewObj: obj,
-//		}
-//	case ServiceExportDeleted:
-//		return &Message{
-//			Kind:   eventType,
-//			OldObj: obj,
-//			NewObj: nil,
-//		}
-//	}
-//
-//	return nil
-//}

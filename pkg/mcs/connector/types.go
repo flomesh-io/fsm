@@ -37,6 +37,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	cctx "github.com/flomesh-io/fsm/pkg/mcs/context"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -53,8 +54,14 @@ type Connector struct {
 	context      context.Context
 	kubeClient   kubernetes.Interface
 	configClient configClientset.Interface
+	mcsClient    multiclusterClientset.Interface
 	cfg          *configurator.Client
 	broker       *messaging.Broker
+}
+
+type Background struct {
+	Context   *cctx.ConnectorContext
+	Connector *Connector
 }
 
 var (
@@ -102,6 +109,7 @@ func NewConnector(ctx context.Context, broker *messaging.Broker) (*Connector, er
 		context:      connectorCtx,
 		kubeClient:   kubeClient,
 		configClient: configClient,
+		mcsClient:    multiclusterClient,
 		cfg:          mc,
 		broker:       broker,
 	}

@@ -55,6 +55,8 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 		gatewayUpdateCh:     make(chan gatewayUpdateEvent),
 		kubeEventPubSub:     pubsub.New(10240),
 		certPubSub:          pubsub.New(10240),
+		mcsEventPubSub:      pubsub.New(10240),
+		//mcsUpdateCh:         make(chan mcsUpdateEvent),
 	}
 
 	go b.runWorkqueueProcessor(stopCh)
@@ -84,13 +86,18 @@ func (b *Broker) GetProxyUpdatePubSub() *pubsub.PubSub {
 	return b.proxyUpdatePubSub
 }
 
-// GetIngressUpdatePubSub returns the PubSub instance corresponding to proxy update events
+// GetIngressUpdatePubSub returns the PubSub instance corresponding to ingress update events
 func (b *Broker) GetIngressUpdatePubSub() *pubsub.PubSub {
 	return b.ingressUpdatePubSub
 }
 
-// GetGatewayUpdatePubSub returns the PubSub instance corresponding to proxy update events
+// GetGatewayUpdatePubSub returns the PubSub instance corresponding to gateway update events
 func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
+	return b.gatewayUpdatePubSub
+}
+
+// GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
+func (b *Broker) GetMCSEventPubSub() *pubsub.PubSub {
 	return b.gatewayUpdatePubSub
 }
 
@@ -523,20 +530,9 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 		}
 	}
 
-	// Update mcs if applicable
+	// Publish MCS event to other interested clients
 	if event := getMCSUpdateEvent(msg); event != nil {
-		log.Trace().Msgf("Msg kind %s will update mcs", msg.Kind)
-		atomic.AddUint64(&b.totalQMCSEventCount, 1)
-		if event.topic != announcements.MCSUpdate.String() {
-			// This is not a broadcast event, so it cannot be coalesced with
-			// other events as the event is specific to one or more proxies.
-			b.mcsUpdatePubSub.Pub(event.msg, event.topic)
-			atomic.AddUint64(&b.totalDispatchedMCSEventCount, 1)
-		} else {
-			// Pass the broadcast event to the dispatcher routine, that coalesces
-			// multiple broadcasts received in close proximity.
-			b.mcsUpdateCh <- *event
-		}
+		b.mcsEventPubSub.Pub(event.msg, event.topic)
 	}
 
 	// Publish event to other interested clients, e.g. log level changes, debug server on/off etc.

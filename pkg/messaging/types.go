@@ -23,19 +23,16 @@ type Broker struct {
 	ingressUpdateCh                  chan ingressUpdateEvent
 	gatewayUpdatePubSub              *pubsub.PubSub
 	gatewayUpdateCh                  chan gatewayUpdateEvent
-	mcsUpdatePubSub                  *pubsub.PubSub
-	mcsUpdateCh                      chan mcsUpdateEvent
+	mcsEventPubSub                   *pubsub.PubSub
 	kubeEventPubSub                  *pubsub.PubSub
 	certPubSub                       *pubsub.PubSub
 	totalQEventCount                 uint64
 	totalQProxyEventCount            uint64
 	totalQIngressEventCount          uint64
 	totalQGatewayEventCount          uint64
-	totalQMCSEventCount              uint64
 	totalDispatchedProxyEventCount   uint64
 	totalDispatchedIngressEventCount uint64
 	totalDispatchedGatewayEventCount uint64
-	totalDispatchedMCSEventCount     uint64
 }
 
 // proxyUpdateEvent specifies the PubSubMessage and topic for an event that

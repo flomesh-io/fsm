@@ -24,6 +24,32 @@
 
 package controller
 
-type Controllers struct {
-	ServiceExport *ServiceExportController
+import (
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
+	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
+	"sync"
+)
+
+const (
+	// workerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
+	workerPoolSize = 0
+)
+
+type ControlPlaneServer struct {
+	cfg         configurator.Configurator
+	msgBroker   *messaging.Broker
+	workQueues  *workerpool.WorkerPool
+	mu          sync.Mutex
+	backgrounds map[string]*conn.Background
+}
+
+func NewControlPlaneServer(cfg configurator.Configurator, msgBroker *messaging.Broker) *ControlPlaneServer {
+	return &ControlPlaneServer{
+		cfg:         cfg,
+		msgBroker:   msgBroker,
+		workQueues:  workerpool.NewWorkerPool(workerPoolSize),
+		backgrounds: make(map[string]*conn.Background),
+	}
 }
