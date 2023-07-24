@@ -39,33 +39,32 @@ type PluginChainInformer interface {
 type pluginChainInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
-	namespace        string
 }
 
 // NewPluginChainInformer constructs a new informer for PluginChain type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewPluginChainInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredPluginChainInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewPluginChainInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredPluginChainInformer(client, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredPluginChainInformer constructs a new informer for PluginChain type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredPluginChainInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredPluginChainInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginV1alpha1().PluginChains(namespace).List(context.TODO(), options)
+				return client.PluginV1alpha1().PluginChains().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginV1alpha1().PluginChains(namespace).Watch(context.TODO(), options)
+				return client.PluginV1alpha1().PluginChains().Watch(context.TODO(), options)
 			},
 		},
 		&pluginv1alpha1.PluginChain{},
@@ -75,7 +74,7 @@ func NewFilteredPluginChainInformer(client versioned.Interface, namespace string
 }
 
 func (f *pluginChainInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredPluginChainInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredPluginChainInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *pluginChainInformer) Informer() cache.SharedIndexInformer {

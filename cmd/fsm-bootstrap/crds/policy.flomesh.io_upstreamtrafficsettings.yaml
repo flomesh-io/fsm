@@ -13,6 +13,8 @@ spec:
     kind: UpstreamTrafficSetting
     listKind: UpstreamTrafficSettingList
     plural: upstreamtrafficsettings
+    shortNames:
+    - upstreamtrafficsetting
     singular: upstreamtrafficsetting
   scope: Namespaced
   versions:

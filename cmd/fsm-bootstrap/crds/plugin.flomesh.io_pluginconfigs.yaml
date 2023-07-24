@@ -13,8 +13,10 @@ spec:
     kind: PluginConfig
     listKind: PluginConfigList
     plural: pluginconfigs
+    shortNames:
+    - picfg
     singular: pluginconfig
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

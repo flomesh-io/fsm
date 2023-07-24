@@ -10,6 +10,7 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:resource:shortName=retry,scope=Namespaced
 type Retry struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

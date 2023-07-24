@@ -42,15 +42,15 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // Plugins returns a PluginInformer.
 func (v *version) Plugins() PluginInformer {
-	return &pluginInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &pluginInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // PluginChains returns a PluginChainInformer.
 func (v *version) PluginChains() PluginChainInformer {
-	return &pluginChainInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &pluginChainInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // PluginConfigs returns a PluginConfigInformer.
 func (v *version) PluginConfigs() PluginConfigInformer {
-	return &pluginConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &pluginConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

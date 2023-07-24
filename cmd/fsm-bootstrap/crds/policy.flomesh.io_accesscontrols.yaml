@@ -13,6 +13,8 @@ spec:
     kind: AccessControl
     listKind: AccessControlList
     plural: accesscontrols
+    shortNames:
+    - accesscontrol
     singular: accesscontrol
   scope: Namespaced
   versions:

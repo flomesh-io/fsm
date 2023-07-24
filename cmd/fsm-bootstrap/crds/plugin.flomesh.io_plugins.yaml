@@ -13,8 +13,10 @@ spec:
     kind: Plugin
     listKind: PluginList
     plural: plugins
+    shortNames:
+    - pi
     singular: plugin
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

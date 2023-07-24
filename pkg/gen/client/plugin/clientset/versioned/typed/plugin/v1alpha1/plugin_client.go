@@ -35,16 +35,16 @@ type PluginV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *PluginV1alpha1Client) Plugins(namespace string) PluginInterface {
-	return newPlugins(c, namespace)
+func (c *PluginV1alpha1Client) Plugins() PluginInterface {
+	return newPlugins(c)
 }
 
-func (c *PluginV1alpha1Client) PluginChains(namespace string) PluginChainInterface {
-	return newPluginChains(c, namespace)
+func (c *PluginV1alpha1Client) PluginChains() PluginChainInterface {
+	return newPluginChains(c)
 }
 
-func (c *PluginV1alpha1Client) PluginConfigs(namespace string) PluginConfigInterface {
-	return newPluginConfigs(c, namespace)
+func (c *PluginV1alpha1Client) PluginConfigs() PluginConfigInterface {
+	return newPluginConfigs(c)
 }
 
 // NewForConfig creates a new PluginV1alpha1Client for the given config.

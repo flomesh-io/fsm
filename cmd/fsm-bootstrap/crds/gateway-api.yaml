@@ -1,7 +1,3 @@
----
-#
-# config/crd/experimental/gateway.networking.k8s.io_gatewayclasses.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -10,6 +6,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: gatewayclasses.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -434,9 +432,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_gateways.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -445,6 +440,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: gateways.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -1875,9 +1872,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_grpcroutes.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -1886,6 +1880,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: grpcroutes.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -3378,9 +3374,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_httproutes.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -3389,6 +3382,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: httproutes.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -7255,9 +7250,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_referencegrants.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -7266,6 +7258,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: referencegrants.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -7537,9 +7531,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_tcproutes.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -7548,6 +7539,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: tcproutes.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -8067,9 +8060,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -8078,6 +8068,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: tlsroutes.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io
@@ -8646,9 +8638,6 @@ status:
   conditions: []
   storedVersions: []
 ---
-#
-# config/crd/experimental/gateway.networking.k8s.io_udproutes.yaml
-#
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -8657,6 +8646,8 @@ metadata:
     gateway.networking.k8s.io/bundle-version: v0.7.1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: udproutes.gateway.networking.k8s.io
 spec:
   group: gateway.networking.k8s.io

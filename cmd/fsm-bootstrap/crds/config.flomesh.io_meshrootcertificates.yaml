@@ -4,6 +4,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
   name: meshrootcertificates.config.flomesh.io
 spec:
   group: config.flomesh.io
@@ -11,6 +13,8 @@ spec:
     kind: MeshRootCertificate
     listKind: MeshRootCertificateList
     plural: meshrootcertificates
+    shortNames:
+    - mrc
     singular: meshrootcertificate
   scope: Namespaced
   versions:

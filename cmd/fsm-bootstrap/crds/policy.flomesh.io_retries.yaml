@@ -13,6 +13,8 @@ spec:
     kind: Retry
     listKind: RetryList
     plural: retries
+    shortNames:
+    - retry
     singular: retry
   scope: Namespaced
   versions:

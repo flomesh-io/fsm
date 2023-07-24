@@ -13,6 +13,7 @@ import (
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:resource:shortName=egress,scope=Namespaced
 type Egress struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

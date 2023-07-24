@@ -13,8 +13,10 @@ spec:
     kind: PluginChain
     listKind: PluginChainList
     plural: pluginchains
+    shortNames:
+    - pichn
     singular: pluginchain
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

@@ -13,6 +13,8 @@ spec:
     kind: EgressGateway
     listKind: EgressGatewayList
     plural: egressgateways
+    shortNames:
+    - egressgateway
     singular: egressgateway
   scope: Namespaced
   versions:

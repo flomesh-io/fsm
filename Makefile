@@ -47,6 +47,9 @@ ifeq ($(GO_VERSION_PATCH),)
 GO_VERSION_PATCH := 0
 endif
 
+export CHART_COMPONENTS_DIR = charts/fsm/components
+export SCRIPTS_TAR = $(CHART_COMPONENTS_DIR)/scripts.tar.gz
+
 check-env:
 ifndef CTR_REGISTRY
 	$(error CTR_REGISTRY environment variable is not defined; see the .env.example file for more information; then source .env)
@@ -58,8 +61,9 @@ endif
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./pkg/apis/..." output:crd:artifacts:config=cmd/fsm-bootstrap/crds
+	$(KUSTOMIZE) build cmd/fsm-bootstrap/ -o cmd/fsm-bootstrap/crds/gateway-api.yaml
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -365,8 +369,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.6
-HELM_VERSION ?= v3.11.3
+KUSTOMIZE_VERSION ?= v5.1.0
+HELM_VERSION ?= v3.12.2
 CONTROLLER_TOOLS_VERSION ?= v0.12.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
