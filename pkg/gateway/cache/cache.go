@@ -301,8 +301,8 @@ func (c *GatewayCache) BuildConfigs() {
 				},
 			}
 
-			// FIXME: version should be integer
-			if _, err := c.repoClient.Batch(cfg.Version, batches); err != nil {
+			hash := utils.Hash([]byte(cfg.Version))
+			if _, err := c.repoClient.Batch(fmt.Sprintf("%d", hash), batches); err != nil {
 				log.Error().Msgf("Sync gateway config to repo failed: %s", err)
 				return
 			}

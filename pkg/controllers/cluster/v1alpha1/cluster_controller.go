@@ -27,6 +27,7 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -115,7 +116,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	mc := r.fctx.Config
 
-	result, err := r.deriveCodebases(mc)
+	result, err := r.deriveCodebases(cluster, mc)
 	if err != nil {
 		return result, err
 	}
@@ -157,16 +158,22 @@ func clusterHash(cluster *mcsv1alpha1.Cluster) string {
 	)
 }
 
-func (r *reconciler) deriveCodebases(mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) deriveCodebases(cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
 
+	bytes, jsonErr := json.Marshal(cluster)
+	if jsonErr != nil {
+		return ctrl.Result{}, jsonErr
+	}
+	version := utils.Hash(bytes)
+
 	defaultServicesPath := utils.GetDefaultServicesPath()
-	if _, err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath); err != nil {
+	if _, err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath, version); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
 	defaultIngressPath := utils.GetDefaultIngressPath()
-	if _, err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath); err != nil {
+	if _, err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath, version); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 

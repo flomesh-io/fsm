@@ -27,6 +27,7 @@ package v1alpha1
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -168,10 +169,15 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 
 func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, mc configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
+	bytes, jsonErr := json.Marshal(nsig)
+	if jsonErr != nil {
+		return ctrl.Result{}, jsonErr
+	}
+	version := utils.Hash(bytes)
 
 	ingressPath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
 	parentPath := utils.IngressCodebasePath()
-	if _, err := repoClient.DeriveCodebase(ingressPath, parentPath); err != nil {
+	if _, err := repoClient.DeriveCodebase(ingressPath, parentPath, version); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
