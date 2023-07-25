@@ -127,7 +127,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	}
 
 	if c.Spec.LogLevel == nil {
-		c.Spec.LogLevel = pointer.Int(2)
+		c.Spec.LogLevel = pointer.String("info")
 	}
 
 	if c.Spec.Replicas == nil {

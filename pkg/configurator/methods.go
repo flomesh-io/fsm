@@ -479,7 +479,7 @@ func (c *Client) IsGatewayApiEnabled() bool {
 }
 
 // GetGatewayApiLogLevel returns log level of FSM Gateway
-func (c *Client) GetGatewayApiLogLevel() string {
+func (c *Client) GetFSMGatewayLogLevel() string {
 	mcSpec := c.getMeshConfig().Spec
 	return mcSpec.GatewayAPI.LogLevel
 }

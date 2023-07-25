@@ -155,8 +155,8 @@ type Configurator interface {
 	// IsGatewayApiEnabled returns whether GatewayAPI is enabled
 	IsGatewayApiEnabled() bool
 
-	// GetGatewayApiLogLevel returns log level of FSM Gateway
-	GetGatewayApiLogLevel() string
+	// GetFSMGatewayLogLevel returns log level of FSM Gateway
+	GetFSMGatewayLogLevel() string
 
 	// IsIngressEnabled returns whether Ingress is enabled
 	IsIngressEnabled() bool

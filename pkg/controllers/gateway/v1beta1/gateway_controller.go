@@ -633,7 +633,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 	overrides := []string{
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
-		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetGatewayApiLogLevel()),
+		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
 	}
 
 	for _, ov := range overrides {

@@ -63,9 +63,9 @@ spec:
           - name: https
             containerPort: {{ default .Values.fsm.fsmIngress.tls.containerPort .Values.nsig.spec.tls.port.targetPort }}
           - name: health
-            containerPort: 8081
+            containerPort: {{ include "fsm.namespaced-ingress.heath.port" . }}
         args:
-          - --verbosity={{ default .Values.fsm.fsmIngress.logLevel .Values.nsig.spec.logLevel }},
+          - --verbosity={{ .Values.nsig.spec.logLevel }},
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }},
           - --fsm-version={{ .Chart.AppVersion }},
         env:

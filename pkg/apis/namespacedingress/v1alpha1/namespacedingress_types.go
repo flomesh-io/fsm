@@ -93,13 +93,13 @@ type NamespacedIngressSpec struct {
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// +kubebuilder:default=2
+	// +kubebuilder:default=info
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=10
 
 	// LogLevel is the log level of this ingress controller pod.
 	// +optional
-	LogLevel *int `json:"logLevel,omitempty"`
+	LogLevel *string `json:"logLevel,omitempty"`
 
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=1
