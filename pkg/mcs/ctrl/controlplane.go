@@ -1,11 +1,11 @@
-package controller
+package ctrl
 
 import (
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
-	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
+	conn "github.com/flomesh-io/fsm/pkg/mcs/remote"
 	"github.com/rs/zerolog/log"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 )

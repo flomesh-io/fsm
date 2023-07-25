@@ -73,7 +73,7 @@ func (r *endpointSliceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	log.Info().Msg("added label", discoveryv1.LabelServiceName, serviceName)
+	log.Info().Msgf("added label: %s=%s", discoveryv1.LabelServiceName, serviceName)
 
 	return ctrl.Result{}, nil
 }

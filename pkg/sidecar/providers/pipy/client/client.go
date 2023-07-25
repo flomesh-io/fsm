@@ -423,3 +423,85 @@ func (p *PipyRepoClient) GetFile(path string) (string, error) {
 
 	return result, nil
 }
+
+func (p *PipyRepoClient) BatchWithAutoVersion(batches []Batch) error {
+	if len(batches) == 0 {
+		return nil
+	}
+
+	for _, batch := range batches {
+		// 1. batch.Basepath, if not exists, create it
+		log.Info().Msgf("batch.Basepath = %q", batch.Basepath)
+		var version = int64(-1)
+		exists, codebase := p.codebaseExists(batch.Basepath)
+		if exists {
+			// just get the version of codebase
+			version = codebase.Version
+		} else {
+			log.Info().Msgf("%q doesn't exist in repo", batch.Basepath)
+			result, err := p.createCodebase(batch.Basepath)
+			if err != nil {
+				log.Error().Msgf("Not able to create the codebase %q, reason: %s", batch.Basepath, err.Error())
+				return err
+			}
+
+			log.Info().Msgf("Result = %#v", result)
+
+			version = result.Version
+		}
+
+		// 2. upload each json to repo
+		for _, item := range batch.Items {
+			fullpath := fmt.Sprintf("%s%s/%s", batch.Basepath, item.Path, item.Filename)
+			log.Info().Msgf("Creating/updating config %q", fullpath)
+			log.Info().Msgf("Content: %#v", item.Content)
+			err := p.upsertFile(fullpath, item.Content)
+			if err != nil {
+				log.Error().Msgf("Upsert %q error, reason: %s", fullpath, err.Error())
+				return err
+			}
+		}
+
+		// 3. commit the repo, so that changes can take effect
+		log.Info().Msgf("Committing batch.Basepath = %q", batch.Basepath)
+		// NOT a valid version, ignore committing
+		if version == -1 {
+			err := fmt.Errorf("%d is not a valid version", version)
+			klog.Error(err)
+			return err
+		}
+		if err := p.commit(batch.Basepath, version); err != nil {
+			log.Error().Msgf("Error happened while committing the codebase %q, error: %s", batch.Basepath, err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *PipyRepoClient) DeriveCodebaseWithAutoVersion(path, base string) (bool, error) {
+	log.Info().Msgf("Checking if exists, codebase %q", path)
+	exists, _ := p.codebaseExists(path)
+
+	if exists {
+		log.Info().Msgf("Codebase %q already exists, ignore deriving ...", path)
+		return false, nil
+	} else {
+		log.Info().Msgf("Codebase %q doesn't exist, deriving ...", path)
+		result, err := p.deriveCodebase(path, base)
+		if err != nil {
+			log.Error().Msgf("Deriving codebase %q error: %#v", path, err)
+			return false, err
+		}
+		log.Info().Msgf("Successfully derived codebase %q", path)
+
+		log.Info().Msgf("Committing the changes of codebase %q", path)
+		if err = p.commit(path, result.Version); err != nil {
+			log.Error().Msgf("Committing codebase %q error: %#v", path, err)
+			return false, err
+		}
+		log.Info().Msgf("Successfully committed codebase %q", path)
+	}
+
+	return true, nil
+}

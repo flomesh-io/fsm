@@ -34,8 +34,8 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/logger"
-	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
-	"github.com/flomesh-io/fsm/pkg/mcs/controller"
+	cp "github.com/flomesh-io/fsm/pkg/mcs/ctrl"
+	"github.com/flomesh-io/fsm/pkg/mcs/remote"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,7 +58,7 @@ type reconciler struct {
 	fctx     *fctx.ControllerContext
 	stopCh   chan struct{}
 	mu       sync.Mutex
-	server   *controller.ControlPlaneServer
+	server   *cp.ControlPlaneServer
 }
 
 var (
@@ -70,7 +70,7 @@ func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 		recorder: ctx.Manager.GetEventRecorderFor("Cluster"),
 		fctx:     ctx,
 		stopCh:   utils.RegisterOSExitHandlers(),
-		server:   controller.NewControlPlaneServer(ctx.Config, ctx.Broker),
+		server:   cp.NewControlPlaneServer(ctx.Config, ctx.Broker),
 	}
 
 	go r.server.Run(r.stopCh)
@@ -180,7 +180,7 @@ func (r *reconciler) createConnector(ctx context.Context, cluster *mcsv1alpha1.C
 	return r.newConnector(ctx, cluster, mc)
 }
 
-func (r *reconciler) recreateConnector(ctx context.Context, bg *conn.Background, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) recreateConnector(ctx context.Context, bg *remote.Background, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -206,7 +206,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 		return result, err
 	}
 
-	background, err := conn.NewBackground(cluster, kubeconfig, r.fctx.Config, r.fctx.Broker)
+	background, err := remote.NewBackground(cluster, kubeconfig, r.fctx.Config, r.fctx.Broker)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

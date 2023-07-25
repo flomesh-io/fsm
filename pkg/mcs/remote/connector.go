@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package connector
+package remote
 
 import (
 	"context"

@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-package controller
+package ctrl
 
 import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	conn "github.com/flomesh-io/fsm/pkg/mcs/connector"
+	conn "github.com/flomesh-io/fsm/pkg/mcs/remote"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 	"sync"
