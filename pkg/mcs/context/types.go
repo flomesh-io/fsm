@@ -33,12 +33,14 @@ import (
 
 type ConnectorContext struct {
 	context.Context
-	ClusterKey      string
-	Hash            string
-	KubeConfig      *rest.Config
-	ConnectorConfig *config.ConnectorConfig
-	Cancel          func()
-	StopCh          chan struct{}
+	ClusterKey        string
+	Hash              string
+	KubeConfig        *rest.Config
+	ConnectorConfig   *config.ConnectorConfig
+	Cancel            func()
+	StopCh            chan struct{}
+	FsmMeshConfigName string
+	FsmNamespace      string
 }
 
 // ConnectorCtxKey the pointer is the key that a ConnectorContext returns itself for.

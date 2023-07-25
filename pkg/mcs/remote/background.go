@@ -18,10 +18,12 @@ func NewBackground(cluster *mcsv1alpha1.Cluster, kubeconfig *rest.Config, mc con
 	}
 
 	background := &cctx.ConnectorContext{
-		ClusterKey:      cluster.Key(),
-		KubeConfig:      kubeconfig,
-		ConnectorConfig: connCfg,
-		Hash:            clusterHash(cluster),
+		ClusterKey:        cluster.Key(),
+		KubeConfig:        kubeconfig,
+		ConnectorConfig:   connCfg,
+		Hash:              clusterHash(cluster),
+		FsmNamespace:      cluster.Spec.FsmNamespace,
+		FsmMeshConfigName: cluster.Spec.FsmMeshConfigName,
 	}
 	_, cancel := context.WithCancel(background)
 	stop := utils.RegisterExitHandlers(cancel)

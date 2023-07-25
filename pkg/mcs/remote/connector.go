@@ -121,15 +121,15 @@ func (c *Connector) processEvent(stopCh <-chan struct{}) {
 	connectorCfg := ctx.ConnectorConfig
 	log.Info().Msgf("[%s] start to processing events .... ", connectorCfg.Key())
 
-	mcsPubSub := c.broker.GetMCSEventPubSub()
+	mcsPubSub := c.controlPlaneBroker.GetMCSEventPubSub()
 	svcExportDeletedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportDeleted.String())
-	defer c.broker.Unsub(mcsPubSub, svcExportDeletedCh)
+	defer c.controlPlaneBroker.Unsub(mcsPubSub, svcExportDeletedCh)
 
 	svcExportAcceptedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportAccepted.String())
-	defer c.broker.Unsub(mcsPubSub, svcExportAcceptedCh)
+	defer c.controlPlaneBroker.Unsub(mcsPubSub, svcExportAcceptedCh)
 
 	svcExportRejectedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportRejected.String())
-	defer c.broker.Unsub(mcsPubSub, svcExportRejectedCh)
+	defer c.controlPlaneBroker.Unsub(mcsPubSub, svcExportRejectedCh)
 
 	for {
 		// FIXME: refine it later

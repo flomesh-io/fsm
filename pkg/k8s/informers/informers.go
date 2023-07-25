@@ -95,6 +95,27 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 	}
 }
 
+// WithKubeClientWithoutNamespace sets the kubeClient for the InformerCollection
+func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := informers.NewSharedInformerFactory(kubeClient, DefaultKubeEventResyncInterval)
+		v1api := informerFactory.Core().V1()
+		ic.informers[InformerKeyService] = v1api.Services().Informer()
+		ic.informers[InformerKeyServiceAccount] = v1api.ServiceAccounts().Informer()
+		ic.informers[InformerKeyPod] = v1api.Pods().Informer()
+		ic.informers[InformerKeyEndpoints] = v1api.Endpoints().Informer()
+		ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
+		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
+		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
+		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+
+		ic.listers.Service = v1api.Services().Lister()
+		ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
+		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.Endpoints = v1api.Endpoints().Lister()
+	}
+}
+
 // WithSMIClients sets the SMI clients for the InformerCollection
 func WithSMIClients(smiTrafficSplitClient smiTrafficSplitClient.Interface, smiTrafficSpecClient smiTrafficSpecClient.Interface, smiAccessClient smiTrafficAccessClient.Interface) InformerCollectionOption {
 	return func(ic *InformerCollection) {

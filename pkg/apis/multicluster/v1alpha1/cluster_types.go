@@ -35,9 +35,6 @@ import (
 
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
-	// +kubebuilder:default=false
-	// +optional
-
 	// +kubebuilder:default=default
 	// +optional
 
@@ -56,8 +53,6 @@ type ClusterSpec struct {
 	// Group, the locality information of this cluster
 	Group string `json:"group,omitempty"`
 
-	// +optional
-
 	// GatewayHost, the Full Qualified Domain Name or IP of the gateway/ingress of this cluster
 	// If it's an IP address, only IPv4 is supported
 	GatewayHost string `json:"gatewayHost,omitempty"`
@@ -74,12 +69,18 @@ type ClusterSpec struct {
 	//  consider use cli to add cluster to control plane, import kubeconfig
 	//  and create a Secret with proper SA to store it as bytes
 
-	// +optional
-
 	// Kubeconfig, The kubeconfig of the cluster you want to connnect to
 	// This's not needed if ClusterMode is InCluster, it will use InCluster
 	// config
 	Kubeconfig string `json:"kubeconfig,omitempty"`
+
+	// +kubebuilder:default=fsm-mesh-config
+	// +optional
+	// FsmMeshConfigName, defines the name of the MeshConfig of managed cluster
+	FsmMeshConfigName string
+
+	// FsmNamespace, defines the namespace of managed cluster in which fsm is installed
+	FsmNamespace string
 }
 
 // ClusterStatus defines the observed state of Cluster

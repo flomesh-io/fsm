@@ -51,12 +51,12 @@ import (
 )
 
 type Connector struct {
-	context      context.Context
-	kubeClient   kubernetes.Interface
-	configClient configClientset.Interface
-	mcsClient    multiclusterClientset.Interface
-	cfg          *configurator.Client
-	broker       *messaging.Broker
+	context            context.Context
+	kubeClient         kubernetes.Interface
+	configClient       configClientset.Interface
+	mcsClient          multiclusterClientset.Interface
+	cfg                *configurator.Client
+	controlPlaneBroker *messaging.Broker
 }
 
 type Background struct {
@@ -68,10 +68,15 @@ var (
 	log = logger.New("mcs-connector")
 )
 
-func NewConnector(ctx context.Context, broker *messaging.Broker) (*Connector, error) {
+func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*Connector, error) {
 	connectorCtx := ctx.(*conn.ConnectorContext)
+	stop := connectorCtx.StopCh
+	kubeConfig := connectorCtx.KubeConfig
+	clusterKey := connectorCtx.ClusterKey
+	fsmNamespace := connectorCtx.FsmNamespace
+	fsmMeshConfigName := connectorCtx.FsmMeshConfigName
 
-	kubeClient, err := kubernetes.NewForConfig(connectorCtx.KubeConfig)
+	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -84,18 +89,20 @@ func NewConnector(ctx context.Context, broker *messaging.Broker) (*Connector, er
 		return nil, err
 	}
 
-	configClient, err := configClientset.NewForConfig(connectorCtx.KubeConfig)
+	configClient, err := configClientset.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	multiclusterClient, err := multiclusterClientset.NewForConfig(connectorCtx.KubeConfig)
+	multiclusterClient, err := multiclusterClientset.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	informerCollection, err := informers.NewInformerCollection(meshName, connectorCtx.StopCh,
-		informers.WithKubeClient(kubeClient),
+	workerBroker := messaging.NewBroker(stop)
+
+	informerCollection, err := informers.NewInformerCollection(clusterKey, stop,
+		informers.WithKubeClientWithoutNamespace(kubeClient),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 		informers.WithMultiClusterClient(multiclusterClient),
 	)
@@ -103,15 +110,15 @@ func NewConnector(ctx context.Context, broker *messaging.Broker) (*Connector, er
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
 
-	mc := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, broker)
+	mc := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, workerBroker)
 
 	connector := &Connector{
-		context:      connectorCtx,
-		kubeClient:   kubeClient,
-		configClient: configClient,
-		mcsClient:    multiclusterClient,
-		cfg:          mc,
-		broker:       broker,
+		context:            connectorCtx,
+		kubeClient:         kubeClient,
+		configClient:       configClient,
+		mcsClient:          multiclusterClient,
+		cfg:                mc,
+		controlPlaneBroker: controlPlaneBroker,
 	}
 
 	for _, informerKey := range []informers.InformerKey{
@@ -187,7 +194,7 @@ func (c *Connector) onUpdateFunc(eventTypes *k8s.EventTypes) func(oldObj, newObj
 				return
 			}
 
-			c.broker.GetQueue().AddRateLimited(events.PubSubMessage{
+			c.controlPlaneBroker.GetQueue().AddRateLimited(events.PubSubMessage{
 				Kind:   announcements.MultiClusterServiceExportCreated,
 				OldObj: nil,
 				NewObj: &mcsevent.ServiceExportEvent{
@@ -218,7 +225,7 @@ func (c *Connector) onDeleteFunc(eventTypes *k8s.EventTypes) func(obj interface{
 				return
 			}
 
-			c.broker.GetQueue().AddRateLimited(events.PubSubMessage{
+			c.controlPlaneBroker.GetQueue().AddRateLimited(events.PubSubMessage{
 				Kind:   announcements.MultiClusterServiceExportDeleted,
 				OldObj: nil,
 				NewObj: &mcsevent.ServiceExportEvent{
