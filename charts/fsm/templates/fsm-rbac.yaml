@@ -7,16 +7,33 @@ metadata:
 rules:
   - apiGroups: ["apps"]
     resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
-    verbs: ["list", "get", "watch"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["networking.k8s.io"]
-    resources: ["ingresses", "ingressclasses"]
+    resources: ["ingressclasses"]
     verbs: ["list", "get", "watch"]
+  - apiGroups: [ "networking.k8s.io" ]
+    resources: [ "ingresses" ]
+    verbs: [ "list", "get", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["list", "get", "watch"]
+  - apiGroups: [ "" ]
+    resources: [ "namespaces" ]
+    verbs: [ "list", "get", "watch" ]
+  - apiGroups: [ "" ]
+    resources: [ "endpoints", "pods", "services", "secrets", "configmaps", "volumes", "serviceaccounts" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [""]
-    resources: ["endpoints", "namespaces", "pods", "services", "secrets", "configmaps", "serviceaccounts"]
-    verbs: ["list", "get", "watch"]
+    resources: ["services/status"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+{{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+{{- end }}
 
   # Port forwarding is needed for the FSM pod to be able to connect
   # to participating Sidecars and fetch their configuration.
@@ -30,7 +47,7 @@ rules:
     verbs: ["create", "update", "delete"]
   - apiGroups: [""]
     resources: ["events"]
-    verbs: ["create", "watch"]
+    verbs: ["list", "get", "create", "watch", "patch", "update"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["create", "update", "delete", "patch"]
@@ -39,10 +56,13 @@ rules:
     verbs: ["create", "update"]
   - apiGroups: ["admissionregistration.k8s.io"]
     resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [ "rbac.authorization.k8s.io" ]
+    resources: [ "roles", "rolebindings", "clusterroles", "clusterrolebindings" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: ["config.flomesh.io"]
     resources: ["meshconfigs", "meshrootcertificates"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
@@ -67,10 +87,16 @@ rules:
     resources: ["ingressbackends/status", "accesscontrols/status", "accesscerts/status", "upstreamtrafficsettings/status"]
     verbs: ["update"]
 
-  # FSM's custom resource API
-  - apiGroups: ["flomesh.io"]
-    resources: ["serviceexports", "serviceimports", "globaltrafficpolicies"]
-    verbs: ["list", "get", "watch"]
+  # FSM's MultiCluster resource API
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "clusters", "proxyprofiles", "serviceimports", "serviceexports" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "clusters/finalizers", "proxyprofiles/finalizers", "serviceimports/finalizers", "serviceexports/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "clusters/status", "proxyprofiles/status", "serviceimports/status", "serviceexports/status" ]
+    verbs: [ "get", "patch", "update" ]
 
   # FSM's custom plugin API
   - apiGroups: ["plugin.flomesh.io"]
@@ -79,6 +105,28 @@ rules:
   - apiGroups: ["plugin.flomesh.io"]
     resources: ["plugins/status", "pluginchains/status", "pluginconfigs/status"]
     verbs: ["update"]
+
+  # FSM's NamespacedIngress API
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "namespacedingresses" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "namespacedingresses/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "namespacedingresses/status" ]
+    verbs: [ "get", "patch", "update" ]
+
+  # GatewayAPI
+  - apiGroups: [ "gateway.networking.k8s.io" ]
+    resources: [ "gatewayclasses", "gateways", "httproutes", "referencepolicies", "tcproutes", "tlsroutes", "udproutes" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "gateway.networking.k8s.io" ]
+    resources: [ "gatewayclasses/finalizers", "gateways/finalizers", "httproutes/finalizers", "referencepolicies/finalizers", "tcproutes/finalizers", "tlsroutes/finalizers", "udproutes/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "gateway.networking.k8s.io" ]
+    resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "referencepolicies/status", "tcproutes/status", "tlsroutes/status", "udproutes/status" ]
+    verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.
   - apiGroups: ["cert-manager.io"]

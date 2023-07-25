@@ -22,11 +22,9 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
 rules:
-  - apiGroups:
-      - "apps"
-    resources:
-      - deployments
-    verbs:
-      - get
-      - list
-      - watch
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments" ]
+    verbs: [ "list", "get", "watch" ]
+  - apiGroups: [ "config.flomesh.io" ]
+    resources: [ "meshconfigs", "meshrootcertificates" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
