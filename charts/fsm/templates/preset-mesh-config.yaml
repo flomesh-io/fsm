@@ -83,30 +83,30 @@ data:
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
       "ingress": {
-        "enabled": {{ and .Values.fsm.ingress.enabled (not .Values.fsm.gatewayApi.enabled )}},
-        "namespaced": {{ .Values.fsm.ingress.namespaced }},
-        "logLevel": "{{ .Values.fsm.ingress.logLevel }}",
+        "enabled": {{ and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled )}},
+        "namespaced": {{ .Values.fsm.fsmIngress.namespaced }},
+        "logLevel": "{{ .Values.fsm.fsmIngress.logLevel }}",
         "http": {
-          "enabled": {{ .Values.fsm.ingress.http.enabled }},
-          "bind": {{ .Values.fsm.ingress.http.port }},
-          "listen": {{ .Values.fsm.ingress.http.containerPort }},
-          "nodePort": {{ default 0 .Values.fsm.ingress.http.nodePort }}
+          "enabled": {{ .Values.fsm.fsmIngress.http.enabled }},
+          "bind": {{ .Values.fsm.fsmIngress.http.port }},
+          "listen": {{ .Values.fsm.fsmIngress.http.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.fsmIngress.http.nodePort }}
         },
         "tls": {
-          "enabled": {{ .Values.fsm.ingress.tls.enabled }},
-          "bind": {{ .Values.fsm.ingress.tls.port }},
-          "listen": {{ .Values.fsm.ingress.tls.containerPort }},
-          "nodePort": {{ default 0 .Values.fsm.ingress.tls.nodePort }},
-          "mTLS": {{ .Values.fsm.ingress.tls.mTLS }},
+          "enabled": {{ .Values.fsm.fsmIngress.tls.enabled }},
+          "bind": {{ .Values.fsm.fsmIngress.tls.port }},
+          "listen": {{ .Values.fsm.fsmIngress.tls.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.fsmIngress.tls.nodePort }},
+          "mTLS": {{ .Values.fsm.fsmIngress.tls.mTLS }},
           "sslPassthrough": {
-            "enabled": {{ .Values.fsm.ingress.tls.sslPassthrough.enabled }},
-            "upstreamPort": {{ .Values.fsm.ingress.tls.sslPassthrough.upstreamPort }}
+            "enabled": {{ .Values.fsm.fsmIngress.tls.sslPassthrough.enabled }},
+            "upstreamPort": {{ .Values.fsm.fsmIngress.tls.sslPassthrough.upstreamPort }}
           }
         }
       },
       "gatewayAPI": {
-        "enabled": {{ and .Values.fsm.gatewayApi.enabled (not .Values.fsm.ingress.enabled) }},
-        "logLevel": "{{ .Values.fsm.gatewayApi.logLevel }}"
+        "enabled": {{ and .Values.fsm.fsmGateway.enabled (not .Values.fsm.fsmIngress.enabled) }},
+        "logLevel": "{{ .Values.fsm.fsmGateway.logLevel }}"
       },
       "serviceLB": {
         "enabled": {{ .Values.fsm.serviceLB.enabled }}

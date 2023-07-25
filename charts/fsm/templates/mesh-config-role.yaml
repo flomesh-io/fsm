@@ -7,9 +7,9 @@ metadata:
     {{- include "fsm.labels" . | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
+      - "config.flomesh.io"
     resources:
-      - configmaps
+      - meshconfigs
     verbs:
       - get
       - list

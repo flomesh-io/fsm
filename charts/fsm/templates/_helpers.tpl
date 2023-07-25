@@ -138,3 +138,17 @@ securityContext:
 {{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmGateway .Values.fsm.image.digest.fsmGateway -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "fsmIngress.heath.port" -}}
+{{- if .Values.fsm.fsmIngress.enabled }}
+{{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}
+{{- .Values.fsm.fsmIngress.http.containerPort }}
+{{- else if and .Values.fsm.fsmIngress.tls.enabled (not (empty .Values.fsm.fsmIngress.tls.containerPort)) }}
+{{- .Values.fsm.fsmIngress.tls.containerPort }}
+{{- else }}
+8081
+{{- end }}
+{{- else }}
+8081
+{{- end }}
+{{- end }}

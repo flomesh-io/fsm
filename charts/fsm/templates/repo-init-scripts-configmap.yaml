@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.fsm.configmaps.repoInit.name }}
+  name: fsm-repo-init-scripts
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}

@@ -31,7 +31,6 @@ fsm:
 
   fsmIngress:
     className: "pipy"
-    enabled: true
     namespaced: false
     logLevel: info
     http:

@@ -797,7 +797,7 @@ fsm:
 
   #
   # -- FSM Pipy Ingress Controller parameters
-  ingress:
+  fsmIngress:
     className: "pipy"
     enabled: true
     namespaced: false
@@ -819,7 +819,7 @@ fsm:
     # -- FSM Pipy Ingress Controller's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     service:
-      name: fsm-ingress-pipy-controller
+      name: fsm-ingress
       type: LoadBalancer
       annotations: {}
     # -- FSM Pipy Ingress Controller's container resource parameters.
@@ -852,9 +852,48 @@ fsm:
 #        add:
 #        - NET_BIND_SERVICE
 
+    ## Affinity settings for pod assignment
+    ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+                    - arm64
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fsm-ingress
+                  - key: ingress.flomesh.io/namespaced
+                    operator: In
+                    values:
+                      - "false"
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+
+    # -- Node tolerations applied to control plane pods.
+    # The specified tolerations allow pods to schedule onto nodes with matching taints.
+    tolerations: [ ]
+
+    # -- Node selector applied to control plane pods.
+    nodeSelector: { }
+
   #
   # -- FSM GatewayAPI parameters
-  gatewayApi:
+  fsmGateway:
     enabled: false
     logLevel: info
 

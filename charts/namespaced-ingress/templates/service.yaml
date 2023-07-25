@@ -8,6 +8,7 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
+    ingress.flomesh.io/namespaced: "true"
     {{- with .Values.nsig.spec.serviceLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
