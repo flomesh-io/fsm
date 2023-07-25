@@ -43,7 +43,7 @@ spec:
         {{- end }}
         command:
           - curl
-          - {{ printf "http://%s:8081/healthz" (include "fsm.manager.host" .) }}
+          - http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz
           - --connect-timeout
           - "2"
           - --retry

@@ -41,7 +41,7 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
           - curl
-          - {{ printf "http://%s:8081/healthz" (include "fsm.manager.host" .) }}
+          - {{ printf "http://fsm-bootstrap.%s.svc.cluster.local:9091/healthz" .Values.fsm.fsmNamespace }}
           - --connect-timeout
           - "2"
           - --retry
