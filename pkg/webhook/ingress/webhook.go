@@ -29,7 +29,7 @@ import (
 	"fmt"
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/webhook"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -150,14 +150,14 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	upstreamSSLSecret := ing.Annotations[ingresspipy.PipyIngressAnnotationUpstreamSSLSecret]
+	upstreamSSLSecret := ing.Annotations[constants.PipyIngressAnnotationUpstreamSSLSecret]
 	if upstreamSSLSecret != "" {
 		if err := w.secretExists(upstreamSSLSecret, ing); err != nil {
 			return fmt.Errorf("secert %q doesn't exist: %s, please check annotation 'pipy.ingress.kubernetes.io/upstream-ssl-secret' of Ingress %s/%s", upstreamSSLSecret, err, ing.Namespace, ing.Name)
 		}
 	}
 
-	trustedCASecret := ing.Annotations[ingresspipy.PipyIngressAnnotationTLSTrustedCASecret]
+	trustedCASecret := ing.Annotations[constants.PipyIngressAnnotationTLSTrustedCASecret]
 	if trustedCASecret != "" {
 		if err := w.secretExists(trustedCASecret, ing); err != nil {
 			return fmt.Errorf("secert %q doesn't exist: %s, please check annotation 'pipy.ingress.kubernetes.io/tls-trusted-ca-secret' of Ingress %s/%s", trustedCASecret, err, ing.Namespace, ing.Name)

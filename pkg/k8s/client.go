@@ -289,11 +289,11 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 
 	case *pluginv1alpha1.Plugin:
 		obj := resource.(*pluginv1alpha1.Plugin)
-		return c.pluginClient.PluginV1alpha1().Plugins(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
+		return c.pluginClient.PluginV1alpha1().Plugins().UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	case *pluginv1alpha1.PluginChain:
 		obj := resource.(*pluginv1alpha1.PluginChain)
-		return c.pluginClient.PluginV1alpha1().PluginChains(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
+		return c.pluginClient.PluginV1alpha1().PluginChains().UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	default:
 		return nil, fmt.Errorf("Unsupported type: %T", t)

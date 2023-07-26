@@ -393,9 +393,10 @@ func main() {
 		Scheme: scheme,
 	})
 	if err != nil {
-		log.Error().Msgf("could not create manager: %s", err)
-		os.Exit(1)
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
+
+	manager.Start(ctx)
 
 	<-stop
 	cancel()

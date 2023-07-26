@@ -61,8 +61,8 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/docker/distribution v2.8.2+incompatible
-	github.com/hashicorp/vault v1.12.7
-	github.com/hashicorp/vault/sdk v0.6.1-0.20230427140652-b4b396ffc14f
+	github.com/hashicorp/vault v1.12.0
+	github.com/hashicorp/vault/sdk v0.6.1-0.20221010215534-6545e24b6023
 	github.com/klauspost/compress v1.15.6 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/net v0.10.0 // indirect

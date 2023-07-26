@@ -67,5 +67,5 @@ type endpointInfo struct {
 }
 
 var (
-	log = logger.New("fsm-gateway-cache")
+	log = logger.New("fsm-gateway/cache")
 )

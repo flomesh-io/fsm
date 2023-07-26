@@ -238,6 +238,83 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 	return false
 }
 
+func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) bool {
+	//ctx := context.TODO()
+	for _, key := range c.gateways {
+		//gw := &gwv1beta1.Gateway{}
+		//if err := c.cache.Get(ctx, key, gw); err != nil {
+		//	klog.Errorf("Failed to get Gateway %s: %s", key, err)
+		//	continue
+		//}
+		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String())
+		if err != nil {
+			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
+			continue
+		}
+		if !exists {
+			log.Error().Msgf("Gateway %s doesn't exist", key)
+			continue
+		}
+
+		gw := obj.(*gwv1beta1.Gateway)
+
+		for _, l := range gw.Spec.Listeners {
+			switch l.Protocol {
+			case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+				if l.TLS == nil {
+					continue
+				}
+
+				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1beta1.TLSModeTerminate {
+					if len(l.TLS.CertificateRefs) == 0 {
+						continue
+					}
+
+					for _, ref := range l.TLS.CertificateRefs {
+						if isRefToSecret(ref, secret, gw.Namespace) {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
+	if ref.Group != nil {
+		switch string(*ref.Group) {
+		case "":
+			log.Info().Msgf("Ref group is %q", string(*ref.Group))
+		default:
+			return false
+		}
+	}
+
+	if ref.Kind != nil {
+		switch string(*ref.Kind) {
+		case "Secret":
+			log.Info().Msgf("Ref kind is %q", string(*ref.Kind))
+		default:
+			return false
+		}
+	}
+
+	if ref.Namespace == nil {
+		if ns != secret.Namespace {
+			return false
+		}
+	} else {
+		if string(*ref.Namespace) != secret.Namespace {
+			return false
+		}
+	}
+
+	return string(ref.Name) == secret.Name
+}
+
 func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -245,7 +322,7 @@ func (c *GatewayCache) BuildConfigs() {
 	configs := make(map[string]*route.ConfigSpec)
 
 	for ns, key := range c.gateways {
-		if gw, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiTCPRoute, key.String()); exists && err == nil {
+		if gw, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String()); exists && err == nil {
 			gw := gw.(*gwv1beta1.Gateway)
 
 			validListeners := gwutils.GetValidListenersFromGateway(gw)

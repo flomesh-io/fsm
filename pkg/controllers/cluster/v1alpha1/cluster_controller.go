@@ -125,7 +125,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	log.Info().Msgf("Cluster key is %s", key)
 	bg, exists := r.server.GetBackground(key)
 	if exists && bg.Context.Hash != clusterHash(cluster) {
-		log.Info().Msgf("Background context of cluster [%s] exists, ")
+		log.Info().Msgf("Background context of cluster [%s] exists, ", key)
 		// exists and the spec changed, then stop it and start a new one
 		if result, err = r.recreateConnector(ctx, bg, cluster, mc); err != nil {
 			return result, err
