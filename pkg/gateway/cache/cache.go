@@ -322,24 +322,31 @@ func (c *GatewayCache) BuildConfigs() {
 	configs := make(map[string]*route.ConfigSpec)
 
 	for ns, key := range c.gateways {
-		if gw, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String()); exists && err == nil {
-			gw := gw.(*gwv1beta1.Gateway)
-
-			validListeners := gwutils.GetValidListenersFromGateway(gw)
-			listenerCfg := c.listeners(gw, validListeners)
-			rules, referredServices := c.routeRules(gw, validListeners)
-			svcConfigs := c.serviceConfigs(referredServices)
-
-			configSpec := &route.ConfigSpec{
-				Defaults:   c.defaults(),
-				Listeners:  listenerCfg,
-				RouteRules: rules,
-				Services:   svcConfigs,
-				Chains:     chains(),
-			}
-			configSpec.Version = utils.SimpleHash(configSpec)
-			configs[ns] = configSpec
+		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String())
+		if err != nil {
+			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
+			continue
 		}
+		if !exists {
+			log.Error().Msgf("Gateway %s doesn't exist", key)
+			continue
+		}
+
+		gw := obj.(*gwv1beta1.Gateway)
+		validListeners := gwutils.GetValidListenersFromGateway(gw)
+		listenerCfg := c.listeners(gw, validListeners)
+		rules, referredServices := c.routeRules(gw, validListeners)
+		svcConfigs := c.serviceConfigs(referredServices)
+
+		configSpec := &route.ConfigSpec{
+			Defaults:   c.defaults(),
+			Listeners:  listenerCfg,
+			RouteRules: rules,
+			Services:   svcConfigs,
+			Chains:     chains(),
+		}
+		configSpec.Version = utils.SimpleHash(configSpec)
+		configs[ns] = configSpec
 	}
 
 	for ns, cfg := range configs {
@@ -794,72 +801,80 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
-		if svc, exists, err := c.informers.GetByKey(informers.InformerKeyService, svcKey.String()); exists && err == nil {
-			svc := svc.(*corev1.Service)
-
-			selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
-				},
-			})
-			if err != nil {
-				log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
-				continue
-			}
-
-			endpointSliceList, err := c.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
-			if err != nil {
-				log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
-				continue
-			}
-
-			if len(endpointSliceList) == 0 {
-				continue
-			}
-
-			svcPort, err := getServicePort(svc, svcInfo.svcPortName.Port)
-			if err != nil {
-				log.Error().Msgf("Failed to get ServicePort: %s", err)
-				continue
-			}
-
-			filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
-			if len(filteredSlices) == 0 {
-				log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
-				continue
-			}
-
-			endpointSet := make(map[endpointInfo]struct{})
-
-			for _, eps := range filteredSlices {
-				for _, endpoint := range eps.Endpoints {
-
-					if !isEndpointReady(endpoint) {
-						continue
-					}
-					endpointPort := findPort(eps.Ports, svcPort)
-
-					for _, address := range endpoint.Addresses {
-						ep := endpointInfo{address: address, port: endpointPort}
-						endpointSet[ep] = struct{}{}
-					}
-				}
-			}
-
-			svcCfg := route.ServiceConfig{
-				Filters:   svcInfo.filters,
-				Endpoints: make(map[string]route.Endpoint),
-			}
-
-			for ep := range endpointSet {
-				hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
-				svcCfg.Endpoints[hostport] = route.Endpoint{
-					Weight: 1,
-				}
-			}
-
-			configs[svcPortName] = svcCfg
+		obj, exists, err := c.informers.GetByKey(informers.InformerKeyService, svcKey.String())
+		if err != nil {
+			log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
+			continue
 		}
+		if !exists {
+			log.Error().Msgf("Service %s doesn't exist", svcKey)
+			continue
+		}
+
+		svc := obj.(*corev1.Service)
+
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
+			},
+		})
+		if err != nil {
+			log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
+			continue
+		}
+
+		endpointSliceList, err := c.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
+		if err != nil {
+			log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
+			continue
+		}
+
+		if len(endpointSliceList) == 0 {
+			continue
+		}
+
+		svcPort, err := getServicePort(svc, svcInfo.svcPortName.Port)
+		if err != nil {
+			log.Error().Msgf("Failed to get ServicePort: %s", err)
+			continue
+		}
+
+		filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
+		if len(filteredSlices) == 0 {
+			log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
+			continue
+		}
+
+		endpointSet := make(map[endpointInfo]struct{})
+
+		for _, eps := range filteredSlices {
+			for _, endpoint := range eps.Endpoints {
+
+				if !isEndpointReady(endpoint) {
+					continue
+				}
+				endpointPort := findPort(eps.Ports, svcPort)
+
+				for _, address := range endpoint.Addresses {
+					ep := endpointInfo{address: address, port: endpointPort}
+					endpointSet[ep] = struct{}{}
+				}
+			}
+		}
+
+		svcCfg := route.ServiceConfig{
+			Filters:   svcInfo.filters,
+			Endpoints: make(map[string]route.Endpoint),
+		}
+
+		for ep := range endpointSet {
+			hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
+			svcCfg.Endpoints[hostport] = route.Endpoint{
+				Weight: 1,
+			}
+		}
+
+		configs[svcPortName] = svcCfg
 	}
 
 	return configs
