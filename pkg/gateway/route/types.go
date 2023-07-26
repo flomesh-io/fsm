@@ -121,33 +121,23 @@ type UDPRouteRule map[string]int32
 var _ RouteRule = &UDPRouteRule{}
 
 type HTTPTrafficMatch struct {
-	Path           *Path            `json:"Path,omitempty"`
-	Headers        []Headers        `json:"Headers,omitempty" hash:"set"`
-	RequestParams  []RequestParams  `json:"RequestParams,omitempty" hash:"set"`
-	Methods        []string         `json:"Methods,omitempty" hash:"set"`
-	BackendService map[string]int32 `json:"BackendService"`
-	RateLimit      *RateLimit       `json:"RateLimit,omitempty"`
+	Path           *Path                           `json:"Path,omitempty"`
+	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
+	RequestParams  map[MatchType]map[string]string `json:"RequestParams,omitempty"`
+	Methods        []string                        `json:"Methods,omitempty" hash:"set"`
+	BackendService map[string]int32                `json:"BackendService"`
+	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
 }
 
 type GRPCTrafficMatch struct {
-	Headers        []Headers        `json:"Headers,omitempty" hash:"set"`
-	Method         *GRPCMethod      `json:"Method,omitempty"`
-	BackendService map[string]int32 `json:"BackendService"`
+	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
+	Method         *GRPCMethod                     `json:"Method,omitempty"`
+	BackendService map[string]int32                `json:"BackendService"`
 }
 
 type Path struct {
 	MatchType MatchType `json:"Type"`
 	Path      string    `json:"Path"`
-}
-
-type Headers struct {
-	MatchType MatchType         `json:"Type"`
-	Headers   map[string]string `json:"Headers"`
-}
-
-type RequestParams struct {
-	MatchType     MatchType         `json:"Type"`
-	RequestParams map[string]string `json:"Params"`
 }
 
 type GRPCMethod struct {
