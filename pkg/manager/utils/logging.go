@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 )
 
 var (
@@ -90,7 +89,7 @@ func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, r
 		} {
 			json, err = sjson.Set(json, path, value)
 			if err != nil {
-				klog.Errorf("Failed to update Logging config: %s", err)
+				log.Error().Msgf("Failed to update Logging config: %s", err)
 				return "", err
 			}
 		}
@@ -101,7 +100,7 @@ func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, r
 		} {
 			json, err = sjson.Set(json, path, value)
 			if err != nil {
-				klog.Errorf("Failed to update Logging config: %s", err)
+				log.Error().Msgf("Failed to update Logging config: %s", err)
 				return "", err
 			}
 		}
@@ -138,14 +137,14 @@ func getLoggingSecret(kubeClient kubernetes.Interface, mc configurator.Configura
 					)
 
 				if err != nil {
-					klog.Errorf("failed to create Secret %s/%s: %s", mc.GetFSMNamespace(), secretName, err)
+					log.Error().Msgf("failed to create Secret %s/%s: %s", mc.GetFSMNamespace(), secretName, err)
 					return nil, err
 				}
 
 				return secret, nil
 			}
 
-			klog.Errorf("failed to get Secret %s/%s: %s", mc.GetFSMNamespace(), secretName, err)
+			log.Error().Msgf("failed to get Secret %s/%s: %s", mc.GetFSMNamespace(), secretName, err)
 			return nil, err
 		}
 

@@ -31,10 +31,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/webhook"
+	"github.com/rs/zerolog/log"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"net/http"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
@@ -110,8 +110,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	klog.V(5).Infof("Default Webhook, name=%s", gatewayClass.Name)
-	klog.V(4).Infof("Before setting default values, spec=%v", gatewayClass.Spec)
+	log.Info().Msgf("Default Webhook, name=%s", gatewayClass.Name)
+	log.Info().Msgf("Before setting default values, spec=%v", gatewayClass.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -119,7 +119,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	return
 	//}
 
-	klog.V(4).Infof("After setting default values, spec=%v", gatewayClass.Spec)
+	log.Info().Msgf("After setting default values, spec=%v", gatewayClass.Spec)
 }
 
 type validator struct {
@@ -172,7 +172,7 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 func doValidation(obj interface{}) error {
 	gatewayClass, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
-		klog.Warningf("unexpected object type: %T", obj)
+		log.Warn().Msgf("unexpected object type: %T", obj)
 		return nil
 	}
 

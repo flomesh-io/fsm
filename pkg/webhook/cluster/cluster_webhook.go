@@ -32,12 +32,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/webhook"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"net"
 	"net/http"
 )
@@ -112,8 +112,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	klog.V(5).Infof("Default Webhook, name=%s", c.Name)
-	klog.V(4).Infof("Before setting default values, spec=%v", c.Spec)
+	log.Info().Msgf("Default Webhook, name=%s", c.Name)
+	log.Info().Msgf("Before setting default values, spec=%v", c.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -135,7 +135,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	c.Labels[constants.MultiClustersConnectorMode] = "remote"
 	//}
 
-	klog.V(4).Infof("After setting default values, spec=%v", c.Spec)
+	log.Info().Msgf("After setting default values, spec=%v", c.Spec)
 }
 
 type validator struct {
@@ -159,7 +159,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	//		Clusters().
 	//		List(context.TODO(), metav1.ListOptions{})
 	//	if err != nil {
-	//		klog.Errorf("Failed to list Clusters, %v", err)
+	//		log.Error().Msgf("Failed to list Clusters, %v", err)
 	//		return err
 	//	}
 	//
@@ -171,7 +171,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	//	}
 	//	if numOfInCluster >= 1 {
 	//		errMsg := fmt.Sprintf("there're %d InCluster resources, should ONLY have exact ONE", numOfInCluster)
-	//		klog.Errorf(errMsg)
+	//		log.Error().Msgf(errMsg)
 	//		return errors.New(errMsg)
 	//	}
 	//}
@@ -220,7 +220,7 @@ func doValidation(obj interface{}) error {
 	//connectorMode := c.Labels[constants.MultiClustersConnectorMode]
 	//switch connectorMode {
 	//case "local", "remote":
-	//	klog.V(5).Infof("multicluster.flomesh.io/connector-mode=%s", connectorMode)
+	//	log.Info().Msgf("multicluster.flomesh.io/connector-mode=%s", connectorMode)
 	//default:
 	//	return fmt.Errorf("invalid value %q for label multicluster.flomesh.io/connector-mode, must be either 'local' or 'remote'", connectorMode)
 	//}
@@ -252,7 +252,7 @@ func doValidation(obj interface{}) error {
 	isDNSName := false
 	if ipErrs := validation.IsValidIPv4Address(field.NewPath(""), host); len(ipErrs) > 0 {
 		// Not IPv4 address
-		klog.Warningf("%q is NOT a valid IPv4 address: %v", host, ipErrs)
+		log.Warn().Msgf("%q is NOT a valid IPv4 address: %v", host, ipErrs)
 		if dnsErrs := validation.IsDNS1123Subdomain(host); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return fmt.Errorf("invalid DNS name %q: %v", host, dnsErrs)
@@ -268,7 +268,7 @@ func doValidation(obj interface{}) error {
 		if err != nil {
 			return fmt.Errorf("%q cannot be resolved to IP", host)
 		}
-		klog.Infof("%q is resolved to IP: %s", host, ipAddr.IP)
+		log.Info().Msgf("%q is resolved to IP: %s", host, ipAddr.IP)
 		gwIPv4 = ipAddr.IP.To4()
 	} else {
 		gwIPv4 = net.ParseIP(host).To4()

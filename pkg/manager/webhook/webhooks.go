@@ -50,12 +50,11 @@ import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
 	"os"
 )
 
 func RegisterWebHooks(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Registering Webhooks ...")
+	log.Info().Msgf("[MGR] Registering Webhooks ...")
 
 	registers, err := webhookRegisters(ctx)
 
@@ -97,7 +96,7 @@ func createWebhookConfigurations(ctx *fctx.ControllerContext, registers []webhoo
 			if apierrors.IsAlreadyExists(err) {
 				existingMwc, err := mutating.Get(context.Background(), mwc.Name, metav1.GetOptions{})
 				if err != nil {
-					klog.Errorf("Unable to get MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
+					log.Error().Msgf("Unable to get MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
 					return err
 				}
 
@@ -105,11 +104,11 @@ func createWebhookConfigurations(ctx *fctx.ControllerContext, registers []webhoo
 				_, err = mutating.Update(context.Background(), existingMwc, metav1.UpdateOptions{})
 				if err != nil {
 					// Should be not conflict for a leader-election manager, error is error
-					klog.Errorf("Unable to update MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
+					log.Error().Msgf("Unable to update MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
 					return err
 				}
 			} else {
-				klog.Errorf("Unable to create MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
+				log.Error().Msgf("Unable to create MutatingWebhookConfigurations %q, %s", mwc.Name, err.Error())
 				return err
 			}
 		}
@@ -124,18 +123,18 @@ func createWebhookConfigurations(ctx *fctx.ControllerContext, registers []webhoo
 			if apierrors.IsAlreadyExists(err) {
 				existingVmc, err := validating.Get(context.Background(), vwc.Name, metav1.GetOptions{})
 				if err != nil {
-					klog.Errorf("Unable to get ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
+					log.Error().Msgf("Unable to get ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
 					return err
 				}
 
 				existingVmc.Webhooks = vwc.Webhooks
 				_, err = validating.Update(context.Background(), existingVmc, metav1.UpdateOptions{})
 				if err != nil {
-					klog.Errorf("Unable to update ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
+					log.Error().Msgf("Unable to update ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
 					return err
 				}
 			} else {
-				klog.Errorf("Unable to create ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
+				log.Error().Msgf("Unable to create ValidatingWebhookConfigurations %q, %s", vwc.Name, err.Error())
 				return err
 			}
 		}
@@ -163,14 +162,14 @@ func issueCertForWebhook(certMgr *certificate.Manager, mc configurator.Configura
 		return nil, err
 	}
 	if err != nil {
-		klog.Error("Error issuing certificate, ", err)
+		log.Error().Msgf("Error issuing certificate: %s ", err)
 		return nil, err
 	}
 
 	// write ca.crt, tls.crt & tls.key to file
 	servingCertsPath := constants.WebhookServerServingCertsPath
 	if err := os.MkdirAll(servingCertsPath, 755); err != nil {
-		klog.Errorf("error creating dir %q, %s", servingCertsPath, err.Error())
+		log.Error().Msgf("error creating dir %q, %s", servingCertsPath, err.Error())
 		return nil, err
 	}
 
@@ -186,7 +185,7 @@ func issueCertForWebhook(certMgr *certificate.Manager, mc configurator.Configura
 			fileName,
 			data,
 			420); err != nil {
-			klog.Errorf("error writing file %q, %s", fileName, err.Error())
+			log.Error().Msgf("error writing file %q, %s", fileName, err.Error())
 			return nil, err
 		}
 	}

@@ -34,11 +34,10 @@ import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/mcs/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/namespacedingress/v1alpha1"
 	svclb "github.com/flomesh-io/fsm/pkg/controllers/servicelb"
-	"k8s.io/klog/v2"
 )
 
 func RegisterReconcilers(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Registering Reconcilers ...")
+	log.Info().Msgf("[MGR] Registering Reconcilers ...")
 
 	mc := ctx.Config
 
@@ -78,7 +77,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 
 	for name, r := range reconcilers {
 		if err := r.SetupWithManager(ctx.Manager); err != nil {
-			klog.Errorf("Failed to setup reconciler %s: %s", name, err)
+			log.Error().Msgf("Failed to setup reconciler %s: %s", name, err)
 			return err
 		}
 	}

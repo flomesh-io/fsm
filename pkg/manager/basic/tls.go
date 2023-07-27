@@ -28,14 +28,13 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
-	"k8s.io/klog/v2"
 )
 
 func SetupTLS(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Setting up TLS ...")
+	log.Info().Msgf("[MGR] Setting up TLS ...")
 
 	mc := ctx.Config
-	//klog.V(5).Infof("mc.Ingress.TLS=%v", mc.Ingress.TLS)
+	//log.Info().Msgf("mc.Ingress.TLS=%v", mc.Ingress.TLS)
 
 	if mc.IsIngressTLSEnabled() {
 		if mc.IsIngressSSLPassthroughEnabled() {

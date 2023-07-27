@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/flomesh-io/fsm/pkg/certificate"
+	"github.com/flomesh-io/fsm/pkg/manager/utils"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -141,39 +142,39 @@ func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *me
 			}
 
 			oldCfg, prevOk := msg.OldObj.(*configv1alpha3.MeshConfig)
-			cfg, newOk := msg.NewObj.(*configv1alpha3.MeshConfig)
+			newCfg, newOk := msg.NewObj.(*configv1alpha3.MeshConfig)
 			if !prevOk || !newOk {
-				log.Error().Msgf("Error casting to *MeshConfig, got type prev=%T, new=%T", oldCfg, cfg)
+				log.Error().Msgf("Error casting to *MeshConfig, got type prev=%T, new=%T", oldCfg, newCfg)
 			}
 
 			log.Info().Msgf("Updating basic config ...")
 
-			if isHTTPConfigChanged(oldCfg, cfg) {
-				if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, repoClient, cfg); err != nil {
+			if isHTTPConfigChanged(oldCfg, newCfg) {
+				if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, repoClient, newCfg); err != nil {
 					log.Error().Msgf("Failed to update HTTP config: %s", err)
 				}
 			}
 
-			if isTLSConfigChanged(oldCfg, cfg) {
-				if cfg.Spec.Ingress.TLS.Enabled {
-					if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, repoClient, certMgr, cfg); err != nil {
+			if isTLSConfigChanged(oldCfg, newCfg) {
+				if newCfg.Spec.Ingress.TLS.Enabled {
+					if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, repoClient, certMgr, newCfg); err != nil {
 						log.Error().Msgf("Failed to update TLS config and issue default cert: %s", err)
 					}
 				} else {
-					if err := utils.UpdateIngressTLSConfig(constants.DefaultIngressBasePath, repoClient, cfg); err != nil {
+					if err := utils.UpdateIngressTLSConfig(constants.DefaultIngressBasePath, repoClient, newCfg); err != nil {
 						log.Error().Msgf("Failed to update TLS config: %s", err)
 					}
 				}
 			}
 
-			if shouldUpdateIngressControllerServiceSpec(oldCfg, cfg) {
-				updateIngressControllerSpec(kubeClient, fsmNamespace, oldCfg, cfg)
+			if shouldUpdateIngressControllerServiceSpec(oldCfg, newCfg) {
+				updateIngressControllerSpec(kubeClient, fsmNamespace, oldCfg, newCfg)
 			}
 		}
 	}
 }
 
-func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace string, oldCfg, cfg *configv1alpha3.MeshConfig) {
+func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace string, oldCfg, newCfg *configv1alpha3.MeshConfig) {
 	selector := labels.SelectorFromSet(
 		map[string]string{
 			"app":                           "fsm-ingress",
@@ -194,28 +195,28 @@ func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace 
 		service := svc.DeepCopy()
 		service.Spec.Ports = nil
 
-		if cfg.Spec.Ingress.HTTP.Enabled {
+		if newCfg.Spec.Ingress.HTTP.Enabled {
 			httpPort := corev1.ServicePort{
 				Name:       "http",
 				Protocol:   corev1.ProtocolTCP,
-				Port:       cfg.Spec.Ingress.HTTP.Bind,
-				TargetPort: intstr.FromInt(int(cfg.Spec.Ingress.HTTP.Listen)),
+				Port:       newCfg.Spec.Ingress.HTTP.Bind,
+				TargetPort: intstr.FromInt(int(newCfg.Spec.Ingress.HTTP.Listen)),
 			}
-			if cfg.Spec.Ingress.HTTP.NodePort > 0 {
-				httpPort.NodePort = cfg.Spec.Ingress.HTTP.NodePort
+			if newCfg.Spec.Ingress.HTTP.NodePort > 0 {
+				httpPort.NodePort = newCfg.Spec.Ingress.HTTP.NodePort
 			}
 			service.Spec.Ports = append(service.Spec.Ports, httpPort)
 		}
 
-		if cfg.Spec.Ingress.TLS.Enabled {
+		if newCfg.Spec.Ingress.TLS.Enabled {
 			tlsPort := corev1.ServicePort{
 				Name:       "https",
 				Protocol:   corev1.ProtocolTCP,
-				Port:       cfg.Spec.Ingress.TLS.Bind,
-				TargetPort: intstr.FromInt(int(cfg.Spec.Ingress.TLS.Listen)),
+				Port:       newCfg.Spec.Ingress.TLS.Bind,
+				TargetPort: intstr.FromInt(int(newCfg.Spec.Ingress.TLS.Listen)),
 			}
-			if cfg.Spec.Ingress.TLS.NodePort > 0 {
-				tlsPort.NodePort = cfg.Spec.Ingress.TLS.NodePort
+			if newCfg.Spec.Ingress.TLS.NodePort > 0 {
+				tlsPort.NodePort = newCfg.Spec.Ingress.TLS.NodePort
 			}
 			service.Spec.Ports = append(service.Spec.Ports, tlsPort)
 		}

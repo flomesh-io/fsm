@@ -32,7 +32,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/tidwall/sjson"
-	"k8s.io/klog/v2"
 )
 
 func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
@@ -48,7 +47,7 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 	} {
 		json, err = sjson.Set(json, path, value)
 		if err != nil {
-			klog.Errorf("Failed to update TLS config: %s", err)
+			log.Error().Msgf("Failed to update TLS config: %s", err)
 			return err
 		}
 	}
@@ -63,7 +62,7 @@ func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, cer
 		certificate.Internal,
 		certificate.FullCNProvided())
 	if err != nil {
-		klog.Errorf("Issue certificate for ingress-pipy error: %s", err)
+		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
 		return err
 	}
 
@@ -84,7 +83,7 @@ func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, cer
 		},
 	})
 	if err != nil {
-		klog.Errorf("Failed to update TLS config: %s", err)
+		log.Error().Msgf("Failed to update TLS config: %s", err)
 		return err
 	}
 
@@ -93,7 +92,7 @@ func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, cer
 }
 
 func UpdateSSLPassthrough(basepath string, repoClient *repo.PipyRepoClient, enabled bool, upstreamPort int32) error {
-	klog.V(5).Infof("SSL passthrough is enabled, updating repo config ...")
+	log.Info().Msgf("SSL passthrough is enabled, updating repo config ...")
 	// 1. get main.json
 	json, err := getMainJson(basepath, repoClient)
 	if err != nil {
@@ -101,14 +100,14 @@ func UpdateSSLPassthrough(basepath string, repoClient *repo.PipyRepoClient, enab
 	}
 
 	// 2. update ssl passthrough config
-	klog.V(5).Infof("SSLPassthrough enabled=%t", enabled)
-	klog.V(5).Infof("SSLPassthrough upstreamPort=%d", upstreamPort)
+	log.Info().Msgf("SSLPassthrough enabled=%t", enabled)
+	log.Info().Msgf("SSLPassthrough upstreamPort=%d", upstreamPort)
 	newJson, err := sjson.Set(json, "sslPassthrough", map[string]interface{}{
 		"enabled":      enabled,
 		"upstreamPort": upstreamPort,
 	})
 	if err != nil {
-		klog.Errorf("Failed to update sslPassthrough: %s", err)
+		log.Error().Msgf("Failed to update sslPassthrough: %s", err)
 		return err
 	}
 

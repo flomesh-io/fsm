@@ -27,7 +27,6 @@ package utils
 import (
 	"fmt"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/klog/v2"
 )
 
 func getMainJson(basepath string, repoClient *repo.PipyRepoClient) (string, error) {
@@ -35,7 +34,7 @@ func getMainJson(basepath string, repoClient *repo.PipyRepoClient) (string, erro
 
 	json, err := repoClient.GetFile(path)
 	if err != nil {
-		klog.Errorf("Get %q from pipy repo error: %s", path, err)
+		log.Error().Msgf("Get %q from pipy repo error: %s", path, err)
 		return "", err
 	}
 
@@ -55,7 +54,7 @@ func updateMainJson(basepath string, repoClient *repo.PipyRepoClient, newJson st
 	}
 
 	if err := repoClient.Batch([]repo.Batch{batch}); err != nil {
-		klog.Errorf("Failed to update %q: %s", getPathOfMainJson(basepath), err)
+		log.Error().Msgf("Failed to update %q: %s", getPathOfMainJson(basepath), err)
 		return err
 	}
 

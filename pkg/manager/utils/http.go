@@ -28,7 +28,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/tidwall/sjson"
-	"k8s.io/klog/v2"
 )
 
 func UpdateIngressHTTPConfig(basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) error {
@@ -42,7 +41,7 @@ func UpdateIngressHTTPConfig(basepath string, repoClient *client.PipyRepoClient,
 		"listen":  mc.GetIngressHTTPListenPort(),
 	})
 	if err != nil {
-		klog.Errorf("Failed to update HTTP config: %s", err)
+		log.Error().Msgf("Failed to update HTTP config: %s", err)
 		return err
 	}
 

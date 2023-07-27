@@ -33,7 +33,6 @@ import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"net/http"
 )
 
@@ -107,8 +106,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	klog.V(5).Infof("Default Webhook, name=%s", serviceImport.Name)
-	klog.V(4).Infof("Before setting default values, spec=%v", serviceImport.Spec)
+	log.Info().Msgf("Default Webhook, name=%s", serviceImport.Name)
+	log.Info().Msgf("Before setting default values, spec=%v", serviceImport.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -121,7 +120,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		serviceImport.Spec.Type = mcsv1alpha1.ClusterSetIP
 	}
 
-	klog.V(4).Infof("After setting default values, spec=%v", serviceImport.Spec)
+	log.Info().Msgf("After setting default values, spec=%v", serviceImport.Spec)
 }
 
 type validator struct {

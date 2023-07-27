@@ -28,11 +28,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
-	"k8s.io/klog/v2"
 )
 
 func SetupHTTP(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Setting up HTTP ...")
+	log.Info().Msgf("[MGR] Setting up HTTP ...")
 
 	mc := ctx.Config
 	if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, mc); err != nil {

@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2"
 	"net/http"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
@@ -118,8 +117,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	klog.V(5).Infof("Default Webhook, name=%s", gateway.Name)
-	klog.V(4).Infof("Before setting default values, spec=%v", gateway.Spec)
+	log.Info().Msgf("Default Webhook, name=%s", gateway.Name)
+	log.Info().Msgf("Before setting default values, spec=%v", gateway.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -127,7 +126,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	return
 	//}
 
-	klog.V(4).Infof("After setting default values, spec=%v", gateway.Spec)
+	log.Info().Msgf("After setting default values, spec=%v", gateway.Spec)
 }
 
 type validator struct {

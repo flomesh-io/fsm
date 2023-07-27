@@ -243,7 +243,7 @@ func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) boo
 	for _, key := range c.gateways {
 		//gw := &gwv1beta1.Gateway{}
 		//if err := c.cache.Get(ctx, key, gw); err != nil {
-		//	klog.Errorf("Failed to get Gateway %s: %s", key, err)
+		//	log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 		//	continue
 		//}
 		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String())

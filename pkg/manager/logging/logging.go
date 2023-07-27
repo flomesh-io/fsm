@@ -28,11 +28,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
-	"k8s.io/klog/v2"
 )
 
 func SetupLogging(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Setting up Logging ...")
+	log.Info().Msgf("[MGR] Setting up Logging ...")
 
 	mc := ctx.Config
 	if err := utils.UpdateLoggingConfig(ctx.KubeClient, constants.DefaultIngressBasePath, ctx.RepoClient, mc); err != nil {

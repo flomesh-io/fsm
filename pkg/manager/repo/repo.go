@@ -34,7 +34,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,7 +49,7 @@ var (
 )
 
 func InitRepo(ctx *fctx.ControllerContext) error {
-	klog.Infof("[MGR] Initializing PIPY Repo ...")
+	log.Info().Msgf("[MGR] Initializing PIPY Repo ...")
 	// wait until pipy repo is up or timeout after 5 minutes
 	repoClient := ctx.RepoClient
 
@@ -63,7 +62,7 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 		log.Error().Msg("Repo is not up, sleeping ...")
 		return success, err
 	}); err != nil {
-		klog.Errorf("Error happened while waiting for repo up, %s", err)
+		log.Error().Msgf("Error happened while waiting for repo up, %s", err)
 		return err
 	}
 
@@ -161,7 +160,7 @@ func listFiles(root string) (files []string) {
 func visit(files *[]string) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			klog.Errorf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
+			log.Error().Msgf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
 		}
 
