@@ -545,3 +545,74 @@ func (c *Client) GetClusterUID() string {
 func (c *Client) GetMultiClusterControlPlaneUID() string {
 	return c.getMeshConfig().Spec.ClusterSet.ControlPlaneUID
 }
+
+func (c *Client) IsIngressTLSEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.Enabled
+	}
+
+	return false
+}
+
+func (c *Client) GetIngressTLSListenPort() int32 {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.Listen
+	}
+
+	return 443
+}
+
+func (c *Client) IsIngressMTLSEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.MTLS
+	}
+
+	return false
+}
+
+func (c *Client) IsIngressSSLPassthroughEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		if passthrough := tls.SSLPassthrough; passthrough != nil {
+			return passthrough.Enabled
+		}
+
+		return false
+	}
+
+	return false
+}
+
+func (c *Client) GetIngressSSLPassthroughUpstreamPort() int32 {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		if passthrough := tls.SSLPassthrough; passthrough != nil {
+			return passthrough.UpstreamPort
+		}
+
+		return 443
+	}
+
+	return 443
+}
+
+func (c *Client) IsIngressHTTPEnabled() bool {
+	http := c.getMeshConfig().Spec.Ingress.HTTP
+	if http != nil {
+		return http.Enabled
+	}
+
+	return false
+}
+
+func (c *Client) GetIngressHTTPListenPort() int32 {
+	http := c.getMeshConfig().Spec.Ingress.HTTP
+	if http != nil {
+		return http.Listen
+	}
+
+	return 80
+}

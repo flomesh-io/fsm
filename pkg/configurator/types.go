@@ -161,8 +161,29 @@ type Configurator interface {
 	// IsIngressEnabled returns whether Ingress is enabled
 	IsIngressEnabled() bool
 
+	// IsIngressTLSEnabled returns whether Ingress is enabled
+	IsIngressTLSEnabled() bool
+
+	// GetIngressTLSListenPort returns the listen port of Ingress TLS
+	GetIngressTLSListenPort() int32
+
+	// IsIngressMTLSEnabled returns whether Ingress mTLS is enabled
+	IsIngressMTLSEnabled() bool
+
+	// IsIngressSSLPassthroughEnabled returns whether Ingress is enabled
+	IsIngressSSLPassthroughEnabled() bool
+
+	// GetIngressSSLPassthroughUpstreamPort returns the upstream port for SSL passthrough
+	GetIngressSSLPassthroughUpstreamPort() int32
+
 	// IsNamespacedIngressEnabled returns whether Namespaced Ingress is enabled
 	IsNamespacedIngressEnabled() bool
+
+	// IsIngressHTTPEnabled returns whether http port of Ingress is enabled
+	IsIngressHTTPEnabled() bool
+
+	// GetIngressHTTPListenPort returns the listen port of Ingress HTTP
+	GetIngressHTTPListenPort() int32
 
 	// IsServiceLBEnabled returns whether ServiceLB is enabled
 	IsServiceLBEnabled() bool
@@ -190,15 +211,6 @@ type Configurator interface {
 
 	// GetImageRegistry returns the image registry
 	GetImageRegistry() string
-
-	//// PipyImage returns the pipy image
-	//PipyImage() string
-	//
-	//// PipyRepoImage returns the pipy-repo image
-	//PipyRepoImage() string
-	//
-	//// PipyNonrootImage string returns the pipy-nonroot image
-	//PipyNonrootImage() string
 
 	// ServiceLbImage string returns the service-lb image
 	ServiceLbImage() string

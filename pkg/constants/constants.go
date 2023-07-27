@@ -2,7 +2,9 @@
 package constants
 
 import (
+	"fmt"
 	"github.com/blang/semver"
+	"os"
 	"text/template"
 	"time"
 )
@@ -82,6 +84,12 @@ const (
 
 	// FSMBootstrapName is the name of the FSM Bootstrap.
 	FSMBootstrapName = "fsm-bootstrap"
+
+	// FSMIngressName is the name of the FSM Ingress.
+	FSMIngressName = "fsm-ingress"
+
+	// FSMGatewayName is the name of the FSM Gateway.
+	FSMGatewayName = "fsm-gateway"
 
 	// ProxyServerPort is the port on which the Pipy Repo Service (ADS) listens for new connections from sidecar proxies
 	ProxyServerPort = 6060
@@ -462,9 +470,13 @@ const (
 	RootCAPrivateKeyName                      = "ca.key"
 	TLSCertName                               = "tls.crt"
 	TLSPrivateKeyName                         = "tls.key"
-	DefaultWebhookServiceName                 = "fsm-webhook-service"
+	WebhookServerServingCertsPathTpl          = "%s/k8s-webhook-server/serving-certs"
 	DefaultMutatingWebhookConfigurationName   = "flomesh-mutating-webhook-configuration"
 	DefaultValidatingWebhookConfigurationName = "flomesh-validating-webhook-configuration"
+)
+
+var (
+	WebhookServerServingCertsPath = fmt.Sprintf(WebhookServerServingCertsPathTpl, os.TempDir())
 )
 
 // NamespacedIngress constants

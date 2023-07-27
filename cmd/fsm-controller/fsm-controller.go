@@ -7,8 +7,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/manager/basic"
+	"github.com/flomesh-io/fsm/pkg/manager/logging"
+	recon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
+	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
+	"github.com/flomesh-io/fsm/pkg/manager/webhook"
+	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"net/http"
 	"os"
 	"path"
@@ -389,14 +396,49 @@ func main() {
 		}
 	}
 
-	manager, err := ctrl.NewManager(kubeConfig, ctrl.Options{
+	mgr, err := ctrl.NewManager(kubeConfig, ctrl.Options{
 		Scheme: scheme,
 	})
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	manager.Start(ctx)
+	repoClient := repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort()))
+	cctx := &fctx.ControllerContext{
+		Client:             mgr.GetClient(),
+		Manager:            mgr,
+		Scheme:             mgr.GetScheme(),
+		KubeClient:         kubeClient,
+		GatewayAPIClient:   gatewayAPIClient,
+		Config:             cfg,
+		InformerCollection: informerCollection,
+		CertificateManager: certManager,
+		RepoClient:         repoClient,
+		Broker:             msgBroker,
+		StopCh:             stop,
+	}
+	for _, f := range []func(*fctx.ControllerContext) error{
+		mrepo.InitRepo,
+		basic.SetupHTTP,
+		basic.SetupTLS,
+		logging.SetupLogging,
+		webhook.RegisterWebHooks,
+		recon.RegisterReconcilers,
+	} {
+		if err := f(cctx); err != nil {
+			log.Error().Msgf("Failed to startup: %s", err)
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error setting up manager")
+		}
+	}
+
+	if cfg.IsIngressEnabled() {
+		go k8s.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, repoClient, stop)
+	}
+
+	if err := mgr.Start(ctx); err != nil {
+		log.Fatal().Msgf("problem running manager, %s", err)
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")
+	}
 
 	<-stop
 	cancel()

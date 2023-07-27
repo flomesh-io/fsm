@@ -90,6 +90,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
+	github.com/tidwall/sjson v1.2.5
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/kubectl v0.26.6
 	k8s.io/kubernetes v1.26.6
