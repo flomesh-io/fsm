@@ -206,6 +206,48 @@ func (mr *MockConfiguratorMockRecorder) GetIngressGatewayCertValidityPeriod() *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressGatewayCertValidityPeriod", reflect.TypeOf((*MockConfigurator)(nil).GetIngressGatewayCertValidityPeriod))
 }
 
+// GetIngressHTTPListenPort mocks base method.
+func (m *MockConfigurator) GetIngressHTTPListenPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressHTTPListenPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressHTTPListenPort indicates an expected call of GetIngressHTTPListenPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressHTTPListenPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressHTTPListenPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressHTTPListenPort))
+}
+
+// GetIngressSSLPassthroughUpstreamPort mocks base method.
+func (m *MockConfigurator) GetIngressSSLPassthroughUpstreamPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressSSLPassthroughUpstreamPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressSSLPassthroughUpstreamPort indicates an expected call of GetIngressSSLPassthroughUpstreamPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressSSLPassthroughUpstreamPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressSSLPassthroughUpstreamPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressSSLPassthroughUpstreamPort))
+}
+
+// GetIngressTLSListenPort mocks base method.
+func (m *MockConfigurator) GetIngressTLSListenPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressTLSListenPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressTLSListenPort indicates an expected call of GetIngressTLSListenPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressTLSListenPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressTLSListenPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressTLSListenPort))
+}
+
 // GetInitContainerImage mocks base method.
 func (m *MockConfigurator) GetInitContainerImage() string {
 	m.ctrl.T.Helper()
@@ -401,6 +443,20 @@ func (m *MockConfigurator) GetRemoteLoggingSampledFraction() float32 {
 func (mr *MockConfiguratorMockRecorder) GetRemoteLoggingSampledFraction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteLoggingSampledFraction", reflect.TypeOf((*MockConfigurator)(nil).GetRemoteLoggingSampledFraction))
+}
+
+// GetRemoteLoggingSecretName mocks base method.
+func (m *MockConfigurator) GetRemoteLoggingSecretName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRemoteLoggingSecretName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetRemoteLoggingSecretName indicates an expected call of GetRemoteLoggingSecretName.
+func (mr *MockConfiguratorMockRecorder) GetRemoteLoggingSecretName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteLoggingSecretName", reflect.TypeOf((*MockConfigurator)(nil).GetRemoteLoggingSecretName))
 }
 
 // GetRepoServerCodebase mocks base method.
@@ -667,6 +723,62 @@ func (m *MockConfigurator) IsIngressEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsIngressEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressEnabled))
+}
+
+// IsIngressHTTPEnabled mocks base method.
+func (m *MockConfigurator) IsIngressHTTPEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressHTTPEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressHTTPEnabled indicates an expected call of IsIngressHTTPEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressHTTPEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressHTTPEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressHTTPEnabled))
+}
+
+// IsIngressMTLSEnabled mocks base method.
+func (m *MockConfigurator) IsIngressMTLSEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressMTLSEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressMTLSEnabled indicates an expected call of IsIngressMTLSEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressMTLSEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressMTLSEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressMTLSEnabled))
+}
+
+// IsIngressSSLPassthroughEnabled mocks base method.
+func (m *MockConfigurator) IsIngressSSLPassthroughEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressSSLPassthroughEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressSSLPassthroughEnabled indicates an expected call of IsIngressSSLPassthroughEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressSSLPassthroughEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressSSLPassthroughEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressSSLPassthroughEnabled))
+}
+
+// IsIngressTLSEnabled mocks base method.
+func (m *MockConfigurator) IsIngressTLSEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressTLSEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressTLSEnabled indicates an expected call of IsIngressTLSEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressTLSEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressTLSEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressTLSEnabled))
 }
 
 // IsLocalDNSProxyEnabled mocks base method.

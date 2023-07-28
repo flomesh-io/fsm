@@ -35,6 +35,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/helm"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	mgrutils "github.com/flomesh-io/fsm/pkg/manager/utils"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -191,7 +192,7 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 
 		if nsig.Spec.TLS.SSLPassthrough.Enabled {
 			// SSL passthrough
-			err := utils.UpdateSSLPassthrough(
+			err := mgrutils.UpdateSSLPassthrough(
 				basepath,
 				repoClient,
 				nsig.Spec.TLS.SSLPassthrough.Enabled,
@@ -202,7 +203,7 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 			}
 		} else {
 			// TLS offload
-			err := utils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc)
+			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}

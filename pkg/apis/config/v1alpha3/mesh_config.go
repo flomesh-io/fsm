@@ -226,6 +226,9 @@ type RemoteLoggingSpec struct {
 
 	// SampledFraction defines the sampled fraction.
 	SampledFraction *string `json:"sampledFraction,omitempty"`
+
+	// SecretName defines the name of the secret that contains the configuration for remote logging.
+	SecretName string `json:"secretName,omitempty"`
 }
 
 // ExternalAuthzSpec is a type to represent external authorization configuration.

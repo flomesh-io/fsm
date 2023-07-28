@@ -203,6 +203,11 @@ func (c *Client) GetRemoteLoggingSampledFraction() float32 {
 	return 1
 }
 
+func (c *Client) GetRemoteLoggingSecretName() string {
+	return c.getMeshConfig().Spec.Observability.RemoteLogging.SecretName
+
+}
+
 // GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
 func (c *Client) GetMaxDataPlaneConnections() int {
 	return c.getMeshConfig().Spec.Sidecar.MaxDataPlaneConnections
@@ -478,7 +483,7 @@ func (c *Client) IsGatewayApiEnabled() bool {
 	return mcSpec.GatewayAPI.Enabled && !mcSpec.Ingress.Enabled
 }
 
-// GetGatewayApiLogLevel returns log level of FSM Gateway
+// GetFSMGatewayLogLevel returns log level of FSM Gateway
 func (c *Client) GetFSMGatewayLogLevel() string {
 	mcSpec := c.getMeshConfig().Spec
 	return mcSpec.GatewayAPI.LogLevel

@@ -1,6 +1,5 @@
 package repo
 
-import "C"
 import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"

@@ -57,7 +57,8 @@ data:
           "address": {{.Values.fsm.remoteLogging.address | mustToJson}},
           "endpoint": {{.Values.fsm.remoteLogging.endpoint | mustToJson}},
           "authorization": {{.Values.fsm.remoteLogging.authorization | mustToJson}},
-          "sampledFraction": {{.Values.fsm.remoteLogging.sampledFraction | mustToJson}}
+          "sampledFraction": {{.Values.fsm.remoteLogging.sampledFraction | mustToJson}},
+          "secretName": {{.Values.fsm.remoteLogging.secretName | mustToJson}}
           {{- end }}
         }
       },
