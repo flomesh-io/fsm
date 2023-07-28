@@ -72,6 +72,8 @@ jobs:
         run: make go-mod-tidy
       - name: Codegen checks
         run: make check-codegen
+      - name: Scripts checks
+        run: make check-scripts
 
   mocks:
     name: Mocks
