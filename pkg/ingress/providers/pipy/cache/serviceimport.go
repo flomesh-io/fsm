@@ -66,10 +66,10 @@ func (info *BaseServiceImportInfo) Protocol() corev1.Protocol {
 type enrichServiceImportInfoFunc func(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport, info *BaseServiceInfo) ServicePort
 
 type serviceImportChange struct {
-	previous          ServiceImportMap
-	current           ServiceImportMap
-	previousEndpoints EndpointsMap
-	currentEndpoints  EndpointsMap
+	previous ServiceImportMap
+	current  ServiceImportMap
+	//previousEndpoints EndpointsMap
+	//currentEndpoints  EndpointsMap
 }
 
 type ServiceImportChangeTracker struct {
@@ -269,11 +269,7 @@ func (sct *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.Service
 }
 
 func shouldSkipServiceImport(svcImp *mcsv1alpha1.ServiceImport) bool {
-	if svcImp == nil {
-		return true
-	}
-
-	return false
+	return svcImp == nil
 }
 
 func (sct *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alpha1.ServiceImport) MultiClusterEndpointsMap {

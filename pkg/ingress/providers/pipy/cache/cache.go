@@ -41,7 +41,6 @@ import (
 	"k8s.io/client-go/tools/events"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -64,12 +63,12 @@ type Cache struct {
 
 	mu sync.Mutex
 
-	endpointsSynced      bool
-	servicesSynced       bool
-	ingressesSynced      bool
-	ingressClassesSynced bool
-	serviceImportSynced  bool
-	initialized          int32
+	//endpointsSynced      bool
+	//servicesSynced       bool
+	//ingressesSynced      bool
+	//ingressClassesSynced bool
+	//serviceImportSynced  bool
+	//initialized          int32
 
 	repoClient  *repo.PipyRepoClient
 	broadcaster events.EventBroadcaster
@@ -117,17 +116,17 @@ func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerC
 //	return c.recorder
 //}
 
-func (c *Cache) setInitialized(value bool) {
-	var initialized int32
-	if value {
-		initialized = 1
-	}
-	atomic.StoreInt32(&c.initialized, initialized)
-}
-
-func (c *Cache) isInitialized() bool {
-	return atomic.LoadInt32(&c.initialized) > 0
-}
+//func (c *Cache) setInitialized(value bool) {
+//	var initialized int32
+//	if value {
+//		initialized = 1
+//	}
+//	atomic.StoreInt32(&c.initialized, initialized)
+//}
+//
+//func (c *Cache) isInitialized() bool {
+//	return atomic.LoadInt32(&c.initialized) > 0
+//}
 
 func (c *Cache) SyncRoutes() {
 	c.mu.Lock()

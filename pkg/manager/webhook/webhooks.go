@@ -184,7 +184,7 @@ func issueCertForWebhook(certMgr *certificate.Manager, mc configurator.Configura
 		if err := os.WriteFile(
 			fileName,
 			data,
-			420); err != nil {
+			0420); err != nil {
 			log.Error().Msgf("error writing file %q, %s", fileName, err.Error())
 			return nil, err
 		}

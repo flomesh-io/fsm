@@ -28,7 +28,6 @@ import (
 	"fmt"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -246,24 +245,24 @@ func (sct *ServiceChangeTracker) shouldSkipService(svc *corev1.Service) bool {
 	return false
 }
 
-func (sct *ServiceChangeTracker) serviceImportExists(svc *corev1.Service) bool {
-	_, err := sct.informers.GetListers().ServiceImport.
-		ServiceImports(svc.Namespace).
-		Get(svc.Name)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// do nothing, not exists, go ahead and check svc
-			log.Info().Msgf("ServiceImport %s/%s doesn't exist", svc.Namespace, svc.Name)
-			return false
-		}
-
-		log.Warn().Msgf("Failed to get ServiceImport %s/%s, %s", svc.Namespace, svc.Name, err)
-
-		return false
-	}
-
-	return true
-}
+//func (sct *ServiceChangeTracker) serviceImportExists(svc *corev1.Service) bool {
+//	_, err := sct.informers.GetListers().ServiceImport.
+//		ServiceImports(svc.Namespace).
+//		Get(svc.Name)
+//	if err != nil {
+//		if errors.IsNotFound(err) {
+//			// do nothing, not exists, go ahead and check svc
+//			log.Info().Msgf("ServiceImport %s/%s doesn't exist", svc.Namespace, svc.Name)
+//			return false
+//		}
+//
+//		log.Warn().Msgf("Failed to get ServiceImport %s/%s, %s", svc.Namespace, svc.Name, err)
+//
+//		return false
+//	}
+//
+//	return true
+//}
 
 func (sm *ServiceMap) apply(changes *ServiceChangeTracker) {
 	changes.lock.Lock()

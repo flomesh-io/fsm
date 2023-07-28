@@ -2,7 +2,6 @@ package pipy
 
 import (
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
@@ -14,8 +13,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
@@ -125,24 +122,24 @@ func (c *client) onChange(oldObj, newObj interface{}) bool {
 	}
 }
 
-func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
-	switch obj.(type) {
-	case *corev1.Service:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyService)
-	case *mcsv1alpha1.ServiceImport:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyServiceImport)
-	case *corev1.Endpoints:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpoints)
-	case *corev1.Secret:
-		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
-	case *networkingv1.Ingress:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyK8sIngress)
-	case *networkingv1.IngressClass:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyK8sIngressClass)
-	}
-
-	return nil
-}
+//func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
+//	switch obj.(type) {
+//	case *corev1.Service:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeyService)
+//	case *mcsv1alpha1.ServiceImport:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeyServiceImport)
+//	case *corev1.Endpoints:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpoints)
+//	case *corev1.Secret:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
+//	case *networkingv1.Ingress:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeyK8sIngress)
+//	case *networkingv1.IngressClass:
+//		return getEventTypesByInformerKey(fsminformers.InformerKeyK8sIngressClass)
+//	}
+//
+//	return nil
+//}
 
 func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.EventTypes {
 	switch informerKey {

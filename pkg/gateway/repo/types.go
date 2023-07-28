@@ -16,12 +16,12 @@ type Server struct {
 	//fsmNamespace    string
 	cfg configurator.Configurator
 	//certManager     *certificate.Manager
-	ready      bool
+	//ready      bool
 	workQueues *workerpool.WorkerPool
 	//kubeController  k8s.Controller
-	msgBroker       *messaging.Broker
-	cache           cache.Cache
-	retryProxiesJob func()
+	msgBroker *messaging.Broker
+	cache     cache.Cache
+	//retryProxiesJob func()
 }
 
 func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache cache.Cache) *Server {
