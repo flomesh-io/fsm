@@ -21,10 +21,10 @@ COPY . .
 # Build
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH LDFLAGS=$LDFLAGS make build/fsm-ingress
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o bin/fsm-ingress -ldflags "$LDFLAGS" ./cmd/fsm-ingress
 
 # Build the final image
-FROM flomesh/pipy:0.90.2-33-$DISTROLESS_TAG
+FROM flomesh/pipy:0.90.2-41-$DISTROLESS_TAG
 WORKDIR /
 COPY --from=builder /fsm/bin/fsm-ingress .
 

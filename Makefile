@@ -1,6 +1,4 @@
 #!make
-include VERSION
-export $(shell sed 's/=.*//' VERSION)
 
 TARGETS      := darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 BINNAME      ?= fsm
@@ -70,13 +68,9 @@ generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and
 	$(CONTROLLER_GEN) object:headerFile="codegen/boilerplate.go.txt" paths="./..."
 
 .PHONY: build
-build: generate go-fmt go-vet ## Build commands with release args, the result will be optimized.
+build: charts-tgz generate go-fmt go-vet ## Build commands with release args, the result will be optimized.
 	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
-
-.PHONY: build/fsm-bootstrap build/fsm-connector build/fsm-controller build/fsm-gateway build/fsm-healthcheck build/fsm-ingress build/fsm-injector build/fsm-interceptor build/fsm-preinstall
-build/fsm-bootstrap build/fsm-connector build/fsm-controller build/fsm-gateway build/fsm-healthcheck build/fsm-ingress build/fsm-injector build/fsm-interceptor build/fsm-preinstall:
-	CGO_ENABLED=0 go build -v -o $(BUILD_DIR)/$(@F) -ldflags ${LDFLAGS} ./cmd/$(@F)
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector/consul,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
 
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
@@ -85,20 +79,18 @@ build-fsm: helm-update-dep cmd/cli/chart.tgz
 cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/fsm)
 	go run $< > $@
 
-helm-update-dep:
-	helm dependency update charts/fsm/
+helm-update-dep: helm
+	$(HELM) dependency update charts/fsm/
+	$(HELM) dependency update charts/gateway/
+	$(HELM) dependency update charts/namespacedingress/
 
 .PHONY: package-scripts
 package-scripts: ## Tar all repo initializing scripts
 	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
 
-.PHONY: charts-tgz-rel
-charts-tgz-rel: helm
-	export PACKAGED_APP_VERSION=$(APP_VERSION) HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
-
-.PHONY: charts-tgz-dev
-charts-tgz-dev: helm
-	export PACKAGED_APP_VERSION=$(APP_VERSION)-dev HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
+.PHONY: charts-tgz
+charts-tgz: helm
+	export PACKAGED_APP_VERSION=$(VERSION) HELM_CHART_VERSION=$(VERSION) HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -242,12 +234,20 @@ docker-build-fsm-interceptor:
 docker-build-fsm-consul-connector:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-consul-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-consul-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
-TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector
-FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor
+.PHONY: docker-build-fsm-ingress
+docker-build-fsm-ingress:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-ingress:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-ingress --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
+
+.PHONY: docker-build-fsm-gateway
+docker-build-fsm-gateway:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
+
+TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
+FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor fsm-ingress fsm-gateway
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 
 .PHONY: docker-build-fsm
-docker-build-fsm: $(DOCKER_FSM_TARGETS)
+docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:
@@ -348,7 +348,7 @@ endif
 ifeq (,$(shell [[ "$(RELEASE_VERSION)" =~ $(VERSION_REGEXP) ]] && echo 1))
 	$(error "Version $(RELEASE_VERSION) must match regexp $(VERSION_REGEXP)")
 endif
-	git tag --sign --message "$(PROJECT_NAME) $(RELEASE_VERSION)" $(RELEASE_VERSION)
+	git tag --sign --message "fsm $(RELEASE_VERSION)" $(RELEASE_VERSION)
 	git verify-tag --verbose $(RELEASE_VERSION)
 	git push origin --tags
 

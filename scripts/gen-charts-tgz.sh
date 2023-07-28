@@ -35,8 +35,8 @@ set -o pipefail
 DIR=$(cd $(dirname "${BASH_SOURCE}")/.. && pwd -P)
 echo "Current DIR is ${DIR}"
 
-CLI_PATH=cmd/cli
-FSM_CHART_PATH=charts/fsm
+#CLI_PATH=cmd/cli
+#FSM_CHART_PATH=charts/fsm
 NAMESPACED_INGRESS_CHART_PATH=charts/namespaced-ingress
 NAMESPACED_INGRESS_CONTROLLER_PATH=pkg/controllers/namespacedingress/v1alpha1
 GATEWAY_CHART_PATH=charts/gateway
@@ -46,10 +46,10 @@ GATEWAY_CONTROLLER_PATH=pkg/controllers/gateway/v1beta1
 ########################################################
 # package fsm chart
 ########################################################
-${HELM_BIN} dependency update ${FSM_CHART_PATH}/
-${HELM_BIN} lint ${FSM_CHART_PATH}/
-${HELM_BIN} package ${FSM_CHART_PATH}/ -d ${CLI_PATH}/ --app-version="${PACKAGED_APP_VERSION}" --version=${HELM_CHART_VERSION}
-mv ${CLI_PATH}/fsm-${HELM_CHART_VERSION}.tgz ${CLI_PATH}/chart.tgz
+#${HELM_BIN} dependency update ${FSM_CHART_PATH}/
+#${HELM_BIN} lint ${FSM_CHART_PATH}/
+#${HELM_BIN} package ${FSM_CHART_PATH}/ -d ${CLI_PATH}/ --app-version="${PACKAGED_APP_VERSION}" --version=${HELM_CHART_VERSION}
+#mv ${CLI_PATH}/fsm-${HELM_CHART_VERSION}.tgz ${CLI_PATH}/chart.tgz
 
 ########################################################
 # package namespaced-ingress chart

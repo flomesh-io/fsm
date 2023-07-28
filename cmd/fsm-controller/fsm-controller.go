@@ -11,6 +11,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/manager/basic"
+	"github.com/flomesh-io/fsm/pkg/manager/listeners"
 	"github.com/flomesh-io/fsm/pkg/manager/logging"
 	recon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
@@ -432,7 +433,7 @@ func main() {
 	}
 
 	if cfg.IsIngressEnabled() {
-		go k8s.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, repoClient, stop)
+		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, repoClient, stop)
 	}
 
 	if err := mgr.Start(ctx); err != nil {
