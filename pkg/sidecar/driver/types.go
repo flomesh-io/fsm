@@ -2,14 +2,11 @@ package driver
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/runtime"
-	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"net/http"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -66,6 +63,4 @@ type ControllerContext struct {
 	CancelFunc       func()
 	Stop             chan struct {
 	}
-	Manager manager.Manager
-	Scheme  *runtime.Scheme
 }
