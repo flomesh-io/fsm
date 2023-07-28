@@ -82,7 +82,7 @@ cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/
 helm-update-dep: helm
 	$(HELM) dependency update charts/fsm/
 	$(HELM) dependency update charts/gateway/
-	$(HELM) dependency update charts/namespacedingress/
+	$(HELM) dependency update charts/namespaced-ingress/
 
 .PHONY: package-scripts
 package-scripts: ## Tar all repo initializing scripts
