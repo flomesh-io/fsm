@@ -79,6 +79,12 @@ build-fsm: helm-update-dep cmd/cli/chart.tgz
 cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/fsm)
 	go run $< > $@
 
+pkg/controllers/namespacedingress/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/namespaced-ingress)
+	go run $< > $@
+
+pkg/controllers/gateway/v1beta1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
+	go run $< > $@
+
 helm-update-dep: helm
 	$(HELM) dependency update charts/fsm/
 	$(HELM) dependency update charts/gateway/
@@ -89,8 +95,7 @@ package-scripts: ## Tar all repo initializing scripts
 	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
 
 .PHONY: charts-tgz
-charts-tgz: helm
-	export PACKAGED_APP_VERSION=$(VERSION) HELM_CHART_VERSION=$(VERSION) HELM_BIN=$(LOCALBIN)/helm && ./scripts/gen-charts-tgz.sh
+charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1beta1/chart.tgz
 
 .PHONY: clean-fsm
 clean-fsm:
