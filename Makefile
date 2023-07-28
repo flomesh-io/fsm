@@ -277,7 +277,7 @@ docker-build-cross-demo: docker-build-demo
 docker-build-cross: docker-build-cross-fsm docker-build-cross-demo
 
 .PHONY: embed-files
-embed-files: helm-update-dep cmd/cli/chart.tgz
+embed-files: helm-update-dep cmd/cli/chart.tgz charts-tgz
 
 .PHONY: embed-files-test
 embed-files-test:

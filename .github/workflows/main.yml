@@ -111,6 +111,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Package Helm Charts
+        run: make charts-tgz
       - name: Go Build
         run: make build-ci
 
