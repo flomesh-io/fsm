@@ -93,6 +93,9 @@ type Configurator interface {
 	// GetRemoteLoggingSampledFraction returns the sampled fraction
 	GetRemoteLoggingSampledFraction() float32
 
+	// GetRemoteLoggingSecretName returns the name of secret that contains the access entity that allows to authorize someone in remote logging service.
+	GetRemoteLoggingSecretName() string
+
 	// GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
 	GetMaxDataPlaneConnections() int
 

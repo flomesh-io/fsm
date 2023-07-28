@@ -541,6 +541,8 @@ fsm:
     authorization: ""
     # -- Sampled Fraction
     sampledFraction: "1.0"
+    # -- Secret Name
+    secretName: "fsm-remote-logging-secret"
 
   # -- Specifies a global list of IP ranges to exclude from outbound traffic interception by the sidecar proxy.
   # If specified, must be a list of IP ranges of the form a.b.c.d/x.

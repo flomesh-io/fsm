@@ -1217,7 +1217,8 @@
                         "enable",
                         "address",
                         "port",
-                        "endpoint"
+                        "endpoint",
+                        "secretName"
                     ],
                     "properties": {
                         "enable": {
@@ -1275,6 +1276,16 @@
                             "examples": [
                                 "0.2"
                             ]
+                        },
+                        "secretName": {
+                          "$id": "#/properties/fsm/properties/remoteLogging/properties/secretName",
+                          "type": "string",
+                          "title": "The secret name for remote logging service",
+                          "description": "The secret name for remote logging service",
+                          "default": "fsm-remote-logging-secret",
+                          "examples": [
+                            "fsm-remote-logging-secret"
+                          ]
                         }
                     },
                     "additionalProperties": false

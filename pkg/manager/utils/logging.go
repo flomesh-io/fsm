@@ -71,18 +71,18 @@ func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, r
 		return "", err
 	}
 
-	if mc.Logging.Enabled {
+	if mc.IsRemoteLoggingEnabled() {
 		secret, err := getLoggingSecret(kubeClient, mc)
 		if err != nil {
 			return "", err
 		}
 
 		if secret == nil {
-			return "", fmt.Errorf("secret %q doesn't exist", mc.Logging.SecretName)
+			return "", fmt.Errorf("secret %q doesn't exist", mc.GetRemoteLoggingSecretName())
 		}
 
 		for path, value := range map[string]interface{}{
-			"logging.enabled": mc.Logging.Enabled,
+			"logging.enabled": mc.IsRemoteLoggingEnabled(),
 			"logging.url":     string(secret.Data["url"]),
 			"logging.token":   string(secret.Data["token"]),
 			"plugins":         loggingEnabledPluginsChain,
@@ -95,7 +95,7 @@ func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, r
 		}
 	} else {
 		for path, value := range map[string]interface{}{
-			"logging.enabled": mc.Logging.Enabled,
+			"logging.enabled": mc.IsRemoteLoggingEnabled(),
 			"plugins":         loggingDisabledPluginsChain,
 		} {
 			json, err = sjson.Set(json, path, value)
@@ -110,8 +110,8 @@ func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, r
 }
 
 func getLoggingSecret(kubeClient kubernetes.Interface, mc configurator.Configurator) (*corev1.Secret, error) {
-	if mc.Logging.Enabled {
-		secretName := mc.Logging.SecretName
+	if mc.IsRemoteLoggingEnabled() {
+		secretName := mc.GetRemoteLoggingSecretName()
 		secret, err := kubeClient.CoreV1().
 			Secrets(mc.GetFSMNamespace()).
 			Get(context.TODO(), secretName, metav1.GetOptions{})
