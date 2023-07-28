@@ -91,7 +91,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
-	k8s.io/klog/v2 v2.100.1
 	k8s.io/kubectl v0.26.6
 	k8s.io/kubernetes v1.26.6
 )
@@ -420,6 +419,7 @@ require (
 	k8s.io/component-helpers v0.26.6 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/helm v2.14.3+incompatible // indirect
+	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	mvdan.cc/gofumpt v0.1.1 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
