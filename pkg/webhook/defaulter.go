@@ -46,7 +46,7 @@ func (h *mutatingHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 // Handle handles admission requests.
-func (h *mutatingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *mutatingHandler) Handle(_ context.Context, req admission.Request) admission.Response {
 	if h.defaulter == nil {
 		panic("defaulter should never be nil")
 	}

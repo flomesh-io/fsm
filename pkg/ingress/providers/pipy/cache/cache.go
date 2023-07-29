@@ -31,6 +31,12 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/events"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
@@ -38,11 +44,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/flomesh-io/fsm/pkg/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/events"
 )
 
 // Cache is the type used to represent the cache for the ingress controller

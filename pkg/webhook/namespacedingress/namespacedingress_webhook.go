@@ -26,12 +26,8 @@ package namespacedingress
 
 import (
 	"context"
-	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
-	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
-	"github.com/flomesh-io/fsm/pkg/webhook"
+	"net/http"
+
 	"github.com/pkg/errors"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,19 +35,27 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
-	"net/http"
+
+	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new register for the namespacedingress resources
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the webhooks for the namespacedingress resources
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -83,6 +87,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the handlers for the namespacedingress resources
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -102,10 +107,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object for the defaulter
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &nsigv1alpha1.NamespacedIngress{}
 }
 
+// SetDefaults sets the default values for the namespacedingress resource
 func (w *defaulter) SetDefaults(obj interface{}) {
 	c, ok := obj.(*nsigv1alpha1.NamespacedIngress)
 	if !ok {
@@ -162,10 +169,12 @@ type validator struct {
 	nsigClient nsigClientset.Interface
 }
 
+// RuntimeObject returns the runtime object for the validator
 func (w *validator) RuntimeObject() runtime.Object {
 	return &nsigv1alpha1.NamespacedIngress{}
 }
 
+// ValidateCreate validates the creation of the namespacedingress resource
 func (w *validator) ValidateCreate(obj interface{}) error {
 	namespacedingress, ok := obj.(*nsigv1alpha1.NamespacedIngress)
 	if !ok {
@@ -183,7 +192,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	// There's already an NamespacedIngress in this namespace, return error
 	if len(list.Items) > 0 {
 		return errors.Errorf(
-			"There's already %d NamespacedIngress(s) in namespace %q. Each namespace can have ONLY ONE NamespacedIngress.",
+			"there's already %d NamespacedIngress(s) in namespace %q. Each namespace can have ONLY ONE NamespacedIngress",
 			len(list.Items),
 			namespacedingress.Namespace,
 		)
@@ -192,7 +201,8 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(namespacedingress)
 }
 
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+// ValidateUpdate validates the update of the namespacedingress resource
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	//oldNamespacedIngress, ok := oldObj.(*nsigv1alpha1.NamespacedIngress)
 	//if !ok {
 	//	return nil
@@ -210,7 +220,8 @@ func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	return doValidation(obj)
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+// ValidateDelete validates the deletion of the namespacedingress resource
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
@@ -221,6 +232,6 @@ func newValidator(kubeClient kubernetes.Interface, nsigClient nsigClientset.Inte
 	}
 }
 
-func doValidation(obj interface{}) error {
+func doValidation(_ interface{}) error {
 	return nil
 }

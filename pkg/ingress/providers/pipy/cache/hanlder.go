@@ -1,10 +1,11 @@
 package cache
 
 import (
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // OnAdd is called whenever a new object is added to the store.

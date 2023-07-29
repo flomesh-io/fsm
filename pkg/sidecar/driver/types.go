@@ -2,11 +2,12 @@ package driver
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"net/http"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"

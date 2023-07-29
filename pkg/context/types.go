@@ -22,22 +22,25 @@
  * SOFTWARE.
  */
 
+// Package context provides the context for the controller
 package context
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
+// ControllerContext is the context for the controller
 type ControllerContext struct {
 	client.Client
 	Manager            manager.Manager

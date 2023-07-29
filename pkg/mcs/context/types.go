@@ -29,8 +29,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/mcs/config"
 	"k8s.io/client-go/rest"
+
+	"github.com/flomesh-io/fsm/pkg/mcs/config"
 )
 
 // ConnectorContext is the context that is used in the mcs package

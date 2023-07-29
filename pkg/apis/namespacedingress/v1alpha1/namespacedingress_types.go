@@ -201,7 +201,3 @@ type NamespacedIngressList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []NamespacedIngress `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&NamespacedIngress{}, &NamespacedIngressList{})
-}

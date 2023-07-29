@@ -26,9 +26,10 @@
 package event
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/mcs/config"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // ServiceExportEvent is the event that is used to notify the mcs package

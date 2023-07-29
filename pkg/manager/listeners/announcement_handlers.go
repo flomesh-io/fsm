@@ -1,7 +1,15 @@
+// Package listeners contains the event handlers for the ingress controller
 package listeners
 
 import (
 	"context"
+
+	"github.com/rs/zerolog/log"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
@@ -11,12 +19,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/rs/zerolog/log"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
 )
 
 // WatchAndUpdateIngressConfig watches for log level changes and updates the global log level

@@ -12,8 +12,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 	"strconv"
+
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
 	admissionv1 "k8s.io/api/admissionregistration/v1"

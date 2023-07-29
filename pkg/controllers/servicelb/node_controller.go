@@ -27,14 +27,15 @@ package servicelb
 import (
 	"context"
 
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 )
 
 // NodeReconciler reconciles a Node object
@@ -107,6 +108,7 @@ func (r *nodeReconciler) updateDaemonSets(ctx context.Context) error {
 	}
 
 	for _, ds := range daemonsets.Items {
+		ds := ds // fix lint, G601: Implicit memory aliasing in for loop.
 		ds.Spec.Template.Spec.NodeSelector = map[string]string{
 			daemonsetNodeLabel: "true",
 		}

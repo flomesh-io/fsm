@@ -26,8 +26,9 @@
 package v1alpha1
 
 import (
-	"github.com/flomesh-io/fsm/pkg/logger"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 const (

@@ -27,26 +27,27 @@ package webhook
 import (
 	"net/http"
 
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 )
 
-// WebhookObject is the interface for webhook objects
-type WebhookObject interface {
+// Object is the interface for webhook objects
+type Object interface {
 	RuntimeObject() runtime.Object
 }
 
 // Defaulter is the interface for webhook defaulters
 type Defaulter interface {
-	WebhookObject
+	Object
 	SetDefaults(obj interface{})
 }
 
 // Validator is the interface for webhook validators
 type Validator interface {
-	WebhookObject
+	Object
 	ValidateCreate(obj interface{}) error
 	ValidateUpdate(oldObj, obj interface{}) error
 	ValidateDelete(obj interface{}) error

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package ingress contains webhook logic for the Ingress resource
 package ingress
 
 import (
@@ -29,16 +30,17 @@ import (
 	"fmt"
 	"net/http"
 
-	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
-	"github.com/flomesh-io/fsm/pkg/utils"
-	"github.com/flomesh-io/fsm/pkg/webhook"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+
+	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
+	"github.com/flomesh-io/fsm/pkg/utils"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 type register struct {
@@ -102,10 +104,12 @@ func newDefaulter(kubeClient kubernetes.Interface) *defaulter {
 	}
 }
 
+// RuntimeObject returns the runtime object
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &networkingv1.Ingress{}
 }
 
+// SetDefaults sets the default values for the ingress
 func (w *defaulter) SetDefaults(obj interface{}) {
 	ing, ok := obj.(*networkingv1.Ingress)
 	if !ok {
@@ -121,18 +125,22 @@ type validator struct {
 	kubeClient kubernetes.Interface
 }
 
+// RuntimeObject returns the runtime object
 func (w *validator) RuntimeObject() runtime.Object {
 	return &networkingv1.Ingress{}
 }
 
+// ValidateCreate validates the ingress creation
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return w.doValidation(obj)
 }
 
+// ValidateUpdate validates the ingress update
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
+// ValidateDelete validates the ingress deletion
 func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }

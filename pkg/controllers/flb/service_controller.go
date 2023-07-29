@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package flb implements the controller for Flomesh Load Balancer.
 package flb
 
 import (
@@ -35,13 +36,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/flb"
-	"github.com/flomesh-io/fsm/pkg/logger"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"github.com/sethvargo/go-retry"
 	corev1 "k8s.io/api/core/v1"
@@ -59,6 +53,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/flb"
+	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 const (
@@ -97,19 +99,19 @@ type setting struct {
 	hash                  string
 }
 
-// FlbAuthRequest is the request body for FLB authentication
-type FlbAuthRequest struct {
+// AuthRequest is the request body for FLB authentication
+type AuthRequest struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
 }
 
-// FlbAuthResponse is the response body for FLB authentication
-type FlbAuthResponse struct {
+// AuthResponse is the response body for FLB authentication
+type AuthResponse struct {
 	Token string `json:"jwt"`
 }
 
-// FlbResponse is the response body for FLB API
-type FlbResponse struct {
+// BalancerAPIResponse is the response body for FLB API
+type BalancerAPIResponse struct {
 	LBIPs []string `json:"LBIPs"`
 }
 
@@ -153,6 +155,7 @@ func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	}
 
 	for _, secret := range secrets.Items {
+		secret := secret // fix lint GO-LOOP-REF
 		if mc.IsFLBStrictModeEnabled() {
 			settings[secret.Namespace] = newSetting(&secret)
 		} else {
@@ -333,11 +336,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			if mc.IsFLBStrictModeEnabled() {
 				defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "GetSecretFailed", "In StrictMode, FLB secret %s/%s must exist", svc.Namespace, mc.GetFLBSecretName())
 				return ctrl.Result{}, err
-			} else {
-				if r.settings[svc.Namespace] == nil {
-					defer r.recorder.Eventf(svc, corev1.EventTypeNormal, "UseDefaultSecret", "FLB Secret %s/%s doesn't exist, using default ...", svc.Namespace, mc.GetFLBSecretName())
-					r.settings[svc.Namespace] = r.settings[flbDefaultSettingKey]
-				}
+			}
+
+			if r.settings[svc.Namespace] == nil {
+				defer r.recorder.Eventf(svc, corev1.EventTypeNormal, "UseDefaultSecret", "FLB Secret %s/%s doesn't exist, using default ...", svc.Namespace, mc.GetFLBSecretName())
+				r.settings[svc.Namespace] = r.settings[flbDefaultSettingKey]
 			}
 		case 1:
 			secret := &secrets.Items[0]
@@ -444,15 +447,7 @@ func secretHasRequiredLabel(secret *corev1.Secret) bool {
 		return false
 	}
 
-	switch strings.ToLower(value) {
-	case "yes", "true", "1", "y", "t":
-		return true
-	case "no", "false", "0", "n", "f", "":
-		return false
-	default:
-		log.Warn().Msgf("%s doesn't have a valid value: %q", constants.FlbSecretLabel, value)
-		return false
-	}
+	return utils.ParseEnabled(value)
 }
 
 func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
@@ -582,7 +577,7 @@ func getFlbParameters(svc *corev1.Service) map[string]string {
 	}
 }
 
-func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, result map[string][]string, del bool) (*FlbResponse, error) {
+func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, result map[string][]string, del bool) (*BalancerAPIResponse, error) {
 	if r.settings[svc.Namespace].token == "" {
 		token, err := r.loginFLB(svc.Namespace)
 		if err != nil {
@@ -615,11 +610,10 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 				r.settings[svc.Namespace].token = token
 
 				return retry.RetryableError(err)
-			} else {
-				defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "InvokeFLBApiError", "Failed to invoke FLB API: %s", err)
-
-				return err
 			}
+
+			defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "InvokeFLBApiError", "Failed to invoke FLB API: %s", err)
+			return err
 		}
 
 		return nil
@@ -630,7 +624,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 		return nil, err
 	}
 
-	return resp.Result().(*FlbResponse), nil
+	return resp.Result().(*BalancerAPIResponse), nil
 }
 
 func (r *reconciler) invokeFlbAPI(namespace string, params map[string]string, result map[string][]string, del bool) (*resty.Response, int, error) {
@@ -640,7 +634,7 @@ func (r *reconciler) invokeFlbAPI(namespace string, params map[string]string, re
 		SetHeader(flbUserHeaderName, setting.flbUser).
 		SetAuthToken(setting.token).
 		SetBody(result).
-		SetResult(&FlbResponse{})
+		SetResult(&BalancerAPIResponse{})
 
 	for h, v := range params {
 		if v != "" {
@@ -677,8 +671,8 @@ func (r *reconciler) loginFLB(namespace string) (string, error) {
 	setting := r.settings[namespace]
 	resp, err := setting.httpClient.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(FlbAuthRequest{Identifier: setting.flbUser, Password: setting.flbPassword}).
-		SetResult(&FlbAuthResponse{}).
+		SetBody(AuthRequest{Identifier: setting.flbUser, Password: setting.flbPassword}).
+		SetResult(&AuthResponse{}).
 		Post(flbAuthAPIPath)
 
 	if err != nil {
@@ -691,7 +685,7 @@ func (r *reconciler) loginFLB(namespace string) (string, error) {
 		return "", fmt.Errorf("StatusCode: %d", resp.StatusCode())
 	}
 
-	return resp.Result().(*FlbAuthResponse).Token, nil
+	return resp.Result().(*AuthResponse).Token, nil
 }
 
 func (r *reconciler) updateService(ctx context.Context, svc *corev1.Service, _ configurator.Configurator, lbAddresses []string) error {
@@ -877,6 +871,7 @@ func (r *reconciler) servicesByNamespace(ns client.Object) []reconcile.Request {
 	requests := make([]reconcile.Request, 0)
 
 	for _, svc := range services.Items {
+		svc := svc // fix lint GO-LOOP-REF
 		if flb.IsFlbEnabled(&svc, r.fctx.KubeClient) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

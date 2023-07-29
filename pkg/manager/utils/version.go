@@ -3,9 +3,10 @@ package utils
 import (
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/tidwall/sjson"
 )
 
 // UpdateMainVersion updates main version of ingress controller

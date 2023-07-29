@@ -27,14 +27,15 @@ package v1alpha1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
 )
 
 // endpointSliceReconciler reconciles an EndpointSlice object

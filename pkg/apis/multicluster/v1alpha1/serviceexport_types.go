@@ -25,9 +25,10 @@
 package v1alpha1
 
 import (
-	commons "github.com/flomesh-io/fsm/pkg/apis"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	commons "github.com/flomesh-io/fsm/pkg/apis"
 )
 
 // ServiceExportRule defines the rule for service export
@@ -153,8 +154,4 @@ type ServiceExportList struct {
 	// List of endpoint slices
 	// +listType=set
 	Items []ServiceExport `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&ServiceExport{}, &ServiceExportList{})
 }

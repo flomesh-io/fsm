@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package repo contains the repo utilities
 package repo
 
 import (
@@ -31,13 +32,14 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/flomesh-io/fsm/pkg/utils"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (

@@ -1,3 +1,5 @@
+//lint:file-ignore U1000 Ignore all unused code, it's test code.
+
 // Package scale implements scale test's methods.
 package scale
 

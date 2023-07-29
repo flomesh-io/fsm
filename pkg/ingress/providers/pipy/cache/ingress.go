@@ -32,12 +32,6 @@ import (
 	"strings"
 	"sync"
 
-	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
-	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,6 +39,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
+
+	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
+	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 type baseIngressInfo struct {
@@ -283,6 +284,7 @@ func (t *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) In
 	ingKey := ingresspipy.MetaNamespaceKey(ing)
 
 	for _, rule := range ing.Spec.Rules {
+		rule := rule // fix lint GO-LOOP-REF
 		if rule.HTTP == nil {
 			continue
 		}
@@ -466,15 +468,7 @@ func (t *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRule,
 
 	// enrich session sticky
 	sticky := ing.Annotations[constants.PipyIngressAnnotationSessionSticky]
-	switch strings.ToLower(sticky) {
-	case "yes", "true", "1", "on":
-		info.sessionSticky = true
-	case "no", "false", "0", "off", "":
-		info.sessionSticky = false
-	default:
-		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/session-sticky of Ingress %s/%s, setting session sticky to false", sticky, ing.Namespace, ing.Name)
-		info.sessionSticky = false
-	}
+	info.sessionSticky = utils.ParseEnabled(sticky)
 
 	// enrich LB type
 	lbValue := ing.Annotations[constants.PipyIngressAnnotationLoadBalancer]
@@ -519,27 +513,11 @@ func (t *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRule,
 	if info.upstream == nil {
 		info.upstream = &repocfg.UpstreamSpec{}
 	}
-	switch strings.ToLower(upstreamSSLVerify) {
-	case "yes", "true", "1", "on":
-		info.upstream.SSLVerify = true
-	case "no", "false", "0", "off", "":
-		info.upstream.SSLVerify = false
-	default:
-		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-verify of Ingress %s/%s, setting upstream-ssl-verify to false", upstreamSSLVerify, ing.Namespace, ing.Name)
-		info.upstream.SSLVerify = false
-	}
+	info.upstream.SSLVerify = utils.ParseEnabled(upstreamSSLVerify)
 
 	// Verify Client
 	verifyClient := ing.Annotations[constants.PipyIngressAnnotationTLSVerifyClient]
-	switch strings.ToLower(verifyClient) {
-	case "yes", "true", "1", "on":
-		info.verifyClient = true
-	case "no", "false", "0", "off", "":
-		info.verifyClient = false
-	default:
-		log.Warn().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-verify-client of Ingress %s/%s, setting verify client to false", verifyClient, ing.Namespace, ing.Name)
-		info.verifyClient = false
-	}
+	info.verifyClient = utils.ParseEnabled(verifyClient)
 
 	// Verify Depth
 	verifyDepth := ing.Annotations[constants.PipyIngressAnnotationTLSVerifyDepth]
@@ -602,26 +580,26 @@ func (t *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule, 
 		cert := t.fetchSSLCert(ing, ing.Namespace, tls.SecretName)
 		if cert == nil {
 			continue
-		} else {
-			if cert.Cert == "" || cert.Key == "" {
-				log.Warn().Msgf("Empty Certificate/PrivateKey from secret %s/%s", ing.Namespace, tls.SecretName)
-				continue
-			}
-
-			x509Cert, err := utils.ConvertPEMCertToX509([]byte(cert.Cert))
-			if err != nil {
-				log.Warn().Msgf("Failed to convert PEM cert to X509: %s", err)
-				continue
-			}
-
-			if err := x509Cert.VerifyHostname(host); err != nil {
-				log.Warn().Msgf("Failed validating SSL certificate %s/%s for host %q: %v", ing.Namespace, tls.SecretName, host, err)
-				continue
-			}
-
-			log.Info().Msgf("Found SSL certificate matching host %q: %s/%s", host, ing.Namespace, tls.SecretName)
-			return tls.SecretName
 		}
+
+		if cert.Cert == "" || cert.Key == "" {
+			log.Warn().Msgf("Empty Certificate/PrivateKey from secret %s/%s", ing.Namespace, tls.SecretName)
+			continue
+		}
+
+		x509Cert, err := utils.ConvertPEMCertToX509([]byte(cert.Cert))
+		if err != nil {
+			log.Warn().Msgf("Failed to convert PEM cert to X509: %s", err)
+			continue
+		}
+
+		if err := x509Cert.VerifyHostname(host); err != nil {
+			log.Warn().Msgf("Failed validating SSL certificate %s/%s for host %q: %v", ing.Namespace, tls.SecretName, host, err)
+			continue
+		}
+
+		log.Info().Msgf("Found SSL certificate matching host %q: %s/%s", host, ing.Namespace, tls.SecretName)
+		return tls.SecretName
 	}
 
 	return ""

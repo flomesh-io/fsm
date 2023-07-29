@@ -3,10 +3,6 @@ package cache
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway/route"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,6 +11,11 @@ import (
 	"k8s.io/utils/pointer"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) string {
@@ -25,10 +26,10 @@ func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObje
 	return string(*secretRef.Namespace)
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRuleSpec {
-	httpSpec := route.HTTPRouteRuleSpec{
-		RouteType: route.RouteTypeHTTP,
-		Matches:   make([]route.HTTPTrafficMatch, 0),
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) routecfg.HTTPRouteRuleSpec {
+	httpSpec := routecfg.HTTPRouteRuleSpec{
+		RouteType: routecfg.L7RouteTypeHTTP,
+		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
 	}
 
 	for _, rule := range httpRoute.Spec.Rules {
@@ -41,12 +42,12 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRule
 		}
 
 		for _, m := range rule.Matches {
-			match := route.HTTPTrafficMatch{
+			match := routecfg.HTTPTrafficMatch{
 				BackendService: backends,
 			}
 
 			if m.Path != nil {
-				match.Path = &route.Path{
+				match.Path = &routecfg.Path{
 					MatchType: httpPathMatchType(m.Path.Type),
 					Path:      httpPath(m.Path.Value),
 				}
@@ -70,20 +71,20 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRule
 	return httpSpec
 }
 
-func httpPathMatchType(matchType *gwv1beta1.PathMatchType) route.MatchType {
+func httpPathMatchType(matchType *gwv1beta1.PathMatchType) routecfg.MatchType {
 	if matchType == nil {
-		return route.MatchTypePrefix
+		return routecfg.MatchTypePrefix
 	}
 
 	switch *matchType {
 	case gwv1beta1.PathMatchPathPrefix:
-		return route.MatchTypePrefix
+		return routecfg.MatchTypePrefix
 	case gwv1beta1.PathMatchExact:
-		return route.MatchTypeExact
+		return routecfg.MatchTypeExact
 	case gwv1beta1.PathMatchRegularExpression:
-		return route.MatchTypeRegex
+		return routecfg.MatchTypeRegex
 	default:
-		return route.MatchTypePrefix
+		return routecfg.MatchTypePrefix
 	}
 }
 
@@ -95,7 +96,7 @@ func httpPath(value *string) string {
 	return *value
 }
 
-func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[route.MatchType]map[string]string {
+func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -113,20 +114,20 @@ func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[route.MatchType]map[string
 		}
 	}
 
-	headers := make(map[route.MatchType]map[string]string)
+	headers := make(map[routecfg.MatchType]map[string]string)
 
 	if len(exact) > 0 {
-		headers[route.MatchTypeExact] = exact
+		headers[routecfg.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		headers[route.MatchTypeRegex] = regex
+		headers[routecfg.MatchTypeRegex] = regex
 	}
 
 	return headers
 }
 
-func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[route.MatchType]map[string]string {
+func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -144,22 +145,22 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[route.MatchType]map[st
 		}
 	}
 
-	params := make(map[route.MatchType]map[string]string)
+	params := make(map[routecfg.MatchType]map[string]string)
 	if len(exact) > 0 {
-		params[route.MatchTypeExact] = exact
+		params[routecfg.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		params[route.MatchTypeRegex] = regex
+		params[routecfg.MatchTypeRegex] = regex
 	}
 
 	return params
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) route.GRPCRouteRuleSpec {
-	grpcSpec := route.GRPCRouteRuleSpec{
-		RouteType: route.RouteTypeGRPC,
-		Matches:   make([]route.GRPCTrafficMatch, 0),
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) routecfg.GRPCRouteRuleSpec {
+	grpcSpec := routecfg.GRPCRouteRuleSpec{
+		RouteType: routecfg.L7RouteTypeGRPC,
+		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
 	}
 
 	for _, rule := range grpcRoute.Spec.Rules {
@@ -172,12 +173,12 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) route.GRPCRouteRuleSp
 		}
 
 		for _, m := range rule.Matches {
-			match := route.GRPCTrafficMatch{
+			match := routecfg.GRPCTrafficMatch{
 				BackendService: backends,
 			}
 
 			if m.Method != nil {
-				match.Method = &route.GRPCMethod{
+				match.Method = &routecfg.GRPCMethod{
 					MatchType: grpcMethodMatchType(m.Method.Type),
 					Service:   m.Method.Service,
 					Method:    m.Method.Method,
@@ -195,22 +196,22 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) route.GRPCRouteRuleSp
 	return grpcSpec
 }
 
-func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) route.MatchType {
+func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) routecfg.MatchType {
 	if matchType == nil {
-		return route.MatchTypeExact
+		return routecfg.MatchTypeExact
 	}
 
 	switch *matchType {
 	case gwv1alpha2.GRPCMethodMatchExact:
-		return route.MatchTypeExact
+		return routecfg.MatchTypeExact
 	case gwv1alpha2.GRPCMethodMatchRegularExpression:
-		return route.MatchTypeRegex
+		return routecfg.MatchTypeRegex
 	default:
-		return route.MatchTypeExact
+		return routecfg.MatchTypeExact
 	}
 }
 
-func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[route.MatchType]map[string]string {
+func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[routecfg.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -228,21 +229,21 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[route.MatchType]map[strin
 		}
 	}
 
-	headers := make(map[route.MatchType]map[string]string)
+	headers := make(map[routecfg.MatchType]map[string]string)
 
 	if len(exact) > 0 {
-		headers[route.MatchTypeExact] = exact
+		headers[routecfg.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		headers[route.MatchTypeRegex] = regex
+		headers[routecfg.MatchTypeRegex] = regex
 	}
 
 	return headers
 }
 
-func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) route.TLSBackendService {
-	backends := route.TLSBackendService{}
+func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) routecfg.TLSBackendService {
+	backends := routecfg.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
@@ -266,8 +267,8 @@ func generateTLSPassthroughRouteCfg(tlsRoute *gwv1alpha2.TLSRoute) *string {
 	return nil
 }
 
-func generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) route.RouteRule {
-	backends := route.TCPRouteRule{}
+func generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) routecfg.RouteRule {
+	backends := routecfg.TCPRouteRule{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
@@ -313,15 +314,15 @@ func allowedListeners(
 	return allowedListeners
 }
 
-func backendRefToServicePortName(ref gwv1beta1.BackendRef, defaultNs string) *route.ServicePortName {
+func backendRefToServicePortName(ref gwv1beta1.BackendRef, defaultNs string) *routecfg.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
-	if (*ref.Kind == "Service" && *ref.Group == "") || (*ref.Kind == "ServiceImport" && *ref.Group == "flomesh.io") {
+	if (*ref.Kind == KindService && *ref.Group == GroupCore) || (*ref.Kind == KindServiceImport && *ref.Group == GroupFlomeshIo) {
 		ns := defaultNs
 		if ref.Namespace != nil {
 			ns = string(*ref.Namespace)
 		}
 
-		return &route.ServicePortName{
+		return &routecfg.ServicePortName{
 			NamespacedName: types.NamespacedName{
 				Namespace: ns,
 				Name:      string(ref.Name),
@@ -335,7 +336,7 @@ func backendRefToServicePortName(ref gwv1beta1.BackendRef, defaultNs string) *ro
 
 func passthroughTarget(ref gwv1beta1.BackendRef) *string {
 	// ONLY supports service backend now
-	if *ref.Kind == "Service" && *ref.Group == "" {
+	if *ref.Kind == KindService && *ref.Group == GroupCore {
 		port := int32(443)
 		if ref.Port != nil {
 			port = int32(*ref.Port)
@@ -357,8 +358,8 @@ func backendWeight(bk gwv1beta1.BackendRef) int32 {
 	return 1
 }
 
-func mergeL7RouteRule(rule1 route.L7RouteRule, rule2 route.L7RouteRule) route.L7RouteRule {
-	mergedRule := route.L7RouteRule{}
+func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) routecfg.L7RouteRule {
+	mergedRule := routecfg.L7RouteRule{}
 
 	for hostname, rule := range rule1 {
 		mergedRule[hostname] = rule
@@ -368,17 +369,17 @@ func mergeL7RouteRule(rule1 route.L7RouteRule, rule2 route.L7RouteRule) route.L7
 		if r1, exists := mergedRule[hostname]; exists {
 			// can only merge same type of route into one hostname
 			switch r1 := r1.(type) {
-			case route.GRPCRouteRuleSpec:
+			case routecfg.GRPCRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case route.GRPCRouteRuleSpec:
+				case routecfg.GRPCRouteRuleSpec:
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
 				}
-			case route.HTTPRouteRuleSpec:
+			case routecfg.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case route.HTTPRouteRuleSpec:
+				case routecfg.HTTPRouteRuleSpec:
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:

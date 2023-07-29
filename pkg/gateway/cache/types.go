@@ -26,7 +26,7 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/route"
+	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
@@ -68,6 +68,23 @@ const (
 	TLSRoutesProcessorType ProcessorType = "tlsroutes"
 )
 
+const (
+	// KindService is the kind used to represent the service
+	KindService = "Service"
+
+	// KindServiceImport is the kind used to represent the service import
+	KindServiceImport = "ServiceImport"
+
+	// KindSecret is the kind used to represent the secret
+	KindSecret = "Secret"
+
+	// GroupFlomeshIo is the group used to represent the flomesh.io group
+	GroupFlomeshIo = "flomesh.io"
+
+	// GroupCore is the group used to represent the core group
+	GroupCore = ""
+)
+
 // Processor is the interface for the functionality provided by the processors
 type Processor interface {
 	Insert(obj interface{}, cache *GatewayCache) bool
@@ -82,8 +99,8 @@ type Cache interface {
 }
 
 type serviceInfo struct {
-	svcPortName route.ServicePortName
-	filters     []route.Filter
+	svcPortName routecfg.ServicePortName
+	filters     []routecfg.Filter
 }
 
 type endpointInfo struct {

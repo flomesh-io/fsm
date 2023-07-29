@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // TCPRoutesProcessor is responsible for processing TCPRoute objects

@@ -28,13 +28,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/tidwall/sjson"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 )
 
 var (

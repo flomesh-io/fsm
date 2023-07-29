@@ -31,7 +31,6 @@ import (
 	"strings"
 	"sync"
 
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,6 +38,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
+
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 type baseServiceInfo struct {

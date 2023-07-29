@@ -3,13 +3,14 @@ package remote
 import (
 	"context"
 
+	"k8s.io/client-go/rest"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	mcscfg "github.com/flomesh-io/fsm/pkg/mcs/config"
 	cctx "github.com/flomesh-io/fsm/pkg/mcs/context"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
-	"k8s.io/client-go/rest"
 )
 
 // NewBackground creates a new background process for a cluster

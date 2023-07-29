@@ -26,11 +26,12 @@
 package pipy
 
 import (
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"k8s.io/client-go/kubernetes"
 )
 
 // client is the type used to represent the Kubernetes client for the networking.k8s.io API group

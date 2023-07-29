@@ -30,11 +30,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/apis/gateway"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -45,6 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 type gatewayClassReconciler struct {
@@ -160,6 +161,7 @@ func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1beta1.Gatew
 func (r *gatewayClassReconciler) setActiveStatus(list *gwv1beta1.GatewayClassList) []*gwv1beta1.GatewayClass {
 	acceptedClasses := make([]*gwv1beta1.GatewayClass, 0)
 	for _, class := range list.Items {
+		class := class // fix lint GO-LOOP-REF
 		if utils.IsAcceptedGatewayClass(&class) {
 			acceptedClasses = append(acceptedClasses, &class)
 		}

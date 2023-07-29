@@ -32,14 +32,6 @@ import (
 	"fmt"
 	"time"
 
-	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/helm"
-	"github.com/flomesh-io/fsm/pkg/logger"
-	mgrutils "github.com/flomesh-io/fsm/pkg/manager/utils"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -48,6 +40,15 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/helm"
+	"github.com/flomesh-io/fsm/pkg/logger"
+	mgrutils "github.com/flomesh-io/fsm/pkg/manager/utils"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 var (
@@ -171,7 +172,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 	return finalValues, nil
 }
 
-func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, _ configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
 	bytes, jsonErr := json.Marshal(nsig)
 	if jsonErr != nil {

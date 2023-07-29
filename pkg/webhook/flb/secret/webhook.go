@@ -22,21 +22,23 @@
  * SOFTWARE.
  */
 
+// Package secret contains webhook logic for the FLB secret resource
 package secret
 
 import (
 	"fmt"
 	"net/http"
 
-	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/webhook"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+
+	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 type register struct {
@@ -152,12 +154,12 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 }
 
 // ValidateUpdate validates the update of the FLB Secret resource
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
 // ValidateDelete validates the deletion of the FLB Secret resource
-func (w *validator) ValidateDelete(obj interface{}) error {
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 

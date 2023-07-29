@@ -2,12 +2,14 @@
 package gateway
 
 import (
+	"time"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	gwcache "github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
-	"time"
 
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )

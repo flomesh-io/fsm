@@ -25,9 +25,10 @@
 package utils
 
 import (
+	"github.com/tidwall/sjson"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/tidwall/sjson"
 )
 
 // UpdateIngressHTTPConfig updates HTTP config of ingress controller

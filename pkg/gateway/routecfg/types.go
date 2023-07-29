@@ -1,13 +1,14 @@
-// Package route contains types for the gateway route
-package route
+// Package routecfg contains types for the gateway route
+package routecfg
 
 import (
 	"fmt"
 
-	commons "github.com/flomesh-io/fsm/pkg/apis"
 	"k8s.io/apimachinery/pkg/types"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	commons "github.com/flomesh-io/fsm/pkg/apis"
 )
 
 // ServicePortName is a combination of a service name, namespace, and port
@@ -41,15 +42,15 @@ const (
 	MatchTypeRegex MatchType = "Regex"
 )
 
-// RouteType is the type of route
-type RouteType string
+// L7RouteType is the type of route
+type L7RouteType string
 
 const (
-	// RouteTypeHTTP is the HTTP route type
-	RouteTypeHTTP RouteType = "HTTP"
+	// L7RouteTypeHTTP is the HTTP route type
+	L7RouteTypeHTTP L7RouteType = "HTTP"
 
-	// RouteTypeGRPC is the GRPC route type
-	RouteTypeGRPC RouteType = "GRPC"
+	// L7RouteTypeGRPC is the GRPC route type
+	L7RouteTypeGRPC L7RouteType = "GRPC"
 )
 
 // ConfigSpec is the configuration spec for the gateway
@@ -113,7 +114,7 @@ var _ RouteRule = &L7RouteRule{}
 
 // HTTPRouteRuleSpec is the HTTP route rule configuration
 type HTTPRouteRuleSpec struct {
-	RouteType RouteType          `json:"RouteType"`
+	RouteType L7RouteType        `json:"L7RouteType"`
 	Matches   []HTTPTrafficMatch `json:"Matches" hash:"set"`
 	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
 }
@@ -122,7 +123,7 @@ var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 
 // GRPCRouteRuleSpec is the GRPC route rule configuration
 type GRPCRouteRuleSpec struct {
-	RouteType RouteType          `json:"RouteType"`
+	RouteType L7RouteType        `json:"L7RouteType"`
 	Matches   []GRPCTrafficMatch `json:"Matches" hash:"set"`
 }
 

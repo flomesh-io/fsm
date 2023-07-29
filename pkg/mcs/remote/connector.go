@@ -31,17 +31,18 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/announcements"
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/k8s/events"
-	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
-	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	retry "github.com/sethvargo/go-retry"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/announcements"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	conn "github.com/flomesh-io/fsm/pkg/mcs/context"
+	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 )
 
 // Run starts the connector
@@ -96,9 +97,9 @@ func (c *Connector) updateConfigsOfManagedCluster() error {
 	if c.cfg.IsManaged() && c.cfg.GetMultiClusterControlPlaneUID() != "" {
 		if c.cfg.GetMultiClusterControlPlaneUID() != connectorCfg.ControlPlaneUID() {
 			return fmt.Errorf("cluster %s is already managed, cannot join the MultiCluster", connectorCfg.Key())
-		} else {
-			log.Info().Msgf("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
 		}
+
+		log.Info().Msgf("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
 	} else {
 		mc := c.cfg.GetMeshConfig()
 		mc.Spec.ClusterSet.IsManaged = true
@@ -492,9 +493,9 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 				for _, ep := range p.Endpoints {
 					if ep.ClusterKey == exportClusterKey {
 						continue
-					} else {
-						endpoints = append(endpoints, *ep.DeepCopy())
 					}
+
+					endpoints = append(endpoints, *ep.DeepCopy())
 				}
 
 				if len(endpoints) > 0 {

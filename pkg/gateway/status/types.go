@@ -2,9 +2,10 @@
 package status
 
 import (
-	"github.com/flomesh-io/fsm/pkg/logger"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 type computeParams struct {

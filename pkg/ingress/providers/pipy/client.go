@@ -1,6 +1,12 @@
 package pipy
 
 import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/rs/zerolog"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/kubernetes"
+	k8scache "k8s.io/client-go/tools/cache"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -11,11 +17,6 @@ import (
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"github.com/google/go-cmp/cmp"
-	"github.com/rs/zerolog"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/kubernetes"
-	k8scache "k8s.io/client-go/tools/cache"
 )
 
 var (

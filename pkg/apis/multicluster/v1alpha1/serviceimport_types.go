@@ -191,7 +191,3 @@ type ServiceImportList struct {
 	// +listType=set
 	Items []ServiceImport `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ServiceImport{}, &ServiceImportList{})
-}

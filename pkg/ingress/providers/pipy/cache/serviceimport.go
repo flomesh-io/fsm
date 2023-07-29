@@ -29,14 +29,15 @@ import (
 	"reflect"
 	"sync"
 
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/events"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 type baseServiceImportInfo struct {
@@ -292,6 +293,7 @@ func (t *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alpha1
 			Protocol:       port.Protocol,
 		}
 		for _, ep := range port.Endpoints {
+			ep := ep // fix lint GO-LOOP-REF
 			baseEndpointInfo := newMultiClusterEndpointInfo(&ep, ep.Target)
 			if t.enrichEndpointInfo != nil {
 				endpointsMap[svcPortName] = append(endpointsMap[svcPortName], t.enrichEndpointInfo(baseEndpointInfo))

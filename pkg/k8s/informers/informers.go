@@ -21,6 +21,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	gatewayApiInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	configInformers "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions"
@@ -34,8 +37,6 @@ import (
 	pluginInformers "github.com/flomesh-io/fsm/pkg/gen/client/plugin/informers/externalversions"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	policyInformers "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions"
-	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-	gatewayApiInformers "sigs.k8s.io/gateway-api/pkg/client/informers/externalversions"
 )
 
 // InformerCollectionOption is a function that modifies an informer collection

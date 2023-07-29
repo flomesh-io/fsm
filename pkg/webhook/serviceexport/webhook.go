@@ -22,30 +22,35 @@
  * SOFTWARE.
  */
 
+// Package serviceexport contains webhook logic for the ServiceExport resource
 package serviceexport
 
 import (
+	"net/http"
+
+	admissionregv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/webhook"
-	admissionregv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"net/http"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new ServiceExport webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the webhooks to be registered for ServiceExport
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -77,6 +82,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the handlers to be registered for ServiceExport
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.ServiceExportMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -96,11 +102,13 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &mcsv1alpha1.ServiceExport{}
 }
 
-func (w *defaulter) SetDefaults(obj interface{}) {
+// SetDefaults sets the default values for the webhook
+func (w *defaulter) SetDefaults(_ interface{}) {
 	//serviceExport, ok := obj.(*svcexpv1alpha1.ServiceExport)
 	//if !ok {
 	//	return
@@ -122,19 +130,23 @@ type validator struct {
 	kubeClient kubernetes.Interface
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
 	return &mcsv1alpha1.ServiceExport{}
 }
 
+// ValidateCreate validates the create request for the webhook
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(obj)
 }
 
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+// ValidateUpdate validates the update request for the webhook
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return doValidation(obj)
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+// ValidateDelete validates the delete request for the webhook
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
@@ -144,7 +156,7 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 	}
 }
 
-func doValidation(obj interface{}) error {
+func doValidation(_ interface{}) error {
 	//serviceExport, ok := obj.(*svcexpv1alpha1.ServiceExport)
 	//if !ok {
 	//    return nil

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package main implements the main entry point for the Flomesh Gateway.
 package main
 
 import (
@@ -30,6 +31,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -43,13 +52,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/version"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type metadata struct {
@@ -212,7 +214,7 @@ func startPipy(spawn int64, url string) {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}
 
-	cmd := exec.Command("pipy", args...)
+	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

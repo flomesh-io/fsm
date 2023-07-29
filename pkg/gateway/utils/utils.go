@@ -30,8 +30,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/apis/gateway"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +37,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
 // IsAcceptedGatewayClass returns true if the gateway class is accepted

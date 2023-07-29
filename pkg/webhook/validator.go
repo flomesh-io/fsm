@@ -49,7 +49,7 @@ func (h *validatingHandler) InjectDecoder(d *admission.Decoder) error {
 }
 
 // Handle handles admission requests.
-func (h *validatingHandler) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (h *validatingHandler) Handle(_ context.Context, req admission.Request) admission.Response {
 	if h.validator == nil {
 		panic("validator should never be nil")
 	}

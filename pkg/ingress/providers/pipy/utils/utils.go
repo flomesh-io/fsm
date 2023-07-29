@@ -26,10 +26,11 @@
 package utils
 
 import (
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/logger"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 var (

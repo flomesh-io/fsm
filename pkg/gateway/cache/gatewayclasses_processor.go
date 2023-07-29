@@ -1,9 +1,10 @@
 package cache
 
 import (
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // GatewayClassesProcessor is responsible for processing GatewayClass objects

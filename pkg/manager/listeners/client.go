@@ -3,11 +3,12 @@ package listeners
 import (
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type client struct {

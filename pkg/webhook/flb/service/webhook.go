@@ -22,33 +22,38 @@
  * SOFTWARE.
  */
 
-package secret
+// Package service contains webhook logic for the FLB service resource
+package service
 
 import (
 	"context"
-	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/flb"
-	"github.com/flomesh-io/fsm/pkg/webhook"
+	"net/http"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
+
+	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/flb"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new FLB Service webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the list of webhooks to be registered for the FLB Service
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -80,6 +85,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the list of handlers to be registered for the FLB Service
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.FLBServiceMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -99,11 +105,13 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &corev1.Service{}
 }
 
-func (w *defaulter) SetDefaults(obj interface{}) {
+// SetDefaults sets the default values for the FLB Service
+func (w *defaulter) SetDefaults(_ interface{}) {
 	//service, ok := obj.(*corev1.Service)
 	//if !ok {
 	//	return
@@ -120,19 +128,23 @@ type validator struct {
 	cfg        configurator.Configurator
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
 	return &corev1.Service{}
 }
 
+// ValidateCreate validates the FLB Service on creation
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+// ValidateUpdate validates the FLB Service on update
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+// ValidateDelete validates the FLB Service on deletion
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 

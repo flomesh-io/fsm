@@ -1,3 +1,5 @@
+//lint:file-ignore U1000 Ignore all unused code, it's test code.
+
 // Package e2e defines test's const vars.
 package e2e
 

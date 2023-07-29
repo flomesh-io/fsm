@@ -25,8 +25,9 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // SecretProcessor is a processor for Secret objects

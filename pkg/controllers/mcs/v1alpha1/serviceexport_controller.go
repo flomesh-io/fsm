@@ -29,11 +29,6 @@ import (
 	"fmt"
 	"time"
 
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -44,6 +39,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // serviceExportReconciler reconciles a ServiceExport object
@@ -128,6 +129,7 @@ func (r *serviceExportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		for _, er := range export.Spec.Rules {
 			for _, ing := range ingList.Items {
+				ing := ing // fix lint GO-LOOP-REF
 				// should not check against itself
 				if metav1.IsControlledBy(&ing, export) {
 					continue

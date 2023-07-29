@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
@@ -23,10 +25,7 @@ import (
 	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
 	"github.com/flomesh-io/fsm/pkg/manager/webhook"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	ctrl "sigs.k8s.io/controller-runtime"
 
-	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
-	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 	smiAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
 	smiTrafficSpecClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/specs/clientset/versioned"
 	smiTrafficSplitClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/split/clientset/versioned"
@@ -37,6 +36,9 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
+	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
+	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
+
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -44,13 +46,14 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	networkingClientset "github.com/flomesh-io/fsm/pkg/gen/client/networking/clientset/versioned"
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
-	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 
@@ -479,6 +482,7 @@ func parseFlags() error {
 	return nil
 }
 
+//lint:ignore U1000 This is used in the tests
 func joinURL(baseURL string, paths ...string) string {
 	p := path.Join(paths...)
 	return fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), strings.TrimLeft(p, "/"))

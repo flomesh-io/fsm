@@ -28,17 +28,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
-	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "flomesh.io", Version: "v1alpha1"}
+	// SchemeGroupVersion is group version used to register MeshConfig
+	SchemeGroupVersion = schema.GroupVersion{
+		Group:   "flomesh.io",
+		Version: "v1alpha1",
+	}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
-	// AddToScheme adds the types in this group-version to the given scheme.
+	// AddToScheme adds all Resources to the Scheme
 	AddToScheme = SchemeBuilder.AddToScheme
 )
 

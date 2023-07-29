@@ -161,6 +161,8 @@ func MergeRules(originalRules, latestRules []*Rule) []*Rule {
 //
 //		for any HTTPRouteMatch. Where there is an overlap in HTTPRouteMatch between the originalRoutes and latestRoutes, the WeightedClusters
 //	 will be unioned as there can only be one set of WeightedClusters per HTTPRouteMatch.
+//
+//lint:ignore U1000 This is currently unused but will be used in the future
 func mergeRoutesWeightedClusters(originalRoutes, latestRoutes []*RouteWeightedClusters) []*RouteWeightedClusters {
 	for _, latest := range latestRoutes {
 		foundRoute := false

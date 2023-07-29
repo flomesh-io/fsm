@@ -31,10 +31,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +42,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // ServiceReconciler reconciles a Service object
@@ -451,7 +452,7 @@ func (r *serviceReconciler) removeFinalizer(ctx context.Context, svc *corev1.Ser
 	return r.fctx.Update(ctx, svc)
 }
 
-func (r *serviceReconciler) hasFinalizer(ctx context.Context, svc *corev1.Service) bool {
+func (r *serviceReconciler) hasFinalizer(_ context.Context, svc *corev1.Service) bool {
 	for _, finalizer := range svc.Finalizers {
 		if finalizer == finalizerName {
 			return true

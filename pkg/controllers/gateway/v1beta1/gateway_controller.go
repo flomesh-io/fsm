@@ -33,14 +33,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/helm"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -59,6 +51,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+	"github.com/flomesh-io/fsm/pkg/helm"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 var (
@@ -128,6 +129,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var effectiveGatewayClass *gwv1beta1.GatewayClass
 	for idx, cls := range gatewayClasses.Items {
+		cls := cls
 		if gwutils.IsEffectiveGatewayClass(&cls) {
 			effectiveGatewayClass = &gatewayClasses.Items[idx]
 			break
@@ -153,6 +155,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	invalidGateways := make([]*gwv1beta1.Gateway, 0)
 
 	for _, gw := range gatewayList.Items {
+		gw := gw // fix lint GO-LOOP-REF
 		if string(gw.Spec.GatewayClassName) == effectiveGatewayClass.Name {
 			validGateways = append(validGateways, &gw)
 		} else {
@@ -163,9 +166,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	sort.Slice(validGateways, func(i, j int) bool {
 		if validGateways[i].CreationTimestamp.Time.Equal(validGateways[j].CreationTimestamp.Time) {
 			return validGateways[i].Name < validGateways[j].Name
-		} else {
-			return validGateways[i].CreationTimestamp.Time.Before(validGateways[j].CreationTimestamp.Time)
 		}
+
+		return validGateways[i].CreationTimestamp.Time.Before(validGateways[j].CreationTimestamp.Time)
 	})
 
 	// 3. Set the oldest as Accepted and the rest are unaccepted
@@ -263,6 +266,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		for _, gw := range gatewayList.Items {
+			gw := gw // fix lint GO-LOOP-REF
 			if gw.Name != activeGateway.Name && len(gw.Status.Addresses) > 0 {
 				gw.Status.Addresses = nil
 				if err := r.fctx.Status().Update(ctx, &gw); err != nil {
@@ -539,6 +543,7 @@ func (r *gatewayReconciler) findActiveGatewayByNamespace(ctx context.Context, na
 	}
 
 	for _, gw := range gatewayList.Items {
+		gw := gw // fix lint GO-LOOP-REF
 		if gwutils.IsActiveGateway(&gw) {
 			return &gw, ctrl.Result{}, nil
 		}

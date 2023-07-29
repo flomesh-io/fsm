@@ -1,13 +1,14 @@
 package ctrl
 
 import (
+	"github.com/rs/zerolog/log"
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	mcsevent "github.com/flomesh-io/fsm/pkg/mcs/event"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/remote"
-	"github.com/rs/zerolog/log"
-	metautil "k8s.io/apimachinery/pkg/api/meta"
 )
 
 // Run starts the control plane server

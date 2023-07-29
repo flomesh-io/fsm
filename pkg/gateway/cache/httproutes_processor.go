@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // HTTPRoutesProcessor is responsible for processing HTTPRoute objects

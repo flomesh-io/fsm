@@ -27,12 +27,13 @@ package utils
 import (
 	"fmt"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/tidwall/sjson"
 )
 
 // UpdateIngressTLSConfig updates TLS config of ingress controller

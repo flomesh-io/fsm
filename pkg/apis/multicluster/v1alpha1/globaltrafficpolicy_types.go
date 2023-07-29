@@ -92,7 +92,3 @@ type GlobalTrafficPolicyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []GlobalTrafficPolicy `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&GlobalTrafficPolicy{}, &GlobalTrafficPolicyList{})
-}

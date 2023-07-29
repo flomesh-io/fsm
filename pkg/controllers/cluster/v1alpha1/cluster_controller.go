@@ -32,15 +32,6 @@ import (
 	"sync"
 	"time"
 
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/logger"
-	cp "github.com/flomesh-io/fsm/pkg/mcs/ctrl"
-	"github.com/flomesh-io/fsm/pkg/mcs/remote"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -52,6 +43,16 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/logger"
+	cp "github.com/flomesh-io/fsm/pkg/mcs/ctrl"
+	"github.com/flomesh-io/fsm/pkg/mcs/remote"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // ClusterReconciler reconciles a Cluster object

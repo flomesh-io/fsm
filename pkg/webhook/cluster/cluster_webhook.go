@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package cluster contains webhook logic for the Cluster resource
 package cluster
 
 import (
@@ -29,11 +30,6 @@ import (
 	"net"
 	"net/http"
 
-	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
-	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/webhook"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -41,6 +37,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
+
+	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 type register struct {
@@ -186,7 +188,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 }
 
 // ValidateUpdate validates the update of the cluster resource
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	//oldCluster, ok := oldObj.(*clusterv1alpha1.Cluster)
 	//if !ok {
 	//	return nil
@@ -205,7 +207,7 @@ func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 }
 
 // ValidateDelete validates the deletion of the cluster resource
-func (w *validator) ValidateDelete(obj interface{}) error {
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 

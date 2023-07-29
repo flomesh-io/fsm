@@ -403,12 +403,14 @@ func (p *PipyRepoClient) IsRepoUp() (success bool, err error) {
 	return
 }
 
+// CodebaseExists checks whether the codebase exists
 func (p *PipyRepoClient) CodebaseExists(path string) bool {
 	exists, _, _ := p.codebaseExists(path)
 
 	return exists
 }
 
+// GetFile gets the file content from repo
 func (p *PipyRepoClient) GetFile(path string) (string, error) {
 	resp, err := p.httpClient.R().
 		Get(fmt.Sprintf("%s/%s", p.apiURI.repoFilesURI, path))

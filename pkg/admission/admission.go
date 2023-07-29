@@ -26,9 +26,10 @@
 package admission
 
 import (
-	"github.com/flomesh-io/fsm/pkg/constants"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // NewMutatingWebhookConfiguration creates a new MutatingWebhookConfiguration

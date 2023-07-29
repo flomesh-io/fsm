@@ -28,10 +28,11 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // ConnectorConfig is the configuration for the connector

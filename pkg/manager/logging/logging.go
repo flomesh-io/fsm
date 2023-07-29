@@ -34,10 +34,5 @@ import (
 func SetupLogging(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Setting up Logging ...")
 
-	mc := ctx.Config
-	if err := utils.UpdateLoggingConfig(ctx.KubeClient, constants.DefaultIngressBasePath, ctx.RepoClient, mc); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.UpdateLoggingConfig(ctx.KubeClient, constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config)
 }

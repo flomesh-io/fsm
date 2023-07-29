@@ -25,27 +25,31 @@
 package serviceimport
 
 import (
+	"net/http"
+
+	admissionregv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/webhook"
-	admissionregv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"net/http"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new ServiceImport webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the webhooks to be registered for ServiceImport
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -77,6 +81,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the handlers to be registered for ServiceImport
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.ServiceImportMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -96,10 +101,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &mcsv1alpha1.ServiceImport{}
 }
 
+// SetDefaults sets the default values for the webhook
 func (w *defaulter) SetDefaults(obj interface{}) {
 	serviceImport, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
@@ -127,19 +134,23 @@ type validator struct {
 	kubeClient kubernetes.Interface
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
 	return &mcsv1alpha1.ServiceImport{}
 }
 
+// ValidateCreate validates the create request for the webhook
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(obj)
 }
 
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+// ValidateUpdate validates the update request for the webhook
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return doValidation(obj)
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+// ValidateDelete validates the delete request for the webhook
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
@@ -149,7 +160,7 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 	}
 }
 
-func doValidation(obj interface{}) error {
+func doValidation(_ interface{}) error {
 	//serviceImport, ok := obj.(*mcsv1alpha1.ServiceImport)
 	//if !ok {
 	//    return nil

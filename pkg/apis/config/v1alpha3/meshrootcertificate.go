@@ -1,8 +1,9 @@
 package v1alpha3
 
 import (
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 )
 
 // MeshRootCertificate defines the configuration for certificate issuing

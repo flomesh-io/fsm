@@ -26,29 +26,33 @@ package gatewayclass
 
 import (
 	"fmt"
+	"net/http"
+
+	admissionregv1 "k8s.io/api/admissionregistration/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/webhook"
-	admissionregv1 "k8s.io/api/admissionregistration/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
-	"net/http"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new gatewayclass webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the webhooks to be registered for gatewayclass
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -80,6 +84,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the handlers to be registered for gatewayclass
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.GatewayClassMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -99,10 +104,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &gwv1beta1.GatewayClass{}
 }
 
+// SetDefaults sets the default values for the webhook
 func (w *defaulter) SetDefaults(obj interface{}) {
 	gatewayClass, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
@@ -125,14 +132,17 @@ type validator struct {
 	kubeClient kubernetes.Interface
 }
 
+// RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
 	return &gwv1beta1.GatewayClass{}
 }
 
+// ValidateCreate validates the create request for the webhook
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(obj)
 }
 
+// ValidateUpdate validates the update request for the webhook
 func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	oldGatewayClass, ok := oldObj.(*gwv1beta1.GatewayClass)
 	if !ok {
@@ -158,7 +168,8 @@ func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	return nil
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+// ValidateDelete validates the delete request for the webhook
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
