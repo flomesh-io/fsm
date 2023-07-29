@@ -2,14 +2,15 @@ package informers
 
 import (
 	"errors"
+	"time"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
-	"k8s.io/client-go/listers/core/v1"
+	v1 "k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
-	"time"
 
 	"k8s.io/client-go/tools/cache"
 )
@@ -85,18 +86,18 @@ const (
 	// InformerKeyNamespacedIngress is the InformerKey for a NamespacedIngress informer
 	InformerKeyNamespacedIngress InformerKey = "NamespacedIngress"
 
-	// InformerKeyGatewayApiGatewayClass is the InformerKey for a GatewayClass informer
-	InformerKeyGatewayApiGatewayClass InformerKey = "GatewayClass-gwapi"
-	// InformerKeyGatewayApiGateway is the InformerKey for a Gateway informer
-	InformerKeyGatewayApiGateway InformerKey = "Gateway-gwapi"
-	// InformerKeyGatewayApiHTTPRoute is the InformerKey for a HTTPRoute informer
-	InformerKeyGatewayApiHTTPRoute InformerKey = "HTTPRoute-gwapi"
-	// InformerKeyGatewayApiGRPCRoute is the InformerKey for a GRPCRoute informer
-	InformerKeyGatewayApiGRPCRoute InformerKey = "GRPCRoute-gwapi"
-	// InformerKeyGatewayApiTLSRoute is the InformerKey for a IngressClass informer
-	InformerKeyGatewayApiTLSRoute InformerKey = "TLSRoute-gwapi"
-	// InformerKeyGatewayApiTCPRoute is the InformerKey for a IngressClass informer
-	InformerKeyGatewayApiTCPRoute InformerKey = "TCPRoute-gwapi"
+	// InformerKeyGatewayAPIGatewayClass is the InformerKey for a GatewayClass informer
+	InformerKeyGatewayAPIGatewayClass InformerKey = "GatewayClass-gwapi"
+	// InformerKeyGatewayAPIGateway is the InformerKey for a Gateway informer
+	InformerKeyGatewayAPIGateway InformerKey = "Gateway-gwapi"
+	// InformerKeyGatewayAPIHTTPRoute is the InformerKey for a HTTPRoute informer
+	InformerKeyGatewayAPIHTTPRoute InformerKey = "HTTPRoute-gwapi"
+	// InformerKeyGatewayAPIGRPCRoute is the InformerKey for a GRPCRoute informer
+	InformerKeyGatewayAPIGRPCRoute InformerKey = "GRPCRoute-gwapi"
+	// InformerKeyGatewayAPITLSRoute is the InformerKey for a IngressClass informer
+	InformerKeyGatewayAPITLSRoute InformerKey = "TLSRoute-gwapi"
+	// InformerKeyGatewayAPITCPRoute is the InformerKey for a IngressClass informer
+	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
 )
 
 const (
@@ -120,6 +121,7 @@ type InformerCollection struct {
 	meshName  string
 }
 
+// Lister is the listers for the informers in the collection
 type Lister struct {
 	Service           v1.ServiceLister
 	ServiceImport     mcsv1alpha1.ServiceImportLister

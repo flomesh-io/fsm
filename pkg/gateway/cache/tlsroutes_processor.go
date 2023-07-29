@@ -5,9 +5,11 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+// TLSRoutesProcessor is responsible for processing TLSRoute objects
 type TLSRoutesProcessor struct {
 }
 
+// Insert adds a TLSRoute to the cache and returns true if the route is effective
 func (p *TLSRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.TLSRoute)
 	if !ok {
@@ -20,6 +22,7 @@ func (p *TLSRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
 
+// Delete removes a TLSRoute from the cache and returns true if the route was found
 func (p *TLSRoutesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.TLSRoute)
 	if !ok {

@@ -26,8 +26,9 @@ package v1alpha1
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
+	"time"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -43,7 +44,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"time"
 )
 
 // serviceExportReconciler reconciles a ServiceExport object
@@ -52,6 +52,7 @@ type serviceExportReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewServiceExportReconciler returns a new ServiceExport.Reconciler
 func NewServiceExportReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceExportReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceExport"),
@@ -414,7 +415,7 @@ func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			Complete(r)
 	}
 
-	if mc.IsGatewayApiEnabled() {
+	if mc.IsGatewayAPIEnabled() {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&mcsv1alpha1.ServiceExport{}).
 			Owns(&gwv1beta1.HTTPRoute{}).

@@ -29,9 +29,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// SecretProcessor is a processor for Secret objects
 type SecretProcessor struct {
 }
 
+// Insert adds a Secret object to the cache and returns true if the cache is changed
 func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
@@ -45,6 +47,7 @@ func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	return cache.isSecretReferredByAnyGateway(key)
 }
 
+// Delete removes a Secret object from the cache and returns true if the cache is changed
 func (p *SecretProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {

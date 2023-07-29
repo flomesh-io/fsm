@@ -1,3 +1,4 @@
+// Package repo contains the repository for the ingress controller
 package repo
 
 import (
@@ -12,6 +13,7 @@ const (
 	workerPoolSize = 0
 )
 
+// Server is the ingress controller server
 type Server struct {
 	//fsmNamespace    string
 	cfg configurator.Configurator
@@ -23,6 +25,7 @@ type Server struct {
 	//retryProxiesJob func()
 }
 
+// NewServer creates a new ingress controller server
 func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache *cache.Cache) *Server {
 	return &Server{
 		//fsmNamespace: fsmNamespace,

@@ -22,13 +22,16 @@
  * SOFTWARE.
  */
 
+// Package v1alpha1 contains controller logic for the Cluster API v1alpha1.
 package v1alpha1
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -49,8 +52,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
-	"time"
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -63,9 +64,10 @@ type reconciler struct {
 }
 
 var (
-	log = logger.New("cluster-v1alpha1-controller")
+	log = logger.New("cluster-controller/v1alpha1")
 )
 
+// NewReconciler returns a new reconciler for Cluster objects
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &reconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Cluster"),
@@ -158,7 +160,7 @@ func clusterHash(cluster *mcsv1alpha1.Cluster) string {
 	)
 }
 
-func (r *reconciler) deriveCodebases(cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) deriveCodebases(cluster *mcsv1alpha1.Cluster, _ configurator.Configurator) (ctrl.Result, error) {
 	repoClient := r.fctx.RepoClient
 
 	bytes, jsonErr := json.Marshal(cluster)
@@ -187,7 +189,7 @@ func (r *reconciler) createConnector(ctx context.Context, cluster *mcsv1alpha1.C
 	return r.newConnector(ctx, cluster, mc)
 }
 
-func (r *reconciler) recreateConnector(ctx context.Context, bg *remote.Background, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) recreateConnector(ctx context.Context, _ *remote.Background, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -233,10 +235,9 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 
 	if success {
 		return r.successJoinClusterSet(ctx, cluster, mc)
-	} else {
-		return r.failedJoinClusterSet(ctx, cluster, errorMsg)
 	}
 
+	return r.failedJoinClusterSet(ctx, cluster, errorMsg)
 }
 
 func getKubeConfig(cluster *mcsv1alpha1.Cluster) (*rest.Config, ctrl.Result, error) {
@@ -257,7 +258,7 @@ func getKubeConfig(cluster *mcsv1alpha1.Cluster) (*rest.Config, ctrl.Result, err
 	return kubeconfig, ctrl.Result{}, nil
 }
 
-func (r *reconciler) successJoinClusterSet(ctx context.Context, cluster *mcsv1alpha1.Cluster, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *reconciler) successJoinClusterSet(ctx context.Context, cluster *mcsv1alpha1.Cluster, _ configurator.Configurator) (ctrl.Result, error) {
 	metautil.SetStatusCondition(&cluster.Status.Conditions, metav1.Condition{
 		Type:               string(mcsv1alpha1.ClusterManaged),
 		Status:             metav1.ConditionTrue,

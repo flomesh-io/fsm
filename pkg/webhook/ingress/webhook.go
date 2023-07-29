@@ -27,6 +27,8 @@ package ingress
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
@@ -37,19 +39,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new ingress webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the ingress webhooks
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -81,6 +84,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the ingress webhook handlers
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.IngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient)),
@@ -111,7 +115,6 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	if !ingresspipy.IsValidPipyIngress(ing) {
 		return
 	}
-
 }
 
 type validator struct {
@@ -126,11 +129,11 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
+func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-func (w *validator) ValidateDelete(obj interface{}) error {
+func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 

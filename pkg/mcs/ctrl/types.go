@@ -22,14 +22,16 @@
  * SOFTWARE.
  */
 
+// Package ctrl is the control plane server
 package ctrl
 
 import (
+	"sync"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	conn "github.com/flomesh-io/fsm/pkg/mcs/remote"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/workerpool"
-	"sync"
 )
 
 const (
@@ -37,6 +39,7 @@ const (
 	workerPoolSize = 0
 )
 
+// ControlPlaneServer is the control plane server
 type ControlPlaneServer struct {
 	cfg         configurator.Configurator
 	msgBroker   *messaging.Broker
@@ -45,6 +48,7 @@ type ControlPlaneServer struct {
 	backgrounds map[string]*conn.Background
 }
 
+// NewControlPlaneServer creates a new ControlPlaneServer
 func NewControlPlaneServer(cfg configurator.Configurator, msgBroker *messaging.Broker) *ControlPlaneServer {
 	return &ControlPlaneServer{
 		cfg:         cfg,

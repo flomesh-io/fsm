@@ -26,7 +26,7 @@ package servicelb
 
 import (
 	"context"
-	_ "embed"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	appv1 "k8s.io/api/apps/v1"
@@ -43,6 +43,7 @@ type nodeReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewNodeReconciler returns a new reconcile.Reconciler
 func NewNodeReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &nodeReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceLB"),

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package servicelb contains controller logic for the ServiceLB
 package servicelb
 
 import "github.com/flomesh-io/fsm/pkg/logger"

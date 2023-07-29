@@ -2,6 +2,7 @@ package utils
 
 import "fmt"
 
+// IngressCodebasePath returns the path to the ingress codebase.
 func IngressCodebasePath() string {
 	// Format:
 	//  /{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}/ingress
@@ -9,6 +10,7 @@ func IngressCodebasePath() string {
 	return GetDefaultIngressPath()
 }
 
+// NamespacedIngressCodebasePath returns the path to the ingress codebase for the given namespace.
 func NamespacedIngressCodebasePath(namespace string) string {
 	// Format:
 	//  /{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}/nsig/{{ .Namespace }}
@@ -30,6 +32,7 @@ func NamespacedIngressCodebasePath(namespace string) string {
 	return fmt.Sprintf("/local/nsig/%s", namespace)
 }
 
+// GetDefaultServicesPath returns the path to the services codebase.
 func GetDefaultServicesPath() string {
 	// Format:
 	//  /{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}/services
@@ -49,6 +52,7 @@ func GetDefaultServicesPath() string {
 	return "/local/services"
 }
 
+// GetDefaultIngressPath returns the path to the ingress codebase.
 func GetDefaultIngressPath() string {
 	// Format:
 	//  /{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}/ingress
@@ -74,7 +78,7 @@ func GatewayCodebasePath(namespace string) string {
 	return fmt.Sprintf("/local/gw/%s", namespace)
 }
 
-// GetDefaultGatewaysPath
+// GetDefaultGatewaysPath returns the path to the gateways codebase.
 // inherit hierarchy: /base/gateways -> /local/gateways -> /local/gw/[ns]
 func GetDefaultGatewaysPath() string {
 	return "/local/gateways"

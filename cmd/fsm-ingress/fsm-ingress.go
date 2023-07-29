@@ -4,6 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
@@ -23,8 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os"
-	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -108,15 +109,15 @@ func main() {
 	}
 
 	// get ingress codebase
-	ingressRepoUrl := ingressCodebase(cfg)
-	log.Info().Msgf("Ingress Repo = %q", ingressRepoUrl)
+	ingressRepoURL := ingressCodebase(cfg)
+	log.Info().Msgf("Ingress Repo = %q", ingressRepoURL)
 
 	// calculate pipy spawn
 	spawn := calcPipySpawn(kubeClient)
 	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
 	// start pipy
-	startPipy(spawn, ingressRepoUrl)
+	startPipy(spawn, ingressRepoURL)
 
 	startHTTPServer()
 
@@ -148,7 +149,7 @@ func ingressCodebase(cfg configurator.Configurator) string {
 }
 
 func calcPipySpawn(kubeClient kubernetes.Interface) int64 {
-	cpuLimits, err := getIngressCpuLimitsQuota(kubeClient)
+	cpuLimits, err := getIngressCPULimitsQuota(kubeClient)
 	if err != nil {
 		log.Fatal().Err(err)
 		os.Exit(1)
@@ -176,7 +177,7 @@ func getIngressPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 	return pod, nil
 }
 
-func getIngressCpuLimitsQuota(kubeClient kubernetes.Interface) (*resource.Quantity, error) {
+func getIngressCPULimitsQuota(kubeClient kubernetes.Interface) (*resource.Quantity, error) {
 	pod, err := getIngressPod(kubeClient)
 	if err != nil {
 		return nil, err
@@ -191,8 +192,8 @@ func getIngressCpuLimitsQuota(kubeClient kubernetes.Interface) (*resource.Quanti
 	return nil, errors.Errorf("No container named 'ingress' in POD %q", pod.Name)
 }
 
-func startPipy(spawn int64, ingressRepoUrl string) {
-	args := []string{ingressRepoUrl}
+func startPipy(spawn int64, ingressRepoURL string) {
+	args := []string{ingressRepoURL}
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}

@@ -210,16 +210,17 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 	}
 }
 
+// WithGatewayAPIClient sets the gateway api client for the InformerCollection
 func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) InformerCollectionOption {
 	return func(ic *InformerCollection) {
 		informerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
 
-		ic.informers[InformerKeyGatewayApiGatewayClass] = informerFactory.Gateway().V1beta1().GatewayClasses().Informer()
-		ic.informers[InformerKeyGatewayApiGateway] = informerFactory.Gateway().V1beta1().Gateways().Informer()
-		ic.informers[InformerKeyGatewayApiHTTPRoute] = informerFactory.Gateway().V1beta1().HTTPRoutes().Informer()
-		ic.informers[InformerKeyGatewayApiGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
-		ic.informers[InformerKeyGatewayApiTCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
-		ic.informers[InformerKeyGatewayApiTLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1beta1().GatewayClasses().Informer()
+		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1beta1().Gateways().Informer()
+		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1beta1().HTTPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 
 		ic.listers.GatewayClass = informerFactory.Gateway().V1beta1().GatewayClasses().Lister()
 		ic.listers.Gateway = informerFactory.Gateway().V1beta1().Gateways().Lister()
@@ -334,6 +335,7 @@ func (ic *InformerCollection) IsMonitoredNamespace(namespace string) bool {
 	return exists
 }
 
+// GetListers returns the listers for the informers
 func (ic *InformerCollection) GetListers() *Lister {
 	return ic.listers
 }

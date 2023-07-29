@@ -22,12 +22,19 @@
  * SOFTWARE.
  */
 
+// Package apis contains the shared types used by the various components of the Flomesh project.
 package apis
 
+// AlgoBalancer is the type of load balancer algorithm
 type AlgoBalancer string
 
 const (
+	// RoundRobinLoadBalancer is the round-robin load balancer algorithm
 	RoundRobinLoadBalancer AlgoBalancer = "rr"
-	HashingLoadBalancer    AlgoBalancer = "hs"
-	LeastWorkLoadBalancer  AlgoBalancer = "lw"
+
+	// HashingLoadBalancer is the hashing load balancer algorithm
+	HashingLoadBalancer AlgoBalancer = "hs"
+
+	// LeastWorkLoadBalancer is the least work load balancer algorithm
+	LeastWorkLoadBalancer AlgoBalancer = "lw"
 )

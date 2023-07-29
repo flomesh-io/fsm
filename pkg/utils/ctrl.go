@@ -2,13 +2,15 @@ package utils
 
 import (
 	"context"
+	"reflect"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// CreateOrUpdate creates or updates the object
 func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object) (controllerutil.OperationResult, error) {
 	// a copy of new object
 	modifiedObj := obj.DeepCopyObject().(client.Object)

@@ -26,14 +26,21 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+// LoadBalancerType defines the type of load balancer
 type LoadBalancerType string
 
 const (
+	// ActiveActiveLbType is the type of load balancer that distributes traffic to all targets
 	ActiveActiveLbType LoadBalancerType = "ActiveActive"
-	LocalityLbType     LoadBalancerType = "Locality"
-	FailOverLbType     LoadBalancerType = "FailOver"
+
+	// LocalityLbType is the type of load balancer that distributes traffic to targets in the same locality
+	LocalityLbType LoadBalancerType = "Locality"
+
+	// FailOverLbType is the type of load balancer that distributes traffic to the first available target
+	FailOverLbType LoadBalancerType = "FailOver"
 )
 
+// TrafficTarget defines the target of traffic
 type TrafficTarget struct {
 	// Format: [region]/[zone]/[group]/[cluster]
 	ClusterKey string `json:"clusterKey"`

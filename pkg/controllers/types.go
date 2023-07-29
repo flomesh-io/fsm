@@ -22,12 +22,14 @@
  * SOFTWARE.
  */
 
+// Package controllers contains the controllers for the FSM CRDs
 package controllers
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// Reconciler is the interface that all reconcilers must implement
 type Reconciler interface {
 	SetupWithManager(mgr ctrl.Manager) error
 }

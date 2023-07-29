@@ -26,6 +26,7 @@ package v1beta1
 
 import (
 	"context"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -43,6 +44,7 @@ type httpRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+// NewHTTPRouteReconciler returns a new HTTPRoute Reconciler
 func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
@@ -51,6 +53,7 @@ func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	}
 }
 
+// Reconcile reads that state of the cluster for a HTTPRoute object and makes changes based on the state read
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	httpRoute := &gwv1beta1.HTTPRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, httpRoute)

@@ -25,64 +25,66 @@
 package cache
 
 import (
+	"net"
+	"reflect"
+	"strconv"
+	"sync"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 	utilnet "k8s.io/utils/net"
-	"net"
-	"reflect"
-	"strconv"
-	"sync"
 )
 
-type BaseEndpointInfo struct {
+type baseEndpointInfo struct {
 	Endpoint string
 	Nodename string
 	Hostname string
 	Cluster  string
 }
 
-var _ Endpoint = &BaseEndpointInfo{}
+var _ Endpoint = &baseEndpointInfo{}
 
-func (info *BaseEndpointInfo) String() string {
+func (info *baseEndpointInfo) String() string {
 	return info.Endpoint
 }
 
-func (info *BaseEndpointInfo) IP() string {
+func (info *baseEndpointInfo) IP() string {
 	return utilcache.IPPart(info.Endpoint)
 }
 
-func (info *BaseEndpointInfo) Port() (int, error) {
+func (info *baseEndpointInfo) Port() (int, error) {
 	return utilcache.PortPart(info.Endpoint)
 }
 
-func (info *BaseEndpointInfo) NodeName() string {
+func (info *baseEndpointInfo) NodeName() string {
 	return info.Nodename
 }
 
-func (info *BaseEndpointInfo) HostName() string {
+func (info *baseEndpointInfo) HostName() string {
 	return info.Hostname
 }
 
-func (info *BaseEndpointInfo) ClusterInfo() string {
+func (info *baseEndpointInfo) ClusterInfo() string {
 	return info.Cluster
 }
 
-func (info *BaseEndpointInfo) Equal(other Endpoint) bool {
+func (info *baseEndpointInfo) Equal(other Endpoint) bool {
 	return info.String() == other.String()
 }
 
-func newBaseEndpointInfo(IP string, port int, nodename string, hostname string) *BaseEndpointInfo {
-	return &BaseEndpointInfo{
+func newBaseEndpointInfo(IP string, port int, nodename string, hostname string) *baseEndpointInfo {
+	return &baseEndpointInfo{
 		Endpoint: net.JoinHostPort(IP, strconv.Itoa(port)),
 		Nodename: nodename,
 		Hostname: hostname,
 	}
 }
 
-type enrichEndpointFunc func(info *BaseEndpointInfo) Endpoint
+type enrichEndpointFunc func(info *baseEndpointInfo) Endpoint
 
+// EndpointChangeTracker tracks changes in endpoints
 type EndpointChangeTracker struct {
 	lock               sync.Mutex
 	items              map[types.NamespacedName]*endpointsChange
@@ -90,6 +92,7 @@ type EndpointChangeTracker struct {
 	recorder           events.EventRecorder
 }
 
+// NewEndpointChangeTracker creates a new EndpointChangeTracker
 func NewEndpointChangeTracker(enrichEndpointInfo enrichEndpointFunc, recorder events.EventRecorder) *EndpointChangeTracker {
 	return &EndpointChangeTracker{
 		items:              make(map[types.NamespacedName]*endpointsChange),
@@ -98,7 +101,8 @@ func NewEndpointChangeTracker(enrichEndpointInfo enrichEndpointFunc, recorder ev
 	}
 }
 
-func (ect *EndpointChangeTracker) Update(previous, current *corev1.Endpoints) bool {
+// Update updates the tracker with the current endpoints
+func (t *EndpointChangeTracker) Update(previous, current *corev1.Endpoints) bool {
 	endpoints := current
 	if endpoints == nil {
 		endpoints = previous
@@ -109,38 +113,38 @@ func (ect *EndpointChangeTracker) Update(previous, current *corev1.Endpoints) bo
 
 	namespacedName := types.NamespacedName{Namespace: endpoints.Namespace, Name: endpoints.Name}
 
-	ect.lock.Lock()
-	defer ect.lock.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
-	change, exists := ect.items[namespacedName]
+	change, exists := t.items[namespacedName]
 	if !exists {
 		change = &endpointsChange{}
-		change.previous = ect.endpointsToEndpointsMap(previous)
-		ect.items[namespacedName] = change
+		change.previous = t.endpointsToEndpointsMap(previous)
+		t.items[namespacedName] = change
 	}
 
-	change.current = ect.endpointsToEndpointsMap(current)
+	change.current = t.endpointsToEndpointsMap(current)
 
 	if reflect.DeepEqual(change.previous, change.current) {
-		delete(ect.items, namespacedName)
+		delete(t.items, namespacedName)
 	} else {
 		for spn, eps := range change.current {
 			log.Info().Msgf("Service port %s updated: %d endpoints", spn, len(eps))
 		}
 	}
 
-	return len(ect.items) > 0
+	return len(t.items) > 0
 }
 
-func (ect *EndpointChangeTracker) checkoutChanges() []*endpointsChange {
-	ect.lock.Lock()
-	defer ect.lock.Unlock()
+func (t *EndpointChangeTracker) checkoutChanges() []*endpointsChange {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	changes := []*endpointsChange{}
-	for _, change := range ect.items {
+	for _, change := range t.items {
 		changes = append(changes, change)
 	}
-	ect.items = make(map[types.NamespacedName]*endpointsChange)
+	t.items = make(map[types.NamespacedName]*endpointsChange)
 	return changes
 }
 
@@ -149,13 +153,15 @@ type endpointsChange struct {
 	current  EndpointsMap
 }
 
+// Update updates the endpoints map with the changes
 func (em EndpointsMap) Update(changes *EndpointChangeTracker) {
 	em.apply(changes)
 }
 
+// EndpointsMap is a map of service port name to endpoints
 type EndpointsMap map[ServicePortName][]Endpoint
 
-func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endpoints) EndpointsMap {
+func (t *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endpoints) EndpointsMap {
 	if endpoints == nil {
 		return nil
 	}
@@ -189,8 +195,8 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *corev1.Endp
 				log.Info().Msgf("Address = %v", addr)
 
 				baseEndpointInfo := newBaseEndpointInfo(addr.IP, int(port.Port), nodename(addr), addr.Hostname)
-				if ect.enrichEndpointInfo != nil {
-					endpointsMap[svcPortName] = append(endpointsMap[svcPortName], ect.enrichEndpointInfo(baseEndpointInfo))
+				if t.enrichEndpointInfo != nil {
+					endpointsMap[svcPortName] = append(endpointsMap[svcPortName], t.enrichEndpointInfo(baseEndpointInfo))
 				} else {
 					endpointsMap[svcPortName] = append(endpointsMap[svcPortName], baseEndpointInfo)
 				}
@@ -224,12 +230,12 @@ func formatEndpointsList(endpoints []Endpoint) []string {
 	return formattedList
 }
 
-func (em EndpointsMap) apply(ect *EndpointChangeTracker) {
-	if ect == nil {
+func (em EndpointsMap) apply(t *EndpointChangeTracker) {
+	if t == nil {
 		return
 	}
 
-	changes := ect.checkoutChanges()
+	changes := t.checkoutChanges()
 	for _, change := range changes {
 		em.unmerge(change.previous)
 		em.merge(change.current)

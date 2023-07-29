@@ -26,6 +26,8 @@ package globaltrafficpolicy
 
 import (
 	"fmt"
+	"net/http"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -34,7 +36,6 @@ import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
 )
 
 type register struct {
@@ -174,8 +175,6 @@ func (w *validator) doValidation(obj interface{}) error {
 				return fmt.Errorf("weight %d of %s is invalid for active-active load balancing, it must be >= 0", t.Weight, t.ClusterKey)
 			}
 		}
-	default:
-
 	}
 
 	return nil

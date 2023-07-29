@@ -5,9 +5,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
+// ServiceImportsProcessor is responsible for processing ServiceImport objects
 type ServiceImportsProcessor struct {
 }
 
+// Insert adds a ServiceImport to the cache and returns true if the route is effective
 func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
@@ -21,6 +23,7 @@ func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) b
 	return cache.isRoutableService(key)
 }
 
+// Delete removes a ServiceImport from the cache and returns true if the route was found
 func (p *ServiceImportsProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {

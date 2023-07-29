@@ -26,6 +26,7 @@ package flb
 
 import (
 	"context"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// IsFlbEnabled checks if the service is enabled for flb
 func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	if svc == nil {
 		return false

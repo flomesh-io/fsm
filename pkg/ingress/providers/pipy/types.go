@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package pipy defines the pipy types and interfaces for the ingress controller
 package pipy
 
 import (

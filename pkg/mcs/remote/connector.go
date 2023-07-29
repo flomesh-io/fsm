@@ -27,6 +27,10 @@ package remote
 import (
 	"context"
 	"fmt"
+	"net"
+	"reflect"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
@@ -37,12 +41,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
+// Run starts the connector
 func (c *Connector) Run(stopCh <-chan struct{}) error {
 	//ctx := c.context.(*conn.ConnectorContext)
 	//connectorCfg := ctx.ConnectorConfig
@@ -234,6 +236,7 @@ func (c *Connector) processEvent(stopCh <-chan struct{}) {
 	}
 }
 
+// ServiceImportExists checks if the ServiceImport exists
 func (c *Connector) ServiceImportExists(svcExp *mcsv1alpha1.ServiceExport) bool {
 	ctx := c.context.(*conn.ConnectorContext)
 
@@ -253,6 +256,7 @@ func (c *Connector) ServiceImportExists(svcExp *mcsv1alpha1.ServiceExport) bool 
 	return true
 }
 
+// ValidateServiceExport validates the ServiceExport and returns error if there's any conflict
 func (c *Connector) ValidateServiceExport(svcExp *mcsv1alpha1.ServiceExport, service *corev1.Service) error {
 	ctx := c.context.(*conn.ConnectorContext)
 	clusterKey := ctx.ClusterKey

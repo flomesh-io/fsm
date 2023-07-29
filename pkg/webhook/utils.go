@@ -26,13 +26,15 @@ package webhook
 
 import (
 	"fmt"
+	"net"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"net"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"strings"
 )
 
+// ValidateParentRefs validates the parent refs of gateway route resource
 func ValidateParentRefs(refs []gwv1beta1.ParentReference) field.ErrorList {
 	var errs field.ErrorList
 	for i, ref := range refs {
@@ -45,6 +47,7 @@ func ValidateParentRefs(refs []gwv1beta1.ParentReference) field.ErrorList {
 	return errs
 }
 
+// IsValidHostname validates the hostname of gateway route resource
 func IsValidHostname(hostname string) error {
 	if net.ParseIP(hostname) != nil {
 		return fmt.Errorf("invalid hostname %q: must be a DNS name, not an IP address", hostname)
@@ -63,6 +66,7 @@ func IsValidHostname(hostname string) error {
 	return nil
 }
 
+// ValidateRouteHostnames validates the hostnames of gateway route resource
 func ValidateRouteHostnames(hostnames []gwv1beta1.Hostname) field.ErrorList {
 	var errs field.ErrorList
 

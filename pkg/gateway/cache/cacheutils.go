@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/route"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -24,7 +25,7 @@ func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObje
 	return string(*secretRef.Namespace)
 }
 
-func generateHttpRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRuleSpec {
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) route.HTTPRouteRuleSpec {
 	httpSpec := route.HTTPRouteRuleSpec{
 		RouteType: route.RouteTypeHTTP,
 		Matches:   make([]route.HTTPTrafficMatch, 0),
@@ -155,7 +156,7 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[route.MatchType]map[st
 	return params
 }
 
-func generateGrpcRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) route.GRPCRouteRuleSpec {
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) route.GRPCRouteRuleSpec {
 	grpcSpec := route.GRPCRouteRuleSpec{
 		RouteType: route.RouteTypeGRPC,
 		Matches:   make([]route.GRPCTrafficMatch, 0),
@@ -265,7 +266,7 @@ func generateTLSPassthroughRouteCfg(tlsRoute *gwv1alpha2.TLSRoute) *string {
 	return nil
 }
 
-func generateTcpRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) route.RouteRule {
+func generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) route.RouteRule {
 	backends := route.TCPRouteRule{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
@@ -447,9 +448,7 @@ func ignoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.S
 
 func findPort(ports []discoveryv1.EndpointPort, svcPort corev1.ServicePort) int32 {
 	portName := svcPort.Name
-
 	for _, p := range ports {
-
 		if p.Port == nil {
 			return getDefaultPort(svcPort)
 		}

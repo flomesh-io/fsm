@@ -22,11 +22,13 @@
  * SOFTWARE.
  */
 
+// Package remote contains the remote connector for the FSM multi-cluster
 package remote
 
 import (
 	"context"
 	"fmt"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -50,6 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Connector is the main struct for the remote connector
 type Connector struct {
 	context            context.Context
 	kubeClient         kubernetes.Interface
@@ -59,6 +62,7 @@ type Connector struct {
 	controlPlaneBroker *messaging.Broker
 }
 
+// Background is the background struct for the remote connector
 type Background struct {
 	Context   *cctx.ConnectorContext
 	Connector *Connector
@@ -68,6 +72,7 @@ var (
 	log = logger.New("mcs-connector")
 )
 
+// NewConnector creates a new remote connector
 func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*Connector, error) {
 	connectorCtx := ctx.(*conn.ConnectorContext)
 	stop := connectorCtx.StopCh
@@ -176,7 +181,7 @@ func (c *Connector) onAddFunc(eventTypes *k8s.EventTypes) func(obj interface{}) 
 	}
 }
 
-func (c *Connector) onUpdateFunc(eventTypes *k8s.EventTypes) func(oldObj, newObj interface{}) {
+func (c *Connector) onUpdateFunc(_ *k8s.EventTypes) func(oldObj, newObj interface{}) {
 	return func(oldObj, newObj interface{}) {
 		switch obj := newObj.(type) {
 		case *mcsv1alpha1.ServiceExport:
@@ -207,7 +212,7 @@ func (c *Connector) onUpdateFunc(eventTypes *k8s.EventTypes) func(oldObj, newObj
 	}
 }
 
-func (c *Connector) onDeleteFunc(eventTypes *k8s.EventTypes) func(obj interface{}) {
+func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 	return func(obj interface{}) {
 		switch obj := obj.(type) {
 		case *mcsv1alpha1.ServiceExport:

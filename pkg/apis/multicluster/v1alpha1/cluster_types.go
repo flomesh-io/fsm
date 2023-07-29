@@ -30,9 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ClusterSpec defines the desired state of Cluster
 type ClusterSpec struct {
 	// +kubebuilder:default=default
@@ -142,6 +139,7 @@ func init() {
 	SchemeBuilder.Register(&Cluster{}, &ClusterList{})
 }
 
+// Key returns the key of the cluster
 func (c *Cluster) Key() string {
 	return utils.EvaluateTemplate(constants.ClusterIDTemplate, struct {
 		Region  string

@@ -155,8 +155,8 @@ type Configurator interface {
 	// GetGlobalPluginChains returns plugin chains
 	GetGlobalPluginChains() map[string][]trafficpolicy.Plugin
 
-	// IsGatewayApiEnabled returns whether GatewayAPI is enabled
-	IsGatewayApiEnabled() bool
+	// IsGatewayAPIEnabled returns whether GatewayAPI is enabled
+	IsGatewayAPIEnabled() bool
 
 	// GetFSMGatewayLogLevel returns log level of FSM Gateway
 	GetFSMGatewayLogLevel() string

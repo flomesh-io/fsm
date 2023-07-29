@@ -22,10 +22,11 @@
  * SOFTWARE.
  */
 
-package v1beta1
+package v1alpha2
 
 import (
 	"context"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -43,6 +44,7 @@ type tlsRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+// NewTLSRouteReconciler returns a new TLSRoute.Reconciler
 func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tlsRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
@@ -51,6 +53,7 @@ func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	}
 }
 
+// Reconcile reconciles a TLSRoute object
 func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	tlsRoute := &gwv1alpha2.TLSRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, tlsRoute)

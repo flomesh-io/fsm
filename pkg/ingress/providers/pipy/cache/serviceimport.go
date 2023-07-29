@@ -26,6 +26,9 @@ package cache
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	corev1 "k8s.io/api/core/v1"
@@ -34,36 +37,34 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/events"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
-	"reflect"
-	"sync"
 )
 
-type BaseServiceImportInfo struct {
-	address  string
-	port     int
-	portName string
+type baseServiceImportInfo struct {
+	address string
+	port    int
+	//portName string
 	protocol corev1.Protocol
 }
 
-var _ ServicePort = &BaseServiceImportInfo{}
+var _ ServicePort = &baseServiceImportInfo{}
 
-func (info *BaseServiceImportInfo) String() string {
+func (info *baseServiceImportInfo) String() string {
 	return fmt.Sprintf("%s:%d/%s", info.address, info.port, info.protocol)
 }
 
-func (info *BaseServiceImportInfo) Address() string {
+func (info *baseServiceImportInfo) Address() string {
 	return info.address
 }
 
-func (info *BaseServiceImportInfo) Port() int {
+func (info *baseServiceImportInfo) Port() int {
 	return info.port
 }
 
-func (info *BaseServiceImportInfo) Protocol() corev1.Protocol {
+func (info *baseServiceImportInfo) Protocol() corev1.Protocol {
 	return info.protocol
 }
 
-type enrichServiceImportInfoFunc func(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport, info *BaseServiceInfo) ServicePort
+type enrichServiceImportInfoFunc func(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport, info *baseServiceInfo) ServicePort
 
 type serviceImportChange struct {
 	previous ServiceImportMap
@@ -72,6 +73,7 @@ type serviceImportChange struct {
 	//currentEndpoints  EndpointsMap
 }
 
+// ServiceImportChangeTracker tracks changes to ServiceImport objects
 type ServiceImportChangeTracker struct {
 	lock                    sync.Mutex
 	items                   map[types.NamespacedName]*serviceImportChange
@@ -82,33 +84,35 @@ type ServiceImportChangeTracker struct {
 	informers               *fsminformers.InformerCollection
 }
 
+// ServiceImportMap is a map of ServicePortName to ServicePort
 type ServiceImportMap map[ServicePortName]ServicePort
 
-type enrichMultiClusterEndpointFunc func(info *BaseEndpointInfo) Endpoint
+type enrichMultiClusterEndpointFunc func(info *baseEndpointInfo) Endpoint
 
 type multiClusterEndpointsChange struct {
 	previous MultiClusterEndpointsMap
 	current  MultiClusterEndpointsMap
 }
 
+// MultiClusterEndpointsMap is a map of ServicePortName to Endpoint from multiple clusters
 type MultiClusterEndpointsMap map[ServicePortName][]Endpoint
 
 type serviceImportInfo struct {
-	*BaseServiceInfo
+	*baseServiceInfo
 	svcName types.NamespacedName
 }
 
-func (sct *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport) *BaseServiceInfo {
+func (t *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport) *baseServiceInfo {
 	log.Info().Msgf("ServiceImport %s/%s, Port %s", svcImp.Namespace, svcImp.Name, port.String())
 
 	clusterIP := ""
-	svc, exists := sct.serviceExists(svcImp)
+	svc, exists := t.serviceExists(svcImp)
 	if exists {
 		// ONLY supports IPv4 for now, uses Service ClusterIP, if a Service with same name exists
 		clusterIP = utilcache.GetClusterIPByFamily(corev1.IPv4Protocol, svc)
 	}
 
-	info := &BaseServiceInfo{
+	info := &baseServiceInfo{
 		address:  clusterIP,
 		port:     int(port.Port),
 		portName: port.Name,
@@ -118,6 +122,7 @@ func (sct *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.Serv
 	return info
 }
 
+// NewServiceImportChangeTracker creates a new ServiceImportChangeTracker
 func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, informers *fsminformers.InformerCollection) *ServiceImportChangeTracker {
 	return &ServiceImportChangeTracker{
 		items:                   make(map[types.NamespacedName]*serviceImportChange),
@@ -129,7 +134,8 @@ func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportIn
 	}
 }
 
-func (sct *ServiceImportChangeTracker) Update(previous, current *mcsv1alpha1.ServiceImport) bool {
+// Update updates the ServiceImportChangeTracker with the latest ServiceImport
+func (t *ServiceImportChangeTracker) Update(previous, current *mcsv1alpha1.ServiceImport) bool {
 	svcImp := current
 	if svcImp == nil {
 		svcImp = previous
@@ -145,42 +151,43 @@ func (sct *ServiceImportChangeTracker) Update(previous, current *mcsv1alpha1.Ser
 
 	namespacedName := types.NamespacedName{Namespace: svcImp.Namespace, Name: svcImp.Name}
 
-	sct.lock.Lock()
-	defer sct.lock.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	// Service changes
-	change, exists := sct.items[namespacedName]
+	change, exists := t.items[namespacedName]
 	if !exists {
 		change = &serviceImportChange{}
-		change.previous = sct.serviceImportToServiceMap(previous)
-		sct.items[namespacedName] = change
+		change.previous = t.serviceImportToServiceMap(previous)
+		t.items[namespacedName] = change
 	}
-	change.current = sct.serviceImportToServiceMap(current)
+	change.current = t.serviceImportToServiceMap(current)
 	if reflect.DeepEqual(change.previous, change.current) {
-		delete(sct.items, namespacedName)
+		delete(t.items, namespacedName)
 	} else {
 		log.Info().Msgf("Service %s updated: %d ports", namespacedName, len(change.current))
 	}
 
 	// Endpoints change
-	epChange, exists := sct.endpointItems[namespacedName]
+	epChange, exists := t.endpointItems[namespacedName]
 	if !exists {
 		epChange = &multiClusterEndpointsChange{}
-		epChange.previous = sct.endpointsToEndpointsMap(previous)
-		sct.endpointItems[namespacedName] = epChange
+		epChange.previous = t.endpointsToEndpointsMap(previous)
+		t.endpointItems[namespacedName] = epChange
 	}
-	epChange.current = sct.endpointsToEndpointsMap(current)
+	epChange.current = t.endpointsToEndpointsMap(current)
 	if reflect.DeepEqual(epChange.previous, epChange.current) {
-		delete(sct.endpointItems, namespacedName)
+		delete(t.endpointItems, namespacedName)
 	} else {
 		for spn, eps := range epChange.current {
 			log.Info().Msgf("Service port %s updated: %d endpoints", spn, len(eps))
 		}
 	}
 
-	return len(sct.items) > 0 || len(sct.endpointItems) > 0
+	return len(t.items) > 0 || len(t.endpointItems) > 0
 }
 
+// Update updates the ServiceImportMap with the latest ServiceImport changes
 func (sm *ServiceImportMap) Update(changes *ServiceImportChangeTracker) {
 	sm.apply(changes)
 }
@@ -231,7 +238,7 @@ func (sm *ServiceImportMap) unmerge(other ServiceImportMap) {
 	}
 }
 
-func (sct *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1alpha1.ServiceImport) ServiceImportMap {
+func (t *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1alpha1.ServiceImport) ServiceImportMap {
 	if svcImp == nil {
 		return nil
 	}
@@ -241,13 +248,13 @@ func (sct *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1al
 	for i := range svcImp.Spec.Ports {
 		servicePort := &svcImp.Spec.Ports[i]
 		svcPortName := ServicePortName{NamespacedName: svcName, Port: servicePort.Name, Protocol: servicePort.Protocol}
-		baseSvcInfo := sct.newBaseServiceInfo(servicePort, svcImp)
+		baseSvcInfo := t.newBaseServiceInfo(servicePort, svcImp)
 		if baseSvcInfo == nil {
 			// nil means we cannot handle such type of service
 			continue
 		}
-		if sct.enrichServiceImportInfo != nil {
-			serviceImportMap[svcPortName] = sct.enrichServiceImportInfo(servicePort, svcImp, baseSvcInfo)
+		if t.enrichServiceImportInfo != nil {
+			serviceImportMap[svcPortName] = t.enrichServiceImportInfo(servicePort, svcImp, baseSvcInfo)
 		} else {
 			serviceImportMap[svcPortName] = baseSvcInfo
 		}
@@ -256,8 +263,8 @@ func (sct *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1al
 	return serviceImportMap
 }
 
-func (sct *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.ServiceImport) (*corev1.Service, bool) {
-	svc, err := sct.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
+func (t *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.ServiceImport) (*corev1.Service, bool) {
+	svc, err := t.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, false
@@ -272,7 +279,7 @@ func shouldSkipServiceImport(svcImp *mcsv1alpha1.ServiceImport) bool {
 	return svcImp == nil
 }
 
-func (sct *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alpha1.ServiceImport) MultiClusterEndpointsMap {
+func (t *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alpha1.ServiceImport) MultiClusterEndpointsMap {
 	if svcImp == nil {
 		return nil
 	}
@@ -286,8 +293,8 @@ func (sct *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alph
 		}
 		for _, ep := range port.Endpoints {
 			baseEndpointInfo := newMultiClusterEndpointInfo(&ep, ep.Target)
-			if sct.enrichEndpointInfo != nil {
-				endpointsMap[svcPortName] = append(endpointsMap[svcPortName], sct.enrichEndpointInfo(baseEndpointInfo))
+			if t.enrichEndpointInfo != nil {
+				endpointsMap[svcPortName] = append(endpointsMap[svcPortName], t.enrichEndpointInfo(baseEndpointInfo))
 			} else {
 				endpointsMap[svcPortName] = append(endpointsMap[svcPortName], baseEndpointInfo)
 			}
@@ -298,25 +305,26 @@ func (sct *ServiceImportChangeTracker) endpointsToEndpointsMap(svcImp *mcsv1alph
 	return endpointsMap
 }
 
-func newMultiClusterEndpointInfo(ep *mcsv1alpha1.Endpoint, target mcsv1alpha1.Target) *BaseEndpointInfo {
-	return &BaseEndpointInfo{
+func newMultiClusterEndpointInfo(ep *mcsv1alpha1.Endpoint, target mcsv1alpha1.Target) *baseEndpointInfo {
+	return &baseEndpointInfo{
 		Endpoint: fmt.Sprintf("%s:%d%s", target.Host, target.Port, target.Path),
 		Cluster:  ep.ClusterKey,
 	}
 }
 
-func (sct *ServiceImportChangeTracker) checkoutChanges() []*multiClusterEndpointsChange {
-	sct.lock.Lock()
-	defer sct.lock.Unlock()
+func (t *ServiceImportChangeTracker) checkoutChanges() []*multiClusterEndpointsChange {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	changes := make([]*multiClusterEndpointsChange, 0)
-	for _, change := range sct.endpointItems {
+	for _, change := range t.endpointItems {
 		changes = append(changes, change)
 	}
-	sct.endpointItems = make(map[types.NamespacedName]*multiClusterEndpointsChange)
+	t.endpointItems = make(map[types.NamespacedName]*multiClusterEndpointsChange)
 	return changes
 }
 
+// Update updates the MultiClusterEndpointsMap with the changes from the ServiceImportChangeTracker
 func (em MultiClusterEndpointsMap) Update(changes *ServiceImportChangeTracker) {
 	em.apply(changes)
 }
@@ -345,8 +353,8 @@ func (em MultiClusterEndpointsMap) unmerge(other MultiClusterEndpointsMap) {
 	}
 }
 
-func enrichServiceImportInfo(port *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport, baseInfo *BaseServiceInfo) ServicePort {
-	info := &serviceImportInfo{BaseServiceInfo: baseInfo}
+func enrichServiceImportInfo(_ *mcsv1alpha1.ServicePort, svcImp *mcsv1alpha1.ServiceImport, baseInfo *baseServiceInfo) ServicePort {
+	info := &serviceImportInfo{baseServiceInfo: baseInfo}
 
 	svcName := types.NamespacedName{Namespace: svcImp.Namespace, Name: svcImp.Name}
 	info.svcName = svcName

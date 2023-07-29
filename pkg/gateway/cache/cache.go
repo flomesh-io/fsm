@@ -1,7 +1,10 @@
+// Package cache implements a cache of all the resources that are relevant to the gateway
 package cache
 
 import (
 	"fmt"
+	"sync"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -19,9 +22,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"sync"
 )
 
+// GatewayCache is a cache of all the resources that are relevant to the gateway
 type GatewayCache struct {
 	repoClient *repo.PipyRepoClient
 	informers  *informers.InformerCollection
@@ -44,6 +47,7 @@ type GatewayCache struct {
 	mutex *sync.RWMutex
 }
 
+// NewGatewayCache creates a new gateway cache
 func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
 	return &GatewayCache{
 		repoClient: repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
@@ -79,6 +83,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 	}
 }
 
+// Insert inserts an object into the cache
 func (c *GatewayCache) Insert(obj interface{}) bool {
 	p := c.getProcessor(obj)
 	if p != nil {
@@ -88,6 +93,7 @@ func (c *GatewayCache) Insert(obj interface{}) bool {
 	return false
 }
 
+// Delete deletes an object from the cache
 func (c *GatewayCache) Delete(obj interface{}) bool {
 	p := c.getProcessor(obj)
 	if p != nil {
@@ -133,7 +139,7 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 	for key := range c.httproutes {
 		// Get HTTPRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiHTTPRoute, key.String()); exists && err == nil {
+		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String()); exists && err == nil {
 			r := r.(*gwv1beta1.HTTPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
@@ -147,7 +153,7 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 
 	for key := range c.grpcroutes {
 		// Get GRPCRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGRPCRoute, key.String()); exists && err == nil {
+		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String()); exists && err == nil {
 			r := r.(*gwv1alpha2.GRPCRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
@@ -161,7 +167,7 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 
 	for key := range c.tlsroutes {
 		// Get TLSRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiTLSRoute, key.String()); exists && err == nil {
+		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String()); exists && err == nil {
 			r := r.(*gwv1alpha2.TLSRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
@@ -175,7 +181,7 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 
 	for key := range c.tcproutes {
 		// Get TCPRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiTCPRoute, key.String()); exists && err == nil {
+		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String()); exists && err == nil {
 			r := r.(*gwv1alpha2.TCPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
@@ -246,7 +252,7 @@ func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) boo
 		//	log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 		//	continue
 		//}
-		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String())
+		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
 		if err != nil {
 			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 			continue
@@ -315,6 +321,7 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	return string(ref.Name) == secret.Name
 }
 
+// BuildConfigs builds the configs for all the gateways in the cache
 func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -322,7 +329,7 @@ func (c *GatewayCache) BuildConfigs() {
 	configs := make(map[string]*route.ConfigSpec)
 
 	for ns, key := range c.gateways {
-		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGateway, key.String())
+		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
 		if err != nil {
 			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 			continue
@@ -355,7 +362,7 @@ func (c *GatewayCache) BuildConfigs() {
 			continue
 		}
 
-		jsonVersion, err := c.getVersionOfConfigJson(gatewayPath)
+		jsonVersion, err := c.getVersionOfConfigJSON(gatewayPath)
 		if err != nil {
 			continue
 		}
@@ -394,7 +401,7 @@ func (c *GatewayCache) BuildConfigs() {
 	}
 }
 
-func (c *GatewayCache) getVersionOfConfigJson(basepath string) (string, error) {
+func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 	path := fmt.Sprintf("%s/config.json", basepath)
 
 	json, err := c.repoClient.GetFile(path)
@@ -519,45 +526,45 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	services := make(map[string]serviceInfo)
 
 	for key := range c.httproutes {
-		if httpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiHTTPRoute, key.String()); exists && err == nil {
+		if httpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String()); exists && err == nil {
 			httpRoute := httpRoute.(*gwv1beta1.HTTPRoute)
 
-			processHttpRoute(gw, validListeners, httpRoute, rules)
-			processHttpRouteBackendFilters(httpRoute, services)
+			processHTTPRoute(gw, validListeners, httpRoute, rules)
+			processHTTPRouteBackendFilters(httpRoute, services)
 		}
 	}
 
 	for key := range c.grpcroutes {
-		if grpcRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiGRPCRoute, key.String()); exists && err == nil {
+		if grpcRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String()); exists && err == nil {
 			grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
 
-			processGrpcRoute(gw, validListeners, grpcRoute, rules)
-			processGrpcRouteBackendFilters(grpcRoute, services)
+			processGRPCRoute(gw, validListeners, grpcRoute, rules)
+			processGRPCRouteBackendFilters(grpcRoute, services)
 		}
 	}
 
 	for key := range c.tlsroutes {
-		if tlsRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiTLSRoute, key.String()); exists && err == nil {
+		if tlsRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String()); exists && err == nil {
 			tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
 
-			processTlsRoute(gw, validListeners, tlsRoute, rules)
-			processTlsBackends(tlsRoute, services)
+			processTLSRoute(gw, validListeners, tlsRoute, rules)
+			processTLSBackends(tlsRoute, services)
 		}
 	}
 
 	for key := range c.tcproutes {
-		if tcpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayApiTCPRoute, key.String()); exists && err == nil {
+		if tcpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String()); exists && err == nil {
 			tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
 
-			processTcpRoute(gw, validListeners, tcpRoute, rules)
-			processTcpBackends(tcpRoute, services)
+			processTCPRoute(gw, validListeners, tcpRoute, rules)
+			processTCPBackends(tcpRoute, services)
 		}
 	}
 
 	return rules, services
 }
 
-func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]route.RouteRule) {
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -578,7 +585,7 @@ func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			httpRule := route.L7RouteRule{}
 			for _, hostname := range hostnames {
-				httpRule[hostname] = generateHttpRouteConfig(httpRoute)
+				httpRule[hostname] = generateHTTPRouteConfig(httpRoute)
 			}
 
 			port := int32(listener.Port)
@@ -593,7 +600,7 @@ func processHttpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]route.RouteRule) {
+func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range grpcRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -614,7 +621,7 @@ func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			grpcRule := route.L7RouteRule{}
 			for _, hostname := range hostnames {
-				grpcRule[hostname] = generateGrpcRouteCfg(grpcRoute)
+				grpcRule[hostname] = generateGRPCRouteCfg(grpcRoute)
 			}
 
 			port := int32(listener.Port)
@@ -629,7 +636,7 @@ func processGrpcRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func processTlsRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]route.RouteRule) {
+func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -676,7 +683,7 @@ func processTlsRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 	}
 }
 
-func processTcpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tcpRoute *gwv1alpha2.TCPRoute, rules map[int32]route.RouteRule) {
+func processTCPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tcpRoute *gwv1alpha2.TCPRoute, rules map[int32]route.RouteRule) {
 	for _, ref := range tcpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -716,13 +723,13 @@ func processTcpRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 
 				rules[int32(listener.Port)] = tlsRule
 			case gwv1beta1.TCPProtocolType:
-				rules[int32(listener.Port)] = generateTcpRouteCfg(tcpRoute)
+				rules[int32(listener.Port)] = generateTCPRouteCfg(tcpRoute)
 			}
 		}
 	}
 }
 
-func processHttpRouteBackendFilters(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) {
+func processHTTPRouteBackendFilters(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) {
 	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
 	for _, rule := range httpRoute.Spec.Rules {
 		ruleLevelFilters := make(map[gwv1beta1.HTTPRouteFilterType]route.Filter)
@@ -751,7 +758,7 @@ func processHttpRouteBackendFilters(httpRoute *gwv1beta1.HTTPRoute, services map
 	}
 }
 
-func processGrpcRouteBackendFilters(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) {
+func processGRPCRouteBackendFilters(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) {
 	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
 	for _, rule := range grpcRoute.Spec.Rules {
 		ruleLevelFilters := make(map[gwv1alpha2.GRPCRouteFilterType]route.Filter)
@@ -780,11 +787,11 @@ func processGrpcRouteBackendFilters(grpcRoute *gwv1alpha2.GRPCRoute, services ma
 	}
 }
 
-func processTlsBackends(tlsRoute *gwv1alpha2.TLSRoute, services map[string]serviceInfo) {
+func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
 	// DO nothing for now
 }
 
-func processTcpBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
+func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := backendRefToServicePortName(backend, tcpRoute.Namespace); svcPort != nil {
@@ -846,10 +853,8 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 		}
 
 		endpointSet := make(map[endpointInfo]struct{})
-
 		for _, eps := range filteredSlices {
 			for _, endpoint := range eps.Endpoints {
-
 				if !isEndpointReady(endpoint) {
 					continue
 				}

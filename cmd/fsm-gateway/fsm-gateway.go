@@ -28,6 +28,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
@@ -46,8 +49,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os"
-	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -125,7 +126,7 @@ func main() {
 
 	cfg := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, msgBroker)
 
-	if !cfg.IsGatewayApiEnabled() {
+	if !cfg.IsGatewayAPIEnabled() {
 		log.Error().Msgf("GatewayAPI is not enabled, FSM doesn't support Ingress and GatewayAPI are both enabled.")
 		os.Exit(1)
 	}
@@ -154,7 +155,7 @@ func codebase(cfg configurator.Configurator) string {
 }
 
 func calcPipySpawn(kubeClient kubernetes.Interface) int64 {
-	cpuLimits, err := getGatewayCpuLimitsQuota(kubeClient)
+	cpuLimits, err := getGatewayCPULimitsQuota(kubeClient)
 	if err != nil {
 		log.Fatal().Err(err)
 		os.Exit(1)
@@ -182,7 +183,7 @@ func getGatewayPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 	return pod, nil
 }
 
-func getGatewayCpuLimitsQuota(kubeClient kubernetes.Interface) (*resource.Quantity, error) {
+func getGatewayCPULimitsQuota(kubeClient kubernetes.Interface) (*resource.Quantity, error) {
 	pod, err := getGatewayPod(kubeClient)
 	if err != nil {
 		return nil, err

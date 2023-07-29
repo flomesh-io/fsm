@@ -323,69 +323,69 @@ const (
 
 	// ---
 
-	// GatewayApiGatewayClassAdded is the type of announcement emitted when we observe an addition of gatewayclasses.gateway.networking.k8s.io
-	GatewayApiGatewayClassAdded Kind = "gwapi-gatewayclass-added"
+	// GatewayAPIGatewayClassAdded is the type of announcement emitted when we observe an addition of gatewayclasses.gateway.networking.k8s.io
+	GatewayAPIGatewayClassAdded Kind = "gwapi-gatewayclass-added"
 
-	// GatewayApiGatewayClassDeleted the type of announcement emitted when we observe a deletion of gatewayclasses.gateway.networking.k8s.io
-	GatewayApiGatewayClassDeleted Kind = "gwapi-gatewayclass-deleted"
+	// GatewayAPIGatewayClassDeleted the type of announcement emitted when we observe a deletion of gatewayclasses.gateway.networking.k8s.io
+	GatewayAPIGatewayClassDeleted Kind = "gwapi-gatewayclass-deleted"
 
-	// GatewayApiGatewayClassUpdated is the type of announcement emitted when we observe an update to gatewayclasses.gateway.networking.k8s.io
-	GatewayApiGatewayClassUpdated Kind = "gwapi-gatewayclass-updated"
-
-	// ---
-
-	// GatewayApiGatewayAdded is the type of announcement emitted when we observe an addition of gateways.gateway.networking.k8s.io
-	GatewayApiGatewayAdded Kind = "gwapi-gateway-added"
-
-	// GatewayApiGatewayDeleted the type of announcement emitted when we observe a deletion of gateways.gateway.networking.k8s.io
-	GatewayApiGatewayDeleted Kind = "gwapi-gateway-deleted"
-
-	// GatewayApiGatewayUpdated is the type of announcement emitted when we observe an update to gateways.gateway.networking.k8s.io
-	GatewayApiGatewayUpdated Kind = "gwapi-gateway-updated"
+	// GatewayAPIGatewayClassUpdated is the type of announcement emitted when we observe an update to gatewayclasses.gateway.networking.k8s.io
+	GatewayAPIGatewayClassUpdated Kind = "gwapi-gatewayclass-updated"
 
 	// ---
 
-	// GatewayApiHTTPRouteAdded is the type of announcement emitted when we observe an addition of httproutes.gateway.networking.k8s.io
-	GatewayApiHTTPRouteAdded Kind = "gwapi-httproute-added"
+	// GatewayAPIGatewayAdded is the type of announcement emitted when we observe an addition of gateways.gateway.networking.k8s.io
+	GatewayAPIGatewayAdded Kind = "gwapi-gateway-added"
 
-	// GatewayApiHTTPRouteDeleted the type of announcement emitted when we observe a deletion of httproutes.gateway.networking.k8s.io
-	GatewayApiHTTPRouteDeleted Kind = "gwapi-httproute-deleted"
+	// GatewayAPIGatewayDeleted the type of announcement emitted when we observe a deletion of gateways.gateway.networking.k8s.io
+	GatewayAPIGatewayDeleted Kind = "gwapi-gateway-deleted"
 
-	// GatewayApiHTTPRouteUpdated is the type of announcement emitted when we observe an update to httproutes.gateway.networking.k8s.io
-	GatewayApiHTTPRouteUpdated Kind = "gwapi-httproute-updated"
-
-	// ---
-
-	// GatewayApiGRPCRouteAdded is the type of announcement emitted when we observe an addition of grpcroutes.gateway.networking.k8s.io
-	GatewayApiGRPCRouteAdded Kind = "gwapi-grpcroute-added"
-
-	// GatewayApiGRPCRouteDeleted the type of announcement emitted when we observe a deletion of grpcroutes.gateway.networking.k8s.io
-	GatewayApiGRPCRouteDeleted Kind = "gwapi-grpcroute-deleted"
-
-	// GatewayApiGRPCRouteUpdated is the type of announcement emitted when we observe an update to grpcroutes.gateway.networking.k8s.io
-	GatewayApiGRPCRouteUpdated Kind = "gwapi-grpcroute-updated"
+	// GatewayAPIGatewayUpdated is the type of announcement emitted when we observe an update to gateways.gateway.networking.k8s.io
+	GatewayAPIGatewayUpdated Kind = "gwapi-gateway-updated"
 
 	// ---
 
-	// GatewayApiTLSRouteAdded is the type of announcement emitted when we observe an addition of tlsroutes.gateway.networking.k8s.io
-	GatewayApiTLSRouteAdded Kind = "gwapi-tlsroute-added"
+	// GatewayAPIHTTPRouteAdded is the type of announcement emitted when we observe an addition of httproutes.gateway.networking.k8s.io
+	GatewayAPIHTTPRouteAdded Kind = "gwapi-httproute-added"
 
-	// GatewayApiTLSRouteDeleted the type of announcement emitted when we observe a deletion of tlsroutes.gateway.networking.k8s.io
-	GatewayApiTLSRouteDeleted Kind = "gwapi-tlsroute-deleted"
+	// GatewayAPIHTTPRouteDeleted the type of announcement emitted when we observe a deletion of httproutes.gateway.networking.k8s.io
+	GatewayAPIHTTPRouteDeleted Kind = "gwapi-httproute-deleted"
 
-	// GatewayApiTLSRouteUpdated is the type of announcement emitted when we observe an update to tlsroutes.gateway.networking.k8s.io
-	GatewayApiTLSRouteUpdated Kind = "gwapi-tlsroute-updated"
+	// GatewayAPIHTTPRouteUpdated is the type of announcement emitted when we observe an update to httproutes.gateway.networking.k8s.io
+	GatewayAPIHTTPRouteUpdated Kind = "gwapi-httproute-updated"
 
 	// ---
 
-	// GatewayApiTCPRouteAdded is the type of announcement emitted when we observe an addition of tcproutes.gateway.networking.k8s.io
-	GatewayApiTCPRouteAdded Kind = "gwapi-tcproute-added"
+	// GatewayAPIGRPCRouteAdded is the type of announcement emitted when we observe an addition of grpcroutes.gateway.networking.k8s.io
+	GatewayAPIGRPCRouteAdded Kind = "gwapi-grpcroute-added"
 
-	// GatewayApiTCPRouteDeleted the type of announcement emitted when we observe a deletion of tcproutes.gateway.networking.k8s.io
-	GatewayApiTCPRouteDeleted Kind = "gwapi-tcproute-deleted"
+	// GatewayAPIGRPCRouteDeleted the type of announcement emitted when we observe a deletion of grpcroutes.gateway.networking.k8s.io
+	GatewayAPIGRPCRouteDeleted Kind = "gwapi-grpcroute-deleted"
 
-	// GatewayApiTCPRouteUpdated is the type of announcement emitted when we observe an update to tcproutes.gateway.networking.k8s.io
-	GatewayApiTCPRouteUpdated Kind = "gwapi-tcproute-updated"
+	// GatewayAPIGRPCRouteUpdated is the type of announcement emitted when we observe an update to grpcroutes.gateway.networking.k8s.io
+	GatewayAPIGRPCRouteUpdated Kind = "gwapi-grpcroute-updated"
+
+	// ---
+
+	// GatewayAPITLSRouteAdded is the type of announcement emitted when we observe an addition of tlsroutes.gateway.networking.k8s.io
+	GatewayAPITLSRouteAdded Kind = "gwapi-tlsroute-added"
+
+	// GatewayAPITLSRouteDeleted the type of announcement emitted when we observe a deletion of tlsroutes.gateway.networking.k8s.io
+	GatewayAPITLSRouteDeleted Kind = "gwapi-tlsroute-deleted"
+
+	// GatewayAPITLSRouteUpdated is the type of announcement emitted when we observe an update to tlsroutes.gateway.networking.k8s.io
+	GatewayAPITLSRouteUpdated Kind = "gwapi-tlsroute-updated"
+
+	// ---
+
+	// GatewayAPITCPRouteAdded is the type of announcement emitted when we observe an addition of tcproutes.gateway.networking.k8s.io
+	GatewayAPITCPRouteAdded Kind = "gwapi-tcproute-added"
+
+	// GatewayAPITCPRouteDeleted the type of announcement emitted when we observe a deletion of tcproutes.gateway.networking.k8s.io
+	GatewayAPITCPRouteDeleted Kind = "gwapi-tcproute-deleted"
+
+	// GatewayAPITCPRouteUpdated is the type of announcement emitted when we observe an update to tcproutes.gateway.networking.k8s.io
+	GatewayAPITCPRouteUpdated Kind = "gwapi-tcproute-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

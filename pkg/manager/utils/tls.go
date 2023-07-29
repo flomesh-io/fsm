@@ -26,6 +26,7 @@ package utils
 
 import (
 	"fmt"
+
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -34,8 +35,9 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+// UpdateIngressTLSConfig updates TLS config of ingress controller
 func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
-	json, err := getMainJson(basepath, repoClient)
+	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
 	}
@@ -52,9 +54,10 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 		}
 	}
 
-	return updateMainJson(basepath, repoClient, json)
+	return updateMainJSON(basepath, repoClient, json)
 }
 
+// IssueCertForIngress issues certificate for ingress controller
 func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator) error {
 	// 1. issue cert
 	cert, err := certMgr.IssueCertificate(
@@ -67,12 +70,12 @@ func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, cer
 	}
 
 	// 2. get main.json
-	json, err := getMainJson(basepath, repoClient)
+	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
 	}
 
-	newJson, err := sjson.Set(json, "tls", map[string]interface{}{
+	newJSON, err := sjson.Set(json, "tls", map[string]interface{}{
 		"enabled": mc.IsIngressTLSEnabled(),
 		"listen":  mc.GetIngressTLSListenPort(),
 		"mTLS":    mc.IsIngressMTLSEnabled(),
@@ -88,13 +91,14 @@ func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, cer
 	}
 
 	// 6. update main.json
-	return updateMainJson(basepath, repoClient, newJson)
+	return updateMainJSON(basepath, repoClient, newJSON)
 }
 
+// UpdateSSLPassthrough updates SSL passthrough config
 func UpdateSSLPassthrough(basepath string, repoClient *repo.PipyRepoClient, enabled bool, upstreamPort int32) error {
 	log.Info().Msgf("SSL passthrough is enabled, updating repo config ...")
 	// 1. get main.json
-	json, err := getMainJson(basepath, repoClient)
+	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
 	}
@@ -102,7 +106,7 @@ func UpdateSSLPassthrough(basepath string, repoClient *repo.PipyRepoClient, enab
 	// 2. update ssl passthrough config
 	log.Info().Msgf("SSLPassthrough enabled=%t", enabled)
 	log.Info().Msgf("SSLPassthrough upstreamPort=%d", upstreamPort)
-	newJson, err := sjson.Set(json, "sslPassthrough", map[string]interface{}{
+	newJSON, err := sjson.Set(json, "sslPassthrough", map[string]interface{}{
 		"enabled":      enabled,
 		"upstreamPort": upstreamPort,
 	})
@@ -112,5 +116,5 @@ func UpdateSSLPassthrough(basepath string, repoClient *repo.PipyRepoClient, enab
 	}
 
 	// 3. update main.json
-	return updateMainJson(basepath, repoClient, newJson)
+	return updateMainJSON(basepath, repoClient, newJSON)
 }

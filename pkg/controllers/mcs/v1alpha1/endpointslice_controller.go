@@ -26,7 +26,7 @@ package v1alpha1
 
 import (
 	"context"
-	_ "embed"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -43,6 +43,7 @@ type endpointSliceReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewEndpointSliceReconciler returns a new EndpointSlice.Reconciler
 func NewEndpointSliceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &endpointSliceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("EndpointSlice"),

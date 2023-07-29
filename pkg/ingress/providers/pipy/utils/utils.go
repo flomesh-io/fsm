@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package utils provides utility functions for the pipy ingress controller
 package utils
 
 import (
@@ -35,6 +36,7 @@ var (
 	log = logger.New("fsm-ingress-utils")
 )
 
+// IsValidPipyIngress checks if the ingress is a valid pipy ingress
 func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 	// 1. with annotation or IngressClass
 	ingressClass, ok := ing.GetAnnotations()[constants.IngressAnnotationKey]
@@ -55,6 +57,7 @@ func IsValidPipyIngress(ing *networkingv1.Ingress) bool {
 	return ingressClass == constants.IngressPipyClass
 }
 
+// MetaNamespaceKey returns the key for an object that implements meta.Interface
 func MetaNamespaceKey(obj interface{}) string {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {

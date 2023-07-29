@@ -30,13 +30,14 @@ import (
 	"github.com/tidwall/sjson"
 )
 
+// UpdateIngressHTTPConfig updates HTTP config of ingress controller
 func UpdateIngressHTTPConfig(basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) error {
-	json, err := getMainJson(basepath, repoClient)
+	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
 	}
 
-	newJson, err := sjson.Set(json, "http", map[string]interface{}{
+	newJSON, err := sjson.Set(json, "http", map[string]interface{}{
 		"enabled": mc.IsIngressHTTPEnabled(),
 		"listen":  mc.GetIngressHTTPListenPort(),
 	})
@@ -45,5 +46,5 @@ func UpdateIngressHTTPConfig(basepath string, repoClient *client.PipyRepoClient,
 		return err
 	}
 
-	return updateMainJson(basepath, repoClient, newJson)
+	return updateMainJSON(basepath, repoClient, newJSON)
 }

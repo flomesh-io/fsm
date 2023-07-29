@@ -29,6 +29,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"helm.sh/helm/v3/pkg/action"
@@ -36,16 +39,15 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
+// RenderChart renders a chart and returns the rendered manifest
 func RenderChart(
 	releaseName string,
 	object metav1.Object,
@@ -108,10 +110,10 @@ func applyChartYAMLs(owner metav1.Object, rel *release.Release, client client.Cl
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else {
-				log.Error().Msgf("Error reading yaml: %s", err)
-				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}
+
+			log.Error().Msgf("Error reading yaml: %s", err)
+			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
 
 		log.Info().Msgf("[HELM UTIL] Processing YAML : \n\n%s\n\n", string(buf))
@@ -159,6 +161,7 @@ func isValidOwner(owner, object metav1.Object) bool {
 	return true
 }
 
+// MergeMaps merges two maps
 func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	out := make(map[string]interface{}, len(a))
 	for k, v := range a {

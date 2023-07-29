@@ -203,9 +203,9 @@ func (c *Client) GetRemoteLoggingSampledFraction() float32 {
 	return 1
 }
 
+// GetRemoteLoggingSecretName returns the name of the secret that contains the credentials to access the remote logging service.
 func (c *Client) GetRemoteLoggingSecretName() string {
 	return c.getMeshConfig().Spec.Observability.RemoteLogging.SecretName
-
 }
 
 // GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
@@ -477,8 +477,8 @@ func (c *Client) GetGlobalPluginChains() map[string][]trafficpolicy.Plugin {
 	return pluginChainMap
 }
 
-// IsGatewayApiEnabled returns whether GatewayAPI is enabled
-func (c *Client) IsGatewayApiEnabled() bool {
+// IsGatewayAPIEnabled returns whether GatewayAPI is enabled
+func (c *Client) IsGatewayAPIEnabled() bool {
 	mcSpec := c.getMeshConfig().Spec
 	return mcSpec.GatewayAPI.Enabled && !mcSpec.Ingress.Enabled
 }
@@ -521,36 +521,44 @@ func (c *Client) IsMultiClusterControlPlane() bool {
 		clusterSet.UID == clusterSet.ControlPlaneUID
 }
 
+// GetImageRegistry returns the image registry
 func (c *Client) GetImageRegistry() string {
 	mcSpec := c.getMeshConfig().Spec
 	return mcSpec.Image.Registry
 }
 
+// ServiceLbImage returns the image for service load balancer
 func (c *Client) ServiceLbImage() string {
 	mcSpec := c.getMeshConfig().Spec
 	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.Image.ServiceLBImage)
 }
 
+// GetFLBSecretName returns the secret name for FLB
 func (c *Client) GetFLBSecretName() string {
 	return c.getMeshConfig().Spec.FLB.SecretName
 }
 
+// IsFLBStrictModeEnabled returns whether FLB is in strict mode
 func (c *Client) IsFLBStrictModeEnabled() bool {
 	return c.getMeshConfig().Spec.FLB.StrictMode
 }
 
+// IsManaged returns whether the cluster is managed
 func (c *Client) IsManaged() bool {
 	return c.getMeshConfig().Spec.ClusterSet.IsManaged
 }
 
+// GetClusterUID returns the UID of the cluster
 func (c *Client) GetClusterUID() string {
 	return c.getMeshConfig().Spec.ClusterSet.UID
 }
 
+// GetMultiClusterControlPlaneUID returns the UID of the control plane of the multi cluster set
 func (c *Client) GetMultiClusterControlPlaneUID() string {
 	return c.getMeshConfig().Spec.ClusterSet.ControlPlaneUID
 }
 
+// IsIngressTLSEnabled returns whether TLS is enabled for ingress
 func (c *Client) IsIngressTLSEnabled() bool {
 	tls := c.getMeshConfig().Spec.Ingress.TLS
 	if tls != nil {
@@ -560,6 +568,7 @@ func (c *Client) IsIngressTLSEnabled() bool {
 	return false
 }
 
+// GetIngressTLSListenPort returns the port that ingress listens on for TLS
 func (c *Client) GetIngressTLSListenPort() int32 {
 	tls := c.getMeshConfig().Spec.Ingress.TLS
 	if tls != nil {
@@ -569,6 +578,7 @@ func (c *Client) GetIngressTLSListenPort() int32 {
 	return 443
 }
 
+// IsIngressMTLSEnabled returns whether mTLS is enabled for ingress
 func (c *Client) IsIngressMTLSEnabled() bool {
 	tls := c.getMeshConfig().Spec.Ingress.TLS
 	if tls != nil {
@@ -578,6 +588,7 @@ func (c *Client) IsIngressMTLSEnabled() bool {
 	return false
 }
 
+// IsIngressSSLPassthroughEnabled returns whether SSL Passthrough is enabled for ingress
 func (c *Client) IsIngressSSLPassthroughEnabled() bool {
 	tls := c.getMeshConfig().Spec.Ingress.TLS
 	if tls != nil {
@@ -591,6 +602,7 @@ func (c *Client) IsIngressSSLPassthroughEnabled() bool {
 	return false
 }
 
+// GetIngressSSLPassthroughUpstreamPort returns the port that ingress listens on for SSL Passthrough
 func (c *Client) GetIngressSSLPassthroughUpstreamPort() int32 {
 	tls := c.getMeshConfig().Spec.Ingress.TLS
 	if tls != nil {
@@ -604,6 +616,7 @@ func (c *Client) GetIngressSSLPassthroughUpstreamPort() int32 {
 	return 443
 }
 
+// IsIngressHTTPEnabled returns whether HTTP is enabled for ingress
 func (c *Client) IsIngressHTTPEnabled() bool {
 	http := c.getMeshConfig().Spec.Ingress.HTTP
 	if http != nil {
@@ -613,6 +626,7 @@ func (c *Client) IsIngressHTTPEnabled() bool {
 	return false
 }
 
+// GetIngressHTTPListenPort returns the port that ingress listens on for HTTP
 func (c *Client) GetIngressHTTPListenPort() int32 {
 	http := c.getMeshConfig().Spec.Ingress.HTTP
 	if http != nil {

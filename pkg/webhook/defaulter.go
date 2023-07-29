@@ -28,6 +28,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -70,6 +71,7 @@ func (h *mutatingHandler) Handle(ctx context.Context, req admission.Request) adm
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshalled)
 }
 
+// DefaultingWebhookFor returns a webhook that defaults the given object.
 func DefaultingWebhookFor(defaulter Defaulter) *admission.Webhook {
 	return &admission.Webhook{
 		Handler: &mutatingHandler{defaulter: defaulter},

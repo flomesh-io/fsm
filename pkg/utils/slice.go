@@ -1,5 +1,6 @@
 package utils
 
+// StringsEqual compares two string slices and returns true if they are equal.
 func StringsEqual(left, right []string) bool {
 	if len(left) != len(right) {
 		return false

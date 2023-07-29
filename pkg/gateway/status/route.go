@@ -27,6 +27,8 @@ package status
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -35,15 +37,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"time"
 )
 
+// RouteStatusProcessor is responsible for computing the status of a Route
 type RouteStatusProcessor struct {
 	Informers *informers.InformerCollection
 }
 
-func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route client.Object) ([]gwv1beta1.RouteParentStatus, error) {
-	gatewayList := p.Informers.List(informers.InformerKeyGatewayApiGateway)
+// ProcessRouteStatus computes the status of a Route
+func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route client.Object) ([]gwv1beta1.RouteParentStatus, error) {
+	gatewayList := p.Informers.List(informers.InformerKeyGatewayAPIGateway)
 
 	activeGateways := make([]*gwv1beta1.Gateway, 0)
 	for _, gw := range gatewayList {
@@ -54,7 +57,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route cli
 	}
 
 	if len(activeGateways) > 0 {
-		var params *computeParams = nil
+		var params *computeParams
 		switch route := route.(type) {
 		case *gwv1beta1.HTTPRoute:
 			params = &computeParams{
@@ -89,9 +92,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(ctx context.Context, route cli
 			return nil, fmt.Errorf("unsupported route type: %T", route)
 		}
 
-		if params != nil {
-			return p.computeRouteParentStatus(activeGateways, params), nil
-		}
+		return p.computeRouteParentStatus(activeGateways, params), nil
 	}
 
 	return nil, nil
@@ -118,9 +119,9 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 			}
 
 			allowedListeners := gwutils.GetAllowedListeners(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
-			if len(allowedListeners) == 0 {
-
-			}
+			//if len(allowedListeners) == 0 {
+			//
+			//}
 
 			count := 0
 			for _, listener := range allowedListeners {

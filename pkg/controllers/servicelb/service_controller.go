@@ -26,8 +26,11 @@ package servicelb
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -43,9 +46,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 // ServiceReconciler reconciles a Service object
@@ -54,6 +54,7 @@ type serviceReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewServiceReconciler returns a new reconcile.Reconciler
 func NewServiceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceLB"),

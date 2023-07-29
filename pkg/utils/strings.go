@@ -4,6 +4,7 @@ import (
 	"strings"
 )
 
+// ParseEnabled parses the given string to a boolean value.
 func ParseEnabled(enabled string) bool {
 	switch strings.ToLower(enabled) {
 	case "1", "t", "true", "y", "yes", "on":

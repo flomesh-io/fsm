@@ -10,6 +10,7 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 )
 
+// Run starts the control plane server
 func (s *ControlPlaneServer) Run(stop <-chan struct{}) {
 	mcsPubSub := s.msgBroker.GetMCSEventPubSub()
 	svcExportCreatedCh := mcsPubSub.Sub(announcements.MultiClusterServiceExportCreated.String())
@@ -130,15 +131,18 @@ func (s *ControlPlaneServer) rejectServiceExport(svcExportEvt *mcsevent.ServiceE
 	})
 }
 
+// GetBackground returns the background with the given cluster key
 func (s *ControlPlaneServer) GetBackground(key string) (*conn.Background, bool) {
 	bg, exists := s.backgrounds[key]
 	return bg, exists
 }
 
+// AddBackground adds a background with the given cluster key
 func (s *ControlPlaneServer) AddBackground(key string, background *conn.Background) {
 	s.backgrounds[key] = background
 }
 
+// DestroyBackground destroys the background with the given cluster key
 func (s *ControlPlaneServer) DestroyBackground(key string) {
 	bg, exists := s.backgrounds[key]
 	if !exists {

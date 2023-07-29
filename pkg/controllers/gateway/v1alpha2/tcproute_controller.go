@@ -22,10 +22,11 @@
  * SOFTWARE.
  */
 
-package v1beta1
+package v1alpha2
 
 import (
 	"context"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -43,6 +44,7 @@ type tcpRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+// NewTCPRouteReconciler returns a new TCPRoute Reconciler
 func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
@@ -51,6 +53,7 @@ func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	}
 }
 
+// Reconcile reconciles a TCPRoute object
 func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	tcpRoute := &gwv1alpha2.TCPRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, tcpRoute)

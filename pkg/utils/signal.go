@@ -6,6 +6,7 @@ import (
 	"syscall"
 )
 
+// RegisterExitHandlers registers a shutdown function to be called when a signal is received.
 func RegisterExitHandlers(shutdownFuncs ...func()) (stop chan struct{}) {
 	stop = make(chan struct{})
 
@@ -22,6 +23,7 @@ func RegisterExitHandlers(shutdownFuncs ...func()) (stop chan struct{}) {
 	return stop
 }
 
+// RegisterOSExitHandlers registers a shutdown function to be called when a signal is received.
 func RegisterOSExitHandlers(shutdownFuncs ...func()) (stop chan struct{}) {
 	var exitSignals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL}
 

@@ -3,10 +3,11 @@ package constants
 
 import (
 	"fmt"
-	"github.com/blang/semver"
 	"os"
 	"text/template"
 	"time"
+
+	"github.com/blang/semver"
 )
 
 const (
@@ -366,49 +367,80 @@ const (
 
 // Gateway API constants
 const (
+	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"
 
-	GatewayPrefix                       = "gateway.flomesh.io"
-	GatewayMTLSAnnotation               = GatewayPrefix + "/mtls"
-	GatewayUpstreamSSLNameAnnotation    = GatewayPrefix + "/upstream-ssl-name"
-	GatewayUpstreamSSLSecretAnnotation  = GatewayPrefix + "/upstream-ssl-secret"
-	GatewayUpstreamSSLVerifyAnnotation  = GatewayPrefix + "/upstream-ssl-verify"
-	GatewayTLSVerifyClientAnnotation    = GatewayPrefix + "/tls-verify-client"
-	GatewayTLSVerifyDepthAnnotation     = GatewayPrefix + "/tls-verify-depth"
-	GatewayTLSTrustedCASecretAnnotation = GatewayPrefix + "/tls-trusted-ca-secret"
-	GatewayBackendProtocolAnnotation    = GatewayPrefix + "/upstream-protocol"
+	// GatewayPrefix is the prefix for all gateway annotations
+	GatewayPrefix = "gateway.flomesh.io"
 
-	GatewayMutatingWebhookPath        = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
-	GatewayValidatingWebhookPath      = "/validate-gateway-networking-k8s-io-v1beta1-gateway"
-	GatewayClassMutatingWebhookPath   = "/mutate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	// GatewayMTLSAnnotation is the annotation used to indicate whether the gateway should be configured for mTLS
+	GatewayMTLSAnnotation = GatewayPrefix + "/mtls"
+
+	// GatewayMutatingWebhookPath is the path at which the gateway mutating webhook is served
+	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
+
+	// GatewayValidatingWebhookPath is the path at which the gateway validating webhook is served
+	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gateway"
+
+	// GatewayClassMutatingWebhookPath is the path at which the gateway class mutating webhook is served
+	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+
+	// GatewayClassValidatingWebhookPath is the path at which the gateway class validating webhook is served
 	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gatewayclass"
-	HTTPRouteMutatingWebhookPath      = "/mutate-gateway-networking-k8s-io-v1beta1-httproute"
-	HTTPRouteValidatingWebhookPath    = "/validate-gateway-networking-k8s-io-v1beta1-httproute"
-	GRPCRouteMutatingWebhookPath      = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
-	GRPCRouteValidatingWebhookPath    = "/validate-gateway-networking-k8s-io-v1alpha2-grpcroute"
-	TCPRouteMutatingWebhookPath       = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"
-	TCPRouteValidatingWebhookPath     = "/validate-gateway-networking-k8s-io-v1alpha2-tcproute"
-	TLSRouteMutatingWebhookPath       = "/mutate-gateway-networking-k8s-io-v1alpha2-tlsroute"
-	TLSRouteValidatingWebhookPath     = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
+
+	// HTTPRouteMutatingWebhookPath is the path at which the HTTP route mutating webhook is served
+	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-httproute"
+
+	// HTTPRouteValidatingWebhookPath is the path at which the HTTP route validating webhook is served
+	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-httproute"
+
+	// GRPCRouteMutatingWebhookPath is the path at which the gRPC route mutating webhook is served
+	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+
+	// GRPCRouteValidatingWebhookPath is the path at which the gRPC route validating webhook is served
+	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+
+	// TCPRouteMutatingWebhookPath is the path at which the TCP route mutating webhook is served
+	TCPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"
+
+	// TCPRouteValidatingWebhookPath is the path at which the TCP route validating webhook is served
+	TCPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tcproute"
+
+	// TLSRouteMutatingWebhookPath is the path at which the TLS route mutating webhook is served
+	TLSRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tlsroute"
+
+	// TLSRouteValidatingWebhookPath is the path at which the TLS route validating webhook is served
+	TLSRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
 )
 
 // PIPY Repo constants
 const (
-	DefaultPipyRepoPath    = "/repo"
-	DefaultPipyRepoApiPath = "/api/v1/repo"
-	DefaultPipyFileApiPath = "/api/v1/repo-files"
+	// DefaultPipyRepoPath is the default path for the PIPY repo
+	DefaultPipyRepoPath = "/repo"
+
+	// DefaultPipyRepoAPIPath is the default path for the PIPY repo API
+	DefaultPipyRepoAPIPath = "/api/v1/repo"
+
+	// DefaultPipyFileAPIPath is the default path for the PIPY file API
+	DefaultPipyFileAPIPath = "/api/v1/repo-files"
+
+	// DefaultServiceBasePath is the default path for the service codebase
 	DefaultServiceBasePath = "/base/services"
+
+	// DefaultIngressBasePath is the default path for the ingress codebase
 	DefaultIngressBasePath = "/base/ingress"
+
+	// DefaultGatewayBasePath is the default path for the gateway codebase
 	DefaultGatewayBasePath = "/base/gateways"
 )
 
 // MultiCluster constants
 const (
-	MultiClustersPrefix            = "multicluster.flomesh.io"
+	// MultiClustersPrefix is the prefix for all multi-cluster annotations
+	MultiClustersPrefix = "multicluster.flomesh.io"
+
+	// MultiClustersServiceExportHash is the annotation used to indicate the hash of the exported service
 	MultiClustersServiceExportHash = MultiClustersPrefix + "/export-hash"
-	//MultiClustersConnectorMode     = MultiClustersPrefix + "/connector-mode"
-	//MultiClustersExported          = MultiClustersPrefix + "/export"
-	//MultiClustersExportedName      = MultiClustersPrefix + "/export-name"
 
 	// MultiClusterLabelServiceName is used to indicate the name of multi-cluster service
 	// that an EndpointSlice belongs to.
@@ -421,96 +453,211 @@ const (
 	// derived Service that represents the imported service for kube-proxy.
 	MultiClusterDerivedServiceAnnotation = MultiClustersPrefix + "/derived-service"
 
+	// ClusterTpl is the template for cluster name
 	ClusterTpl = "{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}"
 
-	ClusterMutatingWebhookPath               = "/mutate-flomesh-io-v1alpha1-cluster"
-	ClusterValidatingWebhookPath             = "/validate-flomesh-io-v1alpha1-cluster"
-	ServiceImportMutatingWebhookPath         = "/mutate-flomesh-io-v1alpha1-serviceimport"
-	ServiceImportValidatingWebhookPath       = "/validate-flomesh-io-v1alpha1-serviceimport"
-	ServiceExportMutatingWebhookPath         = "/mutate-flomesh-io-v1alpha1-serviceexport"
-	ServiceExportValidatingWebhookPath       = "/validate-flomesh-io-v1alpha1-serviceexport"
-	GlobalTrafficPolicyMutatingWebhookPath   = "/mutate-flomesh-io-v1alpha1-globaltrafficpolicy"
+	// ClusterMutatingWebhookPath is the path at which the cluster mutating webhook is served
+	ClusterMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-cluster"
+
+	// ClusterValidatingWebhookPath is the path at which the cluster validating webhook is served
+	ClusterValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-cluster"
+
+	// ServiceImportMutatingWebhookPath is the path at which the service import mutating webhook is served
+	ServiceImportMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-serviceimport"
+
+	// ServiceImportValidatingWebhookPath is the path at which the service import validating webhook is served
+	ServiceImportValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-serviceimport"
+
+	// ServiceExportMutatingWebhookPath is the path at which the service export mutating webhook is served
+	ServiceExportMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-serviceexport"
+
+	// ServiceExportValidatingWebhookPath is the path at which the service export validating webhook is served
+	ServiceExportValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-serviceexport"
+
+	// GlobalTrafficPolicyMutatingWebhookPath is the path at which the global traffic policy mutating webhook is served
+	GlobalTrafficPolicyMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-globaltrafficpolicy"
+
+	// GlobalTrafficPolicyValidatingWebhookPath is the path at which the global traffic policy validating webhook is served
 	GlobalTrafficPolicyValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-globaltrafficpolicy"
 )
 
 // FLB constants
 const (
-	FlbPrefix                   = "flb.flomesh.io"
-	FlbEnabledAnnotation        = FlbPrefix + "/enabled"
-	FlbClusterAnnotation        = FlbPrefix + "/cluster"
-	FlbAddressPoolAnnotation    = FlbPrefix + "/address-pool"
-	FlbDesiredIPAnnotation      = FlbPrefix + "/desired-ip"
+	// FlbPrefix is the prefix for all flb annotations
+	FlbPrefix = "flb.flomesh.io"
+
+	// FlbEnabledAnnotation is the annotation used to indicate if the flb is enabled
+	FlbEnabledAnnotation = FlbPrefix + "/enabled"
+
+	// FlbClusterAnnotation is the annotation used to indicate the cluster name
+	FlbClusterAnnotation = FlbPrefix + "/cluster"
+
+	// FlbAddressPoolAnnotation is the annotation used to indicate the address pool
+	FlbAddressPoolAnnotation = FlbPrefix + "/address-pool"
+
+	// FlbDesiredIPAnnotation is the annotation used to indicate the desired ip
+	FlbDesiredIPAnnotation = FlbPrefix + "/desired-ip"
+
+	// FlbMaxConnectionsAnnotation is the annotation used to indicate the max connections
 	FlbMaxConnectionsAnnotation = FlbPrefix + "/max-connections"
-	FlbReadTimeoutAnnotation    = FlbPrefix + "/read-timeout"
-	FlbWriteTimeoutAnnotation   = FlbPrefix + "/write-timeout"
-	FlbIdleTimeoutAnnotation    = FlbPrefix + "/idle-timeout"
-	FlbAlgoAnnotation           = FlbPrefix + "/algo"
-	FlbSecretLabel              = FlbPrefix + "/config"
 
-	FLBSecretKeyBaseUrl            = "baseUrl"
-	FLBSecretKeyUsername           = "username"
-	FLBSecretKeyPassword           = "password"
-	FLBSecretKeyDefaultCluster     = "defaultCluster"
+	// FlbReadTimeoutAnnotation is the annotation used to indicate the read timeout
+	FlbReadTimeoutAnnotation = FlbPrefix + "/read-timeout"
+
+	// FlbWriteTimeoutAnnotation is the annotation used to indicate the write timeout
+	FlbWriteTimeoutAnnotation = FlbPrefix + "/write-timeout"
+
+	// FlbIdleTimeoutAnnotation is the annotation used to indicate the idle timeout
+	FlbIdleTimeoutAnnotation = FlbPrefix + "/idle-timeout"
+
+	// FlbAlgoAnnotation is the annotation used to indicate the algo
+	FlbAlgoAnnotation = FlbPrefix + "/algo"
+
+	// FlbSecretLabel is the label used to indicate the secret
+	FlbSecretLabel = FlbPrefix + "/config"
+
+	// FLBSecretKeyBaseURL is the key for the base url
+	FLBSecretKeyBaseURL = "baseUrl"
+
+	// FLBSecretKeyUsername is the key for the username
+	FLBSecretKeyUsername = "username"
+
+	// FLBSecretKeyPassword is the key for the password
+	FLBSecretKeyPassword = "password"
+
+	// FLBSecretKeyDefaultCluster is the key for the default cluster
+	FLBSecretKeyDefaultCluster = "defaultCluster"
+
+	// FLBSecretKeyDefaultAddressPool is the key for the default address pool
 	FLBSecretKeyDefaultAddressPool = "defaultAddressPool"
-	FLBSecretKeyDefaultAlgo        = "defaultAlgo"
 
-	FLBServiceMutatingWebhookPath   = "/mutate-flb-core-v1-service"
+	// FLBSecretKeyDefaultAlgo is the key for the default algo
+	FLBSecretKeyDefaultAlgo = "defaultAlgo"
+
+	// FLBServiceMutatingWebhookPath is the path at which the flb service mutating webhook is served
+	FLBServiceMutatingWebhookPath = "/mutate-flb-core-v1-service"
+
+	// FLBServiceValidatingWebhookPath is the path at which the flb service validating webhook is served
 	FLBServiceValidatingWebhookPath = "/validate-flb-core-v1-service"
-	FLBSecretMutatingWebhookPath    = "/mutate-flb-core-v1-secret"
-	FLBSecretValidatingWebhookPath  = "/validate-flb-core-v1-secret"
+
+	// FLBSecretMutatingWebhookPath is the path at which the flb secret mutating webhook is served
+	FLBSecretMutatingWebhookPath = "/mutate-flb-core-v1-secret"
+
+	// FLBSecretValidatingWebhookPath is the path at which the flb secret validating webhook is served
+	FLBSecretValidatingWebhookPath = "/validate-flb-core-v1-secret"
 )
 
 var (
+	// ClusterIDTemplate is a template for cluster ID
 	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
 )
 
 const (
-	KubernetesEndpointSliceServiceNameLabel   = "kubernetes.io/service-name"
-	RootCACertName                            = "ca.crt"
-	RootCAPrivateKeyName                      = "ca.key"
-	TLSCertName                               = "tls.crt"
-	TLSPrivateKeyName                         = "tls.key"
-	WebhookServerServingCertsPathTpl          = "%s/k8s-webhook-server/serving-certs"
-	DefaultMutatingWebhookConfigurationName   = "flomesh-mutating-webhook-configuration"
+	// KubernetesEndpointSliceServiceNameLabel is the label used to indicate the name of the service
+	KubernetesEndpointSliceServiceNameLabel = "kubernetes.io/service-name"
+
+	// RootCACertName is the name of the root CA cert
+	RootCACertName = "ca.crt"
+
+	// TLSCertName is the name of the TLS cert
+	TLSCertName = "tls.crt"
+
+	// TLSPrivateKeyName is the name of the TLS private key
+	TLSPrivateKeyName = "tls.key"
+
+	// WebhookServerServingCertsPathTpl is the template for webhook server serving certs path
+	WebhookServerServingCertsPathTpl = "%s/k8s-webhook-server/serving-certs"
+
+	// DefaultMutatingWebhookConfigurationName is the name of the default mutating webhook configuration
+	DefaultMutatingWebhookConfigurationName = "flomesh-mutating-webhook-configuration"
+
+	// DefaultValidatingWebhookConfigurationName is the name of the default validating webhook configuration
 	DefaultValidatingWebhookConfigurationName = "flomesh-validating-webhook-configuration"
 )
 
 var (
+	// WebhookServerServingCertsPath is the path at which the webhook server serving certs are stored
 	WebhookServerServingCertsPath = fmt.Sprintf(WebhookServerServingCertsPathTpl, os.TempDir())
 )
 
 // NamespacedIngress constants
 const (
-	NamespacedIngressMutatingWebhookPath   = "/mutate-flomesh-io-v1alpha1-namespacedingress"
+	// NamespacedIngressMutatingWebhookPath is the path at which the namespaced ingress mutating webhook is served
+	NamespacedIngressMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-namespacedingress"
+
+	// NamespacedIngressValidatingWebhookPath is the path at which the namespaced ingress validating webhook is served
 	NamespacedIngressValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-namespacedingress"
-	IngressMutatingWebhookPath             = "/mutate-networking-v1-ingress"
-	IngressValidatingWebhookPath           = "/validate-networking-v1-ingress"
+
+	// IngressMutatingWebhookPath is the path at which the ingress mutating webhook is served
+	IngressMutatingWebhookPath = "/mutate-networking-v1-ingress"
+
+	// IngressValidatingWebhookPath is the path at which the ingress validating webhook is served
+	IngressValidatingWebhookPath = "/validate-networking-v1-ingress"
 )
 
 const (
-	IngressPipyController     = "flomesh.io/ingress-pipy"
-	IngressPipyClass          = "pipy"
-	NoDefaultIngressClass     = ""
-	IngressAnnotationKey      = "kubernetes.io/ingress.class"
+	// IngressPipyController is the name of the ingress controller
+	IngressPipyController = "flomesh.io/ingress-pipy"
+
+	// IngressPipyClass is the name of the ingress class
+	IngressPipyClass = "pipy"
+
+	// NoDefaultIngressClass is the name of the undefined ingress class
+	NoDefaultIngressClass = ""
+
+	// IngressAnnotationKey is the key of the ingress class annotation
+	IngressAnnotationKey = "kubernetes.io/ingress.class"
+
+	// IngressClassAnnotationKey is the key of the default ingress class annotation
 	IngressClassAnnotationKey = "ingressclass.kubernetes.io/is-default-class"
 
-	PipyIngressAnnotationPrefix             = "pipy.ingress.kubernetes.io"
-	PipyIngressAnnotationRewriteFrom        = PipyIngressAnnotationPrefix + "/rewrite-target-from"
-	PipyIngressAnnotationRewriteTo          = PipyIngressAnnotationPrefix + "/rewrite-target-to"
-	PipyIngressAnnotationSessionSticky      = PipyIngressAnnotationPrefix + "/session-sticky"
-	PipyIngressAnnotationLoadBalancer       = PipyIngressAnnotationPrefix + "/lb-type"
-	PipyIngressAnnotationUpstreamSSLName    = PipyIngressAnnotationPrefix + "/upstream-ssl-name"
-	PipyIngressAnnotationUpstreamSSLSecret  = PipyIngressAnnotationPrefix + "/upstream-ssl-secret"
-	PipyIngressAnnotationUpstreamSSLVerify  = PipyIngressAnnotationPrefix + "/upstream-ssl-verify"
-	PipyIngressAnnotationTLSVerifyClient    = PipyIngressAnnotationPrefix + "/tls-verify-client"
-	PipyIngressAnnotationTLSVerifyDepth     = PipyIngressAnnotationPrefix + "/tls-verify-depth"
+	// PipyIngressAnnotationPrefix is the prefix of the pipy ingress annotations
+	PipyIngressAnnotationPrefix = "pipy.ingress.kubernetes.io"
+
+	// PipyIngressAnnotationRewriteFrom is the annotation used to indicate the rewrite target from
+	PipyIngressAnnotationRewriteFrom = PipyIngressAnnotationPrefix + "/rewrite-target-from"
+
+	// PipyIngressAnnotationRewriteTo is the annotation used to indicate the rewrite target to
+	PipyIngressAnnotationRewriteTo = PipyIngressAnnotationPrefix + "/rewrite-target-to"
+
+	// PipyIngressAnnotationSessionSticky is the annotation used to indicate the session sticky
+	PipyIngressAnnotationSessionSticky = PipyIngressAnnotationPrefix + "/session-sticky"
+
+	// PipyIngressAnnotationLoadBalancer is the annotation used to indicate the load balancer type
+	PipyIngressAnnotationLoadBalancer = PipyIngressAnnotationPrefix + "/lb-type"
+
+	// PipyIngressAnnotationUpstreamSSLName is the annotation used to indicate the upstream ssl name
+	PipyIngressAnnotationUpstreamSSLName = PipyIngressAnnotationPrefix + "/upstream-ssl-name"
+
+	// PipyIngressAnnotationUpstreamSSLSecret is the annotation used to indicate the upstream ssl secret
+	PipyIngressAnnotationUpstreamSSLSecret = PipyIngressAnnotationPrefix + "/upstream-ssl-secret"
+
+	// PipyIngressAnnotationUpstreamSSLVerify is the annotation used to indicate the upstream ssl verify
+	PipyIngressAnnotationUpstreamSSLVerify = PipyIngressAnnotationPrefix + "/upstream-ssl-verify"
+
+	// PipyIngressAnnotationTLSVerifyClient is the annotation used to indicate the tls verify client
+	PipyIngressAnnotationTLSVerifyClient = PipyIngressAnnotationPrefix + "/tls-verify-client"
+
+	// PipyIngressAnnotationTLSVerifyDepth is the annotation used to indicate the tls verify depth
+	PipyIngressAnnotationTLSVerifyDepth = PipyIngressAnnotationPrefix + "/tls-verify-depth"
+
+	// PipyIngressAnnotationTLSTrustedCASecret is the annotation used to indicate the tls trusted ca secret
 	PipyIngressAnnotationTLSTrustedCASecret = PipyIngressAnnotationPrefix + "/tls-trusted-ca-secret"
-	PipyIngressAnnotationBackendProtocol    = PipyIngressAnnotationPrefix + "/upstream-protocol"
+
+	// PipyIngressAnnotationBackendProtocol is the annotation used to indicate the backend protocol
+	PipyIngressAnnotationBackendProtocol = PipyIngressAnnotationPrefix + "/upstream-protocol"
 )
 
 var (
-	DefaultIngressClass                 = ""
-	MinK8sVersionForIngressV1           = semver.Version{Major: 1, Minor: 19, Patch: 0}
-	MinK8sVersionForIngressV1beta1      = semver.Version{Major: 1, Minor: 16, Patch: 0}
+	// DefaultIngressClass is the default ingress class
+	DefaultIngressClass = ""
+
+	// MinK8sVersionForIngressV1 is the minimum k8s version for ingress v1
+	MinK8sVersionForIngressV1 = semver.Version{Major: 1, Minor: 19, Patch: 0}
+
+	// MinK8sVersionForIngressV1beta1 is the minimum k8s version for ingress v1beta1
+	MinK8sVersionForIngressV1beta1 = semver.Version{Major: 1, Minor: 16, Patch: 0}
+
+	// MinK8sVersionForIngressClassV1beta1 is the minimum k8s version for ingress class v1beta1
 	MinK8sVersionForIngressClassV1beta1 = semver.Version{Major: 1, Minor: 18, Patch: 0}
 )

@@ -26,6 +26,10 @@ package cache
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
@@ -39,11 +43,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/events"
-	"strings"
-	"sync"
-	"time"
 )
 
+// Cache is the type used to represent the cache for the ingress controller
 type Cache struct {
 	kubeClient kubernetes.Interface
 	recorder   events.EventRecorder
@@ -81,6 +83,7 @@ var (
 	log = logger.New("fsm-ingress-cache")
 )
 
+// NewCache creates a new cache for the ingress controller
 func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
 	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, "fsm-cluster-connector-local")
@@ -128,6 +131,7 @@ func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerC
 //	return atomic.LoadInt32(&c.initialized) > 0
 //}
 
+// SyncRoutes syncs the routes to the repo
 func (c *Cache) SyncRoutes() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -260,9 +264,9 @@ func (c *Cache) buildIngressConfig() repocfg.IngressData {
 		}
 
 		for _, e := range c.endpointsMap[svcName] {
-			ep, ok := e.(*BaseEndpointInfo)
+			ep, ok := e.(*baseEndpointInfo)
 			if !ok {
-				log.Error().Msgf("Failed to cast BaseEndpointInfo, endpoint: %s", e.String())
+				log.Error().Msgf("Failed to cast baseEndpointInfo, endpoint: %s", e.String())
 				continue
 			}
 
@@ -290,7 +294,7 @@ func (c *Cache) buildIngressConfig() repocfg.IngressData {
 	return ingressConfig
 }
 
-func (c *Cache) ingressBatches(ingressData repocfg.IngressData, mc configurator.Configurator) []repo.Batch {
+func (c *Cache) ingressBatches(ingressData repocfg.IngressData, _ configurator.Configurator) []repo.Batch {
 	batch := repo.Batch{
 		Basepath: utils.GetDefaultIngressPath(),
 		Items:    []repo.BatchItem{},
@@ -435,7 +439,7 @@ func (c *Cache) buildServiceRoutes() repocfg.ServiceRoute {
 	return serviceRoutes
 }
 
-func serviceBatches(serviceRoutes repocfg.ServiceRoute, mc configurator.Configurator) []repo.Batch {
+func serviceBatches(serviceRoutes repocfg.ServiceRoute, _ configurator.Configurator) []repo.Batch {
 	registry := repocfg.ServiceRegistry{Services: repocfg.ServiceRegistryEntry{}}
 
 	for _, route := range serviceRoutes.Routes {

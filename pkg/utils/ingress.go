@@ -5,6 +5,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// SecretNamespaceAndName returns the namespace and name of the secret.
 func SecretNamespaceAndName(secretName string, ing *networkingv1.Ingress) (string, string, error) {
 	secrNs, secrName, err := cache.SplitMetaNamespaceKey(secretName)
 	if secrName == "" {

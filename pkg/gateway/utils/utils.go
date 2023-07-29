@@ -22,10 +22,14 @@
  * SOFTWARE.
  */
 
+// Package utils contains utility functions for gateway
 package utils
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/gobwas/glob"
@@ -35,26 +39,29 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"strings"
-	"time"
 )
 
+// IsAcceptedGatewayClass returns true if the gateway class is accepted
 func IsAcceptedGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
 	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gwv1beta1.GatewayClassConditionStatusAccepted))
 }
 
+// IsActiveGatewayClass returns true if the gateway class is active
 func IsActiveGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
 	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gateway.GatewayClassConditionStatusActive))
 }
 
+// IsEffectiveGatewayClass returns true if the gateway class is effective
 func IsEffectiveGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
 	return IsAcceptedGatewayClass(gatewayClass) && IsActiveGatewayClass(gatewayClass)
 }
 
+// IsAcceptedGateway returns true if the gateway is accepted
 func IsAcceptedGateway(gateway *gwv1beta1.Gateway) bool {
 	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1beta1.GatewayConditionAccepted))
 }
 
+// IsActiveGateway returns true if the gateway is active
 func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
 	hasValidListener := false
 
@@ -68,14 +75,17 @@ func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
 	return IsAcceptedGateway(gateway) && hasValidListener
 }
 
+// IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
+// IsListenerAccepted returns true if the listener is accepted
 func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
+// IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
 		return false
@@ -92,6 +102,7 @@ func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKe
 	return string(parentRef.Name) == gateway.Name
 }
 
+// ObjectKey returns the object key for the given object
 func ObjectKey(obj client.Object) client.ObjectKey {
 	ns := obj.GetNamespace()
 	if ns == "" {
@@ -101,12 +112,14 @@ func ObjectKey(obj client.Object) client.ObjectKey {
 	return client.ObjectKey{Namespace: ns, Name: obj.GetName()}
 }
 
+// GroupPointer returns a pointer to the given group
 func GroupPointer(group string) *gwv1beta1.Group {
 	result := gwv1beta1.Group(group)
 
 	return &result
 }
 
+// GetValidListenersFromGateway returns the valid listeners from the gateway
 func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 	listeners := make(map[gwv1beta1.SectionName]gwv1beta1.Listener)
 	for _, listener := range gw.Spec.Listeners {
@@ -130,6 +143,7 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 	return validListeners
 }
 
+// GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(
 	parentRef gwv1beta1.ParentReference,
 	routeGvk schema.GroupVersionKind,
@@ -183,6 +197,7 @@ func GetAllowedListeners(
 	return allowedListeners
 }
 
+// GetValidHostnames returns the valid hostnames
 func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gwv1beta1.Hostname) []string {
 	if len(routeHostnames) == 0 {
 		if listenerHostname != nil {
@@ -222,6 +237,7 @@ func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gw
 	return hostnames.UnsortedList()
 }
 
+// HostnameMatchesWildcardHostname returns true if the hostname matches the wildcard hostname
 func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	g := glob.MustCompile(wildcardHostname, '.')
 	return g.Match(hostname)

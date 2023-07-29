@@ -1,3 +1,4 @@
+// Package status implements utility routines related to the status of the Gateway API resource.
 package status
 
 import (

@@ -22,15 +22,18 @@
  * SOFTWARE.
  */
 
+// Package context defines the context that are used in the mcs package
 package context
 
 import (
 	"context"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/mcs/config"
 	"k8s.io/client-go/rest"
-	"time"
 )
 
+// ConnectorContext is the context that is used in the mcs package
 type ConnectorContext struct {
 	context.Context
 	ClusterKey        string

@@ -30,13 +30,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
+// SetupHTTP sets up HTTP of ingress controller
 func SetupHTTP(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Setting up HTTP ...")
 
-	mc := ctx.Config
-	if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, mc); err != nil {
-		return err
-	}
-
-	return nil
+	return utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config)
 }

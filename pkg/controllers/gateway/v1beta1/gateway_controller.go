@@ -29,6 +29,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -55,9 +59,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"sort"
-	"strings"
-	"time"
 )
 
 var (
@@ -82,6 +83,7 @@ func init() {
 	activeGateways = make(map[string]*gwv1beta1.Gateway)
 }
 
+// NewGatewayReconciler returns a new reconciler for Gateway resources
 func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Gateway"),
@@ -89,6 +91,7 @@ func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	}
 }
 
+// Reconcile reconciles a Gateway resource
 func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	gateway := &gwv1beta1.Gateway{}
 	if err := r.fctx.Get(
@@ -570,7 +573,7 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1beta1.Gateway) (ctrl.Resul
 	return r.deployGateway(gateway, mc)
 }
 
-func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
 	bytes, jsonErr := json.Marshal(gw)
 	if jsonErr != nil {
 		return ctrl.Result{}, jsonErr
@@ -586,7 +589,7 @@ func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, mc configurat
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) updateConfig(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *gatewayReconciler) updateConfig(_ *gwv1beta1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
 	// TODO: update pipy repo
 	return ctrl.Result{}, nil
 }

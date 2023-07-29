@@ -27,6 +27,8 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"os"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -50,9 +52,9 @@ import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 )
 
+// RegisterWebHooks registers all webhooks based on the configuration
 func RegisterWebHooks(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Registering Webhooks ...")
 
@@ -168,7 +170,7 @@ func issueCertForWebhook(certMgr *certificate.Manager, mc configurator.Configura
 
 	// write ca.crt, tls.crt & tls.key to file
 	servingCertsPath := constants.WebhookServerServingCertsPath
-	if err := os.MkdirAll(servingCertsPath, 755); err != nil {
+	if err := os.MkdirAll(servingCertsPath, 0750); err != nil {
 		log.Error().Msgf("error creating dir %q, %s", servingCertsPath, err.Error())
 		return nil, err
 	}
@@ -184,7 +186,7 @@ func issueCertForWebhook(certMgr *certificate.Manager, mc configurator.Configura
 		if err := os.WriteFile(
 			fileName,
 			data,
-			0420); err != nil {
+			0600); err != nil {
 			log.Error().Msgf("error writing file %q, %s", fileName, err.Error())
 			return nil, err
 		}
@@ -238,7 +240,7 @@ func getRegisters(cfg *webhook.RegisterConfig, mc configurator.Configurator) []w
 		}
 	}
 
-	if mc.IsGatewayApiEnabled() {
+	if mc.IsGatewayAPIEnabled() {
 		result = append(result, gateway.NewRegister(cfg))
 		result = append(result, gatewayclass.NewRegister(cfg))
 		result = append(result, httproute.NewRegister(cfg))

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package event defines the events that are used in the mcs package
 package event
 
 import (
@@ -30,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// ServiceExportEvent is the event that is used to notify the mcs package
 type ServiceExportEvent struct {
 	Geo           *config.ConnectorConfig
 	ServiceExport *mcsv1alpha1.ServiceExport
@@ -38,6 +40,7 @@ type ServiceExportEvent struct {
 	//Data          map[string]interface{}
 }
 
+// ClusterKey returns the cluster key
 func (e *ServiceExportEvent) ClusterKey() string {
 	return e.Geo.Key()
 }

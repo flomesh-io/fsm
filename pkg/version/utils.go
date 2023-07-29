@@ -1,18 +1,25 @@
 package version
 
 import (
+	"strings"
+
 	"github.com/blang/semver"
 	"k8s.io/client-go/kubernetes"
-	"strings"
 )
 
 var (
+	// ServerVersion is the version of the Kubernetes cluster the operator is running in.
 	ServerVersion = semver.Version{Major: 0, Minor: 0, Patch: 0}
 )
 
 var (
-	MinK8sVersion              = semver.Version{Major: 1, Minor: 19, Patch: 0}
-	MinEndpointSliceVersion    = semver.Version{Major: 1, Minor: 21, Patch: 0}
+	// MinK8sVersion is the minimum version of Kubernetes that the operator supports.
+	MinK8sVersion = semver.Version{Major: 1, Minor: 19, Patch: 0}
+
+	// MinEndpointSliceVersion is the minimum version of Kubernetes that supports EndpointSlice.
+	MinEndpointSliceVersion = semver.Version{Major: 1, Minor: 21, Patch: 0}
+
+	// MinK8sVersionForGatewayAPI is the minimum version of Kubernetes that supports Gateway API.
 	MinK8sVersionForGatewayAPI = MinEndpointSliceVersion
 )
 
@@ -43,16 +50,19 @@ func detectServerVersion(kubeClient kubernetes.Interface) {
 	}
 }
 
+// IsSupportedK8sVersion returns true if the Kubernetes cluster version is supported by the operator.
 func IsSupportedK8sVersion(kubeClient kubernetes.Interface) bool {
 	detectServerVersion(kubeClient)
 	return ServerVersion.GTE(MinK8sVersion)
 }
 
+// IsEndpointSliceEnabled returns true if EndpointSlice is enabled in the Kubernetes cluster.
 func IsEndpointSliceEnabled(kubeClient kubernetes.Interface) bool {
 	detectServerVersion(kubeClient)
 	return ServerVersion.GTE(MinEndpointSliceVersion)
 }
 
+// IsSupportedK8sVersionForGatewayAPI returns true if the Kubernetes cluster version is supported by the operator.
 func IsSupportedK8sVersionForGatewayAPI(kubeClient kubernetes.Interface) bool {
 	return IsEndpointSliceEnabled(kubeClient)
 }

@@ -27,6 +27,7 @@ package utils
 import (
 	"context"
 	"fmt"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/tidwall/sjson"
@@ -56,17 +57,18 @@ var (
 	}
 )
 
+// UpdateLoggingConfig updates logging config of ingress controller
 func UpdateLoggingConfig(kubeClient kubernetes.Interface, basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) error {
-	json, err := getNewLoggingConfigJson(kubeClient, basepath, repoClient, mc)
+	json, err := getNewLoggingConfigJSON(kubeClient, basepath, repoClient, mc)
 	if err != nil {
 		return err
 	}
 
-	return updateMainJson(basepath, repoClient, json)
+	return updateMainJSON(basepath, repoClient, json)
 }
 
-func getNewLoggingConfigJson(kubeClient kubernetes.Interface, basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) (string, error) {
-	json, err := getMainJson(basepath, repoClient)
+func getNewLoggingConfigJSON(kubeClient kubernetes.Interface, basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) (string, error) {
+	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return "", err
 	}

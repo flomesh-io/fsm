@@ -36,6 +36,7 @@ import (
 	svclb "github.com/flomesh-io/fsm/pkg/controllers/servicelb"
 )
 
+// RegisterReconcilers registers all reconcilers based on the configuration
 func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Registering Reconcilers ...")
 
@@ -53,7 +54,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 	//	reconcilers["MCS(EndpointSlice)"] = mcsv1alpha1.NewEndpointSliceReconciler(ctx)
 	//}
 
-	if mc.IsGatewayApiEnabled() {
+	if mc.IsGatewayAPIEnabled() {
 		reconcilers["GatewayAPI(GatewayClass)"] = gatewayv1beta1.NewGatewayClassReconciler(ctx)
 		reconcilers["GatewayAPI(Gateway)"] = gatewayv1beta1.NewGatewayReconciler(ctx)
 		reconcilers["GatewayAPI(HTTPRoute)"] = gatewayv1beta1.NewHTTPRouteReconciler(ctx)

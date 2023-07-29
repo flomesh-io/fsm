@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
+// Package route defines the route types
 package route
 
 import commons "github.com/flomesh-io/fsm/pkg/apis"
 
+// IngressData is the data structure for ingress routes
 type IngressData struct {
 	//RouteBase `json:",inline"`
 	// Hash
@@ -34,12 +36,14 @@ type IngressData struct {
 	Routes []IngressRouteSpec `json:"routes" hash:"set"`
 }
 
+// IngressRouteSpec is the data structure for ingress route spec
 type IngressRouteSpec struct {
 	RouterSpec   `json:",inline"`
 	BalancerSpec `json:",inline"`
 	TLSSpec      `json:",inline"`
 }
 
+// RouterSpec is the data structure for router spec
 type RouterSpec struct {
 	Host    string   `json:"-"`
 	Path    string   `json:"-"`
@@ -47,12 +51,14 @@ type RouterSpec struct {
 	Rewrite []string `json:"rewrite,omitempty"`
 }
 
+// BalancerSpec is the data structure for balancer spec
 type BalancerSpec struct {
 	Sticky   bool                 `json:"sticky,omitempty"`
 	Balancer commons.AlgoBalancer `json:"balancer,omitempty"`
 	Upstream *UpstreamSpec        `json:"upstream,omitempty"`
 }
 
+// UpstreamSpec is the data structure for upstream spec
 type UpstreamSpec struct {
 	Protocol  string             `json:"proto,omitempty"`
 	SSLName   string             `json:"sslName,omitempty"`
@@ -61,6 +67,7 @@ type UpstreamSpec struct {
 	Endpoints []UpstreamEndpoint `json:"endpoints,omitempty" hash:"set"`
 }
 
+// TLSSpec is the data structure for TLS spec
 type TLSSpec struct {
 	IsTLS          bool             `json:"isTLS,omitempty"`
 	IsWildcardHost bool             `json:"isWildcardHost,omitempty"`
@@ -70,12 +77,14 @@ type TLSSpec struct {
 	TrustedCA      *CertificateSpec `json:"trustedCA,omitempty"`
 }
 
+// CertificateSpec is the data structure for certificate spec
 type CertificateSpec struct {
 	Cert string `json:"cert,omitempty"`
 	Key  string `json:"key,omitempty"`
 	CA   string `json:"ca,omitempty"`
 }
 
+// UpstreamEndpoint is the data structure for upstream endpoint
 type UpstreamEndpoint struct {
 	// IP is the entry's IP.  The IP address protocol corresponds to the HashFamily of IPSet.
 	// All entries' IP addresses in the same ip set has same the protocol, IPv4 or IPv6.
@@ -87,6 +96,7 @@ type UpstreamEndpoint struct {
 	Protocol string `json:"protocol,omitempty"`
 }
 
+// ServiceRoute is the data structure for service routes
 type ServiceRoute struct {
 	//RouteBase `json:",inline"`
 	// Hash
@@ -94,6 +104,7 @@ type ServiceRoute struct {
 	Routes []ServiceRouteEntry `json:"routes" hash:"set"`
 }
 
+// ServiceRouteEntry is the data structure for service route entry
 type ServiceRouteEntry struct {
 	// Name, the name of the service
 	Name string `json:"name"`
@@ -105,13 +116,15 @@ type ServiceRouteEntry struct {
 	PortName string `json:"portName,omitempty"`
 }
 
+// Target is the data structure for target
 type Target struct {
 	// Address can be IP address if in the same cluster, or ingress address for out cluster route
 	Address string `json:"address"`
-	// Tag, reserved placeholder for futher features
+	// Tag, reserved placeholder for further features
 	Tags map[string]string `json:"tags,omitempty" hash:"set"`
 }
 
+// IngressConfig is the data structure for ingress config
 type IngressConfig struct {
 	TrustedCAs     []string `json:"trustedCAs"`
 	TLSConfig      `json:",inline"`
@@ -119,20 +132,25 @@ type IngressConfig struct {
 	BalancerConfig `json:",inline"`
 }
 
+// TLSConfig is the data structure for TLS config
 type TLSConfig struct {
 	Certificates map[string]TLSSpec `json:"certificates"`
 }
 
+// RouterConfig is the data structure for router config
 type RouterConfig struct {
 	Routes map[string]RouterSpec `json:"routes"`
 }
 
+// BalancerConfig is the data structure for balancer config
 type BalancerConfig struct {
 	Services map[string]BalancerSpec `json:"services"`
 }
 
+// ServiceRegistry is the data structure for service registry
 type ServiceRegistry struct {
 	Services ServiceRegistryEntry `json:"services"`
 }
 
+// ServiceRegistryEntry is the data structure for service registry entry
 type ServiceRegistryEntry map[string][]string

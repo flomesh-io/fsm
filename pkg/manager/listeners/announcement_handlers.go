@@ -2,6 +2,7 @@ package listeners
 
 import (
 	"context"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -70,7 +71,7 @@ func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *me
 	}
 }
 
-func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace string, oldCfg, newCfg *configv1alpha3.MeshConfig) {
+func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace string, _, newCfg *configv1alpha3.MeshConfig) {
 	selector := labels.SelectorFromSet(
 		map[string]string{
 			"app":                           "fsm-ingress",

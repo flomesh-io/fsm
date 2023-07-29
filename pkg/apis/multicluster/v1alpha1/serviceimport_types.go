@@ -26,9 +26,10 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
 )
 
 // ServiceImportType designates the type of a ServiceImport
@@ -107,6 +108,7 @@ type ServicePort struct {
 	Endpoints []Endpoint `json:"endpoints"`
 }
 
+// String returns a string representation of the ServicePort
 func (p *ServicePort) String() string {
 	if p == nil {
 		return "nil"
@@ -120,11 +122,13 @@ func (p *ServicePort) String() string {
 	return s
 }
 
+// Endpoint represents a single logical "backend" implementing a service.
 type Endpoint struct {
 	Target     Target `json:"target"`
 	ClusterKey string `json:"clusterKey"`
 }
 
+// Target represents a single logical "backend" implementing a service.
 type Target struct {
 	Host string `json:"host"`
 	IP   string `json:"ip"`

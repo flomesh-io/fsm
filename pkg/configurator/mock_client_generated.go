@@ -697,18 +697,18 @@ func (mr *MockConfiguratorMockRecorder) IsFLBStrictModeEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFLBStrictModeEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFLBStrictModeEnabled))
 }
 
-// IsGatewayApiEnabled mocks base method.
-func (m *MockConfigurator) IsGatewayApiEnabled() bool {
+// IsGatewayAPIEnabled mocks base method.
+func (m *MockConfigurator) IsGatewayAPIEnabled() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsGatewayApiEnabled")
+	ret := m.ctrl.Call(m, "IsGatewayAPIEnabled")
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsGatewayApiEnabled indicates an expected call of IsGatewayApiEnabled.
-func (mr *MockConfiguratorMockRecorder) IsGatewayApiEnabled() *gomock.Call {
+// IsGatewayAPIEnabled indicates an expected call of IsGatewayAPIEnabled.
+func (mr *MockConfiguratorMockRecorder) IsGatewayAPIEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGatewayApiEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsGatewayApiEnabled))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGatewayAPIEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsGatewayAPIEnabled))
 }
 
 // IsIngressEnabled mocks base method.

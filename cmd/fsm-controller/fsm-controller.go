@@ -7,6 +7,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
@@ -17,12 +23,7 @@ import (
 	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
 	"github.com/flomesh-io/fsm/pkg/manager/webhook"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"net/http"
-	"os"
-	"path"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"strings"
-	"time"
 
 	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
@@ -301,7 +302,7 @@ func main() {
 		}
 	}
 
-	if cfg.IsGatewayApiEnabled() {
+	if cfg.IsGatewayAPIEnabled() {
 		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, msgBroker, cfg)
 		if err := gatewayController.Start(); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Gateway Controller")

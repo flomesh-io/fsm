@@ -26,8 +26,15 @@ package flb
 
 import (
 	"context"
-	_ "embed"
 	"fmt"
+	"net"
+	"net/http"
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -36,7 +43,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/go-resty/resty/v2"
-	retry "github.com/sethvargo/go-retry"
+	"github.com/sethvargo/go-retry"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,9 +52,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
-	"net"
-	"net/http"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,17 +59,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
 	finalizerName               = "servicelb.flomesh.io/flb"
-	flbAuthApiPath              = "/api/auth/local"
-	flbUpdateServiceApiPath     = "/api/l-4-lbs/updateservice"
-	flbDeleteServiceApiPath     = "/api/l-4-lbs/updateservice/delete"
+	flbAuthAPIPath              = "/api/auth/local"
+	flbUpdateServiceAPIPath     = "/api/l-4-lbs/updateservice"
+	flbDeleteServiceAPIPath     = "/api/l-4-lbs/updateservice/delete"
 	flbClusterHeaderName        = "X-Flb-Cluster"
 	flbAddressPoolHeaderName    = "X-Flb-Address-Pool"
 	flbDesiredIPHeaderName      = "X-Flb-Desired-Ip"
@@ -97,15 +97,18 @@ type setting struct {
 	hash                  string
 }
 
+// FlbAuthRequest is the request body for FLB authentication
 type FlbAuthRequest struct {
 	Identifier string `json:"identifier"`
 	Password   string `json:"password"`
 }
 
+// FlbAuthResponse is the response body for FLB authentication
 type FlbAuthResponse struct {
 	Token string `json:"jwt"`
 }
 
+// FlbResponse is the response body for FLB API
 type FlbResponse struct {
 	LBIPs []string `json:"LBIPs"`
 }
@@ -114,6 +117,7 @@ var (
 	log = logger.New("flb-service-controller")
 )
 
+// NewReconciler returns a new reconciler for Service
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	log.Info().Msgf("Creating FLB service reconciler ...")
 
@@ -179,7 +183,7 @@ func getDefaultSetting(api kubernetes.Interface, mc configurator.Configurator) (
 
 	log.Info().Msgf("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
 
-	log.Info().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseUrl]))
+	log.Info().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseURL]))
 	log.Info().Msgf("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
 	log.Info().Msgf("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
 
@@ -188,7 +192,7 @@ func getDefaultSetting(api kubernetes.Interface, mc configurator.Configurator) (
 
 func newSetting(secret *corev1.Secret) *setting {
 	return &setting{
-		httpClient:            newHttpClient(string(secret.Data[constants.FLBSecretKeyBaseUrl])),
+		httpClient:            newHTTPClient(string(secret.Data[constants.FLBSecretKeyBaseURL])),
 		flbUser:               string(secret.Data[constants.FLBSecretKeyUsername]),
 		flbPassword:           string(secret.Data[constants.FLBSecretKeyPassword]),
 		flbDefaultCluster:     string(secret.Data[constants.FLBSecretKeyDefaultCluster]),
@@ -205,10 +209,10 @@ func newOverrideSetting(secret *corev1.Secret, defaultSetting *setting) *setting
 		token: "",
 	}
 
-	if len(secret.Data[constants.FLBSecretKeyBaseUrl]) == 0 {
+	if len(secret.Data[constants.FLBSecretKeyBaseURL]) == 0 {
 		s.httpClient = defaultSetting.httpClient
 	} else {
-		s.httpClient = newHttpClient(string(secret.Data[constants.FLBSecretKeyBaseUrl]))
+		s.httpClient = newHTTPClient(string(secret.Data[constants.FLBSecretKeyBaseURL]))
 	}
 
 	if len(secret.Data[constants.FLBSecretKeyUsername]) == 0 {
@@ -244,7 +248,7 @@ func newOverrideSetting(secret *corev1.Secret, defaultSetting *setting) *setting
 	return s
 }
 
-func newHttpClient(baseUrl string) *resty.Client {
+func newHTTPClient(baseURL string) *resty.Client {
 	return resty.New().
 		SetTransport(&http.Transport{
 			DisableKeepAlives:  false,
@@ -253,7 +257,7 @@ func newHttpClient(baseUrl string) *resty.Client {
 			DisableCompression: false,
 		}).
 		SetScheme("http").
-		SetBaseURL(baseUrl).
+		SetBaseURL(baseURL).
 		SetTimeout(5 * time.Second).
 		SetDebug(true).
 		EnableTrace()
@@ -507,7 +511,7 @@ func (r *reconciler) createOrUpdateFlbEntry(ctx context.Context, svc *corev1.Ser
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) (map[string][]string, error) {
+func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ configurator.Configurator) (map[string][]string, error) {
 	if svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return nil, nil
 	}
@@ -596,7 +600,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 	var err error
 
 	if err = retry.Fibonacci(context.TODO(), 1*time.Second, func(ctx context.Context) error {
-		resp, statusCode, err = r.invokeFlbApi(svc.Namespace, params, result, del)
+		resp, statusCode, err = r.invokeFlbAPI(svc.Namespace, params, result, del)
 
 		if err != nil {
 			if statusCode == http.StatusUnauthorized {
@@ -629,7 +633,7 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 	return resp.Result().(*FlbResponse), nil
 }
 
-func (r *reconciler) invokeFlbApi(namespace string, params map[string]string, result map[string][]string, del bool) (*resty.Response, int, error) {
+func (r *reconciler) invokeFlbAPI(namespace string, params map[string]string, result map[string][]string, del bool) (*resty.Response, int, error) {
 	setting := r.settings[namespace]
 	request := setting.httpClient.R().
 		SetHeader("Content-Type", "application/json").
@@ -647,9 +651,9 @@ func (r *reconciler) invokeFlbApi(namespace string, params map[string]string, re
 	var resp *resty.Response
 	var err error
 	if del {
-		resp, err = request.Post(flbDeleteServiceApiPath)
+		resp, err = request.Post(flbDeleteServiceAPIPath)
 	} else {
-		resp, err = request.Post(flbUpdateServiceApiPath)
+		resp, err = request.Post(flbUpdateServiceAPIPath)
 	}
 
 	if err != nil {
@@ -675,7 +679,7 @@ func (r *reconciler) loginFLB(namespace string) (string, error) {
 		SetHeader("Content-Type", "application/json").
 		SetBody(FlbAuthRequest{Identifier: setting.flbUser, Password: setting.flbPassword}).
 		SetResult(&FlbAuthResponse{}).
-		Post(flbAuthApiPath)
+		Post(flbAuthAPIPath)
 
 	if err != nil {
 		log.Error().Msgf("error happened while trying to login FLB, %s", err.Error())
@@ -690,7 +694,7 @@ func (r *reconciler) loginFLB(namespace string) (string, error) {
 	return resp.Result().(*FlbAuthResponse).Token, nil
 }
 
-func (r *reconciler) updateService(ctx context.Context, svc *corev1.Service, mc configurator.Configurator, lbAddresses []string) error {
+func (r *reconciler) updateService(ctx context.Context, svc *corev1.Service, _ configurator.Configurator, lbAddresses []string) error {
 	if svc.DeletionTimestamp != nil || svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return r.removeFinalizer(ctx, svc)
 	}
@@ -738,7 +742,6 @@ func lbIPs(addresses []string) []string {
 		} else {
 			ips = append(ips, addr)
 		}
-
 	}
 
 	return ips
@@ -781,7 +784,7 @@ func (r *reconciler) removeFinalizer(ctx context.Context, svc *corev1.Service) e
 	return r.fctx.Update(ctx, svc)
 }
 
-func (r *reconciler) hasFinalizer(ctx context.Context, svc *corev1.Service) bool {
+func (r *reconciler) hasFinalizer(_ context.Context, svc *corev1.Service) bool {
 	for _, finalizer := range svc.Finalizers {
 		if finalizer == finalizerName {
 			return true

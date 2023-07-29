@@ -6,9 +6,11 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
+// GatewayClassesProcessor is responsible for processing GatewayClass objects
 type GatewayClassesProcessor struct {
 }
 
+// Insert adds the GatewayClass object to the cache and returns true if the cache was modified
 func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	class, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
@@ -21,7 +23,7 @@ func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 	//	log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 	//	return false
 	//}
-	obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayApiGatewayClass, key.String())
+	obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGatewayClass, key.String())
 	if err != nil {
 		log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 		return false
@@ -40,6 +42,7 @@ func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 	return false
 }
 
+// Delete removes the GatewayClass object from the cache and returns true if the cache was modified
 func (p *GatewayClassesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	class, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {

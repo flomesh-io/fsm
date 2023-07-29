@@ -26,6 +26,9 @@ package cluster
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -38,20 +41,20 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
-	"net"
-	"net/http"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new cluster webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the webhooks of the cluster resource
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -83,6 +86,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the webhook handlers of the cluster resource
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.ClusterMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -142,10 +146,12 @@ type validator struct {
 	kubeClient kubernetes.Interface
 }
 
+// RuntimeObject returns the runtime object of the validator
 func (w *validator) RuntimeObject() runtime.Object {
 	return &clusterv1alpha1.Cluster{}
 }
 
+// ValidateCreate validates the creation of the cluster resource
 func (w *validator) ValidateCreate(obj interface{}) error {
 	//cluster, ok := obj.(*clusterv1alpha1.Cluster)
 	//if !ok {
@@ -179,6 +185,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(obj)
 }
 
+// ValidateUpdate validates the update of the cluster resource
 func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	//oldCluster, ok := oldObj.(*clusterv1alpha1.Cluster)
 	//if !ok {
@@ -197,6 +204,7 @@ func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	return doValidation(obj)
 }
 
+// ValidateDelete validates the deletion of the cluster resource
 func (w *validator) ValidateDelete(obj interface{}) error {
 	return nil
 }
@@ -256,10 +264,10 @@ func doValidation(obj interface{}) error {
 		if dnsErrs := validation.IsDNS1123Subdomain(host); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return fmt.Errorf("invalid DNS name %q: %v", host, dnsErrs)
-		} else {
-			// is DNS name
-			isDNSName = true
 		}
+
+		// is DNS name
+		isDNSName = true
 	}
 
 	var gwIPv4 net.IP

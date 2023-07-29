@@ -27,6 +27,9 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -42,8 +45,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	"sort"
-	"time"
 )
 
 type gatewayClassReconciler struct {
@@ -51,6 +52,7 @@ type gatewayClassReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewGatewayClassReconciler returns a new reconciler for GatewayClass
 func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
@@ -58,6 +60,7 @@ func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconcil
 	}
 }
 
+// Reconcile reconciles a GatewayClass object
 func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	gatewayClass := &gwv1beta1.GatewayClass{}
 	if err := r.fctx.Get(
@@ -165,9 +168,9 @@ func (r *gatewayClassReconciler) setActiveStatus(list *gwv1beta1.GatewayClassLis
 	sort.Slice(acceptedClasses, func(i, j int) bool {
 		if acceptedClasses[i].CreationTimestamp.Time.Equal(acceptedClasses[j].CreationTimestamp.Time) {
 			return acceptedClasses[i].Name < acceptedClasses[j].Name
-		} else {
-			return acceptedClasses[i].CreationTimestamp.Time.Before(acceptedClasses[j].CreationTimestamp.Time)
 		}
+
+		return acceptedClasses[i].CreationTimestamp.Time.Before(acceptedClasses[j].CreationTimestamp.Time)
 	})
 
 	statusChangedClasses := make([]*gwv1beta1.GatewayClass, 0)

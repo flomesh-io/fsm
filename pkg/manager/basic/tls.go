@@ -30,6 +30,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
+// SetupTLS sets up TLS of ingress controller
 func SetupTLS(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Setting up TLS ...")
 

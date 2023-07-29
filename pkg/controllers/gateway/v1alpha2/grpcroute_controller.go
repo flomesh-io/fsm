@@ -22,10 +22,11 @@
  * SOFTWARE.
  */
 
-package v1beta1
+package v1alpha2
 
 import (
 	"context"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -43,6 +44,7 @@ type grpcRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+// NewGRPCRouteReconciler returns a new GRPCRoute.Reconciler
 func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &grpcRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("GRPCRoute"),
@@ -51,6 +53,7 @@ func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	}
 }
 
+// Reconcile reads that state of the cluster for a GRPCRoute object and makes changes based on the state read
 func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	grpcRoute := &gwv1alpha2.GRPCRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, grpcRoute)

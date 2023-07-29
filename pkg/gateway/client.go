@@ -46,12 +46,12 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyServiceImport,
 		fsminformers.InformerKeyEndpointSlices,
 		fsminformers.InformerKeySecret,
-		fsminformers.InformerKeyGatewayApiGatewayClass,
-		fsminformers.InformerKeyGatewayApiGateway,
-		fsminformers.InformerKeyGatewayApiHTTPRoute,
-		fsminformers.InformerKeyGatewayApiGRPCRoute,
-		fsminformers.InformerKeyGatewayApiTLSRoute,
-		fsminformers.InformerKeyGatewayApiTCPRoute,
+		fsminformers.InformerKeyGatewayAPIGatewayClass,
+		fsminformers.InformerKeyGatewayAPIGateway,
+		fsminformers.InformerKeyGatewayAPIHTTPRoute,
+		fsminformers.InformerKeyGatewayAPIGRPCRoute,
+		fsminformers.InformerKeyGatewayAPITLSRoute,
+		fsminformers.InformerKeyGatewayAPITCPRoute,
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
@@ -118,20 +118,20 @@ func (c *client) shouldObserve(oldObj, newObj interface{}) bool {
 func (c *client) onChange(oldObj, newObj interface{}) bool {
 	if newObj == nil {
 		return c.cache.Delete(oldObj)
-	} else {
-		if oldObj == nil {
-			return c.cache.Insert(newObj)
-		} else {
-			if cmp.Equal(oldObj, newObj) {
-				return false
-			}
-
-			del := c.cache.Delete(oldObj)
-			ins := c.cache.Insert(newObj)
-
-			return del || ins
-		}
 	}
+
+	if oldObj == nil {
+		return c.cache.Insert(newObj)
+	}
+
+	if cmp.Equal(oldObj, newObj) {
+		return false
+	}
+
+	del := c.cache.Delete(oldObj)
+	ins := c.cache.Insert(newObj)
+
+	return del || ins
 }
 
 func (c *client) OnAdd(obj interface{}) {
@@ -163,17 +163,17 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 	case *corev1.Secret:
 		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
 	case *gwv1beta1.GatewayClass:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiGatewayClass)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGatewayClass)
 	case *gwv1beta1.Gateway:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiGateway)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGateway)
 	case *gwv1beta1.HTTPRoute:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiHTTPRoute)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIHTTPRoute)
 	case *gwv1alpha2.GRPCRoute:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiGRPCRoute)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGRPCRoute)
 	case *gwv1alpha2.TLSRoute:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiTLSRoute)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITLSRoute)
 	case *gwv1alpha2.TCPRoute:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayApiTCPRoute)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITCPRoute)
 	}
 
 	return nil
@@ -205,41 +205,41 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Update: announcements.SecretUpdated,
 			Delete: announcements.SecretDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiGatewayClass:
+	case fsminformers.InformerKeyGatewayAPIGatewayClass:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiGatewayClassAdded,
-			Update: announcements.GatewayApiGatewayClassUpdated,
-			Delete: announcements.GatewayApiGatewayClassDeleted,
+			Add:    announcements.GatewayAPIGatewayClassAdded,
+			Update: announcements.GatewayAPIGatewayClassUpdated,
+			Delete: announcements.GatewayAPIGatewayClassDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiGateway:
+	case fsminformers.InformerKeyGatewayAPIGateway:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiGatewayAdded,
-			Update: announcements.GatewayApiGatewayUpdated,
-			Delete: announcements.GatewayApiGatewayDeleted,
+			Add:    announcements.GatewayAPIGatewayAdded,
+			Update: announcements.GatewayAPIGatewayUpdated,
+			Delete: announcements.GatewayAPIGatewayDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiHTTPRoute:
+	case fsminformers.InformerKeyGatewayAPIHTTPRoute:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiHTTPRouteAdded,
-			Update: announcements.GatewayApiHTTPRouteUpdated,
-			Delete: announcements.GatewayApiHTTPRouteDeleted,
+			Add:    announcements.GatewayAPIHTTPRouteAdded,
+			Update: announcements.GatewayAPIHTTPRouteUpdated,
+			Delete: announcements.GatewayAPIHTTPRouteDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiGRPCRoute:
+	case fsminformers.InformerKeyGatewayAPIGRPCRoute:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiGRPCRouteAdded,
-			Update: announcements.GatewayApiGRPCRouteUpdated,
-			Delete: announcements.GatewayApiGRPCRouteDeleted,
+			Add:    announcements.GatewayAPIGRPCRouteAdded,
+			Update: announcements.GatewayAPIGRPCRouteUpdated,
+			Delete: announcements.GatewayAPIGRPCRouteDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiTLSRoute:
+	case fsminformers.InformerKeyGatewayAPITLSRoute:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiTLSRouteAdded,
-			Update: announcements.GatewayApiTLSRouteUpdated,
-			Delete: announcements.GatewayApiTLSRouteDeleted,
+			Add:    announcements.GatewayAPITLSRouteAdded,
+			Update: announcements.GatewayAPITLSRouteUpdated,
+			Delete: announcements.GatewayAPITLSRouteDeleted,
 		}
-	case fsminformers.InformerKeyGatewayApiTCPRoute:
+	case fsminformers.InformerKeyGatewayAPITCPRoute:
 		return &k8s.EventTypes{
-			Add:    announcements.GatewayApiTCPRouteAdded,
-			Update: announcements.GatewayApiTCPRouteUpdated,
-			Delete: announcements.GatewayApiTCPRouteDeleted,
+			Add:    announcements.GatewayAPITCPRouteAdded,
+			Update: announcements.GatewayAPITCPRouteUpdated,
+			Delete: announcements.GatewayAPITCPRouteDeleted,
 		}
 	}
 

@@ -26,12 +26,13 @@ package utils
 
 import (
 	"fmt"
+
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-func getMainJson(basepath string, repoClient *repo.PipyRepoClient) (string, error) {
-	path := getPathOfMainJson(basepath)
+func getMainJSON(basepath string, repoClient *repo.PipyRepoClient) (string, error) {
+	path := getPathOfMainJSON(basepath)
 
 	json, err := repoClient.GetFile(path)
 	if err != nil {
@@ -42,27 +43,27 @@ func getMainJson(basepath string, repoClient *repo.PipyRepoClient) (string, erro
 	return json, nil
 }
 
-func updateMainJson(basepath string, repoClient *repo.PipyRepoClient, newJson string) error {
+func updateMainJSON(basepath string, repoClient *repo.PipyRepoClient, newJSON string) error {
 	batch := repo.Batch{
 		Basepath: basepath,
 		Items: []repo.BatchItem{
 			{
 				Path:     "/config",
 				Filename: "main.json",
-				Content:  newJson,
+				Content:  newJSON,
 			},
 		},
 	}
 
-	hash := utils.Hash([]byte(newJson))
+	hash := utils.Hash([]byte(newJSON))
 	if _, err := repoClient.Batch(fmt.Sprintf("%d", hash), []repo.Batch{batch}); err != nil {
-		log.Error().Msgf("Failed to update %q: %s", getPathOfMainJson(basepath), err)
+		log.Error().Msgf("Failed to update %q: %s", getPathOfMainJSON(basepath), err)
 		return err
 	}
 
 	return nil
 }
 
-func getPathOfMainJson(basepath string) string {
+func getPathOfMainJSON(basepath string) string {
 	return fmt.Sprintf("%s/config/main.json", basepath)
 }

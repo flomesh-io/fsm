@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package v1alpha1 contains controller logic for the MCS API v1alpha1.
 package v1alpha1
 
 import (
@@ -42,5 +43,5 @@ func derivedName(name types.NamespacedName) string {
 }
 
 var (
-	log = logger.New("mcs-v1alpha1-controller")
+	log = logger.New("mcs-controller/v1alpha1")
 )

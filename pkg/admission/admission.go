@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package admission contains admission controller logic
 package admission
 
 import (
@@ -30,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// NewMutatingWebhookConfiguration creates a new MutatingWebhookConfiguration
 func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook) *admissionregv1.MutatingWebhookConfiguration {
 	if len(webhooks) == 0 {
 		return nil
@@ -43,6 +45,7 @@ func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook) 
 	}
 }
 
+// NewValidatingWebhookConfiguration creates a new ValidatingWebhookConfiguration
 func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebhook) *admissionregv1.ValidatingWebhookConfiguration {
 	if len(webhooks) == 0 {
 		return nil
@@ -56,6 +59,7 @@ func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebho
 	}
 }
 
+// NewMutatingWebhook creates a new MutatingWebhook
 func NewMutatingWebhook(
 	mutatingWebhookName,
 	webhookServiceNamespace,
@@ -99,6 +103,7 @@ func NewMutatingWebhook(
 	return result
 }
 
+// NewValidatingWebhook creates a new ValidatingWebhook
 func NewValidatingWebhook(
 	validatingWebhookName,
 	webhookServiceNamespace,
@@ -142,6 +147,7 @@ func NewValidatingWebhook(
 	return result
 }
 
+// NewRule creates a new Rule
 func NewRule(
 	operations []admissionregv1.OperationType,
 	apiGroups, apiVersions, resources []string,

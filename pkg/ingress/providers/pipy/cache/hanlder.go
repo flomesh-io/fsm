@@ -7,6 +7,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 )
 
+// OnAdd is called whenever a new object is added to the store.
 func (c *Cache) OnAdd(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *corev1.Endpoints,
@@ -23,6 +24,7 @@ func (c *Cache) OnAdd(obj interface{}) bool {
 	return false
 }
 
+// OnUpdate is called whenever an object is updated.
 func (c *Cache) OnUpdate(oldObj, newObj interface{}) bool {
 	switch objectForType(oldObj, newObj).(type) {
 	case *corev1.Endpoints:
@@ -67,6 +69,7 @@ func objectForType(oldObj, newObj interface{}) interface{} {
 	return newObj
 }
 
+// OnDelete is called whenever an object is deleted from the store.
 func (c *Cache) OnDelete(obj interface{}) bool {
 	switch obj := obj.(type) {
 	case *corev1.Endpoints,

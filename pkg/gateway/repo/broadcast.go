@@ -1,10 +1,12 @@
 package repo
 
 import (
-	"github.com/flomesh-io/fsm/pkg/announcements"
 	"time"
+
+	"github.com/flomesh-io/fsm/pkg/announcements"
 )
 
+// BroadcastListener listens for broadcast messages from the message broker
 func (s *Server) BroadcastListener() {
 	// Register for proxy config updates broadcast by the message broker
 	gatewayUpdatePubSub := s.msgBroker.GetGatewayUpdatePubSub()

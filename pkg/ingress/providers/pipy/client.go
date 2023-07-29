@@ -26,7 +26,8 @@ var (
 func NewIngressController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, certMgr *certificate.Manager) Controller {
 	return newClient(informerCollection, kubeClient, msgBroker, cfg, certMgr)
 }
-func newClient(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, certMgr *certificate.Manager) *client {
+
+func newClient(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, _ *certificate.Manager) *client {
 	c := &client{
 		informers:  informerCollection,
 		kubeClient: kubeClient,
@@ -109,17 +110,17 @@ func (c *client) shouldObserve(oldObj, newObj interface{}) bool {
 func (c *client) onChange(oldObj, newObj interface{}) bool {
 	if newObj == nil {
 		return c.cache.OnDelete(oldObj)
-	} else {
-		if oldObj == nil {
-			return c.cache.OnAdd(newObj)
-		} else {
-			if cmp.Equal(oldObj, newObj) {
-				return false
-			}
-
-			return c.cache.OnUpdate(oldObj, newObj)
-		}
 	}
+
+	if oldObj == nil {
+		return c.cache.OnAdd(newObj)
+	}
+
+	if cmp.Equal(oldObj, newObj) {
+		return false
+	}
+
+	return c.cache.OnUpdate(oldObj, newObj)
 }
 
 //func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
@@ -184,6 +185,7 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 	return nil
 }
 
+// Start starts the client
 func (c *client) Start() error {
 	// Start broadcast listener thread
 	s := repo.NewServer(c.cfg, c.msgBroker, c.cache)

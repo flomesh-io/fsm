@@ -1,3 +1,4 @@
+// Package repo contains the repository for the gateway
 package repo
 
 import (
@@ -12,6 +13,7 @@ const (
 	workerPoolSize = 0
 )
 
+// Server is the gateway server
 type Server struct {
 	//fsmNamespace    string
 	cfg configurator.Configurator
@@ -24,6 +26,7 @@ type Server struct {
 	//retryProxiesJob func()
 }
 
+// NewServer creates a new gateway server
 func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache cache.Cache) *Server {
 	return &Server{
 		//fsmNamespace: fsmNamespace,

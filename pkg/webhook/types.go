@@ -25,22 +25,26 @@
 package webhook
 
 import (
+	"net/http"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"net/http"
 )
 
+// WebhookObject is the interface for webhook objects
 type WebhookObject interface {
 	RuntimeObject() runtime.Object
 }
 
+// Defaulter is the interface for webhook defaulters
 type Defaulter interface {
 	WebhookObject
 	SetDefaults(obj interface{})
 }
 
+// Validator is the interface for webhook validators
 type Validator interface {
 	WebhookObject
 	ValidateCreate(obj interface{}) error
@@ -48,11 +52,13 @@ type Validator interface {
 	ValidateDelete(obj interface{}) error
 }
 
+// Register is the interface for webhook registers
 type Register interface {
 	GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook)
 	GetHandlers() map[string]http.Handler
 }
 
+// RegisterConfig is the configuration for webhook registers
 type RegisterConfig struct {
 	*fctx.ControllerContext
 	NsigClient     nsigClientset.Interface

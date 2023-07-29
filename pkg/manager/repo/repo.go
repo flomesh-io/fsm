@@ -26,28 +26,29 @@ package repo
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 	"github.com/flomesh-io/fsm/pkg/utils"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 const (
-	ScriptsRoot = "/repo/scripts"
+	scriptsRoot = "/repo/scripts"
 )
 
 var (
 	log = logger.New("fsm-controller/repo")
 )
 
+// InitRepo initializes the pipy repo
 func InitRepo(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Initializing PIPY Repo ...")
 	// wait until pipy repo is up or timeout after 5 minutes
@@ -88,7 +89,7 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 	}
 
 	// GatewayAPI
-	if mc.IsGatewayApiEnabled() {
+	if mc.IsGatewayAPIEnabled() {
 		defaultGatewaysPath := utils.GetDefaultGatewaysPath()
 		if _, err := repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath, 0); err != nil {
 			return err
@@ -105,7 +106,7 @@ func getBatches(mc configurator.Configurator) []repo.Batch {
 		batches = append(batches, ingressBatch())
 	}
 
-	if mc.IsGatewayApiEnabled() {
+	if mc.IsGatewayAPIEnabled() {
 		batches = append(batches, gatewaysBatch())
 	}
 
@@ -113,15 +114,15 @@ func getBatches(mc configurator.Configurator) []repo.Batch {
 }
 
 func ingressBatch() repo.Batch {
-	return createBatch(constants.DefaultIngressBasePath, fmt.Sprintf("%s/ingress", ScriptsRoot))
+	return createBatch(constants.DefaultIngressBasePath, fmt.Sprintf("%s/ingress", scriptsRoot))
 }
 
 func servicesBatch() repo.Batch {
-	return createBatch(constants.DefaultServiceBasePath, fmt.Sprintf("%s/services", ScriptsRoot))
+	return createBatch(constants.DefaultServiceBasePath, fmt.Sprintf("%s/services", scriptsRoot))
 }
 
 func gatewaysBatch() repo.Batch {
-	return createBatch(constants.DefaultGatewayBasePath, fmt.Sprintf("%s/gateways", ScriptsRoot))
+	return createBatch(constants.DefaultGatewayBasePath, fmt.Sprintf("%s/gateways", scriptsRoot))
 }
 
 func createBatch(repoPath, scriptsDir string) repo.Batch {
@@ -131,7 +132,7 @@ func createBatch(repoPath, scriptsDir string) repo.Batch {
 	}
 
 	for _, file := range listFiles(scriptsDir) {
-		content, err := ioutil.ReadFile(file)
+		content, err := os.ReadFile(file)
 		if err != nil {
 			panic(err)
 		}

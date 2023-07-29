@@ -26,13 +26,15 @@ package config
 
 import (
 	"fmt"
+	"net"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"net"
 )
 
+// ConnectorConfig is the configuration for the connector
 type ConnectorConfig struct {
 	name            string
 	region          string
@@ -45,6 +47,7 @@ type ConnectorConfig struct {
 	controlPlaneUID string
 }
 
+// NewConnectorConfig creates a new ConnectorConfig
 func NewConnectorConfig(
 	region, zone, group, name, gatewayHost string,
 	gatewayPort int32,
@@ -79,10 +82,10 @@ func NewConnectorConfig(
 		if dnsErrs := validation.IsDNS1123Subdomain(gatewayHost); len(dnsErrs) > 0 {
 			// Not valid DNS domain name
 			return nil, fmt.Errorf("invalid DNS name or IP %q: %v", gatewayHost, dnsErrs)
-		} else {
-			// is DNS name
-			isDNSName = true
 		}
+
+		// is DNS name
+		isDNSName = true
 	}
 
 	var gwIPv4 net.IP
@@ -113,18 +116,22 @@ func NewConnectorConfig(
 	return c, nil
 }
 
+// Name returns the name of the connected cluster
 func (c *ConnectorConfig) Name() string {
 	return c.name
 }
 
+// Region returns the region of the connected cluster
 func (c *ConnectorConfig) Region() string {
 	return c.region
 }
 
+// Zone returns the zone of the connected cluster
 func (c *ConnectorConfig) Zone() string {
 	return c.zone
 }
 
+// Group returns the group of the connected cluster
 func (c *ConnectorConfig) Group() string {
 	return c.group
 }
@@ -133,10 +140,12 @@ func (c *ConnectorConfig) Group() string {
 //	return c.inCluster
 //}
 
+// Key returns the key of the connected cluster
 func (c *ConnectorConfig) Key() string {
 	return c.key
 }
 
+// GatewayHost returns the gateway host of the connected cluster
 func (c *ConnectorConfig) GatewayHost() string {
 	//if c.inCluster {
 	//	return ""
@@ -144,6 +153,7 @@ func (c *ConnectorConfig) GatewayHost() string {
 	return c.gatewayHost
 }
 
+// GatewayIP returns the gateway IP of the connected cluster
 func (c *ConnectorConfig) GatewayIP() net.IP {
 	//if c.inCluster {
 	//	return net.IPv4zero
@@ -151,6 +161,7 @@ func (c *ConnectorConfig) GatewayIP() net.IP {
 	return c.gatewayIP
 }
 
+// GatewayPort returns the gateway port of the connected cluster
 func (c *ConnectorConfig) GatewayPort() int32 {
 	//if c.inCluster {
 	//	return 0
@@ -158,6 +169,7 @@ func (c *ConnectorConfig) GatewayPort() int32 {
 	return c.gatewayPort
 }
 
+// ControlPlaneUID returns the control plane UID of the connected cluster
 func (c *ConnectorConfig) ControlPlaneUID() string {
 	return c.controlPlaneUID
 }

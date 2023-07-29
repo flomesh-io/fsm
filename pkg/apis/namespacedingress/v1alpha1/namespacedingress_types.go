@@ -119,6 +119,7 @@ type NamespacedIngressSpec struct {
 	PodSecurityContext *corev1.PodSecurityContext `json:"podSecurityContext,omitempty"`
 }
 
+// HTTP defines the http configuration of this ingress controller.
 type HTTP struct {
 	// +kubebuilder:default=true
 
@@ -130,6 +131,7 @@ type HTTP struct {
 	Port corev1.ServicePort `json:"port,omitempty"`
 }
 
+// TLS defines the TLS configuration of this ingress controller.
 type TLS struct {
 	// +kubebuilder:default=false
 
@@ -147,6 +149,7 @@ type TLS struct {
 	SSLPassthrough SSLPassthrough `json:"sslPassthrough,omitempty"`
 }
 
+// SSLPassthrough defines the SSLPassthrough configuration of this ingress controller.
 type SSLPassthrough struct {
 	// +kubebuilder:default=false
 

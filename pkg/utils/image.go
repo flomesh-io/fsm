@@ -2,8 +2,9 @@ package utils
 
 import (
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	//  Import the crypto sha256 algorithm for the docker image parser to work
 	_ "crypto/sha256"
@@ -41,6 +42,7 @@ func ParseImageName(image string) (string, string, string, error) {
 	return repoToPull, tag, digest, nil
 }
 
+// ImagePullPolicyByTag returns the pull policy for the given image tag.
 func ImagePullPolicyByTag(image string) corev1.PullPolicy {
 	_, tag, _, _ := ParseImageName(image)
 

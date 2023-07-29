@@ -27,6 +27,11 @@ package cache
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync"
+
 	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
@@ -40,13 +45,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
-	"reflect"
-	"strconv"
-	"strings"
-	"sync"
 )
 
-type BaseIngressInfo struct {
+type baseIngressInfo struct {
 	headers        map[string]string
 	host           string
 	path           string
@@ -63,41 +64,41 @@ type BaseIngressInfo struct {
 	trustedCA      *repocfg.CertificateSpec
 }
 
-var _ Route = &BaseIngressInfo{}
+var _ Route = &baseIngressInfo{}
 
-func (info BaseIngressInfo) String() string {
+func (info baseIngressInfo) String() string {
 	return fmt.Sprintf("%s%s", info.host, info.path)
 }
 
-func (info BaseIngressInfo) Headers() map[string]string {
+func (info baseIngressInfo) Headers() map[string]string {
 	return info.headers
 }
 
-func (info BaseIngressInfo) Host() string {
+func (info baseIngressInfo) Host() string {
 	return info.host
 }
 
-func (info BaseIngressInfo) Path() string {
+func (info baseIngressInfo) Path() string {
 	return info.path
 }
 
-func (info BaseIngressInfo) Backend() ServicePortName {
+func (info baseIngressInfo) Backend() ServicePortName {
 	return info.backend
 }
 
-func (info BaseIngressInfo) Rewrite() []string {
+func (info baseIngressInfo) Rewrite() []string {
 	return info.rewrite
 }
 
-func (info BaseIngressInfo) SessionSticky() bool {
+func (info baseIngressInfo) SessionSticky() bool {
 	return info.sessionSticky
 }
 
-func (info BaseIngressInfo) LBType() apiconstants.AlgoBalancer {
+func (info baseIngressInfo) LBType() apiconstants.AlgoBalancer {
 	return info.lbType
 }
 
-func (info BaseIngressInfo) UpstreamSSLName() string {
+func (info baseIngressInfo) UpstreamSSLName() string {
 	if info.upstream == nil {
 		return ""
 	}
@@ -105,7 +106,7 @@ func (info BaseIngressInfo) UpstreamSSLName() string {
 	return info.upstream.SSLName
 }
 
-func (info BaseIngressInfo) UpstreamSSLCert() *repocfg.CertificateSpec {
+func (info baseIngressInfo) UpstreamSSLCert() *repocfg.CertificateSpec {
 	if info.upstream == nil {
 		return nil
 	}
@@ -113,7 +114,7 @@ func (info BaseIngressInfo) UpstreamSSLCert() *repocfg.CertificateSpec {
 	return info.upstream.SSLCert
 }
 
-func (info BaseIngressInfo) UpstreamSSLVerify() bool {
+func (info baseIngressInfo) UpstreamSSLVerify() bool {
 	if info.upstream == nil {
 		return false
 	}
@@ -121,31 +122,31 @@ func (info BaseIngressInfo) UpstreamSSLVerify() bool {
 	return info.upstream.SSLVerify
 }
 
-func (info BaseIngressInfo) Certificate() *repocfg.CertificateSpec {
+func (info baseIngressInfo) Certificate() *repocfg.CertificateSpec {
 	return info.certificate
 }
 
-func (info BaseIngressInfo) IsTLS() bool {
+func (info baseIngressInfo) IsTLS() bool {
 	return info.isTLS
 }
 
-func (info BaseIngressInfo) IsWildcardHost() bool {
+func (info baseIngressInfo) IsWildcardHost() bool {
 	return info.isWildcardHost
 }
 
-func (info BaseIngressInfo) VerifyClient() bool {
+func (info baseIngressInfo) VerifyClient() bool {
 	return info.verifyClient
 }
 
-func (info BaseIngressInfo) VerifyDepth() int {
+func (info baseIngressInfo) VerifyDepth() int {
 	return info.verifyDepth
 }
 
-func (info BaseIngressInfo) TrustedCA() *repocfg.CertificateSpec {
+func (info baseIngressInfo) TrustedCA() *repocfg.CertificateSpec {
 	return info.trustedCA
 }
 
-func (info BaseIngressInfo) Protocol() string {
+func (info baseIngressInfo) Protocol() string {
 	if info.upstream == nil {
 		return ""
 	}
@@ -153,14 +154,17 @@ func (info BaseIngressInfo) Protocol() string {
 	return info.upstream.Protocol
 }
 
+// IngressMap is a map of Ingresses
 type IngressMap map[RouteKey]Route
 
+// RouteKey is a key for IngressMap
 type RouteKey struct {
 	ServicePortName
 	Host string
 	Path string
 }
 
+// String returns a string representation of RouteKey
 func (irk *RouteKey) String() string {
 	return fmt.Sprintf("%s#%s#%s", irk.Host, irk.Path, irk.ServicePortName.String())
 }
@@ -170,6 +174,7 @@ type ingressChange struct {
 	current  IngressMap
 }
 
+// IngressChangeTracker tracks changes to Ingresses
 type IngressChangeTracker struct {
 	lock       sync.Mutex
 	items      map[types.NamespacedName]*ingressChange
@@ -178,6 +183,7 @@ type IngressChangeTracker struct {
 	recorder   events.EventRecorder
 }
 
+// NewIngressChangeTracker creates a new IngressChangeTracker
 func NewIngressChangeTracker(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, recorder events.EventRecorder) *IngressChangeTracker {
 	return &IngressChangeTracker{
 		items:      make(map[types.NamespacedName]*ingressChange),
@@ -187,10 +193,10 @@ func NewIngressChangeTracker(kubeClient kubernetes.Interface, informers *fsminfo
 	}
 }
 
-func (ict *IngressChangeTracker) newBaseIngressInfo(rule networkingv1.IngressRule, path networkingv1.HTTPIngressPath, svcPortName ServicePortName) *BaseIngressInfo {
+func (t *IngressChangeTracker) newBaseIngressInfo(rule networkingv1.IngressRule, path networkingv1.HTTPIngressPath, svcPortName ServicePortName) *baseIngressInfo {
 	switch *path.PathType {
 	case networkingv1.PathTypeExact:
-		return &BaseIngressInfo{
+		return &baseIngressInfo{
 			headers:        make(map[string]string),
 			host:           rule.Host,
 			path:           path.Path,
@@ -209,7 +215,7 @@ func (ict *IngressChangeTracker) newBaseIngressInfo(rule networkingv1.IngressRul
 			}
 		}
 
-		return &BaseIngressInfo{
+		return &baseIngressInfo{
 			headers:        make(map[string]string),
 			host:           rule.Host,
 			path:           hostPath,
@@ -231,7 +237,8 @@ func isWildcardHost(host string) bool {
 	return false
 }
 
-func (ict *IngressChangeTracker) Update(previous, current *networkingv1.Ingress) bool {
+// Update updates the tracker with the given Ingresses
+func (t *IngressChangeTracker) Update(previous, current *networkingv1.Ingress) bool {
 	ing := current
 	if ing == nil {
 		ing = previous
@@ -247,27 +254,27 @@ func (ict *IngressChangeTracker) Update(previous, current *networkingv1.Ingress)
 
 	namespacedName := types.NamespacedName{Namespace: ing.Namespace, Name: ing.Name}
 
-	ict.lock.Lock()
-	defer ict.lock.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
-	change, exists := ict.items[namespacedName]
+	change, exists := t.items[namespacedName]
 	if !exists {
 		change = &ingressChange{}
-		change.previous = ict.ingressToIngressMap(previous)
-		ict.items[namespacedName] = change
+		change.previous = t.ingressToIngressMap(previous)
+		t.items[namespacedName] = change
 	}
-	change.current = ict.ingressToIngressMap(current)
+	change.current = t.ingressToIngressMap(current)
 
 	if reflect.DeepEqual(change.previous, change.current) {
-		delete(ict.items, namespacedName)
+		delete(t.items, namespacedName)
 	} else {
 		log.Info().Msgf("Ingress %s updated: %d rules", namespacedName, len(change.current))
 	}
 
-	return len(ict.items) > 0
+	return len(t.items) > 0
 }
 
-func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) IngressMap {
+func (t *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) IngressMap {
 	if ing == nil {
 		return nil
 	}
@@ -287,7 +294,7 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 				continue
 			}
 
-			svcPortName := ict.servicePortName(ing.Namespace, path.Backend.Service)
+			svcPortName := t.servicePortName(ing.Namespace, path.Backend.Service)
 			// in case of error or unexpected condition, ignore it
 			if svcPortName == nil {
 				log.Warn().Msgf("svcPortName is nil for Namespace: %q,  Path: %v", ing.Namespace, path)
@@ -295,7 +302,7 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 			}
 			log.Info().Msgf("ServicePortName %q", svcPortName.String())
 
-			baseIngInfo := ict.newBaseIngressInfo(rule, path, *svcPortName)
+			baseIngInfo := t.newBaseIngressInfo(rule, path, *svcPortName)
 			if baseIngInfo == nil {
 				continue
 			}
@@ -312,7 +319,7 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 				continue
 			}
 
-			ingressMap[routeKey] = ict.enrichIngressInfo(&rule, ing, baseIngInfo)
+			ingressMap[routeKey] = t.enrichIngressInfo(&rule, ing, baseIngInfo)
 
 			log.Info().Msgf("Route %q is linked to rule %v", routeKey.String(), ingressMap[routeKey])
 		}
@@ -321,7 +328,7 @@ func (ict *IngressChangeTracker) ingressToIngressMap(ing *networkingv1.Ingress) 
 	return ingressMap
 }
 
-func (ict *IngressChangeTracker) servicePortName(namespace string, service *networkingv1.IngressServiceBackend) *ServicePortName {
+func (t *IngressChangeTracker) servicePortName(namespace string, service *networkingv1.IngressServiceBackend) *ServicePortName {
 	if service != nil {
 		if service.Port.Name != "" {
 			return createSvcPortNameInstance(namespace, service.Name, service.Port.Name)
@@ -333,7 +340,7 @@ func (ict *IngressChangeTracker) servicePortName(namespace string, service *netw
 				Name:      service.Name,
 			}
 
-			svc, err := ict.findService(namespace, service)
+			svc, err := t.findService(namespace, service)
 			if err != nil {
 				log.Error().Msgf("Not able to find service %s from anywhere, %v", namespacedSvcName.String(), err)
 				return nil
@@ -345,7 +352,6 @@ func (ict *IngressChangeTracker) servicePortName(namespace string, service *netw
 				}
 			}
 		}
-
 	}
 
 	return nil
@@ -364,18 +370,18 @@ func createSvcPortNameInstance(namespace, serviceName, portName string) *Service
 }
 
 // svcName in namespace/name format
-func (ict *IngressChangeTracker) findService(namespace string, service *networkingv1.IngressServiceBackend) (*corev1.Service, error) {
+func (t *IngressChangeTracker) findService(namespace string, service *networkingv1.IngressServiceBackend) (*corev1.Service, error) {
 	svcName := fmt.Sprintf("%s/%s", namespace, service.Name)
 
 	// first, find in local store
-	svc, exists, err := ict.informers.GetByKey(fsminformers.InformerKeyService, svcName)
+	svc, exists, err := t.informers.GetByKey(fsminformers.InformerKeyService, svcName)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		log.Warn().Msgf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
 		// if not exists in local, retrieve it from remote API server, this's Plan-B, should seldom happns
-		svc, err = ict.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
+		svc, err = t.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -386,18 +392,19 @@ func (ict *IngressChangeTracker) findService(namespace string, service *networki
 	return svc.(*corev1.Service), nil
 }
 
-func (ict *IngressChangeTracker) checkoutChanges() []*ingressChange {
-	ict.lock.Lock()
-	defer ict.lock.Unlock()
+func (t *IngressChangeTracker) checkoutChanges() []*ingressChange {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	changes := []*ingressChange{}
-	for _, change := range ict.items {
+	for _, change := range t.items {
 		changes = append(changes, change)
 	}
-	ict.items = make(map[types.NamespacedName]*ingressChange)
+	t.items = make(map[types.NamespacedName]*ingressChange)
 	return changes
 }
 
+// Update updates the ingress map with the changes
 func (im IngressMap) Update(changes *IngressChangeTracker) {
 	im.apply(changes)
 }
@@ -427,14 +434,14 @@ func (im IngressMap) unmerge(other IngressMap) {
 }
 
 // enrichIngressInfo is for extending K8s standard ingress
-func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRule, ing *networkingv1.Ingress, info *BaseIngressInfo) Route {
+func (t *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRule, ing *networkingv1.Ingress, info *baseIngressInfo) Route {
 	if len(ing.Spec.TLS) > 0 {
 		info.isTLS = true
 
-		secretName := ict.getTLSSecretName(rule, ing)
+		secretName := t.getTLSSecretName(rule, ing)
 		log.Info().Msgf("secret name = %q ...", secretName)
 		if secretName != "" {
-			cert := ict.fetchSSLCert(ing, ing.Namespace, secretName)
+			cert := t.fetchSSLCert(ing, ing.Namespace, secretName)
 
 			if cert != nil && cert.Cert != "" && cert.Key != "" {
 				log.Info().Msgf("Found certificate for host %q from secret %s/%s", rule.Host, ing.Namespace, secretName)
@@ -496,13 +503,12 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	// Upstream SSL Secret
 	upstreamSSLSecret := ing.Annotations[constants.PipyIngressAnnotationUpstreamSSLSecret]
 	if upstreamSSLSecret != "" {
-
 		ns, name, err := utils.SecretNamespaceAndName(upstreamSSLSecret, ing)
 		if err == nil {
 			if info.upstream == nil {
 				info.upstream = &repocfg.UpstreamSpec{}
 			}
-			info.upstream.SSLCert = ict.fetchSSLCert(ing, ns, name)
+			info.upstream.SSLCert = t.fetchSSLCert(ing, ns, name)
 		} else {
 			log.Error().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/upstream-ssl-secret of Ingress %s/%s: %s", upstreamSSLSecret, ing.Namespace, ing.Name, err)
 		}
@@ -556,7 +562,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	if trustedCASecret != "" {
 		ns, name, err := utils.SecretNamespaceAndName(trustedCASecret, ing)
 		if err == nil {
-			info.trustedCA = ict.fetchSSLCert(ing, ns, name)
+			info.trustedCA = t.fetchSSLCert(ing, ns, name)
 		} else {
 			log.Error().Msgf("Invalid value %q of annotation pipy.ingress.kubernetes.io/tls-trusted-ca-secret of Ingress %s/%s: %s", trustedCASecret, ing.Namespace, ing.Name, err)
 		}
@@ -577,7 +583,7 @@ func (ict *IngressChangeTracker) enrichIngressInfo(rule *networkingv1.IngressRul
 	return info
 }
 
-func (ict *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule, ing *networkingv1.Ingress) string {
+func (t *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule, ing *networkingv1.Ingress) string {
 	host := rule.Host
 	lowercaseHost := strings.ToLower(host)
 	for _, tls := range ing.Spec.TLS {
@@ -593,7 +599,7 @@ func (ict *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule
 			continue
 		}
 
-		cert := ict.fetchSSLCert(ing, ing.Namespace, tls.SecretName)
+		cert := t.fetchSSLCert(ing, ing.Namespace, tls.SecretName)
 		if cert == nil {
 			continue
 		} else {
@@ -621,7 +627,7 @@ func (ict *IngressChangeTracker) getTLSSecretName(rule *networkingv1.IngressRule
 	return ""
 }
 
-func (ict *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, name string) *repocfg.CertificateSpec {
+func (t *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, name string) *repocfg.CertificateSpec {
 	if ns == "" {
 		log.Warn().Msgf("namespace is empty, will use Ingress's namespace")
 		ns = ing.Namespace
@@ -633,7 +639,7 @@ func (ict *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, nam
 	}
 
 	log.Info().Msgf("Fetching secret %s/%s ...", ns, name)
-	secret, err := ict.informers.GetListers().Secret.Secrets(ns).Get(name)
+	secret, err := t.informers.GetListers().Secret.Secrets(ns).Get(name)
 
 	if err != nil {
 		log.Error().Msgf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)

@@ -8,9 +8,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// EndpointSlicesProcessor is responsible for processing EndpointSlices
 type EndpointSlicesProcessor struct {
 }
 
+// Insert adds the EndpointSlice object to the cache and returns true if the cache was modified
 func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
@@ -37,6 +39,7 @@ func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 	return cache.isRoutableService(svcKey)
 }
 
+// Delete removes the EndpointSlice object from the cache and returns true if the cache was modified
 func (p *EndpointSlicesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {

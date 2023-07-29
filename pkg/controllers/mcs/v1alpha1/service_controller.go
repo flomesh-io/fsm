@@ -26,7 +26,7 @@ package v1alpha1
 
 import (
 	"context"
-	_ "embed"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -44,6 +44,7 @@ type serviceReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewServiceReconciler returns a new Service.Reconciler
 func NewServiceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Service"),

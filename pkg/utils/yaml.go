@@ -10,6 +10,7 @@ var (
 	decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 )
 
+// DecodeYamlToUnstructured decodes YAML to Unstructured
 func DecodeYamlToUnstructured(data []byte) (*unstructured.Unstructured, error) {
 	obj := &unstructured.Unstructured{}
 	_, _, err := decUnstructured.Decode(data, nil, obj)

@@ -30,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ServiceExportRule defines the rule for service export
 type ServiceExportRule struct {
 	// The port number of service
 	PortNumber int32 `json:"portNumber,omitempty"`
@@ -55,6 +56,7 @@ type ServiceExportRule struct {
 	PathType *networkingv1.PathType `json:"pathType"`
 }
 
+// PathRewrite defines the rewrite rule for service export
 type PathRewrite struct {
 	From string `json:"from,omitempty"`
 	To   string `json:"to,omitempty"`

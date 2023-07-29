@@ -5,6 +5,7 @@ import (
 	"text/template"
 )
 
+// EvaluateTemplate evaluates the given template with the given data and returns the result as a string.
 func EvaluateTemplate(t *template.Template, data interface{}) string {
 	var tpl bytes.Buffer
 	if err := t.Execute(&tpl, data); err != nil {

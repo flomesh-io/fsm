@@ -3,11 +3,13 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"strings"
 )
 
+// ErrorListToError converts a list of errors to a single error
 func ErrorListToError(errorList field.ErrorList) error {
 	if errorList == nil {
 		return nil

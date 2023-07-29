@@ -744,17 +744,17 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		// GatewayAPI events
 		//
 		// Gateway event
-		announcements.GatewayApiGatewayAdded, announcements.GatewayApiGatewayDeleted, announcements.GatewayApiGatewayUpdated,
+		announcements.GatewayAPIGatewayAdded, announcements.GatewayAPIGatewayDeleted, announcements.GatewayAPIGatewayUpdated,
 		// GatewayClass event
-		announcements.GatewayApiGatewayClassAdded, announcements.GatewayApiGatewayClassDeleted, announcements.GatewayApiGatewayClassUpdated,
+		announcements.GatewayAPIGatewayClassAdded, announcements.GatewayAPIGatewayClassDeleted, announcements.GatewayAPIGatewayClassUpdated,
 		// HTTPRoute event
-		announcements.GatewayApiHTTPRouteAdded, announcements.GatewayApiHTTPRouteDeleted, announcements.GatewayApiHTTPRouteUpdated,
+		announcements.GatewayAPIHTTPRouteAdded, announcements.GatewayAPIHTTPRouteDeleted, announcements.GatewayAPIHTTPRouteUpdated,
 		// GRPCRoute event
-		announcements.GatewayApiGRPCRouteAdded, announcements.GatewayApiGRPCRouteDeleted, announcements.GatewayApiGRPCRouteUpdated,
+		announcements.GatewayAPIGRPCRouteAdded, announcements.GatewayAPIGRPCRouteDeleted, announcements.GatewayAPIGRPCRouteUpdated,
 		// TLSCRoute event
-		announcements.GatewayApiTLSRouteAdded, announcements.GatewayApiTLSRouteDeleted, announcements.GatewayApiTLSRouteUpdated,
+		announcements.GatewayAPITLSRouteAdded, announcements.GatewayAPITLSRouteDeleted, announcements.GatewayAPITLSRouteUpdated,
 		// TCPRoute event
-		announcements.GatewayApiTCPRouteAdded, announcements.GatewayApiTCPRouteDeleted, announcements.GatewayApiTCPRouteUpdated,
+		announcements.GatewayAPITCPRouteAdded, announcements.GatewayAPITCPRouteDeleted, announcements.GatewayAPITCPRouteUpdated,
 
 		//
 		// MultiCluster events

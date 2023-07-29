@@ -1,12 +1,13 @@
 package listeners
 
 import (
+	"time"
+
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
 	corev1 "k8s.io/api/core/v1"
-	"time"
 )
 
 type client struct {
@@ -225,7 +226,7 @@ func (c *client) GetGlobalPluginChains() map[string][]trafficpolicy.Plugin {
 	panic("implement me")
 }
 
-func (c *client) IsGatewayApiEnabled() bool {
+func (c *client) IsGatewayAPIEnabled() bool {
 	//TODO implement me
 	panic("implement me")
 }

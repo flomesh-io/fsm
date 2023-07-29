@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package v1alpha1 contains controller logic for the NamespacedIngress API v1alpha1.
 package v1alpha1
 
 import (
@@ -29,6 +30,8 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -45,7 +48,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 var (
@@ -54,7 +56,7 @@ var (
 )
 
 var (
-	log = logger.New("namespacedingress-v1alpha1-controller")
+	log = logger.New("namespacedingress-controller/v1alpha1")
 )
 
 // NamespacedIngressReconciler reconciles a NamespacedIngress object
@@ -63,6 +65,7 @@ type reconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+// NewReconciler returns a new NamespacedIngress reconciler
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &reconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("NamespacedIngress"),

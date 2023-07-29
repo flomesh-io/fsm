@@ -26,6 +26,8 @@ package secret
 
 import (
 	"fmt"
+	"net/http"
+
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -35,19 +37,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
+// NewRegister creates a new FLB Secret webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
+// GetWebhooks returns the list of webhooks of the FLB Secret resource
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
@@ -87,6 +90,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
+// GetHandlers returns the list of handlers of the FLB Secret resource
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.FLBSecretMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
@@ -106,10 +110,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 	}
 }
 
+// RuntimeObject returns the runtime object of the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
 	return &corev1.Secret{}
 }
 
+// SetDefaults sets the default values of the FLB Secret resource
 func (w *defaulter) SetDefaults(obj interface{}) {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
@@ -135,18 +141,22 @@ type validator struct {
 	cfg        configurator.Configurator
 }
 
+// RuntimeObject returns the runtime object of the webhook
 func (w *validator) RuntimeObject() runtime.Object {
 	return &corev1.Secret{}
 }
 
+// ValidateCreate validates the creation of the FLB Secret resource
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return w.doValidation(obj)
 }
 
+// ValidateUpdate validates the update of the FLB Secret resource
 func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
+// ValidateDelete validates the deletion of the FLB Secret resource
 func (w *validator) ValidateDelete(obj interface{}) error {
 	return nil
 }
@@ -171,7 +181,7 @@ func (w *validator) doValidation(obj interface{}) error {
 
 	if mc.IsFLBStrictModeEnabled() {
 		for _, key := range []string{
-			constants.FLBSecretKeyBaseUrl,
+			constants.FLBSecretKeyBaseURL,
 			constants.FLBSecretKeyUsername,
 			constants.FLBSecretKeyPassword,
 			constants.FLBSecretKeyDefaultCluster,

@@ -2,6 +2,7 @@ package remote
 
 import (
 	"context"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	mcscfg "github.com/flomesh-io/fsm/pkg/mcs/config"
@@ -11,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// NewBackground creates a new background process for a cluster
 func NewBackground(cluster *mcsv1alpha1.Cluster, kubeconfig *rest.Config, mc configurator.Configurator, broker *messaging.Broker) (*Background, error) {
 	connCfg, err := connectorConfig(cluster, mc)
 	if err != nil {
@@ -71,6 +73,7 @@ func connectorConfig(cluster *mcsv1alpha1.Cluster, mc configurator.Configurator)
 	)
 }
 
+// Run starts the background process
 func (b *Background) Run() error {
 	return b.Connector.Run(b.Context.StopCh)
 }

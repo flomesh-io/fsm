@@ -422,6 +422,7 @@ type PluginChainSpec struct {
 	Disable bool `json:"disable"`
 }
 
+// IngressSpec is the type to represent ingress.
 type IngressSpec struct {
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
@@ -441,6 +442,7 @@ type IngressSpec struct {
 	TLS *TLS `json:"tls"`
 }
 
+// HTTP is the type to represent http.
 type HTTP struct {
 	// +kubebuilder:default=true
 	Enabled bool `json:"enabled"`
@@ -461,6 +463,7 @@ type HTTP struct {
 	NodePort int32 `json:"nodePort"`
 }
 
+// TLS is the type to represent tls.
 type TLS struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
@@ -488,6 +491,7 @@ type TLS struct {
 	SSLPassthrough *SSLPassthrough `json:"sslPassthrough"`
 }
 
+// SSLPassthrough is the type to represent ssl passthrough.
 type SSLPassthrough struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
@@ -498,6 +502,7 @@ type SSLPassthrough struct {
 	UpstreamPort int32 `json:"upstreamPort"`
 }
 
+// GatewayAPISpec is the type to represent gateway api.
 type GatewayAPISpec struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
@@ -506,11 +511,13 @@ type GatewayAPISpec struct {
 	LogLevel string `json:"logLevel"`
 }
 
+// ServiceLBSpec is the type to represent service lb.
 type ServiceLBSpec struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
 }
 
+// FLBSpec is the type to represent flb.
 type FLBSpec struct {
 	// +kubebuilder:default=false
 	Enabled bool `json:"enabled"`
@@ -522,6 +529,7 @@ type FLBSpec struct {
 	SecretName string `json:"secretName"`
 }
 
+// ImageSpec is the type to represent image.
 type ImageSpec struct {
 	// +kubebuilder:default=flomesh
 	Registry string `json:"registry"`

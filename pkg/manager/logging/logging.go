@@ -30,6 +30,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
+// SetupLogging sets up Logging of ingress controller
 func SetupLogging(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Setting up Logging ...")
 

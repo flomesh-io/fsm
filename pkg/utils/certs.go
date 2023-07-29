@@ -32,6 +32,7 @@ import (
 	"fmt"
 )
 
+// ConvertPEMCertToX509 converts a PEM certificate to x509
 func ConvertPEMCertToX509(pemCrt []byte) (*x509.Certificate, error) {
 	block, _ := pem.Decode(pemCrt)
 	if block == nil {
@@ -47,6 +48,7 @@ func ConvertPEMCertToX509(pemCrt []byte) (*x509.Certificate, error) {
 	return x509Cert, nil
 }
 
+// ConvertPEMPrivateKeyToX509 converts a PEM private key to x509
 func ConvertPEMPrivateKeyToX509(pemKey []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(pemKey)
 	if block == nil {
@@ -63,6 +65,7 @@ func ConvertPEMPrivateKeyToX509(pemKey []byte) (*rsa.PrivateKey, error) {
 	return x509Key.(*rsa.PrivateKey), nil
 }
 
+// CertToPEM converts a certificate to PEM format
 func CertToPEM(caBytes []byte) ([]byte, error) {
 	caPEM := new(bytes.Buffer)
 	if err := pem.Encode(caPEM, &pem.Block{
@@ -75,6 +78,7 @@ func CertToPEM(caBytes []byte) ([]byte, error) {
 	return caPEM.Bytes(), nil
 }
 
+// RSAKeyToPEM converts a RSA private key to PEM format
 func RSAKeyToPEM(privateKey *rsa.PrivateKey) ([]byte, error) {
 	privateBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
@@ -92,6 +96,7 @@ func RSAKeyToPEM(privateKey *rsa.PrivateKey) ([]byte, error) {
 	return keyPEM.Bytes(), nil
 }
 
+// CsrToPEM converts a CSR to PEM format
 func CsrToPEM(csrBytes []byte) ([]byte, error) {
 	csrPEM := new(bytes.Buffer)
 	if err := pem.Encode(csrPEM, &(pem.Block{

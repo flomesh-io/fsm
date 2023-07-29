@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+// Package cache contains the cache for the gateway
 package cache
 
 import (
@@ -29,27 +30,51 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
+// ProcessorType is the type used to represent the type of processor
 type ProcessorType string
 
 const (
-	ServicesProcessorType       ProcessorType = "services"
+	// ServicesProcessorType is the type used to represent the services processor
+	ServicesProcessorType ProcessorType = "services"
+
+	// EndpointSlicesProcessorType is the type used to represent the endpoint slices processor
 	EndpointSlicesProcessorType ProcessorType = "endpointslices"
-	EndpointsProcessorType      ProcessorType = "endpoints"
+
+	// EndpointsProcessorType is the type used to represent the endpoints processor
+	EndpointsProcessorType ProcessorType = "endpoints"
+
+	// ServiceImportsProcessorType is the type used to represent the service imports processor
 	ServiceImportsProcessorType ProcessorType = "serviceimports"
-	SecretsProcessorType        ProcessorType = "secrets"
+
+	// SecretsProcessorType is the type used to represent the secrets processor
+	SecretsProcessorType ProcessorType = "secrets"
+
+	// GatewayClassesProcessorType is the type used to represent the gateway classes processor
 	GatewayClassesProcessorType ProcessorType = "gatewayclasses"
-	GatewaysProcessorType       ProcessorType = "gateways"
-	HTTPRoutesProcessorType     ProcessorType = "httproutes"
-	GRPCRoutesProcessorType     ProcessorType = "grpcroutes"
-	TCPRoutesProcessorType      ProcessorType = "tcproutes"
-	TLSRoutesProcessorType      ProcessorType = "tlsroutes"
+
+	// GatewaysProcessorType is the type used to represent the gateways processor
+	GatewaysProcessorType ProcessorType = "gateways"
+
+	// HTTPRoutesProcessorType is the type used to represent the HTTP routes processor
+	HTTPRoutesProcessorType ProcessorType = "httproutes"
+
+	// GRPCRoutesProcessorType is the type used to represent the gRPC routes processor
+	GRPCRoutesProcessorType ProcessorType = "grpcroutes"
+
+	// TCPRoutesProcessorType is the type used to represent the TCP routes processor
+	TCPRoutesProcessorType ProcessorType = "tcproutes"
+
+	// TLSRoutesProcessorType is the type used to represent the TLS routes processor
+	TLSRoutesProcessorType ProcessorType = "tlsroutes"
 )
 
+// Processor is the interface for the functionality provided by the processors
 type Processor interface {
 	Insert(obj interface{}, cache *GatewayCache) bool
 	Delete(obj interface{}, cache *GatewayCache) bool
 }
 
+// Cache is the interface for the functionality provided by the cache
 type Cache interface {
 	Insert(obj interface{}) bool
 	Delete(obj interface{}) bool

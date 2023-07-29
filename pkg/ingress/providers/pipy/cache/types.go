@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 
+// Package cache contains cache logic for pipy ingress controller
 package cache
 
 import (
 	"fmt"
+
 	commons "github.com/flomesh-io/fsm/pkg/apis"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	v1 "k8s.io/api/core/v1"
@@ -54,6 +56,7 @@ type Route interface {
 	Protocol() string
 }
 
+// ServicePortName , Service Port Name
 type ServicePortName struct {
 	types.NamespacedName
 	Port     string
@@ -71,6 +74,7 @@ func fmtPortName(in string) string {
 	return fmt.Sprintf(":%s", in)
 }
 
+// ServicePort , Service Port interface
 type ServicePort interface {
 	String() string
 	Address() string
@@ -78,6 +82,7 @@ type ServicePort interface {
 	Protocol() v1.Protocol
 }
 
+// Endpoint , Endpoint interface
 type Endpoint interface {
 	String() string
 	IP() string
@@ -88,6 +93,7 @@ type Endpoint interface {
 	Equal(Endpoint) bool
 }
 
+// ServiceEndpoint , Service Endpoints interface
 type ServiceEndpoint struct {
 	Endpoint        string
 	ServicePortName ServicePortName

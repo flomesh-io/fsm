@@ -27,10 +27,11 @@ package webhook
 import (
 	"context"
 	goerrors "errors"
+	"net/http"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -127,6 +128,7 @@ func validationResponseFromStatus(allowed bool, status metav1.Status) admission.
 	return resp
 }
 
+// ValidatingWebhookFor returns a new validating webhook for the given validator.
 func ValidatingWebhookFor(validator Validator) *admission.Webhook {
 	return &admission.Webhook{
 		Handler: &validatingHandler{validator: validator},
