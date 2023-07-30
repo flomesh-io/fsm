@@ -122,9 +122,41 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
+	effectiveGatewayClass, err := r.findEffectiveGatewayClass(ctx)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if effectiveGatewayClass == nil {
+		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
+	result, err := r.updateGatewayStatus(ctx, gateway, effectiveGatewayClass)
+	if err != nil {
+		return result, err
+	}
+
+	// 5. update listener status of this gateway no matter it's accepted or not
+	result, err = r.updateListenerStatus(ctx, gateway)
+	if err != nil {
+		return result, err
+	}
+
+	result, err = r.updateGatewayAddresses(ctx, gateway)
+	if err != nil {
+		return result, err
+	}
+
+	r.fctx.EventHandler.OnAdd(gateway)
+
+	return ctrl.Result{}, nil
+}
+
+func (r *gatewayReconciler) findEffectiveGatewayClass(ctx context.Context) (*gwv1beta1.GatewayClass, error) {
 	var gatewayClasses gwv1beta1.GatewayClassList
 	if err := r.fctx.List(ctx, &gatewayClasses); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to list gateway classes: %s", err)
+		return nil, fmt.Errorf("failed to list gateway classes: %s", err)
 	}
 
 	var effectiveGatewayClass *gwv1beta1.GatewayClass
@@ -136,11 +168,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	if effectiveGatewayClass == nil {
-		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
-		return ctrl.Result{}, nil
-	}
+	return effectiveGatewayClass, nil
+}
 
+func (r *gatewayReconciler) updateGatewayStatus(ctx context.Context, gateway *gwv1beta1.Gateway, effectiveGatewayClass *gwv1beta1.GatewayClass) (ctrl.Result, error) {
 	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
 	gatewayList := &gwv1beta1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(gateway.Namespace)); err != nil {
@@ -202,22 +233,19 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return result, err
 		}
 	}
+	return ctrl.Result{}, nil
+}
 
-	// 5. update listener status of this gateway no matter it's accepted or not
-	result, err := r.updateListenerStatus(ctx, gateway)
-	if err != nil {
-		return result, err
-	}
-
+func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway *gwv1beta1.Gateway) (ctrl.Result, error) {
 	// 6. after all status of gateways in the namespace have been updated successfully
 	//   list all gateways in the namespace and deploy/redeploy the effective one
-	activeGateway, result, err := r.findActiveGatewayByNamespace(ctx, gateway.Namespace)
+	activeGateway, err := r.findActiveGatewayByNamespace(ctx, gateway.Namespace)
 	if err != nil {
-		return result, err
+		return ctrl.Result{}, err
 	}
 
 	if activeGateway != nil && !isSameGateway(activeGateways[gateway.Namespace], activeGateway) {
-		result, err = r.applyGateway(activeGateway)
+		result, err := r.applyGateway(activeGateway)
 		if err != nil {
 			return result, err
 		}
@@ -225,58 +253,58 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		activeGateways[gateway.Namespace] = activeGateway
 	}
 
+	if activeGateway == nil {
+		return ctrl.Result{}, nil
+	}
+
 	// 7. update addresses of Gateway status if any IP is allocated
-	if activeGateway != nil {
-		lbSvc := &corev1.Service{}
-		key := client.ObjectKey{
-			Namespace: activeGateway.Namespace,
-			Name:      fmt.Sprintf("fsm-gateway-%s", activeGateway.Namespace),
-		}
-		if err := r.fctx.Get(ctx, key, lbSvc); err != nil {
-			return ctrl.Result{}, err
-		}
+	lbSvc := &corev1.Service{}
+	key := client.ObjectKey{
+		Namespace: activeGateway.Namespace,
+		Name:      fmt.Sprintf("fsm-gateway-%s", activeGateway.Namespace),
+	}
+	if err := r.fctx.Get(ctx, key, lbSvc); err != nil {
+		return ctrl.Result{}, err
+	}
 
-		if lbSvc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-			if len(lbSvc.Status.LoadBalancer.Ingress) > 0 {
-				addresses := gatewayAddresses(activeGateway, lbSvc)
-				if len(addresses) > 0 {
-					activeGateway.Status.Addresses = addresses
-					if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
-						//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
+	if lbSvc.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		if len(lbSvc.Status.LoadBalancer.Ingress) > 0 {
+			addresses := gatewayAddresses(activeGateway, lbSvc)
+			if len(addresses) > 0 {
+				activeGateway.Status.Addresses = addresses
+				if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
+					//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
 
-						return ctrl.Result{}, err
-					}
-				}
-
-				defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
-			} else {
-				if len(activeGateway.Status.Addresses) == 0 {
-					defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
-
-					return ctrl.Result{Requeue: true}, nil
-				}
-			}
-		}
-
-		// if there's any previous active gateways and has been assigned addresses, clean it up
-		gatewayList := &gwv1beta1.GatewayList{}
-		if err := r.fctx.List(ctx, gatewayList, client.InNamespace(activeGateway.Namespace)); err != nil {
-			log.Error().Msgf("Failed to list all gateways in namespace %s: %s", activeGateway.Namespace, err)
-			return ctrl.Result{}, err
-		}
-
-		for _, gw := range gatewayList.Items {
-			gw := gw // fix lint GO-LOOP-REF
-			if gw.Name != activeGateway.Name && len(gw.Status.Addresses) > 0 {
-				gw.Status.Addresses = nil
-				if err := r.fctx.Status().Update(ctx, &gw); err != nil {
 					return ctrl.Result{}, err
 				}
+			}
+
+			defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
+		} else {
+			if len(activeGateway.Status.Addresses) == 0 {
+				defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
+
+				return ctrl.Result{Requeue: true}, nil
 			}
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(gateway)
+	// if there's any previous active gateways and has been assigned addresses, clean it up
+	gatewayList := &gwv1beta1.GatewayList{}
+	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(activeGateway.Namespace)); err != nil {
+		log.Error().Msgf("Failed to list all gateways in namespace %s: %s", activeGateway.Namespace, err)
+		return ctrl.Result{}, err
+	}
+
+	for _, gw := range gatewayList.Items {
+		gw := gw // fix lint GO-LOOP-REF
+		if gw.Name != activeGateway.Name && len(gw.Status.Addresses) > 0 {
+			gw.Status.Addresses = nil
+			if err := r.fctx.Status().Update(ctx, &gw); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -535,21 +563,21 @@ func addressesToStrings(addresses []gwv1beta1.GatewayAddress) []string {
 	return result
 }
 
-func (r *gatewayReconciler) findActiveGatewayByNamespace(ctx context.Context, namespace string) (*gwv1beta1.Gateway, ctrl.Result, error) {
+func (r *gatewayReconciler) findActiveGatewayByNamespace(ctx context.Context, namespace string) (*gwv1beta1.Gateway, error) {
 	gatewayList := &gwv1beta1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(namespace)); err != nil {
 		log.Error().Msgf("Failed to list all gateways in namespace %s: %s", namespace, err)
-		return nil, ctrl.Result{}, err
+		return nil, err
 	}
 
 	for _, gw := range gatewayList.Items {
 		gw := gw // fix lint GO-LOOP-REF
 		if gwutils.IsActiveGateway(&gw) {
-			return &gw, ctrl.Result{}, nil
+			return &gw, nil
 		}
 	}
 
-	return nil, ctrl.Result{}, nil
+	return nil, nil
 }
 
 func isSameGateway(oldGateway, newGateway *gwv1beta1.Gateway) bool {

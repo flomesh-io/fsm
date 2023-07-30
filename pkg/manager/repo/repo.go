@@ -134,7 +134,7 @@ func createBatch(repoPath, scriptsDir string) repo.Batch {
 	}
 
 	for _, file := range listFiles(scriptsDir) {
-		content, err := os.ReadFile(file)
+		content, err := os.ReadFile(filepath.Clean(file))
 		if err != nil {
 			panic(err)
 		}

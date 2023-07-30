@@ -64,12 +64,12 @@ output:
   print-linter-name: true
   # Make issues output unique by line.
   # Default: true
-  uniq-by-line: false
+  uniq-by-line: true
   # Add a prefix to the output file references.
   # Default is no prefix.
   path-prefix: ""
   # Sort results by: filepath, line and column.
-  sort-results: false
+  sort-results: true
 
 severity:
   # Set the default severity for issues.
@@ -83,7 +83,7 @@ severity:
   # - TeamCity: https://www.jetbrains.com/help/teamcity/service-messages.html#Inspection+Instance
   #
   # Default value is an empty string.
-  default-severity: error
+  default-severity: "error"
   # If set to true `severity-rules` regular expressions become case-sensitive.
   # Default: false
   case-sensitive: true
@@ -97,3 +97,6 @@ severity:
     - linters:
         - dupl
       severity: info
+    - linters:
+        - revive
+      severity: warning
