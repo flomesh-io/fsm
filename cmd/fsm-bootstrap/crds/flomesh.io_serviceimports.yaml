@@ -66,10 +66,14 @@ spec:
                     endpoints:
                       description: The address of accessing the service
                       items:
+                        description: Endpoint represents a single logical "backend"
+                          implementing a service.
                         properties:
                           clusterKey:
                             type: string
                           target:
+                            description: Target represents a single logical "backend"
+                              implementing a service.
                             properties:
                               host:
                                 type: string

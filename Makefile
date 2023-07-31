@@ -63,12 +63,8 @@ manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRol
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./pkg/apis/..." output:crd:artifacts:config=cmd/fsm-bootstrap/crds
 	$(KUSTOMIZE) build cmd/fsm-bootstrap/ -o cmd/fsm-bootstrap/crds/gateway-api.yaml
 
-.PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="codegen/boilerplate.go.txt" paths="./..."
-
 .PHONY: build
-build: charts-tgz generate go-fmt go-vet ## Build commands with release args, the result will be optimized.
+build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, the result will be optimized.
 	@mkdir -p $(BUILD_DIR)
 	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector/consul,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
 
@@ -374,7 +370,7 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.1.0
+KUSTOMIZE_VERSION ?= v4.5.6
 HELM_VERSION ?= v3.12.2
 CONTROLLER_TOOLS_VERSION ?= v0.12.1
 

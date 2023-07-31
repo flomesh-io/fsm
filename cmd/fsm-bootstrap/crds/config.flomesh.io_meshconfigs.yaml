@@ -1303,12 +1303,15 @@ spec:
                 properties:
                   enabled:
                     default: false
+                    description: Enabled defines if flb is enabled.
                     type: boolean
                   secretName:
                     default: fsm-flb-secret
+                    description: SecretName defines the secret name of flb.
                     type: string
                   strictMode:
                     default: false
+                    description: StrictMode defines if flb is in strict mode.
                     type: boolean
                 required:
                 - enabled
@@ -1320,9 +1323,20 @@ spec:
                 properties:
                   enabled:
                     default: false
+                    description: Enabled defines if gateway api is enabled.
                     type: boolean
                   logLevel:
                     default: info
+                    description: LogLevel defines the log level of gateway api.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
                     type: string
                 required:
                 - enabled
@@ -1333,9 +1347,11 @@ spec:
                 properties:
                   registry:
                     default: flomesh
+                    description: Registry defines the registry of docker image.
                     type: string
                   serviceLBImage:
                     default: mirrored-klipper-lb:v0.3.5
+                    description: ServiceLBImage defines the service lb image.
                     type: string
                 required:
                 - registry
@@ -1346,6 +1362,7 @@ spec:
                 properties:
                   enabled:
                     default: true
+                    description: Enabled defines if ingress is enabled.
                     type: boolean
                   http:
                     default:
@@ -1353,24 +1370,29 @@ spec:
                       enabled: true
                       listen: 8000
                       nodePort: 30508
+                    description: HTTP defines the http configuration of ingress.
                     properties:
                       bind:
                         default: 80
+                        description: Bind defines the bind port of http.
                         format: int32
                         maximum: 65535
                         minimum: 1
                         type: integer
                       enabled:
                         default: true
+                        description: Enabled defines if http is enabled.
                         type: boolean
                       listen:
                         default: 8000
+                        description: Listen defines the listen port of http.
                         format: int32
                         maximum: 65535
                         minimum: 1
                         type: integer
                       nodePort:
                         default: 30508
+                        description: NodePort defines the node port of http.
                         format: int32
                         maximum: 65535
                         minimum: 1
@@ -1383,9 +1405,20 @@ spec:
                     type: object
                   logLevel:
                     default: info
+                    description: LogLevel defines the log level of ingress.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
                     type: string
                   namespaced:
                     default: false
+                    description: Namespaced defines if ingress is namespaced.
                     type: boolean
                   tls:
                     default:
@@ -1394,27 +1427,33 @@ spec:
                       listen: 8443
                       mTLS: false
                       nodePort: 30607
+                    description: TLS defines the tls configuration of ingress.
                     properties:
                       bind:
                         default: 443
+                        description: Bind defines the bind port of tls.
                         format: int32
                         maximum: 65535
                         minimum: 1
                         type: integer
                       enabled:
                         default: false
+                        description: Enabled defines if tls is enabled.
                         type: boolean
                       listen:
                         default: 8443
+                        description: Listen defines the listen port of tls.
                         format: int32
                         maximum: 65535
                         minimum: 1
                         type: integer
                       mTLS:
                         default: false
+                        description: MTLS defines if mTLS is enabled.
                         type: boolean
                       nodePort:
                         default: 30607
+                        description: NodePort defines the node port of tls.
                         format: int32
                         maximum: 65535
                         minimum: 1
@@ -1423,12 +1462,17 @@ spec:
                         default:
                           enabled: false
                           upstreamPort: 443
+                        description: SSLPassthrough defines the ssl passthrough configuration
+                          of tls.
                         properties:
                           enabled:
                             default: false
+                            description: Enabled defines if ssl passthrough is enabled.
                             type: boolean
                           upstreamPort:
                             default: 443
+                            description: UpstreamPort defines the upstream port of
+                              ssl passthrough.
                             format: int32
                             maximum: 65535
                             minimum: 1
@@ -1460,6 +1504,15 @@ spec:
                   fsmLogLevel:
                     description: FSMLogLevel defines the log level for FSM control
                       plane logs.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
                     type: string
                   remoteLogging:
                     description: RemoteLogging defines FSM's remote logging configuration.
@@ -1484,6 +1537,10 @@ spec:
                         type: integer
                       sampledFraction:
                         description: SampledFraction defines the sampled fraction.
+                        type: string
+                      secretName:
+                        description: SecretName defines the name of the secret that
+                          contains the configuration for remote logging.
                         type: string
                     required:
                     - enable
@@ -1626,6 +1683,7 @@ spec:
                 properties:
                   enabled:
                     default: false
+                    description: Enabled defines if service lb is enabled.
                     type: boolean
                 required:
                 - enabled
@@ -1691,6 +1749,15 @@ spec:
                     description: LogLevel defines the logging level for the sidecar's
                       logs. Non developers should generally never set this value.
                       In production environments the LogLevel should be set to error.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
                     type: string
                   maxDataPlaneConnections:
                     description: MaxDataPlaneConnections defines the maximum allowed

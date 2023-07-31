@@ -61,6 +61,15 @@ spec:
           spec:
             description: ClusterSpec defines the desired state of Cluster
             properties:
+              fsmMeshConfigName:
+                default: fsm-mesh-config
+                description: FsmMeshConfigName, defines the name of the MeshConfig
+                  of managed cluster
+                type: string
+              fsmNamespace:
+                description: FsmNamespace, defines the namespace of managed cluster
+                  in which fsm is installed
+                type: string
               gatewayHost:
                 description: GatewayHost, the Full Qualified Domain Name or IP of
                   the gateway/ingress of this cluster If it's an IP address, only
@@ -90,6 +99,8 @@ spec:
                 default: default
                 description: Zone, the locality information of this cluster
                 type: string
+            required:
+            - fsmNamespace
             type: object
           status:
             description: ClusterStatus defines the observed state of Cluster

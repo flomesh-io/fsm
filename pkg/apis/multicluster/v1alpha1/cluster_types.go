@@ -75,10 +75,10 @@ type ClusterSpec struct {
 	// +kubebuilder:default=fsm-mesh-config
 	// +optional
 	// FsmMeshConfigName, defines the name of the MeshConfig of managed cluster
-	FsmMeshConfigName string
+	FsmMeshConfigName string `json:"fsmMeshConfigName,omitempty"`
 
 	// FsmNamespace, defines the namespace of managed cluster in which fsm is installed
-	FsmNamespace string
+	FsmNamespace string `json:"fsmNamespace"`
 }
 
 // ClusterStatus defines the observed state of Cluster

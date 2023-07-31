@@ -69,6 +69,7 @@ spec:
               rules:
                 description: The paths for accessing the service via Ingress controller
                 items:
+                  description: ServiceExportRule defines the rule for service export
                   properties:
                     path:
                       description: Path is matched against the path of an incoming

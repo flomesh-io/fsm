@@ -56,6 +56,7 @@ spec:
                 type: string
               targets:
                 items:
+                  description: TrafficTarget defines the target of traffic
                   properties:
                     clusterKey:
                       description: 'Format: [region]/[zone]/[group]/[cluster]'

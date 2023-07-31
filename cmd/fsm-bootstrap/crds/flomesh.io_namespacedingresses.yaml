@@ -1054,12 +1054,19 @@ spec:
                     type: object
                 type: object
               logLevel:
-                default: 2
+                default: info
                 description: LogLevel is the log level of this ingress controller
                   pod.
-                maximum: 10
-                minimum: 1
-                type: integer
+                enum:
+                - trace
+                - debug
+                - info
+                - warn
+                - error
+                - fatal
+                - panic
+                - disabled
+                type: string
               nodeSelector:
                 additionalProperties:
                   type: string

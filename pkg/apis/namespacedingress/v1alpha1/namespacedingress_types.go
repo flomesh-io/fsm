@@ -94,8 +94,7 @@ type NamespacedIngressSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
 	// +kubebuilder:default=info
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=10
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 
 	// LogLevel is the log level of this ingress controller pod.
 	// +optional

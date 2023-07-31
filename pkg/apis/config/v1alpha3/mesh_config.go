@@ -94,6 +94,7 @@ type SidecarSpec struct {
 	// EnablePrivilegedInitContainer defines a boolean indicating whether the init container for a meshed pod should run as privileged.
 	EnablePrivilegedInitContainer bool `json:"enablePrivilegedInitContainer"`
 
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 	// LogLevel defines the logging level for the sidecar's logs. Non developers should generally never set this value. In production environments the LogLevel should be set to error.
 	LogLevel string `json:"logLevel,omitempty"`
 
@@ -176,6 +177,7 @@ type TrafficSpec struct {
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.
 type ObservabilitySpec struct {
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 	// FSMLogLevel defines the log level for FSM control plane logs.
 	FSMLogLevel string `json:"fsmLogLevel,omitempty"`
 
@@ -425,115 +427,142 @@ type PluginChainSpec struct {
 // IngressSpec is the type to represent ingress.
 type IngressSpec struct {
 	// +kubebuilder:default=true
+	// Enabled defines if ingress is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=false
+	// Namespaced defines if ingress is namespaced.
 	Namespaced bool `json:"namespaced"`
 
 	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
+	// LogLevel defines the log level of ingress.
 	LogLevel string `json:"logLevel"`
 
 	// +kubebuilder:default={enabled: true, bind: 80, listen: 8000, nodePort: 30508}
 	// +optional
+	// HTTP defines the http configuration of ingress.
 	HTTP *HTTP `json:"http"`
 
 	// +kubebuilder:default={enabled: true, bind: 443, listen: 8443, nodePort: 30607, mTLS: false}
 	// +optional
+	// TLS defines the tls configuration of ingress.
 	TLS *TLS `json:"tls"`
 }
 
 // HTTP is the type to represent http.
 type HTTP struct {
 	// +kubebuilder:default=true
+	// Enabled defines if http is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=80
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// Bind defines the bind port of http.
 	Bind int32 `json:"bind"`
 
 	// +kubebuilder:default=8000
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// Listen defines the listen port of http.
 	Listen int32 `json:"listen"`
 
 	// +kubebuilder:default=30508
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// NodePort defines the node port of http.
 	NodePort int32 `json:"nodePort"`
 }
 
 // TLS is the type to represent tls.
 type TLS struct {
 	// +kubebuilder:default=false
+	// Enabled defines if tls is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=443
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// Bind defines the bind port of tls.
 	Bind int32 `json:"bind" validate:"gte=1,lte=65535"`
 
 	// +kubebuilder:default=8443
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// Listen defines the listen port of tls.
 	Listen int32 `json:"listen" validate:"gte=1,lte=65535"`
 
 	// +kubebuilder:default=30607
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// NodePort defines the node port of tls.
 	NodePort int32 `json:"nodePort" validate:"gte=0,lte=65535"`
 
 	// +kubebuilder:default=false
+	// MTLS defines if mTLS is enabled.
 	MTLS bool `json:"mTLS"`
 
 	// +kubebuilder:default={enabled: false, upstreamPort: 443}
 	// +optional
+	// SSLPassthrough defines the ssl passthrough configuration of tls.
 	SSLPassthrough *SSLPassthrough `json:"sslPassthrough"`
 }
 
 // SSLPassthrough is the type to represent ssl passthrough.
 type SSLPassthrough struct {
 	// +kubebuilder:default=false
+	// Enabled defines if ssl passthrough is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=443
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
+	// UpstreamPort defines the upstream port of ssl passthrough.
 	UpstreamPort int32 `json:"upstreamPort"`
 }
 
 // GatewayAPISpec is the type to represent gateway api.
 type GatewayAPISpec struct {
 	// +kubebuilder:default=false
+	// Enabled defines if gateway api is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
+	// LogLevel defines the log level of gateway api.
 	LogLevel string `json:"logLevel"`
 }
 
 // ServiceLBSpec is the type to represent service lb.
 type ServiceLBSpec struct {
 	// +kubebuilder:default=false
+	// Enabled defines if service lb is enabled.
 	Enabled bool `json:"enabled"`
 }
 
 // FLBSpec is the type to represent flb.
 type FLBSpec struct {
 	// +kubebuilder:default=false
+	// Enabled defines if flb is enabled.
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=false
+	// StrictMode defines if flb is in strict mode.
 	StrictMode bool `json:"strictMode"`
 
 	// +kubebuilder:default=fsm-flb-secret
+	// SecretName defines the secret name of flb.
 	SecretName string `json:"secretName"`
 }
 
 // ImageSpec is the type to represent image.
 type ImageSpec struct {
 	// +kubebuilder:default=flomesh
+	// Registry defines the registry of docker image.
 	Registry string `json:"registry"`
 
 	// +kubebuilder:default="mirrored-klipper-lb:v0.3.5"
+	// ServiceLBImage defines the service lb image.
 	ServiceLBImage string `json:"serviceLBImage"`
 }
