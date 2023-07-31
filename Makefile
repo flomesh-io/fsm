@@ -124,7 +124,7 @@ check-mocks:
 .PHONY: check-codegen
 check-codegen:
 	@./codegen/gen-crd-client.sh
-	@git diff --exit-code || { echo "----- Please commit the changes made by './codegen/gen-crd-client.sh' -----"; exit 1; }
+	@git diff --exit-code -- ':!go.mod' ':!go.sum' || { echo "----- Please commit the changes made by './codegen/gen-crd-client.sh' -----"; exit 1; }
 
 .PHONY: go-checks
 go-checks: go-lint go-fmt go-mod-tidy check-mocks check-codegen
