@@ -126,6 +126,10 @@ check-codegen:
 	@./codegen/gen-crd-client.sh
 	@git diff --exit-code -- ':!go.mod' ':!go.sum' || { echo "----- Please commit the changes made by './codegen/gen-crd-client.sh' -----"; exit 1; }
 
+.PHONY: check-scripts
+check-scripts:
+	./scripts/check-scripts.sh
+
 .PHONY: go-checks
 go-checks: go-lint go-fmt go-mod-tidy check-mocks check-codegen
 
