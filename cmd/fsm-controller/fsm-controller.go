@@ -471,6 +471,8 @@ func startMetricsStore() {
 		metricsstore.DefaultMetricsStore.AdmissionWebhookResponseTotal,
 		metricsstore.DefaultMetricsStore.EventsQueued,
 		metricsstore.DefaultMetricsStore.ReconciliationTotal,
+		metricsstore.DefaultMetricsStore.IngressBroadcastEventCount,
+		metricsstore.DefaultMetricsStore.GatewayBroadcastEventCounter,
 	)
 }
 

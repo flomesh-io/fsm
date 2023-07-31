@@ -287,6 +287,20 @@ func init() {
 		Help:      "Counter of resource reconciliations invoked",
 	}, []string{"kind"})
 
+	defaultMetricsStore.IngressBroadcastEventCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "ingress",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of IngressBroadcast events published by the FSM controller",
+	})
+
+	defaultMetricsStore.GatewayBroadcastEventCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "gateway",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of GatewayBroadcast events published by the FSM controller",
+	})
+
 	defaultMetricsStore.registry = prometheus.NewRegistry()
 }
 
