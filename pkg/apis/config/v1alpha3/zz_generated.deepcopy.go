@@ -19,7 +19,6 @@ limitations under the License.
 package v1alpha3
 
 import (
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -381,7 +380,7 @@ func (in *MeshRootCertificateList) DeepCopyInto(out *MeshRootCertificateList) {
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]v1alpha2.MeshRootCertificate, len(*in))
+		*out = make([]MeshRootCertificate, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

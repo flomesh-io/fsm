@@ -140,8 +140,8 @@ func WithConfigClient(configClient configClientset.Interface, meshConfigName, fs
 		meshConfiginformerFactory := configInformers.NewSharedInformerFactoryWithOptions(configClient, DefaultKubeEventResyncInterval, configInformers.WithNamespace(fsmNamespace), listOption)
 		mrcInformerFactory := configInformers.NewSharedInformerFactoryWithOptions(configClient, DefaultKubeEventResyncInterval, configInformers.WithNamespace(fsmNamespace))
 
-		ic.informers[InformerKeyMeshConfig] = meshConfiginformerFactory.Config().V1alpha2().MeshConfigs().Informer()
-		ic.informers[InformerKeyMeshRootCertificate] = mrcInformerFactory.Config().V1alpha2().MeshRootCertificates().Informer()
+		ic.informers[InformerKeyMeshConfig] = meshConfiginformerFactory.Config().V1alpha3().MeshConfigs().Informer()
+		ic.informers[InformerKeyMeshRootCertificate] = mrcInformerFactory.Config().V1alpha3().MeshRootCertificates().Informer()
 	}
 }
 

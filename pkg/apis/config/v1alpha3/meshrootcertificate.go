@@ -1,9 +1,8 @@
 package v1alpha3
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 )
 
 // MeshRootCertificate defines the configuration for certificate issuing
@@ -55,7 +54,16 @@ type ProviderSpec struct {
 }
 
 // CertManagerProviderSpec defines the configuration of the cert-manager provider
-type CertManagerProviderSpec v1alpha2.CertManagerProviderSpec
+type CertManagerProviderSpec struct {
+	// IssuerName specifies the name of the Issuer resource
+	IssuerName string `json:"issuerName"`
+
+	// IssuerKind specifies the kind of Issuer
+	IssuerKind string `json:"issuerKind"`
+
+	// IssuerGroup specifies the group the Issuer belongs to
+	IssuerGroup string `json:"issuerGroup"`
+}
 
 // VaultProviderSpec defines the configuration of the Vault provider
 type VaultProviderSpec struct {
@@ -83,7 +91,16 @@ type VaultTokenSpec struct {
 }
 
 // SecretKeyReferenceSpec defines the configuration of the secret reference
-type SecretKeyReferenceSpec v1alpha2.SecretKeyReferenceSpec
+type SecretKeyReferenceSpec struct {
+	// Name specifies the name of the secret in which the Vault token is stored
+	Name string `json:"name"`
+
+	// Key specifies the key whose value is the Vault token
+	Key string `json:"key"`
+
+	// Namespace specifies the namespace of the secret in which the Vault token is stored
+	Namespace string `json:"namespace"`
+}
 
 // TresorProviderSpec defines the configuration of the Tresor provider
 type TresorProviderSpec struct {
@@ -92,11 +109,23 @@ type TresorProviderSpec struct {
 }
 
 // TresorCASpec defines the configuration of Tresor's root certificate
-type TresorCASpec v1alpha2.TresorCASpec
+type TresorCASpec struct {
+	// SecretRef specifies the secret in which the root certificate is stored
+	SecretRef corev1.SecretReference `json:"secretRef"`
+}
+
+// MeshRootCertificateStatus defines the status of the MeshRootCertificate resource
+type MeshRootCertificateStatus struct {
+	// State specifies the state of the certificate provider
+	// All states are specified in constants.go
+	State string `json:"state"`
+}
 
 // MeshRootCertificateList defines the list of MeshRootCertificate objects
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type MeshRootCertificateList v1alpha2.MeshRootCertificateList
+type MeshRootCertificateList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
 
-// MeshRootCertificateStatus defines the status of the MeshRootCertificate resource
-type MeshRootCertificateStatus v1alpha2.MeshRootCertificateStatus
+	Items []MeshRootCertificate `json:"items"`
+}
