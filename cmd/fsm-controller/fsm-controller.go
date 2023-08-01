@@ -408,7 +408,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoBaseURL := fmt.Sprintf("%s://%s:%d/repo", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
+	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 	repoClient := repo.NewRepoClient(repoBaseURL)
 	cctx := &fctx.ControllerContext{
 		Client:             mgr.GetClient(),

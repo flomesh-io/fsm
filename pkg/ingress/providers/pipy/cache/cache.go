@@ -88,7 +88,7 @@ var (
 func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
 	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, "fsm-cluster-connector-local")
-	repoBaseURL := fmt.Sprintf("%s://%s:%d/repo", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
+	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 
 	c := &Cache{
 		kubeClient:               kubeClient,
