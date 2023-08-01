@@ -149,7 +149,7 @@ func main() {
 
 	<-stop
 	cancel()
-	log.Info().Msgf("Stopping fsm-controller %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Stopping fsm-gateway %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 }
 
 func codebase(cfg configurator.Configurator) string {
