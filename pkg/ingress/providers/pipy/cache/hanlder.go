@@ -11,12 +11,14 @@ import (
 // OnAdd is called whenever a new object is added to the store.
 func (c *Cache) OnAdd(obj interface{}) bool {
 	switch obj := obj.(type) {
-	case *corev1.Endpoints,
-		*corev1.Service,
-		*corev1.Secret,
-		*networkingv1.Ingress,
-		mcsv1alpha1.ServiceImport:
-		return c.OnUpdate(nil, obj)
+	case *corev1.Endpoints:
+		return c.endpointsChanges.Update(nil, obj)
+	case *corev1.Service:
+		return c.serviceChanges.Update(nil, obj)
+	case *mcsv1alpha1.ServiceImport:
+		return c.serviceImportChanges.Update(nil, obj)
+	case *networkingv1.Ingress:
+		return c.ingressChanges.Update(nil, obj)
 	case *networkingv1.IngressClass:
 		updateDefaultIngressClass(obj, obj.Name)
 		return true
@@ -73,12 +75,14 @@ func objectForType(oldObj, newObj interface{}) interface{} {
 // OnDelete is called whenever an object is deleted from the store.
 func (c *Cache) OnDelete(obj interface{}) bool {
 	switch obj := obj.(type) {
-	case *corev1.Endpoints,
-		*corev1.Service,
-		*corev1.Secret,
-		*networkingv1.Ingress,
-		mcsv1alpha1.ServiceImport:
-		return c.OnUpdate(obj, nil)
+	case *corev1.Endpoints:
+		return c.endpointsChanges.Update(obj, nil)
+	case *corev1.Service:
+		return c.serviceChanges.Update(obj, nil)
+	case *mcsv1alpha1.ServiceImport:
+		return c.serviceImportChanges.Update(obj, nil)
+	case *networkingv1.Ingress:
+		return c.ingressChanges.Update(obj, nil)
 	case *networkingv1.IngressClass:
 		// if the default IngressClass is deleted, set the DefaultIngressClass variable to empty
 		updateDefaultIngressClass(obj, constants.NoDefaultIngressClass)
