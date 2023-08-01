@@ -59,9 +59,12 @@ endif
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen kustomize ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./pkg/apis/..." output:crd:artifacts:config=cmd/fsm-bootstrap/crds
-	$(KUSTOMIZE) build cmd/fsm-bootstrap/ -o cmd/fsm-bootstrap/crds/gateway-api.yaml
+
+.PHONY: labels
+labels: kustomize ## Attach required labels to gateway-api resources
+	$(KUSTOMIZE) build cmd/fsm-bootstrap/raw/ -o cmd/fsm-bootstrap/crds/
 
 .PHONY: build
 build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, the result will be optimized.

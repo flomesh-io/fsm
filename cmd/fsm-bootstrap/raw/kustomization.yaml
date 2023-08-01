@@ -5,4 +5,4 @@ commonLabels:
   app.kubernetes.io/name: flomesh.io
 
 resources:
-- crds/gateway-api.yaml
+- gateway-api.yaml
