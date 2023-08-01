@@ -3,6 +3,7 @@ package repo
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
@@ -47,6 +48,14 @@ func (job *PipyConfGeneratorJob) Run() {
 		log.Warn().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingServiceList)).
 			Msgf("Error looking up services for Sidecar with name=%s", proxy.GetName())
 		return
+	}
+
+	if len(proxyServices) > 0 {
+		sort.SliceStable(proxyServices, func(i, j int) bool {
+			ps1 := proxyServices[i]
+			ps2 := proxyServices[j]
+			return ps1.Namespace < ps2.Namespace || ps1.Name < ps2.Name
+		})
 	}
 
 	cataloger := s.catalog
