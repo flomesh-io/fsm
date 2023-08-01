@@ -42,6 +42,20 @@ spec:
         - name: init-fsm-controller
           image: {{ .Values.fsm.curlImage }}
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+        - name: init-untar
+          image: {{ .Values.fsm.curlImage }}
+          imagePullPolicy: IfNotPresent
+          command:
+          - sh
+          - -c
+          - |
+            tar -C /repo -zxvf /scripts.tar.gz
+          volumeMounts:
+          - mountPath: /scripts.tar.gz
+            name: fsm-init-repo-scripts
+            subPath: scripts.tar.gz
+          - mountPath: /repo
+            name: shared-repo
       containers:
         {{- range .Values.fsm.sidecarDrivers }}
         {{- if eq .sidecarName $.Values.fsm.sidecarClass }}
@@ -143,6 +157,9 @@ spec:
                   fieldPath: metadata.name
             - name: FSM_DEFAULT_SIDECAR_CLASS
               value: "{{ .Values.fsm.sidecarClass }}"
+          volumeMounts:
+            - mountPath: /repo
+              name: shared-repo
       {{- if .Values.fsm.enableFluentbit }}
         - name: {{ .Values.fsm.fluentBit.name }}
           image: {{ .Values.fsm.fluentBit.registry }}/fluent-bit:{{ .Values.fsm.fluentBit.tag }}
@@ -182,8 +199,13 @@ spec:
             mountPath: /var/lib/docker/containers
             readOnly: true
        {{- end }}
-    {{- if .Values.fsm.enableFluentbit }}
       volumes:
+      - configMap:
+          name: fsm-init-repo-scripts
+        name: fsm-init-repo-scripts
+      - emptyDir: {}
+        name: shared-repo
+    {{- if .Values.fsm.enableFluentbit }}
       - name: config
         configMap:
           name: fluentbit-configmap
