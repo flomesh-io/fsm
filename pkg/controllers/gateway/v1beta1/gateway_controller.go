@@ -27,7 +27,6 @@ package v1beta1
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -607,15 +606,9 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1beta1.Gateway) (ctrl.Resul
 }
 
 func (r *gatewayReconciler) deriveCodebases(gw *gwv1beta1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
-	bytes, jsonErr := json.Marshal(gw)
-	if jsonErr != nil {
-		return ctrl.Result{}, jsonErr
-	}
-	version := utils.Hash(bytes)
-
 	gwPath := utils.GatewayCodebasePath(gw.Namespace)
 	parentPath := utils.GetDefaultGatewaysPath()
-	if _, err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath, version); err != nil {
+	if err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 

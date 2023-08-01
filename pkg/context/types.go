@@ -37,7 +37,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 // ControllerContext is the context for the controller

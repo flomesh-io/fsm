@@ -24,7 +24,7 @@ import (
 	recon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
 	"github.com/flomesh-io/fsm/pkg/manager/webhook"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 
 	smiAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
 	smiTrafficSpecClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/specs/clientset/versioned"
@@ -408,7 +408,8 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoClient := repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort()))
+	repoBaseURL := fmt.Sprintf("%s://%s:%d/repo", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
+	repoClient := repo.NewRepoClient(repoBaseURL)
 	cctx := &fctx.ControllerContext{
 		Client:             mgr.GetClient(),
 		Manager:            mgr,

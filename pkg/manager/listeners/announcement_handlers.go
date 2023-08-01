@@ -18,7 +18,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 // WatchAndUpdateIngressConfig watches for log level changes and updates the global log level

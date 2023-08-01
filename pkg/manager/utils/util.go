@@ -27,8 +27,7 @@ package utils
 import (
 	"fmt"
 
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/flomesh-io/fsm/pkg/utils"
+	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 func getMainJSON(basepath string, repoClient *repo.PipyRepoClient) (string, error) {
@@ -55,8 +54,7 @@ func updateMainJSON(basepath string, repoClient *repo.PipyRepoClient, newJSON st
 		},
 	}
 
-	hash := utils.Hash([]byte(newJSON))
-	if _, err := repoClient.Batch(fmt.Sprintf("%d", hash), []repo.Batch{batch}); err != nil {
+	if err := repoClient.Batch([]repo.Batch{batch}); err != nil {
 		log.Error().Msgf("Failed to update %q: %s", getPathOfMainJSON(basepath), err)
 		return err
 	}

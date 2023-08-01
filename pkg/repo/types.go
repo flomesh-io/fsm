@@ -22,30 +22,30 @@
  * SOFTWARE.
  */
 
-package utils
+package repo
 
-import (
-	"github.com/tidwall/sjson"
+import "github.com/flomesh-io/fsm/pkg/logger"
 
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/repo"
-)
-
-// UpdateIngressHTTPConfig updates HTTP config of ingress controller
-func UpdateIngressHTTPConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
-	json, err := getMainJSON(basepath, repoClient)
-	if err != nil {
-		return err
-	}
-
-	newJSON, err := sjson.Set(json, "http", map[string]interface{}{
-		"enabled": mc.IsIngressHTTPEnabled(),
-		"listen":  mc.GetIngressHTTPListenPort(),
-	})
-	if err != nil {
-		log.Error().Msgf("Failed to update HTTP config: %s", err)
-		return err
-	}
-
-	return updateMainJSON(basepath, repoClient, newJSON)
+type Codebase struct {
+	Version     int64    `json:"version,string,omitempty"`
+	Path        string   `json:"path,omitempty"`
+	Main        string   `json:"main,omitempty"`
+	Base        string   `json:"base,omitempty"`
+	Files       []string `json:"files,omitempty"`
+	EditFiles   []string `json:"editFiles,omitempty"`
+	ErasedFiles []string `json:"erasedFiles,omitempty"`
+	Derived     []string `json:"derived,omitempty"`
 }
+
+type Batch struct {
+	Basepath string
+	Items    []BatchItem
+}
+
+type BatchItem struct {
+	Path     string
+	Filename string
+	Content  interface{}
+}
+
+var log = logger.New("pipy-repo-client")

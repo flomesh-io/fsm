@@ -42,7 +42,7 @@ import (
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
@@ -88,6 +88,7 @@ var (
 func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
 	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, "fsm-cluster-connector-local")
+	repoBaseURL := fmt.Sprintf("%s://%s:%d/repo", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 
 	c := &Cache{
 		kubeClient:               kubeClient,
@@ -99,7 +100,7 @@ func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerC
 		endpointsMap:             make(EndpointsMap),
 		ingressMap:               make(IngressMap),
 		multiClusterEndpointsMap: make(MultiClusterEndpointsMap),
-		repoClient:               repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
+		repoClient:               repo.NewRepoClient(repoBaseURL),
 		broadcaster:              eventBroadcaster,
 	}
 
@@ -168,8 +169,7 @@ func (c *Cache) SyncRoutes() {
 		batches := serviceBatches(serviceRoutes, mc)
 		if batches != nil {
 			go func() {
-				hash := utils.Hash([]byte(serviceRoutes.Hash))
-				if _, err := c.repoClient.Batch(fmt.Sprintf("%d", hash), batches); err != nil {
+				if err := c.repoClient.Batch(batches); err != nil {
 					log.Error().Msgf("Sync service routes to repo failed: %s", err)
 					return
 				}
@@ -194,8 +194,7 @@ func (c *Cache) SyncRoutes() {
 		batches := c.ingressBatches(ingressRoutes, mc)
 		if batches != nil {
 			go func() {
-				hash := utils.Hash([]byte(ingressRoutes.Hash))
-				if _, err := c.repoClient.Batch(fmt.Sprintf("%d", hash), batches); err != nil {
+				if err := c.repoClient.Batch(batches); err != nil {
 					log.Error().Msgf("Sync ingress routes to repo failed: %s", err)
 					return
 				}

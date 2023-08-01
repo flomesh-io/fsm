@@ -34,8 +34,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/flomesh-io/fsm/pkg/repo"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
 )
 
 var (
@@ -59,7 +60,7 @@ var (
 )
 
 // UpdateLoggingConfig updates logging config of ingress controller
-func UpdateLoggingConfig(kubeClient kubernetes.Interface, basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) error {
+func UpdateLoggingConfig(kubeClient kubernetes.Interface, basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
 	json, err := getNewLoggingConfigJSON(kubeClient, basepath, repoClient, mc)
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func UpdateLoggingConfig(kubeClient kubernetes.Interface, basepath string, repoC
 	return updateMainJSON(basepath, repoClient, json)
 }
 
-func getNewLoggingConfigJSON(kubeClient kubernetes.Interface, basepath string, repoClient *client.PipyRepoClient, mc configurator.Configurator) (string, error) {
+func getNewLoggingConfigJSON(kubeClient kubernetes.Interface, basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) (string, error) {
 	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return "", err

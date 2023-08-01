@@ -21,7 +21,7 @@ import (
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
@@ -50,8 +50,9 @@ type GatewayCache struct {
 
 // NewGatewayCache creates a new gateway cache
 func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
+	repoBaseURL := fmt.Sprintf("%s://%s:%d/repo", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 	return &GatewayCache{
-		repoClient: repo.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
+		repoClient: repo.NewRepoClient(repoBaseURL),
 		informers:  informerCollection,
 		kubeClient: kubeClient,
 
@@ -393,8 +394,7 @@ func (c *GatewayCache) BuildConfigs() {
 				},
 			}
 
-			hash := utils.Hash([]byte(cfg.Version))
-			if _, err := c.repoClient.Batch(fmt.Sprintf("%d", hash), batches); err != nil {
+			if err := c.repoClient.Batch(batches); err != nil {
 				log.Error().Msgf("Sync gateway config to repo failed: %s", err)
 				return
 			}

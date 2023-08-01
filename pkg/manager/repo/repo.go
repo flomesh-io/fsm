@@ -38,7 +38,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/logger"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
@@ -57,13 +57,13 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 	repoClient := ctx.RepoClient
 
 	if err := wait.PollImmediate(5*time.Second, 60*5*time.Second, func() (bool, error) {
-		success, err := repoClient.IsRepoUp()
-		if success {
-			log.Info().Msg("Repo is READY!")
-			return success, nil
+		if repoClient.IsRepoUp() {
+			log.Info().Msgf("Repo is READY!")
+			return true, nil
 		}
-		log.Error().Msg("Repo is not up, sleeping ...")
-		return success, err
+
+		log.Info().Msgf("Repo is not up, sleeping ...")
+		return false, nil
 	}); err != nil {
 		log.Error().Msgf("Error happened while waiting for repo up, %s", err)
 		return err
@@ -71,21 +71,21 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 
 	mc := ctx.Config
 	// initialize the repo
-	if _, err := repoClient.Batch(fmt.Sprintf("%d", 0), getBatches(mc)); err != nil {
+	if err := repoClient.Batch(getBatches(mc)); err != nil {
 		return err
 	}
 
 	// derive codebase
 	// Services
 	defaultServicesPath := utils.GetDefaultServicesPath()
-	if _, err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath, 0); err != nil {
+	if err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath); err != nil {
 		return err
 	}
 
 	// Ingress
 	if mc.IsIngressEnabled() {
 		defaultIngressPath := utils.GetDefaultIngressPath()
-		if _, err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath, 0); err != nil {
+		if err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath); err != nil {
 			return err
 		}
 	}
@@ -93,7 +93,7 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 	// GatewayAPI
 	if mc.IsGatewayAPIEnabled() {
 		defaultGatewaysPath := utils.GetDefaultGatewaysPath()
-		if _, err := repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath, 0); err != nil {
+		if err := repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
 			return err
 		}
 	}

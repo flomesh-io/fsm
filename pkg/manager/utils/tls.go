@@ -32,8 +32,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	repo "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 // UpdateIngressTLSConfig updates TLS config of ingress controller
@@ -59,7 +58,7 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 }
 
 // IssueCertForIngress issues certificate for ingress controller
-func IssueCertForIngress(basepath string, repoClient *client.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator) error {
+func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator) error {
 	// 1. issue cert
 	cert, err := certMgr.IssueCertificate(
 		fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace()),
