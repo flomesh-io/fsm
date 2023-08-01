@@ -67,10 +67,10 @@ spec:
         - name: health
           containerPort: 8081
         args:
-        - --verbosity={{ .Values.fsm.fsmIngress.logLevel }},
-        - --fsm-namespace={{ include "fsm.namespace" . }},
-        - --fsm-version={{ .Chart.AppVersion }},
-        - --mesh-name={{.Values.fsm.meshName}},
+        - --verbosity={{ .Values.fsm.fsmIngress.logLevel }}
+        - --fsm-namespace={{ include "fsm.namespace" . }}
+        - --fsm-version={{ .Chart.AppVersion }}
+        - --mesh-name={{.Values.fsm.meshName}}
         resources:
           {{- toYaml .Values.fsm.fsmIngress.resources | nindent 10 }}
         env:

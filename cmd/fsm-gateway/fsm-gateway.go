@@ -97,7 +97,7 @@ func getMetadata() metadata {
 }
 
 func main() {
-	log.Info().Msgf("Starting fsm-controller %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Starting fsm-gateway %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := parseFlags(); err != nil {
 		log.Fatal().Err(err).Str(errcode.Kind, errcode.ErrInvalidCLIArgument.String()).Msg("Error parsing cmd line arguments")
 	}
