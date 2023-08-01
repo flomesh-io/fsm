@@ -55,4 +55,5 @@ type ControllerContext struct {
 	EventHandler       gateway.Controller
 	StopCh             <-chan struct{}
 	FsmNamespace       string
+	MeshName           string
 }

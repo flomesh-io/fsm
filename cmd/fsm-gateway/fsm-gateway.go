@@ -69,6 +69,7 @@ var (
 	meshName          string // An ID that uniquely identifies an FSM instance
 	fsmNamespace      string
 	fsmMeshConfigName string
+	fsmVersion        string
 
 	meta metadata
 )
@@ -78,6 +79,7 @@ func init() {
 	flags.StringVar(&meshName, "mesh-name", "", "FSM mesh name")
 	flags.StringVar(&fsmNamespace, "fsm-namespace", "", "FSM controller's namespace")
 	flags.StringVar(&fsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
+	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 
 	meta = getMetadata()
 }

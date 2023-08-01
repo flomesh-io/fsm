@@ -421,6 +421,7 @@ func main() {
 		RepoClient:         repoClient,
 		Broker:             msgBroker,
 		StopCh:             stop,
+		MeshName:           meshName,
 	}
 	for _, f := range []func(*fctx.ControllerContext) error{
 		mrepo.InitRepo,

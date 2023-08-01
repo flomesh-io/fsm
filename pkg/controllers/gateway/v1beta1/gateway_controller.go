@@ -634,7 +634,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc configurator
 		Major:   "1",
 		Minor:   "21",
 	}
-	if ctrlResult, err := helm.RenderChart(releaseName, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, resolveValues); err != nil {
+	if ctrlResult, err := helm.RenderChart(releaseName, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, r.resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
 		return ctrlResult, err
 	}
@@ -643,7 +643,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc configurator
 	return ctrl.Result{}, nil
 }
 
-func resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
+func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
 	gateway, ok := object.(*gwv1beta1.Gateway)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of *gwv1beta1.Gateway", object)
@@ -670,6 +670,7 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
 		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
+		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
 	}
 
 	for _, ov := range overrides {
