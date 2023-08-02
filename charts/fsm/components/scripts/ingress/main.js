@@ -49,7 +49,7 @@
   .branch(
     Boolean(config?.tls?.enabled), (
       $=>$
-        .listen(config?.tls?.listen || 8000)
+        .listen(config?.tls?.listen || 8443)
         .branch(
           () => config?.sslPassthrough?.enabled === true, 'passthrough',
           'inbound-tls'
