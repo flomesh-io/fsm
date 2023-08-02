@@ -38,19 +38,23 @@
     __isTLS: false,
   })
 
-  .listen(
-    config?.http?.enabled
-      ? (config?.http?.listen ? config.http.listen : 8000)
-      : 0
-  ).link('inbound-http')
+  .branch(
+    Boolean(config?.http?.enabled), (
+      $=>$
+        .listen(config?.http?.listen || 8000)
+        .link('inbound-http')
+    )
+  )
 
-  .listen(
-    config?.tls?.enabled
-      ? (config?.tls?.listen ? config.tls.listen : 8443)
-      : 0
-  ).branch(
-    () => config?.sslPassthrough?.enabled === true, 'passthrough',
-    'inbound-tls'
+  .branch(
+    Boolean(config?.tls?.enabled), (
+      $=>$
+        .listen(config?.tls?.listen || 8000)
+        .branch(
+          () => config?.sslPassthrough?.enabled === true, 'passthrough',
+          'inbound-tls'
+        )
+    )
   )
 
   .pipeline('inbound-tls')
