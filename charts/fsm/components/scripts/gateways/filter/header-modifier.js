@@ -23,6 +23,28 @@
  */
 
 ((
+  resolvVar = val => (
+    val?.startsWith('$') ? (
+      (
+        pos = val.indexOf('_'),
+        name,
+        member,
+        content = val,
+      ) => (
+        (pos > 0) && (
+          name = val.substring(1, pos),
+          member = val.substring(pos + 1),
+          (name === 'http') && (
+            content = __http?.headers?.[member] || __http?.[member] || val
+          ) || (name === 'consumer') && (
+            content = __consumer?.[member] || val
+          )
+        ),
+        content
+      )
+    )() : val
+  ),
+
   makeModifierHandler = cfg => (
     (
       set = cfg?.set,
@@ -32,14 +54,14 @@
       (set || add || remove) && (
         msg => (
           set && set.forEach(
-            e => (msg[e.name] = e.value)
+            e => (msg[e.name] = resolvVar(e.value))
           ),
           add && add.forEach(
             e => (
               msg[e.name] ? (
-                msg[e.name] = msg[e.name] + ',' + e.value
+                msg[e.name] = msg[e.name] + ',' + resolvVar(e.value)
               ) : (
-                msg[e.name] = e.value
+                msg[e.name] = resolvVar(e.value)
               )
             )
           ),
@@ -92,6 +114,8 @@
 
 .import({
   __service: 'service',
+  __http: 'http',
+  __consumer: 'consumer',
 })
 
 .pipeline()

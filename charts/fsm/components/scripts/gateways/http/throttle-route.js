@@ -32,6 +32,7 @@
 pipy({
   _overflow: null,
   _rateLimit: null,
+  _localWaitCounter: null,
 })
 
 .import({
@@ -55,10 +56,12 @@ pipy({
             )
           ), (
             $=>$
-            .handleMessageStart(() => _rateLimit.count++)
+            .onStart(() => void(_localWaitCounter = { n: 0 }))
+            .onEnd(() => void(_rateLimit.count -= _localWaitCounter.n))
+            .handleMessageStart(() => (_rateLimit.count++, _localWaitCounter.n++))
             .throttleMessageRate(() => _rateLimit.quota, {blockInput: false})
             .chain()
-            .handleMessageStart(() => _rateLimit.count--)
+            .handleMessageStart(() => (_rateLimit.count--, _localWaitCounter.n--))
           )
         )
       ), (

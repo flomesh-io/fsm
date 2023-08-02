@@ -44,11 +44,22 @@
         obj = {
           targetBalancer: serviceConfig.Endpoints && new algo.RoundRobinLoadBalancer(
             shuffle(Object.fromEntries(Object.entries(serviceConfig.Endpoints)
-              .map(([k, v]) => (endpointAttributes[k] = v, [k, v.Weight]))
+              .map(([k, v]) => (endpointAttributes[k] = v, v.hash = algo.hash(k), [k, v.Weight]))
               .filter(([k, v]) => v > 0)
             ))
           ),
           endpointAttributes,
+          ...(serviceConfig.StickyCookieName && ({
+            stickyCookie: {
+              name: serviceConfig.StickyCookieName,
+              expires: serviceConfig.StickyCookieExpires || 3600,
+              hashTable: Object.fromEntries(Object.keys(serviceConfig.Endpoints).map(
+                k => (
+                  [algo.hash(k), k]
+                )
+              ))
+            }
+          })),
           failoverBalancer: serviceConfig.Endpoints && failover(Object.fromEntries(Object.entries(serviceConfig.Endpoints).map(([k, v]) => [k, v.Weight]))),
           needRetry: Boolean(serviceConfig.RetryPolicy?.NumRetries),
           numRetries: serviceConfig.RetryPolicy?.NumRetries,
@@ -115,13 +126,39 @@
     )
   )(),
 
+  getCookies = cookie => (
+    (
+      cookies = {},
+      arr,
+      kv,
+    ) => (
+      cookie && (
+        (arr = cookie.split(';')) && (
+          arr.forEach(
+            p => (
+              kv = p.split('='),
+              (kv.length > 1) && (
+                cookies[kv[0].trim()] = kv[1].trim()
+              )
+            )
+          )
+        ),
+        cookies
+      )
+    )
+  )(),
+
 ) => pipy({
   _retryCount: 0,
   _serviceConfig: null,
   _targetBalancer: null,
   _failoverBalancer: null,
-  _targetObject: null,
   _muxHttpOptions: null,
+  _cookies: null,
+  _cookieId: null,
+  _isRetry: false,
+  _unhealthCache: null,
+  _healthCheckTarget: null,
 })
 
 .import({
@@ -130,6 +167,8 @@
   __cert: 'connect-tls',
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
+  __healthCheckTargets: 'health-check',
+  __healthCheckServices: 'health-check',
 })
 
 .pipeline()
@@ -141,7 +180,8 @@
       _targetBalancer = _serviceConfig.targetBalancer,
       _serviceConfig.failoverBalancer && (
         _failoverBalancer = _serviceConfig.failoverBalancer
-      )
+      ),
+      _unhealthCache = __healthCheckServices?.[__service.name]
     )
   )
 )
@@ -155,7 +195,10 @@
       .link('upstream')
       .replaceMessageStart(
         msg => (
-          shouldRetry(msg.head.status) ? new StreamEnd('Replay') : msg
+          shouldRetry(msg?.head?.status) ? (
+            _isRetry = true,
+            new StreamEnd('Replay')
+          ) : msg
         )
       )
     )
@@ -168,8 +211,20 @@
 .handleMessageStart(
   msg => (
     _serviceConfig && (
-      _targetObject = _targetBalancer?.borrow?.({}),
-      __target = _targetObject?.id
+      _serviceConfig.stickyCookie && (
+        _cookieId = null,
+        !_isRetry && (_cookies = getCookies(msg?.head?.headers?.cookie)) && (_cookieId = _cookies[_serviceConfig.stickyCookie.name]) && (
+          (_cookieId = _serviceConfig.stickyCookie.hashTable[_cookieId]) && (
+            _unhealthCache?.get?.(_cookieId) && (_cookieId = null)
+          )
+        )
+      ),
+      _cookieId ? (
+        __target = _cookieId
+      ) : (
+        __target = _targetBalancer?.borrow?.({}, undefined, _unhealthCache)?.id
+      ),
+      __target
     ) && (
       (
         attrs = _serviceConfig?.endpointAttributes?.[__target]
@@ -178,6 +233,15 @@
           __cert = attrs?.UpstreamCert
         ) : (
           __cert = __service?.UpstreamCert
+        ),
+        _cookieId ? (
+          _cookieId = null
+        ) : (
+          _serviceConfig?.stickyCookie && attrs?.hash && (
+            _cookieId = _serviceConfig.stickyCookie.name + '=' + attrs.hash + '; path=/; expires='
+                      + new Date(new Date().getTime() + 1000 * _serviceConfig.stickyCookie.expires).toUTCString()
+                      + '; max-age=' + _serviceConfig.stickyCookie.expires
+          )
         )
       )
     )()
@@ -201,6 +265,7 @@
           () => (
             _targetBalancer = _failoverBalancer,
             _failoverBalancer = null,
+            _isRetry = true,
             new StreamEnd('Replay')
           )
         )
@@ -210,13 +275,44 @@
     )
   ),
   (
-    $=>$.muxHTTP(() => _targetObject, () => _muxHttpOptions).to(
+    $=>$.muxHTTP(() => undefined, () => _muxHttpOptions).to(
       $=>$.branch(
         () => __cert, (
           $=>$.use('lib/connect-tls.js')
         ), (
           $=>$.use('lib/connect-tcp.js')
         )
+      )
+    )
+    .handleMessage(
+      msg => (
+        (_healthCheckTarget = __healthCheckTargets?.[__target + '@' + __service.name]) && (
+          (!msg?.head?.status || (msg?.head?.status > 499)) ? (
+            _healthCheckTarget.service.fail(_healthCheckTarget)
+          ) : (
+            _healthCheckTarget.service.ok(_healthCheckTarget)
+          )
+        )
+      )
+    )
+    .branch(
+      () => _cookieId, (
+        $=>$.handleMessageStart(
+          msg => (
+            msg?.head?.headers && (
+              !msg.head.headers['set-cookie'] && (
+                msg.head.headers['set-cookie'] = []
+              ),
+              (typeof msg.head.headers['set-cookie'] === 'string') ? (
+                msg.head.headers['set-cookie'] = [msg.head.headers['set-cookie'], _cookieId]
+              ) : (
+                msg.head.headers['set-cookie'].push(_cookieId)
+              )
+            )
+          )
+        )
+      ), (
+        $=>$
       )
     )
   )

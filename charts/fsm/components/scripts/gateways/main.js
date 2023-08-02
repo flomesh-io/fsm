@@ -69,4 +69,8 @@
   )
 )
 
+.task()
+.onStart(new Data)
+.use('common/health-check.js')
+
 )()

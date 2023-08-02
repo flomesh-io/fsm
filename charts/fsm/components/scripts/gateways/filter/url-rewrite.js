@@ -23,6 +23,28 @@
  */
 
 ((
+  resolvVar = val => (
+    val?.startsWith('$') ? (
+      (
+        pos = val.indexOf('_'),
+        name,
+        member,
+        content = val,
+      ) => (
+        (pos > 0) && (
+          name = val.substring(1, pos),
+          member = val.substring(pos + 1),
+          (name === 'http') && (
+            content = __http?.headers?.[member] || __http?.[member] || val
+          ) || (name === 'consumer') && (
+            content = __consumer?.[member] || val
+          )
+        ),
+        content
+      )
+    )() : val
+  ),
+
   getPrefix = uri => (
     (
       path = uri?.split?.('?')[0] || '',
@@ -32,20 +54,43 @@
     )
   )(),
 
+  pathPrefix = (path, prefix) => (
+    path.startsWith(prefix) && (
+      prefix.endsWith('/') || (
+        (
+          lastChar = path.charAt(prefix.length),
+        ) => (
+          lastChar === '' || lastChar === '/'
+        )
+      )()
+    )
+  ),
+
   makeHeadHandler = cfg => (
     (cfg?.path?.type === 'ReplacePrefixMatch') ? (
       head => (
         (
-          prefix = getPrefix(head?.path),
-          suffix = (head?.path || '').substring(prefix.length),
+          match = pathPrefix(head?.path, cfg?.path?.replacePrefixMatch),
+          suffix = match && (head?.path || '').substring(cfg.path.replacePrefixMatch.length),
+          replace = resolvVar(cfg?.path?.replacePrefix || '/'),
         ) => (
-          cfg?.path?.replacePrefixMatch === '/' ? (
-            head.path = suffix
-          ) : (
-            head.path = cfg?.path?.replacePrefixMatch + suffix
-          ),
-          cfg?.hostname && head.headers && (
-            head.headers.host = cfg.hostname
+          match && (
+            replace.endsWith('/') ? (
+              suffix.startsWith('/') ? (
+                head.path = replace + suffix.substring(1)
+              ) : (
+                head.path = replace + suffix
+              )
+            ) : (
+              suffix.startsWith('/') ? (
+                head.path = replace + suffix
+              ) : (
+                head.path = replace + '/' + suffix
+              )
+            ),
+            cfg?.hostname && head.headers && (
+              head.headers.host = cfg.hostname
+            )
           )
         )
       )()
@@ -56,7 +101,7 @@
             prefix = (head?.path || '').split('?')[0],
             suffix = (head?.path || '').substring(prefix.length),
           ) => (
-            head.path  = cfg?.path?.replaceFullPath + suffix,
+            head.path = resolvVar(cfg?.path?.replaceFullPath) + suffix,
             cfg?.hostname && head.headers && (
               head.headers.host = cfg.hostname
             )
@@ -90,6 +135,8 @@
 
 .import({
   __service: 'service',
+  __http: 'http',
+  __consumer: 'consumer',
 })
 
 .pipeline()

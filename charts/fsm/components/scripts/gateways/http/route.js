@@ -85,29 +85,25 @@
     )
   )(),
 
-  makeDictionaryMatches = (dictionary, name) => (
+  makeDictionaryMatches = dictionary => (
     (
-      tests = (dictionary || []).map(
-        d => (
-          (d.Type === 'Exact') ? (
-            (d[name] || []).map(
-              h => Object.keys(h || {}).map(
-                k => (obj => obj?.[k] === h[k])
-              )
-            ).flat()
+      tests = Object.entries(dictionary || {}).map(
+        ([type, dict]) => (
+          (type === 'Exact') ? (
+            Object.keys(dict || {}).map(
+              k => (obj => obj?.[k] === dict[k])
+            )
           ) : (
-            (d.Type === 'Regex') ? (
-              (d[name] || []).map(
-                h => Object.keys(h || {}).map(
-                  k => (
-                    (
-                      regex = new RegExp(h[k])
-                    ) => (
-                      obj => regex.test(obj?.[k] || '')
-                    )
-                  )()
-                )
-              ).flat()
+            (type === 'Regex') ? (
+              Object.keys(dict || {}).map(
+                k => (
+                  (
+                    regex = new RegExp(dict[k])
+                  ) => (
+                    obj => regex.test(obj?.[k] || '')
+                  )
+                )()
+              )
             ) : [() => false]
           )
         )
@@ -147,11 +143,11 @@
           () => false
         )
       ),
-      matchHeaders = makeDictionaryMatches(rule?.Headers, 'Headers'),
+      matchHeaders = makeDictionaryMatches(rule?.Headers),
       matchMethod = (
         rule?.Methods && Object.fromEntries((rule.Methods).map(m => [m, true]))
       ),
-      matchParams = makeDictionaryMatches(rule?.QueryParams, 'Params'),
+      matchParams = makeDictionaryMatches(rule?.QueryParams),
     ) => (
       {
         config: rule,
@@ -164,14 +160,15 @@
             )
           )
         ),
-        backendServiceBalancer: new algo.RoundRobinLoadBalancer(rule?.BackendService || {})
+        backendServiceBalancer: new algo.RoundRobinLoadBalancer(rule?.BackendService || {}),
+        ...(rule?.ServerRoot && { serverRoot: rule.ServerRoot })
       }
     )
   )(),
 
   makeGrpcMatches = rule => (
     (
-      matchHeaders = makeDictionaryMatches(rule?.Headers, 'Headers'),
+      matchHeaders = makeDictionaryMatches(rule?.Headers),
       matchMethod = (
         rule?.Method?.Type === 'Exact' && (
           path => (
@@ -202,7 +199,7 @@
     (
       matches = [],
     ) => (
-      (routeTypeMatches?.RouteType === 'HTTP' || routeTypeMatches?.RouteType === 'HTTP2') && (
+      (!routeTypeMatches?.RouteType || routeTypeMatches?.RouteType === 'HTTP' || routeTypeMatches?.RouteType === 'HTTP2') && (
         matches = (routeTypeMatches?.Matches || []).map(
           m => makeHttpMatches(m)
         )
@@ -223,8 +220,9 @@
   routeMatchesHandlers = new algo.Cache(makeRouteMatchesHandler),
 
   hostHandlers = new algo.Cache(
-    host => (
+    fullHost => (
       (
+        host = fullHost.split('@')[0],
         routeRules = config?.RouteRules?.[__port?.Port],
         matchDomain = matchDomainHandlers.get(routeRules),
         domain = matchDomain(host.toLowerCase()),
@@ -237,6 +235,17 @@
             __route = messageHandler(message)
           )
         )
+      )
+    )()
+  ),
+
+  handleMessage = (host, msg) => (
+    host && (
+      (
+        fullHost = host + '@' + __port?.Port,
+        handler = hostHandlers.get(fullHost),
+      ) => (
+        handler && handler(msg)
       )
     )()
   ),
@@ -258,12 +267,12 @@
 .pipeline()
 .handleMessageStart(
   msg => (
-    hostHandlers.get(msg?.head?.headers?.host)?.(msg),
+    handleMessage(msg?.head?.headers?.host, msg),
     !__domain && __consumer?.sni && (
-      hostHandlers.get(__consumer.sni)?.(msg)
+      handleMessage(__consumer.sni, msg)
     ),
     !__domain && config?.Configs?.StripAnyHostPort && (
-      hostHandlers.get(msg?.head?.headers?.host?.split(':')?.[0])?.(msg)
+      handleMessage(msg?.head?.headers?.host?.split(':')?.[0], msg)
     )
   )
 )

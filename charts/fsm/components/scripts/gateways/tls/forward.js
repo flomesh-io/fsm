@@ -98,6 +98,8 @@
 ) => pipy({
   _balancer: null,
   _serviceConfig: null,
+  _unhealthCache: null,
+  _healthCheckTarget: null,
 })
 
 .export('tls-forward', {
@@ -110,6 +112,8 @@
   __cert: 'connect-tls',
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
+  __healthCheckTargets: 'health-check',
+  __healthCheckServices: 'health-check',
 })
 
 .pipeline()
@@ -124,7 +128,8 @@
       (__service = serviceHandlers.get(_balancer.borrow({}).id)) && (
         (_serviceConfig = serviceConfigs.get(__service)) && (
           __metricLabel = __service.name,
-          (__target = _serviceConfig.targetBalancer?.borrow?.({})?.id) && (
+          _unhealthCache = __healthCheckServices?.[__service.name],
+          (__target = _serviceConfig.targetBalancer?.borrow?.({}, undefined, _unhealthCache)?.id) && (
             (
               attrs = _serviceConfig?.endpointAttributes?.[__target]
             ) => (
@@ -159,6 +164,17 @@
         $=>$.use('lib/connect-tls.js')
       ), (
         $=>$.use('lib/connect-tcp.js')
+      )
+    )
+    .handleStreamEnd(
+      e => (
+        (_healthCheckTarget = __healthCheckTargets?.[__target + '@' + __service.name]) && (
+          (!e.error || e.error === "ReadTimeout" || e.error === "WriteTimeout" || e.error === "IdleTimeout") ? (
+            _healthCheckTarget.service.ok(_healthCheckTarget)
+          ) : (
+            _healthCheckTarget.service.fail(_healthCheckTarget)
+          )
+        )
       )
     )
   )

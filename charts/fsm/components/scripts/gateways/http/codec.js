@@ -23,7 +23,16 @@
  */
 
 pipy()
+
+.export('http', {
+  __http: null,
+})
+
 .pipeline()
 .demuxHTTP().to(
-  $=>$.chain()
+  $=>$
+  .handleMessageStart(
+    msg => (__http = msg?.head)
+  )
+  .chain()
 )

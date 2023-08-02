@@ -67,7 +67,7 @@ pipy({
 )
 .branch(
   () => __target.startsWith('127.0.0.1:'), (
-    $=>$.connect(() => __target, { bind: '127.0.0.6' })
+    $=>$.connect(() => __target, { bind: '127.0.0.1' })
   ),
   (
     $=>$.connect(() => __target)
