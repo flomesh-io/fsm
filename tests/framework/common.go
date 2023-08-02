@@ -652,6 +652,8 @@ func (td *FsmTestData) LoadFSMImagesIntoKind() error {
 		"fsm-bootstrap",
 		"fsm-preinstall",
 		"fsm-healthcheck",
+		"fsm-ingress",
+		"fsm-gateway",
 	}
 
 	return td.LoadImagesToKind(imageNames)
