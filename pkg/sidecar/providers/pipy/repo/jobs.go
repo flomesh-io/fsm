@@ -10,6 +10,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
+	"github.com/flomesh-io/fsm/pkg/injector"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
@@ -60,6 +61,11 @@ func (job *PipyConfGeneratorJob) Run() {
 
 	cataloger := s.catalog
 	pipyConf := new(PipyConf)
+
+	if proxy.PodMetadata != nil && len(proxy.PodMetadata.Namespace) > 0 {
+		metrics, _ := injector.IsMetricsEnabled(s.kubeController, proxy.PodMetadata.Namespace)
+		pipyConf.Metrics = metrics
+	}
 
 	probes(proxy, pipyConf)
 	features(s, proxy, pipyConf)
