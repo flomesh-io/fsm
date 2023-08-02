@@ -345,6 +345,11 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		DeployJaeger:            false,
 		DeployFluentbit:         false,
 		EnableReconciler:        false,
+		EnableIngress:           false,
+		EnableGateway:           false,
+		EnableServiceLB:         false,
+		EnableFLB:               false,
+		EnableEgressGateway:     false,
 
 		VaultHost:            "vault." + td.FsmNamespace + ".svc.cluster.local",
 		VaultProtocol:        "http",
@@ -447,6 +452,11 @@ func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.
 	meshConfig.Spec.FeatureFlags.EnableAccessControlPolicy = instOpts.EnableAccessControlPolicy
 	meshConfig.Spec.FeatureFlags.EnableRetryPolicy = instOpts.EnableRetryPolicy
 
+	meshConfig.Spec.Ingress.Enabled = instOpts.EnableIngress
+	meshConfig.Spec.GatewayAPI.Enabled = instOpts.EnableGateway
+	meshConfig.Spec.ServiceLB.Enabled = instOpts.EnableServiceLB
+	meshConfig.Spec.FLB.Enabled = instOpts.EnableFLB
+
 	return meshConfig
 }
 
@@ -504,6 +514,11 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.featureFlags.enableAccessControlPolicy=%v", instOpts.EnableAccessControlPolicy),
 		fmt.Sprintf("fsm.featureFlags.enableRetryPolicy=%v", instOpts.EnableRetryPolicy),
 		fmt.Sprintf("fsm.enableReconciler=%v", instOpts.EnableReconciler),
+		fmt.Sprintf("fsm.fsmIngress.enabled=%v", instOpts.EnableIngress),
+		fmt.Sprintf("fsm.fsmGateway.enabled=%v", instOpts.EnableGateway),
+		fmt.Sprintf("fsm.flb.enabled=%v", instOpts.EnableFLB),
+		fmt.Sprintf("fsm.serviceLB.enabled=%v", instOpts.EnableServiceLB),
+		fmt.Sprintf("fsm.egressGateway.enabled=%v", instOpts.EnableEgressGateway),
 	)
 
 	if instOpts.LocalProxyMode != "" {
@@ -550,7 +565,10 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 
 	td.T.Logf("Setting log FSM's log level through overrides to %s", instOpts.FSMLogLevel)
 	instOpts.SetOverrides = append(instOpts.SetOverrides,
-		fmt.Sprintf("fsm.controllerLogLevel=%s", instOpts.FSMLogLevel))
+		fmt.Sprintf("fsm.controllerLogLevel=%s", instOpts.FSMLogLevel),
+		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", instOpts.FSMLogLevel),
+		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", instOpts.FSMLogLevel),
+	)
 
 	if len(instOpts.SetOverrides) > 0 {
 		separator := "="

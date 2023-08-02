@@ -103,6 +103,11 @@ type InstallFSMOpts struct {
 	DeployJaeger            bool
 	DeployFluentbit         bool
 	EnableReconciler        bool
+	EnableIngress           bool
+	EnableGateway           bool
+	EnableFLB               bool
+	EnableServiceLB         bool
+	EnableEgressGateway     bool
 
 	VaultHost            string
 	VaultProtocol        string
