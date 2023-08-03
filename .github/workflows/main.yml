@@ -185,7 +185,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$(PWD)/bin:$PATH
+          export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
@@ -239,7 +239,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$(PWD)/bin:$PATH
+          export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
@@ -293,7 +293,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$(PWD)/bin:$PATH
+          export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
@@ -354,7 +354,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$(PWD)/bin:$PATH
+          export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
@@ -408,7 +408,7 @@ jobs:
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$(PWD)/bin:$PATH
+          export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
