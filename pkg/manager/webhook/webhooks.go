@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -222,37 +224,37 @@ func registerWebhookHandlers(ctx *fctx.ControllerContext, registers []webhook.Re
 	}
 }
 
-func getRegisters(cfg *webhook.RegisterConfig, mc configurator.Configurator) []webhook.Register {
+func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) []webhook.Register {
 	result := make([]webhook.Register, 0)
 
-	//result = append(result, injector.NewRegister(cfg))
+	//result = append(result, injector.NewRegister(regCfg))
 
-	result = append(result, cluster.NewRegister(cfg))
-	//result = append(result, cm.NewRegister(cfg))
-	//result = append(result, proxyprofile.NewRegister(cfg))
-	result = append(result, serviceexport.NewRegister(cfg))
-	result = append(result, serviceimport.NewRegister(cfg))
-	result = append(result, globaltrafficpolicy.NewRegister(cfg))
+	result = append(result, cluster.NewRegister(regCfg))
+	//result = append(result, cm.NewRegister(regCfg))
+	//result = append(result, proxyprofile.NewRegister(regCfg))
+	result = append(result, serviceexport.NewRegister(regCfg))
+	result = append(result, serviceimport.NewRegister(regCfg))
+	result = append(result, globaltrafficpolicy.NewRegister(regCfg))
 
 	if mc.IsIngressEnabled() {
-		result = append(result, ingress.NewRegister(cfg))
+		result = append(result, ingress.NewRegister(regCfg))
 		if mc.IsNamespacedIngressEnabled() {
-			result = append(result, namespacedingress.NewRegister(cfg))
+			result = append(result, namespacedingress.NewRegister(regCfg))
 		}
 	}
 
-	if mc.IsGatewayAPIEnabled() {
-		result = append(result, gateway.NewRegister(cfg))
-		result = append(result, gatewayclass.NewRegister(cfg))
-		result = append(result, httproute.NewRegister(cfg))
-		result = append(result, grpcroute.NewRegister(cfg))
-		result = append(result, tcproute.NewRegister(cfg))
-		result = append(result, tlsroute.NewRegister(cfg))
+	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(regCfg.KubeClient) {
+		result = append(result, gateway.NewRegister(regCfg))
+		result = append(result, gatewayclass.NewRegister(regCfg))
+		result = append(result, httproute.NewRegister(regCfg))
+		result = append(result, grpcroute.NewRegister(regCfg))
+		result = append(result, tcproute.NewRegister(regCfg))
+		result = append(result, tlsroute.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {
-		result = append(result, flbsecret.NewRegister(cfg))
-		result = append(result, flbservice.NewRegister(cfg))
+		result = append(result, flbsecret.NewRegister(regCfg))
+		result = append(result, flbservice.NewRegister(regCfg))
 	}
 
 	return result

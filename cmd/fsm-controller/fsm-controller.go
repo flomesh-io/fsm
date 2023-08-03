@@ -305,7 +305,7 @@ func main() {
 		}
 	}
 
-	if cfg.IsGatewayAPIEnabled() {
+	if cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
 		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, msgBroker, cfg)
 		if err := gatewayController.Start(); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Gateway Controller")

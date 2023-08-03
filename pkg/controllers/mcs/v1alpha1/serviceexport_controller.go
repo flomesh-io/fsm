@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -417,7 +419,7 @@ func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			Complete(r)
 	}
 
-	if mc.IsGatewayAPIEnabled() {
+	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(r.fctx.KubeClient) {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&mcsv1alpha1.ServiceExport{}).
 			Owns(&gwv1beta1.HTTPRoute{}).

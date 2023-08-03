@@ -34,6 +34,7 @@ import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/mcs/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/namespacedingress/v1alpha1"
 	svclb "github.com/flomesh-io/fsm/pkg/controllers/servicelb"
+	"github.com/flomesh-io/fsm/pkg/version"
 )
 
 // RegisterReconcilers registers all reconcilers based on the configuration
@@ -54,7 +55,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 	//	reconcilers["MCS(EndpointSlice)"] = mcsv1alpha1.NewEndpointSliceReconciler(ctx)
 	//}
 
-	if mc.IsGatewayAPIEnabled() {
+	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(ctx.KubeClient) {
 		reconcilers["GatewayAPI(GatewayClass)"] = gatewayv1beta1.NewGatewayClassReconciler(ctx)
 		reconcilers["GatewayAPI(Gateway)"] = gatewayv1beta1.NewGatewayReconciler(ctx)
 		reconcilers["GatewayAPI(HTTPRoute)"] = gatewayv1beta1.NewHTTPRouteReconciler(ctx)

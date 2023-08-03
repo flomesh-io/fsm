@@ -8,6 +8,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	"github.com/rs/zerolog/log"
 	smiTrafficAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
 	smiAccessInformers "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/informers/externalversions"
@@ -84,15 +86,18 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyServiceAccount] = v1api.ServiceAccounts().Informer()
 		ic.informers[InformerKeyPod] = v1api.Pods().Informer()
 		ic.informers[InformerKeyEndpoints] = v1api.Endpoints().Informer()
-		ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
-		ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
+
+		if version.IsEndpointSliceEnabled(kubeClient) {
+			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
+			ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
+		}
 	}
 }
 
@@ -105,15 +110,18 @@ func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCol
 		ic.informers[InformerKeyServiceAccount] = v1api.ServiceAccounts().Informer()
 		ic.informers[InformerKeyPod] = v1api.Pods().Informer()
 		ic.informers[InformerKeyEndpoints] = v1api.Endpoints().Informer()
-		ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
-		ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
+
+		if version.IsEndpointSliceEnabled(kubeClient) {
+			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
+			ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
+		}
 	}
 }
 
