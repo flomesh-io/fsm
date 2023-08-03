@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+
 	tassert "github.com/stretchr/testify/assert"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -144,7 +147,7 @@ func TestNewValidatingWebhook(t *testing.T) {
 	testVersion := "test-version"
 	enableReconciler := false
 	validateTrafficTarget := true
-	t.Run("successful startup", func(t *testing.T) {
+	t.Run("successful startup k8s v1.19.0", func(t *testing.T) {
 		certManager := tresorFake.NewFake(nil, 1*time.Hour)
 
 		stop := make(chan struct{})
@@ -157,6 +160,59 @@ func TestNewValidatingWebhook(t *testing.T) {
 		}
 
 		kube := fake.NewSimpleClientset(webhook)
+		kube.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+			GitVersion: "v1.19.0",
+		}
+		informerCollection, err := informers.NewInformerCollection("fsm", stop, informers.WithKubeClient(kube))
+		tassert.NoError(t, err)
+		policyClient := policy.NewPolicyController(informerCollection, nil, nil, broker)
+		ctx, cancel := context.WithCancel(context.Background())
+		err = NewValidatingWebhook(ctx, nil, webhook.Name, testNamespace, testVersion, testMeshName, enableReconciler, validateTrafficTarget, certManager, kube, nil, policyClient)
+		tassert.NoError(t, err)
+		cancel()
+	})
+
+	t.Run("successful startup k8s v1.21.0", func(t *testing.T) {
+		certManager := tresorFake.NewFake(nil, 1*time.Hour)
+
+		stop := make(chan struct{})
+		defer close(stop)
+		broker := messaging.NewBroker(stop)
+		webhook := &admissionregv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-webhook",
+			},
+		}
+
+		kube := fake.NewSimpleClientset(webhook)
+		kube.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+			GitVersion: "v1.21.0",
+		}
+		informerCollection, err := informers.NewInformerCollection("fsm", stop, informers.WithKubeClient(kube))
+		tassert.NoError(t, err)
+		policyClient := policy.NewPolicyController(informerCollection, nil, nil, broker)
+		ctx, cancel := context.WithCancel(context.Background())
+		err = NewValidatingWebhook(ctx, nil, webhook.Name, testNamespace, testVersion, testMeshName, enableReconciler, validateTrafficTarget, certManager, kube, nil, policyClient)
+		tassert.NoError(t, err)
+		cancel()
+	})
+
+	t.Run("successful startup k8s v1.25.0", func(t *testing.T) {
+		certManager := tresorFake.NewFake(nil, 1*time.Hour)
+
+		stop := make(chan struct{})
+		defer close(stop)
+		broker := messaging.NewBroker(stop)
+		webhook := &admissionregv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "my-webhook",
+			},
+		}
+
+		kube := fake.NewSimpleClientset(webhook)
+		kube.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+			GitVersion: "v1.25.0",
+		}
 		informerCollection, err := informers.NewInformerCollection("fsm", stop, informers.WithKubeClient(kube))
 		tassert.NoError(t, err)
 		policyClient := policy.NewPolicyController(informerCollection, nil, nil, broker)
