@@ -77,6 +77,13 @@ const (
 	// ValidatorWebhookPort is the port on which the resource validator webhook listens
 	ValidatorWebhookPort = 9093
 
+	// FSMWebhookPort is the port mutating and validating webhook listens
+	FSMWebhookPort = 9443
+
+	// FSMControllerLeaderElectionID is the name of the resource that leader election
+	// 	will use for holding the leader lock.
+	FSMControllerLeaderElectionID = "fsm-controller.flomesh.io"
+
 	// FSMControllerName is the name of the FSM Controller (formerly ADS service).
 	FSMControllerName = "fsm-controller"
 

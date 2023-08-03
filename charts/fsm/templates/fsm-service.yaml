@@ -23,5 +23,8 @@ spec:
     - name: healthz
       port: 9091
       targetPort: 9091
+    - name: webhook
+      port: 9443
+      targetPort: 9443
   selector:
     app: fsm-controller

@@ -402,14 +402,18 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(kubeConfig, ctrl.Options{
-		Scheme: scheme,
+		Scheme:                  scheme,
+		LeaderElection:          true,
+		LeaderElectionNamespace: cfg.GetFSMNamespace(),
+		LeaderElectionID:        constants.FSMControllerLeaderElectionID,
+		Port:                    constants.FSMWebhookPort,
 	})
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
-	repoClient := repo.NewRepoClient(repoBaseURL)
+	repoRootURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
+	repoClient := repo.NewRepoClient(repoRootURL)
 	cctx := &fctx.ControllerContext{
 		Client:             mgr.GetClient(),
 		Manager:            mgr,
