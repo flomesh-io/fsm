@@ -218,7 +218,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
 | fsm.fsmIngress.className | string | `"pipy"` |  |
-| fsm.fsmIngress.enabled | bool | `true` |  |
+| fsm.fsmIngress.enabled | bool | `false` |  |
 | fsm.fsmIngress.env[0].name | string | `"GIN_MODE"` |  |
 | fsm.fsmIngress.env[0].value | string | `"release"` |  |
 | fsm.fsmIngress.http.containerPort | int | `8000` |  |
