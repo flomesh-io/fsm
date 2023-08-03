@@ -801,7 +801,7 @@ fsm:
   # -- FSM Pipy Ingress Controller parameters
   fsmIngress:
     className: "pipy"
-    enabled: true
+    enabled: false
     namespaced: false
     logLevel: info
     http:
