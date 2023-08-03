@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+
 	smiAccess "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/access/v1alpha3"
 	smiSpecs "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/specs/v1alpha4"
 	smiSplit "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
@@ -45,6 +48,9 @@ func bootstrapClient(stop chan struct{}, t *testing.T) (*Client, *fakeKubeClient
 	fsmNamespace := "fsm-system"
 	meshName := "fsm"
 	kubeClient := testclient.NewSimpleClientset()
+	kubeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+		GitVersion: "v1.21.0",
+	}
 	smiTrafficSplitClientSet := testTrafficSplitClient.NewSimpleClientset()
 	smiTrafficSpecClientSet := testTrafficSpecClient.NewSimpleClientset()
 	smiTrafficTargetClientSet := testTrafficTargetClient.NewSimpleClientset()
