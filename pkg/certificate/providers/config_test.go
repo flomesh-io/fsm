@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+
 	"github.com/golang/mock/gomock"
 	tassert "github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -444,6 +447,9 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 				getCA = oldCA
 			}()
 
+			tc.kubeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+				GitVersion: "v1.21.0",
+			}
 			ic, err := informers.NewInformerCollection("fsm", nil, informers.WithKubeClient(tc.kubeClient), informers.WithConfigClient(tc.configClient, "", "fsm-system"))
 			assert.NoError(err)
 			assert.NotNil(ic)
