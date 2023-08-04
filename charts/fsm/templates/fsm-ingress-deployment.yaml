@@ -34,7 +34,7 @@ spec:
         {{- end }}
     spec:
       initContainers:
-      - name: wait-manager
+      - name: wait-controller
         image: {{ .Values.fsm.curlImage }}
         imagePullPolicy: IfNotPresent
         {{- with .Values.fsm.fsmIngress.securityContext }}
@@ -43,7 +43,7 @@ spec:
         {{- end }}
         command:
           - curl
-          - http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz
+          - http://fsm-controller.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/health/ready
           - --connect-timeout
           - "2"
           - --retry

@@ -36,12 +36,12 @@ spec:
     spec:
       priorityClassName: system-node-critical
       initContainers:
-      - name: wait-manager
+      - name: wait-controller
         image: {{ .Values.fsm.curlImage }}
         imagePullPolicy: IfNotPresent
         command:
           - curl
-          - {{ printf "http://fsm-bootstrap.%s.svc.cluster.local:9091/healthz" .Values.fsm.fsmNamespace }}
+          - {{ printf "http://fsm-controller.%s.svc.cluster.local:9091/health/ready" .Values.fsm.fsmNamespace }}
           - --connect-timeout
           - "2"
           - --retry
