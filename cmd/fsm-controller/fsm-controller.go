@@ -307,14 +307,9 @@ func main() {
 	}
 
 	if cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
-		gatewayController, err := gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
-		if err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Gateway Controller")
-		}
-		if gatewayController != nil {
-			if err := gatewayController.Start(); err != nil {
-				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting Gateway Controller")
-			}
+		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
+		if err := gatewayController.Start(); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting Gateway Controller")
 		}
 	}
 

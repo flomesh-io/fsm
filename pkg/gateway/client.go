@@ -5,7 +5,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -17,6 +16,8 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
@@ -36,10 +37,10 @@ var (
 )
 
 // NewGatewayAPIController returns a gateway.Controller interface related to functionality provided by the resources in the plugin.flomesh.io API group
-func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) (Controller, error) {
+func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) Controller {
 	return newClient(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
 }
-func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) (*client, error) {
+func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) *client {
 	c := &client{
 		informers:  informerCollection,
 		kubeClient: kubeClient,
@@ -88,14 +89,14 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 			if _, err := gatewayAPIClient.GatewayV1beta1().
 				GatewayClasses().
 				Update(context.TODO(), fsmGatewayClass, metav1.UpdateOptions{}); err != nil {
-				return nil, err
+				log.Error().Msgf("Failed to update FSM GatewayClass: %s", err)
 			}
 		}
 
-		return nil, err
+		log.Error().Msgf("Failed to create FSM GatewayClass: %s", err)
 	}
 
-	return c, nil
+	return c
 }
 
 func (c *client) getEventHandlerFuncs(eventTypes *k8s.EventTypes) k8scache.ResourceEventHandlerFuncs {
