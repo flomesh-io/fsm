@@ -90,10 +90,12 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 				GatewayClasses().
 				Update(context.TODO(), fsmGatewayClass, metav1.UpdateOptions{}); err != nil {
 				log.Error().Msgf("Failed to update FSM GatewayClass: %s", err)
+				panic(err)
 			}
 		}
 
 		log.Error().Msgf("Failed to create FSM GatewayClass: %s", err)
+		panic(err)
 	}
 
 	return c
