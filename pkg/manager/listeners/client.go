@@ -98,8 +98,7 @@ func (c *client) GetTracingSampledFraction() float32 {
 }
 
 func (c *client) IsRemoteLoggingEnabled() bool {
-	//TODO implement me
-	panic("implement me")
+	return c.mc.Spec.Observability.RemoteLogging.Enable
 }
 
 func (c *client) GetRemoteLoggingHost() string {
@@ -128,8 +127,7 @@ func (c *client) GetRemoteLoggingSampledFraction() float32 {
 }
 
 func (c *client) GetRemoteLoggingSecretName() string {
-	//TODO implement me
-	panic("implement me")
+	return c.mc.Spec.Observability.RemoteLogging.SecretName
 }
 
 func (c *client) GetMaxDataPlaneConnections() int {

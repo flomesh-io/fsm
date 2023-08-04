@@ -444,6 +444,7 @@ func main() {
 
 	if cfg.IsIngressEnabled() {
 		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, repoClient, stop)
+		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, repoClient, stop)
 	}
 
 	if cfg.IsIngressEnabled() || (cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {

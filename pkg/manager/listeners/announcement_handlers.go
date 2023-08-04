@@ -21,7 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
-// WatchAndUpdateIngressConfig watches for log level changes and updates the global log level
+// WatchAndUpdateIngressConfig watches for configuration of ingress, update repo if needed
 func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *messaging.Broker, fsmNamespace string, certMgr *certificate.Manager, repoClient *repo.PipyRepoClient, stop <-chan struct{}) {
 	kubePubSub := msgBroker.GetKubeEventPubSub()
 	meshCfgUpdateChan := kubePubSub.Sub(announcements.MeshConfigUpdated.String())
@@ -155,4 +155,52 @@ func shouldUpdateIngressControllerServiceSpec(oldCfg, cfg *configv1alpha3.MeshCo
 			oldCfg.Spec.Ingress.HTTP.Listen != cfg.Spec.Ingress.HTTP.Listen ||
 			oldCfg.Spec.Ingress.HTTP.NodePort != cfg.Spec.Ingress.HTTP.NodePort ||
 			oldCfg.Spec.Ingress.HTTP.Bind != cfg.Spec.Ingress.HTTP.Bind)
+}
+
+// WatchAndUpdateLoggingConfig watches for log config changes and updates the repo
+func WatchAndUpdateLoggingConfig(kubeClient *kubernetes.Clientset, msgBroker *messaging.Broker, repoClient *repo.PipyRepoClient, stop <-chan struct{}) {
+	kubePubSub := msgBroker.GetKubeEventPubSub()
+	meshCfgUpdateChan := kubePubSub.Sub(announcements.MeshConfigUpdated.String())
+	defer msgBroker.Unsub(kubePubSub, meshCfgUpdateChan)
+
+	for {
+		select {
+		case <-stop:
+			log.Info().Msg("Received stop signal, exiting log level update routine")
+			return
+
+		case event := <-meshCfgUpdateChan:
+			msg, ok := event.(events.PubSubMessage)
+			if !ok {
+				log.Error().Msgf("Error casting to PubSubMessage, got type %T", msg)
+				continue
+			}
+
+			oldCfg, prevOk := msg.OldObj.(*configv1alpha3.MeshConfig)
+			newCfg, newOk := msg.NewObj.(*configv1alpha3.MeshConfig)
+			if !prevOk || !newOk {
+				log.Error().Msgf("Error casting to *MeshConfig, got type prev=%T, new=%T", oldCfg, newCfg)
+			}
+
+			log.Info().Msgf("Updating logging config ...")
+
+			if isLoggingConfigChanged(oldCfg, newCfg) {
+				log.Info().Msgf("Logging config changed ...")
+
+				if err := utils.UpdateLoggingConfig(kubeClient, constants.DefaultIngressBasePath, repoClient, meshConfigToConfigurator(newCfg)); err != nil {
+					log.Error().Msgf("Failed to update Logging config: %s", err)
+				}
+			}
+		}
+	}
+}
+
+func isLoggingConfigChanged(oldCfg, cfg *configv1alpha3.MeshConfig) bool {
+	log.Debug().Msgf("oldCfg.Logging.Enabled=%t", oldCfg.Spec.Observability.RemoteLogging.Enable)
+	log.Debug().Msgf("cfg.Logging.Enabled=%t", cfg.Spec.Observability.RemoteLogging.Enable)
+	log.Debug().Msgf("oldCfg.Logging.SecretName=%s", oldCfg.Spec.Observability.RemoteLogging.SecretName)
+	log.Debug().Msgf("cfg.Logging.SecretName=%s", cfg.Spec.Observability.RemoteLogging.SecretName)
+
+	return oldCfg.Spec.Observability.RemoteLogging.Enable != cfg.Spec.Observability.RemoteLogging.Enable ||
+		oldCfg.Spec.Observability.RemoteLogging.SecretName != cfg.Spec.Observability.RemoteLogging.SecretName
 }
