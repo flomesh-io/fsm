@@ -33,11 +33,15 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	mutils "github.com/flomesh-io/fsm/pkg/manager/utils"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/go-co-op/gocron"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -45,8 +49,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
-	"github.com/go-co-op/gocron"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -272,6 +274,7 @@ func rebuildRepoJob(repoClient *repo.PipyRepoClient, client client.Client, mc co
 			}
 
 			for _, gw := range gatewayList.Items {
+				gw := gw // fix lint GO-LOOP-REF
 				if gwutils.IsActiveGateway(&gw) {
 					gwPath := utils.GatewayCodebasePath(gw.Namespace)
 					parentPath := utils.GetDefaultGatewaysPath()

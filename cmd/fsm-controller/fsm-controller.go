@@ -183,6 +183,7 @@ func getCertOptions() (providers.Options, error) {
 	return nil, fmt.Errorf("unknown certificate provider kind: %s", certProviderKind)
 }
 
+//gocyclo:ignore
 func main() {
 	log.Info().Msgf("Starting fsm-controller %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := parseFlags(); err != nil {
@@ -412,8 +413,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoRootURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
-	repoClient := repo.NewRepoClient(repoRootURL)
+	repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()))
 	cctx := &fctx.ControllerContext{
 		Client:             mgr.GetClient(),
 		Manager:            mgr,
@@ -443,12 +443,12 @@ func main() {
 	}
 
 	if cfg.IsIngressEnabled() {
-		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, repoClient, stop)
-		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, repoClient, stop)
+		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, cctx.RepoClient, stop)
+		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, cctx.RepoClient, stop)
 	}
 
 	if cfg.IsIngressEnabled() || (cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {
-		mrepo.ChecksAndRebuildRepo(repoClient, mgr.GetClient(), cfg)
+		mrepo.ChecksAndRebuildRepo(cctx.RepoClient, mgr.GetClient(), cfg)
 	}
 
 	if err := mgr.Start(ctx); err != nil {
