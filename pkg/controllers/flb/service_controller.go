@@ -447,7 +447,7 @@ func secretHasRequiredLabel(secret *corev1.Secret) bool {
 		return false
 	}
 
-	return utils.ParseEnabled(value)
+	return value == "true"
 }
 
 func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {

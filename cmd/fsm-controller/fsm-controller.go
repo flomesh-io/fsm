@@ -432,6 +432,7 @@ func main() {
 		Broker:             msgBroker,
 		StopCh:             stop,
 		MeshName:           meshName,
+		FSMVersion:         fsmVersion,
 	}
 	for _, f := range []func(*fctx.ControllerContext) error{
 		mrepo.InitRepo,

@@ -33,7 +33,7 @@ import (
 )
 
 // NewMutatingWebhookConfiguration creates a new MutatingWebhookConfiguration
-func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook) *admissionregv1.MutatingWebhookConfiguration {
+func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook, meshName, fsmVersion string) *admissionregv1.MutatingWebhookConfiguration {
 	if len(webhooks) == 0 {
 		return nil
 	}
@@ -41,13 +41,19 @@ func NewMutatingWebhookConfiguration(webhooks []admissionregv1.MutatingWebhook) 
 	return &admissionregv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constants.DefaultMutatingWebhookConfigurationName,
+			Labels: map[string]string{
+				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
+				constants.FSMAppInstanceLabelKey: meshName,
+				constants.FSMAppVersionLabelKey:  fsmVersion,
+				constants.AppLabel:               constants.FSMControllerName,
+			},
 		},
 		Webhooks: webhooks,
 	}
 }
 
 // NewValidatingWebhookConfiguration creates a new ValidatingWebhookConfiguration
-func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebhook) *admissionregv1.ValidatingWebhookConfiguration {
+func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebhook, meshName, fsmVersion string) *admissionregv1.ValidatingWebhookConfiguration {
 	if len(webhooks) == 0 {
 		return nil
 	}
@@ -55,6 +61,12 @@ func NewValidatingWebhookConfiguration(webhooks []admissionregv1.ValidatingWebho
 	return &admissionregv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constants.DefaultValidatingWebhookConfigurationName,
+			Labels: map[string]string{
+				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
+				constants.FSMAppInstanceLabelKey: meshName,
+				constants.FSMAppVersionLabelKey:  fsmVersion,
+				constants.AppLabel:               constants.FSMControllerName,
+			},
 		},
 		Webhooks: webhooks,
 	}

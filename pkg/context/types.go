@@ -54,6 +54,6 @@ type ControllerContext struct {
 	Broker             *messaging.Broker
 	EventHandler       gateway.Controller
 	StopCh             <-chan struct{}
-	FsmNamespace       string
 	MeshName           string
+	FSMVersion         string
 }

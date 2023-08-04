@@ -93,7 +93,7 @@ func createWebhookConfigurations(ctx *fctx.ControllerContext, registers []webhoo
 	mutatingWebhooks, validatingWebhooks := allWebhooks(registers)
 
 	// Mutating
-	if mwc := flomeshadmission.NewMutatingWebhookConfiguration(mutatingWebhooks); mwc != nil {
+	if mwc := flomeshadmission.NewMutatingWebhookConfiguration(mutatingWebhooks, ctx.MeshName, ctx.FSMVersion); mwc != nil {
 		mutating := ctx.KubeClient.
 			AdmissionregistrationV1().
 			MutatingWebhookConfigurations()
@@ -120,7 +120,7 @@ func createWebhookConfigurations(ctx *fctx.ControllerContext, registers []webhoo
 	}
 
 	// Validating
-	if vwc := flomeshadmission.NewValidatingWebhookConfiguration(validatingWebhooks); vwc != nil {
+	if vwc := flomeshadmission.NewValidatingWebhookConfiguration(validatingWebhooks, ctx.MeshName, ctx.FSMVersion); vwc != nil {
 		validating := ctx.KubeClient.
 			AdmissionregistrationV1().
 			ValidatingWebhookConfigurations()
