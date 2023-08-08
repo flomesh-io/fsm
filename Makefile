@@ -142,7 +142,7 @@ go-vet:
 
 .PHONY: go-lint
 go-lint: embed-files-test
-	docker run --rm -v $$(pwd):/app -w /app golangci/golangci-lint:v1.50 golangci-lint run --config .golangci.yml
+	docker run --rm -v $$(pwd):/app -w /app golangci/golangci-lint:v1.53 golangci-lint run --config .golangci.yml
 
 .PHONY: go-fmt
 go-fmt:
