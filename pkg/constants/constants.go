@@ -523,6 +523,9 @@ const (
 	// FlbAlgoAnnotation is the annotation used to indicate the algo
 	FlbAlgoAnnotation = FlbPrefix + "/algo"
 
+	// FlbTagsAnnotation is the annotation used to indicate the tags
+	FlbTagsAnnotation = FlbPrefix + "/tags"
+
 	// FlbSecretLabel is the label used to indicate the secret
 	FlbSecretLabel = FlbPrefix + "/config"
 

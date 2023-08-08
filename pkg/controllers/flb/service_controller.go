@@ -27,6 +27,7 @@ package flb
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -36,6 +37,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ghodss/yaml"
 	"github.com/go-resty/resty/v2"
 	"github.com/sethvargo/go-retry"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +80,18 @@ const (
 	flbAlgoHeaderName           = "X-Flb-Algo"
 	flbUserHeaderName           = "X-Flb-User"
 	flbK8sClusterHeaderName     = "X-Flb-K8s-Cluster"
-	flbDefaultSettingKey        = "flb.flomesh.io/default-setting"
+	/*
+	   - port: 80
+	     tags:
+	       abc: def
+	       123: 456
+	   - port: 443
+	     tags:
+	       xyz: abc
+	       789: 123
+	*/
+	flbTagsHeaderName    = "X-Flb-Tags"
+	flbDefaultSettingKey = "flb.flomesh.io/default-setting"
 )
 
 // reconciler reconciles a Service object
@@ -115,6 +128,11 @@ type AuthResponse struct {
 // BalancerAPIResponse is the response body for FLB API
 type BalancerAPIResponse struct {
 	LBIPs []string `json:"LBIPs"`
+}
+
+type serviceTag struct {
+	Port int32             `json:"port"`
+	Tags map[string]string `json:"tags"`
 }
 
 var (
@@ -469,7 +487,7 @@ func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service
 			result[svcKey] = make([]string, 0)
 		}
 
-		params := getFlbParameters(svc)
+		params := r.getFlbParameters(svc)
 		if _, err := r.updateFLB(svc, params, result, true); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -494,7 +512,7 @@ func (r *reconciler) createOrUpdateFlbEntry(ctx context.Context, svc *corev1.Ser
 
 	log.Info().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
 
-	params := getFlbParameters(svc)
+	params := r.getFlbParameters(svc)
 	resp, err := r.updateFLB(svc, params, endpoints, false)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -570,7 +588,7 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 	return result, nil
 }
 
-func getFlbParameters(svc *corev1.Service) map[string]string {
+func (r *reconciler) getFlbParameters(svc *corev1.Service) map[string]string {
 	if svc.Annotations == nil {
 		return map[string]string{}
 	}
@@ -584,7 +602,55 @@ func getFlbParameters(svc *corev1.Service) map[string]string {
 		flbWriteTimeoutHeaderName:   svc.Annotations[constants.FlbWriteTimeoutAnnotation],
 		flbIdleTimeoutHeaderName:    svc.Annotations[constants.FlbIdleTimeoutAnnotation],
 		flbAlgoHeaderName:           getValidAlgo(svc.Annotations[constants.FlbAlgoAnnotation]),
+		flbTagsHeaderName:           r.getTags(svc),
 	}
+}
+
+func (r *reconciler) getTags(svc *corev1.Service) string {
+	rawTags, ok := svc.Annotations[constants.FlbTagsAnnotation]
+
+	if !ok || len(rawTags) == 0 {
+		return ""
+	}
+
+	tags := make([]serviceTag, 0)
+	if err := yaml.Unmarshal([]byte(rawTags), &tags); err != nil {
+		log.Error().Msgf("Failed to unmarshal tags: %s, it' not in a valid format", err)
+		defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "InvalidTagFormat", "Format of annotation %s is not valid", constants.FlbTagsAnnotation)
+		return ""
+	}
+	log.Debug().Msgf("Unmarshalled tags of service %s/%s: %v", svc.Namespace, svc.Name, tags)
+
+	svcPorts := make(map[int32]bool)
+	for _, port := range svc.Spec.Ports {
+		svcPorts[port.Port] = true
+	}
+	log.Debug().Msgf("Ports of service %s/%s: %v", svc.Namespace, svc.Name, svcPorts)
+
+	resultTags := make([]serviceTag, 0)
+	for _, tag := range tags {
+		if _, ok := svcPorts[tag.Port]; !ok {
+			continue
+		}
+		resultTags = append(resultTags, tag)
+	}
+	log.Debug().Msgf("Valid tags for service %s/%s: %v", svc.Namespace, svc.Name, resultTags)
+
+	if len(resultTags) == 0 {
+		return ""
+	}
+
+	resultTagsBytes, err := json.Marshal(resultTags)
+	if err != nil {
+		log.Error().Msgf("Failed to marshal tags: %s", err)
+		defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "MarshalJson", "Failed marshal tags to JSON: %s", err)
+		return ""
+	}
+
+	tagsJson := string(resultTagsBytes)
+	log.Debug().Msgf("tagsJson: %s", tagsJson)
+
+	return tagsJson
 }
 
 func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, result map[string][]string, del bool) (*BalancerAPIResponse, error) {
