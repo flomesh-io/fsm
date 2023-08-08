@@ -535,6 +535,9 @@ const (
 	// FLBSecretKeyPassword is the key for the password
 	FLBSecretKeyPassword = "password"
 
+	// FLBSecretKeyK8sCluster is the key for the k8s cluster which FLB controller is installed
+	FLBSecretKeyK8sCluster = "k8sCluster"
+
 	// FLBSecretKeyDefaultCluster is the key for the default cluster
 	FLBSecretKeyDefaultCluster = "defaultCluster"
 

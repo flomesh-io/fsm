@@ -913,6 +913,7 @@ fsm:
     baseUrl: http://localhost:1337
     username: admin
     password: admin
+    k8sCluster: "UNKNOWN"
     defaultCluster: default
     defaultAddressPool: default
     defaultAlgo: rr

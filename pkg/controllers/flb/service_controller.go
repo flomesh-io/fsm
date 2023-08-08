@@ -77,6 +77,7 @@ const (
 	flbIdleTimeoutHeaderName    = "X-Flb-Idle-Timeout"
 	flbAlgoHeaderName           = "X-Flb-Algo"
 	flbUserHeaderName           = "X-Flb-User"
+	flbK8sClusterHeaderName     = "X-Flb-K8s-Cluster"
 	flbDefaultSettingKey        = "flb.flomesh.io/default-setting"
 )
 
@@ -92,6 +93,7 @@ type setting struct {
 	httpClient            *resty.Client
 	flbUser               string
 	flbPassword           string
+	k8sCluster            string
 	flbDefaultCluster     string
 	flbDefaultAddressPool string
 	flbDefaultAlgo        string
@@ -198,6 +200,7 @@ func newSetting(secret *corev1.Secret) *setting {
 		httpClient:            newHTTPClient(string(secret.Data[constants.FLBSecretKeyBaseURL])),
 		flbUser:               string(secret.Data[constants.FLBSecretKeyUsername]),
 		flbPassword:           string(secret.Data[constants.FLBSecretKeyPassword]),
+		k8sCluster:            string(secret.Data[constants.FLBSecretKeyK8sCluster]),
 		flbDefaultCluster:     string(secret.Data[constants.FLBSecretKeyDefaultCluster]),
 		flbDefaultAddressPool: string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]),
 		flbDefaultAlgo:        string(secret.Data[constants.FLBSecretKeyDefaultAlgo]),
@@ -228,6 +231,12 @@ func newOverrideSetting(secret *corev1.Secret, defaultSetting *setting) *setting
 		s.flbPassword = defaultSetting.flbPassword
 	} else {
 		s.flbPassword = string(secret.Data[constants.FLBSecretKeyPassword])
+	}
+
+	if len(secret.Data[constants.FLBSecretKeyK8sCluster]) == 0 {
+		s.k8sCluster = defaultSetting.k8sCluster
+	} else {
+		s.k8sCluster = string(secret.Data[constants.FLBSecretKeyK8sCluster])
 	}
 
 	if len(secret.Data[constants.FLBSecretKeyDefaultCluster]) == 0 {
@@ -516,10 +525,11 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 		return nil, err
 	}
 
+	setting := r.settings[svc.Namespace]
 	result := make(map[string][]string)
 
 	for _, port := range svc.Spec.Ports {
-		svcKey := fmt.Sprintf("%s/%s:%d", svc.Namespace, svc.Name, port.Port)
+		svcKey := fmt.Sprintf("%s/%s/%s:%d", setting.k8sCluster, svc.Namespace, svc.Name, port.Port)
 		result[svcKey] = make([]string, 0)
 
 		for _, ss := range ep.Subsets {
@@ -632,6 +642,7 @@ func (r *reconciler) invokeFlbAPI(namespace string, params map[string]string, re
 	request := setting.httpClient.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader(flbUserHeaderName, setting.flbUser).
+		SetHeader(flbK8sClusterHeaderName, setting.k8sCluster).
 		SetAuthToken(setting.token).
 		SetBody(result).
 		SetResult(&BalancerAPIResponse{})
