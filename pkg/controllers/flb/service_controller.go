@@ -65,11 +65,21 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
+// FLB API paths
 const (
-	finalizerName               = "servicelb.flomesh.io/flb"
-	flbAuthAPIPath              = "/api/auth/local"
-	flbUpdateServiceAPIPath     = "/api/l-4-lbs/updateservice"
-	flbDeleteServiceAPIPath     = "/api/l-4-lbs/updateservice/delete"
+	flbAuthAPIPath          = "/api/auth/local"
+	flbUpdateServiceAPIPath = "/api/l-4-lbs/updateservice"
+	flbDeleteServiceAPIPath = "/api/l-4-lbs/updateservice/delete"
+)
+
+// FLB annotations
+const (
+	finalizerName        = "servicelb.flomesh.io/flb"
+	flbDefaultSettingKey = "flb.flomesh.io/default-setting"
+)
+
+// FLB request HTTP headers
+const (
 	flbClusterHeaderName        = "X-Flb-Cluster"
 	flbAddressPoolHeaderName    = "X-Flb-Address-Pool"
 	flbDesiredIPHeaderName      = "X-Flb-Desired-Ip"
@@ -80,18 +90,7 @@ const (
 	flbAlgoHeaderName           = "X-Flb-Algo"
 	flbUserHeaderName           = "X-Flb-User"
 	flbK8sClusterHeaderName     = "X-Flb-K8s-Cluster"
-	/*
-	   - port: 80
-	     tags:
-	       abc: def
-	       123: 456
-	   - port: 443
-	     tags:
-	       xyz: abc
-	       789: 123
-	*/
-	flbTagsHeaderName    = "X-Flb-Tags"
-	flbDefaultSettingKey = "flb.flomesh.io/default-setting"
+	flbTagsHeaderName           = "X-Flb-Tags"
 )
 
 // reconciler reconciles a Service object
