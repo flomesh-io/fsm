@@ -481,9 +481,10 @@ func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service
 	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
 		log.Info().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
 
+		setting := r.settings[svc.Namespace]
 		result := make(map[string][]string)
 		for _, port := range svc.Spec.Ports {
-			svcKey := fmt.Sprintf("%s/%s:%d", svc.Namespace, svc.Name, port.Port)
+			svcKey := serviceKey(setting, svc, port)
 			result[svcKey] = make([]string, 0)
 		}
 
@@ -547,7 +548,7 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 	result := make(map[string][]string)
 
 	for _, port := range svc.Spec.Ports {
-		svcKey := fmt.Sprintf("%s/%s/%s:%d", setting.k8sCluster, svc.Namespace, svc.Name, port.Port)
+		svcKey := serviceKey(setting, svc, port)
 		result[svcKey] = make([]string, 0)
 
 		for _, ss := range ep.Subsets {
@@ -829,6 +830,10 @@ func serviceIPs(svc *corev1.Service) []string {
 	}
 
 	return ips
+}
+
+func serviceKey(setting *setting, svc *corev1.Service, port corev1.ServicePort) string {
+	return fmt.Sprintf("%s/%s/%s:%d", setting.k8sCluster, svc.Namespace, svc.Name, port.Port)
 }
 
 func (r *reconciler) addFinalizer(ctx context.Context, svc *corev1.Service) error {
