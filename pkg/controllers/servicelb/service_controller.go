@@ -204,8 +204,8 @@ func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Servic
 		portName := fmt.Sprintf("lb-%s-%d", strings.ToLower(string(port.Protocol)), port.Port)
 		container := corev1.Container{
 			Name:            portName,
-			Image:           mc.ServiceLbImage(),
-			ImagePullPolicy: utils.ImagePullPolicyByTag(mc.ServiceLbImage()),
+			Image:           mc.ServiceLBImage(),
+			ImagePullPolicy: utils.ImagePullPolicyByTag(mc.ServiceLBImage()),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          portName,

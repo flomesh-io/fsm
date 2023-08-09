@@ -527,8 +527,8 @@ func (c *Client) GetImageRegistry() string {
 	return mcSpec.Image.Registry
 }
 
-// ServiceLbImage returns the image for service load balancer
-func (c *Client) ServiceLbImage() string {
+// ServiceLBImage returns the image for service load balancer
+func (c *Client) ServiceLBImage() string {
 	mcSpec := c.getMeshConfig().Spec
 	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.Image.ServiceLBImage)
 }

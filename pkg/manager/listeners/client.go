@@ -360,7 +360,7 @@ func (c *client) GetImageRegistry() string {
 	panic("implement me")
 }
 
-func (c *client) ServiceLbImage() string {
+func (c *client) ServiceLBImage() string {
 	//TODO implement me
 	panic("implement me")
 }

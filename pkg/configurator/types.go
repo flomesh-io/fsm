@@ -215,6 +215,6 @@ type Configurator interface {
 	// GetImageRegistry returns the image registry
 	GetImageRegistry() string
 
-	// ServiceLbImage string returns the service-lb image
-	ServiceLbImage() string
+	// ServiceLBImage string returns the service-lb image
+	ServiceLBImage() string
 }

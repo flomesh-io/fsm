@@ -907,16 +907,16 @@ func (mr *MockConfiguratorMockRecorder) IsTracingEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTracingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsTracingEnabled))
 }
 
-// ServiceLbImage mocks base method.
-func (m *MockConfigurator) ServiceLbImage() string {
+// ServiceLBImage mocks base method.
+func (m *MockConfigurator) ServiceLBImage() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ServiceLbImage")
+	ret := m.ctrl.Call(m, "ServiceLBImage")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// ServiceLbImage indicates an expected call of ServiceLbImage.
-func (mr *MockConfiguratorMockRecorder) ServiceLbImage() *gomock.Call {
+// ServiceLBImage indicates an expected call of ServiceLBImage.
+func (mr *MockConfiguratorMockRecorder) ServiceLBImage() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServiceLbImage", reflect.TypeOf((*MockConfigurator)(nil).ServiceLbImage))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServiceLBImage", reflect.TypeOf((*MockConfigurator)(nil).ServiceLBImage))
 }
