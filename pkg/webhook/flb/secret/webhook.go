@@ -70,7 +70,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 			nil,
 			&metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					constants.FlbSecretLabel: "true",
+					constants.FLBSecretLabel: "true",
 				},
 			},
 			admissionregv1.Ignore,
@@ -84,7 +84,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 			nil,
 			&metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					constants.FlbSecretLabel: "true",
+					constants.FLBSecretLabel: "true",
 				},
 			},
 			admissionregv1.Ignore,

@@ -161,7 +161,7 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	if !flb.IsFlbEnabled(service, w.kubeClient) {
+	if !flb.IsFLBEnabled(service, w.kubeClient) {
 		return nil
 	}
 

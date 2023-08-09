@@ -493,41 +493,41 @@ const (
 
 // FLB constants
 const (
-	// FlbPrefix is the prefix for all flb annotations
-	FlbPrefix = "flb.flomesh.io"
+	// FLBPrefix is the prefix for all flb annotations
+	FLBPrefix = "flb.flomesh.io"
 
-	// FlbEnabledAnnotation is the annotation used to indicate if the flb is enabled
-	FlbEnabledAnnotation = FlbPrefix + "/enabled"
+	// FLBEnabledAnnotation is the annotation used to indicate if the flb is enabled
+	FLBEnabledAnnotation = FLBPrefix + "/enabled"
 
-	// FlbClusterAnnotation is the annotation used to indicate the cluster name
-	FlbClusterAnnotation = FlbPrefix + "/cluster"
+	// FLBClusterAnnotation is the annotation used to indicate the cluster name
+	FLBClusterAnnotation = FLBPrefix + "/cluster"
 
-	// FlbAddressPoolAnnotation is the annotation used to indicate the address pool
-	FlbAddressPoolAnnotation = FlbPrefix + "/address-pool"
+	// FLBAddressPoolAnnotation is the annotation used to indicate the address pool
+	FLBAddressPoolAnnotation = FLBPrefix + "/address-pool"
 
-	// FlbDesiredIPAnnotation is the annotation used to indicate the desired ip
-	FlbDesiredIPAnnotation = FlbPrefix + "/desired-ip"
+	// FLBDesiredIPAnnotation is the annotation used to indicate the desired ip
+	FLBDesiredIPAnnotation = FLBPrefix + "/desired-ip"
 
-	// FlbMaxConnectionsAnnotation is the annotation used to indicate the max connections
-	FlbMaxConnectionsAnnotation = FlbPrefix + "/max-connections"
+	// FLBMaxConnectionsAnnotation is the annotation used to indicate the max connections
+	FLBMaxConnectionsAnnotation = FLBPrefix + "/max-connections"
 
-	// FlbReadTimeoutAnnotation is the annotation used to indicate the read timeout
-	FlbReadTimeoutAnnotation = FlbPrefix + "/read-timeout"
+	// FLBReadTimeoutAnnotation is the annotation used to indicate the read timeout
+	FLBReadTimeoutAnnotation = FLBPrefix + "/read-timeout"
 
-	// FlbWriteTimeoutAnnotation is the annotation used to indicate the write timeout
-	FlbWriteTimeoutAnnotation = FlbPrefix + "/write-timeout"
+	// FLBWriteTimeoutAnnotation is the annotation used to indicate the write timeout
+	FLBWriteTimeoutAnnotation = FLBPrefix + "/write-timeout"
 
-	// FlbIdleTimeoutAnnotation is the annotation used to indicate the idle timeout
-	FlbIdleTimeoutAnnotation = FlbPrefix + "/idle-timeout"
+	// FLBIdleTimeoutAnnotation is the annotation used to indicate the idle timeout
+	FLBIdleTimeoutAnnotation = FLBPrefix + "/idle-timeout"
 
-	// FlbAlgoAnnotation is the annotation used to indicate the algo
-	FlbAlgoAnnotation = FlbPrefix + "/algo"
+	// FLBAlgoAnnotation is the annotation used to indicate the algo
+	FLBAlgoAnnotation = FLBPrefix + "/algo"
 
-	// FlbTagsAnnotation is the annotation used to indicate the tags
-	FlbTagsAnnotation = FlbPrefix + "/tags"
+	// FLBTagsAnnotation is the annotation used to indicate the tags
+	FLBTagsAnnotation = FLBPrefix + "/tags"
 
-	// FlbSecretLabel is the label used to indicate the secret
-	FlbSecretLabel = FlbPrefix + "/config"
+	// FLBSecretLabel is the label used to indicate the secret
+	FLBSecretLabel = FLBPrefix + "/config"
 
 	// FLBSecretKeyBaseURL is the key for the base url
 	FLBSecretKeyBaseURL = "baseUrl"

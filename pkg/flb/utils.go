@@ -35,8 +35,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-// IsFlbEnabled checks if the service is enabled for flb
-func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
+// IsFLBEnabled checks if the service is enabled for flb
+func IsFLBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	if svc == nil {
 		return false
 	}
@@ -46,7 +46,7 @@ func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	}
 
 	// if service doesn't have flb.flomesh.io/enabled annotation
-	if svc.Annotations == nil || svc.Annotations[constants.FlbEnabledAnnotation] == "" {
+	if svc.Annotations == nil || svc.Annotations[constants.FLBEnabledAnnotation] == "" {
 		// check ns annotation
 		ns, err := kubeClient.CoreV1().
 			Namespaces().
@@ -57,15 +57,15 @@ func IsFlbEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 			return false
 		}
 
-		if ns.Annotations == nil || ns.Annotations[constants.FlbEnabledAnnotation] == "" {
+		if ns.Annotations == nil || ns.Annotations[constants.FLBEnabledAnnotation] == "" {
 			return false
 		}
 
-		log.Info().Msgf("Found annotation %q on Namespace %q", constants.FlbEnabledAnnotation, ns.Name)
-		return utils.ParseEnabled(ns.Annotations[constants.FlbEnabledAnnotation])
+		log.Info().Msgf("Found annotation %q on Namespace %q", constants.FLBEnabledAnnotation, ns.Name)
+		return utils.ParseEnabled(ns.Annotations[constants.FLBEnabledAnnotation])
 	}
 
 	// parse svc annotation
-	log.Info().Msgf("Found annotation %q on Service %s/%s", constants.FlbEnabledAnnotation, svc.Namespace, svc.Name)
-	return utils.ParseEnabled(svc.Annotations[constants.FlbEnabledAnnotation])
+	log.Info().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
+	return utils.ParseEnabled(svc.Annotations[constants.FLBEnabledAnnotation])
 }
