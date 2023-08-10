@@ -15,6 +15,16 @@ type client struct {
 	mc *configv1alpha3.MeshConfig
 }
 
+func (c *client) GetImageTag() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) GetImagePullPolicy() corev1.PullPolicy {
+	//TODO implement me
+	panic("implement me")
+}
+
 func meshConfigToConfigurator(meshConfig *configv1alpha3.MeshConfig) configurator.Configurator {
 	return &client{mc: meshConfig}
 }

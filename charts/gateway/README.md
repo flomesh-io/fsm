@@ -94,7 +94,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
 | fsm.image.tag | string | `"1.0.1"` | Container image tag for control plane images |
-| fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
+| fsm.imagePullSecrets | list | `[]` | `fsm-gateway` image pull secret |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |
 
 <!-- markdownlint-enable MD013 MD034 -->

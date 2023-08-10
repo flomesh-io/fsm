@@ -110,11 +110,17 @@ data:
         "logLevel": "{{ .Values.fsm.fsmGateway.logLevel }}"
       },
       "serviceLB": {
-        "enabled": {{ .Values.fsm.serviceLB.enabled }}
+        "enabled": {{ .Values.fsm.serviceLB.enabled }},
+        "image": "{{ .Values.fsm.serviceLBImage }}"
       },
       "flb": {
         "enabled": {{ .Values.fsm.flb.enabled }},
         "strictMode": {{ .Values.fsm.flb.strictMode }},
         "secretName": "{{ .Values.fsm.flb.secretName }}"
+      },
+      "image": {
+        "registry": "{{ .Values.fsm.image.registry }}",
+        "tag": "{{ .Values.fsm.image.tag }}",
+        "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
       }
     }

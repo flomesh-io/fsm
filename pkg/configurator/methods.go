@@ -527,10 +527,21 @@ func (c *Client) GetImageRegistry() string {
 	return mcSpec.Image.Registry
 }
 
+// GetImageTag returns the image tag
+func (c *Client) GetImageTag() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Image.Tag
+}
+
+func (c *Client) GetImagePullPolicy() corev1.PullPolicy {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Image.PullPolicy
+}
+
 // ServiceLBImage returns the image for service load balancer
 func (c *Client) ServiceLBImage() string {
 	mcSpec := c.getMeshConfig().Spec
-	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.Image.ServiceLBImage)
+	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.ServiceLB.Image)
 }
 
 // GetFLBSecretName returns the secret name for FLB

@@ -17,7 +17,7 @@ fsm:
       # -- fsm-gateway's image digest
       fsmGateway: ""
 
-  # -- `fsm-controller` image pull secret
+  # -- `fsm-gateway` image pull secret
   imagePullSecrets: []
 
   # -- Curl image for control plane init container

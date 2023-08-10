@@ -215,6 +215,12 @@ type Configurator interface {
 	// GetImageRegistry returns the image registry
 	GetImageRegistry() string
 
+	// GetImageTag returns the image tag
+	GetImageTag() string
+
+	// GetImagePullPolicy returns the image pull policy
+	GetImagePullPolicy() corev1.PullPolicy
+
 	// ServiceLBImage string returns the service-lb image
 	ServiceLBImage() string
 }

@@ -1345,17 +1345,22 @@ spec:
               image:
                 description: Image defines the configurations of Image info
                 properties:
+                  pullPolicy:
+                    default: IfNotPresent
+                    description: PullPolicy defines the pull policy of docker image.
+                    type: string
                   registry:
                     default: flomesh
                     description: Registry defines the registry of docker image.
                     type: string
-                  serviceLBImage:
-                    default: mirrored-klipper-lb:v0.3.5
-                    description: ServiceLBImage defines the service lb image.
+                  tag:
+                    default: latest
+                    description: Tag defines the tag of docker image.
                     type: string
                 required:
+                - pullPolicy
                 - registry
-                - serviceLBImage
+                - tag
                 type: object
               ingress:
                 description: Ingress defines the configurations of Ingress features.
@@ -1685,8 +1690,13 @@ spec:
                     default: false
                     description: Enabled defines if service lb is enabled.
                     type: boolean
+                  image:
+                    default: mirrored-klipper-lb:v0.3.5
+                    description: Image defines the service lb image.
+                    type: string
                 required:
                 - enabled
+                - image
                 type: object
               sidecar:
                 description: Sidecar defines the configurations of the proxy sidecar

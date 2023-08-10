@@ -661,6 +661,8 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 
 	overrides := []string{
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
+		fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
+		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.GetImagePullPolicy()),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
 		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),

@@ -539,6 +539,10 @@ type ServiceLBSpec struct {
 	// +kubebuilder:default=false
 	// Enabled defines if service lb is enabled.
 	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:default="mirrored-klipper-lb:v0.3.5"
+	// Image defines the service lb image.
+	Image string `json:"image"`
 }
 
 // FLBSpec is the type to represent flb.
@@ -562,7 +566,11 @@ type ImageSpec struct {
 	// Registry defines the registry of docker image.
 	Registry string `json:"registry"`
 
-	// +kubebuilder:default="mirrored-klipper-lb:v0.3.5"
-	// ServiceLBImage defines the service lb image.
-	ServiceLBImage string `json:"serviceLBImage"`
+	// +kubebuilder:default=latest
+	// Tag defines the tag of docker image.
+	Tag string `json:"tag"`
+
+	// +kubebuilder:default=IfNotPresent
+	// PullPolicy defines the pull policy of docker image.
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 }

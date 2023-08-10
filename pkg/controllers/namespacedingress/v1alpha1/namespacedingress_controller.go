@@ -129,14 +129,14 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Major:   "1",
 		Minor:   "19",
 	}
-	if ctrlResult, err = helm.RenderChart(releaseName, nsig, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, resolveValues); err != nil {
+	if ctrlResult, err = helm.RenderChart(releaseName, nsig, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, r.resolveValues); err != nil {
 		return ctrlResult, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
+func (r *reconciler) resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
 	nsig, ok := object.(*nsigv1alpha1.NamespacedIngress)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of nsigv1alpha1.NamespacedIngress", object)
@@ -159,7 +159,11 @@ func resolveValues(object metav1.Object, mc configurator.Configurator) (map[stri
 	overrides := []string{
 		"fsm.ingress.namespaced=true",
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
-		fmt.Sprintf("fsm.namespace=%s", mc.GetFSMNamespace()),
+		fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
+		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.GetImagePullPolicy()),
+		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
+		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", mc.GetFSMGatewayLogLevel()),
+		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
 	}
 
 	for _, ov := range overrides {

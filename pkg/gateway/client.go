@@ -2,7 +2,7 @@ package gateway
 
 import (
 	"context"
-	"github.com/flomesh-io/fsm/pkg/constants"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -14,6 +14,8 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"

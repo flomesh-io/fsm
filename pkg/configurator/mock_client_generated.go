@@ -164,6 +164,20 @@ func (mr *MockConfiguratorMockRecorder) GetGlobalPluginChains() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalPluginChains", reflect.TypeOf((*MockConfigurator)(nil).GetGlobalPluginChains))
 }
 
+// GetImagePullPolicy mocks base method.
+func (m *MockConfigurator) GetImagePullPolicy() v1.PullPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagePullPolicy")
+	ret0, _ := ret[0].(v1.PullPolicy)
+	return ret0
+}
+
+// GetImagePullPolicy indicates an expected call of GetImagePullPolicy.
+func (mr *MockConfiguratorMockRecorder) GetImagePullPolicy() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagePullPolicy", reflect.TypeOf((*MockConfigurator)(nil).GetImagePullPolicy))
+}
+
 // GetImageRegistry mocks base method.
 func (m *MockConfigurator) GetImageRegistry() string {
 	m.ctrl.T.Helper()
@@ -176,6 +190,20 @@ func (m *MockConfigurator) GetImageRegistry() string {
 func (mr *MockConfiguratorMockRecorder) GetImageRegistry() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageRegistry", reflect.TypeOf((*MockConfigurator)(nil).GetImageRegistry))
+}
+
+// GetImageTag mocks base method.
+func (m *MockConfigurator) GetImageTag() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageTag")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetImageTag indicates an expected call of GetImageTag.
+func (mr *MockConfiguratorMockRecorder) GetImageTag() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageTag", reflect.TypeOf((*MockConfigurator)(nil).GetImageTag))
 }
 
 // GetInboundExternalAuthConfig mocks base method.
