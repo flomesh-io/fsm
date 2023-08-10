@@ -121,7 +121,7 @@ func main() {
 	msgBroker := messaging.NewBroker(stop)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
-		informers.WithKubeClient(kubeClient),
+		//informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 	)
 	if err != nil {

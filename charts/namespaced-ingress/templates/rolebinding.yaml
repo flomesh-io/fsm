@@ -32,20 +32,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
     namespace: {{ .Values.nsig.metadata.namespace }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: {{ printf "fsm-mesh-config-clusterrolebinding-%s" .Values.nsig.metadata.namespace }}
-  labels:
-    {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-ingress
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: fsm-mesh-config-clusterrole
-subjects:
-  - kind: ServiceAccount
-    name: {{ include "fsm.namespaced-ingress.serviceAccountName" . }}
-    namespace: {{ .Values.nsig.metadata.namespace }}
 {{- end }}

@@ -6,25 +6,6 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
 rules:
-  - apiGroups:
-      - "config.flomesh.io"
-    resources:
-      - meshconfigs
-    verbs:
-      - get
-      - list
-      - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: fsm-mesh-config-clusterrole
-  labels:
-    {{- include "fsm.labels" . | nindent 4 }}
-rules:
-  - apiGroups: [ "apps" ]
-    resources: [ "deployments" ]
-    verbs: [ "list", "get", "watch" ]
   - apiGroups: [ "config.flomesh.io" ]
     resources: [ "meshconfigs", "meshrootcertificates" ]
-    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+    verbs: [ "get", "list", "watch"]

@@ -51,6 +51,10 @@ var (
 	meta metadata
 )
 
+const (
+	httpSchema = "http"
+)
+
 func init() {
 	flags.StringVarP(&verbosity, "verbosity", "v", constants.DefaultFSMLogLevel, "Set boot log verbosity level")
 	flags.StringVar(&meshName, "mesh-name", "", "FSM mesh name")
@@ -98,7 +102,7 @@ func main() {
 	msgBroker := messaging.NewBroker(stop)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
-		informers.WithKubeClient(kubeClient),
+		//informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 	)
 	if err != nil {
@@ -143,10 +147,10 @@ func ingressCodebase(cfg configurator.Configurator) string {
 	repoPort := cfg.GetProxyServerPort()
 
 	if cfg.IsNamespacedIngressEnabled() {
-		return fmt.Sprintf("%s://%s:%d/repo%s/", "http", repoHost, repoPort, utils.NamespacedIngressCodebasePath(meta.PodNamespace))
+		return fmt.Sprintf("%s://%s:%d/repo%s/", httpSchema, repoHost, repoPort, utils.NamespacedIngressCodebasePath(meta.PodNamespace))
 	}
 	if cfg.IsIngressEnabled() {
-		return fmt.Sprintf("%s://%s:%d/repo%s/", "http", repoHost, repoPort, utils.IngressCodebasePath())
+		return fmt.Sprintf("%s://%s:%d/repo%s/", httpSchema, repoHost, repoPort, utils.IngressCodebasePath())
 	}
 
 	return ""
