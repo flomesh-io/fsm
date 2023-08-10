@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -19,7 +20,7 @@ func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 		return false
 	}
 
-	key := utils.ObjectKey(class)
+	key := client.ObjectKey{Name: class.GetName()}
 	//if err := cache.client.Get(context.TODO(), key, class); err != nil {
 	//	log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 	//	return false
