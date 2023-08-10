@@ -2,8 +2,6 @@ package gateway
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +37,7 @@ var (
 func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) Controller {
 	return newClient(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
 }
+
 func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) *client {
 	c := &client{
 		informers:  informerCollection,
@@ -84,27 +83,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 	if _, err := gatewayAPIClient.GatewayV1beta1().
 		GatewayClasses().
 		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
-		if errors.IsAlreadyExists(err) {
-			existing, err := gatewayAPIClient.GatewayV1beta1().
-				GatewayClasses().Get(context.TODO(), constants.FSMGatewayClassName, metav1.GetOptions{})
-			if err != nil {
-				log.Error().Msgf("Error getting GatewayClass %s", constants.FSMGatewayClassName)
-				panic(err)
-			}
-
-			fsmGatewayClass.ObjectMeta = existing.ObjectMeta
-			if _, err := gatewayAPIClient.GatewayV1beta1().
-				GatewayClasses().
-				Update(context.TODO(), fsmGatewayClass, metav1.UpdateOptions{}); err != nil {
-				if !errors.IsConflict(err) {
-					log.Error().Msgf("Failed to update FSM GatewayClass: %s", err)
-					panic(err)
-				}
-			}
-		}
-
-		log.Error().Msgf("Failed to create FSM GatewayClass: %s", err)
-		panic(err)
+		log.Warn().Msgf("Failed to create FSM GatewayClass: %s", err)
 	}
 
 	return c
