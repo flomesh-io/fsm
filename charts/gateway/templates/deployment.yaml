@@ -93,12 +93,12 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 8081
+            port: 9091
         readinessProbe:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 8081
+            port: 9091
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.fsmGateway.podSecurityContext }}
       securityContext:
