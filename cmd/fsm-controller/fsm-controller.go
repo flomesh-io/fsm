@@ -306,8 +306,9 @@ func main() {
 		}
 	}
 
+	var gatewayController gateway.Controller
 	if cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
-		gatewayController := gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
+		gatewayController = gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
 		if err := gatewayController.Start(); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting Gateway Controller")
 		}
@@ -425,6 +426,7 @@ func main() {
 		CertificateManager: certManager,
 		RepoClient:         repoClient,
 		Broker:             msgBroker,
+		EventHandler:       gatewayController,
 		StopCh:             stop,
 		MeshName:           meshName,
 		FSMVersion:         fsmVersion,
