@@ -4,9 +4,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/pflag"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
 )
