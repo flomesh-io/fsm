@@ -76,13 +76,13 @@ build-fsm: helm-update-dep cmd/cli/chart.tgz
 	CGO_ENABLED=0 go build -v -o ./bin/fsm -ldflags ${LDFLAGS} ./cmd/cli
 
 cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/fsm)
-	go run $< > $@
+	go run $< --chart-name=fsm > $@
 
 pkg/controllers/namespacedingress/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/namespaced-ingress)
-	go run $< > $@
+	go run $< --chart-name=namespaced-ingress > $@
 
 pkg/controllers/gateway/v1beta1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
-	go run $< > $@
+	go run $< --chart-name=gateway > $@
 
 helm-update-dep: helm
 	$(HELM) dependency update charts/fsm/
