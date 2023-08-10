@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -13,8 +14,6 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
@@ -39,6 +38,27 @@ func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection
 }
 
 func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) *client {
+	fsmGatewayClass := &gwv1beta1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: constants.FSMGatewayClassName,
+			Labels: map[string]string{
+				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
+				constants.FSMAppInstanceLabelKey: meshName,
+				constants.FSMAppVersionLabelKey:  fsmVersion,
+				constants.AppLabel:               constants.FSMControllerName,
+			},
+		},
+		Spec: gwv1beta1.GatewayClassSpec{
+			ControllerName: constants.GatewayController,
+		},
+	}
+
+	if _, err := gatewayAPIClient.GatewayV1beta1().
+		GatewayClasses().
+		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
+		log.Warn().Msgf("Failed to create FSM GatewayClass: %s", err)
+	}
+
 	c := &client{
 		informers:  informerCollection,
 		kubeClient: kubeClient,
@@ -63,27 +83,6 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
 		}
-	}
-
-	fsmGatewayClass := &gwv1beta1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: constants.FSMGatewayClassName,
-			Labels: map[string]string{
-				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
-				constants.FSMAppInstanceLabelKey: meshName,
-				constants.FSMAppVersionLabelKey:  fsmVersion,
-				constants.AppLabel:               constants.FSMControllerName,
-			},
-		},
-		Spec: gwv1beta1.GatewayClassSpec{
-			ControllerName: constants.GatewayController,
-		},
-	}
-
-	if _, err := gatewayAPIClient.GatewayV1beta1().
-		GatewayClasses().
-		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
-		log.Warn().Msgf("Failed to create FSM GatewayClass: %s", err)
 	}
 
 	return c
