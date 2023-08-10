@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/google/go-cmp/cmp"
@@ -86,11 +85,21 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		GatewayClasses().
 		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
 		if errors.IsAlreadyExists(err) {
+			existing, err := gatewayAPIClient.GatewayV1beta1().
+				GatewayClasses().Get(context.TODO(), constants.FSMGatewayClassName, metav1.GetOptions{})
+			if err != nil {
+				log.Error().Msgf("Error getting GatewayClass %s", constants.FSMGatewayClassName)
+				panic(err)
+			}
+
+			fsmGatewayClass.ObjectMeta = existing.ObjectMeta
 			if _, err := gatewayAPIClient.GatewayV1beta1().
 				GatewayClasses().
 				Update(context.TODO(), fsmGatewayClass, metav1.UpdateOptions{}); err != nil {
-				log.Error().Msgf("Failed to update FSM GatewayClass: %s", err)
-				panic(err)
+				if !errors.IsConflict(err) {
+					log.Error().Msgf("Failed to update FSM GatewayClass: %s", err)
+					panic(err)
+				}
 			}
 		}
 
