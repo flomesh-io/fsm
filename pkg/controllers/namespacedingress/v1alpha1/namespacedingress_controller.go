@@ -157,7 +157,6 @@ func (r *reconciler) resolveValues(object metav1.Object, mc configurator.Configu
 	finalValues := nsigValues.AsMap()
 
 	overrides := []string{
-		"fsm.ingress.namespaced=true",
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
 		fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
 		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.GetImagePullPolicy()),
@@ -219,10 +218,5 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nsigv1alpha1.NamespacedIngress{}).
-		//Owns(&corev1.Service{}).
-		//Owns(&appv1.Deployment{}).
-		//Owns(&corev1.ServiceAccount{}).
-		//Owns(&rbacv1.Role{}).
-		//Owns(&rbacv1.RoleBinding{}).
 		Complete(r)
 }

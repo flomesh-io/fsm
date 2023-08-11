@@ -68,7 +68,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.http.nodePort | int | `30508` |  |
 | fsm.fsmIngress.http.port | int | `80` |  |
 | fsm.fsmIngress.logLevel | string | `"info"` |  |
-| fsm.fsmIngress.namespaced | bool | `false` |  |
 | fsm.fsmIngress.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
 | fsm.fsmIngress.podAnnotations | object | `{}` |  |
 | fsm.fsmIngress.podLabels | object | `{}` | FSM Pipy Ingress Controller's pod labels |

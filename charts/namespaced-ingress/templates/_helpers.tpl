@@ -7,17 +7,12 @@ ServiceAccountName - namespaced-ingress
 
 
 {{- define "fsm.namespaced-ingress.heath.port" -}}
-{{- if and .Values.fsm.ingress.enabled .Values.fsm.ingress.namespaced }}
 {{- if .Values.nsig.spec.http.enabled }}
-{{- default .Values.fsm.ingress.http.containerPort .Values.nsig.spec.http.port.targetPort }}
+{{- default .Values.fsm.fsmIngress.http.containerPort .Values.nsig.spec.http.port.targetPort }}
 {{- else if and .Values.nsig.spec.tls.enabled }}
-{{- default .Values.fsm.ingress.tls.containerPort .Values.nsig.spec.tls.port.targetPort }}
+{{- default .Values.fsm.fsmIngress.tls.containerPort .Values.nsig.spec.tls.port.targetPort }}
 {{- else }}
 9091
-{{- end }}
-{{- else }}
-9091
-{{- end }}
 {{- end }}
 
 
