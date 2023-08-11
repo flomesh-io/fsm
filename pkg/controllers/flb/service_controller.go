@@ -205,11 +205,11 @@ func getDefaultSetting(api kubernetes.Interface, mc configurator.Configurator) (
 		return nil, fmt.Errorf("secret %s/%s doesn't have required label %s=true", mc.GetFSMNamespace(), mc.GetFLBSecretName(), constants.FLBSecretLabel)
 	}
 
-	log.Info().Msgf("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
+	log.Debug().Msgf("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
 
-	log.Info().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseURL]))
-	log.Info().Msgf("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
-	log.Info().Msgf("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
+	log.Debug().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseURL]))
+	log.Debug().Msgf("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
+	log.Debug().Msgf("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
 
 	return newSetting(secret), nil
 }
@@ -340,7 +340,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	if flb.IsFLBEnabled(svc, r.fctx.KubeClient) {
-		log.Info().Msgf("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
+		log.Debug().Msgf("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
 
 		r.cache[req.NamespacedName] = svc.DeepCopy()
 		mc := r.fctx.Config
@@ -405,7 +405,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return ctrl.Result{}, nil
 		}
 
-		log.Info().Msgf("Annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
+		log.Debug().Msgf("Annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
 		if newAnnotations := r.computeServiceAnnotations(svc); newAnnotations != nil {
 			svc.Annotations = newAnnotations
 			if err := r.fctx.Update(ctx, svc); err != nil {
@@ -413,7 +413,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				return ctrl.Result{}, err
 			}
 
-			log.Info().Msgf("After updating, annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
+			log.Debug().Msgf("After updating, annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
 		}
 
 		return r.createOrUpdateFLBEntry(ctx, svc)
@@ -424,7 +424,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 func (r *reconciler) computeServiceAnnotations(svc *corev1.Service) map[string]string {
 	setting := r.settings[svc.Namespace]
-	log.Info().Msgf("Setting for Namespace %q: %v", svc.Namespace, setting)
+	log.Debug().Msgf("Setting for Namespace %q: %v", svc.Namespace, setting)
 
 	svcCopy := svc.DeepCopy()
 	if svcCopy.Annotations == nil {
@@ -480,7 +480,7 @@ func secretHasRequiredLabel(secret *corev1.Secret) bool {
 
 func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
 	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		log.Info().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
+		log.Debug().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
 
 		setting := r.settings[svc.Namespace]
 		result := make(map[string][]string)
@@ -503,7 +503,7 @@ func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service
 }
 
 func (r *reconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
-	log.Info().Msgf("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
+	log.Debug().Msgf("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
 
 	mc := r.fctx.Config
 
@@ -512,7 +512,7 @@ func (r *reconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Ser
 		return ctrl.Result{}, err
 	}
 
-	log.Info().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
+	log.Debug().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
 
 	params := r.getFLBParameters(svc)
 	resp, err := r.updateFLB(svc, params, endpoints, false)
@@ -526,7 +526,7 @@ func (r *reconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Ser
 		return ctrl.Result{RequeueAfter: 5 * time.Second}, fmt.Errorf("FLB hasn't assigned any external IP for service %s/%s", svc.Namespace, svc.Name)
 	}
 
-	log.Info().Msgf("External IPs assigned by FLB: %#v", resp)
+	log.Debug().Msgf("External IPs assigned by FLB: %#v", resp)
 
 	if err := r.updateService(ctx, svc, mc, resp.LBIPs); err != nil {
 		return ctrl.Result{}, err
@@ -908,7 +908,7 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *reconciler) isInterestedService(obj client.Object) bool {
 	svc, ok := obj.(*corev1.Service)
 	if !ok {
-		log.Info().Msgf("unexpected object type: %T", obj)
+		log.Debug().Msgf("unexpected object type: %T", obj)
 		return false
 	}
 

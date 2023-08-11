@@ -88,7 +88,7 @@ func (r *serviceImportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		if err := r.fctx.Update(ctx, svcImport); err != nil {
 			return ctrl.Result{}, err
 		}
-		log.Info().Msgf("Added annotation %s=%s", constants.MultiClusterDerivedServiceAnnotation, req.Name)
+		log.Debug().Msgf("Added annotation %s=%s", constants.MultiClusterDerivedServiceAnnotation, req.Name)
 
 		return ctrl.Result{}, nil
 	}
@@ -179,7 +179,7 @@ func (r *serviceImportReconciler) upsertDerivedService(ctx context.Context, svcI
 		return nil, err
 	}
 
-	log.Info().Msgf("Created service %s/%s", svc.Namespace, svc.Name)
+	log.Debug().Msgf("Created service %s/%s", svc.Namespace, svc.Name)
 
 	return svc, nil
 }

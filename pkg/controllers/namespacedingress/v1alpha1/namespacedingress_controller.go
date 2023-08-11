@@ -89,7 +89,7 @@ type namespacedIngressValues struct {
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	mc := r.fctx.Config
 
-	log.Info().Msgf("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
+	log.Debug().Msgf("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
 	if !mc.IsNamespacedIngressEnabled() {
 		log.Warn().Msgf("Ingress is not enabled or Ingress mode is not Namespace, ignore processing NamespacedIngress...")
 		return ctrl.Result{}, nil
@@ -105,7 +105,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info().Msgf("[NSIG] NamespacedIngress resource not found. Ignoring since object must be deleted")
+			log.Debug().Msgf("[NSIG] NamespacedIngress resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -142,13 +142,13 @@ func (r *reconciler) resolveValues(object metav1.Object, mc configurator.Configu
 		return nil, fmt.Errorf("object %v is not type of nsigv1alpha1.NamespacedIngress", object)
 	}
 
-	log.Info().Msgf("[NSIG] Resolving Values ...")
+	log.Debug().Msgf("[NSIG] Resolving Values ...")
 
 	nsigBytes, err := ghodssyaml.Marshal(&namespacedIngressValues{NamespacedIngress: nsig})
 	if err != nil {
 		return nil, fmt.Errorf("convert NamespacedIngress to yaml, err = %v", err)
 	}
-	log.Info().Msgf("\n\nNSIG VALUES YAML:\n\n\n%s\n\n", string(nsigBytes))
+	log.Debug().Msgf("\n\nNSIG VALUES YAML:\n\n\n%s\n\n", string(nsigBytes))
 	nsigValues, err := chartutil.ReadValues(nsigBytes)
 	if err != nil {
 		return nil, err

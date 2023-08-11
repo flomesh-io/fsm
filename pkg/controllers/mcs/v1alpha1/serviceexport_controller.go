@@ -352,7 +352,7 @@ func ingressAnnotations(export *mcsv1alpha1.ServiceExport) map[string]string {
 	annos := make(map[string]string)
 
 	if export.Spec.PathRewrite != nil {
-		log.Info().Msgf("PathRewrite=%#v", export.Spec.PathRewrite)
+		log.Debug().Msgf("PathRewrite=%#v", export.Spec.PathRewrite)
 		if export.Spec.PathRewrite.From != "" && export.Spec.PathRewrite.To != "" {
 			annos[constants.PipyIngressAnnotationRewriteFrom] = export.Spec.PathRewrite.From
 			annos[constants.PipyIngressAnnotationRewriteTo] = export.Spec.PathRewrite.To

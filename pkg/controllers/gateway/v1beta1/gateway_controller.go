@@ -648,7 +648,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		return nil, fmt.Errorf("object %v is not type of *gwv1beta1.Gateway", object)
 	}
 
-	log.Info().Msgf("[GW] Resolving Values ...")
+	log.Debug().Msgf("[GW] Resolving Values ...")
 
 	gwBytes, err := ghodssyaml.Marshal(&gatewayValues{
 		Gateway:   gateway,
@@ -657,7 +657,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	if err != nil {
 		return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)
 	}
-	log.Info().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
+	log.Debug().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
 	gwValues, err := chartutil.ReadValues(gwBytes)
 	if err != nil {
 		return nil, err

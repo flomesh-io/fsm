@@ -249,7 +249,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	gwclsPrct := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		gatewayClass, ok := object.(*gwv1beta1.GatewayClass)
 		if !ok {
-			log.Info().Msgf("unexpected object type: %T", object)
+			log.Error().Msgf("unexpected object type: %T", object)
 			return false
 		}
 

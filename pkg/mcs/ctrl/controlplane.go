@@ -23,7 +23,7 @@ func (s *ControlPlaneServer) Run(stop <-chan struct{}) {
 			mc := s.cfg
 			// ONLY Control Plane takes care of the federation of service export/import
 			if mc.IsManaged() && mc.GetMultiClusterControlPlaneUID() != "" && mc.GetClusterUID() != mc.GetMultiClusterControlPlaneUID() {
-				log.Info().Msgf("Ignore processing ServiceExportCreated event due to cluster is managed and not a control plane ...")
+				log.Debug().Msgf("Ignore processing ServiceExportCreated event due to cluster is managed and not a control plane ...")
 				continue
 			}
 
@@ -31,7 +31,7 @@ func (s *ControlPlaneServer) Run(stop <-chan struct{}) {
 				log.Warn().Msgf("Channel closed for ServiceExport")
 				continue
 			}
-			log.Info().Msgf("Received event ServiceExportCreated %v", msg)
+			log.Debug().Msgf("Received event ServiceExportCreated %v", msg)
 
 			e, ok := msg.(events.PubSubMessage)
 			if !ok {
@@ -70,15 +70,15 @@ func (s *ControlPlaneServer) processServiceExportCreatedEvent(svcExportEvt *mcse
 
 	export := svcExportEvt.ServiceExport
 	if s.isFirstTimeExport(svcExportEvt) {
-		log.Info().Msgf("[%s] ServiceExport %s/%s is exported first in the cluster set, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+		log.Debug().Msgf("[%s] ServiceExport %s/%s is exported first in the cluster set, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 		s.acceptServiceExport(svcExportEvt)
 	} else {
 		valid, err := s.isValidServiceExport(svcExportEvt)
 		if valid {
-			log.Info().Msgf("[%s] ServiceExport %s/%s is valid, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+			log.Debug().Msgf("[%s] ServiceExport %s/%s is valid, will be accepted", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 			s.acceptServiceExport(svcExportEvt)
 		} else {
-			log.Info().Msgf("[%s] ServiceExport %s/%s is invalid, will be rejected", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
+			log.Debug().Msgf("[%s] ServiceExport %s/%s is invalid, will be rejected", svcExportEvt.Geo.Key(), export.Namespace, export.Name)
 			s.rejectServiceExport(svcExportEvt, err)
 		}
 	}
