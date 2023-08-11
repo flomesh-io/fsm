@@ -420,7 +420,7 @@ func main() {
 		Manager:            mgr,
 		Scheme:             mgr.GetScheme(),
 		KubeClient:         kubeClient,
-		GatewayAPIClient:   gatewayAPIClient,
+		KubeConfig:         kubeConfig,
 		Config:             cfg,
 		InformerCollection: informerCollection,
 		CertificateManager: certManager,

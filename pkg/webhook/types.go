@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
-	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 )
 
 // Object is the interface for webhook objects
@@ -62,7 +61,6 @@ type Register interface {
 // RegisterConfig is the configuration for webhook registers
 type RegisterConfig struct {
 	*fctx.ControllerContext
-	NsigClient     nsigClientset.Interface
 	WebhookSvcNs   string
 	WebhookSvcName string
 	CaBundle       []byte

@@ -28,9 +28,9 @@ package context
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -46,7 +46,6 @@ type ControllerContext struct {
 	Manager            manager.Manager
 	Scheme             *runtime.Scheme
 	KubeClient         kubernetes.Interface
-	GatewayAPIClient   gwclient.Interface
 	Config             configurator.Configurator
 	InformerCollection *fsminformers.InformerCollection
 	CertificateManager *certificate.Manager
@@ -56,4 +55,5 @@ type ControllerContext struct {
 	StopCh             <-chan struct{}
 	MeshName           string
 	FSMVersion         string
+	KubeConfig         *rest.Config
 }

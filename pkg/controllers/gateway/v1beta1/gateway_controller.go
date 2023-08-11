@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -59,6 +61,8 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/helm"
 	"github.com/flomesh-io/fsm/pkg/utils"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 var (
@@ -75,8 +79,9 @@ type gatewayValues struct {
 }
 
 type gatewayReconciler struct {
-	recorder record.EventRecorder
-	fctx     *fctx.ControllerContext
+	recorder         record.EventRecorder
+	fctx             *fctx.ControllerContext
+	gatewayAPIClient gwclient.Interface
 }
 
 func init() {
@@ -86,8 +91,9 @@ func init() {
 // NewGatewayReconciler returns a new reconciler for Gateway resources
 func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("Gateway"),
-		fctx:     ctx,
+		recorder:         ctx.Manager.GetEventRecorderFor("Gateway"),
+		fctx:             ctx,
+		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 }
 
@@ -709,7 +715,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return false
 			}
 
-			gatewayClass, err := r.fctx.GatewayAPIClient.
+			gatewayClass, err := r.gatewayAPIClient.
 				GatewayV1beta1().
 				GatewayClasses().
 				Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})

@@ -30,6 +30,8 @@ import (
 	"sort"
 	"time"
 
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -46,18 +48,22 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 type gatewayClassReconciler struct {
-	recorder record.EventRecorder
-	fctx     *fctx.ControllerContext
+	recorder         record.EventRecorder
+	fctx             *fctx.ControllerContext
+	gatewayAPIClient gwclient.Interface
 }
 
 // NewGatewayClassReconciler returns a new reconciler for GatewayClass
 func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
-		fctx:     ctx,
+		recorder:         ctx.Manager.GetEventRecorderFor("GatewayClass"),
+		fctx:             ctx,
+		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 }
 
@@ -99,7 +105,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return result, err
 	}
 
-	gatewayClassList, err := r.fctx.GatewayAPIClient.GatewayV1beta1().
+	gatewayClassList, err := r.gatewayAPIClient.GatewayV1beta1().
 		GatewayClasses().
 		List(ctx, metav1.ListOptions{})
 	if err != nil {

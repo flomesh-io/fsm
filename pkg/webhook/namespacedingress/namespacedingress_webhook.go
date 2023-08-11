@@ -46,12 +46,14 @@ import (
 
 type register struct {
 	*webhook.RegisterConfig
+	nsigClient nsigClientset.Interface
 }
 
 // NewRegister creates a new register for the namespacedingress resources
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
+		nsigClient:     nsigClientset.NewForConfigOrDie(cfg.KubeConfig),
 	}
 }
 
@@ -91,7 +93,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.NamespacedIngressValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.NsigClient)),
+		constants.NamespacedIngressValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.nsigClient)),
 	}
 }
 
