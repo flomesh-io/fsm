@@ -64,20 +64,20 @@ func RenderChart(
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error loading chart for installation: %s", err)
 	}
-	log.Info().Msgf("[HELM UTIL] Chart = %v", chart)
+	log.Debug().Msgf("[HELM UTIL] Chart = %v", chart)
 
 	values, err := resolveValues(object, mc)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error resolve values for installation: %s", err)
 	}
-	log.Info().Msgf("[HELM UTIL] Values = %s", values)
+	log.Debug().Msgf("[HELM UTIL] Values = %s", values)
 
 	rel, err := installClient.Run(chart, values)
 	if err != nil {
 		log.Error().Msgf("[HELM UTIL] Error installing chart: %s", err)
 		return ctrl.Result{}, fmt.Errorf("error install %s/%s: %s", object.GetNamespace(), object.GetName(), err)
 	}
-	log.Info().Msgf("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
+	log.Debug().Msgf("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
 
 	if result, err := applyChartYAMLs(object, rel, client, scheme); err != nil {
 		log.Error().Msgf("[HELM UTIL] Error applying chart YAMLs: %s", err)
@@ -90,11 +90,11 @@ func RenderChart(
 func helmClient(releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
 	configFlags := &genericclioptions.ConfigFlags{Namespace: &namespace}
 
-	log.Info().Msgf("[HELM UTIL] Initializing Helm Action Config ...")
+	log.Debug().Msgf("[HELM UTIL] Initializing Helm Action Config ...")
 	actionConfig := new(action.Configuration)
-	_ = actionConfig.Init(configFlags, namespace, "secret", log.Info().Msgf)
+	_ = actionConfig.Init(configFlags, namespace, "secret", log.Debug().Msgf)
 
-	log.Info().Msgf("[HELM UTIL] Creating Helm Install Client ...")
+	log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
 	installClient := helm.NewInstall(actionConfig)
 	installClient.ReleaseName = releaseName
 	installClient.Namespace = namespace
@@ -119,20 +119,20 @@ func applyChartYAMLs(owner metav1.Object, rel *release.Release, client client.Cl
 			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
 
-		log.Info().Msgf("[HELM UTIL] Processing YAML : \n\n%s\n\n", string(buf))
+		log.Debug().Msgf("[HELM UTIL] Processing YAML : \n\n%s\n\n", string(buf))
 		obj, err := utils.DecodeYamlToUnstructured(buf)
 		if err != nil {
 			log.Error().Msgf("Error decoding YAML to Unstructured object: %s", err)
 			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
-		log.Info().Msgf("[HELM UTIL] Unstructured Object = \n\n%v\n\n", obj)
+		log.Debug().Msgf("[HELM UTIL] Unstructured Object = \n\n%v\n\n", obj)
 
 		if isValidOwner(owner, obj) {
 			if err = ctrl.SetControllerReference(owner, obj, scheme); err != nil {
 				log.Error().Msgf("Error setting controller reference: %s", err)
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}
-			log.Info().Msgf("[HELM UTIL] Resource %s/%s, Owner: %v", obj.GetNamespace(), obj.GetName(), obj.GetOwnerReferences())
+			log.Debug().Msgf("[HELM UTIL] Resource %s/%s, Owner: %v", obj.GetNamespace(), obj.GetName(), obj.GetOwnerReferences())
 		}
 
 		result, err := utils.CreateOrUpdate(context.TODO(), client, obj)
@@ -141,7 +141,7 @@ func applyChartYAMLs(owner metav1.Object, rel *release.Release, client client.Cl
 			return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 		}
 
-		log.Info().Msgf("[HELM UTIL] Successfully %s object: %v", result, obj)
+		log.Debug().Msgf("[HELM UTIL] Successfully %s object: %v", result, obj)
 	}
 
 	return ctrl.Result{}, nil
