@@ -28,6 +28,7 @@ package admission
 import (
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
@@ -95,6 +96,7 @@ func NewMutatingWebhook(
 				Namespace: webhookServiceNamespace,
 				Name:      webhookServiceName,
 				Path:      &webhookPath,
+				Port:      pointer.Int32(constants.FSMWebhookPort),
 			},
 			CABundle: caBundle,
 		},
@@ -139,6 +141,7 @@ func NewValidatingWebhook(
 				Namespace: webhookServiceNamespace,
 				Name:      webhookServiceName,
 				Path:      &webhookPath,
+				Port:      pointer.Int32(constants.FSMWebhookPort),
 			},
 			CABundle: caBundle,
 		},
