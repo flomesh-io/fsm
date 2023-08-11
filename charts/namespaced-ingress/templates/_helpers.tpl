@@ -5,7 +5,7 @@ ServiceAccountName - namespaced-ingress
 {{ default "fsm-namespaced-ingress" .Values.nsig.spec.serviceAccountName }}
 {{- end }}
 
-
+{{/* NamespacedIngress heath check port */}}
 {{- define "fsm.namespaced-ingress.heath.port" -}}
 {{- if .Values.nsig.spec.http.enabled }}
 {{- default .Values.fsm.fsmIngress.http.containerPort .Values.nsig.spec.http.port.targetPort }}
@@ -14,7 +14,7 @@ ServiceAccountName - namespaced-ingress
 {{- else }}
 9091
 {{- end }}
-
+{{- end }}
 
 {{/* fsm-ingress image */}}
 {{- define "fsmIngress.image" -}}
