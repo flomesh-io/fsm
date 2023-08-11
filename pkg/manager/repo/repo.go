@@ -194,10 +194,10 @@ func ChecksAndRebuildRepo(repoClient *repo.PipyRepoClient, client client.Client,
 	}
 	s.RegisterEventListeners(
 		gocron.AfterJobRuns(func(jobName string) {
-			log.Info().Msgf(">>>>>> After ChecksAndRebuildRepo: %s\n", jobName)
+			log.Debug().Msgf(">>>>>> After ChecksAndRebuildRepo: %s\n", jobName)
 		}),
 		gocron.BeforeJobRuns(func(jobName string) {
-			log.Info().Msgf(">>>>>> Before ChecksAndRebuildRepo: %s\n", jobName)
+			log.Debug().Msgf(">>>>>> Before ChecksAndRebuildRepo: %s\n", jobName)
 		}),
 		gocron.WhenJobReturnsError(func(jobName string, err error) {
 			log.Error().Msgf(">>>>>> ChecksAndRebuildRepo Returns Error: %s, %v\n", jobName, err)
@@ -207,10 +207,10 @@ func ChecksAndRebuildRepo(repoClient *repo.PipyRepoClient, client client.Client,
 }
 
 func rebuildRepoJob(repoClient *repo.PipyRepoClient, client client.Client, mc configurator.Configurator) error {
-	log.Info().Msg("<<<<<< rebuilding repo - start >>>>>> ")
+	log.Debug().Msg("<<<<<< rebuilding repo - start >>>>>> ")
 
 	if !repoClient.IsRepoUp() {
-		log.Info().Msg("Repo is not up, sleeping ...")
+		log.Debug().Msg("Repo is not up, sleeping ...")
 		return nil
 	}
 
@@ -291,6 +291,6 @@ func rebuildRepoJob(repoClient *repo.PipyRepoClient, client client.Client, mc co
 		}
 	}
 
-	log.Info().Msg("<<<<<< rebuilding repo - end >>>>>> ")
+	log.Debug().Msg("<<<<<< rebuilding repo - end >>>>>> ")
 	return nil
 }
