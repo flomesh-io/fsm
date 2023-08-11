@@ -74,11 +74,13 @@ func RenderChart(
 
 	rel, err := installClient.Run(chart, values)
 	if err != nil {
+		log.Error().Msgf("[HELM UTIL] Error installing chart: %s", err)
 		return ctrl.Result{}, fmt.Errorf("error install %s/%s: %s", object.GetNamespace(), object.GetName(), err)
 	}
 	log.Info().Msgf("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
 
 	if result, err := applyChartYAMLs(object, rel, client, scheme); err != nil {
+		log.Error().Msgf("[HELM UTIL] Error applying chart YAMLs: %s", err)
 		return result, err
 	}
 
