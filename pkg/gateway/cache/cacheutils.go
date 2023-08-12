@@ -293,12 +293,13 @@ func allowedListeners(
 			selectedListeners = append(selectedListeners, validListener)
 		}
 	}
+	log.Debug().Msgf("[GW-CACHE] selectedListeners: %v", selectedListeners)
 
 	if len(selectedListeners) == 0 {
 		return nil
 	}
 
-	var allowedListeners []gwtypes.Listener
+	allowedListeners := make([]gwtypes.Listener, 0)
 	for _, selectedListener := range selectedListeners {
 		if !selectedListener.AllowsKind(routeGvk) {
 			continue
