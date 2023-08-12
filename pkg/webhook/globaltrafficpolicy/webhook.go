@@ -114,8 +114,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	log.Info().Msgf("Default Webhook, name=%s", policy.Name)
-	log.Info().Msgf("Before setting default values, spec=%v", policy.Spec)
+	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
+	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -127,7 +127,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		policy.Spec.LbType = mcsv1alpha1.LocalityLbType
 	}
 
-	log.Info().Msgf("After setting default values, spec=%v", policy.Spec)
+	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
 type validator struct {

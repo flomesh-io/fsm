@@ -61,11 +61,11 @@ func IsFLBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 			return false
 		}
 
-		log.Info().Msgf("Found annotation %q on Namespace %q", constants.FLBEnabledAnnotation, ns.Name)
+		log.Debug().Msgf("Found annotation %q on Namespace %q", constants.FLBEnabledAnnotation, ns.Name)
 		return utils.ParseEnabled(ns.Annotations[constants.FLBEnabledAnnotation])
 	}
 
 	// parse svc annotation
-	log.Info().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
+	log.Debug().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
 	return utils.ParseEnabled(svc.Annotations[constants.FLBEnabledAnnotation])
 }

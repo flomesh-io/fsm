@@ -247,7 +247,7 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Service, error) {
 	connectorCtx := c.context.(*conn.ConnectorContext)
 	connectorConfig := connectorCtx.ConnectorConfig
-	log.Info().Msgf("[%s] Getting service %s/%s", connectorConfig.Key(), export.Namespace, export.Name)
+	log.Debug().Msgf("[%s] Getting service %s/%s", connectorConfig.Key(), export.Namespace, export.Name)
 
 	svc, err := c.kubeClient.CoreV1().
 		Services(export.Namespace).

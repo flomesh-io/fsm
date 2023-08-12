@@ -202,7 +202,7 @@ func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectK
 	if ref.Group != nil {
 		switch string(*ref.Group) {
 		case GroupCore, GroupFlomeshIo:
-			log.Info().Msgf("Ref group is %q", string(*ref.Group))
+			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
 		default:
 			return false
 		}
@@ -211,7 +211,7 @@ func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectK
 	if ref.Kind != nil {
 		switch string(*ref.Kind) {
 		case KindService, KindServiceImport:
-			log.Info().Msgf("Ref kind is %q", string(*ref.Kind))
+			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
 		default:
 			return false
 		}
@@ -295,7 +295,7 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	if ref.Group != nil {
 		switch string(*ref.Group) {
 		case "":
-			log.Info().Msgf("Ref group is %q", string(*ref.Group))
+			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
 		default:
 			return false
 		}
@@ -304,7 +304,7 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	if ref.Kind != nil {
 		switch string(*ref.Kind) {
 		case KindSecret:
-			log.Info().Msgf("Ref kind is %q", string(*ref.Kind))
+			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
 		default:
 			return false
 		}
@@ -371,7 +371,7 @@ func (c *GatewayCache) BuildConfigs() {
 
 		if jsonVersion == cfg.Version {
 			// config not changed, ignore updating
-			log.Info().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
+			log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
 			continue
 		}
 

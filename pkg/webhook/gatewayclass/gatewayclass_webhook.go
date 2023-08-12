@@ -116,8 +116,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	log.Info().Msgf("Default Webhook, name=%s", gatewayClass.Name)
-	log.Info().Msgf("Before setting default values, spec=%v", gatewayClass.Spec)
+	log.Debug().Msgf("Default Webhook, name=%s", gatewayClass.Name)
+	log.Debug().Msgf("Before setting default values, spec=%v", gatewayClass.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -125,7 +125,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	return
 	//}
 
-	log.Info().Msgf("After setting default values, spec=%v", gatewayClass.Spec)
+	log.Debug().Msgf("After setting default values, spec=%v", gatewayClass.Spec)
 }
 
 type validator struct {

@@ -118,8 +118,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		return
 	}
 
-	log.Info().Msgf("Default Webhook, name=%s", c.Name)
-	log.Info().Msgf("Before setting default values, spec=%v", c.Spec)
+	log.Debug().Msgf("Default Webhook, name=%s", c.Name)
+	log.Debug().Msgf("Before setting default values, spec=%v", c.Spec)
 
 	//meshConfig := w.configStore.MeshConfig.GetConfig()
 	//
@@ -141,7 +141,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	c.Labels[constants.MultiClustersConnectorMode] = "remote"
 	//}
 
-	log.Info().Msgf("After setting default values, spec=%v", c.Spec)
+	log.Debug().Msgf("After setting default values, spec=%v", c.Spec)
 }
 
 type validator struct {
@@ -230,7 +230,7 @@ func doValidation(obj interface{}) error {
 	//connectorMode := c.Labels[constants.MultiClustersConnectorMode]
 	//switch connectorMode {
 	//case "local", "remote":
-	//	log.Info().Msgf("multicluster.flomesh.io/connector-mode=%s", connectorMode)
+	//	log.Debug().Msgf("multicluster.flomesh.io/connector-mode=%s", connectorMode)
 	//default:
 	//	return fmt.Errorf("invalid value %q for label multicluster.flomesh.io/connector-mode, must be either 'local' or 'remote'", connectorMode)
 	//}
@@ -278,7 +278,7 @@ func doValidation(obj interface{}) error {
 		if err != nil {
 			return fmt.Errorf("%q cannot be resolved to IP", host)
 		}
-		log.Info().Msgf("%q is resolved to IP: %s", host, ipAddr.IP)
+		log.Debug().Msgf("%q is resolved to IP: %s", host, ipAddr.IP)
 		gwIPv4 = ipAddr.IP.To4()
 	} else {
 		gwIPv4 = net.ParseIP(host).To4()
