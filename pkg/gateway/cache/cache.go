@@ -527,39 +527,71 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	services := make(map[string]serviceInfo)
 
 	for key := range c.httproutes {
-		if httpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String()); exists && err == nil {
-			httpRoute := httpRoute.(*gwv1beta1.HTTPRoute)
-
-			processHTTPRoute(gw, validListeners, httpRoute, rules)
-			processHTTPRouteBackendFilters(httpRoute, services)
+		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String())
+		if !exists {
+			log.Error().Msgf("HTTPRoute %s does not exist", key)
+			continue
 		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
+			continue
+		}
+
+		httpRoute := route.(*gwv1beta1.HTTPRoute)
+		processHTTPRoute(gw, validListeners, httpRoute, rules)
+		processHTTPRouteBackendFilters(httpRoute, services)
 	}
 
 	for key := range c.grpcroutes {
-		if grpcRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String()); exists && err == nil {
-			grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
-
-			processGRPCRoute(gw, validListeners, grpcRoute, rules)
-			processGRPCRouteBackendFilters(grpcRoute, services)
+		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String())
+		if !exists {
+			log.Error().Msgf("GRPCRoute %s does not exist", key)
+			continue
 		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
+			continue
+		}
+
+		grpcRoute := route.(*gwv1alpha2.GRPCRoute)
+		processGRPCRoute(gw, validListeners, grpcRoute, rules)
+		processGRPCRouteBackendFilters(grpcRoute, services)
 	}
 
 	for key := range c.tlsroutes {
-		if tlsRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String()); exists && err == nil {
-			tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
-
-			processTLSRoute(gw, validListeners, tlsRoute, rules)
-			processTLSBackends(tlsRoute, services)
+		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String())
+		if !exists {
+			log.Error().Msgf("TLSRoute %s does not exist", key)
+			continue
 		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
+			continue
+		}
+
+		tlsRoute := route.(*gwv1alpha2.TLSRoute)
+		processTLSRoute(gw, validListeners, tlsRoute, rules)
+		processTLSBackends(tlsRoute, services)
 	}
 
 	for key := range c.tcproutes {
-		if tcpRoute, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String()); exists && err == nil {
-			tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
-
-			processTCPRoute(gw, validListeners, tcpRoute, rules)
-			processTCPBackends(tcpRoute, services)
+		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String())
+		if !exists {
+			log.Error().Msgf("TCPRoute %s does not exist", key)
+			continue
 		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
+			continue
+		}
+
+		tcpRoute := route.(*gwv1alpha2.TCPRoute)
+		processTCPRoute(gw, validListeners, tcpRoute, rules)
+		processTCPBackends(tcpRoute, services)
 	}
 
 	return rules, services
