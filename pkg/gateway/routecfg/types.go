@@ -114,7 +114,7 @@ var _ RouteRule = &L7RouteRule{}
 
 // HTTPRouteRuleSpec is the HTTP route rule configuration
 type HTTPRouteRuleSpec struct {
-	RouteType L7RouteType        `json:"L7RouteType"`
+	RouteType L7RouteType        `json:"RouteType"`
 	Matches   []HTTPTrafficMatch `json:"Matches" hash:"set"`
 	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
 }
@@ -123,7 +123,7 @@ var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 
 // GRPCRouteRuleSpec is the GRPC route rule configuration
 type GRPCRouteRuleSpec struct {
-	RouteType L7RouteType        `json:"L7RouteType"`
+	RouteType L7RouteType        `json:"RouteType"`
 	Matches   []GRPCTrafficMatch `json:"Matches" hash:"set"`
 }
 
