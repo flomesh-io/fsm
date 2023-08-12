@@ -541,7 +541,7 @@ func (c *Client) GetImagePullPolicy() corev1.PullPolicy {
 // ServiceLBImage returns the image for service load balancer
 func (c *Client) ServiceLBImage() string {
 	mcSpec := c.getMeshConfig().Spec
-	return fmt.Sprintf("%s/%s", c.GetImageRegistry(), mcSpec.ServiceLB.Image)
+	return mcSpec.ServiceLB.Image
 }
 
 // GetFLBSecretName returns the secret name for FLB
