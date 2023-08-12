@@ -439,7 +439,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
 | fsm.serviceAccessMode | string | `"domain"` | Service access mode |
 | fsm.serviceLB.enabled | bool | `false` |  |
-| fsm.serviceLBImage | string | `"mirrored-klipper-lb:v0.3.5"` | service-lb Image |
+| fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
 | fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.2-41","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
 | fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
