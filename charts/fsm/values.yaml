@@ -79,7 +79,7 @@ fsm:
   curlImage: curlimages/curl
 
   # -- service-lb Image
-  serviceLBImage: mirrored-klipper-lb:v0.3.5
+  serviceLBImage: flomesh/mirrored-klipper-lb:v0.3.5
 
 
   # -- Pipy RepoServer
