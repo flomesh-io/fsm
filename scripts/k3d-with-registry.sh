@@ -52,7 +52,7 @@ k3d cluster create "$K3D_CLUSTER_NAME" \
 	--port 8090:80@loadbalancer \
 	--port 9443:443@loadbalancer \
 	--k3s-arg '--disable=traefik@server:*' \
-	--lb-config-override 'settings.workerConnections=2048' \
 	--network "$k3d_network" \
 	--wait \
 	--timeout 60s
+#	--k3s-arg '--disable=servicelb@server:*' \
