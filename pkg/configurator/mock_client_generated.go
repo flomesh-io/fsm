@@ -108,6 +108,20 @@ func (mr *MockConfiguratorMockRecorder) GetFSMGatewayLogLevel() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSMGatewayLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFSMGatewayLogLevel))
 }
 
+// GetFSMIngressLogLevel mocks base method.
+func (m *MockConfigurator) GetFSMIngressLogLevel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSMIngressLogLevel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFSMIngressLogLevel indicates an expected call of GetFSMIngressLogLevel.
+func (mr *MockConfiguratorMockRecorder) GetFSMIngressLogLevel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSMIngressLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFSMIngressLogLevel))
+}
+
 // GetFSMLogLevel mocks base method.
 func (m *MockConfigurator) GetFSMLogLevel() string {
 	m.ctrl.T.Helper()
