@@ -3,12 +3,16 @@ package main
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 
 	_ "embed" // required to embed resources
 	"fmt"
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	helm "helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -17,6 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"sigs.k8s.io/yaml"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
 )
@@ -70,11 +75,13 @@ type installCmd struct {
 	timeout        time.Duration
 	clientSet      kubernetes.Interface
 	chartRequested *chart.Chart
-	setOptions     []string
+	setOptions     []string // --set
 	atomic         bool
 	// Toggle this to enforce only one mesh in this cluster
 	enforceSingleMesh bool
 	disableSpinner    bool
+
+	valueFiles []string // -f/--values
 }
 
 func newInstallCmd(config *helm.Configuration, out io.Writer) *cobra.Command {
@@ -108,6 +115,7 @@ func newInstallCmd(config *helm.Configuration, out io.Writer) *cobra.Command {
 	f.DurationVar(&inst.timeout, "timeout", 5*time.Minute, "Time to wait for installation and resources in a ready state, zero means no timeout")
 	f.StringArrayVar(&inst.setOptions, "set", nil, "Set arbitrary chart values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.BoolVar(&inst.atomic, "atomic", false, "Automatically clean up resources if installation fails")
+	f.StringSliceVarP(&inst.valueFiles, "values", "f", []string{}, "Specify values in a YAML file (can specify multiple)")
 
 	return cmd
 }
@@ -117,11 +125,19 @@ func (i *installCmd) run(config *helm.Configuration) error {
 		return err
 	}
 
+	values := map[string]interface{}{}
 	// values represents the overrides for the FSM chart's values.yaml file
-	values, err := i.resolveValues()
+	setValues, err := i.resolveValues()
 	if err != nil {
 		return err
 	}
+	fileValues, err := i.resoleValueFiles()
+	if err != nil {
+		return err
+	}
+	// --set takes precedence over --values/-f
+	mergeMaps(values, fileValues)
+	mergeMaps(values, setValues)
 
 	installClient := helm.NewInstall(config)
 	installClient.ReleaseName = i.meshName
@@ -205,4 +221,54 @@ func parseVal(vals []string, parsedVals map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (i *installCmd) resoleValueFiles() (map[string]interface{}, error) {
+	base := map[string]interface{}{}
+
+	// User specified a values files via -f/--values
+	for _, filePath := range i.valueFiles {
+		currentMap := map[string]interface{}{}
+
+		valueBytes, err := readFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := yaml.Unmarshal(valueBytes, &currentMap); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse %s", filePath)
+		}
+		// Merge with the previous map
+		base = mergeMaps(base, currentMap)
+	}
+
+	return base, nil
+}
+
+// readFile load a file from stdin, the local directory, or a remote file with a url.
+func readFile(filePath string) ([]byte, error) {
+	if strings.TrimSpace(filePath) == "-" {
+		return io.ReadAll(os.Stdin)
+	}
+
+	return os.ReadFile(filepath.Clean(filePath))
+}
+
+func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = mergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
+	return out
 }
