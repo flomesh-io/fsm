@@ -131,13 +131,19 @@ func (i *installCmd) run(config *helm.Configuration) error {
 	if err != nil {
 		return err
 	}
+	debug("setValues: %s", setValues)
+
 	fileValues, err := i.resoleValueFiles()
 	if err != nil {
 		return err
 	}
+	debug("fileValues: %s", fileValues)
+
 	// --set takes precedence over --values/-f
-	mergeMaps(values, fileValues)
-	mergeMaps(values, setValues)
+	values = mergeMaps(values, fileValues)
+	values = mergeMaps(values, setValues)
+
+	debug("values: %s", values)
 
 	installClient := helm.NewInstall(config)
 	installClient.ReleaseName = i.meshName
