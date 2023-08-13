@@ -35,7 +35,6 @@ jobs:
       - name: Build Binaries
         run: |
           make release-artifacts
-        shell: bash
       - name: Generate Release Notes
         run: scripts/release-notes.sh $VERSION > release-notes.md
       - name: Create Release
@@ -142,7 +141,6 @@ jobs:
 
       - name: Package Helm Charts
         run: make charts-tgz
-        shell: bash
 
       - name: Docker meta - ${{ matrix.id }}
         id: docker_meta
