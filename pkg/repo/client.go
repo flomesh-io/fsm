@@ -42,7 +42,7 @@ type PipyRepoClient struct {
 	//mu               sync.Mutex
 }
 
-func NewRepoClient(repoRootUrl string) *PipyRepoClient {
+func NewRepoClient(repoRootUrl string, logLevel string) *PipyRepoClient {
 	return NewRepoClientWithTransport(
 		repoRootUrl,
 		&http.Transport{
@@ -50,30 +50,38 @@ func NewRepoClient(repoRootUrl string) *PipyRepoClient {
 			MaxIdleConns:       10,
 			IdleConnTimeout:    60 * time.Second,
 			DisableCompression: false,
-		})
-}
-
-func NewRepoClientWithTransport(repoRootUrl string, transport *http.Transport) *PipyRepoClient {
-	return newRepoClientWithRepoRootUrlAndTransport(
-		repoRootUrl,
-		transport,
+		},
+		logLevel,
 	)
 }
 
-func newRepoClientWithRepoRootUrlAndTransport(repoRootUrl string, transport *http.Transport) *PipyRepoClient {
+func NewRepoClientWithTransport(repoRootUrl string, transport *http.Transport, logLevel string) *PipyRepoClient {
+	return newRepoClientWithRepoRootUrlAndTransport(
+		repoRootUrl,
+		transport,
+		logLevel,
+	)
+}
+
+func newRepoClientWithRepoRootUrlAndTransport(repoRootUrl string, transport *http.Transport, logLevel string) *PipyRepoClient {
 	repo := &PipyRepoClient{
 		baseUrl:          repoRootUrl,
 		defaultTransport: transport,
 	}
 
-	repo.httpClient = resty.New().
+	httpClient := resty.New().
 		SetTransport(repo.defaultTransport).
 		SetScheme("http").
 		SetAllowGetMethodPayload(true).
 		SetBaseURL(repo.baseUrl).
-		SetTimeout(5 * time.Second).
-		SetDebug(true).
-		EnableTrace()
+		SetTimeout(5 * time.Second)
+
+	switch logLevel {
+	case "debug", "trace":
+		httpClient = httpClient.SetDebug(true).EnableTrace()
+	}
+
+	repo.httpClient = httpClient
 
 	return repo
 }

@@ -646,3 +646,9 @@ func (c *Client) GetIngressHTTPListenPort() int32 {
 
 	return 80
 }
+
+// GetFSMIngressLogLevel returns the log level of ingress
+func (c *Client) GetFSMIngressLogLevel() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ingress.LogLevel
+}

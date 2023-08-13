@@ -161,7 +161,7 @@ func (r *reconciler) resolveValues(object metav1.Object, mc configurator.Configu
 		fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
 		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.GetImagePullPolicy()),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
-		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", mc.GetFSMGatewayLogLevel()),
+		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", mc.GetFSMIngressLogLevel()),
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
 	}
 

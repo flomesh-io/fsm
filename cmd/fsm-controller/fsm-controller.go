@@ -414,7 +414,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()))
+	repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
 	cctx := &fctx.ControllerContext{
 		Client:             mgr.GetClient(),
 		Manager:            mgr,

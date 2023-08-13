@@ -188,6 +188,9 @@ type Configurator interface {
 	// GetIngressHTTPListenPort returns the listen port of Ingress HTTP
 	GetIngressHTTPListenPort() int32
 
+	// GetFSMIngressLogLevel returns log level of FSM Gateway
+	GetFSMIngressLogLevel() string
+
 	// IsServiceLBEnabled returns whether ServiceLB is enabled
 	IsServiceLBEnabled() bool
 

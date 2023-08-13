@@ -100,7 +100,7 @@ func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerC
 		endpointsMap:             make(EndpointsMap),
 		ingressMap:               make(IngressMap),
 		multiClusterEndpointsMap: make(MultiClusterEndpointsMap),
-		repoClient:               repo.NewRepoClient(repoBaseURL),
+		repoClient:               repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
 		broadcaster:              eventBroadcaster,
 	}
 

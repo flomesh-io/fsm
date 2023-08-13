@@ -65,7 +65,7 @@ spec:
           - name: health
             containerPort: {{ include "fsm.namespaced-ingress.heath.port" . }}
         args:
-          - --verbosity={{ .Values.nsig.spec.logLevel }}
+          - --verbosity={{ default .Values.fsm.fsmIngress.logLevel .Values.nsig.spec.logLevel }}
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
           - --fsm-version={{ .Chart.AppVersion }}
           - --mesh-name={{.Values.fsm.meshName}}

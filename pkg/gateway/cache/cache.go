@@ -61,7 +61,7 @@ type GatewayCache struct {
 func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
 	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 	return &GatewayCache{
-		repoClient: repo.NewRepoClient(repoBaseURL),
+		repoClient: repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
 		informers:  informerCollection,
 		kubeClient: kubeClient,
 
