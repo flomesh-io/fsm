@@ -51,6 +51,7 @@ jobs:
           cache: true
       - name: go build deps
         run: make embed-files-test
+        shell: bash
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
@@ -70,10 +71,13 @@ jobs:
           cache: true
       - name: go mod tidy
         run: make go-mod-tidy
+        shell: bash
       - name: Codegen checks
         run: make check-codegen
+        shell: bash
       - name: Scripts checks
         run: make check-scripts
+        shell: bash
 
   mocks:
     name: Mocks
@@ -88,8 +92,10 @@ jobs:
           cache: true
       - name: go mod tidy
         run: make go-mod-tidy
+        shell: bash
       - name: gomock checks
         run: make check-mocks
+        shell: bash
 
   charts:
     name: Chart checks
@@ -99,6 +105,7 @@ jobs:
         uses: actions/checkout@v3
       - name: chart checks
         run: make chart-checks
+        shell: bash
 
   build:
     name: Go build
@@ -113,8 +120,10 @@ jobs:
           cache: true
       - name: Package Helm Charts
         run: make charts-tgz
+        shell: bash
       - name: Go Build
         run: make build-ci
+        shell: bash
 
   unittest:
     name: Go test
@@ -130,8 +139,10 @@ jobs:
           cache: true
       - name: go mod tidy
         run: make go-mod-tidy
+        shell: bash
       - name: Test
         run: make go-test-coverage
+        shell: bash
       - name: Upload Coverage
         if: ${{ success() }}
         uses: codecov/codecov-action@v3
@@ -151,10 +162,13 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm
+        shell: bash
       - name: Setup Trivy
         run: make trivy-ci-setup
+        shell: bash
       - name: Scan docker images for vulnerabilities
         run: make trivy-scan-images
+        shell: bash
 
   e2etest_1-4:
     name: Go test e2e
@@ -180,6 +194,7 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        shell: bash
       - name: Run tests
         id: test
         env:
@@ -234,6 +249,7 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        shell: bash
       - name: Run tests
         id: test
         env:
@@ -288,6 +304,7 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        shell: bash
       - name: Run tests
         id: test
         env:
@@ -349,6 +366,7 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        shell: bash
       - name: Run tests
         id: test
         env:
@@ -403,6 +421,7 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        shell: bash
       - name: Run tests
         id: test
         env:
@@ -461,6 +480,7 @@ jobs:
           make kind-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
+        shell: bash
 
   images:
     name: Docker Images
@@ -479,3 +499,4 @@ jobs:
         env:
           CTR_TAG: latest-main
         run: make docker-build-cross
+        shell: bash
