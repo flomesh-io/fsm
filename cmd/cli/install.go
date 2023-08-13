@@ -125,7 +125,6 @@ func (i *installCmd) run(config *helm.Configuration) error {
 		return err
 	}
 
-	values := map[string]interface{}{}
 	// values represents the overrides for the FSM chart's values.yaml file
 	setValues, err := i.resolveValues()
 	if err != nil {
@@ -133,16 +132,14 @@ func (i *installCmd) run(config *helm.Configuration) error {
 	}
 	debug("setValues: %s", setValues)
 
-	fileValues, err := i.resoleValueFiles()
+	fileValues, err := i.resoleValuesFromFiles()
 	if err != nil {
 		return err
 	}
 	debug("fileValues: %s", fileValues)
 
 	// --set takes precedence over --values/-f
-	values = mergeMaps(values, fileValues)
-	values = mergeMaps(values, setValues)
-
+	values := mergeMaps(fileValues, setValues)
 	debug("values: %s", values)
 
 	installClient := helm.NewInstall(config)
@@ -229,7 +226,7 @@ func parseVal(vals []string, parsedVals map[string]interface{}) error {
 	return nil
 }
 
-func (i *installCmd) resoleValueFiles() (map[string]interface{}, error) {
+func (i *installCmd) resoleValuesFromFiles() (map[string]interface{}, error) {
 	base := map[string]interface{}{}
 
 	// User specified a values files via -f/--values
