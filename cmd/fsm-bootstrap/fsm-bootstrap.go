@@ -397,7 +397,7 @@ func buildDefaultMeshConfig(presetMeshConfigMap *corev1.ConfigMap) (*configv1alp
 	config := &configv1alpha3.MeshConfig{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MeshConfig",
-			APIVersion: "config.flomesh.io/configv1alpha3",
+			APIVersion: "config.flomesh.io/v1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: meshConfigName,
@@ -471,7 +471,7 @@ func buildMeshRootCertificate(presetMeshRootCertificateConfigMap *corev1.ConfigM
 	mrc := &configv1alpha3.MeshRootCertificate{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MeshRootCertificate",
-			APIVersion: "config.flomesh.io/configv1alpha3",
+			APIVersion: "config.flomesh.io/v1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: meshRootCertificateName,
