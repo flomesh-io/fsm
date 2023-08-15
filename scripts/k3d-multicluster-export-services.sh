@@ -4,11 +4,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.21.11-k3s1}"
 K3D_HOST_IP="${K3D_HOST_IP:-10.0.1.21}"
 
 # export httpbin service in cluster-1 and cluster-3 to ClusterSet
-export NAMESPACE_MESH=httpbin
+export HTTPBIN_NAMESPACE=httpbin
 for K3D_CLUSTER_NAME in cluster-1 cluster-3
 do
   kubecm switch k3d-${K3D_CLUSTER_NAME}
@@ -17,7 +16,7 @@ do
 apiVersion: flomesh.io/v1alpha1
 kind: ServiceExport
 metadata:
-  namespace: ${NAMESPACE_MESH}
+  namespace: ${HTTPBIN_NAMESPACE}
   name: httpbin
 spec:
   serviceAccountName: "*"
@@ -29,7 +28,7 @@ spec:
 apiVersion: flomesh.io/v1alpha1
 kind: ServiceExport
 metadata:
-  namespace: ${NAMESPACE_MESH}
+  namespace: ${HTTPBIN_NAMESPACE}
   name: httpbin-${K3D_CLUSTER_NAME}
 spec:
   serviceAccountName: "*"
