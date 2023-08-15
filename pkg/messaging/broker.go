@@ -532,6 +532,7 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 
 	// Publish MCS event to other interested clients
 	if event := getMCSUpdateEvent(msg); event != nil {
+		log.Debug().Msgf("[MCS] Publishing event type: %s", msg.Kind)
 		b.mcsEventPubSub.Pub(event.msg, event.topic)
 	}
 
@@ -781,11 +782,11 @@ func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 		// MultiCluster events
 		//
 		// ServiceImport event
-		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
+		//announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
 		// ServiceExport event
-		announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
+		//announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
 		// GlobalTrafficPolicy event
-		announcements.GlobalTrafficPolicyAdded, announcements.GlobalTrafficPolicyUpdated, announcements.GlobalTrafficPolicyDeleted,
+		//announcements.GlobalTrafficPolicyAdded, announcements.GlobalTrafficPolicyUpdated, announcements.GlobalTrafficPolicyDeleted,
 		// MultiCluster ServiceExport event
 		announcements.MultiClusterServiceExportCreated, announcements.MultiClusterServiceExportDeleted,
 		announcements.MultiClusterServiceExportAccepted, announcements.MultiClusterServiceExportRejected:
