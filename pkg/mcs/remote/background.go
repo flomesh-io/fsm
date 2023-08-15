@@ -15,6 +15,8 @@ import (
 
 // NewBackground creates a new background process for a cluster
 func NewBackground(cluster *mcsv1alpha1.Cluster, kubeconfig *rest.Config, mc configurator.Configurator, broker *messaging.Broker) (*Background, error) {
+	log.Debug().Msgf("Creating background process for cluster %q", cluster.Key())
+
 	connCfg, err := connectorConfig(cluster, mc)
 	if err != nil {
 		return nil, err

@@ -47,9 +47,11 @@ import (
 
 // Run starts the connector
 func (c *Connector) Run(stopCh <-chan struct{}) error {
-	//ctx := c.context.(*conn.ConnectorContext)
-	//connectorCfg := ctx.ConnectorConfig
+	ctx := c.context.(*conn.ConnectorContext)
+	connectorCfg := ctx.ConnectorConfig
 	errCh := make(chan error)
+
+	log.Debug().Msgf("[%s] Starting connector ......", connectorCfg.Key())
 
 	err := c.updateConfigsOfManagedCluster()
 	if err != nil {
@@ -80,6 +82,7 @@ func (c *Connector) Run(stopCh <-chan struct{}) error {
 	// register event handler
 	//mc := c.clusterCfg.MeshConfig.GetConfig()
 	if c.cfg.IsManaged() {
+		log.Debug().Msgf("[%s] is managed.", connectorCfg.Key())
 		go c.processEvent(stopCh)
 	}
 

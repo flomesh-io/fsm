@@ -82,6 +82,8 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 	fsmNamespace := connectorCtx.FsmNamespace
 	fsmMeshConfigName := connectorCtx.FsmMeshConfigName
 
+	log.Debug().Msgf("Creating remote connector for cluster %s, fsmNamespace=%s, fsmMeshConfigName=%s", clusterKey, fsmNamespace, fsmMeshConfigName)
+
 	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		return nil, err
@@ -108,7 +110,7 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 	workerBroker := messaging.NewBroker(stop)
 
 	informerCollection, err := informers.NewInformerCollection(clusterKey, stop,
-		informers.WithKubeClientWithoutNamespace(kubeClient),
+		//informers.WithKubeClientWithoutNamespace(kubeClient),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 		informers.WithMultiClusterClient(multiclusterClient),
 	)
@@ -135,6 +137,7 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 		}
 	}
 
+	log.Debug().Msgf("Checking if FSM Control Plane is installed in cluster %s ...", clusterKey)
 	// checks if fsm is installed in the cluster, this's a MUST otherwise it doesn't work
 	_, err = kubeClient.AppsV1().
 		Deployments(mc.GetFSMNamespace()).
@@ -154,7 +157,7 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 
 func getEventTypesByInformerKey(informerKey informers.InformerKey) *k8s.EventTypes {
 	switch informerKey {
-	case informers.InformerKeyService:
+	case informers.InformerKeyServiceExport:
 		return &k8s.EventTypes{
 			Add:    announcements.ServiceExportAdded,
 			Update: announcements.ServiceExportUpdated,
@@ -177,6 +180,11 @@ func (c *Connector) onAddFunc(eventTypes *k8s.EventTypes) func(obj interface{}) 
 	return func(obj interface{}) {
 		switch obj := obj.(type) {
 		case *mcsv1alpha1.ServiceExport:
+			connectorCtx := c.context.(*conn.ConnectorContext)
+			connectorConfig := connectorCtx.ConnectorConfig
+
+			log.Debug().Msgf("[%s] ServiceExport %s added", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
+
 			c.onUpdateFunc(eventTypes)(nil, obj)
 		}
 	}
@@ -188,6 +196,8 @@ func (c *Connector) onUpdateFunc(_ *k8s.EventTypes) func(oldObj, newObj interfac
 		case *mcsv1alpha1.ServiceExport:
 			connectorCtx := c.context.(*conn.ConnectorContext)
 			connectorConfig := connectorCtx.ConnectorConfig
+
+			log.Debug().Msgf("[%s] ServiceExport %s updated", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
 
 			if !c.cfg.IsManaged() {
 				log.Warn().Msgf("[%s] Cluster is not managed, ignore processing ServiceExport %s", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
@@ -219,6 +229,8 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 		case *mcsv1alpha1.ServiceExport:
 			connectorCtx := c.context.(*conn.ConnectorContext)
 			connectorConfig := connectorCtx.ConnectorConfig
+
+			log.Debug().Msgf("[%s] ServiceExport %s deleted", connectorConfig.Key(), client.ObjectKeyFromObject(obj))
 
 			if !c.cfg.IsManaged() {
 				log.Warn().Msgf("[%s] Cluster is not managed, ignore processing ServiceExport %s", connectorConfig.Key(), client.ObjectKeyFromObject(obj))

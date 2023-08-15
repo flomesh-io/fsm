@@ -98,7 +98,7 @@ func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
 func (b *Broker) GetMCSEventPubSub() *pubsub.PubSub {
-	return b.gatewayUpdatePubSub
+	return b.mcsEventPubSub
 }
 
 // GetKubeEventPubSub returns the PubSub instance corresponding to k8s events
@@ -784,13 +784,15 @@ func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 		announcements.ServiceImportAdded, announcements.ServiceImportDeleted, announcements.ServiceImportUpdated,
 		// ServiceExport event
 		announcements.ServiceExportAdded, announcements.ServiceExportDeleted, announcements.ServiceExportUpdated,
+		// GlobalTrafficPolicy event
+		announcements.GlobalTrafficPolicyAdded, announcements.GlobalTrafficPolicyUpdated, announcements.GlobalTrafficPolicyDeleted,
 		// MultiCluster ServiceExport event
 		announcements.MultiClusterServiceExportCreated, announcements.MultiClusterServiceExportDeleted,
 		announcements.MultiClusterServiceExportAccepted, announcements.MultiClusterServiceExportRejected:
 
 		return &mcsUpdateEvent{
 			msg:   msg,
-			topic: announcements.MCSUpdate.String(),
+			topic: msg.Kind.String(),
 		}
 	default:
 		return nil
