@@ -36,6 +36,7 @@ cluster_list="control-plane $worker_list"
 # create k3d clusters
 for K3D_CLUSTER_NAME in $cluster_list
 do
+  echo "------------------------------------------------------------"
   # check if cluster already exists
   # shellcheck disable=SC2086
   jq_cluster_exists=".[] | select(.name == \"$K3D_CLUSTER_NAME\")"
@@ -44,6 +45,9 @@ do
     echo "cluster '$K3D_CLUSTER_NAME' already num_of_exists, skipping creation of cluster."
     continue
   fi
+
+  echo "Creating cluster '$K3D_CLUSTER_NAME'..."
+  echo "------------------------------------------------------------"
 
   # create cluster
 k3d cluster create --config - <<EOF
@@ -90,4 +94,5 @@ EOF
 
   ((api_port=api_port+1))
   ((port=port+1))
+  echo "------------------------------------------------------------"
 done

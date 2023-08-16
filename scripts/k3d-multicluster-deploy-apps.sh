@@ -13,11 +13,15 @@ worker_list="cluster-1 cluster-2 cluster-3"
 export HTTPBIN_NAMESPACE=httpbin
 for K3D_CLUSTER_NAME in $worker_list
 do
+  echo "------------------------------------------------------------"
   kubecm switch "k3d-${K3D_CLUSTER_NAME}"
+  echo "------------------------------------------------------------"
   echo "Deploying httpbin to cluster $K3D_CLUSTER_NAME ..."
+  echo "------------------------------------------------------------"
+
   kubectl create namespace ${HTTPBIN_NAMESPACE}
   "$FSM_BIN" namespace add ${HTTPBIN_NAMESPACE}
-  kubectl apply -n ${HTTPBIN_NAMESPACE} -f - <<EOF
+kubectl apply -n ${HTTPBIN_NAMESPACE} -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -71,15 +75,19 @@ spec:
   selector:
     app: pipy
 EOF
-
+  echo "------------------------------------------------------------"
   sleep 3
   kubectl wait --for=condition=ready pod -n ${HTTPBIN_NAMESPACE} --all --timeout=60s
+  echo "------------------------------------------------------------"
 done
 
 # deploy curl in cluster-2
 export CURL_NAMESPACE=curl
+echo "------------------------------------------------------------"
 kubecm switch k3d-cluster-2
+echo "------------------------------------------------------------"
 echo "Deploying curl to cluster cluster-2 ..."
+echo "------------------------------------------------------------"
 kubectl create namespace ${CURL_NAMESPACE}
 "$FSM_BIN" namespace add ${CURL_NAMESPACE}
 kubectl apply -n ${CURL_NAMESPACE} -f - <<EOF
@@ -123,6 +131,7 @@ spec:
         name: curl
         command: ["sleep", "365d"]
 EOF
-
+echo "------------------------------------------------------------"
 sleep 3
 kubectl wait --for=condition=ready pod -n ${CURL_NAMESPACE} --all --timeout=60s
+echo "------------------------------------------------------------"

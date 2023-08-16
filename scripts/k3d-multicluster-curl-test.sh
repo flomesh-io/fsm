@@ -21,9 +21,11 @@ spec:
 EOF
 
 echo "Testing httpbin service ..."
-for i in {1..5};
+for i in {1..10};
 do
+    echo "------------------------------------------------------------"
     echo "$i: Visiting http://httpbin.httpbin:8080/ ..."
     kubectl exec "${curl_client}" -n curl -c curl -- curl -s http://httpbin.httpbin:8080/
+    echo "------------------------------------------------------------"
     sleep 1
 done

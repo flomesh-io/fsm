@@ -9,8 +9,11 @@ FSM_NAMESPACE="${FSM_NAMESPACE:-fsm}"
 
 worker_list="cluster-1 cluster-2 cluster-3"
 
+echo "------------------------------------------------------------"
 kubecm switch k3d-control-plane
+echo "------------------------------------------------------------"
 echo "Sleep for a while, waiting for fsm to be ready in cluster control-plane ..."
+echo "------------------------------------------------------------"
 sleep 10
 
 port=8081
@@ -18,7 +21,9 @@ port=8081
 # join clusters
 for K3D_CLUSTER_NAME in $worker_list
 do
-echo "Joining cluster $K3D_CLUSTER_NAME to control-plane cluster ..."
+  echo "------------------------------------------------------------"
+  echo "Joining cluster $K3D_CLUSTER_NAME to control-plane cluster ..."
+
 kubectl apply -f - <<EOF
 apiVersion: flomesh.io/v1alpha1
 kind: Cluster
@@ -31,5 +36,7 @@ spec:
   kubeconfig: |+
 $(k3d kubeconfig get "${K3D_CLUSTER_NAME}" | sed 's|^|    |g' | sed "s|0.0.0.0|$K3D_HOST_IP|g")
 EOF
-((port=port+1))
+
+  ((port=port+1))
+  echo "------------------------------------------------------------"
 done

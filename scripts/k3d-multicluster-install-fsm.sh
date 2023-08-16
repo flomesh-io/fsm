@@ -18,13 +18,17 @@ cluster_list="control-plane $worker_list"
 # install fsm
 for K3D_CLUSTER_NAME in $cluster_list
 do
+  echo "------------------------------------------------------------"
   kubecm switch "k3d-${K3D_CLUSTER_NAME}"
 
+  echo "------------------------------------------------------------"
   echo "Waiting for cluster $K3D_CLUSTER_NAME to be ready ..."
   sleep 1
   kubectl wait --timeout=180s --for=condition=ready pod --all -n kube-system
+  echo "------------------------------------------------------------"
   echo "Installing fsm to cluster $K3D_CLUSTER_NAME ..."
   sleep 1
+  echo "------------------------------------------------------------"
 
   DNS_SVC_IP="$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o jsonpath='{.items[0].spec.clusterIP}')"
 
@@ -37,7 +41,9 @@ do
   	--set=osm.localDNSProxy.enable=true \
     --set=osm.localDNSProxy.primaryUpstreamDNSServerIPAddr="${DNS_SVC_IP}"
 
+  echo "------------------------------------------------------------"
   echo "Waiting for fsm to be ready in cluster $K3D_CLUSTER_NAME ..."
   sleep 1
   kubectl wait --timeout=180s --for=condition=ready pod --all -n "$FSM_NAMESPACE"
+  echo "------------------------------------------------------------"
 done
