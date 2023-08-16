@@ -11,7 +11,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/tests"
 
 	. "github.com/flomesh-io/fsm/tests/framework"
@@ -38,7 +38,7 @@ var _ = FSMDescribe("Test HTTP traffic from 1 pod client -> 1 pod server",
 			// Prior iterations of FSM didn't allow mesh services to bind to the podIP
 			// This test ensures that that behavior is configurable via MeshConfig
 			withSourceKubernetesService := true
-			testTraffic(withSourceKubernetesService, []string{"gunicorn", "-b", "$(POD_IP):80", "httpbin:app", "-k", "gevent"}, false, WithLocalProxyMode(v1alpha2.LocalProxyModePodIP))
+			testTraffic(withSourceKubernetesService, []string{"gunicorn", "-b", "$(POD_IP):80", "httpbin:app", "-k", "gevent"}, false, WithLocalProxyMode(v1alpha3.LocalProxyModePodIP))
 		})
 
 		Context("Test traffic flowing from client to a headless service without a Kubernetes Service for the Source: HTTP", func() {

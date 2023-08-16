@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 
@@ -40,7 +40,7 @@ func (c *client) provisionIngressGatewayCert(stop <-chan struct{}) error {
 
 // createAndStoreGatewayCert creates a certificate for the given certificate spec and stores
 // it in the referenced k8s secret if the spec is valid.
-func (c *client) createAndStoreGatewayCert(spec configv1alpha2.IngressGatewayCertSpec) error {
+func (c *client) createAndStoreGatewayCert(spec configv1alpha3.IngressGatewayCertSpec) error {
 	if len(spec.SubjectAltNames) == 0 {
 		return fmt.Errorf("Ingress gateway certificate spec must specify at least 1 SAN")
 	}
@@ -131,7 +131,7 @@ func (c *client) storeCertInSecret(cert *certificate.Certificate, secret corev1.
 
 // handleCertificateChange updates the gateway certificate and secret when the MeshConfig resource changes or
 // when the corresponding gateway certificate is rotated.
-func (c *client) handleCertificateChange(currentCertSpec *configv1alpha2.IngressGatewayCertSpec, stop <-chan struct{}) {
+func (c *client) handleCertificateChange(currentCertSpec *configv1alpha3.IngressGatewayCertSpec, stop <-chan struct{}) {
 	kubePubSub := c.msgBroker.GetKubeEventPubSub()
 	meshConfigUpdateChan := kubePubSub.Sub(announcements.MeshConfigUpdated.String())
 	defer c.msgBroker.Unsub(kubePubSub, meshConfigUpdateChan)
@@ -167,7 +167,7 @@ func (c *client) handleCertificateChange(currentCertSpec *configv1alpha2.Ingress
 	}
 }
 
-func (c *client) doMeshConfigUpdateChan(currentCertSpec *configv1alpha2.IngressGatewayCertSpec, ok bool, msg interface{}) (bool, *configv1alpha2.IngressGatewayCertSpec) {
+func (c *client) doMeshConfigUpdateChan(currentCertSpec *configv1alpha3.IngressGatewayCertSpec, ok bool, msg interface{}) (bool, *configv1alpha3.IngressGatewayCertSpec) {
 	if !ok {
 		log.Warn().Msgf("Notification channel closed for MeshConfig")
 		return false, nil
@@ -179,7 +179,7 @@ func (c *client) doMeshConfigUpdateChan(currentCertSpec *configv1alpha2.IngressG
 		return false, nil
 	}
 
-	updatedMeshConfig, ok := event.NewObj.(*configv1alpha2.MeshConfig)
+	updatedMeshConfig, ok := event.NewObj.(*configv1alpha3.MeshConfig)
 	if !ok {
 		log.Error().Msgf("Received unexpected object %T, expected MeshConfig", updatedMeshConfig)
 		return false, nil
@@ -235,7 +235,7 @@ func (c *client) doAccessCertChan(ok bool, msg interface{}, accessCertCache map[
 	}
 }
 
-func (c *client) doCertRotateChan(currentCertSpec *configv1alpha2.IngressGatewayCertSpec, ok bool, msg interface{}, accessCertCache map[certificate.CommonName]*policyv1alpha1.AccessCert) {
+func (c *client) doCertRotateChan(currentCertSpec *configv1alpha3.IngressGatewayCertSpec, ok bool, msg interface{}, accessCertCache map[certificate.CommonName]*policyv1alpha1.AccessCert) {
 	if !ok {
 		log.Warn().Msg("Notification channel closed for certificate rotation")
 		return
@@ -322,7 +322,7 @@ func (c *client) removeAccessCert(oldAccessCert *policyv1alpha1.AccessCert, newO
 }
 
 // removeGatewayCertAndSecret removes the secret and certificate corresponding to the existing cert spec
-func (c *client) removeGatewayCertAndSecret(storedCertSpec configv1alpha2.IngressGatewayCertSpec) error {
+func (c *client) removeGatewayCertAndSecret(storedCertSpec configv1alpha3.IngressGatewayCertSpec) error {
 	err := c.kubeClient.CoreV1().Secrets(storedCertSpec.Secret.Namespace).Delete(context.Background(), storedCertSpec.Secret.Name, metav1.DeleteOptions{})
 	if err != nil {
 		return err

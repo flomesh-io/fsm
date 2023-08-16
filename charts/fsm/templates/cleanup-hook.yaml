@@ -14,13 +14,16 @@ rules:
     verbs: ["delete"]
   - apiGroups: [ "" ]
     resources: [ "secrets"]
-    verbs: ["delete"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "create", "delete", "update", "patch"]
   - apiGroups: ["admissionregistration.k8s.io"]
     resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: [ "gateway.networking.k8s.io" ]
+    resources: [ "gatewayclasses" ]
+    verbs: [ "get", "list", "create", "update", "patch", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -84,9 +87,12 @@ spec:
              kubectl replace -f /fsm-crds;
              kubectl delete --ignore-not-found meshconfig -n '{{ include "fsm.namespace" . }}' fsm-mesh-config;
              kubectl delete --ignore-not-found secret -n '{{ include "fsm.namespace" . }}' {{ .Values.fsm.caBundleSecretName }};
+             kubectl delete --ignore-not-found secret -n '{{ include "fsm.namespace" . }}' {{ .Values.fsm.remoteLogging.secretName }};
+             kubectl delete secret -l flb.flomesh.io/config=true --ignore-not-found;
              kubectl delete --ignore-not-found meshrootcertificate -n '{{ include "fsm.namespace" . }}' fsm-mesh-root-certificate;
              kubectl delete mutatingwebhookconfiguration -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-injector --ignore-not-found;
              kubectl delete validatingwebhookconfiguration -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-controller --ignore-not-found;
+             kubectl delete gatewayclasses.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-controller --ignore-not-found;
 {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}

@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
@@ -77,8 +77,8 @@ func (r *ResyncTicker) watchConfig(quit <-chan struct{}) {
 				continue
 			}
 
-			oldMeshSpec, oldOk := event.OldObj.(*configv1alpha2.MeshConfig)
-			newMeshSpec, newOk := event.NewObj.(*configv1alpha2.MeshConfig)
+			oldMeshSpec, oldOk := event.OldObj.(*configv1alpha3.MeshConfig)
+			newMeshSpec, newOk := event.NewObj.(*configv1alpha3.MeshConfig)
 			if !oldOk || !newOk {
 				log.Error().Msgf("Received unexpected message old=%T new=%T on channel, expected *MeshConfig", oldMeshSpec, newMeshSpec)
 				continue

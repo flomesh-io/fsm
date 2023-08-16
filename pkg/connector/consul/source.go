@@ -94,6 +94,8 @@ func (s *Source) Run(ctx context.Context) {
 }
 
 // Aggregate micro services
+//
+//lint:ignore U1000 ignore unused
 func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connector.MicroSvcDomainName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
 	serviceEntries, _, err := s.ConsulClient.Health().Service(string(svcName), s.FilterTag, s.PassingOnly, nil)
 	if err != nil {

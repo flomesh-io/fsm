@@ -19,22 +19,10 @@ package v1alpha1
 // PluginLister.
 type PluginListerExpansion interface{}
 
-// PluginNamespaceListerExpansion allows custom methods to be added to
-// PluginNamespaceLister.
-type PluginNamespaceListerExpansion interface{}
-
 // PluginChainListerExpansion allows custom methods to be added to
 // PluginChainLister.
 type PluginChainListerExpansion interface{}
 
-// PluginChainNamespaceListerExpansion allows custom methods to be added to
-// PluginChainNamespaceLister.
-type PluginChainNamespaceListerExpansion interface{}
-
 // PluginConfigListerExpansion allows custom methods to be added to
 // PluginConfigLister.
 type PluginConfigListerExpansion interface{}
-
-// PluginConfigNamespaceListerExpansion allows custom methods to be added to
-// PluginConfigNamespaceLister.
-type PluginConfigNamespaceListerExpansion interface{}

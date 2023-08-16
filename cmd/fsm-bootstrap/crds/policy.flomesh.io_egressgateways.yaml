@@ -1,0 +1,134 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: egressgateways.policy.flomesh.io
+spec:
+  group: policy.flomesh.io
+  names:
+    kind: EgressGateway
+    listKind: EgressGatewayList
+    plural: egressgateways
+    shortNames:
+    - egressgateway
+    singular: egressgateway
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: EgressGateway is the type used to represent an Egress Gateway
+          policy.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the EgressGateway policy specification
+            properties:
+              global:
+                description: GlobalEgressGateways defines the list of Global egress
+                  gateway.
+                items:
+                  description: GatewayBindingSubject is a Kubernetes objects which
+                    should be allowed forward to
+                  properties:
+                    namespace:
+                      type: string
+                    service:
+                      type: string
+                    weight:
+                      type: integer
+                  required:
+                  - namespace
+                  - service
+                  type: object
+                type: array
+              matches:
+                description: Matches defines the list of object references the EgressGateway
+                  policy should match on.
+                items:
+                  description: TypedLocalObjectReference contains enough information
+                    to let you locate the typed referenced object inside the same
+                    namespace.
+                  properties:
+                    apiGroup:
+                      description: APIGroup is the group for the resource being referenced.
+                        If APIGroup is not specified, the specified Kind must be in
+                        the core API group. For any other third-party types, APIGroup
+                        is required.
+                      type: string
+                    kind:
+                      description: Kind is the type of resource being referenced
+                      type: string
+                    name:
+                      description: Name is the name of resource being referenced
+                      type: string
+                  required:
+                  - kind
+                  - name
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
+              rules:
+                description: EgressPolicyGatewayRules defines the rules of gateway
+                  based egress policies.
+                items:
+                  description: EgressPolicyGatewayRule is the type used to represent
+                    the rule of Egress Gateway specification based egress policies.
+                  properties:
+                    egressGateways:
+                      items:
+                        description: GatewayBindingSubject is a Kubernetes objects
+                          which should be allowed forward to
+                        properties:
+                          namespace:
+                            type: string
+                          service:
+                            type: string
+                          weight:
+                            type: integer
+                        required:
+                        - namespace
+                        - service
+                        type: object
+                      type: array
+                    egressPolicies:
+                      items:
+                        description: EgressBindingSubject is a Kubernetes objects
+                          which should be allowed egress
+                        properties:
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
+                      type: array
+                  required:
+                  - egressGateways
+                  - egressPolicies
+                  type: object
+                type: array
+            required:
+            - global
+            - rules
+            type: object
+        type: object
+    served: true
+    storage: true

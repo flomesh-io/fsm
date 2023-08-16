@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+
 	"github.com/google/uuid"
 	tassert "github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +67,11 @@ func TestIsMonitoredNamespace(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			a := tassert.New(t)
 
-			ic, err := informers.NewInformerCollection(testMeshName, nil, informers.WithKubeClient(testclient.NewSimpleClientset()))
+			kube := testclient.NewSimpleClientset()
+			kube.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+				GitVersion: "v1.21.0",
+			}
+			ic, err := informers.NewInformerCollection(testMeshName, nil, informers.WithKubeClient(kube))
 			a.Nil(err)
 			c := newClient(ic, nil, nil, nil)
 			_ = ic.Add(informers.InformerKeyNamespace, tc.namespace, t)

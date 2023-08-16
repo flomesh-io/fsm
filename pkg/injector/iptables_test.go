@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 )
 
 func TestGenerateIptablesCommands(t *testing.T) {
 	testCases := []struct {
 		name                       string
-		proxyMode                  configv1alpha2.LocalProxyMode
+		proxyMode                  configv1alpha3.LocalProxyMode
 		outboundIPRangeExclusions  []string
 		outboundIPRangeInclusions  []string
 		outboundPortExclusions     []int
@@ -94,7 +94,7 @@ EOF
 		},
 		{
 			name:      "proxy mode pod ip",
-			proxyMode: configv1alpha2.LocalProxyModePodIP,
+			proxyMode: configv1alpha3.LocalProxyModePodIP,
 			expected: `iptables-restore --noflush <<EOF
 # FSM sidecar interception rules
 *nat

@@ -25,6 +25,7 @@ import (
 
 type FlomeshV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	ClustersGetter
 	GlobalTrafficPoliciesGetter
 	ServiceExportsGetter
 	ServiceImportsGetter
@@ -33,6 +34,10 @@ type FlomeshV1alpha1Interface interface {
 // FlomeshV1alpha1Client is used to interact with features provided by the flomesh.io group.
 type FlomeshV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *FlomeshV1alpha1Client) Clusters() ClusterInterface {
+	return newClusters(c)
 }
 
 func (c *FlomeshV1alpha1Client) GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyInterface {

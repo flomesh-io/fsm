@@ -5,7 +5,7 @@ import (
 
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
@@ -19,15 +19,15 @@ type MRCComposer struct {
 }
 
 // List returns the MRCs stored in the informerCollection's store
-func (m *MRCComposer) List() ([]*v1alpha2.MeshRootCertificate, error) {
+func (m *MRCComposer) List() ([]*v1alpha3.MeshRootCertificate, error) {
 	// informers return slice of pointers so we'll convert them to value types before returning
 	mrcPtrs := m.informerCollection.List(informers.InformerKeyMeshRootCertificate)
-	var mrcs []*v1alpha2.MeshRootCertificate
+	var mrcs []*v1alpha3.MeshRootCertificate
 	for _, mrcPtr := range mrcPtrs {
 		if mrcPtr == nil {
 			continue
 		}
-		mrc, ok := mrcPtr.(*v1alpha2.MeshRootCertificate)
+		mrc, ok := mrcPtr.(*v1alpha3.MeshRootCertificate)
 		if !ok {
 			continue
 		}
@@ -45,7 +45,7 @@ func (m *MRCComposer) Watch(ctx context.Context) (<-chan certificate.MRCEvent, e
 	eventChan := make(chan certificate.MRCEvent)
 	m.informerCollection.AddEventHandler(informers.InformerKeyMeshRootCertificate, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			mrc := obj.(*v1alpha2.MeshRootCertificate)
+			mrc := obj.(*v1alpha3.MeshRootCertificate)
 			log.Debug().Msgf("received MRC add event for MRC %s/%s", mrc.GetNamespace(), mrc.GetName())
 			eventChan <- certificate.MRCEvent{
 				Type: certificate.MRCEventAdded,
@@ -55,7 +55,7 @@ func (m *MRCComposer) Watch(ctx context.Context) (<-chan certificate.MRCEvent, e
 		// We don't really care about the previous version
 		// since the "state machine" of the MRC is well defined
 		UpdateFunc: func(_, newObj interface{}) {
-			mrc := newObj.(*v1alpha2.MeshRootCertificate)
+			mrc := newObj.(*v1alpha3.MeshRootCertificate)
 			log.Debug().Msgf("received MRC update event for MRC %s/%s", mrc.GetNamespace(), mrc.GetName())
 			eventChan <- certificate.MRCEvent{
 				Type: certificate.MRCEventUpdated,

@@ -1,5 +1,6 @@
 // +k8s:deepcopy-gen=package,register
 // +groupName=networking.k8s.io
+// +kubebuilder:skip
 
 // Package v1 contains API Schema definitions for the networking.k8s.io v1 API group
 package v1

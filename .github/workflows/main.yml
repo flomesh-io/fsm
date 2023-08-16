@@ -54,7 +54,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.51
+          version: v1.53
           skip-pkg-cache: true
 
   codegen:
@@ -72,6 +72,8 @@ jobs:
         run: make go-mod-tidy
       - name: Codegen checks
         run: make check-codegen
+      - name: Scripts checks
+        run: make check-scripts
 
   mocks:
     name: Mocks
@@ -109,6 +111,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Package Helm Charts
+        run: make charts-tgz
       - name: Go Build
         run: make build-ci
 
@@ -180,7 +184,10 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -231,7 +238,10 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -282,7 +292,10 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -340,7 +353,10 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -391,7 +407,10 @@ jobs:
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
-        run: go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}

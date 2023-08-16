@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	auth "github.com/flomesh-io/fsm/pkg/auth"
 	trafficpolicy "github.com/flomesh-io/fsm/pkg/trafficpolicy"
 	gomock "github.com/golang/mock/gomock"
@@ -52,6 +52,20 @@ func (mr *MockConfiguratorMockRecorder) GetCertKeyBitSize() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCertKeyBitSize", reflect.TypeOf((*MockConfigurator)(nil).GetCertKeyBitSize))
 }
 
+// GetClusterUID mocks base method.
+func (m *MockConfigurator) GetClusterUID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusterUID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetClusterUID indicates an expected call of GetClusterUID.
+func (mr *MockConfiguratorMockRecorder) GetClusterUID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterUID", reflect.TypeOf((*MockConfigurator)(nil).GetClusterUID))
+}
+
 // GetConfigResyncInterval mocks base method.
 func (m *MockConfigurator) GetConfigResyncInterval() time.Duration {
 	m.ctrl.T.Helper()
@@ -64,6 +78,48 @@ func (m *MockConfigurator) GetConfigResyncInterval() time.Duration {
 func (mr *MockConfiguratorMockRecorder) GetConfigResyncInterval() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigResyncInterval", reflect.TypeOf((*MockConfigurator)(nil).GetConfigResyncInterval))
+}
+
+// GetFLBSecretName mocks base method.
+func (m *MockConfigurator) GetFLBSecretName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFLBSecretName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFLBSecretName indicates an expected call of GetFLBSecretName.
+func (mr *MockConfiguratorMockRecorder) GetFLBSecretName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFLBSecretName", reflect.TypeOf((*MockConfigurator)(nil).GetFLBSecretName))
+}
+
+// GetFSMGatewayLogLevel mocks base method.
+func (m *MockConfigurator) GetFSMGatewayLogLevel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSMGatewayLogLevel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFSMGatewayLogLevel indicates an expected call of GetFSMGatewayLogLevel.
+func (mr *MockConfiguratorMockRecorder) GetFSMGatewayLogLevel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSMGatewayLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFSMGatewayLogLevel))
+}
+
+// GetFSMIngressLogLevel mocks base method.
+func (m *MockConfigurator) GetFSMIngressLogLevel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFSMIngressLogLevel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFSMIngressLogLevel indicates an expected call of GetFSMIngressLogLevel.
+func (mr *MockConfiguratorMockRecorder) GetFSMIngressLogLevel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFSMIngressLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFSMIngressLogLevel))
 }
 
 // GetFSMLogLevel mocks base method.
@@ -95,10 +151,10 @@ func (mr *MockConfiguratorMockRecorder) GetFSMNamespace() *gomock.Call {
 }
 
 // GetFeatureFlags mocks base method.
-func (m *MockConfigurator) GetFeatureFlags() v1alpha2.FeatureFlags {
+func (m *MockConfigurator) GetFeatureFlags() v1alpha3.FeatureFlags {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeatureFlags")
-	ret0, _ := ret[0].(v1alpha2.FeatureFlags)
+	ret0, _ := ret[0].(v1alpha3.FeatureFlags)
 	return ret0
 }
 
@@ -120,6 +176,48 @@ func (m *MockConfigurator) GetGlobalPluginChains() map[string][]trafficpolicy.Pl
 func (mr *MockConfiguratorMockRecorder) GetGlobalPluginChains() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalPluginChains", reflect.TypeOf((*MockConfigurator)(nil).GetGlobalPluginChains))
+}
+
+// GetImagePullPolicy mocks base method.
+func (m *MockConfigurator) GetImagePullPolicy() v1.PullPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagePullPolicy")
+	ret0, _ := ret[0].(v1.PullPolicy)
+	return ret0
+}
+
+// GetImagePullPolicy indicates an expected call of GetImagePullPolicy.
+func (mr *MockConfiguratorMockRecorder) GetImagePullPolicy() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagePullPolicy", reflect.TypeOf((*MockConfigurator)(nil).GetImagePullPolicy))
+}
+
+// GetImageRegistry mocks base method.
+func (m *MockConfigurator) GetImageRegistry() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageRegistry")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetImageRegistry indicates an expected call of GetImageRegistry.
+func (mr *MockConfiguratorMockRecorder) GetImageRegistry() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageRegistry", reflect.TypeOf((*MockConfigurator)(nil).GetImageRegistry))
+}
+
+// GetImageTag mocks base method.
+func (m *MockConfigurator) GetImageTag() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageTag")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetImageTag indicates an expected call of GetImageTag.
+func (mr *MockConfiguratorMockRecorder) GetImageTag() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageTag", reflect.TypeOf((*MockConfigurator)(nil).GetImageTag))
 }
 
 // GetInboundExternalAuthConfig mocks base method.
@@ -148,6 +246,48 @@ func (m *MockConfigurator) GetIngressGatewayCertValidityPeriod() time.Duration {
 func (mr *MockConfiguratorMockRecorder) GetIngressGatewayCertValidityPeriod() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressGatewayCertValidityPeriod", reflect.TypeOf((*MockConfigurator)(nil).GetIngressGatewayCertValidityPeriod))
+}
+
+// GetIngressHTTPListenPort mocks base method.
+func (m *MockConfigurator) GetIngressHTTPListenPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressHTTPListenPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressHTTPListenPort indicates an expected call of GetIngressHTTPListenPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressHTTPListenPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressHTTPListenPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressHTTPListenPort))
+}
+
+// GetIngressSSLPassthroughUpstreamPort mocks base method.
+func (m *MockConfigurator) GetIngressSSLPassthroughUpstreamPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressSSLPassthroughUpstreamPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressSSLPassthroughUpstreamPort indicates an expected call of GetIngressSSLPassthroughUpstreamPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressSSLPassthroughUpstreamPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressSSLPassthroughUpstreamPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressSSLPassthroughUpstreamPort))
+}
+
+// GetIngressTLSListenPort mocks base method.
+func (m *MockConfigurator) GetIngressTLSListenPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIngressTLSListenPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetIngressTLSListenPort indicates an expected call of GetIngressTLSListenPort.
+func (mr *MockConfiguratorMockRecorder) GetIngressTLSListenPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressTLSListenPort", reflect.TypeOf((*MockConfigurator)(nil).GetIngressTLSListenPort))
 }
 
 // GetInitContainerImage mocks base method.
@@ -207,10 +347,10 @@ func (mr *MockConfiguratorMockRecorder) GetMaxDataPlaneConnections() *gomock.Cal
 }
 
 // GetMeshConfig mocks base method.
-func (m *MockConfigurator) GetMeshConfig() v1alpha2.MeshConfig {
+func (m *MockConfigurator) GetMeshConfig() v1alpha3.MeshConfig {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMeshConfig")
-	ret0, _ := ret[0].(v1alpha2.MeshConfig)
+	ret0, _ := ret[0].(v1alpha3.MeshConfig)
 	return ret0
 }
 
@@ -233,6 +373,20 @@ func (m *MockConfigurator) GetMeshConfigJSON() (string, error) {
 func (mr *MockConfiguratorMockRecorder) GetMeshConfigJSON() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMeshConfigJSON", reflect.TypeOf((*MockConfigurator)(nil).GetMeshConfigJSON))
+}
+
+// GetMultiClusterControlPlaneUID mocks base method.
+func (m *MockConfigurator) GetMultiClusterControlPlaneUID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMultiClusterControlPlaneUID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetMultiClusterControlPlaneUID indicates an expected call of GetMultiClusterControlPlaneUID.
+func (mr *MockConfiguratorMockRecorder) GetMultiClusterControlPlaneUID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMultiClusterControlPlaneUID", reflect.TypeOf((*MockConfigurator)(nil).GetMultiClusterControlPlaneUID))
 }
 
 // GetProxyResources mocks base method.
@@ -331,6 +485,20 @@ func (m *MockConfigurator) GetRemoteLoggingSampledFraction() float32 {
 func (mr *MockConfiguratorMockRecorder) GetRemoteLoggingSampledFraction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteLoggingSampledFraction", reflect.TypeOf((*MockConfigurator)(nil).GetRemoteLoggingSampledFraction))
+}
+
+// GetRemoteLoggingSecretName mocks base method.
+func (m *MockConfigurator) GetRemoteLoggingSecretName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRemoteLoggingSecretName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetRemoteLoggingSecretName indicates an expected call of GetRemoteLoggingSecretName.
+func (mr *MockConfiguratorMockRecorder) GetRemoteLoggingSecretName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteLoggingSecretName", reflect.TypeOf((*MockConfigurator)(nil).GetRemoteLoggingSecretName))
 }
 
 // GetRepoServerCodebase mocks base method.
@@ -543,6 +711,118 @@ func (mr *MockConfiguratorMockRecorder) IsEgressEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEgressEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsEgressEnabled))
 }
 
+// IsFLBEnabled mocks base method.
+func (m *MockConfigurator) IsFLBEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFLBEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFLBEnabled indicates an expected call of IsFLBEnabled.
+func (mr *MockConfiguratorMockRecorder) IsFLBEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFLBEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFLBEnabled))
+}
+
+// IsFLBStrictModeEnabled mocks base method.
+func (m *MockConfigurator) IsFLBStrictModeEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFLBStrictModeEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFLBStrictModeEnabled indicates an expected call of IsFLBStrictModeEnabled.
+func (mr *MockConfiguratorMockRecorder) IsFLBStrictModeEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFLBStrictModeEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFLBStrictModeEnabled))
+}
+
+// IsGatewayAPIEnabled mocks base method.
+func (m *MockConfigurator) IsGatewayAPIEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsGatewayAPIEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsGatewayAPIEnabled indicates an expected call of IsGatewayAPIEnabled.
+func (mr *MockConfiguratorMockRecorder) IsGatewayAPIEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGatewayAPIEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsGatewayAPIEnabled))
+}
+
+// IsIngressEnabled mocks base method.
+func (m *MockConfigurator) IsIngressEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressEnabled indicates an expected call of IsIngressEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressEnabled))
+}
+
+// IsIngressHTTPEnabled mocks base method.
+func (m *MockConfigurator) IsIngressHTTPEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressHTTPEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressHTTPEnabled indicates an expected call of IsIngressHTTPEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressHTTPEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressHTTPEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressHTTPEnabled))
+}
+
+// IsIngressMTLSEnabled mocks base method.
+func (m *MockConfigurator) IsIngressMTLSEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressMTLSEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressMTLSEnabled indicates an expected call of IsIngressMTLSEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressMTLSEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressMTLSEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressMTLSEnabled))
+}
+
+// IsIngressSSLPassthroughEnabled mocks base method.
+func (m *MockConfigurator) IsIngressSSLPassthroughEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressSSLPassthroughEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressSSLPassthroughEnabled indicates an expected call of IsIngressSSLPassthroughEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressSSLPassthroughEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressSSLPassthroughEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressSSLPassthroughEnabled))
+}
+
+// IsIngressTLSEnabled mocks base method.
+func (m *MockConfigurator) IsIngressTLSEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsIngressTLSEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsIngressTLSEnabled indicates an expected call of IsIngressTLSEnabled.
+func (mr *MockConfiguratorMockRecorder) IsIngressTLSEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsIngressTLSEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsIngressTLSEnabled))
+}
+
 // IsLocalDNSProxyEnabled mocks base method.
 func (m *MockConfigurator) IsLocalDNSProxyEnabled() bool {
 	m.ctrl.T.Helper()
@@ -555,6 +835,48 @@ func (m *MockConfigurator) IsLocalDNSProxyEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsLocalDNSProxyEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsLocalDNSProxyEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsLocalDNSProxyEnabled))
+}
+
+// IsManaged mocks base method.
+func (m *MockConfigurator) IsManaged() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsManaged")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsManaged indicates an expected call of IsManaged.
+func (mr *MockConfiguratorMockRecorder) IsManaged() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsManaged", reflect.TypeOf((*MockConfigurator)(nil).IsManaged))
+}
+
+// IsMultiClusterControlPlane mocks base method.
+func (m *MockConfigurator) IsMultiClusterControlPlane() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMultiClusterControlPlane")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMultiClusterControlPlane indicates an expected call of IsMultiClusterControlPlane.
+func (mr *MockConfiguratorMockRecorder) IsMultiClusterControlPlane() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMultiClusterControlPlane", reflect.TypeOf((*MockConfigurator)(nil).IsMultiClusterControlPlane))
+}
+
+// IsNamespacedIngressEnabled mocks base method.
+func (m *MockConfigurator) IsNamespacedIngressEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsNamespacedIngressEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsNamespacedIngressEnabled indicates an expected call of IsNamespacedIngressEnabled.
+func (mr *MockConfiguratorMockRecorder) IsNamespacedIngressEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsNamespacedIngressEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsNamespacedIngressEnabled))
 }
 
 // IsPermissiveTrafficPolicyMode mocks base method.
@@ -599,6 +921,20 @@ func (mr *MockConfiguratorMockRecorder) IsRemoteLoggingEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRemoteLoggingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsRemoteLoggingEnabled))
 }
 
+// IsServiceLBEnabled mocks base method.
+func (m *MockConfigurator) IsServiceLBEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsServiceLBEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsServiceLBEnabled indicates an expected call of IsServiceLBEnabled.
+func (mr *MockConfiguratorMockRecorder) IsServiceLBEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsServiceLBEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsServiceLBEnabled))
+}
+
 // IsTracingEnabled mocks base method.
 func (m *MockConfigurator) IsTracingEnabled() bool {
 	m.ctrl.T.Helper()
@@ -611,4 +947,18 @@ func (m *MockConfigurator) IsTracingEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsTracingEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTracingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsTracingEnabled))
+}
+
+// ServiceLBImage mocks base method.
+func (m *MockConfigurator) ServiceLBImage() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServiceLBImage")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// ServiceLBImage indicates an expected call of ServiceLBImage.
+func (mr *MockConfiguratorMockRecorder) ServiceLBImage() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServiceLBImage", reflect.TypeOf((*MockConfigurator)(nil).ServiceLBImage))
 }

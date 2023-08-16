@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -453,7 +453,7 @@ func TestGetEgressTrafficPolicy(t *testing.T) {
 				policyController: mockPolicyController,
 			}
 
-			mockCfg.EXPECT().GetFeatureFlags().Return(configv1alpha2.FeatureFlags{EnableEgressPolicy: true}).Times(1)
+			mockCfg.EXPECT().GetFeatureFlags().Return(configv1alpha3.FeatureFlags{EnableEgressPolicy: true}).Times(1)
 
 			actual, err := mc.GetEgressTrafficPolicy(testSourceIdentity)
 			assert.Equal(tc.expectError, err != nil)

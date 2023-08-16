@@ -1,0 +1,42 @@
+{{- if and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled ) (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if and (not .Values.fsm.fsmIngress.namespaced) (or .Values.fsm.fsmIngress.http.enabled .Values.fsm.fsmIngress.tls.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fsm.fsmIngress.service.name }}
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
+    ingress.flomesh.io/namespaced: "false"
+  {{- with .Values.fsm.fsmIngress.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.fsm.fsmIngress.service.type }}
+  {{- $setNodePorts := (or (eq .Values.fsm.fsmIngress.service.type "NodePort") (eq .Values.fsm.fsmIngress.service.type "LoadBalancer")) }}
+  ports:
+  {{- if and .Values.fsm.fsmIngress.http.enabled (and (not (empty .Values.fsm.fsmIngress.http.port)) (not (empty .Values.fsm.fsmIngress.http.containerPort))) }}
+  - name: http
+    port: {{ .Values.fsm.fsmIngress.http.port }}
+    protocol: TCP
+    targetPort: {{ .Values.fsm.fsmIngress.http.containerPort }}
+    {{- if (and $setNodePorts (not (empty .Values.fsm.fsmIngress.http.nodePort))) }}
+    nodePort: {{ .Values.fsm.fsmIngress.http.nodePort }}
+    {{- end }}
+  {{- end }}
+  {{- if and .Values.fsm.fsmIngress.tls.enabled (and (not (empty .Values.fsm.fsmIngress.tls.port)) (not (empty .Values.fsm.fsmIngress.tls.containerPort))) }}
+  - name: https
+    port: {{ .Values.fsm.fsmIngress.tls.port }}
+    protocol: TCP
+    targetPort: {{ .Values.fsm.fsmIngress.tls.containerPort }}
+    {{- if (and $setNodePorts (not (empty .Values.fsm.fsmIngress.tls.nodePort))) }}
+    nodePort: {{ .Values.fsm.fsmIngress.tls.nodePort }}
+    {{- end }}
+  {{- end }}
+  selector:
+    app: fsm-ingress
+    ingress.flomesh.io/namespaced: "false"
+{{- end }}
+{{- end }}

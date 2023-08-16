@@ -21,6 +21,7 @@ import (
 
 	configv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha1"
 	configv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/typed/config/v1alpha3"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -30,6 +31,7 @@ type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface
 	ConfigV1alpha2() configv1alpha2.ConfigV1alpha2Interface
+	ConfigV1alpha3() configv1alpha3.ConfigV1alpha3Interface
 }
 
 // Clientset contains the clients for groups.
@@ -37,6 +39,7 @@ type Clientset struct {
 	*discovery.DiscoveryClient
 	configV1alpha1 *configv1alpha1.ConfigV1alpha1Client
 	configV1alpha2 *configv1alpha2.ConfigV1alpha2Client
+	configV1alpha3 *configv1alpha3.ConfigV1alpha3Client
 }
 
 // ConfigV1alpha1 retrieves the ConfigV1alpha1Client
@@ -47,6 +50,11 @@ func (c *Clientset) ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface {
 // ConfigV1alpha2 retrieves the ConfigV1alpha2Client
 func (c *Clientset) ConfigV1alpha2() configv1alpha2.ConfigV1alpha2Interface {
 	return c.configV1alpha2
+}
+
+// ConfigV1alpha3 retrieves the ConfigV1alpha3Client
+func (c *Clientset) ConfigV1alpha3() configv1alpha3.ConfigV1alpha3Interface {
+	return c.configV1alpha3
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -101,6 +109,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.configV1alpha3, err = configv1alpha3.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -124,6 +136,7 @@ func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.configV1alpha1 = configv1alpha1.New(c)
 	cs.configV1alpha2 = configv1alpha2.New(c)
+	cs.configV1alpha3 = configv1alpha3.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

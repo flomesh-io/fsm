@@ -38,6 +38,9 @@ ENABLE_FLUENTBIT="${ENABLE_FLUENTBIT:-false}"
 DEPLOY_PROMETHEUS="${DEPLOY_PROMETHEUS:-false}"
 DEPLOY_WITH_SAME_SA="${DEPLOY_WITH_SAME_SA:-false}"
 SIDECAR_LOG_LEVEL="${SIDECAR_LOG_LEVEL:-error}"
+CONTROLLER_LOG_LEVEL="${CONTROLLER_LOG_LEVEL:-warn}"
+INGRESS_LOG_LEVEL="${INGRESS_LOG_LEVEL:-warn}"
+GATEWAY_LOG_LEVEL="${GATEWAY_LOG_LEVEL:-warn}"
 DEPLOY_ON_OPENSHIFT="${DEPLOY_ON_OPENSHIFT:-false}"
 TIMEOUT="${TIMEOUT:-90s}"
 USE_PRIVATE_REGISTRY="${USE_PRIVATE_REGISTRY:-false}"
@@ -121,7 +124,9 @@ if [ "$CERT_MANAGER" = "vault" ]; then
       --set=fsm.enableFluentbit="$ENABLE_FLUENTBIT" \
       --set=fsm.deployPrometheus="$DEPLOY_PROMETHEUS" \
       --set=fsm.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
-      --set=fsm.controllerLogLevel="warn" \
+      --set=fsm.controllerLogLevel="$CONTROLLER_LOG_LEVEL" \
+      --set=fsm.fsmIngress.logLevel="$INGRESS_LOG_LEVEL" \
+      --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \
       --set=fsm.localProxyMode="$LOCAL_PROXY_MODE" \
       --timeout="$TIMEOUT" \
       $optionalInstallArgs
@@ -146,7 +151,9 @@ else
       --set=fsm.enableFluentbit="$ENABLE_FLUENTBIT" \
       --set=fsm.deployPrometheus="$DEPLOY_PROMETHEUS" \
       --set=fsm.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
-      --set=fsm.controllerLogLevel="warn" \
+      --set=fsm.controllerLogLevel="$CONTROLLER_LOG_LEVEL" \
+      --set=fsm.fsmIngress.logLevel="$INGRESS_LOG_LEVEL" \
+      --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \
       --set=fsm.localProxyMode="$LOCAL_PROXY_MODE" \
       --timeout="$TIMEOUT" \
       $optionalInstallArgs

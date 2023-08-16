@@ -10,7 +10,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -38,7 +38,7 @@ const (
 // The functions in this file implement the configurator.Configurator interface
 
 // GetMeshConfig returns the MeshConfig resource corresponding to the control plane
-func (c *Client) GetMeshConfig() configv1alpha2.MeshConfig {
+func (c *Client) GetMeshConfig() configv1alpha3.MeshConfig {
 	return c.getMeshConfig()
 }
 
@@ -47,7 +47,7 @@ func (c *Client) GetFSMNamespace() string {
 	return c.fsmNamespace
 }
 
-func marshalConfigToJSON(config configv1alpha2.MeshConfigSpec) (string, error) {
+func marshalConfigToJSON(config configv1alpha3.MeshConfigSpec) (string, error) {
 	bytes, err := json.MarshalIndent(&config, "", "    ")
 	if err != nil {
 		return "", err
@@ -201,6 +201,11 @@ func (c *Client) GetRemoteLoggingSampledFraction() float32 {
 		}
 	}
 	return 1
+}
+
+// GetRemoteLoggingSecretName returns the name of the secret that contains the credentials to access the remote logging service.
+func (c *Client) GetRemoteLoggingSecretName() string {
+	return c.getMeshConfig().Spec.Observability.RemoteLogging.SecretName
 }
 
 // GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
@@ -403,7 +408,7 @@ func (c *Client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
 }
 
 // GetFeatureFlags returns FSM's feature flags
-func (c *Client) GetFeatureFlags() configv1alpha2.FeatureFlags {
+func (c *Client) GetFeatureFlags() configv1alpha3.FeatureFlags {
 	return c.getMeshConfig().Spec.FeatureFlags
 }
 
@@ -470,4 +475,180 @@ func (c *Client) GetGlobalPluginChains() map[string][]trafficpolicy.Plugin {
 	pluginChainMap["outbound-tcp"] = outboundTCPChains
 	pluginChainMap["outbound-http"] = outboundHTTPChains
 	return pluginChainMap
+}
+
+// IsGatewayAPIEnabled returns whether GatewayAPI is enabled
+func (c *Client) IsGatewayAPIEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.Enabled && !mcSpec.Ingress.Enabled
+}
+
+// GetFSMGatewayLogLevel returns log level of FSM Gateway
+func (c *Client) GetFSMGatewayLogLevel() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.LogLevel
+}
+
+// IsIngressEnabled returns whether Ingress is enabled
+func (c *Client) IsIngressEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ingress.Enabled && !mcSpec.GatewayAPI.Enabled
+}
+
+// IsNamespacedIngressEnabled returns whether Namespaced Ingress is enabled
+func (c *Client) IsNamespacedIngressEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return c.IsIngressEnabled() && mcSpec.Ingress.Namespaced
+}
+
+// IsServiceLBEnabled returns whether ServiceLB is enabled
+func (c *Client) IsServiceLBEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.ServiceLB.Enabled
+}
+
+// IsFLBEnabled returns whether FLB is enabled
+func (c *Client) IsFLBEnabled() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.FLB.Enabled
+}
+
+// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
+func (c *Client) IsMultiClusterControlPlane() bool {
+	clusterSet := c.getMeshConfig().Spec.ClusterSet
+
+	return clusterSet.ControlPlaneUID == "" ||
+		clusterSet.UID == clusterSet.ControlPlaneUID
+}
+
+// GetImageRegistry returns the image registry
+func (c *Client) GetImageRegistry() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Image.Registry
+}
+
+// GetImageTag returns the image tag
+func (c *Client) GetImageTag() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Image.Tag
+}
+
+func (c *Client) GetImagePullPolicy() corev1.PullPolicy {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Image.PullPolicy
+}
+
+// ServiceLBImage returns the image for service load balancer
+func (c *Client) ServiceLBImage() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.ServiceLB.Image
+}
+
+// GetFLBSecretName returns the secret name for FLB
+func (c *Client) GetFLBSecretName() string {
+	return c.getMeshConfig().Spec.FLB.SecretName
+}
+
+// IsFLBStrictModeEnabled returns whether FLB is in strict mode
+func (c *Client) IsFLBStrictModeEnabled() bool {
+	return c.getMeshConfig().Spec.FLB.StrictMode
+}
+
+// IsManaged returns whether the cluster is managed
+func (c *Client) IsManaged() bool {
+	return c.getMeshConfig().Spec.ClusterSet.IsManaged
+}
+
+// GetClusterUID returns the UID of the cluster
+func (c *Client) GetClusterUID() string {
+	return c.getMeshConfig().Spec.ClusterSet.UID
+}
+
+// GetMultiClusterControlPlaneUID returns the UID of the control plane of the multi cluster set
+func (c *Client) GetMultiClusterControlPlaneUID() string {
+	return c.getMeshConfig().Spec.ClusterSet.ControlPlaneUID
+}
+
+// IsIngressTLSEnabled returns whether TLS is enabled for ingress
+func (c *Client) IsIngressTLSEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.Enabled
+	}
+
+	return false
+}
+
+// GetIngressTLSListenPort returns the port that ingress listens on for TLS
+func (c *Client) GetIngressTLSListenPort() int32 {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.Listen
+	}
+
+	return 443
+}
+
+// IsIngressMTLSEnabled returns whether mTLS is enabled for ingress
+func (c *Client) IsIngressMTLSEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		return tls.MTLS
+	}
+
+	return false
+}
+
+// IsIngressSSLPassthroughEnabled returns whether SSL Passthrough is enabled for ingress
+func (c *Client) IsIngressSSLPassthroughEnabled() bool {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		if passthrough := tls.SSLPassthrough; passthrough != nil {
+			return passthrough.Enabled
+		}
+
+		return false
+	}
+
+	return false
+}
+
+// GetIngressSSLPassthroughUpstreamPort returns the port that ingress listens on for SSL Passthrough
+func (c *Client) GetIngressSSLPassthroughUpstreamPort() int32 {
+	tls := c.getMeshConfig().Spec.Ingress.TLS
+	if tls != nil {
+		if passthrough := tls.SSLPassthrough; passthrough != nil {
+			return passthrough.UpstreamPort
+		}
+
+		return 443
+	}
+
+	return 443
+}
+
+// IsIngressHTTPEnabled returns whether HTTP is enabled for ingress
+func (c *Client) IsIngressHTTPEnabled() bool {
+	http := c.getMeshConfig().Spec.Ingress.HTTP
+	if http != nil {
+		return http.Enabled
+	}
+
+	return false
+}
+
+// GetIngressHTTPListenPort returns the port that ingress listens on for HTTP
+func (c *Client) GetIngressHTTPListenPort() int32 {
+	http := c.getMeshConfig().Spec.Ingress.HTTP
+	if http != nil {
+		return http.Listen
+	}
+
+	return 80
+}
+
+// GetFSMIngressLogLevel returns the log level of ingress
+func (c *Client) GetFSMIngressLogLevel() string {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.Ingress.LogLevel
 }

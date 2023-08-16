@@ -6,7 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/auth"
@@ -28,7 +28,7 @@ type Client struct {
 // Configurator is the controller interface for K8s namespaces
 type Configurator interface {
 	// GetMeshConfig returns the MeshConfig resource corresponding to the control plane
-	GetMeshConfig() configv1alpha2.MeshConfig
+	GetMeshConfig() configv1alpha3.MeshConfig
 
 	// GetFSMNamespace returns the namespace in which FSM controller pod resides
 	GetFSMNamespace() string
@@ -93,6 +93,9 @@ type Configurator interface {
 	// GetRemoteLoggingSampledFraction returns the sampled fraction
 	GetRemoteLoggingSampledFraction() float32
 
+	// GetRemoteLoggingSecretName returns the name of secret that contains the access entity that allows to authorize someone in remote logging service.
+	GetRemoteLoggingSecretName() string
+
 	// GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
 	GetMaxDataPlaneConnections() int
 
@@ -147,8 +150,80 @@ type Configurator interface {
 	GetInboundExternalAuthConfig() auth.ExtAuthConfig
 
 	// GetFeatureFlags returns FSM's feature flags
-	GetFeatureFlags() configv1alpha2.FeatureFlags
+	GetFeatureFlags() configv1alpha3.FeatureFlags
 
 	// GetGlobalPluginChains returns plugin chains
 	GetGlobalPluginChains() map[string][]trafficpolicy.Plugin
+
+	// IsGatewayAPIEnabled returns whether GatewayAPI is enabled
+	IsGatewayAPIEnabled() bool
+
+	// GetFSMGatewayLogLevel returns log level of FSM Gateway
+	GetFSMGatewayLogLevel() string
+
+	// IsIngressEnabled returns whether Ingress is enabled
+	IsIngressEnabled() bool
+
+	// IsIngressTLSEnabled returns whether Ingress is enabled
+	IsIngressTLSEnabled() bool
+
+	// GetIngressTLSListenPort returns the listen port of Ingress TLS
+	GetIngressTLSListenPort() int32
+
+	// IsIngressMTLSEnabled returns whether Ingress mTLS is enabled
+	IsIngressMTLSEnabled() bool
+
+	// IsIngressSSLPassthroughEnabled returns whether Ingress is enabled
+	IsIngressSSLPassthroughEnabled() bool
+
+	// GetIngressSSLPassthroughUpstreamPort returns the upstream port for SSL passthrough
+	GetIngressSSLPassthroughUpstreamPort() int32
+
+	// IsNamespacedIngressEnabled returns whether Namespaced Ingress is enabled
+	IsNamespacedIngressEnabled() bool
+
+	// IsIngressHTTPEnabled returns whether http port of Ingress is enabled
+	IsIngressHTTPEnabled() bool
+
+	// GetIngressHTTPListenPort returns the listen port of Ingress HTTP
+	GetIngressHTTPListenPort() int32
+
+	// GetFSMIngressLogLevel returns log level of FSM Gateway
+	GetFSMIngressLogLevel() string
+
+	// IsServiceLBEnabled returns whether ServiceLB is enabled
+	IsServiceLBEnabled() bool
+
+	// IsFLBEnabled returns whether FLB is enabled
+	IsFLBEnabled() bool
+
+	// GetFLBSecretName returns the secret name of FLB
+	GetFLBSecretName() string
+
+	// IsFLBStrictModeEnabled returns whether FLB Strict Mode is enabled
+	IsFLBStrictModeEnabled() bool
+
+	// IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
+	IsMultiClusterControlPlane() bool
+
+	// IsManaged returns whether the current cluster is managed by multicluster control plane
+	IsManaged() bool
+
+	// GetClusterUID returns the UID of the cluster
+	GetClusterUID() string
+
+	// GetMultiClusterControlPlaneUID returns the UID of the control plane if it's managed, or empty if not managed
+	GetMultiClusterControlPlaneUID() string
+
+	// GetImageRegistry returns the image registry
+	GetImageRegistry() string
+
+	// GetImageTag returns the image tag
+	GetImageTag() string
+
+	// GetImagePullPolicy returns the image pull policy
+	GetImagePullPolicy() corev1.PullPolicy
+
+	// ServiceLBImage string returns the service-lb image
+	ServiceLBImage() string
 }

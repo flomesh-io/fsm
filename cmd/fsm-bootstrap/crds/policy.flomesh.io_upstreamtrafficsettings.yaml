@@ -1,0 +1,340 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: upstreamtrafficsettings.policy.flomesh.io
+spec:
+  group: policy.flomesh.io
+  names:
+    kind: UpstreamTrafficSetting
+    listKind: UpstreamTrafficSettingList
+    plural: upstreamtrafficsettings
+    shortNames:
+    - upstreamtrafficsetting
+    singular: upstreamtrafficsetting
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: UpstreamTrafficSetting defines the settings applicable to traffic
+          destined to an upstream host.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the UpstreamTrafficSetting policy specification
+            properties:
+              connectionSettings:
+                description: ConnectionSettings specifies the connection settings
+                  for traffic directed to the upstream host.
+                properties:
+                  http:
+                    description: HTTP specifies the HTTP level connection settings.
+                    properties:
+                      circuitBreaking:
+                        description: CircuitBreaking specifies the HTTP connection
+                          circuit breaking setting.
+                        properties:
+                          degradedResponseContent:
+                            description: DegradedResponseContent specifies the degraded
+                              http response content of circuit breaking
+                            type: string
+                          degradedStatusCode:
+                            description: DegradedStatusCode specifies the degraded
+                              http status code of circuit breaking
+                            format: int32
+                            type: integer
+                          degradedTimeWindow:
+                            description: DegradedTimeWindow specifies recovery timeout
+                              (in seconds) when circuit breaker opens.
+                            type: string
+                          errorAmountThreshold:
+                            description: ErrorAmountThreshold specifies the amount
+                              threshold of error request
+                            format: int32
+                            type: integer
+                          errorRatioThreshold:
+                            description: ErrorRatioThreshold specifies the ratio threshold
+                              of error request
+                            type: number
+                          minRequestAmount:
+                            description: MinRequestAmount specifies minimum number
+                              of requests (in an active statistic time span) that
+                              can trigger circuit breaking.
+                            format: int32
+                            type: integer
+                          slowAmountThreshold:
+                            description: SlowAmountThreshold specifies the amount
+                              threshold of slow request
+                            format: int32
+                            type: integer
+                          slowRatioThreshold:
+                            description: SlowRatioThreshold specifies the ratio threshold
+                              of slow request
+                            type: number
+                          slowTimeThreshold:
+                            description: SlowTimeThreshold specifies the time threshold
+                              of slow request
+                            type: string
+                          statTimeWindow:
+                            description: StatTimeWindow specifies statistical time
+                              period of circuit breaking
+                            type: string
+                        required:
+                        - degradedTimeWindow
+                        - minRequestAmount
+                        - statTimeWindow
+                        type: object
+                      maxPendingRequests:
+                        description: MaxPendingRequests specifies the maximum number
+                          of pending HTTP requests allowed to the upstream host. For
+                          HTTP/2 connections, if `maxRequestsPerConnection` is not
+                          configured, all requests will be multiplexed over the same
+                          connection so this circuit breaker will only be hit when
+                          no connection is already established. Defaults to 4294967295
+                          (2^32 - 1) if not specified.
+                        format: int32
+                        type: integer
+                      maxRequests:
+                        description: MaxRequests specifies the maximum number of parallel
+                          requests allowed to the upstream host. Defaults to 4294967295
+                          (2^32 - 1) if not specified.
+                        format: int32
+                        type: integer
+                      maxRequestsPerConnection:
+                        description: MaxRequestsPerConnection specifies the maximum
+                          number of requests per connection allowed to the upstream
+                          host. Defaults to unlimited if not specified.
+                        format: int32
+                        type: integer
+                      maxRetries:
+                        description: MaxRetries specifies the maximum number of parallel
+                          retries allowed to the upstream host. Defaults to 4294967295
+                          (2^32 - 1) if not specified.
+                        format: int32
+                        type: integer
+                    type: object
+                  tcp:
+                    description: TCP specifies the TCP level connection settings.
+                      Applies to both TCP and HTTP connections.
+                    properties:
+                      connectTimeout:
+                        description: ConnectTimeout specifies the TCP connection timeout.
+                          Defaults to 5s if not specified.
+                        type: string
+                      maxConnections:
+                        description: MaxConnections specifies the maximum number of
+                          TCP connections allowed to the upstream host. Defaults to
+                          4294967295 (2^32 - 1) if not specified.
+                        format: int32
+                        type: integer
+                    type: object
+                type: object
+              host:
+                description: Host the upstream traffic is directed to. Must either
+                  be an FQDN corresponding to the upstream service or the name of
+                  the upstream service. If only the service name is specified, the
+                  FQDN is derived from the service name and the namespace of the UpstreamTrafficSetting
+                  rule.
+                type: string
+              httpRoutes:
+                description: HTTPRoutes defines the list of HTTP routes settings for
+                  the upstream host. Settings are applied at a per route level.
+                items:
+                  description: HTTPRouteSpec defines the settings corresponding to
+                    an HTTP route
+                  properties:
+                    path:
+                      description: Path defines the HTTP path.
+                      type: string
+                    rateLimit:
+                      description: RateLimit defines the HTTP rate limiting specification
+                        for the specified HTTP route.
+                      properties:
+                        local:
+                          description: Local defines the local rate limiting specification
+                            applied per HTTP route.
+                          properties:
+                            burst:
+                              description: Burst defines the number of requests above
+                                the baseline rate that are allowed in a short period
+                                of time.
+                              format: int32
+                              type: integer
+                            requests:
+                              description: Requests defines the number of requests
+                                allowed per unit of time before rate limiting occurs.
+                              format: int32
+                              type: integer
+                            responseHeadersToAdd:
+                              description: ResponseHeadersToAdd defines the list of
+                                HTTP headers that should be added to each response
+                                for requests that have been rate limited.
+                              items:
+                                description: HTTPHeaderValue defines an HTTP header
+                                  name/value pair
+                                properties:
+                                  name:
+                                    description: Name defines the name of the HTTP
+                                      header.
+                                    type: string
+                                  value:
+                                    description: Value defines the value of the header
+                                      corresponding to the name key.
+                                    type: string
+                                required:
+                                - name
+                                - value
+                                type: object
+                              type: array
+                            responseStatusCode:
+                              description: ResponseStatusCode defines the HTTP status
+                                code to use for responses to rate limited requests.
+                                Code must be in the 400-599 (inclusive) error range.
+                                If not specified, a default of 429 (Too Many Requests)
+                                is used.
+                              format: int32
+                              type: integer
+                            unit:
+                              description: Unit defines the period of time within
+                                which requests over the limit will be rate limited.
+                                Valid values are "second", "minute" and "hour".
+                              type: string
+                          required:
+                          - requests
+                          - unit
+                          type: object
+                      type: object
+                  required:
+                  - path
+                  type: object
+                type: array
+              rateLimit:
+                description: RateLimit specifies the rate limit settings for the traffic
+                  directed to the upstream host. If HTTP rate limiting is specified,
+                  the rate limiting is applied at the VirtualHost level applicable
+                  to all routes within the VirtualHost.
+                properties:
+                  local:
+                    description: Local specified the local rate limiting specification
+                      for the upstream host. Local rate limiting is enforced directly
+                      by the upstream host without any involvement of a global rate
+                      limiting service. This is applied as a token bucket rate limiter.
+                    properties:
+                      http:
+                        description: HTTP defines the local rate limiting specification
+                          for HTTP traffic. This is a token bucket rate limiter where
+                          each request consumes a single token. If the token is available,
+                          the request will be allowed. If no tokens are available,
+                          the request will receive the configured rate limit status.
+                        properties:
+                          burst:
+                            description: Burst defines the number of requests above
+                              the baseline rate that are allowed in a short period
+                              of time.
+                            format: int32
+                            type: integer
+                          requests:
+                            description: Requests defines the number of requests allowed
+                              per unit of time before rate limiting occurs.
+                            format: int32
+                            type: integer
+                          responseHeadersToAdd:
+                            description: ResponseHeadersToAdd defines the list of
+                              HTTP headers that should be added to each response for
+                              requests that have been rate limited.
+                            items:
+                              description: HTTPHeaderValue defines an HTTP header
+                                name/value pair
+                              properties:
+                                name:
+                                  description: Name defines the name of the HTTP header.
+                                  type: string
+                                value:
+                                  description: Value defines the value of the header
+                                    corresponding to the name key.
+                                  type: string
+                              required:
+                              - name
+                              - value
+                              type: object
+                            type: array
+                          responseStatusCode:
+                            description: ResponseStatusCode defines the HTTP status
+                              code to use for responses to rate limited requests.
+                              Code must be in the 400-599 (inclusive) error range.
+                              If not specified, a default of 429 (Too Many Requests)
+                              is used.
+                            format: int32
+                            type: integer
+                          unit:
+                            description: Unit defines the period of time within which
+                              requests over the limit will be rate limited. Valid
+                              values are "second", "minute" and "hour".
+                            type: string
+                        required:
+                        - requests
+                        - unit
+                        type: object
+                      tcp:
+                        description: TCP defines the local rate limiting specification
+                          at the network level. This is a token bucket rate limiter
+                          where each connection consumes a single token. If the token
+                          is available, the connection will be allowed. If no tokens
+                          are available, the connection will be immediately closed.
+                        properties:
+                          burst:
+                            description: Burst defines the number of connections above
+                              the baseline rate that are allowed in a short period
+                              of time.
+                            format: int32
+                            type: integer
+                          connections:
+                            description: Connections defines the number of connections
+                              allowed per unit of time before rate limiting occurs.
+                            format: int32
+                            type: integer
+                          unit:
+                            description: Unit defines the period of time within which
+                              connections over the limit will be rate limited. Valid
+                              values are "second", "minute" and "hour".
+                            type: string
+                        required:
+                        - connections
+                        - unit
+                        type: object
+                    type: object
+                type: object
+            required:
+            - host
+            type: object
+          status:
+            description: Status is the status of the UpstreamTrafficSetting resource.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of an UpstreamTrafficSetting
+                  resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of an
+                  UpstreamTrafficSetting resource.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true

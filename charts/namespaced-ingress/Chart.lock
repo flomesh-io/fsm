@@ -1,0 +1,6 @@
+dependencies:
+- name: tpls
+  repository: file://../tpls
+  version: 0.1.1
+digest: sha256:835c3f1a59e3d49577b45e10e3ee288f7a2b0107867e382c40c15cd80b90b366
+generated: "2022-06-25T00:30:21.195732+08:00"

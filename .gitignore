@@ -39,6 +39,7 @@ debug
 build/
 .dev/
 .env
+.envrc
 _dist/
 
 creds.json

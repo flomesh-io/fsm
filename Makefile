@@ -15,13 +15,15 @@ ifeq ($(shell uname),Darwin)
 	SHA256 = shasum -a 256
 endif
 
+BUILD_DIR = bin
+
 VERSION ?= dev
-BUILD_DATE ?=
+BUILD_DATE ?= $(shell date +%Y-%m-%d-%H:%M-%Z)
 GIT_SHA=$$(git rev-parse HEAD)
 BUILD_DATE_VAR := github.com/flomesh-io/fsm/pkg/version.BuildDate
 BUILD_VERSION_VAR := github.com/flomesh-io/fsm/pkg/version.Version
 BUILD_GITCOMMIT_VAR := github.com/flomesh-io/fsm/pkg/version.GitCommit
-DOCKER_GO_VERSION = 1.19
+DOCKER_GO_VERSION = 1.20
 DOCKER_BUILDX_PLATFORM ?= linux/amd64
 # Value for the --output flag on docker buildx build.
 # https://docs.docker.com/engine/reference/commandline/buildx_build/#output
@@ -43,6 +45,9 @@ ifeq ($(GO_VERSION_PATCH),)
 GO_VERSION_PATCH := 0
 endif
 
+export CHART_COMPONENTS_DIR = charts/fsm/components
+export SCRIPTS_TAR = $(CHART_COMPONENTS_DIR)/scripts.tar.gz
+
 check-env:
 ifndef CTR_REGISTRY
 	$(error CTR_REGISTRY environment variable is not defined; see the .env.example file for more information; then source .env)
@@ -51,15 +56,45 @@ ifndef CTR_TAG
 	$(error CTR_TAG environment variable is not defined; see the .env.example file for more information; then source .env)
 endif
 
+##@ Development
+
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./pkg/apis/..." output:crd:artifacts:config=cmd/fsm-bootstrap/crds
+
+.PHONY: labels
+labels: kustomize ## Attach required labels to gateway-api resources
+	$(KUSTOMIZE) build cmd/fsm-bootstrap/raw/ -o cmd/fsm-bootstrap/crds/
+
+.PHONY: build
+build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, the result will be optimized.
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector/consul,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
+
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
 	CGO_ENABLED=0 go build -v -o ./bin/fsm -ldflags ${LDFLAGS} ./cmd/cli
 
 cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/fsm)
-	go run $< > $@
+	go run $< --chart-name=fsm > $@
 
-helm-update-dep:
-	helm dependency update charts/fsm/
+pkg/controllers/namespacedingress/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/namespaced-ingress)
+	go run $< --chart-name=namespaced-ingress > $@
+
+pkg/controllers/gateway/v1beta1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
+	go run $< --chart-name=gateway > $@
+
+helm-update-dep: helm
+	$(HELM) dependency update charts/fsm/
+	$(HELM) dependency update charts/gateway/
+	$(HELM) dependency update charts/namespaced-ingress/
+
+.PHONY: package-scripts
+package-scripts: ## Tar all repo initializing scripts
+	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
+
+.PHONY: charts-tgz
+charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1beta1/chart.tgz
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -92,7 +127,11 @@ check-mocks:
 .PHONY: check-codegen
 check-codegen:
 	@./codegen/gen-crd-client.sh
-	@git diff --exit-code || { echo "----- Please commit the changes made by './codegen/gen-crd-client.sh' -----"; exit 1; }
+	@git diff --exit-code -- ':!go.mod' ':!go.sum' || { echo "----- Please commit the changes made by './codegen/gen-crd-client.sh' -----"; exit 1; }
+
+.PHONY: check-scripts
+check-scripts:
+	./scripts/check-scripts.sh
 
 .PHONY: go-checks
 go-checks: go-lint go-fmt go-mod-tidy check-mocks check-codegen
@@ -103,7 +142,7 @@ go-vet:
 
 .PHONY: go-lint
 go-lint: embed-files-test
-	docker run --rm -v $$(pwd):/app -w /app golangci/golangci-lint:v1.50 golangci-lint run --config .golangci.yml
+	docker run --rm -v $$(pwd):/app -w /app golangci/golangci-lint:v1.53 golangci-lint run --config .golangci.yml
 
 .PHONY: go-fmt
 go-fmt:
@@ -203,12 +242,20 @@ docker-build-fsm-interceptor:
 docker-build-fsm-consul-connector:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-consul-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-consul-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
-TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector
-FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor
+.PHONY: docker-build-fsm-ingress
+docker-build-fsm-ingress:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-ingress:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-ingress --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
+
+.PHONY: docker-build-fsm-gateway
+docker-build-fsm-gateway:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
+
+TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
+FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor fsm-ingress fsm-gateway
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 
 .PHONY: docker-build-fsm
-docker-build-fsm: $(DOCKER_FSM_TARGETS)
+docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:
@@ -238,7 +285,7 @@ docker-build-cross-demo: docker-build-demo
 docker-build-cross: docker-build-cross-fsm docker-build-cross-demo
 
 .PHONY: embed-files
-embed-files: helm-update-dep cmd/cli/chart.tgz
+embed-files: helm-update-dep cmd/cli/chart.tgz charts-tgz
 
 .PHONY: embed-files-test
 embed-files-test:
@@ -280,6 +327,7 @@ install-git-pre-push-hook:
 # -------------------------------------------
 #  release targets below
 # -------------------------------------------
+##@ Release Targets
 
 .PHONY: build-cross
 build-cross: helm-update-dep cmd/cli/chart.tgz
@@ -298,3 +346,60 @@ dist:
 
 .PHONY: release-artifacts
 release-artifacts: build-cross dist
+
+.PHONY: release
+VERSION_REGEXP := ^v[0-9]+\.[0-9]+\.[0-9]+(\-(alpha|beta|rc)\.[0-9]+)?$
+release: ## Create a release tag, push to git repository and trigger the release workflow.
+ifeq (,$(RELEASE_VERSION))
+	$(error "RELEASE_VERSION must be set to tag HEAD")
+endif
+ifeq (,$(shell [[ "$(RELEASE_VERSION)" =~ $(VERSION_REGEXP) ]] && echo 1))
+	$(error "Version $(RELEASE_VERSION) must match regexp $(VERSION_REGEXP)")
+endif
+	git tag --sign --message "fsm $(RELEASE_VERSION)" $(RELEASE_VERSION)
+	git verify-tag --verbose $(RELEASE_VERSION)
+	git push origin --tags
+
+# -------------------------------------------
+#  Build Dependencies below
+# -------------------------------------------
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+HELM ?= $(LOCALBIN)/helm
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+
+## Tool Versions
+KUSTOMIZE_VERSION ?= v4.5.6
+HELM_VERSION ?= v3.12.2
+CONTROLLER_TOOLS_VERSION ?= v0.12.1
+
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	[ -f $(KUSTOMIZE) ] || curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+
+HELM_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+.PHONY: helm
+helm: $(HELM) ## Download kustomize locally if necessary.
+$(HELM): $(LOCALBIN)
+	[ -f $(HELM) ] || curl -s $(HELM_INSTALL_SCRIPT) | HELM_INSTALL_DIR=$(LOCALBIN) bash -s -- --version $(HELM_VERSION) --no-sudo
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	[ -f $(CONTROLLER_GEN) ] || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	[ -f $(ENVTEST) ] || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+

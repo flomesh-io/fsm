@@ -1,0 +1,13 @@
+fsm:
+  controllerLogLevel: debug
+  flb:
+    enabled: true
+    strictMode: false
+    secretName: fsm-flb-secret
+    baseUrl: http://192.168.12.5:30000
+    username: admin
+    password: Flomesh@2023
+    k8sCluster: "test1"
+    defaultCluster: default
+    defaultAddressPool: default
+    defaultAlgo: rr

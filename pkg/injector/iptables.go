@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
@@ -68,7 +68,7 @@ var iptablesInboundStaticRules = []string{
 }
 
 // GenerateIptablesCommands generates a list of iptables commands to set up sidecar interception and redirection
-func GenerateIptablesCommands(proxyMode configv1alpha2.LocalProxyMode, enabledDNSProxy bool, outboundIPRangeExclusionList []string, outboundIPRangeInclusionList []string, outboundPortExclusionList []int, inboundPortExclusionList []int, networkInterfaceExclusionList []string) string {
+func GenerateIptablesCommands(proxyMode configv1alpha3.LocalProxyMode, enabledDNSProxy bool, outboundIPRangeExclusionList []string, outboundIPRangeInclusionList []string, outboundPortExclusionList []int, inboundPortExclusionList []int, networkInterfaceExclusionList []string) string {
 	var rules strings.Builder
 
 	fmt.Fprintln(&rules, `# FSM sidecar interception rules
@@ -106,7 +106,7 @@ func GenerateIptablesCommands(proxyMode configv1alpha2.LocalProxyMode, enabledDN
 		cmds = append(cmds, iptablesDNSOutboundStaticRules...)
 	}
 
-	if proxyMode == configv1alpha2.LocalProxyModePodIP {
+	if proxyMode == configv1alpha3.LocalProxyModePodIP {
 		// For sidecar -> local service container proxying, send traffic to pod IP instead of localhost
 		// *Note: it is important to use the insert option '-I' instead of the append option '-A' to ensure the
 		// DNAT to the pod ip for sidecar -> localhost traffic happens before the rule that redirects traffic to the proxy

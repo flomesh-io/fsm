@@ -13,6 +13,19 @@ import (
 	"strings"
 	"time"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/gateway"
+	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/manager/basic"
+	"github.com/flomesh-io/fsm/pkg/manager/listeners"
+	"github.com/flomesh-io/fsm/pkg/manager/logging"
+	recon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
+	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
+	"github.com/flomesh-io/fsm/pkg/manager/webhook"
+	"github.com/flomesh-io/fsm/pkg/repo"
+
 	smiAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
 	smiTrafficSpecClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/specs/clientset/versioned"
 	smiTrafficSplitClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/split/clientset/versioned"
@@ -21,6 +34,10 @@ import (
 	extensionsClientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
+
+	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
+	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,8 +46,11 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	networkingClientset "github.com/flomesh-io/fsm/pkg/gen/client/networking/clientset/versioned"
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
@@ -143,6 +163,9 @@ func init() {
 
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = admissionv1.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
+	_ = mcscheme.AddToScheme(scheme)
+	_ = nsigscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -160,6 +183,7 @@ func getCertOptions() (providers.Options, error) {
 	return nil, fmt.Errorf("unknown certificate provider kind: %s", certProviderKind)
 }
 
+//gocyclo:ignore
 func main() {
 	log.Info().Msgf("Starting fsm-controller %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := parseFlags(); err != nil {
@@ -219,6 +243,8 @@ func main() {
 	smiTrafficSplitClientSet := smiTrafficSplitClient.NewForConfigOrDie(kubeConfig)
 	smiTrafficSpecClientSet := smiTrafficSpecClient.NewForConfigOrDie(kubeConfig)
 	smiTrafficTargetClientSet := smiAccessClient.NewForConfigOrDie(kubeConfig)
+	gatewayAPIClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
+	namespacedIngressClient := nsigClientset.NewForConfigOrDie(kubeConfig)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
 		informers.WithKubeClient(kubeClient),
@@ -228,6 +254,8 @@ func main() {
 		informers.WithPluginClient(pluginClient),
 		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
+		informers.WithIngressClient(kubeClient, namespacedIngressClient),
+		informers.WithGatewayAPIClient(gatewayAPIClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
@@ -270,6 +298,21 @@ func main() {
 	policyController := policy.NewPolicyController(informerCollection, kubeClient, k8sClient, msgBroker)
 	pluginController := plugin.NewPluginController(informerCollection, kubeClient, k8sClient, msgBroker)
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
+
+	if cfg.IsIngressEnabled() {
+		ingressController := pipy.NewIngressController(informerCollection, kubeClient, msgBroker, cfg, certManager)
+		if err := ingressController.Start(); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Ingress Controller")
+		}
+	}
+
+	var gatewayController gateway.Controller
+	if cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
+		gatewayController = gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
+		if err := gatewayController.Start(); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting Gateway Controller")
+		}
+	}
 
 	kubeProvider := kube.NewClient(k8sClient, cfg)
 	multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
@@ -360,6 +403,62 @@ func main() {
 		}
 	}
 
+	mgr, err := ctrl.NewManager(kubeConfig, ctrl.Options{
+		Scheme:                  scheme,
+		LeaderElection:          true,
+		LeaderElectionNamespace: cfg.GetFSMNamespace(),
+		LeaderElectionID:        constants.FSMControllerLeaderElectionID,
+		Port:                    constants.FSMWebhookPort,
+	})
+	if err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
+	}
+
+	repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
+	cctx := &fctx.ControllerContext{
+		Client:             mgr.GetClient(),
+		Manager:            mgr,
+		Scheme:             mgr.GetScheme(),
+		KubeClient:         kubeClient,
+		KubeConfig:         kubeConfig,
+		Config:             cfg,
+		InformerCollection: informerCollection,
+		CertificateManager: certManager,
+		RepoClient:         repoClient,
+		Broker:             msgBroker,
+		EventHandler:       gatewayController,
+		StopCh:             stop,
+		MeshName:           meshName,
+		FSMVersion:         fsmVersion,
+	}
+	for _, f := range []func(*fctx.ControllerContext) error{
+		mrepo.InitRepo,
+		basic.SetupHTTP,
+		basic.SetupTLS,
+		logging.SetupLogging,
+		webhook.RegisterWebHooks,
+		recon.RegisterReconcilers,
+	} {
+		if err := f(cctx); err != nil {
+			log.Error().Msgf("Failed to startup: %s", err)
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error setting up manager")
+		}
+	}
+
+	if cfg.IsIngressEnabled() {
+		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, cctx.RepoClient, stop)
+		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, cctx.RepoClient, stop)
+	}
+
+	if cfg.IsIngressEnabled() || (cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {
+		mrepo.ChecksAndRebuildRepo(cctx.RepoClient, mgr.GetClient(), cfg)
+	}
+
+	if err := mgr.Start(ctx); err != nil {
+		log.Fatal().Msgf("problem running manager, %s", err)
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")
+	}
+
 	<-stop
 	cancel()
 	log.Info().Msgf("Stopping fsm-controller %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
@@ -386,6 +485,8 @@ func startMetricsStore() {
 		metricsstore.DefaultMetricsStore.AdmissionWebhookResponseTotal,
 		metricsstore.DefaultMetricsStore.EventsQueued,
 		metricsstore.DefaultMetricsStore.ReconciliationTotal,
+		metricsstore.DefaultMetricsStore.IngressBroadcastEventCount,
+		metricsstore.DefaultMetricsStore.GatewayBroadcastEventCounter,
 	)
 }
 
@@ -397,6 +498,7 @@ func parseFlags() error {
 	return nil
 }
 
+//lint:ignore U1000 This is used in the tests
 func joinURL(baseURL string, paths ...string) string {
 	p := path.Join(paths...)
 	return fmt.Sprintf("%s/%s", strings.TrimRight(baseURL, "/"), strings.TrimLeft(p, "/"))

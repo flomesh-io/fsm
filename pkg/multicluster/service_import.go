@@ -279,7 +279,7 @@ func (c *Client) ListServiceIdentitiesForService(svc service.MeshService) ([]ide
 
 // GetTargetPortForServicePort returns the TargetPort corresponding to the Port used by clients
 // to communicate with it.
-func (c Client) GetTargetPortForServicePort(namespacedSvc types.NamespacedName, port uint16) map[uint16]bool {
+func (c *Client) GetTargetPortForServicePort(namespacedSvc types.NamespacedName, port uint16) map[uint16]bool {
 	svc := service.MeshService{
 		Namespace: namespacedSvc.Namespace, // Backends belong to the same namespace as the apex service
 		Name:      namespacedSvc.Name,

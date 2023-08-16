@@ -63,6 +63,18 @@ type MetricsStore struct {
 	AdmissionWebhookResponseTotal *prometheus.CounterVec
 
 	/*
+	 * Ingress metrics
+	 */
+	// IngressBroadcastEventCount is the metric for the total number of IngressBroadcast events published
+	IngressBroadcastEventCount prometheus.Counter
+
+	/*
+	 * GatewayAPI metrics
+	 */
+	// GatewayBroadcastEventCounter is the metric for the total number of GatewayBroadcast events published
+	GatewayBroadcastEventCounter prometheus.Counter
+
+	/*
 	 * Certificate metrics
 	 */
 	// CertIssuedCount is the metric counter for the number of certificates issued
@@ -274,6 +286,20 @@ func init() {
 		Name:      "reconciliation_total",
 		Help:      "Counter of resource reconciliations invoked",
 	}, []string{"kind"})
+
+	defaultMetricsStore.IngressBroadcastEventCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "ingress",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of IngressBroadcast events published by the FSM controller",
+	})
+
+	defaultMetricsStore.GatewayBroadcastEventCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "gateway",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of GatewayBroadcast events published by the FSM controller",
+	})
 
 	defaultMetricsStore.registry = prometheus.NewRegistry()
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/bootstrap"
 )
 
-func getPlatformSpecificSpecComponents(cfg configurator.Configurator, podOS string) (podSecurityContext *corev1.SecurityContext, pipyContainer string) {
+func getPlatformSpecificSpecComponents(cfg configurator.Configurator, _ string) (podSecurityContext *corev1.SecurityContext, pipyContainer string) {
 	podSecurityContext = &corev1.SecurityContext{
 		AllowPrivilegeEscalation: pointer.BoolPtr(false),
 		RunAsUser: func() *int64 {
