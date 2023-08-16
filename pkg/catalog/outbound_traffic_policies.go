@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+	"sort"
 
 	mapset "github.com/deckarep/golang-set"
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
@@ -77,7 +78,13 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 				resolvableIPSet.Add(endp.IP.String())
 			}
 			if resolvableIPSet.Cardinality() > 0 {
-				servicesResolvableSet[meshSvc.FQDN()] = resolvableIPSet.ToSlice()
+				addrItems := resolvableIPSet.ToSlice()
+				sort.SliceStable(addrItems, func(i, j int) bool {
+					addr1 := addrItems[i].(string)
+					addr2 := addrItems[j].(string)
+					return addr1 < addr2
+				})
+				servicesResolvableSet[meshSvc.FQDN()] = addrItems
 			}
 		}
 
