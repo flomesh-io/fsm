@@ -19,7 +19,7 @@
   
 - Make docker images available to the cluster
   ```shell
-  make docker-build
+  make docker-build-fsm
   ```
 
 - Install **fsm**, make sure fsmIngress is **disabled** and fsmGateway is **enabled**
@@ -34,13 +34,6 @@
         --set fsm.image.registry=$CTR_REGISTRY \
         --set fsm.image.tag=$CTR_TAG
   ```
-
-  Please note: it exposes 5 ports
-  - `8090`: **HTTP**
-  - `7443`: **HTTPS**
-  - `8443`: **TLS Passthrough**
-  - `9443`: **TLS Terminate**
-  - `3000`: **TCP**
 
 - Install **grcpurl**
   - Binaries
