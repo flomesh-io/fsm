@@ -113,6 +113,16 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |
+| fsm.egressGateway.adminPort | int | `6060` |  |
+| fsm.egressGateway.enabled | bool | `false` |  |
+| fsm.egressGateway.logLevel | string | `"error"` |  |
+| fsm.egressGateway.mode | string | `"http2tunnel"` |  |
+| fsm.egressGateway.name | string | `"fsm-egress-gateway"` |  |
+| fsm.egressGateway.podAnnotations | object | `{}` |  |
+| fsm.egressGateway.podLabels | object | `{}` |  |
+| fsm.egressGateway.port | int | `1080` |  |
+| fsm.egressGateway.replicaCount | int | `1` | FSM Operator Manager's replica count (ignored when autoscale.enable is true) |
+| fsm.egressGateway.resources | object | `{"limits":{"cpu":"500m","memory":"128M"},"requests":{"cpu":"100m","memory":"64M"}}` | FSM Operator Manager's container resource parameters. |
 | fsm.enableDebugServer | bool | `false` | Enable the debug HTTP server on FSM controller |
 | fsm.enableEgress | bool | `true` | Enable egress in the mesh |
 | fsm.enableFluentbit | bool | `false` | Enable Fluent Bit sidecar deployment on FSM controller's pod |
@@ -131,6 +141,16 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableRetryPolicy | bool | `false` | Enable Retry Policy for automatic request retries |
 | fsm.featureFlags.enableSidecarActiveHealthChecks | bool | `false` | Enable Sidecar active health checks |
 | fsm.featureFlags.enableSnapshotCacheMode | bool | `false` | Enables SnapshotCache feature for Sidecar xDS server. |
+| fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
+| fsm.flb.defaultAddressPool | string | `"default"` |  |
+| fsm.flb.defaultAlgo | string | `"rr"` |  |
+| fsm.flb.defaultCluster | string | `"default"` |  |
+| fsm.flb.enabled | bool | `false` |  |
+| fsm.flb.k8sCluster | string | `"UNKNOWN"` |  |
+| fsm.flb.password | string | `"admin"` |  |
+| fsm.flb.secretName | string | `"fsm-flb-secret"` |  |
+| fsm.flb.strictMode | bool | `false` |  |
+| fsm.flb.username | string | `"admin"` |  |
 | fsm.fluentBit.enableProxySupport | bool | `false` | Enable proxy support toggle for Fluent Bit |
 | fsm.fluentBit.httpProxy | string | `""` | Optional HTTP proxy endpoint for Fluent Bit |
 | fsm.fluentBit.httpsProxy | string | `""` | Optional HTTPS proxy endpoint for Fluent Bit |
@@ -181,6 +201,55 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.replicaCount | int | `1` | FSM controller's replica count (ignored when autoscale.enable is true) |
 | fsm.fsmController.resource | object | `{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
+| fsm.fsmGateway.enabled | bool | `false` |  |
+| fsm.fsmGateway.logLevel | string | `"info"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].key | string | `"kubernetes.io/arch"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].operator | string | `"In"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
+| fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].key | string | `"app"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].operator | string | `"In"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-ingress"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].key | string | `"ingress.flomesh.io/namespaced"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].operator | string | `"In"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[1].values[0] | string | `"false"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
+| fsm.fsmIngress.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
+| fsm.fsmIngress.className | string | `"pipy"` |  |
+| fsm.fsmIngress.enabled | bool | `false` |  |
+| fsm.fsmIngress.env[0].name | string | `"GIN_MODE"` |  |
+| fsm.fsmIngress.env[0].value | string | `"release"` |  |
+| fsm.fsmIngress.http.containerPort | int | `8000` |  |
+| fsm.fsmIngress.http.enabled | bool | `true` |  |
+| fsm.fsmIngress.http.nodePort | int | `30508` |  |
+| fsm.fsmIngress.http.port | int | `80` |  |
+| fsm.fsmIngress.logLevel | string | `"info"` |  |
+| fsm.fsmIngress.namespaced | bool | `false` |  |
+| fsm.fsmIngress.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
+| fsm.fsmIngress.podAnnotations | object | `{}` |  |
+| fsm.fsmIngress.podLabels | object | `{}` | FSM Pipy Ingress Controller's pod labels |
+| fsm.fsmIngress.podSecurityContext.runAsGroup | int | `65532` |  |
+| fsm.fsmIngress.podSecurityContext.runAsNonRoot | bool | `true` |  |
+| fsm.fsmIngress.podSecurityContext.runAsUser | int | `65532` |  |
+| fsm.fsmIngress.podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| fsm.fsmIngress.replicaCount | int | `1` | FSM Pipy Ingress Controller's replica count (ignored when autoscale.enable is true) |
+| fsm.fsmIngress.resources | object | `{"limits":{"cpu":"2","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM Pipy Ingress Controller's container resource parameters. |
+| fsm.fsmIngress.securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| fsm.fsmIngress.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| fsm.fsmIngress.service.annotations | object | `{}` |  |
+| fsm.fsmIngress.service.name | string | `"fsm-ingress"` |  |
+| fsm.fsmIngress.service.type | string | `"LoadBalancer"` |  |
+| fsm.fsmIngress.tls.containerPort | int | `8443` |  |
+| fsm.fsmIngress.tls.enabled | bool | `false` |  |
+| fsm.fsmIngress.tls.mTLS | bool | `false` |  |
+| fsm.fsmIngress.tls.nodePort | int | `30607` |  |
+| fsm.fsmIngress.tls.port | int | `443` |  |
+| fsm.fsmIngress.tls.sslPassthrough.enabled | bool | `false` |  |
+| fsm.fsmIngress.tls.sslPassthrough.upstreamPort | int | `443` |  |
+| fsm.fsmIngress.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
@@ -218,22 +287,26 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.port | int | `3000` | Grafana service's port |
 | fsm.grafana.rendererImage | string | `"grafana/grafana-image-renderer:3.2.1"` | Image used for Grafana Renderer |
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmHealthcheck":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
 | fsm.image.digest.fsmConsulConnector | string | `""` | fsm-consul-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
+| fsm.image.digest.fsmGateway | string | `""` | fsm-gateway's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
+| fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
 | fsm.image.digest.fsmInjector | string | `""` | fsm-injector's image digest |
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmHealthcheck":"fsm-healthcheck","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
 | fsm.image.name.fsmConsulConnector | string | `"fsm-consul-connector"` | fsm-consul-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
+| fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
+| fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |
 | fsm.image.name.fsmInjector | string | `"fsm-injector"` | fsm-injector's image name |
 | fsm.image.name.fsmInterceptor | string | `"fsm-interceptor"` | fsm-interceptor's image name |
 | fsm.image.name.fsmPreinstall | string | `"fsm-preinstall"` | fsm-preinstall's image name |
@@ -358,16 +431,19 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.endpoint | string | `""` | Remote logging's API path where the spans will be sent to |
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
-| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.90.2-33","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
+| fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
+| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.90.2-41","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
-| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.90.2-33"` | Image used for Pipy RepoServer |
+| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.90.2-41"` | Image used for Pipy RepoServer |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
 | fsm.serviceAccessMode | string | `"domain"` | Service access mode |
+| fsm.serviceLB.enabled | bool | `false` |  |
+| fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
-| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.2-33","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
+| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.2-41","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
 | fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
-| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.2-33"` | Sidecar image for Linux workloads |
+| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.2-41"` | Sidecar image for Linux workloads |
 | fsm.sidecarImage | string | `""` | Sidecar image for Linux workloads |
 | fsm.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md |

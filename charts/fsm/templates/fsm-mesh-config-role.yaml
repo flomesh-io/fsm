@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fsm-mesh-config-role
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [ "config.flomesh.io" ]
+    resources: [ "meshconfigs", "meshrootcertificates" ]
+    verbs: [ "get", "list", "watch"]

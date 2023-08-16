@@ -170,6 +170,7 @@
                 "sidecarDrivers",
                 "pluginChains",
                 "curlImage",
+                "serviceLBImage",
                 "caBundleSecretName",
                 "enableDebugServer",
                 "enablePermissiveTrafficPolicy",
@@ -197,6 +198,11 @@
                 "injector",
                 "cloudConnector",
                 "fsmBootstrap",
+                "fsmIngress",
+                "fsmGateway",
+                "egressGateway",
+                "flb",
+                "serviceLB",
                 "featureFlags"
             ],
             "properties": {
@@ -659,6 +665,15 @@
                     "description": "The curl image for control plane init containers.",
                     "examples": [
                         "curlimages/curl"
+                    ]
+                },
+                "serviceLBImage": {
+                    "$id": "#/properties/fsm/properties/serviceLBImage",
+                    "type": "string",
+                    "title": "The serviceLBImage schema",
+                    "description": "The serviceLB image for control plane.",
+                    "examples": [
+                        "flomesh/mirrored-klipper-lb:v0.3.5"
                     ]
                 },
                 "repoServer": {
@@ -1202,7 +1217,8 @@
                         "enable",
                         "address",
                         "port",
-                        "endpoint"
+                        "endpoint",
+                        "secretName"
                     ],
                     "properties": {
                         "enable": {
@@ -1260,6 +1276,16 @@
                             "examples": [
                                 "0.2"
                             ]
+                        },
+                        "secretName": {
+                          "$id": "#/properties/fsm/properties/remoteLogging/properties/secretName",
+                          "type": "string",
+                          "title": "The secret name for remote logging service",
+                          "description": "The secret name for remote logging service",
+                          "default": "fsm-remote-logging-secret",
+                          "examples": [
+                            "fsm-remote-logging-secret"
+                          ]
                         }
                     },
                     "additionalProperties": false
@@ -1490,6 +1516,370 @@
                         }
                     },
                     "additionalProperties": false
+                },
+                "fsmIngress": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The ingress Schema",
+                    "required": [
+                        "enabled",
+                        "namespaced",
+                        "http",
+                        "tls",
+                        "className",
+                        "replicaCount",
+                        "service",
+                        "resources",
+                        "podLabels",
+                        "podAnnotations",
+                        "podSecurityContext",
+                        "securityContext",
+                        "logLevel"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true,
+                            "title": "The enabled Schema"
+                        },
+                        "namespaced": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "Enabled namespaced Ingress Controller or not"
+                        },
+                        "logLevel": {
+                            "type": "string",
+                            "default": "info",
+                            "title": "logLevel schema"
+                        },
+                        "http": {
+                            "type": "object",
+                            "default": {},
+                            "title": "Enable HTTP port for Ingress",
+                            "required": [
+                                "enabled",
+                                "port",
+                                "containerPort",
+                                "nodePort"
+                            ],
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "title": "Enable HTTP port for Ingress"
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "default": 80,
+                                    "title": "The port Schema"
+                                },
+                                "containerPort": {
+                                    "type": "integer",
+                                    "default": 8000,
+                                    "title": "The containerPort Schema"
+                                },
+                                "nodePort": {
+                                    "type": "integer",
+                                    "default": 30508,
+                                    "title": "The nodePort Schema"
+                                }
+                            }
+                        },
+                        "tls": {
+                            "type": "object",
+                            "default": {},
+                            "title": "TLS settings for Ingress",
+                            "required": [
+                                "enabled",
+                                "port",
+                                "containerPort",
+                                "nodePort",
+                                "sslPassthrough"
+                            ],
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "title": "Enable TLS/HTTPs port for Ingress"
+                                },
+                                "port": {
+                                    "type": "integer",
+                                    "default": 443,
+                                    "title": "The port Schema"
+                                },
+                                "containerPort": {
+                                    "type": "integer",
+                                    "default": 8443,
+                                    "title": "The containerPort Schema"
+                                },
+                                "nodePort": {
+                                    "type": "integer",
+                                    "default": 30607,
+                                    "title": "The nodePort Schema"
+                                },
+                                "sslPassthrough": {
+                                    "type": "object",
+                                    "default": {},
+                                    "title": "SSL Passthrough settings for Ingress",
+                                    "required": [
+                                        "enabled",
+                                        "upstreamPort"
+                                    ],
+                                    "properties": {
+                                        "enabled": {
+                                            "type": "boolean",
+                                            "default": false,
+                                            "title": "Enable SSL Passthrough for Ingress"
+                                        },
+                                        "upstreamPort": {
+                                            "type": "integer",
+                                            "default": 443,
+                                            "title": "Upstream port of SSL Passthrough"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "className": {
+                            "type": "string",
+                            "default": "pipy",
+                            "title": "The className Schema"
+                        },
+                        "replicaCount": {
+                            "type": "integer",
+                            "default": 1,
+                            "title": "The replicaCount Schema"
+                        },
+                        "service": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The service Schema",
+                            "required": [
+                                "name",
+                                "type"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "type": "string",
+                                    "default": "fsm-ingress-pipy-controller",
+                                    "title": "The name Schema"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "default": "LoadBalancer",
+                                    "title": "The type Schema"
+                                }
+                            }
+                        },
+                        "resources": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The resources Schema"
+                        },
+                        "podLabels": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The podLabels Schema"
+                        },
+                        "podAnnotations": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The podAnnotations Schema"
+                        },
+                        "podSecurityContext": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The podSecurityContext Schema"
+                        },
+                        "securityContext": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The securityContext Schema"
+                        },
+                        "affinity": {
+                            "type": "object"
+                        },
+                        "nodeSelector": {
+                            "type": "object"
+                        },
+                        "tolerations": {
+                            "type": "array"
+                        }
+                    }
+                },
+                "fsmGateway": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The gatewayApi Schema",
+                    "required": [
+                        "enabled",
+                        "logLevel"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "The enabled Schema"
+                        },
+                        "logLevel": {
+                            "type": "string",
+                            "default": "info",
+                            "title": "The logLevel Schema"
+                        }
+                    }
+                },
+                "serviceLB": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The serviceLB Schema",
+                    "required": [
+                        "enabled"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "The enabled Schema"
+                        }
+                    }
+                },
+                "egressGateway": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The manager Schema",
+                    "required": [
+                        "enabled",
+                        "name",
+                        "replicaCount",
+                        "resources",
+                        "podLabels",
+                        "podAnnotations",
+                        "port",
+                        "adminPort",
+                        "mode",
+                        "logLevel"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "The enabled Schema"
+                        },
+                        "name": {
+                            "type": "string",
+                            "default": "fsm-manager",
+                            "title": "The name Schema"
+                        },
+                        "replicaCount": {
+                            "type": "integer",
+                            "default": 1,
+                            "title": "The replicaCount Schema"
+                        },
+                        "resources": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The resources Schema"
+                        },
+                        "podLabels": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The podLabels Schema"
+                        },
+                        "podAnnotations": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The podAnnotations Schema"
+                        },
+                        "port": {
+                            "type": "integer",
+                            "default": 1080,
+                            "title": "The port Schema"
+                        },
+                        "adminPort": {
+                            "type": "integer",
+                            "default": 6060,
+                            "title": "The admin port Schema"
+                        },
+                        "mode": {
+                            "type": "string",
+                            "default": "http2tunnel",
+                            "title": "The forward mode"
+                        },
+                        "logLevel": {
+                            "type": "string",
+                            "default": "error",
+                            "title": "The logLevel Schema"
+                        }
+                    }
+                },
+                "flb": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The FLB Schema",
+                    "required": [
+                        "enabled",
+                        "strictMode",
+                        "secretName",
+                        "baseUrl",
+                        "username",
+                        "password",
+                        "k8sCluster",
+                        "defaultCluster",
+                        "defaultAddressPool",
+                        "defaultAlgo"
+                    ],
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "The enabled Schema"
+                        },
+                        "strictMode": {
+                            "type": "boolean",
+                            "default": false,
+                            "title": "The strictMode Schema"
+                        },
+                        "secretName": {
+                            "type": "string",
+                            "default": "fsm-flb-secret",
+                            "title": "The secretName Schema"
+                        },
+                        "baseUrl": {
+                            "type": "string",
+                            "default": "http://localhost:1337",
+                            "title": "The baseUrl Schema"
+                        },
+                        "username": {
+                            "type": "string",
+                            "default": "admin",
+                            "title": "The username Schema"
+                        },
+                        "password": {
+                            "type": "string",
+                            "default": "admin",
+                            "title": "The password Schema"
+                        },
+                        "k8sCluster": {
+                          "type": "string",
+                          "default": "UNKNOWN",
+                          "title": "The k8sCluster Schema"
+                        },
+                        "defaultCluster": {
+                            "type": "string",
+                            "default": "default",
+                            "title": "The defaultCluster Schema"
+                        },
+                        "defaultAddressPool": {
+                            "type": "string",
+                            "default": "default",
+                            "title": "The defaultAddressPool Schema"
+                        },
+                        "defaultAlgo": {
+                            "type": "string",
+                            "default": "rr",
+                            "title": "The defaultAlgo Schema"
+                        }
+                    }
                 },
                 "featureFlags": {
                     "$id": "#/properties/fsm/properties/featureFlags",

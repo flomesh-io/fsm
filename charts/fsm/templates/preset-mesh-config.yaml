@@ -7,7 +7,14 @@ data:
   preset-mesh-config.json: |
     {
       "clusterSet": {
-        "properties": []
+        "properties": [],
+        "isManaged": false,
+        "uid": "{{ uuidv4 }}",
+        "region": "default",
+        "zone": "default",
+        "group": "default",
+        "name": "local",
+        "controlPlaneUID": ""
       },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
@@ -50,7 +57,8 @@ data:
           "address": {{.Values.fsm.remoteLogging.address | mustToJson}},
           "endpoint": {{.Values.fsm.remoteLogging.endpoint | mustToJson}},
           "authorization": {{.Values.fsm.remoteLogging.authorization | mustToJson}},
-          "sampledFraction": {{.Values.fsm.remoteLogging.sampledFraction | mustToJson}}
+          "sampledFraction": {{.Values.fsm.remoteLogging.sampledFraction | mustToJson}},
+          "secretName": {{.Values.fsm.remoteLogging.secretName | mustToJson}}
           {{- end }}
         }
       },
@@ -74,5 +82,45 @@ data:
         "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}},
         "enableAutoDefaultRoute": {{.Values.fsm.featureFlags.enableAutoDefaultRoute | mustToJson}}
       },
-      "pluginChains": {{.Values.fsm.pluginChains | mustToJson }}
+      "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
+      "ingress": {
+        "enabled": {{ and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled )}},
+        "namespaced": {{ .Values.fsm.fsmIngress.namespaced }},
+        "logLevel": "{{ .Values.fsm.fsmIngress.logLevel }}",
+        "http": {
+          "enabled": {{ .Values.fsm.fsmIngress.http.enabled }},
+          "bind": {{ .Values.fsm.fsmIngress.http.port }},
+          "listen": {{ .Values.fsm.fsmIngress.http.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.fsmIngress.http.nodePort }}
+        },
+        "tls": {
+          "enabled": {{ .Values.fsm.fsmIngress.tls.enabled }},
+          "bind": {{ .Values.fsm.fsmIngress.tls.port }},
+          "listen": {{ .Values.fsm.fsmIngress.tls.containerPort }},
+          "nodePort": {{ default 0 .Values.fsm.fsmIngress.tls.nodePort }},
+          "mTLS": {{ .Values.fsm.fsmIngress.tls.mTLS }},
+          "sslPassthrough": {
+            "enabled": {{ .Values.fsm.fsmIngress.tls.sslPassthrough.enabled }},
+            "upstreamPort": {{ .Values.fsm.fsmIngress.tls.sslPassthrough.upstreamPort }}
+          }
+        }
+      },
+      "gatewayAPI": {
+        "enabled": {{ and .Values.fsm.fsmGateway.enabled (not .Values.fsm.fsmIngress.enabled) }},
+        "logLevel": "{{ .Values.fsm.fsmGateway.logLevel }}"
+      },
+      "serviceLB": {
+        "enabled": {{ .Values.fsm.serviceLB.enabled }},
+        "image": "{{ .Values.fsm.serviceLBImage }}"
+      },
+      "flb": {
+        "enabled": {{ .Values.fsm.flb.enabled }},
+        "strictMode": {{ .Values.fsm.flb.strictMode }},
+        "secretName": "{{ .Values.fsm.flb.secretName }}"
+      },
+      "image": {
+        "registry": "{{ .Values.fsm.image.registry }}",
+        "tag": "{{ .Values.fsm.image.tag }}",
+        "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
+      }
     }

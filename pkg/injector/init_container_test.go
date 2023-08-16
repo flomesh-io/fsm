@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 )
@@ -28,10 +28,10 @@ var _ = Describe("Test functions creating Sidecar bootstrap configuration", func
 	Context("test GetInitContainerSpec()", func() {
 		It("Creates init container without ip range exclusion list", func() {
 			mockConfigurator.EXPECT().GetInitContainerImage().Return(containerImage).Times(1)
-			mockConfigurator.EXPECT().GetMeshConfig().Return(configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Sidecar: configv1alpha2.SidecarSpec{
-						LocalProxyMode: configv1alpha2.LocalProxyModeLocalhost,
+			mockConfigurator.EXPECT().GetMeshConfig().Return(configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Sidecar: configv1alpha3.SidecarSpec{
+						LocalProxyMode: configv1alpha3.LocalProxyModeLocalhost,
 					},
 				},
 			}).Times(1)
@@ -105,10 +105,10 @@ EOF
 		})
 		It("Sets podIP DNAT rule if set in meshconfig", func() {
 			mockConfigurator.EXPECT().GetInitContainerImage().Return(containerImage).Times(1)
-			mockConfigurator.EXPECT().GetMeshConfig().Return(configv1alpha2.MeshConfig{
-				Spec: configv1alpha2.MeshConfigSpec{
-					Sidecar: configv1alpha2.SidecarSpec{
-						LocalProxyMode: configv1alpha2.LocalProxyModePodIP,
+			mockConfigurator.EXPECT().GetMeshConfig().Return(configv1alpha3.MeshConfig{
+				Spec: configv1alpha3.MeshConfigSpec{
+					Sidecar: configv1alpha3.SidecarSpec{
+						LocalProxyMode: configv1alpha3.LocalProxyModePodIP,
 					},
 				},
 			}).Times(1)

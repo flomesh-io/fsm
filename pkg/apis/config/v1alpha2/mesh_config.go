@@ -9,6 +9,7 @@ import (
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:deprecatedversion
 type MeshConfig struct {
 	// Object's type metadata.
 	metav1.TypeMeta `json:",inline" yaml:",inline"`

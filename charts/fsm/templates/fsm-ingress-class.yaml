@@ -1,0 +1,13 @@
+{{- if and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled ) (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: pipy
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+  annotations:
+    meta.flomesh.io/namespace: {{ include "fsm.namespace" . }}
+    meta.flomesh.io/ingress-pipy-svc: "fsm-ingress"
+spec:
+  controller: flomesh.io/ingress-pipy
+{{- end }}

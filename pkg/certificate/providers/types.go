@@ -5,7 +5,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -43,7 +43,7 @@ var (
 type Options interface {
 	Validate() error
 
-	AsProviderSpec() v1alpha2.ProviderSpec
+	AsProviderSpec() v1alpha3.ProviderSpec
 }
 
 // TresorOptions is a type that specifies 'Tresor' certificate provider options
@@ -76,7 +76,7 @@ type CertManagerOptions struct {
 // TODO(#4502): Remove this entirely once we are fully onboarded to MRC informers.
 type MRCCompatClient struct {
 	MRCProviderGenerator
-	mrc *v1alpha2.MeshRootCertificate
+	mrc *v1alpha3.MeshRootCertificate
 }
 
 // MRCProviderGenerator knows how to convert a given MRC to its appropriate provider.

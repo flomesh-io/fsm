@@ -10,7 +10,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/certificate/pem"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -331,14 +331,14 @@ func TestHandleMRCEvent(t *testing.T) {
 			mrcClient: &fakeMRCClient{},
 			mrcEvent: MRCEvent{
 				Type: MRCEventAdded,
-				MRC: &v1alpha2.MeshRootCertificate{
+				MRC: &v1alpha3.MeshRootCertificate{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "my-mrc",
 					},
-					Spec: v1alpha2.MeshRootCertificateSpec{
+					Spec: v1alpha3.MeshRootCertificateSpec{
 						TrustDomain: "foo.bar.com",
 					},
-					Status: v1alpha2.MeshRootCertificateStatus{
+					Status: v1alpha3.MeshRootCertificateStatus{
 						State: constants.MRCStateActive,
 					},
 				},

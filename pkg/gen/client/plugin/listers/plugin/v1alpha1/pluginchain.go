@@ -28,8 +28,9 @@ type PluginChainLister interface {
 	// List lists all PluginChains in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error)
-	// PluginChains returns an object that can list and get PluginChains.
-	PluginChains(namespace string) PluginChainNamespaceLister
+	// Get retrieves the PluginChain from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.PluginChain, error)
 	PluginChainListerExpansion
 }
 
@@ -51,41 +52,9 @@ func (s *pluginChainLister) List(selector labels.Selector) (ret []*v1alpha1.Plug
 	return ret, err
 }
 
-// PluginChains returns an object that can list and get PluginChains.
-func (s *pluginChainLister) PluginChains(namespace string) PluginChainNamespaceLister {
-	return pluginChainNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// PluginChainNamespaceLister helps list and get PluginChains.
-// All objects returned here must be treated as read-only.
-type PluginChainNamespaceLister interface {
-	// List lists all PluginChains in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error)
-	// Get retrieves the PluginChain from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.PluginChain, error)
-	PluginChainNamespaceListerExpansion
-}
-
-// pluginChainNamespaceLister implements the PluginChainNamespaceLister
-// interface.
-type pluginChainNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all PluginChains in the indexer for a given namespace.
-func (s pluginChainNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginChain))
-	})
-	return ret, err
-}
-
-// Get retrieves the PluginChain from the indexer for a given namespace and name.
-func (s pluginChainNamespaceLister) Get(name string) (*v1alpha1.PluginChain, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the PluginChain from the index for a given name.
+func (s *pluginChainLister) Get(name string) (*v1alpha1.PluginChain, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

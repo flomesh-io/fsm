@@ -28,8 +28,9 @@ type PluginConfigLister interface {
 	// List lists all PluginConfigs in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error)
-	// PluginConfigs returns an object that can list and get PluginConfigs.
-	PluginConfigs(namespace string) PluginConfigNamespaceLister
+	// Get retrieves the PluginConfig from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.PluginConfig, error)
 	PluginConfigListerExpansion
 }
 
@@ -51,41 +52,9 @@ func (s *pluginConfigLister) List(selector labels.Selector) (ret []*v1alpha1.Plu
 	return ret, err
 }
 
-// PluginConfigs returns an object that can list and get PluginConfigs.
-func (s *pluginConfigLister) PluginConfigs(namespace string) PluginConfigNamespaceLister {
-	return pluginConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// PluginConfigNamespaceLister helps list and get PluginConfigs.
-// All objects returned here must be treated as read-only.
-type PluginConfigNamespaceLister interface {
-	// List lists all PluginConfigs in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error)
-	// Get retrieves the PluginConfig from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.PluginConfig, error)
-	PluginConfigNamespaceListerExpansion
-}
-
-// pluginConfigNamespaceLister implements the PluginConfigNamespaceLister
-// interface.
-type pluginConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all PluginConfigs in the indexer for a given namespace.
-func (s pluginConfigNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the PluginConfig from the indexer for a given namespace and name.
-func (s pluginConfigNamespaceLister) Get(name string) (*v1alpha1.PluginConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the PluginConfig from the index for a given name.
+func (s *pluginConfigLister) Get(name string) (*v1alpha1.PluginConfig, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

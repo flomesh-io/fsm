@@ -1,0 +1,149 @@
+{{- if (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-gateway
+    meshName: {{ .Values.fsm.meshName }}
+spec:
+  replicas: {{ default 1 .Values.gwy.spec.replicas }}
+  selector:
+    matchLabels:
+      app: fsm-gateway
+      gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: fsm-gateway
+        gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
+        {{- with .Values.fsm.fsmGateway.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9091'
+        {{- with .Values.fsm.fsmGateway.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      priorityClassName: system-node-critical
+      initContainers:
+      - name: wait-controller
+        image: {{ .Values.fsm.curlImage }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - curl
+          - {{ printf "http://fsm-controller.%s.svc.cluster.local:9091/health/ready" .Values.fsm.fsmNamespace }}
+          - --connect-timeout
+          - "2"
+          - --retry
+          - "50"
+          - --retry-connrefused
+          - --retry-delay
+          - "5"
+        {{- with .Values.fsm.fsmGateway.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      containers:
+      - name: gateway
+        image: {{ include "fsmGateway.image" . }}
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
+        ports:
+          {{- range $listener := .Values.listeners }}
+          - name: {{ $listener.name }}
+            containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
+          {{- end }}
+          - name: health
+            containerPort: 8081
+        args:
+          - --verbosity={{ .Values.fsm.fsmGateway.logLevel }}
+          - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
+          - --fsm-version={{ .Chart.AppVersion }}
+          - --mesh-name={{ .Values.fsm.meshName }}
+        resources:
+          {{- toYaml .Values.fsm.fsmGateway.resources | nindent 10 }}
+        env:
+        - name: FSM_NAMESPACE
+          value: {{ .Values.fsm.fsmNamespace }}
+        - name: FSM_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: FSM_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- with .Values.fsm.fsmGateway.env }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.fsm.fsmGateway.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: 9091
+        readinessProbe:
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          tcpSocket:
+            port: 9091
+      terminationGracePeriodSeconds: 60
+      {{- with .Values.fsm.fsmGateway.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "fsm.gateway.serviceAccountName" . }}
+      {{- with .Values.fsm.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.fsm.fsmGateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - fsm-gateway
+                    - key: gateway.flomesh.io/ns
+                      operator: In
+                      values:
+                        - {{ .Values.gwy.metadata.namespace }}
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- with .Values.fsm.fsmGateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

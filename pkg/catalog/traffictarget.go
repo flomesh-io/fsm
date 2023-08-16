@@ -143,6 +143,8 @@ func trafficTargetIdentityToServiceIdentity(identitySubject smiAccess.IdentityBi
 }
 
 // trafficTargetIdentitiesToSvcAccounts returns a list of Service Accounts from the given list of identities from a Traffic Target
+//
+//lint:ignore U1000 This is currently unused but will be used in a future PR
 func trafficTargetIdentitiesToSvcAccounts(identities []smiAccess.IdentityBindingSubject) []identity.K8sServiceAccount {
 	serviceAccountsMap := map[identity.K8sServiceAccount]bool{}
 

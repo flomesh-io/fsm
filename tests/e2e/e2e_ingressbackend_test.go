@@ -42,6 +42,7 @@ func testIngressBackend() {
 	It("allows ingress traffic", func() {
 		// Install FSM
 		installOpts := Td.GetFSMInstallOpts()
+		installOpts.EnableIngress = false
 		Expect(Td.InstallFSM(installOpts)).To(Succeed())
 
 		Expect(Td.CreateNs(destNs, nil)).To(Succeed())

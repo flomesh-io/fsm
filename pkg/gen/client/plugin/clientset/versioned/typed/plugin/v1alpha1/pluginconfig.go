@@ -30,7 +30,7 @@ import (
 // PluginConfigsGetter has a method to return a PluginConfigInterface.
 // A group's client should implement this interface.
 type PluginConfigsGetter interface {
-	PluginConfigs(namespace string) PluginConfigInterface
+	PluginConfigs() PluginConfigInterface
 }
 
 // PluginConfigInterface has methods to work with PluginConfig resources.
@@ -50,14 +50,12 @@ type PluginConfigInterface interface {
 // pluginConfigs implements PluginConfigInterface
 type pluginConfigs struct {
 	client rest.Interface
-	ns     string
 }
 
 // newPluginConfigs returns a PluginConfigs
-func newPluginConfigs(c *PluginV1alpha1Client, namespace string) *pluginConfigs {
+func newPluginConfigs(c *PluginV1alpha1Client) *pluginConfigs {
 	return &pluginConfigs{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -65,7 +63,6 @@ func newPluginConfigs(c *PluginV1alpha1Client, namespace string) *pluginConfigs 
 func (c *pluginConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginConfig, err error) {
 	result = &v1alpha1.PluginConfig{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -82,7 +79,6 @@ func (c *pluginConfigs) List(ctx context.Context, opts v1.ListOptions) (result *
 	}
 	result = &v1alpha1.PluginConfigList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -99,7 +95,6 @@ func (c *pluginConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.I
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -110,7 +105,6 @@ func (c *pluginConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.I
 func (c *pluginConfigs) Create(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.CreateOptions) (result *v1alpha1.PluginConfig, err error) {
 	result = &v1alpha1.PluginConfig{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(pluginConfig).
@@ -123,7 +117,6 @@ func (c *pluginConfigs) Create(ctx context.Context, pluginConfig *v1alpha1.Plugi
 func (c *pluginConfigs) Update(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (result *v1alpha1.PluginConfig, err error) {
 	result = &v1alpha1.PluginConfig{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		Name(pluginConfig.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -138,7 +131,6 @@ func (c *pluginConfigs) Update(ctx context.Context, pluginConfig *v1alpha1.Plugi
 func (c *pluginConfigs) UpdateStatus(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (result *v1alpha1.PluginConfig, err error) {
 	result = &v1alpha1.PluginConfig{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		Name(pluginConfig.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *pluginConfigs) UpdateStatus(ctx context.Context, pluginConfig *v1alpha1
 // Delete takes name of the pluginConfig and deletes it. Returns an error if one occurs.
 func (c *pluginConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		Name(name).
 		Body(&opts).
@@ -167,7 +158,6 @@ func (c *pluginConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOpti
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *pluginConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOpti
 func (c *pluginConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginConfig, err error) {
 	result = &v1alpha1.PluginConfig{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("pluginconfigs").
 		Name(name).
 		SubResource(subresources...).

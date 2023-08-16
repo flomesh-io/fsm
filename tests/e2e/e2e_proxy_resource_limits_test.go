@@ -65,7 +65,7 @@ var _ = FSMDescribe("Test proxy resource setting",
 						corev1.ResourceMemory: resource.MustParse("64M"),
 					},
 				}
-				_, err = Td.ConfigClient.ConfigV1alpha2().MeshConfigs(Td.FsmNamespace).Update(context.TODO(), meshConfig, v1.UpdateOptions{})
+				_, err = Td.ConfigClient.ConfigV1alpha3().MeshConfigs(Td.FsmNamespace).Update(context.TODO(), meshConfig, v1.UpdateOptions{})
 				Expect(err).ShouldNot(HaveOccurred())
 
 				// Create a new app

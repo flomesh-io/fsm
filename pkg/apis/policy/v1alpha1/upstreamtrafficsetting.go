@@ -8,6 +8,8 @@ import (
 // to an upstream host.
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:resource:shortName=upstreamtrafficsetting,scope=Namespaced
 type UpstreamTrafficSetting struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

@@ -1,0 +1,305 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: meshrootcertificates.config.flomesh.io
+spec:
+  group: config.flomesh.io
+  names:
+    kind: MeshRootCertificate
+    listKind: MeshRootCertificateList
+    plural: meshrootcertificates
+    shortNames:
+    - mrc
+    singular: meshrootcertificate
+  scope: Namespaced
+  versions:
+  - deprecated: true
+    name: v1alpha2
+    schema:
+      openAPIV3Schema:
+        description: MeshRootCertificate defines the configuration for certificate
+          issuing by the mesh control plane
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the MeshRootCertificate config specification
+            properties:
+              provider:
+                description: Provider specifies the mesh certificate provider
+                properties:
+                  certManager:
+                    description: CertManager specifies the cert-manager provider configuration
+                    properties:
+                      issuerGroup:
+                        description: IssuerGroup specifies the group the Issuer belongs
+                          to
+                        type: string
+                      issuerKind:
+                        description: IssuerKind specifies the kind of Issuer
+                        type: string
+                      issuerName:
+                        description: IssuerName specifies the name of the Issuer resource
+                        type: string
+                    required:
+                    - issuerGroup
+                    - issuerKind
+                    - issuerName
+                    type: object
+                  tresor:
+                    description: Tresor specifies the Tresor provider configuration
+                    properties:
+                      ca:
+                        description: CA specifies Tresor's ca configuration
+                        properties:
+                          secretRef:
+                            description: SecretRef specifies the secret in which the
+                              root certificate is stored
+                            properties:
+                              name:
+                                description: name is unique within a namespace to
+                                  reference a secret resource.
+                                type: string
+                              namespace:
+                                description: namespace defines the space within which
+                                  the secret name must be unique.
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        required:
+                        - secretRef
+                        type: object
+                    required:
+                    - ca
+                    type: object
+                  vault:
+                    description: Vault specifies the vault provider configuration
+                    properties:
+                      host:
+                        description: Host specifies the name of the Vault server
+                        type: string
+                      port:
+                        description: Port specifies the port of the Vault server
+                        type: integer
+                      protocol:
+                        description: Protocol specifies the protocol for connections
+                          to Vault
+                        type: string
+                      role:
+                        description: Role specifies the name of the role for use by
+                          mesh control plane
+                        type: string
+                      token:
+                        description: Token specifies the configuration of the token
+                          to be used by mesh control plane to connect to Vault
+                        properties:
+                          secretKeyRef:
+                            description: SecretKeyRef specifies the secret in which
+                              the Vault token is stored
+                            properties:
+                              key:
+                                description: Key specifies the key whose value is
+                                  the Vault token
+                                type: string
+                              name:
+                                description: Name specifies the name of the secret
+                                  in which the Vault token is stored
+                                type: string
+                              namespace:
+                                description: Namespace specifies the namespace of
+                                  the secret in which the Vault token is stored
+                                type: string
+                            required:
+                            - key
+                            - name
+                            - namespace
+                            type: object
+                        required:
+                        - secretKeyRef
+                        type: object
+                    required:
+                    - host
+                    - port
+                    - protocol
+                    - role
+                    - token
+                    type: object
+                type: object
+              trustDomain:
+                description: TrustDomain is the trust domain to use as a suffix in
+                  Common Names for new certificates.
+                type: string
+            required:
+            - provider
+            - trustDomain
+            type: object
+          status:
+            description: Status of the MeshRootCertificate resource
+            properties:
+              state:
+                description: State specifies the state of the certificate provider
+                  All states are specified in constants.go
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: false
+  - name: v1alpha3
+    schema:
+      openAPIV3Schema:
+        description: MeshRootCertificate defines the configuration for certificate
+          issuing by the mesh control plane
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the MeshRootCertificate config specification
+            properties:
+              provider:
+                description: Provider specifies the mesh certificate provider
+                properties:
+                  certManager:
+                    description: CertManager specifies the cert-manager provider configuration
+                    properties:
+                      issuerGroup:
+                        description: IssuerGroup specifies the group the Issuer belongs
+                          to
+                        type: string
+                      issuerKind:
+                        description: IssuerKind specifies the kind of Issuer
+                        type: string
+                      issuerName:
+                        description: IssuerName specifies the name of the Issuer resource
+                        type: string
+                    required:
+                    - issuerGroup
+                    - issuerKind
+                    - issuerName
+                    type: object
+                  tresor:
+                    description: Tresor specifies the Tresor provider configuration
+                    properties:
+                      ca:
+                        description: CA specifies Tresor's ca configuration
+                        properties:
+                          secretRef:
+                            description: SecretRef specifies the secret in which the
+                              root certificate is stored
+                            properties:
+                              name:
+                                description: name is unique within a namespace to
+                                  reference a secret resource.
+                                type: string
+                              namespace:
+                                description: namespace defines the space within which
+                                  the secret name must be unique.
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        required:
+                        - secretRef
+                        type: object
+                    required:
+                    - ca
+                    type: object
+                  vault:
+                    description: Vault specifies the vault provider configuration
+                    properties:
+                      host:
+                        description: Host specifies the name of the Vault server
+                        type: string
+                      port:
+                        description: Port specifies the port of the Vault server
+                        type: integer
+                      protocol:
+                        description: Protocol specifies the protocol for connections
+                          to Vault
+                        type: string
+                      role:
+                        description: Role specifies the name of the role for use by
+                          mesh control plane
+                        type: string
+                      token:
+                        description: Token specifies the configuration of the token
+                          to be used by mesh control plane to connect to Vault
+                        properties:
+                          secretKeyRef:
+                            description: SecretKeyRef specifies the secret in which
+                              the Vault token is stored
+                            properties:
+                              key:
+                                description: Key specifies the key whose value is
+                                  the Vault token
+                                type: string
+                              name:
+                                description: Name specifies the name of the secret
+                                  in which the Vault token is stored
+                                type: string
+                              namespace:
+                                description: Namespace specifies the namespace of
+                                  the secret in which the Vault token is stored
+                                type: string
+                            required:
+                            - key
+                            - name
+                            - namespace
+                            type: object
+                        required:
+                        - secretKeyRef
+                        type: object
+                    required:
+                    - host
+                    - port
+                    - protocol
+                    - role
+                    - token
+                    type: object
+                type: object
+              trustDomain:
+                description: TrustDomain is the trust domain to use as a suffix in
+                  Common Names for new certificates.
+                type: string
+            required:
+            - provider
+            - trustDomain
+            type: object
+          status:
+            description: Status of the MeshRootCertificate resource
+            properties:
+              state:
+                description: State specifies the state of the certificate provider
+                  All states are specified in constants.go
+                type: string
+            required:
+            - state
+            type: object
+        type: object
+    served: true
+    storage: true

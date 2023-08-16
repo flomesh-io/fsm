@@ -15,6 +15,8 @@ const (
 	// How many bits in the certificate serial number
 	certSerialNumberBits = 128
 
+	// The organization name to be used in the certificates
+	//lint:ignore U1000 Ignore unused variable
 	testCertOrgName = "Flomesh Service Mesh Tresor"
 )
 

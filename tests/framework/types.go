@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/kind/pkg/cluster"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	versioned2 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
@@ -103,6 +103,11 @@ type InstallFSMOpts struct {
 	DeployJaeger            bool
 	DeployFluentbit         bool
 	EnableReconciler        bool
+	EnableIngress           bool
+	EnableGateway           bool
+	EnableFLB               bool
+	EnableServiceLB         bool
+	EnableEgressGateway     bool
 
 	VaultHost            string
 	VaultProtocol        string
@@ -123,7 +128,7 @@ type InstallFSMOpts struct {
 	FSMLogLevel          string
 	SidecarLogLevel      string
 	SidecarClass         string
-	LocalProxyMode       configv1alpha2.LocalProxyMode
+	LocalProxyMode       configv1alpha3.LocalProxyMode
 	EnableDebugServer    bool
 
 	SetOverrides []string

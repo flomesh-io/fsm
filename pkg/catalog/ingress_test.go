@@ -14,7 +14,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/policy"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/service"
@@ -421,7 +421,7 @@ func TestGetIngressTrafficPolicy(t *testing.T) {
 			mockEndpointsProvider.EXPECT().ListEndpointsForService(sourceSvcWithoutEndpoints).Return(nil).AnyTimes()
 			mockEndpointsProvider.EXPECT().GetID().Return("mock").AnyTimes()
 			mockKubeController.EXPECT().UpdateStatus(gomock.Any()).Return(nil, nil).AnyTimes()
-			mockCfg.EXPECT().GetFeatureFlags().Return(configv1alpha2.FeatureFlags{EnableIngressBackendPolicy: true}).AnyTimes()
+			mockCfg.EXPECT().GetFeatureFlags().Return(configv1alpha3.FeatureFlags{EnableIngressBackendPolicy: true}).AnyTimes()
 
 			actual, err := meshCatalog.GetIngressTrafficPolicy(tc.meshSvc)
 			assert.Equal(tc.expectError, err != nil)

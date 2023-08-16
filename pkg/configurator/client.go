@@ -6,7 +6,7 @@ import (
 
 	"k8s.io/client-go/tools/cache"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
@@ -49,8 +49,8 @@ func (c *Client) getMeshConfigCacheKey() string {
 }
 
 // Returns the current MeshConfig
-func (c *Client) getMeshConfig() configv1alpha2.MeshConfig {
-	var meshConfig configv1alpha2.MeshConfig
+func (c *Client) getMeshConfig() configv1alpha3.MeshConfig {
+	var meshConfig configv1alpha3.MeshConfig
 
 	meshConfigCacheKey := c.getMeshConfigCacheKey()
 	item, exists, err := c.informers.GetByKey(informers.InformerKeyMeshConfig, meshConfigCacheKey)
@@ -64,13 +64,13 @@ func (c *Client) getMeshConfig() configv1alpha2.MeshConfig {
 		return meshConfig
 	}
 
-	meshConfig = *item.(*configv1alpha2.MeshConfig)
+	meshConfig = *item.(*configv1alpha3.MeshConfig)
 	return meshConfig
 }
 
 func (c *Client) metricsHandler() cache.ResourceEventHandlerFuncs {
 	handleMetrics := func(obj interface{}) {
-		config := obj.(*configv1alpha2.MeshConfig)
+		config := obj.(*configv1alpha3.MeshConfig)
 
 		// This uses reflection to iterate over the feature flags to avoid
 		// enumerating them here individually. This code assumes the following:
@@ -95,7 +95,7 @@ func (c *Client) metricsHandler() cache.ResourceEventHandlerFuncs {
 			handleMetrics(newObj)
 		},
 		DeleteFunc: func(obj interface{}) {
-			config := obj.(*configv1alpha2.MeshConfig).DeepCopy()
+			config := obj.(*configv1alpha3.MeshConfig).DeepCopy()
 			// Ensure metrics reflect however the rest of the control plane
 			// handles when the MeshConfig doesn't exist. If this happens not to
 			// be the "real" MeshConfig, handleMetrics() will simply ignore it.

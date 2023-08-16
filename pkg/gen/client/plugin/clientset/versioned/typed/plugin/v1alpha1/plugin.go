@@ -30,7 +30,7 @@ import (
 // PluginsGetter has a method to return a PluginInterface.
 // A group's client should implement this interface.
 type PluginsGetter interface {
-	Plugins(namespace string) PluginInterface
+	Plugins() PluginInterface
 }
 
 // PluginInterface has methods to work with Plugin resources.
@@ -50,14 +50,12 @@ type PluginInterface interface {
 // plugins implements PluginInterface
 type plugins struct {
 	client rest.Interface
-	ns     string
 }
 
 // newPlugins returns a Plugins
-func newPlugins(c *PluginV1alpha1Client, namespace string) *plugins {
+func newPlugins(c *PluginV1alpha1Client) *plugins {
 	return &plugins{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -65,7 +63,6 @@ func newPlugins(c *PluginV1alpha1Client, namespace string) *plugins {
 func (c *plugins) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -82,7 +79,6 @@ func (c *plugins) List(ctx context.Context, opts v1.ListOptions) (result *v1alph
 	}
 	result = &v1alpha1.PluginList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -99,7 +95,6 @@ func (c *plugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfa
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -110,7 +105,6 @@ func (c *plugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfa
 func (c *plugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.CreateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(plugin).
@@ -123,7 +117,6 @@ func (c *plugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.C
 func (c *plugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("plugins").
 		Name(plugin.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -138,7 +131,6 @@ func (c *plugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.U
 func (c *plugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("plugins").
 		Name(plugin.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *plugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opt
 // Delete takes name of the plugin and deletes it. Returns an error if one occurs.
 func (c *plugins) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).
 		Body(&opts).
@@ -167,7 +158,6 @@ func (c *plugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, l
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *plugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, l
 func (c *plugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).
 		SubResource(subresources...).

@@ -124,12 +124,12 @@ func (c *client) initEndpointMonitor() {
 }
 
 // IsMonitoredNamespace returns a boolean indicating if the namespace is among the list of monitored namespaces
-func (c client) IsMonitoredNamespace(namespace string) bool {
+func (c *client) IsMonitoredNamespace(namespace string) bool {
 	return c.informers.IsMonitoredNamespace(namespace)
 }
 
 // ListMonitoredNamespaces returns all namespaces that the mesh is monitoring.
-func (c client) ListMonitoredNamespaces() ([]string, error) {
+func (c *client) ListMonitoredNamespaces() ([]string, error) {
 	var namespaces []string
 
 	for _, ns := range c.informers.List(fsminformers.InformerKeyNamespace) {
@@ -144,7 +144,7 @@ func (c client) ListMonitoredNamespaces() ([]string, error) {
 }
 
 // GetService retrieves the Kubernetes Services resource for the given MeshService
-func (c client) GetService(svc service.MeshService) *corev1.Service {
+func (c *client) GetService(svc service.MeshService) *corev1.Service {
 	// client-go cache uses <namespace>/<name> as key
 	svcIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyService, svc.NamespacedKey())
 	if exists && err == nil {
@@ -155,7 +155,7 @@ func (c client) GetService(svc service.MeshService) *corev1.Service {
 }
 
 // ListServices returns a list of services that are part of monitored namespaces
-func (c client) ListServices() []*corev1.Service {
+func (c *client) ListServices() []*corev1.Service {
 	var services []*corev1.Service
 
 	for _, serviceInterface := range c.informers.List(fsminformers.InformerKeyService) {
@@ -170,7 +170,7 @@ func (c client) ListServices() []*corev1.Service {
 }
 
 // ListServiceAccounts returns a list of service accounts that are part of monitored namespaces
-func (c client) ListServiceAccounts() []*corev1.ServiceAccount {
+func (c *client) ListServiceAccounts() []*corev1.ServiceAccount {
 	var serviceAccounts []*corev1.ServiceAccount
 
 	for _, serviceInterface := range c.informers.List(fsminformers.InformerKeyServiceAccount) {
@@ -185,7 +185,7 @@ func (c client) ListServiceAccounts() []*corev1.ServiceAccount {
 }
 
 // GetNamespace returns a Namespace resource if found, nil otherwise.
-func (c client) GetNamespace(ns string) *corev1.Namespace {
+func (c *client) GetNamespace(ns string) *corev1.Namespace {
 	nsIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNamespace, ns)
 	if exists && err == nil {
 		ns := nsIf.(*corev1.Namespace)
@@ -197,7 +197,7 @@ func (c client) GetNamespace(ns string) *corev1.Namespace {
 // ListPods returns a list of pods part of the mesh
 // Kubecontroller does not currently segment pod notifications, hence it receives notifications
 // for all k8s Pods.
-func (c client) ListPods() []*corev1.Pod {
+func (c *client) ListPods() []*corev1.Pod {
 	var pods []*corev1.Pod
 
 	for _, podInterface := range c.informers.List(fsminformers.InformerKeyPod) {
@@ -212,7 +212,7 @@ func (c client) ListPods() []*corev1.Pod {
 
 // GetEndpoints returns the endpoint for a given service, otherwise returns nil if not found
 // or error if the API errored out.
-func (c client) GetEndpoints(svc service.MeshService) (*corev1.Endpoints, error) {
+func (c *client) GetEndpoints(svc service.MeshService) (*corev1.Endpoints, error) {
 	ep, exists, err := c.informers.GetByKey(fsminformers.InformerKeyEndpoints, svc.NamespacedKey())
 	if err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ func (c client) GetEndpoints(svc service.MeshService) (*corev1.Endpoints, error)
 }
 
 // ListServiceIdentitiesForService lists ServiceAccounts associated with the given service
-func (c client) ListServiceIdentitiesForService(svc service.MeshService) ([]identity.K8sServiceAccount, error) {
+func (c *client) ListServiceIdentitiesForService(svc service.MeshService) ([]identity.K8sServiceAccount, error) {
 	var svcAccounts []identity.K8sServiceAccount
 
 	k8sSvc := c.GetService(svc)
@@ -269,7 +269,7 @@ func IsMetricsEnabled(pod *corev1.Pod) bool {
 
 // UpdateStatus updates the status subresource for the given resource and GroupVersionKind
 // The resource within the 'interface{}' must be a pointer to the underlying resource
-func (c client) UpdateStatus(resource interface{}) (metav1.Object, error) {
+func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 	switch t := resource.(type) {
 	case *policyv1alpha1.AccessCert:
 		obj := resource.(*policyv1alpha1.AccessCert)
@@ -289,11 +289,11 @@ func (c client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 
 	case *pluginv1alpha1.Plugin:
 		obj := resource.(*pluginv1alpha1.Plugin)
-		return c.pluginClient.PluginV1alpha1().Plugins(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
+		return c.pluginClient.PluginV1alpha1().Plugins().UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	case *pluginv1alpha1.PluginChain:
 		obj := resource.(*pluginv1alpha1.PluginChain)
-		return c.pluginClient.PluginV1alpha1().PluginChains(obj.Namespace).UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
+		return c.pluginClient.PluginV1alpha1().PluginChains().UpdateStatus(context.Background(), obj, metav1.UpdateOptions{})
 
 	default:
 		return nil, fmt.Errorf("Unsupported type: %T", t)
@@ -406,7 +406,7 @@ func GetTargetPortFromEndpoints(endpointName string, endpoints corev1.Endpoints)
 	return
 }
 
-func (c client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
+func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 	proxyUUID, svcAccount := proxy.GetUUID().String(), proxy.GetIdentity().ToK8sServiceAccount()
 	log.Trace().Msgf("Looking for pod with label %q=%q", constants.SidecarUniqueIDLabelName, proxyUUID)
 	podList := c.ListPods()
@@ -462,7 +462,7 @@ func (c client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 
 // GetTargetPortForServicePort returns the TargetPort corresponding to the Port used by clients
 // to communicate with it.
-func (c client) GetTargetPortForServicePort(namespacedSvc types.NamespacedName, port uint16) (uint16, error) {
+func (c *client) GetTargetPortForServicePort(namespacedSvc types.NamespacedName, port uint16) (uint16, error) {
 	// Lookup the k8s service corresponding to the given service name.
 	// The k8s service is necessary to lookup the TargetPort from the Endpoint whose name
 	// matches the name of the port on the k8s Service object.

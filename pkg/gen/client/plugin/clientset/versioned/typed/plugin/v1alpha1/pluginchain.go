@@ -30,7 +30,7 @@ import (
 // PluginChainsGetter has a method to return a PluginChainInterface.
 // A group's client should implement this interface.
 type PluginChainsGetter interface {
-	PluginChains(namespace string) PluginChainInterface
+	PluginChains() PluginChainInterface
 }
 
 // PluginChainInterface has methods to work with PluginChain resources.
@@ -50,14 +50,12 @@ type PluginChainInterface interface {
 // pluginChains implements PluginChainInterface
 type pluginChains struct {
 	client rest.Interface
-	ns     string
 }
 
 // newPluginChains returns a PluginChains
-func newPluginChains(c *PluginV1alpha1Client, namespace string) *pluginChains {
+func newPluginChains(c *PluginV1alpha1Client) *pluginChains {
 	return &pluginChains{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -65,7 +63,6 @@ func newPluginChains(c *PluginV1alpha1Client, namespace string) *pluginChains {
 func (c *pluginChains) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginChain, err error) {
 	result = &v1alpha1.PluginChain{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -82,7 +79,6 @@ func (c *pluginChains) List(ctx context.Context, opts v1.ListOptions) (result *v
 	}
 	result = &v1alpha1.PluginChainList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -99,7 +95,6 @@ func (c *pluginChains) Watch(ctx context.Context, opts v1.ListOptions) (watch.In
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -110,7 +105,6 @@ func (c *pluginChains) Watch(ctx context.Context, opts v1.ListOptions) (watch.In
 func (c *pluginChains) Create(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.CreateOptions) (result *v1alpha1.PluginChain, err error) {
 	result = &v1alpha1.PluginChain{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(pluginChain).
@@ -123,7 +117,6 @@ func (c *pluginChains) Create(ctx context.Context, pluginChain *v1alpha1.PluginC
 func (c *pluginChains) Update(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.UpdateOptions) (result *v1alpha1.PluginChain, err error) {
 	result = &v1alpha1.PluginChain{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		Name(pluginChain.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -138,7 +131,6 @@ func (c *pluginChains) Update(ctx context.Context, pluginChain *v1alpha1.PluginC
 func (c *pluginChains) UpdateStatus(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.UpdateOptions) (result *v1alpha1.PluginChain, err error) {
 	result = &v1alpha1.PluginChain{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		Name(pluginChain.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *pluginChains) UpdateStatus(ctx context.Context, pluginChain *v1alpha1.P
 // Delete takes name of the pluginChain and deletes it. Returns an error if one occurs.
 func (c *pluginChains) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		Name(name).
 		Body(&opts).
@@ -167,7 +158,6 @@ func (c *pluginChains) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("pluginchains").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *pluginChains) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 func (c *pluginChains) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginChain, err error) {
 	result = &v1alpha1.PluginChain{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("pluginchains").
 		Name(name).
 		SubResource(subresources...).

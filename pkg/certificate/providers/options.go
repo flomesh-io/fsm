@@ -6,7 +6,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 )
 
 // Validate validates the options for Tresor certificate provider
@@ -18,10 +18,10 @@ func (options TresorOptions) Validate() error {
 }
 
 // AsProviderSpec returns the provider spec generated from the tresor options
-func (options TresorOptions) AsProviderSpec() v1alpha2.ProviderSpec {
-	return v1alpha2.ProviderSpec{
-		Tresor: &v1alpha2.TresorProviderSpec{
-			CA: v1alpha2.TresorCASpec{
+func (options TresorOptions) AsProviderSpec() v1alpha3.ProviderSpec {
+	return v1alpha3.ProviderSpec{
+		Tresor: &v1alpha3.TresorProviderSpec{
+			CA: v1alpha3.TresorCASpec{
 				SecretRef: corev1.SecretReference{
 					Name: options.SecretName,
 				},
@@ -52,13 +52,13 @@ func (options VaultOptions) Validate() error {
 }
 
 // AsProviderSpec returns the provider spec generated from the vault options
-func (options VaultOptions) AsProviderSpec() v1alpha2.ProviderSpec {
-	return v1alpha2.ProviderSpec{
-		Vault: &v1alpha2.VaultProviderSpec{
+func (options VaultOptions) AsProviderSpec() v1alpha3.ProviderSpec {
+	return v1alpha3.ProviderSpec{
+		Vault: &v1alpha3.VaultProviderSpec{
 			Protocol: options.VaultProtocol,
 			Host:     options.VaultHost,
-			Token: v1alpha2.VaultTokenSpec{
-				SecretKeyRef: v1alpha2.SecretKeyReferenceSpec{
+			Token: v1alpha3.VaultTokenSpec{
+				SecretKeyRef: v1alpha3.SecretKeyReferenceSpec{
 					Name:      options.VaultTokenSecretName,
 					Namespace: options.VaultTokenSecretNamespace,
 					Key:       options.VaultTokenSecretKey,
@@ -88,9 +88,9 @@ func (options CertManagerOptions) Validate() error {
 }
 
 // AsProviderSpec returns the provider spec generated from the CertManager options
-func (options CertManagerOptions) AsProviderSpec() v1alpha2.ProviderSpec {
-	return v1alpha2.ProviderSpec{
-		CertManager: &v1alpha2.CertManagerProviderSpec{
+func (options CertManagerOptions) AsProviderSpec() v1alpha3.ProviderSpec {
+	return v1alpha3.ProviderSpec{
+		CertManager: &v1alpha3.CertManagerProviderSpec{
 			IssuerName:  options.IssuerName,
 			IssuerKind:  options.IssuerKind,
 			IssuerGroup: options.IssuerGroup,

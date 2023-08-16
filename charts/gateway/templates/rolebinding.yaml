@@ -1,0 +1,35 @@
+{{- if (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fsm-gateway-rolebinding
+  namespace: {{ .Values.gwy.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fsm-gateway-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "fsm.gateway.serviceAccountName" . }}
+    namespace: {{ .Values.gwy.metadata.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ printf "fsm-mesh-config-rolebinding-%s" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.fsm.fsmNamespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-gateway
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fsm-mesh-config-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "fsm.gateway.serviceAccountName" . }}
+    namespace: {{ .Values.gwy.metadata.namespace }}
+{{- end }}

@@ -15,6 +15,10 @@ limitations under the License.
 
 package v1alpha1
 
+// ClusterListerExpansion allows custom methods to be added to
+// ClusterLister.
+type ClusterListerExpansion interface{}
+
 // GlobalTrafficPolicyListerExpansion allows custom methods to be added to
 // GlobalTrafficPolicyLister.
 type GlobalTrafficPolicyListerExpansion interface{}

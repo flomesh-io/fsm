@@ -10,7 +10,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
 
-	configv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 )
 
 const (
@@ -30,9 +30,9 @@ func TestGetMeshConfig(t *testing.T) {
 	c := NewConfigurator(ic, fsmNamespace, fsmMeshConfigName, nil)
 
 	// Returns empty MeshConfig if informer cache is empty
-	a.Equal(configv1alpha2.MeshConfig{}, c.getMeshConfig())
+	a.Equal(configv1alpha3.MeshConfig{}, c.getMeshConfig())
 
-	newObj := &configv1alpha2.MeshConfig{
+	newObj := &configv1alpha3.MeshConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "config.flomesh.io",
 			Kind:       "MeshConfig",
@@ -58,12 +58,12 @@ func TestMetricsHandler(t *testing.T) {
 	metricsstore.DefaultMetricsStore.Start(metricsstore.DefaultMetricsStore.FeatureFlagEnabled)
 
 	// Adding the MeshConfig
-	handlers.OnAdd(&configv1alpha2.MeshConfig{
+	handlers.OnAdd(&configv1alpha3.MeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fsmMeshConfigName,
 		},
-		Spec: configv1alpha2.MeshConfigSpec{
-			FeatureFlags: configv1alpha2.FeatureFlags{
+		Spec: configv1alpha3.MeshConfigSpec{
+			FeatureFlags: configv1alpha3.FeatureFlags{
 				EnableRetryPolicy: true,
 			},
 		},
@@ -72,12 +72,12 @@ func TestMetricsHandler(t *testing.T) {
 	a.True(metricsstore.DefaultMetricsStore.Contains(`fsm_feature_flag_enabled{feature_flag="enableSnapshotCacheMode"} 0` + "\n"))
 
 	// Updating the MeshConfig
-	handlers.OnUpdate(nil, &configv1alpha2.MeshConfig{
+	handlers.OnUpdate(nil, &configv1alpha3.MeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fsmMeshConfigName,
 		},
-		Spec: configv1alpha2.MeshConfigSpec{
-			FeatureFlags: configv1alpha2.FeatureFlags{
+		Spec: configv1alpha3.MeshConfigSpec{
+			FeatureFlags: configv1alpha3.FeatureFlags{
 				EnableSnapshotCacheMode: true,
 			},
 		},
@@ -86,12 +86,12 @@ func TestMetricsHandler(t *testing.T) {
 	a.True(metricsstore.DefaultMetricsStore.Contains(`fsm_feature_flag_enabled{feature_flag="enableSnapshotCacheMode"} 1` + "\n"))
 
 	// Deleting the MeshConfig
-	handlers.OnDelete(&configv1alpha2.MeshConfig{
+	handlers.OnDelete(&configv1alpha3.MeshConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fsmMeshConfigName,
 		},
-		Spec: configv1alpha2.MeshConfigSpec{
-			FeatureFlags: configv1alpha2.FeatureFlags{
+		Spec: configv1alpha3.MeshConfigSpec{
+			FeatureFlags: configv1alpha3.FeatureFlags{
 				EnableSnapshotCacheMode: true,
 			},
 		},
