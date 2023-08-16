@@ -501,6 +501,7 @@ type HTTPConnectionSettings struct {
 type PipyConf struct {
 	Ts               *time.Time
 	Version          *string
+	Metrics          bool
 	Spec             MeshConfigSpec
 	Certificate      *Certificate
 	Inbound          *InboundTrafficPolicy    `json:"Inbound"`

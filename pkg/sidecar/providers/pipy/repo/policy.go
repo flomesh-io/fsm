@@ -304,7 +304,13 @@ func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, r
 	if itm.HTTPHostPort2Service == nil {
 		itm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
-	itm.HTTPHostPort2Service[hostPort] = ruleName
+	if preRuleName, exist := itm.HTTPHostPort2Service[hostPort]; exist {
+		if len(ruleName) < len(preRuleName) {
+			itm.HTTPHostPort2Service[hostPort] = ruleName
+		}
+	} else {
+		itm.HTTPHostPort2Service[hostPort] = ruleName
+	}
 }
 
 func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName) {
