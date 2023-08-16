@@ -7,11 +7,13 @@ set -o pipefail
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 FSM_BIN="${SHELL_FOLDER}/../bin/fsm"
 
+worker_list="cluster-1 cluster-2 cluster-3"
+
 # deploy httpbin in cluster-1 and cluster-3
 export HTTPBIN_NAMESPACE=httpbin
-for K3D_CLUSTER_NAME in cluster-1 cluster-3
+for K3D_CLUSTER_NAME in $worker_list
 do
-  kubecm switch k3d-${K3D_CLUSTER_NAME}
+  kubecm switch "k3d-${K3D_CLUSTER_NAME}"
   echo "Deploying httpbin to cluster $K3D_CLUSTER_NAME ..."
   kubectl create namespace ${HTTPBIN_NAMESPACE}
   "$FSM_BIN" namespace add ${HTTPBIN_NAMESPACE}
