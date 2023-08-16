@@ -30,8 +30,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/mcs/config"
 
