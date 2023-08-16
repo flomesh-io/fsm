@@ -150,7 +150,7 @@ jobs:
           tags: |
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}.{{minor}}.{{patch}}
-            type=sha,format=long
+            type=sha,format=short
           flavor: |
             latest=auto
 
