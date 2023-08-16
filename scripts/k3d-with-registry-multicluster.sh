@@ -7,7 +7,6 @@ set -o pipefail
 K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.21.11-k3s1}"
 K3D_HOST_IP="${K3D_HOST_IP:-10.0.1.21}"
 K3D_NETWORK="${K3D_NETWORK:-fsm}"
-SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
 
 k3d_prefix='k3d'
 reg_name='registry.localhost'
