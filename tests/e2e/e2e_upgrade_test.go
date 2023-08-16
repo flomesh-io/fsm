@@ -51,7 +51,7 @@ var _ = FSMDescribe("Upgrade from latest",
 			// release branches, it should specify the most recent patch of the
 			// previous minor release. e.g. on the release-v1.0 branch, this
 			// should be "0.11".
-			i.Version = "1.3.5"
+			i.Version = "1.1.0"
 			i.Namespace = Td.FsmNamespace
 			i.Wait = true
 			i.ReleaseName = releaseName
