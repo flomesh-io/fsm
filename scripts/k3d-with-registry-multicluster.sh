@@ -47,19 +47,47 @@ do
   fi
 
   # create cluster
-  k3d cluster create "${K3D_CLUSTER_NAME}" \
-    --registry-use $final_reg_name:$reg_port \
-    --registry-config "$SHELL_FOLDER/k3d-registry.yaml" \
-    --image "$K3D_IMAGE" \
-    --servers 1 \
-    --agents 0 \
-    --api-port "${K3D_HOST_IP}:${api_port}" \
-    --port "${api_port}:6443@server:0" \
-    --port "${port}:80@server:0" \
-    --servers-memory 4g \
-    --k3s-arg "--disable=traefik@server:0" \
-    --network "$K3D_NETWORK" \
-    --wait
+k3d cluster create --config - <<EOF
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: ${K3D_CLUSTER_NAME}
+servers: 1
+agents: 0
+kubeAPI:
+  host: "${K3D_HOST_IP}"
+  hostIP: "0.0.0.0"
+  hostPort: "${api_port}"
+image: $K3D_IMAGE
+network: $K3D_NETWORK
+ports:
+  - port: ${port}:80
+    nodeFilters:
+      - loadbalancer
+registries:
+  use:
+    - $final_reg_name:$reg_port
+  config: |
+    mirrors:
+      "localhost:5000":
+        endpoint:
+          - http://$final_reg_name:$reg_port
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      - arg: "--disable=traefik"
+        nodeFilters:
+          - server:*
+      - arg: "--tls-san=${K3D_HOST_IP}"
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+EOF
 
   ((api_port=api_port+1))
   ((port=port+1))

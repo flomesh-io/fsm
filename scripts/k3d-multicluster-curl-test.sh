@@ -7,14 +7,14 @@ set -o pipefail
 kubecm switch k3d-cluster-2
 curl_client="$(kubectl get pod -n curl -l app=curl -o jsonpath='{.items[0].metadata.name}')"
 
-echo "Creating GlobalTrafficPolicy(FailOver) for httpbin service ..."
+echo "Creating GlobalTrafficPolicy(ActiveActive) for httpbin service ..."
 kubectl apply -n httpbin -f  - <<EOF
 apiVersion: flomesh.io/v1alpha1
 kind: GlobalTrafficPolicy
 metadata:
   name: httpbin
 spec:
-  lbType: FailOver
+  lbType: ActiveActive
   targets:
     - clusterKey: default/default/default/cluster-1
     - clusterKey: default/default/default/cluster-3
