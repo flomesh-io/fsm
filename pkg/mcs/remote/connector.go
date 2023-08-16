@@ -49,74 +49,12 @@ import (
 func (c *Connector) Run(stopCh <-chan struct{}) error {
 	ctx := c.context.(*conn.ConnectorContext)
 	connectorCfg := ctx.ConnectorConfig
-	errCh := make(chan error)
 
 	log.Debug().Msgf("[%s] Starting connector ......", connectorCfg.Key())
 
-	err := c.updateConfigsOfManagedCluster()
-	if err != nil {
-		return err
-	}
-
-	//if c.cache.GetBroadcaster() != nil && c.k8sAPI.EventClient != nil {
-	//	log.Debug().Msgf("[%s] Starting broadcaster ......", connectorCfg.Key())
-	//	c.cache.GetBroadcaster().StartRecordingToSink(stopCh)
-	//}
-
-	// register event handlers
-	//log.Debug().Msgf("[%s] Registering event handlers ......", connectorCfg.Key())
-	//controllers := c.cache.GetControllers()
-	//go controllers.ServiceExport.Run(stopCh)
-
-	// start the ServiceExport Informer
-	//log.Debug().Msgf("[%s] Starting ServiceExport informer ......", connectorCfg.Key())
-	//go controllers.ServiceExport.Informer.Run(stopCh)
-	//if !k8scache.WaitForCacheSync(stopCh, controllers.ServiceExport.HasSynced) {
-	//	runtime.HandleError(fmt.Errorf("[%s] timed out waiting for ServiceExport to sync", connectorCfg.Key()))
-	//}
-	//
-	//// Sleep for a while, so that there's enough time for processing
-	//log.Debug().Msgf("[%s] Sleep for a while ......", connectorCfg.Key())
-	//time.Sleep(1 * time.Second)
-
-	// register event handler
-	//mc := c.clusterCfg.MeshConfig.GetConfig()
 	if c.cfg.IsManaged() {
 		log.Debug().Msgf("[%s] is managed.", connectorCfg.Key())
 		go c.processEvent(stopCh)
-	}
-
-	// start the cache runner
-	//go c.cache.SyncLoop(stopCh)
-
-	return <-errCh
-}
-
-func (c *Connector) updateConfigsOfManagedCluster() error {
-	ctx := c.context.(*conn.ConnectorContext)
-	connectorCfg := ctx.ConnectorConfig
-	log.Debug().Msgf("[%s] updating config .... ", connectorCfg.Key())
-
-	if c.cfg.IsManaged() && c.cfg.GetMultiClusterControlPlaneUID() != "" {
-		if c.cfg.GetMultiClusterControlPlaneUID() != connectorCfg.ControlPlaneUID() {
-			return fmt.Errorf("cluster %s is already managed, cannot join the MultiCluster", connectorCfg.Key())
-		}
-
-		log.Debug().Msgf("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
-	} else {
-		mc := c.cfg.GetMeshConfig()
-		mc.Spec.ClusterSet.IsManaged = true
-		mc.Spec.ClusterSet.Region = connectorCfg.Region()
-		mc.Spec.ClusterSet.Zone = connectorCfg.Zone()
-		mc.Spec.ClusterSet.Group = connectorCfg.Group()
-		mc.Spec.ClusterSet.Name = connectorCfg.Name()
-		mc.Spec.ClusterSet.ControlPlaneUID = connectorCfg.ControlPlaneUID()
-
-		if _, err := c.configClient.ConfigV1alpha3().
-			MeshConfigs(mc.Namespace).
-			Update(ctx, &mc, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
 	}
 
 	return nil

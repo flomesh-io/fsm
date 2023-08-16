@@ -28,9 +28,14 @@ package remote
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/flomesh-io/fsm/pkg/mcs/config"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
@@ -39,7 +44,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -120,6 +124,30 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 
 	mc := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, workerBroker)
 
+	log.Debug().Msgf("Checking if FSM Control Plane is installed in cluster %s ...", clusterKey)
+	// checks if fsm is installed in the cluster, this's a MUST otherwise it doesn't work
+	_, err = kubeClient.AppsV1().
+		Deployments(mc.GetFSMNamespace()).
+		Get(context.TODO(), constants.FSMControllerName, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Error().Msgf("[%s] FSM Control Plane is not installed or not in a proper state, please check it.", clusterKey)
+			return nil, err
+		}
+
+		log.Error().Msgf("[%s] Get FSM controller component %s/%s error: %s", clusterKey, mc.GetFSMNamespace(), constants.FSMControllerName, err)
+		return nil, err
+	}
+
+	if err := updateConfigsOfManagedCluster(configClient, connectorCtx.ConnectorConfig, mc); err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error updating mesh config of managed cluster %s", clusterKey)
+		return nil, err
+	}
+
+	// wait for the config to be updated
+	log.Debug().Msgf("[%s] Waiting for the config to be updated ...", clusterKey)
+	time.Sleep(1 * time.Second)
+
 	connector := &Connector{
 		context:            connectorCtx,
 		kubeClient:         kubeClient,
@@ -137,22 +165,35 @@ func NewConnector(ctx context.Context, controlPlaneBroker *messaging.Broker) (*C
 		}
 	}
 
-	log.Debug().Msgf("Checking if FSM Control Plane is installed in cluster %s ...", clusterKey)
-	// checks if fsm is installed in the cluster, this's a MUST otherwise it doesn't work
-	_, err = kubeClient.AppsV1().
-		Deployments(mc.GetFSMNamespace()).
-		Get(context.TODO(), constants.FSMControllerName, metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			log.Error().Msgf("FSM Control Plane is not installed or not in a proper state, please check it.")
-			return nil, err
+	return connector, nil
+}
+
+func updateConfigsOfManagedCluster(configClient configClientset.Interface, connectorCfg *config.ConnectorConfig, cfg configurator.Configurator) error {
+	log.Debug().Msgf("[%s] updating config .... ", connectorCfg.Key())
+
+	if cfg.IsManaged() && cfg.GetMultiClusterControlPlaneUID() != "" {
+		if cfg.GetMultiClusterControlPlaneUID() != connectorCfg.ControlPlaneUID() {
+			return fmt.Errorf("cluster %s is already managed, cannot join the MultiCluster", connectorCfg.Key())
 		}
 
-		log.Error().Msgf("Get FSM controller component %s/%s error: %s", mc.GetFSMNamespace(), constants.FSMControllerName, err)
-		return nil, err
+		log.Debug().Msgf("[%s] Rejoining ClusterSet ...", connectorCfg.Key())
+	} else {
+		mc := cfg.GetMeshConfig()
+		mc.Spec.ClusterSet.IsManaged = true
+		mc.Spec.ClusterSet.Region = connectorCfg.Region()
+		mc.Spec.ClusterSet.Zone = connectorCfg.Zone()
+		mc.Spec.ClusterSet.Group = connectorCfg.Group()
+		mc.Spec.ClusterSet.Name = connectorCfg.Name()
+		mc.Spec.ClusterSet.ControlPlaneUID = connectorCfg.ControlPlaneUID()
+
+		if _, err := configClient.ConfigV1alpha3().
+			MeshConfigs(mc.Namespace).
+			Update(context.TODO(), &mc, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
 	}
 
-	return connector, nil
+	return nil
 }
 
 func getEventTypesByInformerKey(informerKey informers.InformerKey) *k8s.EventTypes {
