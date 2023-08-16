@@ -20,6 +20,9 @@
   * MacOS: `brew install k3d`, for other platforms, please see [k3d docs](https://k3d.io/#installation)
 
 ## Setup test environment:
+### Export environment variables:
+`export K3D_HOST_IP=[you local ip address]`
+
 ### Create clusters
 `./scripts/k3d-with-registry-multicluster.sh`
 
