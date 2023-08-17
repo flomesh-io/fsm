@@ -27,7 +27,7 @@ changelog=$(git log "$prev".."$tag" --no-merges --format="* %s %H (%aN)")
 
 # Determine if any CRDs were updated between tags
 # CRD upgrades require manually deleting prior CRDs before upgrading Helm chart
-crd_changes=$(git diff --name-only "$prev".."$tag" -- charts/fsm/crds)
+crd_changes=$(git diff --name-only "$prev".."$tag" -- cmd/fsm-bootstrap/crds/)
 if [[ -z "$crd_changes" ]]; then
    crd_changes="No CRD changes between tags ${prev} and ${tag}"
 fi
