@@ -78,6 +78,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyGatewayAPIGatewayClass,
 		fsminformers.InformerKeyGatewayAPIGateway,
 		fsminformers.InformerKeyGatewayAPIHTTPRoute,
+		fsminformers.InformerKeyGatewayAPIReferenceGrant,
 		fsminformers.InformerKeyGatewayAPIGRPCRoute,
 		fsminformers.InformerKeyGatewayAPITLSRoute,
 		fsminformers.InformerKeyGatewayAPITCPRoute,
@@ -197,6 +198,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGateway)
 	case *gwv1beta1.HTTPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIHTTPRoute)
+	case *gwv1beta1.ReferenceGrant:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIReferenceGrant)
 	case *gwv1alpha2.GRPCRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGRPCRoute)
 	case *gwv1alpha2.TLSRoute:
@@ -251,6 +254,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayAPIHTTPRouteAdded,
 			Update: announcements.GatewayAPIHTTPRouteUpdated,
 			Delete: announcements.GatewayAPIHTTPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIReferenceGrant:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIReferenceGrantAdded,
+			Update: announcements.GatewayAPIReferenceGrantUpdated,
+			Delete: announcements.GatewayAPIReferenceGrantDeleted,
 		}
 	case fsminformers.InformerKeyGatewayAPIGRPCRoute:
 		return &k8s.EventTypes{

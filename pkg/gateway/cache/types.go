@@ -58,6 +58,9 @@ const (
 	// HTTPRoutesProcessorType is the type used to represent the HTTP routes processor
 	HTTPRoutesProcessorType ProcessorType = "httproutes"
 
+	// ReferenceGrantsProcessorType is the type used to represent the ReferenceGrant processor
+	ReferenceGrantsProcessorType ProcessorType = "referencegrants"
+
 	// GRPCRoutesProcessorType is the type used to represent the gRPC routes processor
 	GRPCRoutesProcessorType ProcessorType = "grpcroutes"
 

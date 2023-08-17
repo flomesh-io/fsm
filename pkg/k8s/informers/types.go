@@ -95,10 +95,12 @@ const (
 	InformerKeyGatewayAPIHTTPRoute InformerKey = "HTTPRoute-gwapi"
 	// InformerKeyGatewayAPIGRPCRoute is the InformerKey for a GRPCRoute informer
 	InformerKeyGatewayAPIGRPCRoute InformerKey = "GRPCRoute-gwapi"
-	// InformerKeyGatewayAPITLSRoute is the InformerKey for a IngressClass informer
+	// InformerKeyGatewayAPITLSRoute is the InformerKey for a TLSRoute informer
 	InformerKeyGatewayAPITLSRoute InformerKey = "TLSRoute-gwapi"
-	// InformerKeyGatewayAPITCPRoute is the InformerKey for a IngressClass informer
+	// InformerKeyGatewayAPITCPRoute is the InformerKey for a TCPRoute informer
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
+	// InformerKeyGatewayAPIReferenceGrant is the InformerKey for a TCPRoute informer
+	InformerKeyGatewayAPIReferenceGrant InformerKey = "ReferenceGrant-gwapi"
 )
 
 const (
@@ -132,6 +134,7 @@ type Lister struct {
 	GatewayClass      gwv1beta1.GatewayClassLister
 	Gateway           gwv1beta1.GatewayLister
 	HTTPRoute         gwv1beta1.HTTPRouteLister
+	ReferenceGrant    gwv1beta1.ReferenceGrantLister
 	GRPCRoute         gwv1alpha2.GRPCRouteLister
 	TLSRoute          gwv1alpha2.TLSRouteLister
 	TCPRoute          gwv1alpha2.TCPRouteLister

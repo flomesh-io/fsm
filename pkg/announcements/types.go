@@ -356,6 +356,17 @@ const (
 
 	// ---
 
+	// GatewayAPIReferenceGrantAdded is the type of announcement emitted when we observe an addition of referencegrants.gateway.networking.k8s.io
+	GatewayAPIReferenceGrantAdded Kind = "gwapi-referencegrant-added"
+
+	// GatewayAPIReferenceGrantDeleted the type of announcement emitted when we observe a deletion of referencegrants.gateway.networking.k8s.io
+	GatewayAPIReferenceGrantDeleted Kind = "gwapi-referencegrant-deleted"
+
+	// GatewayAPIReferenceGrantUpdated is the type of announcement emitted when we observe an update to referencegrants.gateway.networking.k8s.io
+	GatewayAPIReferenceGrantUpdated Kind = "gwapi-referencegrant-updated"
+
+	// ---
+
 	// GatewayAPIGRPCRouteAdded is the type of announcement emitted when we observe an addition of grpcroutes.gateway.networking.k8s.io
 	GatewayAPIGRPCRouteAdded Kind = "gwapi-grpcroute-added"
 

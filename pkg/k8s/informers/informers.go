@@ -224,16 +224,20 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 	return func(ic *InformerCollection) {
 		informerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
 
+		// Informers
 		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1beta1().GatewayClasses().Informer()
 		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1beta1().Gateways().Informer()
 		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1beta1().HTTPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIReferenceGrant] = informerFactory.Gateway().V1beta1().ReferenceGrants().Informer()
 		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 
+		// Listers
 		ic.listers.GatewayClass = informerFactory.Gateway().V1beta1().GatewayClasses().Lister()
 		ic.listers.Gateway = informerFactory.Gateway().V1beta1().Gateways().Lister()
 		ic.listers.HTTPRoute = informerFactory.Gateway().V1beta1().HTTPRoutes().Lister()
+		ic.listers.ReferenceGrant = informerFactory.Gateway().V1beta1().ReferenceGrants().Lister()
 		ic.listers.GRPCRoute = informerFactory.Gateway().V1alpha2().GRPCRoutes().Lister()
 		ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
 		ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
