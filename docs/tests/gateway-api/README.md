@@ -50,13 +50,8 @@
   - For more installation methods, please see [grpcurl docs](https://github.com/fullstorydev/grpcurl#installation) for details.
 
 
-- Modify /etc/hosts
-
-  As we'll use custom domain `grpctest.dev` and `foo.com` for testing, add it to `/etc/hosts` if it doesn't exist.
-  ```shell
-  sudo echo '127.0.0.1 grpctest.dev' >>  /etc/hosts
-  sudo echo '127.0.0.1 foo.com' >>  /etc/hosts
-  ```
+- Setup **dnsmasq** to resolve *.localhost domain to 127.0.0.1
+  * Please see [dnsmasq docs](../dnsmasq/README.md)
   
 ## Test cases
 
@@ -88,8 +83,8 @@ openssl req -new -x509 -nodes -days 365000 \
 ```shell
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
   -keyout https.key -out https.crt \
-  -subj "/CN=foo.com" \
-  -addext "subjectAltName = DNS:foo.com"
+  -subj "/CN=httptest.localhost" \
+  -addext "subjectAltName = DNS:httptest.localhost"
 ```
 
 - Create Secret for HTTPS Gateway resource
@@ -101,8 +96,8 @@ kubectl -n httpbin create secret tls https-cert --key https.key --cert https.crt
 ```shell
 openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
   -keyout grpc.key -out grpc.crt \
-  -subj "/CN=grpctest.dev" \
-  -addext "subjectAltName = DNS:grpctest.dev"
+  -subj "/CN=grpctest.localhost" \
+  -addext "subjectAltName = DNS:grpctest.localhost"
 ```
 
 - Create Secret for gRPC Gateway resource
@@ -138,13 +133,13 @@ spec:
     - protocol: TLS
       port: 8443
       name: tlsp
-      hostname: foo.com
+      hostname: httptest.localhost
       tls:
         mode: Passthrough
     - protocol: TLS
       port: 9443
       name: tlst
-      hostname: foo.com
+      hostname: httptest.localhost
       tls:
         mode: Terminate
         certificateRefs:
@@ -218,7 +213,7 @@ spec:
     namespace: default
     port: 80
   hostnames:
-  - "foo.com"
+  - "httptest.localhost"
   rules:
   - matches:
     - path:
@@ -232,11 +227,11 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv -H "Host: foo.com" http://localhost:8090/bar
+❯ curl -iv -H "Host: httptest.localhost" http://localhost:8090/bar
 *   Trying 127.0.0.1:8090...
 * Connected to localhost (127.0.0.1) port 8090 (#0)
 > GET /bar HTTP/1.1
-> Host: foo.com
+> Host: httptest.localhost
 > User-Agent: curl/7.88.1
 > Accept: */*
 >
@@ -331,7 +326,7 @@ spec:
       namespace: default
       port: 80  
   hostnames:
-    - grpctest.dev
+    - grpctest.localhost
   rules:
   - matches:
     - method:
@@ -345,13 +340,13 @@ EOF
 
 #### Test it:
 ```shell
-grpcurl -vv -H "Host: grpctest.dev" -plaintext -d '{"greeting":"Flomesh"}' localhost:8090 hello.HelloService/SayHello
+grpcurl -vv -H "Host: grpctest.localhost" -plaintext -d '{"greeting":"Flomesh"}' localhost:8090 hello.HelloService/SayHello
 
 Resolved method descriptor:
 rpc SayHello ( .hello.HelloRequest ) returns ( .hello.HelloResponse );
 
 Request metadata to send:
-host: grpctest.dev
+host: grpctest.localhost
 
 Response headers received:
 content-type: application/grpc
@@ -475,7 +470,7 @@ spec:
     namespace: default
     port: 443
   hostnames:
-  - "foo.com"
+  - "httptest.localhost"
   rules:
   - matches:
     - path:
@@ -489,9 +484,9 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv --cacert https.crt -H "Host: foo.com" https://foo.com:7443/bar
+❯ curl -iv --cacert https.crt -H "Host: httptest.localhost" https://httptest.localhost:7443/bar
 *   Trying 127.0.0.1:7443...
-* Connected to foo.com (127.0.0.1) port 7443 (#0)
+* Connected to httptest.localhost (127.0.0.1) port 7443 (#0)
 * ALPN: offers h2,http/1.1
 * (304) (OUT), TLS handshake, Client hello (1):
 *  CAfile: https.crt
@@ -505,22 +500,22 @@ EOF
 * SSL connection using TLSv1.3 / AEAD-AES256-GCM-SHA384
 * ALPN: server accepted h2
 * Server certificate:
-*  subject: CN=foo.com
+*  subject: CN=httptest.localhost
 *  start date: Jul  6 03:41:13 2023 GMT
 *  expire date: Jul  5 03:41:13 2024 GMT
-*  subjectAltName: host "foo.com" matched cert's "foo.com"
-*  issuer: CN=foo.com
+*  subjectAltName: host "httptest.localhost" matched cert's "httptest.localhost"
+*  issuer: CN=httptest.localhost
 *  SSL certificate verify ok.
 * using HTTP/2
 * h2h3 [:method: GET]
 * h2h3 [:path: /bar]
 * h2h3 [:scheme: https]
-* h2h3 [:authority: foo.com]
+* h2h3 [:authority: httptest.localhost]
 * h2h3 [user-agent: curl/7.88.1]
 * h2h3 [accept: */*]
 * Using Stream ID: 1 (easy handle 0x7fe4c4812e00)
 > GET /bar HTTP/2
-> Host: foo.com
+> Host: httptest.localhost
 > user-agent: curl/7.88.1
 > accept: */*
 >
@@ -531,7 +526,7 @@ content-length: 20
 
 <
 Hi, I am HTTPRoute!
-* Connection #0 to host foo.com left intact
+* Connection #0 to host httptest.localhost left intact
 ```
 
 ### Test HTTPS - GRPCRoute
@@ -549,7 +544,7 @@ spec:
       namespace: default
       port: 443  
   hostnames:
-    - grpctest.dev
+    - grpctest.localhost
   rules:
   - matches:
     - method:
@@ -563,7 +558,7 @@ EOF
 
 #### Test it:
 ```shell
-❯ grpcurl -vv -cacert grpc.crt -d '{"greeting":"Flomesh"}' grpctest.dev:7443 hello.HelloService/SayHello
+❯ grpcurl -vv -cacert grpc.crt -d '{"greeting":"Flomesh"}' grpctest.localhost:7443 hello.HelloService/SayHello
 
 Resolved method descriptor:
 rpc SayHello ( .hello.HelloRequest ) returns ( .hello.HelloResponse );
@@ -608,9 +603,9 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv --cacert https.crt -H "Host: foo.com" https://foo.com:9443
+❯ curl -iv --cacert https.crt -H "Host: httptest.localhost" https://httptest.localhost:9443
 *   Trying 127.0.0.1:9443...
-* Connected to foo.com (127.0.0.1) port 9443 (#0)
+* Connected to httptest.localhost (127.0.0.1) port 9443 (#0)
 * ALPN: offers h2,http/1.1
 * (304) (OUT), TLS handshake, Client hello (1):
 *  CAfile: https.crt
@@ -624,22 +619,22 @@ EOF
 * SSL connection using TLSv1.3 / AEAD-AES256-GCM-SHA384
 * ALPN: server accepted h2
 * Server certificate:
-*  subject: CN=foo.com
+*  subject: CN=httptest.localhost
 *  start date: Jul  6 03:41:13 2023 GMT
 *  expire date: Jul  5 03:41:13 2024 GMT
-*  subjectAltName: host "foo.com" matched cert's "foo.com"
-*  issuer: CN=foo.com
+*  subjectAltName: host "httptest.localhost" matched cert's "httptest.localhost"
+*  issuer: CN=httptest.localhost
 *  SSL certificate verify ok.
 * using HTTP/2
 * h2h3 [:method: GET]
 * h2h3 [:path: /]
 * h2h3 [:scheme: https]
-* h2h3 [:authority: foo.com]
+* h2h3 [:authority: httptest.localhost]
 * h2h3 [user-agent: curl/7.88.1]
 * h2h3 [accept: */*]
 * Using Stream ID: 1 (easy handle 0x7f90ec011e00)
 > GET / HTTP/2
-> Host: foo.com
+> Host: httptest.localhost
 > user-agent: curl/7.88.1
 > accept: */*
 >
@@ -648,7 +643,7 @@ HTTP/2 200
 
 <
 Hi, I am TCPRoute!
-* Connection #0 to host foo.com left intact
+* Connection #0 to host httptest.localhost left intact
 ```
 
 ### Test TLS Passthrough
@@ -674,7 +669,7 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl https://bing.com -iv --connect-to foo.com:8443:bing:443
+❯ curl https://bing.com -iv --connect-to httptest.localhost:8443:bing:443
 *   Trying 204.79.197.200:443...
 * Connected to bing.com (204.79.197.200) port 443 (#0)
 * ALPN: offers h2,http/1.1
