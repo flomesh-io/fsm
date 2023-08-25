@@ -65,6 +65,9 @@ type MeshConfigSpec struct {
 
 	// Image defines the configurations of Image info
 	Image ImageSpec `json:"image"`
+
+	// Misc defines the configurations of misc info
+	Misc MiscSpec `json:"misc"`
 }
 
 // LocalProxyMode is a type alias representing the way the sidecar proxies to the main application
@@ -540,7 +543,7 @@ type ServiceLBSpec struct {
 	// Enabled defines if service lb is enabled.
 	Enabled bool `json:"enabled"`
 
-	// +kubebuilder:default="mirrored-klipper-lb:v0.3.5"
+	// +kubebuilder:default="flomesh/mirrored-klipper-lb:v0.3.5"
 	// Image defines the service lb image.
 	Image string `json:"image"`
 }
@@ -573,4 +576,11 @@ type ImageSpec struct {
 	// +kubebuilder:default=IfNotPresent
 	// PullPolicy defines the pull policy of docker image.
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
+}
+
+// MiscSpec is the type to represent misc configs.
+type MiscSpec struct {
+	// +kubebuilder:default="curlimages/curl"
+	// CurlImage defines the image of curl.
+	CurlImage string `json:"curlImage"`
 }

@@ -122,5 +122,8 @@ data:
         "registry": "{{ .Values.fsm.image.registry }}",
         "tag": "{{ .Values.fsm.image.tag }}",
         "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
+      },
+      "misc": {
+        "curlImage": "{{ .Values.fsm.curlImage }}"
       }
     }
