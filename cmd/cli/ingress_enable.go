@@ -18,8 +18,9 @@ import (
 
 	"k8s.io/client-go/dynamic"
 
-	"github.com/flomesh-io/fsm/pkg/helm"
 	"helm.sh/helm/v3/pkg/chartutil"
+
+	"github.com/flomesh-io/fsm/pkg/helm"
 
 	"github.com/tidwall/sjson"
 
@@ -34,22 +35,18 @@ import (
 )
 
 const ingressEnableDescription = `
-This command will enable metrics scraping on all pods belonging to the given
-namespace or set of namespaces. Newly created pods belonging to namespaces that
-are enabled for metrics will be automatically enabled with metrics.
-
-The command does not deploy a metrics collection service such as Prometheus.
+This command will enable FSM ingress, make sure --mesh-name and --fsm-namespace matches 
+the release name and namespace of installed FSM, otherwise it doesn't work.
 `
 
 type ingressEnableCmd struct {
-	out            io.Writer
-	kubeClient     kubernetes.Interface
-	dynamicClient  dynamic.Interface
-	configClient   configClientset.Interface
-	meshName       string
-	mapper         meta.RESTMapper
-	actionConfig   *action.Configuration
-	templateClient *action.Install
+	out           io.Writer
+	kubeClient    kubernetes.Interface
+	dynamicClient dynamic.Interface
+	configClient  configClientset.Interface
+	meshName      string
+	mapper        meta.RESTMapper
+	actionConfig  *action.Configuration
 }
 
 func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {

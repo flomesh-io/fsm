@@ -7,44 +7,43 @@ import (
 	"io"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/tidwall/sjson"
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
-	"github.com/flomesh-io/fsm/pkg/helm"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/helm"
+
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/restmapper"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const ingressDisableDescription = `
-This command will enable metrics scraping on all pods belonging to the given
-namespace or set of namespaces. Newly created pods belonging to namespaces that
-are enabled for metrics will be automatically enabled with metrics.
-
-The command does not deploy a metrics collection service such as Prometheus.
+This command will disable FSM ingress, make sure --mesh-name and --fsm-namespace matches 
+the release name and namespace of installed FSM, otherwise it doesn't work.
 `
 
 type ingressDisableCmd struct {
-	out            io.Writer
-	kubeClient     kubernetes.Interface
-	dynamicClient  dynamic.Interface
-	configClient   configClientset.Interface
-	meshName       string
-	mapper         meta.RESTMapper
-	actionConfig   *action.Configuration
-	templateClient *action.Install
+	out           io.Writer
+	kubeClient    kubernetes.Interface
+	dynamicClient dynamic.Interface
+	configClient  configClientset.Interface
+	meshName      string
+	mapper        meta.RESTMapper
+	actionConfig  *action.Configuration
 }
 
 func newIngressDisable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
