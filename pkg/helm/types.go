@@ -2,9 +2,10 @@
 package helm
 
 import (
-	"github.com/flomesh-io/fsm/pkg/logger"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 var (
