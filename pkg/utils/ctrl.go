@@ -72,34 +72,34 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object) (co
 func CreateOrUpdateUnstructured(ctx context.Context, dynamicClient dynamic.Interface, mapper meta.RESTMapper, obj *unstructured.Unstructured) error {
 	// a copy of new object
 	modifiedObj := obj.DeepCopyObject().(*unstructured.Unstructured)
-	log.Debug().Msgf("Modified: %v", modifiedObj)
+	//log.Debug().Msgf("Modified: %v", modifiedObj)
 
-	key := client.ObjectKeyFromObject(obj)
-	gvk := obj.GetObjectKind().GroupVersionKind()
+	//key := client.ObjectKeyFromObject(obj)
+	//gvk := obj.GetObjectKind().GroupVersionKind()
 
 	oldObj, err := getUnstructured(ctx, dynamicClient, mapper, obj)
 	if err != nil {
 		if !apierrors.IsNotFound(err) {
-			log.Error().Msgf("Get Object %v, %s err: %s", gvk, key, err)
+			//log.Error().Msgf("Get Object %v, %s err: %s", gvk, key, err)
 			return err
 		}
 
-		log.Debug().Msgf("Creating Object %v, %s/%s ...", gvk, obj.GetNamespace(), obj.GetName())
+		//log.Debug().Msgf("Creating Object %v, %s/%s ...", gvk, obj.GetNamespace(), obj.GetName())
 		if _, err := createUnstructured(ctx, dynamicClient, mapper, obj); err != nil {
-			log.Error().Msgf("Create Object %s err: %s", key, err)
+			//log.Error().Msgf("Create Object %s err: %s", key, err)
 			return err
 		}
 
-		log.Debug().Msgf("Object %v, %s is created successfully.", gvk, key)
+		//log.Debug().Msgf("Object %v, %s is created successfully.", gvk, key)
 
 		return nil
 	}
-	log.Debug().Msgf("Found Object %v, %s: %v", gvk, key, oldObj)
+	//log.Debug().Msgf("Found Object %v, %s: %v", gvk, key, oldObj)
 
 	if !reflect.DeepEqual(oldObj, modifiedObj) {
-		log.Debug().Msgf("Patching Object %v, %s/%s ...", gvk, obj.GetNamespace(), obj.GetName())
+		//log.Debug().Msgf("Patching Object %v, %s/%s ...", gvk, obj.GetNamespace(), obj.GetName())
 		if _, err := patchUnstructured(ctx, dynamicClient, mapper, obj, modifiedObj); err != nil {
-			log.Error().Msgf("Patch Object %v, %s err: %s", gvk, key, err)
+			//log.Error().Msgf("Patch Object %v, %s err: %s", gvk, key, err)
 			return err
 		}
 	}
@@ -133,13 +133,22 @@ func patchUnstructured(ctx context.Context, dynamicClient dynamic.Interface, map
 
 	patchData, err := client.Merge.Data(modifiedObj)
 	if err != nil {
-		log.Error().Msgf("Create ApplyPatch err: %s", err)
+		//log.Error().Msgf("Create ApplyPatch err: %s", err)
 		return nil, err
 	}
-	log.Debug().Msgf("Patch data = %s", string(patchData))
+	//log.Debug().Msgf("Patch data = %s", string(patchData))
 
 	// Only issue a Patch if the before and after resources differ
 	return dri.Patch(ctx, obj.GetName(), types.MergePatchType, patchData, metav1.PatchOptions{FieldManager: "fsm"})
+}
+
+func DeleteUnstructured(ctx context.Context, dynamicClient dynamic.Interface, mapper meta.RESTMapper, obj *unstructured.Unstructured) error {
+	dri, err := getDynamicResourceInterface(obj, mapper, dynamicClient)
+	if err != nil {
+		return err
+	}
+
+	return dri.Delete(ctx, obj.GetName(), metav1.DeleteOptions{})
 }
 
 func getDynamicResourceInterface(obj *unstructured.Unstructured, mapper meta.RESTMapper, dynamicClient dynamic.Interface) (dynamic.ResourceInterface, error) {

@@ -13,6 +13,19 @@ This command consists of multiple subcommands related to managing ingress contro
 associated with fsm installations.
 `
 
+const (
+	presetMeshConfigName    = "preset-mesh-config"
+	presetMeshConfigJSONKey = "preset-mesh-config.json"
+)
+
+var (
+	ingressManifestFiles = []string{
+		"templates/fsm-ingress-class.yaml",
+		"templates/fsm-ingress-deployment.yaml",
+		"templates/fsm-ingress-service.yaml",
+	}
+)
+
 func newIngressCmd(config *action.Configuration, out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "ingress",
@@ -22,7 +35,7 @@ func newIngressCmd(config *action.Configuration, out io.Writer) *cobra.Command {
 		Args:    cobra.NoArgs,
 	}
 	cmd.AddCommand(newIngressEnable(config, out))
-	//cmd.AddCommand(newIngressDisable(out))
+	cmd.AddCommand(newIngressDisable(config, out))
 
 	return cmd
 }

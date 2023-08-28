@@ -36,7 +36,9 @@ import (
 	"strings"
 	"time"
 
-	metautil "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/client-go/dynamic"
 
@@ -97,7 +99,7 @@ func RenderChart(
 }
 
 func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
-	log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
+	//log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
 	installClient := helm.NewInstall(cfg)
 	installClient.ReleaseName = releaseName
 	installClient.Namespace = namespace
@@ -176,7 +178,13 @@ func isValidOwner(owner, object metav1.Object) bool {
 	return true
 }
 
-func ApplyYAMLs(dynamicClient dynamic.Interface, mapper metautil.RESTMapper, manifests string, showFiles ...string) error {
+func ApplyYAMLs(
+	dynamicClient dynamic.Interface,
+	mapper meta.RESTMapper,
+	manifests string,
+	handler YAMLHandlerFunc,
+	showFiles ...string,
+) error {
 	splitManifests := releaseutil.SplitManifests(manifests)
 	manifestsKeys := make([]string, 0, len(splitManifests))
 	for k := range splitManifests {
@@ -218,14 +226,14 @@ func ApplyYAMLs(dynamicClient dynamic.Interface, mapper metautil.RESTMapper, man
 			}
 		}
 		for _, manifest := range manifestsToRender {
-			if err := applyManifest(dynamicClient, mapper, manifest); err != nil {
+			if err := handler(dynamicClient, mapper, manifest); err != nil {
 				return err
 			}
 		}
 	} else {
 		for _, manifestKey := range manifestsKeys {
 			manifest := splitManifests[manifestKey]
-			if err := applyManifest(dynamicClient, mapper, manifest); err != nil {
+			if err := handler(dynamicClient, mapper, manifest); err != nil {
 				return err
 			}
 		}
@@ -234,20 +242,30 @@ func ApplyYAMLs(dynamicClient dynamic.Interface, mapper metautil.RESTMapper, man
 	return nil
 }
 
-func applyManifest(dynamicClient dynamic.Interface, mapper metautil.RESTMapper, manifest string) error {
-	log.Debug().Msgf("[HELM UTIL] Processing YAML: \n\n%s\n\n", manifest)
-
+func ApplyManifest(dynamicClient dynamic.Interface, mapper meta.RESTMapper, manifest string) error {
 	obj, err := utils.DecodeYamlToUnstructured([]byte(manifest))
 	if err != nil {
-		log.Error().Msgf("Error decoding YAML to Unstructured object: %s", err)
 		return err
 	}
 
-	log.Debug().Msgf("[HELM UTIL] Unstructured Object = \n\n%v\n\n", obj)
-
 	if err := utils.CreateOrUpdateUnstructured(context.TODO(), dynamicClient, mapper, obj); err != nil {
-		log.Error().Msgf("Error creating/updating object: %s", err)
 		return err
+	}
+
+	return nil
+}
+
+func DeleteManifest(dynamicClient dynamic.Interface, mapper meta.RESTMapper, manifest string) error {
+	obj, err := utils.DecodeYamlToUnstructured([]byte(manifest))
+	if err != nil {
+		return err
+	}
+
+	if err := utils.DeleteUnstructured(context.TODO(), dynamicClient, mapper, obj); err != nil {
+		// ignore if not found
+		if !errors.IsNotFound(err) {
+			return err
+		}
 	}
 
 	return nil

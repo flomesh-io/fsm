@@ -9,7 +9,7 @@ import (
 
 	"helm.sh/helm/v3/pkg/action"
 
-	metautil "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/restmapper"
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
@@ -41,42 +41,29 @@ are enabled for metrics will be automatically enabled with metrics.
 The command does not deploy a metrics collection service such as Prometheus.
 `
 
-const (
-	presetMeshConfigName    = "preset-mesh-config"
-	presetMeshConfigJSONKey = "preset-mesh-config.json"
-)
-
-var (
-	ingressManifestFiles = []string{
-		"templates/fsm-ingress-class.yaml",
-		"templates/fsm-ingress-deployment.yaml",
-		"templates/fsm-ingress-service.yaml",
-	}
-)
-
 type ingressEnableCmd struct {
-	out           io.Writer
-	kubeClient    kubernetes.Interface
-	dynamicClient dynamic.Interface
-	configClient  configClientset.Interface
-	meshName      string
-	mapper        metautil.RESTMapper
-	actionConfig  *action.Configuration
+	out            io.Writer
+	kubeClient     kubernetes.Interface
+	dynamicClient  dynamic.Interface
+	configClient   configClientset.Interface
+	meshName       string
+	mapper         meta.RESTMapper
+	actionConfig   *action.Configuration
+	templateClient *action.Install
 }
 
-func newIngressEnable(config *action.Configuration, out io.Writer) *cobra.Command {
+func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
 	enableCmd := &ingressEnableCmd{
-		out: out,
+		out:          out,
+		actionConfig: actionConfig,
 	}
 
 	cmd := &cobra.Command{
-		Use:   "enable ...",
+		Use:   "enable",
 		Short: "enable ingress",
 		Long:  ingressEnableDescription,
 		Args:  cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, args []string) error {
-			enableCmd.actionConfig = config
-
 			config, err := settings.RESTClientGetter().ToRESTConfig()
 			if err != nil {
 				return fmt.Errorf("error fetching kubeconfig: %w", err)
@@ -114,6 +101,7 @@ func newIngressEnable(config *action.Configuration, out io.Writer) *cobra.Comman
 
 	f := cmd.Flags()
 	f.StringVar(&enableCmd.meshName, "mesh-name", defaultMeshName, "name for the control plane instance")
+	//utilruntime.Must(cmd.MarkFlagRequired("mesh-name"))
 
 	return cmd
 }
@@ -123,26 +111,6 @@ func (cmd *ingressEnableCmd) run() error {
 	defer cancel()
 
 	fsmNamespace := settings.Namespace()
-
-	debug("Checking fsm release in namespace %q", fsmNamespace)
-	actionConfig := helm.ActionConfig(fsmNamespace, debug)
-
-	listClient := action.NewList(actionConfig)
-	releases, err := listClient.Run()
-	if err != nil {
-		return err
-	}
-
-	switch len(releases) {
-	case 0:
-		fmt.Fprintf(cmd.out, "No existing fsm release in namespace %q \n", fsmNamespace)
-		return nil
-	case 1:
-		fmt.Fprintf(cmd.out, "Found existing fsm release %q in namespace %q \n", releases[0].Name, fsmNamespace)
-	default:
-		fmt.Fprintf(cmd.out, "Found %d existing fsm releases in namespace %q \n", len(releases), fsmNamespace)
-		return nil
-	}
 
 	debug("Getting mesh config ...")
 	// get mesh config
@@ -167,17 +135,19 @@ func (cmd *ingressEnableCmd) run() error {
 	debug("Updating configmap preset-mesh-config ...")
 	// update content data of preset-mesh-config.json
 	json := cm.Data[presetMeshConfigJSONKey]
-	newJson, err := sjson.Set(json, "ingress", map[string]interface{}{"enabled": true, "namespaced": false})
-	if err != nil {
-		return err
-	}
-	newJson, err = sjson.Set(newJson, "gatewayAPI", map[string]interface{}{"enabled": false})
-	if err != nil {
-		return err
+	for path, value := range map[string]interface{}{
+		"ingress.enabled":    true,
+		"ingress.namespaced": false,
+		"gatewayAPI.enabled": false,
+	} {
+		json, err = sjson.Set(json, path, value)
+		if err != nil {
+			return err
+		}
 	}
 
 	// update configmap preset-mesh-config
-	cm.Data[presetMeshConfigJSONKey] = newJson
+	cm.Data[presetMeshConfigJSONKey] = json
 	_, err = cmd.kubeClient.CoreV1().ConfigMaps(fsmNamespace).Update(ctx, cm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
@@ -187,6 +157,7 @@ func (cmd *ingressEnableCmd) run() error {
 	// update mesh config, fsm-mesh-config
 	mc.Spec.Ingress.Enabled = true
 	mc.Spec.Ingress.Namespaced = false
+	mc.Spec.GatewayAPI.Enabled = false
 	_, err = cmd.configClient.ConfigV1alpha3().MeshConfigs(fsmNamespace).Update(ctx, mc, metav1.UpdateOptions{})
 	if err != nil {
 		return err
@@ -224,8 +195,8 @@ func (cmd *ingressEnableCmd) run() error {
 	debug("Creating helm template client ...")
 	// create a helm template client
 	templateClient := helm.TemplateClient(
-		actionConfig,
-		releases[0].Name,
+		cmd.actionConfig,
+		cmd.meshName,
 		fsmNamespace,
 		&chartutil.KubeVersion{
 			Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
@@ -246,11 +217,13 @@ func (cmd *ingressEnableCmd) run() error {
 
 	debug("Apply ingress manifests ...")
 	// filter out unneeded manifests, only keep ingress manifests, then do a kubectl-apply like action for each manifest
-	if err := helm.ApplyYAMLs(cmd.dynamicClient, cmd.mapper, rel.Manifest, ingressManifestFiles...); err != nil {
+	if err := helm.ApplyYAMLs(cmd.dynamicClient, cmd.mapper, rel.Manifest, helm.ApplyManifest, ingressManifestFiles...); err != nil {
 		return err
 	}
 
 	// TODO: wait for pod ready? no hurry
+
+	fmt.Fprintf(cmd.out, "Ingress is enabled successfully\n")
 
 	return nil
 }
