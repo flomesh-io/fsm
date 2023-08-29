@@ -439,7 +439,6 @@ func deleteNamespacedIngressResources(ctx context.Context, nsigClient nsigClient
 }
 
 func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClientset.Interface) error {
-
 	// delete gateways
 	debug("Deleting gateways ...")
 	gatewayList, err := gatewayAPIClient.GatewayV1beta1().Gateways(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})

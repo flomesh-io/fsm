@@ -47,7 +47,8 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		newSupportCmd(config, stdout, stderr),
 		newUninstallCmd(config, stdin, stdout),
 		newIngressCmd(config, stdout),
-		newGatewayCmd(config, stdout),
+		newGatewayCmd(stdout),
+		newServiceLBCmd(stdout),
 	)
 
 	// Add subcommands related to unmanaged environments

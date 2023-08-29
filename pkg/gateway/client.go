@@ -47,7 +47,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
 				constants.FSMAppInstanceLabelKey: meshName,
 				constants.FSMAppVersionLabelKey:  fsmVersion,
-				constants.AppLabel:               constants.FSMControllerName,
+				constants.AppLabel:               constants.FSMGatewayName,
 			},
 		},
 		Spec: gwv1beta1.GatewayClassSpec{

@@ -3,8 +3,6 @@ package main
 import (
 	"io"
 
-	"helm.sh/helm/v3/pkg/action"
-
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +11,7 @@ This command consists of multiple subcommands related to managing gateway contro
 associated with fsm installations.
 `
 
-func newGatewayCmd(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
+func newGatewayCmd(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "gateway",
 		Short:   "manage fsm gateway",
