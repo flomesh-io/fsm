@@ -5,7 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
 	"helm.sh/helm/v3/pkg/action"
 
@@ -22,11 +25,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/helm"
 
-	"github.com/tidwall/sjson"
-
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 
 	"github.com/spf13/cobra"
@@ -40,13 +38,15 @@ the release name and namespace of installed FSM, otherwise it doesn't work.
 `
 
 type ingressEnableCmd struct {
-	out           io.Writer
-	kubeClient    kubernetes.Interface
-	dynamicClient dynamic.Interface
-	configClient  configClientset.Interface
-	meshName      string
-	mapper        meta.RESTMapper
-	actionConfig  *action.Configuration
+	out              io.Writer
+	kubeClient       kubernetes.Interface
+	dynamicClient    dynamic.Interface
+	configClient     configClientset.Interface
+	nsigClient       nsigClientset.Interface
+	gatewayAPIClient gatewayApiClientset.Interface
+	meshName         string
+	mapper           meta.RESTMapper
+	actionConfig     *action.Configuration
 }
 
 func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
@@ -57,7 +57,7 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "enable ingress",
+		Short: "enable fsm ingress",
 		Long:  ingressEnableDescription,
 		Args:  cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -92,6 +92,18 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 			}
 			enableCmd.configClient = configClient
 
+			nsigClient, err := nsigClientset.NewForConfig(config)
+			if err != nil {
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+			}
+			enableCmd.nsigClient = nsigClient
+
+			gatewayAPIClient, err := gatewayApiClientset.NewForConfig(config)
+			if err != nil {
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+			}
+			enableCmd.gatewayAPIClient = gatewayAPIClient
+
 			return enableCmd.run()
 		},
 	}
@@ -117,35 +129,29 @@ func (cmd *ingressEnableCmd) run() error {
 	}
 
 	// check if ingress is enabled, if yes, just return
+	// TODO: check if ingress controller is installed and running???
 	if mc.Spec.Ingress.Enabled {
 		fmt.Fprintf(cmd.out, "Ingress is enabled, not action needed")
 		return nil
 	}
 
-	debug("Getting configmap preset-mesh-config ...")
-	// get configmap preset-mesh-config
-	cm, err := cmd.kubeClient.CoreV1().ConfigMaps(fsmNamespace).Get(ctx, presetMeshConfigName, metav1.GetOptions{})
+	debug("Deleting FSM NamespacedIngress resources ...")
+	err = deleteNamespacedIngressResources(ctx, cmd.nsigClient)
 	if err != nil {
 		return err
 	}
 
-	debug("Updating configmap preset-mesh-config ...")
-	// update content data of preset-mesh-config.json
-	json := cm.Data[presetMeshConfigJSONKey]
-	for path, value := range map[string]interface{}{
+	debug("Deleting FSM Gateway resources ...")
+	err = deleteGatewayResources(ctx, cmd.gatewayAPIClient)
+	if err != nil {
+		return err
+	}
+
+	err = updatePresetMeshConfigMap(ctx, cmd.kubeClient, fsmNamespace, map[string]interface{}{
 		"ingress.enabled":    true,
 		"ingress.namespaced": false,
 		"gatewayAPI.enabled": false,
-	} {
-		json, err = sjson.Set(json, path, value)
-		if err != nil {
-			return err
-		}
-	}
-
-	// update configmap preset-mesh-config
-	cm.Data[presetMeshConfigJSONKey] = json
-	_, err = cmd.kubeClient.CoreV1().ConfigMaps(fsmNamespace).Update(ctx, cm, metav1.UpdateOptions{})
+	})
 	if err != nil {
 		return err
 	}
@@ -163,14 +169,7 @@ func (cmd *ingressEnableCmd) run() error {
 	debug("Restarting fsm-controller ...")
 	// Rollout restart fsm-controller
 	// patch the deployment spec template triggers the action of rollout restart like with kubectl
-	patch := fmt.Sprintf(
-		`{"spec": {"template":{"metadata": {"annotations": {"kubectl.kubernetes.io/restartedAt": "%s"}}}}}`,
-		time.Now().Format("20060102-150405.0000"),
-	)
-
-	_, err = cmd.kubeClient.AppsV1().
-		Deployments(fsmNamespace).
-		Patch(ctx, constants.FSMControllerName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
+    meshName: {{ .Values.fsm.meshName }}
     ingress.flomesh.io/namespaced: "false"
   {{- with .Values.fsm.fsmIngress.service.annotations }}
   annotations:

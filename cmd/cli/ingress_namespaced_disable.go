@@ -5,34 +5,36 @@ import (
 	"fmt"
 	"io"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-const ingressDisableDescription = `
-This command will disable FSM ingress, make sure --mesh-name and --fsm-namespace matches 
+const namespacedIngressDisableDescription = `
+This command will disable FSM NamespacedIngress, make sure --mesh-name and --fsm-namespace matches 
 the release name and namespace of installed FSM, otherwise it doesn't work.
 `
 
-type ingressDisableCmd struct {
+type namespacedIngressDisableCmd struct {
 	out          io.Writer
 	kubeClient   kubernetes.Interface
 	configClient configClientset.Interface
+	nsigClient   nsigClientset.Interface
 	meshName     string
 }
 
-func newIngressDisable(out io.Writer) *cobra.Command {
-	disableCmd := &ingressDisableCmd{
+func newNamespacedIngressDisableCmd(out io.Writer) *cobra.Command {
+	disableCmd := &namespacedIngressDisableCmd{
 		out: out,
 	}
 
 	cmd := &cobra.Command{
 		Use:   "disable",
-		Short: "disable fsm ingress",
-		Long:  ingressDisableDescription,
+		Short: "disable fsm NamespacedIngress",
+		Long:  namespacedIngressDisableDescription,
 		Args:  cobra.ExactArgs(0),
 		RunE: func(_ *cobra.Command, args []string) error {
 			config, err := settings.RESTClientGetter().ToRESTConfig()
@@ -52,6 +54,12 @@ func newIngressDisable(out io.Writer) *cobra.Command {
 			}
 			disableCmd.configClient = configClient
 
+			nsigClient, err := nsigClientset.NewForConfig(config)
+			if err != nil {
+				return fmt.Errorf("could not access Kubernetes cluster, check kubeconfig: %w", err)
+			}
+			disableCmd.nsigClient = nsigClient
+
 			return disableCmd.run()
 		},
 	}
@@ -63,7 +71,7 @@ func newIngressDisable(out io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (cmd *ingressDisableCmd) run() error {
+func (cmd *namespacedIngressDisableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -77,13 +85,13 @@ func (cmd *ingressDisableCmd) run() error {
 	}
 
 	// check if ingress is enabled, if yes, just return
-	if !mc.Spec.Ingress.Enabled {
-		fmt.Fprintf(cmd.out, "Ingress is disabled already, not action needed")
+	if !mc.Spec.Ingress.Enabled && !mc.Spec.Ingress.Namespaced {
+		fmt.Fprintf(cmd.out, "NamespacedIngress is disabled already, not action needed")
 		return nil
 	}
 
-	debug("Deleting FSM Ingress resources ...")
-	err = deleteIngressResources(ctx, cmd.kubeClient, fsmNamespace, cmd.meshName)
+	debug("Deleting FSM NamespacedIngress resources ...")
+	err = deleteNamespacedIngressResources(ctx, cmd.nsigClient)
 	if err != nil {
 		return err
 	}
@@ -110,7 +118,7 @@ func (cmd *ingressDisableCmd) run() error {
 		return err
 	}
 
-	fmt.Fprintf(cmd.out, "Ingress is disabled successfully\n")
+	fmt.Fprintf(cmd.out, "Gateway is disabled successfully\n")
 
 	return nil
 }

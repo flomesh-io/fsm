@@ -35,7 +35,8 @@ func newIngressCmd(config *action.Configuration, out io.Writer) *cobra.Command {
 		Args:    cobra.NoArgs,
 	}
 	cmd.AddCommand(newIngressEnable(config, out))
-	cmd.AddCommand(newIngressDisable(config, out))
+	cmd.AddCommand(newIngressDisable(out))
+	cmd.AddCommand(newNamespacedIngressCmd(out))
 
 	return cmd
 }
