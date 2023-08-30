@@ -99,6 +99,9 @@ const (
 	// FSMGatewayName is the name of the FSM Gateway.
 	FSMGatewayName = "fsm-gateway"
 
+	// FSMEgressGatewayName is the name of the FSM Egress Gateway.
+	FSMEgressGatewayName = "fsm-egress-gateway"
+
 	// ProxyServerPort is the port on which the Pipy Repo Service (ADS) listens for new connections from sidecar proxies
 	ProxyServerPort = 6060
 

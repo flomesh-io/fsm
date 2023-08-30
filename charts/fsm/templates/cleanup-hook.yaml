@@ -13,7 +13,7 @@ rules:
     resources: ["meshconfigs"]
     verbs: ["delete"]
   - apiGroups: [ "" ]
-    resources: [ "services" ]
+    resources: [ "services", "configmaps" ]
     verbs: [ "delete" ]
   - apiGroups: [ "app" ]
     resources: [ "deployments" ]
@@ -110,6 +110,9 @@ spec:
              kubectl delete ingressclasses pipy --ignore-not-found;
              kubectl delete deploy fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
              kubectl delete svc fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete deploy fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete svc fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete cm fsm-egress-gateway-pjs -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
 {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}

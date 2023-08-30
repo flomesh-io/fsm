@@ -63,6 +63,9 @@ type MeshConfigSpec struct {
 	// FLB defines the configurations of FLB features.
 	FLB FLBSpec `json:"flb,omitempty"`
 
+	// EgressGateway defines the configurations of EgressGateway features.
+	EgressGateway EgressGatewaySpec `json:"egressGateway,omitempty"`
+
 	// Image defines the configurations of Image info
 	Image ImageSpec `json:"image"`
 
@@ -563,6 +566,39 @@ type FLBSpec struct {
 	SecretName string `json:"secretName"`
 }
 
+// EgressGatewaySpec is the type to represent egress gateway.
+type EgressGatewaySpec struct {
+	// +kubebuilder:default=false
+	// Enabled defines if flb is enabled.
+	Enabled bool `json:"enabled"`
+
+	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
+	// LogLevel defines the log level of gateway api.
+	LogLevel string `json:"logLevel"`
+
+	// +kubebuilder:default=http2tunnel
+	// +kubebuilder:validation:Enum=http2tunnel;sock5
+	// Mode defines the mode of egress gateway.
+	Mode string `json:"mode"`
+
+	// +kubebuilder:default=1080
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// Port defines the port of egress gateway.
+	Port *int32 `json:"port,omitempty"`
+
+	// +kubebuilder:default=6060
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	// AdminPort defines the admin port of egress gateway.
+	AdminPort *int32 `json:"adminPort,omitempty"`
+
+	// +kubebuilder:default=1
+	// Replicas defines the replicas of egress gateway.
+	Replicas *int32 `json:"replicas,omitempty"`
+}
+
 // ImageSpec is the type to represent image.
 type ImageSpec struct {
 	// +kubebuilder:default=flomesh
@@ -583,4 +619,8 @@ type MiscSpec struct {
 	// +kubebuilder:default="curlimages/curl"
 	// CurlImage defines the image of curl.
 	CurlImage string `json:"curlImage"`
+
+	// +kubebuilder:default="flomesh/pipy-repo:0.90.2-41"
+	// RepoServerImage defines the image of repo server.
+	RepoServerImage string `json:"repoServerImage"`
 }
