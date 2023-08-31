@@ -38,15 +38,26 @@ the release name and namespace of installed FSM, otherwise it doesn't work.
 `
 
 type ingressEnableCmd struct {
-	out              io.Writer
-	kubeClient       kubernetes.Interface
-	dynamicClient    dynamic.Interface
-	configClient     configClientset.Interface
-	nsigClient       nsigClientset.Interface
-	gatewayAPIClient gatewayApiClientset.Interface
-	meshName         string
-	mapper           meta.RESTMapper
-	actionConfig     *action.Configuration
+	out                     io.Writer
+	kubeClient              kubernetes.Interface
+	dynamicClient           dynamic.Interface
+	configClient            configClientset.Interface
+	nsigClient              nsigClientset.Interface
+	gatewayAPIClient        gatewayApiClientset.Interface
+	mapper                  meta.RESTMapper
+	actionConfig            *action.Configuration
+	meshName                string
+	logLevel                string
+	httpEnabled             bool
+	httpPort                int32
+	httpNodePort            int32
+	tlsEnabled              bool
+	mtls                    bool
+	tlsPort                 int32
+	tlsNodePort             int32
+	passthroughEnabled      bool
+	passthroughUpstreamPort int32
+	replicas                int32
 }
 
 func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
@@ -110,6 +121,17 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 
 	f := cmd.Flags()
 	f.StringVar(&enableCmd.meshName, "mesh-name", defaultMeshName, "name for the control plane instance")
+	f.StringVar(&enableCmd.logLevel, "log-level", "error", "log level of ingress")
+	f.BoolVar(&enableCmd.httpEnabled, "http-enable", true, "enable/disable HTTP ingress")
+	f.Int32Var(&enableCmd.httpPort, "http-port", 80, "HTTP ingress port")
+	f.Int32Var(&enableCmd.httpNodePort, "http-node-port", 30508, "HTTP ingress node port")
+	f.BoolVar(&enableCmd.tlsEnabled, "tls-enable", false, "enable/disable TLS ingress")
+	f.BoolVar(&enableCmd.mtls, "mtls", false, "enable/disable mTLS for ingress")
+	f.Int32Var(&enableCmd.tlsPort, "tls-port", 443, "TLS ingress port")
+	f.Int32Var(&enableCmd.tlsNodePort, "tls-node-port", 30607, "TLS ingress node port")
+	f.BoolVar(&enableCmd.passthroughEnabled, "passthrough-enable", false, "enable/disable SSL passthrough")
+	f.Int32Var(&enableCmd.passthroughUpstreamPort, "passthrough-upstream-port", 443, "SSL passthrough upstream port")
+	f.Int32Var(&enableCmd.replicas, "replicas", 1, "replicas of ingress")
 	//utilruntime.Must(cmd.MarkFlagRequired("mesh-name"))
 
 	return cmd
@@ -148,9 +170,19 @@ func (cmd *ingressEnableCmd) run() error {
 	}
 
 	err = updatePresetMeshConfigMap(ctx, cmd.kubeClient, fsmNamespace, map[string]interface{}{
-		"ingress.enabled":    true,
-		"ingress.namespaced": false,
-		"gatewayAPI.enabled": false,
+		"ingress.enabled":                         true,
+		"ingress.namespaced":                      false,
+		"ingress.logLevel":                        cmd.logLevel,
+		"ingress.http.enabled":                    cmd.httpEnabled,
+		"ingress.http.bind":                       cmd.httpPort,
+		"ingress.http.nodePort":                   cmd.httpNodePort,
+		"ingress.tls.enabled":                     cmd.tlsEnabled,
+		"ingress.tls.bind":                        cmd.tlsPort,
+		"ingress.tls.nodePort":                    cmd.tlsNodePort,
+		"ingress.tls.mTLS":                        cmd.mtls,
+		"ingress.tls.sslPassthrough.enabled":      cmd.passthroughEnabled,
+		"ingress.tls.sslPassthrough.upstreamPort": cmd.passthroughUpstreamPort,
+		"gatewayAPI.enabled":                      false,
 	})
 	if err != nil {
 		return err
@@ -160,6 +192,16 @@ func (cmd *ingressEnableCmd) run() error {
 	// update mesh config, fsm-mesh-config
 	mc.Spec.Ingress.Enabled = true
 	mc.Spec.Ingress.Namespaced = false
+	mc.Spec.Ingress.LogLevel = cmd.logLevel
+	mc.Spec.Ingress.HTTP.Enabled = cmd.httpEnabled
+	mc.Spec.Ingress.HTTP.Bind = cmd.httpPort
+	mc.Spec.Ingress.HTTP.NodePort = cmd.httpNodePort
+	mc.Spec.Ingress.TLS.Enabled = cmd.tlsEnabled
+	mc.Spec.Ingress.TLS.Bind = cmd.tlsPort
+	mc.Spec.Ingress.TLS.NodePort = cmd.tlsNodePort
+	mc.Spec.Ingress.TLS.MTLS = cmd.mtls
+	mc.Spec.Ingress.TLS.SSLPassthrough.Enabled = cmd.passthroughEnabled
+	mc.Spec.Ingress.TLS.SSLPassthrough.UpstreamPort = cmd.passthroughUpstreamPort
 	mc.Spec.GatewayAPI.Enabled = false
 	_, err = cmd.configClient.ConfigV1alpha3().MeshConfigs(fsmNamespace).Update(ctx, mc, metav1.UpdateOptions{})
 	if err != nil {
@@ -230,6 +272,17 @@ func (cmd *ingressEnableCmd) resolveValues(mc *configv1alpha3.MeshConfig) (map[s
 	valuesConfig := []string{
 		fmt.Sprintf("fsm.fsmIngress.enabled=%t", true),
 		fmt.Sprintf("fsm.fsmIngress.namespaced=%t", false),
+		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", cmd.logLevel),
+		fmt.Sprintf("fsm.fsmIngress.http.enabled=%t", cmd.httpEnabled),
+		fmt.Sprintf("fsm.fsmIngress.http.port=%d", cmd.httpPort),
+		fmt.Sprintf("fsm.fsmIngress.http.nodePort=%d", cmd.httpNodePort),
+		fmt.Sprintf("fsm.fsmIngress.tls.enabled=%t", cmd.tlsEnabled),
+		fmt.Sprintf("fsm.fsmIngress.tls.port=%d", cmd.tlsPort),
+		fmt.Sprintf("fsm.fsmIngress.tls.nodePort=%d", cmd.tlsNodePort),
+		fmt.Sprintf("fsm.fsmIngress.tls.mTLS=%t", cmd.mtls),
+		fmt.Sprintf("fsm.fsmIngress.tls.sslPassthrough.enabled=%t", cmd.passthroughEnabled),
+		fmt.Sprintf("fsm.fsmIngress.tls.sslPassthrough.upstreamPort=%d", cmd.passthroughUpstreamPort),
+		fmt.Sprintf("fsm.fsmIngress.replicaCount=%d", cmd.replicas),
 		fmt.Sprintf("fsm.fsmGateway.enabled=%t", false),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetNamespace()),
 		fmt.Sprintf("fsm.meshName=%s", cmd.meshName),

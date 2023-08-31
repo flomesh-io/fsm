@@ -75,13 +75,12 @@ func (cmd *egressGatewayDisableCmd) run() error {
 		return err
 	}
 
-	// check if ingress is enabled, if yes, just return
 	if !mc.Spec.EgressGateway.Enabled {
 		fmt.Fprintf(cmd.out, "egress-gateway is disabled already, not action needed")
 		return nil
 	}
 
-	debug("Deleting FSM Ingress resources ...")
+	debug("Deleting FSM egress-gateway resources ...")
 	err = deleteEgressGatewayResources(ctx, cmd.kubeClient, fsmNamespace, cmd.meshName)
 	if err != nil {
 		return err

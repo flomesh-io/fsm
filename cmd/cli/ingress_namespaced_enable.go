@@ -86,8 +86,6 @@ func (cmd *namespacedIngressEnableCmd) run() error {
 		return err
 	}
 
-	// check if gateway is enabled, if yes, just return
-	// TODO: check if GatewayClass is installed and if there's any running gateway instances
 	if mc.Spec.Ingress.Enabled && mc.Spec.Ingress.Namespaced {
 		fmt.Fprintf(cmd.out, "NamespacedIngress is enabled already, not action needed")
 		return nil

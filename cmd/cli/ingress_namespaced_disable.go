@@ -84,7 +84,6 @@ func (cmd *namespacedIngressDisableCmd) run() error {
 		return err
 	}
 
-	// check if ingress is enabled, if yes, just return
 	if !mc.Spec.Ingress.Enabled && !mc.Spec.Ingress.Namespaced {
 		fmt.Fprintf(cmd.out, "NamespacedIngress is disabled already, not action needed")
 		return nil
@@ -118,7 +117,7 @@ func (cmd *namespacedIngressDisableCmd) run() error {
 		return err
 	}
 
-	fmt.Fprintf(cmd.out, "Gateway is disabled successfully\n")
+	fmt.Fprintf(cmd.out, "NamespacedIngress is disabled successfully\n")
 
 	return nil
 }

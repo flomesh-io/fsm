@@ -84,7 +84,6 @@ func (cmd *gatewayDisableCmd) run() error {
 		return err
 	}
 
-	// check if ingress is enabled, if yes, just return
 	if !mc.Spec.GatewayAPI.Enabled {
 		fmt.Fprintf(cmd.out, "Gateway is disabled already, not action needed")
 		return nil

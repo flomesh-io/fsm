@@ -24,6 +24,7 @@ type gatewayEnableCmd struct {
 	configClient configClientset.Interface
 	nsigClient   nsigClientset.Interface
 	meshName     string
+	logLevel     string
 }
 
 func newGatewayEnable(out io.Writer) *cobra.Command {
@@ -66,6 +67,7 @@ func newGatewayEnable(out io.Writer) *cobra.Command {
 
 	f := cmd.Flags()
 	f.StringVar(&enableCmd.meshName, "mesh-name", defaultMeshName, "name for the control plane instance")
+	f.StringVar(&enableCmd.logLevel, "log-level", "error", "log level of gateway")
 	//utilruntime.Must(cmd.MarkFlagRequired("mesh-name"))
 
 	return cmd
@@ -104,9 +106,10 @@ func (cmd *gatewayEnableCmd) run() error {
 	}
 
 	err = updatePresetMeshConfigMap(ctx, cmd.kubeClient, fsmNamespace, map[string]interface{}{
-		"ingress.enabled":    false,
-		"ingress.namespaced": false,
-		"gatewayAPI.enabled": true,
+		"ingress.enabled":     false,
+		"ingress.namespaced":  false,
+		"gatewayAPI.enabled":  true,
+		"gatewayAPI.logLevel": cmd.logLevel,
 	})
 	if err != nil {
 		return err
@@ -117,6 +120,7 @@ func (cmd *gatewayEnableCmd) run() error {
 	mc.Spec.Ingress.Enabled = false
 	mc.Spec.Ingress.Namespaced = false
 	mc.Spec.GatewayAPI.Enabled = true
+	mc.Spec.GatewayAPI.LogLevel = cmd.logLevel
 	_, err = cmd.configClient.ConfigV1alpha3().MeshConfigs(fsmNamespace).Update(ctx, mc, metav1.UpdateOptions{})
 	if err != nil {
 		return err
