@@ -116,6 +116,9 @@ type SidecarSpec struct {
 	// ConfigResyncInterval defines the resync interval for regular proxy broadcast updates.
 	ConfigResyncInterval string `json:"configResyncInterval,omitempty"`
 
+	// SidecarTimeout defines the connect/idle/read/write timeout.
+	SidecarTimeout int `json:"sidecarTimeout,omitempty"`
+
 	// Resources defines the compute resources for the sidecar.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 

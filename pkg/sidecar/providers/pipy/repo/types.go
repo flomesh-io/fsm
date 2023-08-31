@@ -211,6 +211,7 @@ type LocalDNSProxy struct {
 // MeshConfigSpec represents the spec of mesh config
 type MeshConfigSpec struct {
 	SidecarLogLevel string
+	SidecarTimeout  int
 	Traffic         TrafficSpec
 	FeatureFlags    FeatureFlags
 	Probes          struct {

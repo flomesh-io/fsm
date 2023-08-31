@@ -464,6 +464,9 @@ fsm:
   # -- Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync
   configResyncInterval: "90s"
 
+  # -- Sets connect/idle/read/write timeout
+  sidecarTimeout: 60
+
   # -- Controller log verbosity
   controllerLogLevel: info
 

@@ -213,6 +213,15 @@ func (c *Client) GetMaxDataPlaneConnections() int {
 	return c.getMeshConfig().Spec.Sidecar.MaxDataPlaneConnections
 }
 
+// GetSidecarTimeout returns connect/idle/read/write timeout
+func (c *Client) GetSidecarTimeout() int {
+	timeout := c.getMeshConfig().Spec.Sidecar.SidecarTimeout
+	if timeout <= 0 {
+		timeout = 60
+	}
+	return timeout
+}
+
 // GetSidecarLogLevel returns the sidecar log level
 func (c *Client) GetSidecarLogLevel() string {
 	logLevel := c.getMeshConfig().Spec.Sidecar.LogLevel
