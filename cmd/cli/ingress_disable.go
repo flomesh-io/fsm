@@ -7,9 +7,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const ingressDisableDescription = `

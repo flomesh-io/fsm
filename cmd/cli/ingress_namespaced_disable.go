@@ -7,10 +7,11 @@ import (
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const namespacedIngressDisableDescription = `

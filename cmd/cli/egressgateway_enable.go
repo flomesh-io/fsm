@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -10,19 +9,18 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 
-	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
-	"github.com/flomesh-io/fsm/pkg/helm"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/chartutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/restmapper"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const egressGatewayEnableDescription = `
@@ -43,6 +41,22 @@ type egressGatewayEnableCmd struct {
 	adminPort     int32
 	port          int32
 	replicas      int32
+}
+
+func (cmd *egressGatewayEnableCmd) GetActionConfig() *action.Configuration {
+	return cmd.actionConfig
+}
+
+func (cmd *egressGatewayEnableCmd) GetDynamicClient() dynamic.Interface {
+	return cmd.dynamicClient
+}
+
+func (cmd *egressGatewayEnableCmd) GetRESTMapper() meta.RESTMapper {
+	return cmd.mapper
+}
+
+func (cmd *egressGatewayEnableCmd) GetMeshName() string {
+	return cmd.meshName
 }
 
 func newEgressGatewayEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
@@ -155,44 +169,7 @@ func (cmd *egressGatewayEnableCmd) run() error {
 		return err
 	}
 
-	debug("Loading fsm helm chart ...")
-	// load fsm helm chart
-	chart, err := loader.LoadArchive(bytes.NewReader(chartTGZSource))
-	if err != nil {
-		return err
-	}
-
-	debug("Resolving values ...")
-	// resolve values
-	values, err := cmd.resolveValues(mc)
-	if err != nil {
-		return err
-	}
-
-	debug("Creating helm template client ...")
-	// create a helm template client
-	templateClient := helm.TemplateClient(
-		cmd.actionConfig,
-		cmd.meshName,
-		fsmNamespace,
-		&chartutil.KubeVersion{
-			Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
-			Major:   "1",
-			Minor:   "19",
-		},
-	)
-	templateClient.Replace = true
-
-	debug("Rendering helm template ...")
-	// render entire fsm helm template
-	rel, err := templateClient.Run(chart, values)
-	if err != nil {
-		return err
-	}
-
-	debug("Apply ingress manifests ...")
-	// filter out unneeded manifests, only keep ingress manifests, then do a kubectl-apply like action for each manifest
-	if err := helm.ApplyYAMLs(cmd.dynamicClient, cmd.mapper, rel.Manifest, helm.ApplyManifest, egressGatewayManifestFiles...); err != nil {
+	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, egressGatewayManifestFiles...); err != nil {
 		return err
 	}
 
@@ -201,7 +178,7 @@ func (cmd *egressGatewayEnableCmd) run() error {
 	return nil
 }
 
-func (cmd *egressGatewayEnableCmd) resolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error) {
+func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error) {
 	finalValues := map[string]interface{}{}
 
 	valuesConfig := []string{

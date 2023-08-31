@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -17,13 +16,7 @@ import (
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
-	"helm.sh/helm/v3/pkg/chart/loader"
-
 	"k8s.io/client-go/dynamic"
-
-	"helm.sh/helm/v3/pkg/chartutil"
-
-	"github.com/flomesh-io/fsm/pkg/helm"
 
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 
@@ -58,6 +51,22 @@ type ingressEnableCmd struct {
 	passthroughEnabled      bool
 	passthroughUpstreamPort int32
 	replicas                int32
+}
+
+func (cmd *ingressEnableCmd) GetActionConfig() *action.Configuration {
+	return cmd.actionConfig
+}
+
+func (cmd *ingressEnableCmd) GetDynamicClient() dynamic.Interface {
+	return cmd.dynamicClient
+}
+
+func (cmd *ingressEnableCmd) GetRESTMapper() meta.RESTMapper {
+	return cmd.mapper
+}
+
+func (cmd *ingressEnableCmd) GetMeshName() string {
+	return cmd.meshName
 }
 
 func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.Command {
@@ -216,57 +225,16 @@ func (cmd *ingressEnableCmd) run() error {
 		return err
 	}
 
-	debug("Loading fsm helm chart ...")
-	// load fsm helm chart
-	chart, err := loader.LoadArchive(bytes.NewReader(chartTGZSource))
-	if err != nil {
+	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, ingressManifestFiles...); err != nil {
 		return err
 	}
-
-	debug("Resolving values ...")
-	// resolve values
-	values, err := cmd.resolveValues(mc)
-	if err != nil {
-		return err
-	}
-
-	debug("Creating helm template client ...")
-	// create a helm template client
-	templateClient := helm.TemplateClient(
-		cmd.actionConfig,
-		cmd.meshName,
-		fsmNamespace,
-		&chartutil.KubeVersion{
-			Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
-			Major:   "1",
-			Minor:   "19",
-		},
-	)
-	templateClient.Replace = true
-
-	debug("Rendering helm template ...")
-	// render entire fsm helm template
-	rel, err := templateClient.Run(chart, values)
-	if err != nil {
-		return err
-	}
-	//debug("rel.Config = %s", rel.Config)
-	//debug("rel.Manifest = %s", rel.Manifest)
-
-	debug("Apply ingress manifests ...")
-	// filter out unneeded manifests, only keep ingress manifests, then do a kubectl-apply like action for each manifest
-	if err := helm.ApplyYAMLs(cmd.dynamicClient, cmd.mapper, rel.Manifest, helm.ApplyManifest, ingressManifestFiles...); err != nil {
-		return err
-	}
-
-	// TODO: wait for pod ready? no hurry
 
 	fmt.Fprintf(cmd.out, "Ingress is enabled successfully\n")
 
 	return nil
 }
 
-func (cmd *ingressEnableCmd) resolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error) {
+func (cmd *ingressEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error) {
 	finalValues := map[string]interface{}{}
 
 	valuesConfig := []string{

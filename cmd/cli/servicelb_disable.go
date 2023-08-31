@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
-	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const serviceLBDisableDescription = `
@@ -21,7 +21,6 @@ type serviceLBDisableCmd struct {
 	out          io.Writer
 	kubeClient   kubernetes.Interface
 	configClient configClientset.Interface
-	nsigClient   nsigClientset.Interface
 	meshName     string
 }
 
@@ -82,11 +81,6 @@ func (cmd *serviceLBDisableCmd) run() error {
 		return nil
 	}
 
-	debug("Deleting FSM service-lb resources ...")
-	if err := deleteServiceLBResources(ctx, cmd.kubeClient, fsmNamespace, cmd.meshName); err != nil {
-		return err
-	}
-
 	if err := updatePresetMeshConfigMap(ctx, cmd.kubeClient, fsmNamespace, map[string]interface{}{
 		"serviceLB.enabled": false,
 	}); err != nil {
@@ -101,6 +95,11 @@ func (cmd *serviceLBDisableCmd) run() error {
 	}
 
 	if err := restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace); err != nil {
+		return err
+	}
+
+	debug("Deleting FSM service-lb resources ...")
+	if err := deleteServiceLBResources(ctx, cmd.kubeClient, fsmNamespace, cmd.meshName); err != nil {
 		return err
 	}
 

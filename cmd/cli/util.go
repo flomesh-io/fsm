@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,18 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+
+	"github.com/flomesh-io/fsm/pkg/helm"
+
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+
+	"helm.sh/helm/v3/pkg/action"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/dynamic"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -36,6 +49,14 @@ import (
 const (
 	restartAtEnvName = "RESTART_AT"
 )
+
+type ManifestClient interface {
+	GetActionConfig() *action.Configuration
+	GetDynamicClient() dynamic.Interface
+	GetRESTMapper() meta.RESTMapper
+	GetMeshName() string
+	ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error)
+}
 
 // confirm displays a prompt `s` to the user and returns a bool indicating yes / no
 // If the lowercased, trimmed input begins with anything other than 'y', it returns false
@@ -278,6 +299,7 @@ func annotateErrorMessageWithActionableMessage(actionableMessage string, errMsgF
 	return fmt.Errorf(errMsgFormat+actionableMessage, args...)
 }
 
+//lint:ignore U1000 ignore unused
 func restartFSMController(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string) error {
 	debug("Restarting fsm-controller ...")
 	// Rollout restart fsm-controller
@@ -348,7 +370,64 @@ func restartFSMControllerContainer(ctx context.Context, kubeClient kubernetes.In
 		}
 	}
 
+	if err := waitForPodsRunningReady(kubeClient, fsmNamespace, int(*deployment.Spec.Replicas), deployment.Spec.Selector); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func waitForPodsRunningReady(kubeClient kubernetes.Interface, ns string, nExpectedRunningPods int, labelSelector *metav1.LabelSelector) error {
+	timeout := 5 * time.Minute
+	debug("Wait up to %v for %d pods ready in ns [%s]...", timeout, nExpectedRunningPods, ns)
+
+	listOpts := metav1.ListOptions{
+		FieldSelector: "status.phase=Running",
+	}
+
+	if labelSelector != nil {
+		labelMap, _ := metav1.LabelSelectorAsMap(labelSelector)
+		listOpts.LabelSelector = labels.SelectorFromSet(labelMap).String()
+	}
+
+	for start := time.Now(); time.Since(start) < timeout; time.Sleep(2 * time.Second) {
+		pods, err := kubeClient.CoreV1().Pods(ns).List(context.TODO(), listOpts)
+
+		if err != nil {
+			return fmt.Errorf("failed to list pods")
+		}
+
+		if len(pods.Items) < nExpectedRunningPods {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		nReadyPods := 0
+		for _, pod := range pods.Items {
+			for _, cond := range pod.Status.Conditions {
+				if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionTrue {
+					nReadyPods++
+					if nReadyPods == nExpectedRunningPods {
+						debug("Finished waiting for NS [%s].", ns)
+						return nil
+					}
+				}
+			}
+		}
+		time.Sleep(time.Second)
+	}
+
+	pods, err := kubeClient.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list pods")
+	}
+	debug("Pod Statuses in namespace", ns)
+	for _, pod := range pods.Items {
+		status, _ := json.MarshalIndent(pod.Status, "", "  ")
+		debug("Pod %s:\n%s", pod.Name, status)
+	}
+
+	return fmt.Errorf("not all pods were Running & Ready in NS %s after %v", ns, timeout)
 }
 
 func updatePresetMeshConfigMap(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string, values map[string]interface{}) error {
@@ -371,8 +450,7 @@ func updatePresetMeshConfigMap(ctx context.Context, kubeClient kubernetes.Interf
 
 	// update configmap preset-mesh-config
 	cm.Data[presetMeshConfigJSONKey] = presetMeshConfigJSON
-	_, err = kubeClient.CoreV1().ConfigMaps(fsmNamespace).Update(ctx, cm, metav1.UpdateOptions{})
-	if err != nil {
+	if _, err := kubeClient.CoreV1().ConfigMaps(fsmNamespace).Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
 		return err
 	}
 
@@ -392,9 +470,11 @@ func deleteIngressResources(ctx context.Context, kubeClient kubernetes.Interface
 	}
 
 	serviceList, err := kubeClient.CoreV1().Services(fsmNamespace).List(ctx, listOptions)
+	if err != nil {
+		return err
+	}
 	for _, service := range serviceList.Items {
-		err = kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, service.Name, metav1.DeleteOptions{})
-		if err != nil {
+		if err := kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, service.Name, metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -402,17 +482,18 @@ func deleteIngressResources(ctx context.Context, kubeClient kubernetes.Interface
 	}
 
 	deploymentList, err := kubeClient.AppsV1().Deployments(fsmNamespace).List(ctx, listOptions)
+	if err != nil {
+		return err
+	}
 	for _, deployment := range deploymentList.Items {
-		err = kubeClient.AppsV1().Deployments(fsmNamespace).Delete(ctx, deployment.Name, metav1.DeleteOptions{})
-		if err != nil {
+		if err := kubeClient.AppsV1().Deployments(fsmNamespace).Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
 		}
 	}
 
-	err = kubeClient.NetworkingV1().IngressClasses().Delete(ctx, constants.IngressPipyClass, metav1.DeleteOptions{})
-	if err != nil {
+	if err := kubeClient.NetworkingV1().IngressClasses().Delete(ctx, constants.IngressPipyClass, metav1.DeleteOptions{}); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
@@ -469,8 +550,6 @@ func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClie
 		}
 	}
 
-	// TODO: delete XXXRoute resources and ReferenceGrant?
-
 	return nil
 }
 
@@ -508,14 +587,81 @@ func deleteServiceLBResources(ctx context.Context, kubeClient kubernetes.Interfa
 	}
 
 	daemonSetList, err := kubeClient.AppsV1().DaemonSets(fsmNamespace).List(ctx, listOptions)
-	for _, deployment := range daemonSetList.Items {
-		err = kubeClient.AppsV1().DaemonSets(fsmNamespace).Delete(ctx, deployment.Name, metav1.DeleteOptions{})
-		if err != nil {
+	if err != nil {
+		return err
+	}
+	for _, daemonSet := range daemonSetList.Items {
+		if err := kubeClient.AppsV1().DaemonSets(fsmNamespace).Delete(ctx, daemonSet.Name, metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
 		}
 	}
 
+	return nil
+}
+
+func deleteFLBResources(ctx context.Context, kubeClient kubernetes.Interface) error {
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			constants.FLBSecretLabel: "true",
+		},
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
+	}
+
+	secretList, err := kubeClient.CoreV1().Secrets(corev1.NamespaceAll).List(ctx, listOptions)
+	if err != nil {
+		return err
+	}
+	for _, secret := range secretList.Items {
+		if err := kubeClient.AppsV1().DaemonSets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{}); err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func installManifests(cmd ManifestClient, mc *configv1alpha3.MeshConfig, fsmNamespace string, kubeVersion *chartutil.KubeVersion, manifestFiles ...string) error {
+	debug("Loading fsm helm chart ...")
+	// load fsm helm chart
+	chart, err := loader.LoadArchive(bytes.NewReader(chartTGZSource))
+	if err != nil {
+		return err
+	}
+
+	debug("Resolving values ...")
+	// resolve values
+	values, err := cmd.ResolveValues(mc)
+	if err != nil {
+		return err
+	}
+
+	debug("Creating helm template client ...")
+	// create a helm template client
+	templateClient := helm.TemplateClient(
+		cmd.GetActionConfig(),
+		cmd.GetMeshName(),
+		fsmNamespace,
+		kubeVersion,
+	)
+	templateClient.Replace = true
+
+	debug("Rendering helm template ...")
+	// render entire fsm helm template
+	rel, err := templateClient.Run(chart, values)
+	if err != nil {
+		return err
+	}
+
+	debug("Apply manifests ...")
+	// filter out unneeded manifests, only keep interested manifests, then do a kubectl-apply like action for each manifest
+	if err := helm.ApplyYAMLs(cmd.GetDynamicClient(), cmd.GetRESTMapper(), rel.Manifest, helm.ApplyManifest, manifestFiles...); err != nil {
+		return err
+	}
 	return nil
 }

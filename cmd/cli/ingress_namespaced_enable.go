@@ -7,9 +7,10 @@ import (
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 
 	"github.com/spf13/cobra"
 )
@@ -25,7 +26,6 @@ type namespacedIngressEnableCmd struct {
 	configClient     configClientset.Interface
 	gatewayAPIClient gatewayApiClientset.Interface
 	meshName         string
-	version          string
 }
 
 func newNamespacedIngressEnableCmd(out io.Writer) *cobra.Command {
