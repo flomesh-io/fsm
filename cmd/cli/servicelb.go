@@ -19,8 +19,8 @@ func newServiceLBCmd(out io.Writer) *cobra.Command {
 		Long:    serviceLBDescription,
 		Args:    cobra.NoArgs,
 	}
-	cmd.AddCommand(newGatewayEnable(out))
-	cmd.AddCommand(newGatewayDisable(out))
+	cmd.AddCommand(newServiceLBEnableCmd(out))
+	cmd.AddCommand(newServiceLBDisableCmd(out))
 
 	return cmd
 }

@@ -495,3 +495,27 @@ func deleteEgressGatewayResources(ctx context.Context, kubeClient kubernetes.Int
 
 	return nil
 }
+
+func deleteServiceLBResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName string) error {
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			constants.AppLabel: constants.FSMServiceLBName,
+			"meshName":         meshName,
+		},
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
+	}
+
+	daemonSetList, err := kubeClient.AppsV1().DaemonSets(fsmNamespace).List(ctx, listOptions)
+	for _, deployment := range daemonSetList.Items {
+		err = kubeClient.AppsV1().DaemonSets(fsmNamespace).Delete(ctx, deployment.Name, metav1.DeleteOptions{})
+		if err != nil {
+			if !errors.IsNotFound(err) {
+				return err
+			}
+		}
+	}
+
+	return nil
+}

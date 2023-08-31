@@ -21,6 +21,9 @@ rules:
   - apiGroups: [ "networking.k8s.io" ]
     resources: [ "ingressclasses" ]
     verbs: [ "delete" ]
+  - apiGroups: [ "app" ]
+    resources: [ "daemonsets" ]
+    verbs: [ "get", "list", "create", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "secrets"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
@@ -107,6 +110,7 @@ spec:
              kubectl delete gatewayclasses.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-gateway --ignore-not-found;
              kubectl delete gateways.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-gateway --ignore-not-found;
              kubectl delete namespacedingresses.flomesh.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-ingress --ignore-not-found;
+             kubectl delete daemonsets -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-servicelb --ignore-not-found;
              kubectl delete ingressclasses pipy --ignore-not-found;
              kubectl delete deploy fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
              kubectl delete svc fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
