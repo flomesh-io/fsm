@@ -257,6 +257,12 @@ DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
+E2E_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
+DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))
+
+.PHONY: docker-build-e2e
+docker-build-e2e: charts-tgz $(DOCKER_E2E_TARGETS)
+
 .PHONY: buildx-context
 buildx-context:
 	@if ! docker buildx ls | grep -q "^fsm "; then docker buildx create --name fsm --driver-opt network=host; fi
