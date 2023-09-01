@@ -1,11 +1,21 @@
 ((
   config = pipy.solve('config.js'),
+
+  connectOptions = (config?.Spec?.SidecarTimeout > 0) ? (
+    {
+      connectTimeout: config.Spec.SidecarTimeout,
+      readTimeout: config.Spec.SidecarTimeout,
+      writeTimeout: config.Spec.SidecarTimeout,
+      idleTimeout: config.Spec.SidecarTimeout,
+    }
+  ) : {},
+
 ) => pipy()
 
 .branch(
   Boolean(config?.Inbound?.TrafficMatches), (
     $=>$
-    .listen(15003, { transparent: true })
+    .listen(15003, { transparent: true, ...connectOptions })
     .onStart(() => new Data)
     .use('modules/inbound-main.js')
   )
@@ -14,7 +24,7 @@
 .branch(
   Boolean(config?.Outbound || config?.Spec?.Traffic?.EnableEgress), (
     $=>$
-    .listen(15001, { transparent: true })
+    .listen(15001, { transparent: true, ...connectOptions })
     .onStart(() => new Data)
     .use('modules/outbound-main.js')
   )
