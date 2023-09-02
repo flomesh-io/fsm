@@ -94,8 +94,3 @@ func debug(format string, v ...interface{}) {
 		fmt.Printf(format, v...)
 	}
 }
-
-func print(format string, v ...interface{}) {
-	format = fmt.Sprintf("%s\n", format)
-	fmt.Printf(format, v...)
-}

@@ -378,9 +378,9 @@ func waitForDeploymentReady(ctx context.Context, kubeClient kubernetes.Interface
 }
 
 func deploymentStatus(deployment *appsv1.Deployment) (string, bool, error) {
-
 	if deployment.Generation <= deployment.Status.ObservedGeneration {
 		cond := deploymentutil.GetDeploymentCondition(deployment.Status, appsv1.DeploymentProgressing)
+
 		if cond != nil && cond.Reason == deploymentutil.TimedOutReason {
 			return "", false, fmt.Errorf("deployment %q exceeded its progress deadline", deployment.Name)
 		}
@@ -393,9 +393,11 @@ func deploymentStatus(deployment *appsv1.Deployment) (string, bool, error) {
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
 			return fmt.Sprintf("Waiting for deployment %q rollout to finish: %d of %d updated replicas are available...\n", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas), false, nil
 		}
+
 		return fmt.Sprintf("deployment %q successfully rolled out\n", deployment.Name), true, nil
 	}
-	return fmt.Sprintf("Waiting for deployment spec update to be observed...\n"), false, nil
+
+	return fmt.Sprintf("Waiting for deployment %q spec update to be observed...\n", deployment.Name), false, nil
 }
 
 //lint:ignore U1000 ignore unused
