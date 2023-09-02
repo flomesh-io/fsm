@@ -86,7 +86,7 @@ func (cmd *gatewayDisableCmd) run() error {
 	}
 
 	if !mc.Spec.GatewayAPI.Enabled {
-		fmt.Fprintf(cmd.out, "Gateway is disabled already, not action needed")
+		fmt.Fprintf(cmd.out, "Gateway is disabled already, no action needed\n")
 		return nil
 	}
 
@@ -111,8 +111,7 @@ func (cmd *gatewayDisableCmd) run() error {
 		return err
 	}
 
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

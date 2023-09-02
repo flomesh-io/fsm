@@ -72,7 +72,7 @@ func (cmd *flbDisableCmd) run() error {
 	}
 
 	if !mc.Spec.FLB.Enabled {
-		fmt.Fprintf(cmd.out, "FLB is disabled already, not action needed")
+		fmt.Fprintf(cmd.out, "FLB is disabled already, no action needed\n")
 		return nil
 	}
 
@@ -89,7 +89,7 @@ func (cmd *flbDisableCmd) run() error {
 		return err
 	}
 
-	if err := restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace); err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

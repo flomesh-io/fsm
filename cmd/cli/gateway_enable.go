@@ -90,7 +90,7 @@ func (cmd *gatewayEnableCmd) run() error {
 	// check if gateway is enabled, if yes, just return
 	// TODO: check if GatewayClass is installed and if there's any running gateway instances
 	if mc.Spec.GatewayAPI.Enabled {
-		fmt.Fprintf(cmd.out, "Gatweway is enabled already, not action needed")
+		fmt.Fprintf(cmd.out, "Gatweway is enabled already, no action needed\n")
 		return nil
 	}
 
@@ -127,8 +127,7 @@ func (cmd *gatewayEnableCmd) run() error {
 		return err
 	}
 
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

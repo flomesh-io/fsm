@@ -139,7 +139,7 @@ func (cmd *flbEnableCmd) run() error {
 	}
 
 	if mc.Spec.ServiceLB.Enabled {
-		fmt.Fprintf(cmd.out, "service-lb is enabled already, not action needed")
+		fmt.Fprintf(cmd.out, "service-lb is enabled already, no action needed\n")
 		return nil
 	}
 
@@ -166,8 +166,7 @@ func (cmd *flbEnableCmd) run() error {
 		return err
 	}
 
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

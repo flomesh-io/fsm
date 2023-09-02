@@ -12,6 +12,15 @@ import (
 	"strings"
 	"time"
 
+	deploymentutil "k8s.io/kubectl/pkg/util/deployment"
+
+	"k8s.io/kubectl/pkg/util/interrupt"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/tools/cache"
+
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 
@@ -41,13 +50,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	watchtools "k8s.io/client-go/tools/watch"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
-)
-
-const (
-	restartAtEnvName = "RESTART_AT"
 )
 
 type ManifestClient interface {
@@ -300,7 +306,7 @@ func annotateErrorMessageWithActionableMessage(actionableMessage string, errMsgF
 }
 
 //lint:ignore U1000 ignore unused
-func restartFSMController(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string) error {
+func restartFSMController(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string, out io.Writer) error {
 	debug("Restarting fsm-controller ...")
 	// Rollout restart fsm-controller
 	// patch the deployment spec template triggers the action of rollout restart like with kubectl
@@ -309,74 +315,90 @@ func restartFSMController(ctx context.Context, kubeClient kubernetes.Interface, 
 		time.Now().Format("20060102-150405.0000"),
 	)
 
-	if _, err := kubeClient.AppsV1().
+	deployment, err := kubeClient.AppsV1().
 		Deployments(fsmNamespace).
-		Patch(ctx, constants.FSMControllerName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{}); err != nil {
+		Patch(ctx, constants.FSMControllerName, types.StrategicMergePatchType, []byte(patch), metav1.PatchOptions{})
+	if err != nil {
+		return err
+	}
+
+	if err := waitForDeploymentReady(ctx, kubeClient, deployment, out); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func restartFSMControllerContainer(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string) error {
-	debug("Restarting fsm-controller container ...")
+func waitForDeploymentReady(ctx context.Context, kubeClient kubernetes.Interface, deployment *appsv1.Deployment, out io.Writer) error {
+	timeout := 5 * time.Minute
 
-	// Get fsm-controller deployment
-	deployment, err := kubeClient.AppsV1().Deployments(fsmNamespace).Get(ctx, constants.FSMControllerName, metav1.GetOptions{})
-	if err != nil {
-		return err
+	fieldSelector := fields.OneTermEqualSelector("metadata.name", deployment.Name).String()
+	lw := &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			options.FieldSelector = fieldSelector
+			return kubeClient.AppsV1().Deployments(deployment.Namespace).List(context.TODO(), options)
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			options.FieldSelector = fieldSelector
+			return kubeClient.AppsV1().Deployments(deployment.Namespace).Watch(context.TODO(), options)
+		},
 	}
 
-	// Get fsm-controller pods by selector of the deployment
-	selector, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
-	if err != nil {
-		return err
-	}
-	pods, err := kubeClient.CoreV1().Pods(fsmNamespace).List(ctx, metav1.ListOptions{LabelSelector: selector.String()})
-	if err != nil {
-		return err
-	}
-
-	// Update env of fsm-controller container to trigger restart ONLY fsm-controller container,
-	// no impact on other containers in the pod
-	for idxp, pod := range pods.Items {
-		for idxc, c := range pod.Spec.Containers {
-			if c.Name != constants.FSMControllerName {
-				continue
-			}
-
-			found := false
-			for idxe, env := range c.Env {
-				if env.Name == restartAtEnvName {
-					pods.Items[idxp].Spec.Containers[idxc].Env[idxe] = corev1.EnvVar{
-						Name:  restartAtEnvName,
-						Value: time.Now().Format("20060102-150405.0000"),
-					}
-					found = true
-					break
+	// if the rollout isn't done yet, keep watching deployment status
+	ctx, cancel := watchtools.ContextWithOptionalTimeout(context.Background(), timeout)
+	intr := interrupt.New(nil, cancel)
+	if err := intr.Run(func() error {
+		_, err := watchtools.UntilWithSync(ctx, lw, &appsv1.Deployment{}, nil, func(e watch.Event) (bool, error) {
+			switch t := e.Type; t {
+			case watch.Added, watch.Modified:
+				status, done, err := deploymentStatus(e.Object.(*appsv1.Deployment))
+				if err != nil {
+					return false, err
 				}
+				fmt.Fprintf(out, "%s", status)
+				// Quit waiting if the rollout is done
+				if done {
+					return true, nil
+				}
+
+				return false, nil
+			case watch.Deleted:
+				// We need to abort to avoid cases of recreation and not to silently watch the wrong (new) object
+				return true, fmt.Errorf("object has been deleted")
+			default:
+				return true, fmt.Errorf("internal error: unexpected event %#v", e)
 			}
-
-			if !found {
-				pods.Items[idxp].Spec.Containers[idxc].Env = append(pods.Items[idxp].Spec.Containers[idxc].Env, corev1.EnvVar{
-					Name:  restartAtEnvName,
-					Value: time.Now().Format("20060102-150405.0000"),
-				})
-			}
-		}
-
-		if _, err := kubeClient.CoreV1().Pods(fsmNamespace).Update(ctx, &pods.Items[idxp], metav1.UpdateOptions{}); err != nil {
-			return err
-		}
-	}
-
-	if err := waitForPodsRunningReady(kubeClient, fsmNamespace, int(*deployment.Spec.Replicas), deployment.Spec.Selector); err != nil {
+		})
+		return err
+	}); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+func deploymentStatus(deployment *appsv1.Deployment) (string, bool, error) {
+
+	if deployment.Generation <= deployment.Status.ObservedGeneration {
+		cond := deploymentutil.GetDeploymentCondition(deployment.Status, appsv1.DeploymentProgressing)
+		if cond != nil && cond.Reason == deploymentutil.TimedOutReason {
+			return "", false, fmt.Errorf("deployment %q exceeded its progress deadline", deployment.Name)
+		}
+		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
+			return fmt.Sprintf("Waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated...\n", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas), false, nil
+		}
+		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
+			return fmt.Sprintf("Waiting for deployment %q rollout to finish: %d old replicas are pending termination...\n", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas), false, nil
+		}
+		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
+			return fmt.Sprintf("Waiting for deployment %q rollout to finish: %d of %d updated replicas are available...\n", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas), false, nil
+		}
+		return fmt.Sprintf("deployment %q successfully rolled out\n", deployment.Name), true, nil
+	}
+	return fmt.Sprintf("Waiting for deployment spec update to be observed...\n"), false, nil
+}
+
+//lint:ignore U1000 ignore unused
 func waitForPodsRunningReady(kubeClient kubernetes.Interface, ns string, nExpectedRunningPods int, labelSelector *metav1.LabelSelector) error {
 	timeout := 5 * time.Minute
 	debug("Wait up to %v for %d pods ready in ns [%s]...", timeout, nExpectedRunningPods, ns)

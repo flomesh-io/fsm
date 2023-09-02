@@ -86,7 +86,7 @@ func (cmd *namespacedIngressDisableCmd) run() error {
 	}
 
 	if !mc.Spec.Ingress.Enabled && !mc.Spec.Ingress.Namespaced {
-		fmt.Fprintf(cmd.out, "NamespacedIngress is disabled already, not action needed")
+		fmt.Fprintf(cmd.out, "NamespacedIngress is disabled already, no action needed\n")
 		return nil
 	}
 
@@ -113,8 +113,7 @@ func (cmd *namespacedIngressDisableCmd) run() error {
 		return err
 	}
 
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

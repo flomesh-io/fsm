@@ -162,7 +162,7 @@ func (cmd *ingressEnableCmd) run() error {
 	// check if ingress is enabled, if yes, just return
 	// TODO: check if ingress controller is installed and running???
 	if mc.Spec.Ingress.Enabled {
-		fmt.Fprintf(cmd.out, "Ingress is enabled, not action needed")
+		fmt.Fprintf(cmd.out, "Ingress is enabled, no action needed\n")
 		return nil
 	}
 
@@ -220,8 +220,7 @@ func (cmd *ingressEnableCmd) run() error {
 	debug("Restarting fsm-controller ...")
 	// Rollout restart fsm-controller
 	// patch the deployment spec template triggers the action of rollout restart like with kubectl
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

@@ -79,7 +79,7 @@ func (cmd *ingressDisableCmd) run() error {
 
 	// check if ingress is enabled, if yes, just return
 	if !mc.Spec.Ingress.Enabled {
-		fmt.Fprintf(cmd.out, "Ingress is disabled already, not action needed")
+		fmt.Fprintf(cmd.out, "Ingress is disabled already, no action needed\n")
 		return nil
 	}
 
@@ -106,8 +106,7 @@ func (cmd *ingressDisableCmd) run() error {
 		return err
 	}
 
-	err = restartFSMControllerContainer(ctx, cmd.kubeClient, fsmNamespace)
-	if err != nil {
+	if err := restartFSMController(ctx, cmd.kubeClient, fsmNamespace, cmd.out); err != nil {
 		return err
 	}
 

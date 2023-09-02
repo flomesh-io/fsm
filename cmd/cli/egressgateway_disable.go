@@ -77,7 +77,7 @@ func (cmd *egressGatewayDisableCmd) run() error {
 	}
 
 	if !mc.Spec.EgressGateway.Enabled {
-		fmt.Fprintf(cmd.out, "egress-gateway is disabled already, not action needed")
+		fmt.Fprintf(cmd.out, "egress-gateway is disabled already, no action needed\n")
 		return nil
 	}
 
