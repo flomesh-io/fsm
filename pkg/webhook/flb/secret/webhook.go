@@ -186,7 +186,6 @@ func (w *validator) doValidation(obj interface{}) error {
 			constants.FLBSecretKeyBaseURL,
 			constants.FLBSecretKeyUsername,
 			constants.FLBSecretKeyPassword,
-			constants.FLBSecretKeyDefaultCluster,
 			constants.FLBSecretKeyDefaultAddressPool,
 			constants.FLBSecretKeyDefaultAlgo,
 		} {

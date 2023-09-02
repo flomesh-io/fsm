@@ -919,7 +919,6 @@ fsm:
     username: admin
     password: admin
     k8sCluster: "UNKNOWN"
-    defaultCluster: default
     defaultAddressPool: default
     defaultAlgo: rr
 

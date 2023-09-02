@@ -1846,7 +1846,6 @@
                         "username",
                         "password",
                         "k8sCluster",
-                        "defaultCluster",
                         "defaultAddressPool",
                         "defaultAlgo"
                     ],
@@ -1885,11 +1884,6 @@
                           "type": "string",
                           "default": "UNKNOWN",
                           "title": "The k8sCluster Schema"
-                        },
-                        "defaultCluster": {
-                            "type": "string",
-                            "default": "default",
-                            "title": "The defaultCluster Schema"
                         },
                         "defaultAddressPool": {
                             "type": "string",
