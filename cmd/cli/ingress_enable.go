@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -225,6 +228,19 @@ func (cmd *ingressEnableCmd) run() error {
 	}
 
 	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, ingressManifestFiles...); err != nil {
+		return err
+	}
+
+	time.Sleep(3 * time.Second)
+
+	deployment, err := cmd.kubeClient.AppsV1().
+		Deployments(fsmNamespace).
+		Get(ctx, constants.FSMIngressName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if err := waitForDeploymentReady(ctx, cmd.kubeClient, deployment, cmd.out); err != nil {
 		return err
 	}
 

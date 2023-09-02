@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"k8s.io/utils/pointer"
 
@@ -170,6 +171,19 @@ func (cmd *egressGatewayEnableCmd) run() error {
 	}
 
 	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, egressGatewayManifestFiles...); err != nil {
+		return err
+	}
+
+	time.Sleep(3 * time.Second)
+
+	deployment, err := cmd.kubeClient.AppsV1().
+		Deployments(fsmNamespace).
+		Get(ctx, constants.FSMEgressGatewayName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if err := waitForDeploymentReady(ctx, cmd.kubeClient, deployment, cmd.out); err != nil {
 		return err
 	}
 
