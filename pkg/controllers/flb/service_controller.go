@@ -80,7 +80,6 @@ const (
 
 // FLB request HTTP headers
 const (
-	flbClusterHeaderName        = "X-Flb-Cluster"
 	flbAddressPoolHeaderName    = "X-Flb-Address-Pool"
 	flbDesiredIPHeaderName      = "X-Flb-Desired-Ip"
 	flbMaxConnectionsHeaderName = "X-Flb-Max-Connections"
@@ -107,7 +106,6 @@ type setting struct {
 	flbUser               string
 	flbPassword           string
 	k8sCluster            string
-	flbDefaultCluster     string
 	flbDefaultAddressPool string
 	flbDefaultAlgo        string
 	token                 string
@@ -208,7 +206,6 @@ func getDefaultSetting(api kubernetes.Interface, mc configurator.Configurator) (
 	log.Debug().Msgf("Found Secret %s/%s", mc.GetFSMNamespace(), mc.GetFLBSecretName())
 
 	log.Debug().Msgf("FLB base URL = %q", string(secret.Data[constants.FLBSecretKeyBaseURL]))
-	log.Debug().Msgf("FLB default Cluster = %q", string(secret.Data[constants.FLBSecretKeyDefaultCluster]))
 	log.Debug().Msgf("FLB default Address Pool = %q", string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]))
 
 	return newSetting(secret), nil
@@ -220,7 +217,6 @@ func newSetting(secret *corev1.Secret) *setting {
 		flbUser:               string(secret.Data[constants.FLBSecretKeyUsername]),
 		flbPassword:           string(secret.Data[constants.FLBSecretKeyPassword]),
 		k8sCluster:            string(secret.Data[constants.FLBSecretKeyK8sCluster]),
-		flbDefaultCluster:     string(secret.Data[constants.FLBSecretKeyDefaultCluster]),
 		flbDefaultAddressPool: string(secret.Data[constants.FLBSecretKeyDefaultAddressPool]),
 		flbDefaultAlgo:        string(secret.Data[constants.FLBSecretKeyDefaultAlgo]),
 		hash:                  fmt.Sprintf("%d", utils.GetSecretDataHash(secret)),
@@ -256,12 +252,6 @@ func newOverrideSetting(secret *corev1.Secret, defaultSetting *setting) *setting
 		s.k8sCluster = defaultSetting.k8sCluster
 	} else {
 		s.k8sCluster = string(secret.Data[constants.FLBSecretKeyK8sCluster])
-	}
-
-	if len(secret.Data[constants.FLBSecretKeyDefaultCluster]) == 0 {
-		s.flbDefaultCluster = defaultSetting.flbDefaultCluster
-	} else {
-		s.flbDefaultCluster = string(secret.Data[constants.FLBSecretKeyDefaultCluster])
 	}
 
 	if len(secret.Data[constants.FLBSecretKeyDefaultAddressPool]) == 0 {
@@ -432,7 +422,6 @@ func (r *reconciler) computeServiceAnnotations(svc *corev1.Service) map[string]s
 	}
 
 	for key, value := range map[string]string{
-		constants.FLBClusterAnnotation:     setting.flbDefaultCluster,
 		constants.FLBAddressPoolAnnotation: setting.flbDefaultAddressPool,
 		constants.FLBAlgoAnnotation:        getValidAlgo(setting.flbDefaultAlgo),
 	} {
@@ -596,7 +585,6 @@ func (r *reconciler) getFLBParameters(svc *corev1.Service) map[string]string {
 	}
 
 	return map[string]string{
-		flbClusterHeaderName:        svc.Annotations[constants.FLBClusterAnnotation],
 		flbAddressPoolHeaderName:    svc.Annotations[constants.FLBAddressPoolAnnotation],
 		flbDesiredIPHeaderName:      svc.Annotations[constants.FLBDesiredIPAnnotation],
 		flbMaxConnectionsHeaderName: svc.Annotations[constants.FLBMaxConnectionsAnnotation],
@@ -677,12 +665,12 @@ func (r *reconciler) updateFLB(svc *corev1.Service, params map[string]string, re
 
 		if err != nil {
 			if statusCode == http.StatusUnauthorized {
-				token, err := r.loginFLB(svc.Namespace)
-				if err != nil {
-					log.Error().Msgf("Login to FLB failed: %s", err)
-					defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "LoginFailed", "Login to FLB failed: %s", err)
+				token, loginErr := r.loginFLB(svc.Namespace)
+				if loginErr != nil {
+					log.Error().Msgf("Login to FLB failed: %s", loginErr)
+					defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "LoginFailed", "Login to FLB failed: %s", loginErr)
 
-					return err
+					return loginErr
 				}
 
 				r.settings[svc.Namespace].token = token

@@ -499,9 +499,6 @@ const (
 	// FLBEnabledAnnotation is the annotation used to indicate if the flb is enabled
 	FLBEnabledAnnotation = FLBPrefix + "/enabled"
 
-	// FLBClusterAnnotation is the annotation used to indicate the cluster name
-	FLBClusterAnnotation = FLBPrefix + "/cluster"
-
 	// FLBAddressPoolAnnotation is the annotation used to indicate the address pool
 	FLBAddressPoolAnnotation = FLBPrefix + "/address-pool"
 
@@ -540,9 +537,6 @@ const (
 
 	// FLBSecretKeyK8sCluster is the key for the k8s cluster which FLB controller is installed
 	FLBSecretKeyK8sCluster = "k8sCluster"
-
-	// FLBSecretKeyDefaultCluster is the key for the default cluster
-	FLBSecretKeyDefaultCluster = "defaultCluster"
 
 	// FLBSecretKeyDefaultAddressPool is the key for the default address pool
 	FLBSecretKeyDefaultAddressPool = "defaultAddressPool"
