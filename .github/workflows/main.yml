@@ -3,7 +3,8 @@ on:
   push:
     branches:
       - main
-      - release-*
+      - release-v*
+      - release/v*
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -13,7 +14,8 @@ on:
   pull_request:
     branches:
       - main
-      - release-*
+      - release-v*
+      - release/v*
     paths-ignore:
       - "docs/**"
       - "**.md"
