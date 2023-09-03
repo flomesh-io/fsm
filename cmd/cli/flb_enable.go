@@ -40,7 +40,6 @@ type flbEnableCmd struct {
 	userName      string
 	password      string
 	k8sCluster    string
-	cluster       string
 	addressPool   string
 	algo          string
 }
@@ -116,7 +115,6 @@ func newFLBEnableCmd(config *action.Configuration, out io.Writer) *cobra.Command
 	f.StringVar(&enableCmd.userName, "username", "admin", "user name of FLB API server")
 	f.StringVar(&enableCmd.password, "password", "admin", "password of FLB API server")
 	f.StringVar(&enableCmd.k8sCluster, "k8s-cluster", "UNKNOWN", "name of the k8s cluster in which FLB controller is running")
-	f.StringVar(&enableCmd.cluster, "cluster", "default", "name of the pipy cluster of FLB data plane")
 	f.StringVar(&enableCmd.addressPool, "address-pool", "default", "name of the address pool of FLB")
 	f.StringVar(&enableCmd.algo, "algo", "default", "load balancing algorithm of FLB")
 
@@ -185,7 +183,6 @@ func (cmd *flbEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) (map[strin
 		fmt.Sprintf("fsm.flb.baseUrl=%s", cmd.baseUrl),
 		fmt.Sprintf("fsm.flb.password=%s", cmd.password),
 		fmt.Sprintf("fsm.flb.k8sCluster=%s", cmd.kubeClient),
-		fmt.Sprintf("fsm.flb.defaultCluster=%s", cmd.cluster),
 		fmt.Sprintf("fsm.flb.defaultAddressPool=%s", cmd.addressPool),
 		fmt.Sprintf("fsm.flb.defaultAlgo=%s", cmd.algo),
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetNamespace()),
