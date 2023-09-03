@@ -186,6 +186,7 @@
                 "meshName",
                 "maxDataPlaneConnections",
                 "sidecarLogLevel",
+                "sidecarTimeout",
                 "controllerLogLevel",
                 "enforceSingleMesh",
                 "deployJaeger",
@@ -1027,6 +1028,15 @@
                     "examples": [
                         "30s"
                     ]
+                },
+                "sidecarTimeout": {
+                  "$id": "#/properties/fsm/properties/sidecarTimeout",
+                  "type": "integer",
+                  "title": "The sidecarTimeout schema",
+                  "description": "Sets connect/idle/read/write timeout",
+                  "examples": [
+                    "60"
+                  ]
                 },
                 "sidecarLogLevel": {
                     "$id": "#/properties/fsm/properties/sidecarLogLevel",

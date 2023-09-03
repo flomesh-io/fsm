@@ -4,6 +4,16 @@
   {
     metricsCache,
   } = pipy.solve('metrics.js'),
+
+  connectOptions = (config?.Spec?.SidecarTimeout > 0) ? (
+    {
+      connectTimeout: config.Spec.SidecarTimeout,
+      readTimeout: config.Spec.SidecarTimeout,
+      writeTimeout: config.Spec.SidecarTimeout,
+      idleTimeout: config.Spec.SidecarTimeout,
+    }
+  ) : {},
+
 ) => (
 
 pipy({
@@ -44,10 +54,10 @@ pipy({
 )
 .branch(
   () => __target.startsWith('127.0.0.1:'), (
-    $=>$.connect(() => __target, { bind: '127.0.0.6' })
+    $=>$.connect(() => __target, { bind: '127.0.0.6', ...connectOptions })
   ),
   (
-    $=>$.connect(() => __target)
+    $=>$.connect(() => __target, connectOptions)
   )
 )
 .handleData(

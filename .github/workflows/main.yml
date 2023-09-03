@@ -179,7 +179,7 @@ jobs:
       - name: Build test dependencies
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        run: make docker-build-e2e build-fsm
       - name: Run tests
         id: test
         env:
@@ -233,7 +233,7 @@ jobs:
       - name: Build test dependencies
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        run: make docker-build-e2e build-fsm
       - name: Run tests
         id: test
         env:
@@ -287,7 +287,7 @@ jobs:
       - name: Build test dependencies
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        run: make docker-build-e2e build-fsm
       - name: Run tests
         id: test
         env:
@@ -348,7 +348,7 @@ jobs:
       - name: Build test dependencies
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        run: make docker-build-e2e build-fsm
       - name: Run tests
         id: test
         env:
@@ -402,7 +402,7 @@ jobs:
       - name: Build test dependencies
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
-        run: make docker-build-fsm build-fsm docker-build-tcp-echo-server
+        run: make docker-build-e2e build-fsm
       - name: Run tests
         id: test
         env:
