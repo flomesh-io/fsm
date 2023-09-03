@@ -252,10 +252,16 @@ docker-build-fsm-gateway:
 
 TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
 FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor fsm-ingress fsm-gateway
+E2E_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
+
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
+DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))
 
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
+
+.PHONY: docker-build-e2e
+docker-build-e2e: charts-tgz $(DOCKER_E2E_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:

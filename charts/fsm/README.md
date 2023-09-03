@@ -445,6 +445,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.2-41"` | Sidecar image for Linux workloads |
 | fsm.sidecarImage | string | `""` | Sidecar image for Linux workloads |
 | fsm.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
+| fsm.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
 | fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |

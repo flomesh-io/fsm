@@ -99,6 +99,9 @@ type Configurator interface {
 	// GetMaxDataPlaneConnections returns the max data plane connections allowed, 0 if disabled
 	GetMaxDataPlaneConnections() int
 
+	// GetSidecarTimeout returns connect/idle/read/write timeout
+	GetSidecarTimeout() int
+
 	// GetFSMLogLevel returns the configured FSM log level
 	GetFSMLogLevel() string
 
