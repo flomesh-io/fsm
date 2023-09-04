@@ -62,7 +62,7 @@ func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certM
 	// 1. issue cert
 	cert, err := certMgr.IssueCertificate(
 		fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace()),
-		certificate.Internal,
+		certificate.IngressGateway,
 		certificate.FullCNProvided())
 	if err != nil {
 		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
@@ -80,9 +80,9 @@ func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certM
 		"listen":  mc.GetIngressTLSListenPort(),
 		"mTLS":    mc.IsIngressMTLSEnabled(),
 		"certificate": map[string]interface{}{
-			"cert": cert.GetCertificateChain(),
-			"key":  cert.GetPrivateKey(),
-			"ca":   cert.GetIssuingCA(),
+			"cert": string(cert.GetCertificateChain()),
+			"key":  string(cert.GetPrivateKey()),
+			"ca":   string(cert.GetIssuingCA()),
 		},
 	})
 	if err != nil {
