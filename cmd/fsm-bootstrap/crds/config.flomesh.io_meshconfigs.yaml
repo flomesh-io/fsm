@@ -363,9 +363,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -453,6 +450,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                 required:
                 - enablePrivilegedInitContainer
                 type: object
@@ -931,9 +932,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -1022,6 +1020,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                   tlsMaxProtocolVersion:
                     description: TLSMaxProtocolVersion defines the maximum TLS protocol
                       version that the sidecar supports. Valid TLS protocol versions
@@ -1794,9 +1796,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -1885,6 +1884,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                   tlsMaxProtocolVersion:
                     description: TLSMaxProtocolVersion defines the maximum TLS protocol
                       version that the sidecar supports. Valid TLS protocol versions
