@@ -31,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -164,9 +166,14 @@ func (r *serviceReconciler) newDaemonSet(ctx context.Context, svc *corev1.Servic
 			Name:      name,
 			Namespace: svc.Namespace,
 			Labels: map[string]string{
-				nodeSelectorLabel: "false",
-				svcNameLabel:      svc.Name,
-				svcNamespaceLabel: svc.Namespace,
+				nodeSelectorLabel:                "false",
+				svcNameLabel:                     svc.Name,
+				svcNamespaceLabel:                svc.Namespace,
+				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
+				constants.FSMAppInstanceLabelKey: r.fctx.MeshName,
+				constants.FSMAppVersionLabelKey:  r.fctx.FSMVersion,
+				constants.AppLabel:               constants.FSMServiceLBName,
+				"meshName":                       r.fctx.MeshName,
 			},
 		},
 		TypeMeta: metav1.TypeMeta{

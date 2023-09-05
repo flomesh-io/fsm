@@ -9,6 +9,7 @@ metadata:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
     meshName: {{ .Values.fsm.meshName }}
+    ingress.flomesh.io/namespaced: "false"
 spec:
   replicas: {{ .Values.fsm.fsmIngress.replicaCount }}
   selector:
