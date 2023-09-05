@@ -1261,6 +1261,58 @@ spec:
                 - properties
                 - uid
                 type: object
+              egressGateway:
+                description: EgressGateway defines the configurations of EgressGateway
+                  features.
+                properties:
+                  adminPort:
+                    default: 6060
+                    description: AdminPort defines the admin port of egress gateway.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  enabled:
+                    default: false
+                    description: Enabled defines if flb is enabled.
+                    type: boolean
+                  logLevel:
+                    default: info
+                    description: LogLevel defines the log level of gateway api.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
+                    type: string
+                  mode:
+                    default: http2tunnel
+                    description: Mode defines the mode of egress gateway.
+                    enum:
+                    - http2tunnel
+                    - sock5
+                    type: string
+                  port:
+                    default: 1080
+                    description: Port defines the port of egress gateway.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  replicas:
+                    default: 1
+                    description: Replicas defines the replicas of egress gateway.
+                    format: int32
+                    type: integer
+                required:
+                - enabled
+                - logLevel
+                - mode
+                type: object
               featureFlags:
                 description: FeatureFlags defines the feature flags for a mesh instance.
                 properties:
@@ -1523,8 +1575,13 @@ spec:
                     default: curlimages/curl
                     description: CurlImage defines the image of curl.
                     type: string
+                  repoServerImage:
+                    default: flomesh/pipy-repo:0.90.2-41
+                    description: RepoServerImage defines the image of repo server.
+                    type: string
                 required:
                 - curlImage
+                - repoServerImage
                 type: object
               observability:
                 description: Observalility defines the observability configurations

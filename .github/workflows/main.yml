@@ -76,6 +76,10 @@ jobs:
         run: make check-codegen
       - name: Scripts checks
         run: make check-scripts
+      - name: Manifests checks
+        run: |
+          make manifests
+          make check-manifests
 
   mocks:
     name: Mocks
