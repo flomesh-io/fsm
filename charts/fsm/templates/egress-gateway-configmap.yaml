@@ -5,7 +5,9 @@ metadata:
   name: fsm-egress-gateway-pjs
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    {{- include "fsm.egress-gateway.labels" . | nindent 4 }}
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-egress-gateway
+    meshName: {{ .Values.fsm.meshName }}
 data:
   egress-gateway.js: |
 {{- if eq .Values.fsm.egressGateway.mode "sock5" }}

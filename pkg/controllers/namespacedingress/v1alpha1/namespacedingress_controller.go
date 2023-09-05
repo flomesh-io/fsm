@@ -123,13 +123,18 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrlResult, err
 	}
 
-	releaseName := fmt.Sprintf("namespaced-ingress-%s", nsig.Namespace)
-	kubeVersion := &chartutil.KubeVersion{
-		Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
-		Major:   "1",
-		Minor:   "19",
-	}
-	if ctrlResult, err = helm.RenderChart(releaseName, nsig, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, r.resolveValues); err != nil {
+	actionConfig := helm.ActionConfig(nsig.Namespace, log.Debug().Msgf)
+	templateClient := helm.TemplateClient(
+		actionConfig,
+		fmt.Sprintf("namespaced-ingress-%s", nsig.Namespace),
+		nsig.Namespace,
+		&chartutil.KubeVersion{
+			Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
+			Major:   "1",
+			Minor:   "19",
+		},
+	)
+	if ctrlResult, err = helm.RenderChart(templateClient, nsig, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		return ctrlResult, err
 	}
 

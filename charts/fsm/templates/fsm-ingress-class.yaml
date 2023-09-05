@@ -5,6 +5,7 @@ metadata:
   name: pipy
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-ingress
   annotations:
     meta.flomesh.io/namespace: {{ include "fsm.namespace" . }}
     meta.flomesh.io/ingress-pipy-svc: "fsm-ingress"

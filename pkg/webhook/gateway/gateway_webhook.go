@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"net/http"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +49,7 @@ import (
 
 type register struct {
 	*webhook.RegisterConfig
+	gatewayAPIClient gatewayApiClientset.Interface
 }
 
 const (
@@ -56,7 +59,8 @@ const (
 // NewRegister creates a new gateway webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
-		RegisterConfig: cfg,
+		RegisterConfig:   cfg,
+		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(cfg.KubeConfig),
 	}
 }
 
@@ -95,20 +99,25 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered of gateway
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
+		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Config, r.MeshName, r.FSMVersion)),
 		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
 	}
 }
 
 type defaulter struct {
-	kubeClient kubernetes.Interface
-	cfg        configurator.Configurator
+	kubeClient       kubernetes.Interface
+	gatewayAPIClient gatewayApiClientset.Interface
+	cfg              configurator.Configurator
+	meshName         string
+	fsmVersion       string
 }
 
-func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator) *defaulter {
+func newDefaulter(kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, cfg configurator.Configurator, meshName, fsmVersion string) *defaulter {
 	return &defaulter{
 		kubeClient: kubeClient,
 		cfg:        cfg,
+		meshName:   meshName,
+		fsmVersion: fsmVersion,
 	}
 }
 
@@ -127,11 +136,28 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", gateway.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", gateway.Spec)
 
-	//meshConfig := w.configStore.MeshConfig.GetConfig()
-	//
-	//if meshConfig == nil {
-	//	return
-	//}
+	gatewayClass, err := w.gatewayAPIClient.
+		GatewayV1beta1().
+		GatewayClasses().
+		Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})
+	if err != nil {
+		log.Error().Msgf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
+		return
+	}
+
+	if gatewayClass.Spec.ControllerName != constants.GatewayController {
+		log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
+		return
+	}
+
+	// if it's a valid gateway, set default values
+	if len(gateway.Labels) == 0 {
+		gateway.Labels = map[string]string{}
+	}
+	gateway.Labels[constants.FSMAppNameLabelKey] = constants.FSMAppNameLabelValue
+	gateway.Labels[constants.FSMAppInstanceLabelKey] = w.meshName
+	gateway.Labels[constants.FSMAppVersionLabelKey] = w.fsmVersion
+	gateway.Labels[constants.AppLabel] = constants.FSMGatewayName
 
 	log.Debug().Msgf("After setting default values, spec=%v", gateway.Spec)
 }

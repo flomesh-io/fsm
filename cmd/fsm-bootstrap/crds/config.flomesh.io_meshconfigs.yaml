@@ -1516,6 +1516,16 @@ spec:
                 - logLevel
                 - namespaced
                 type: object
+              misc:
+                description: Misc defines the configurations of misc info
+                properties:
+                  curlImage:
+                    default: curlimages/curl
+                    description: CurlImage defines the image of curl.
+                    type: string
+                required:
+                - curlImage
+                type: object
               observability:
                 description: Observalility defines the observability configurations
                   for a mesh instance.
@@ -1714,7 +1724,7 @@ spec:
                     description: Enabled defines if service lb is enabled.
                     type: boolean
                   image:
-                    default: mirrored-klipper-lb:v0.3.5
+                    default: flomesh/mirrored-klipper-lb:v0.3.5
                     description: Image defines the service lb image.
                     type: string
                 required:
@@ -2005,6 +2015,7 @@ spec:
                 type: object
             required:
             - image
+            - misc
             type: object
         type: object
     served: true
