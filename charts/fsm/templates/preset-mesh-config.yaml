@@ -89,6 +89,7 @@ data:
         "enabled": {{ and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled )}},
         "namespaced": {{ .Values.fsm.fsmIngress.namespaced }},
         "logLevel": "{{ .Values.fsm.fsmIngress.logLevel }}",
+        "type": "{{ .Values.fsm.fsmIngress.service.type }}",
         "http": {
           "enabled": {{ .Values.fsm.fsmIngress.http.enabled }},
           "bind": {{ .Values.fsm.fsmIngress.http.port }},
