@@ -1553,10 +1553,18 @@ spec:
                     - mTLS
                     - nodePort
                     type: object
+                  type:
+                    default: LoadBalancer
+                    description: Type defines the type of ingress service.
+                    enum:
+                    - LoadBalancer
+                    - NodePort
+                    type: string
                 required:
                 - enabled
                 - logLevel
                 - namespaced
+                - type
                 type: object
               misc:
                 description: Misc defines the configurations of misc info
