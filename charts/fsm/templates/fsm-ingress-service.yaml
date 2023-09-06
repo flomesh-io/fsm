@@ -16,7 +16,7 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.fsm.fsmIngress.service.type }}
-  {{- $setNodePorts := (or (eq .Values.fsm.fsmIngress.service.type "NodePort") (eq .Values.fsm.fsmIngress.service.type "LoadBalancer")) }}
+  {{- $setNodePorts := (eq .Values.fsm.fsmIngress.service.type "NodePort") }}
   ports:
   {{- if and .Values.fsm.fsmIngress.http.enabled (and (not (empty .Values.fsm.fsmIngress.http.port)) (not (empty .Values.fsm.fsmIngress.http.containerPort))) }}
   - name: http

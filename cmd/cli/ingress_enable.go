@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -54,6 +56,7 @@ type ingressEnableCmd struct {
 	passthroughEnabled      bool
 	passthroughUpstreamPort int32
 	replicas                int32
+	serviceType             string
 }
 
 func (cmd *ingressEnableCmd) GetActionConfig() *action.Configuration {
@@ -136,14 +139,15 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 	f.StringVar(&enableCmd.logLevel, "log-level", "error", "log level of ingress")
 	f.BoolVar(&enableCmd.httpEnabled, "http-enable", true, "enable/disable HTTP ingress")
 	f.Int32Var(&enableCmd.httpPort, "http-port", 80, "HTTP ingress port")
-	f.Int32Var(&enableCmd.httpNodePort, "http-node-port", 30508, "HTTP ingress node port")
+	f.Int32Var(&enableCmd.httpNodePort, "http-node-port", 30508, "HTTP ingress node port, take effect only if type is NodePort")
 	f.BoolVar(&enableCmd.tlsEnabled, "tls-enable", false, "enable/disable TLS ingress")
 	f.BoolVar(&enableCmd.mtls, "mtls", false, "enable/disable mTLS for ingress")
 	f.Int32Var(&enableCmd.tlsPort, "tls-port", 443, "TLS ingress port")
-	f.Int32Var(&enableCmd.tlsNodePort, "tls-node-port", 30607, "TLS ingress node port")
+	f.Int32Var(&enableCmd.tlsNodePort, "tls-node-port", 30607, "TLS ingress node port, take effect only if type is NodePort")
 	f.BoolVar(&enableCmd.passthroughEnabled, "passthrough-enable", false, "enable/disable SSL passthrough")
 	f.Int32Var(&enableCmd.passthroughUpstreamPort, "passthrough-upstream-port", 443, "SSL passthrough upstream port")
 	f.Int32Var(&enableCmd.replicas, "replicas", 1, "replicas of ingress")
+	f.StringVar(&enableCmd.serviceType, "type", string(corev1.ServiceTypeLoadBalancer), "type of ingress service, LoadBalancer or NodePort")
 	//utilruntime.Must(cmd.MarkFlagRequired("mesh-name"))
 
 	return cmd
@@ -152,6 +156,10 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 func (cmd *ingressEnableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if cmd.serviceType != string(corev1.ServiceTypeLoadBalancer) && cmd.serviceType != string(corev1.ServiceTypeNodePort) {
+		return fmt.Errorf("invalid service type, only support LoadBalancer or NodePort")
+	}
 
 	fsmNamespace := settings.Namespace()
 
