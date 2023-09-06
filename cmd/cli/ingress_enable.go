@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -54,6 +56,7 @@ type ingressEnableCmd struct {
 	passthroughEnabled      bool
 	passthroughUpstreamPort int32
 	replicas                int32
+	serviceType             string
 }
 
 func (cmd *ingressEnableCmd) GetActionConfig() *action.Configuration {
@@ -144,6 +147,7 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 	f.BoolVar(&enableCmd.passthroughEnabled, "passthrough-enable", false, "enable/disable SSL passthrough")
 	f.Int32Var(&enableCmd.passthroughUpstreamPort, "passthrough-upstream-port", 443, "SSL passthrough upstream port")
 	f.Int32Var(&enableCmd.replicas, "replicas", 1, "replicas of ingress")
+	f.StringVar(&enableCmd.serviceType, "type", string(corev1.ServiceTypeLoadBalancer), "type of ingress service, LoadBalancer or NodePort")
 	//utilruntime.Must(cmd.MarkFlagRequired("mesh-name"))
 
 	return cmd
@@ -152,6 +156,10 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 func (cmd *ingressEnableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if cmd.serviceType != string(corev1.ServiceTypeLoadBalancer) && cmd.serviceType != string(corev1.ServiceTypeNodePort) {
+		return fmt.Errorf("invalid service type, only support LoadBalancer or NodePort")
+	}
 
 	fsmNamespace := settings.Namespace()
 
