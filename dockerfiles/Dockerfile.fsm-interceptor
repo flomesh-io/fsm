@@ -1,6 +1,9 @@
 ARG GO_VERSION
 
-FROM golang:$GO_VERSION as gobuild
+FROM --platform=$BUILDPLATFORM golang:$GO_VERSION AS builder
+ARG LDFLAGS
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -26,7 +29,7 @@ WORKDIR /app
 
 COPY bpf bpf
 COPY Makefile.CNI Makefile
-COPY --from=gobuild /app/dist/fsm-interceptor fsm-interceptor
-COPY --from=gobuild /app/dist/fsm-cni fsm-cni
+COPY --from=builder /app/dist/fsm-interceptor fsm-interceptor
+COPY --from=builder /app/dist/fsm-cni fsm-cni
 
 CMD /app/fsm-interceptor
