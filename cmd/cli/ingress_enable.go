@@ -192,6 +192,7 @@ func (cmd *ingressEnableCmd) run() error {
 	err = updatePresetMeshConfigMap(ctx, cmd.kubeClient, fsmNamespace, map[string]interface{}{
 		"ingress.enabled":                         true,
 		"ingress.namespaced":                      false,
+		"ingress.type":                            cmd.serviceType,
 		"ingress.logLevel":                        cmd.logLevel,
 		"ingress.http.enabled":                    cmd.httpEnabled,
 		"ingress.http.bind":                       cmd.httpPort,
@@ -212,6 +213,7 @@ func (cmd *ingressEnableCmd) run() error {
 	// update mesh config, fsm-mesh-config
 	mc.Spec.Ingress.Enabled = true
 	mc.Spec.Ingress.Namespaced = false
+	mc.Spec.Ingress.Type = corev1.ServiceType(cmd.serviceType)
 	mc.Spec.Ingress.LogLevel = cmd.logLevel
 	mc.Spec.Ingress.HTTP.Enabled = cmd.httpEnabled
 	mc.Spec.Ingress.HTTP.Bind = cmd.httpPort
@@ -263,6 +265,7 @@ func (cmd *ingressEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) (map[s
 	valuesConfig := []string{
 		fmt.Sprintf("fsm.fsmIngress.enabled=%t", true),
 		fmt.Sprintf("fsm.fsmIngress.namespaced=%t", false),
+		fmt.Sprintf("fsm.fsmIngress.service.type=%s", cmd.serviceType),
 		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", cmd.logLevel),
 		fmt.Sprintf("fsm.fsmIngress.http.enabled=%t", cmd.httpEnabled),
 		fmt.Sprintf("fsm.fsmIngress.http.port=%d", cmd.httpPort),

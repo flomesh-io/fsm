@@ -443,6 +443,11 @@ type IngressSpec struct {
 	// Namespaced defines if ingress is namespaced.
 	Namespaced bool `json:"namespaced"`
 
+	// +kubebuilder:default=LoadBalancer
+	// +kubebuilder:validation:Enum=LoadBalancer;NodePort
+	// Type defines the type of ingress service.
+	Type corev1.ServiceType `json:"type"`
+
 	// +kubebuilder:default=info
 	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 	// LogLevel defines the log level of ingress.
