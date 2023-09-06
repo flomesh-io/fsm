@@ -15,6 +15,11 @@ type client struct {
 	mc *configv1alpha3.MeshConfig
 }
 
+func (c *client) GetRemoteLoggingLevel() uint16 {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetSidecarTimeout() int {
 	//TODO implement me
 	panic("implement me")
