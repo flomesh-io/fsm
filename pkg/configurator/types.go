@@ -78,6 +78,9 @@ type Configurator interface {
 	// IsRemoteLoggingEnabled returns whether remote logging is enabled
 	IsRemoteLoggingEnabled() bool
 
+	// GetRemoteLoggingLevel returns the remote logging level
+	GetRemoteLoggingLevel() uint16
+
 	// GetRemoteLoggingHost is the host to which we send logging spans
 	GetRemoteLoggingHost() string
 
