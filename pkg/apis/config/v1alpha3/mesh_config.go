@@ -223,6 +223,9 @@ type RemoteLoggingSpec struct {
 	// Enable defines a boolean indicating if the sidecars are enabled for remote logging.
 	Enable bool `json:"enable"`
 
+	// Level defines the remote logging's level.
+	Level uint16 `json:"level,omitempty"`
+
 	// Port defines the remote logging's port.
 	Port int16 `json:"port,omitempty"`
 

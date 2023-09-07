@@ -156,6 +156,11 @@ func (c *Client) IsRemoteLoggingEnabled() bool {
 	return c.getMeshConfig().Spec.Observability.RemoteLogging.Enable
 }
 
+// GetRemoteLoggingLevel returns the remote logging level
+func (c *Client) GetRemoteLoggingLevel() uint16 {
+	return c.getMeshConfig().Spec.Observability.RemoteLogging.Level
+}
+
 // GetRemoteLoggingHost is the host to which we send logging spans
 func (c *Client) GetRemoteLoggingHost() string {
 	remoteLoggingAddress := c.getMeshConfig().Spec.Observability.RemoteLogging.Address

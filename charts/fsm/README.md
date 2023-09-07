@@ -428,6 +428,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.authorization | string | `""` | The authorization for remote logging service |
 | fsm.remoteLogging.enable | bool | `false` | Toggles Sidecar's remote logging functionality on/off for all sidecar proxies in the mesh |
 | fsm.remoteLogging.endpoint | string | `""` | Remote logging's API path where the spans will be sent to |
+| fsm.remoteLogging.level | int | `2` | Level of the remote logging service |
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
