@@ -192,6 +192,11 @@ spec:
                         description: Endpoint defines the API endpoint for remote
                           logging requests sent to the collector.
                         type: string
+                      level:
+                        description: Level on which remote logging is enabled.
+                        type: integer
+                        minimum: 0
+                        maximum: 2
                       port:
                         description: Port defines the remote loggings port.
                         type: integer
@@ -714,6 +719,11 @@ spec:
                         description: Endpoint defines the API endpoint for remote
                           logging requests sent to the collector.
                         type: string
+                      level:
+                        description: Level on which remote logging is enabled.
+                        type: integer
+                        minimum: 0
+                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer
@@ -1543,6 +1553,11 @@ spec:
                         description: Endpoint defines the API endpoint for remote
                           logging requests sent to the collector.
                         type: string
+                      level:
+                        description: Level on which remote logging is enabled.
+                        type: integer
+                        minimum: 0
+                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer

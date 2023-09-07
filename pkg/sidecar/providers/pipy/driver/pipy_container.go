@@ -163,6 +163,10 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 	}
 
 	if injCtx.Configurator.IsRemoteLoggingEnabled() {
+		sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
+			Name:  "REMOTE_LOGGING_LEVEL",
+			Value: fmt.Sprintf("%d", injCtx.Configurator.GetRemoteLoggingLevel()),
+		})
 		if len(injCtx.Configurator.GetRemoteLoggingHost()) > 0 && injCtx.Configurator.GetRemoteLoggingPort() > 0 {
 			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
 				Name:  "REMOTE_LOGGING_ADDRESS",
