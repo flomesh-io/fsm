@@ -215,6 +215,9 @@ func startPipy(spawn int64, url string) {
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}
+	if verbosity != "disabled" {
+		args = append([]string{"--log-level", utils.PipyLogLevelByVerbosity(verbosity)}, args...)
+	}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout
