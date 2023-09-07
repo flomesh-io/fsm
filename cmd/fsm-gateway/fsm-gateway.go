@@ -216,7 +216,7 @@ func startPipy(spawn int64, url string) {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}
 	if verbosity != "disabled" {
-		args = append([]string{"--log-level", utils.PipyLogLevelByVerbosity(verbosity)}, args...)
+		args = append([]string{fmt.Sprintf("--log-level=%s", utils.PipyLogLevelByVerbosity(verbosity))}, args...)
 	}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
