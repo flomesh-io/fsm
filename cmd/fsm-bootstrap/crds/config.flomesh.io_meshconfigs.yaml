@@ -193,10 +193,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote loggings port.
                         type: integer
@@ -721,10 +719,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer
@@ -1631,10 +1627,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer
