@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
 	"github.com/spf13/cobra"
@@ -77,6 +79,11 @@ func newGatewayEnable(out io.Writer) *cobra.Command {
 func (cmd *gatewayEnableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if !version.IsSupportedK8sVersionForGatewayAPI(cmd.kubeClient) {
+		return fmt.Errorf("kubernetes server version %s is not supported, requires at least %s",
+			version.ServerVersion.String(), version.MinK8sVersionForGatewayAPI.String())
+	}
 
 	fsmNamespace := settings.Namespace()
 
