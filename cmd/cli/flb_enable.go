@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"k8s.io/client-go/restmapper"
@@ -160,7 +162,7 @@ func (cmd *flbEnableCmd) run() error {
 		return err
 	}
 
-	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, flbManifestFiles...); err != nil {
+	if err := installManifests(cmd, mc, fsmNamespace, constants.KubeVersion119, flbManifestFiles...); err != nil {
 		return err
 	}
 

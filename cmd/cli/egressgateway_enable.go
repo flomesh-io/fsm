@@ -170,7 +170,7 @@ func (cmd *egressGatewayEnableCmd) run() error {
 		return err
 	}
 
-	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, egressGatewayManifestFiles...); err != nil {
+	if err := installManifests(cmd, mc, fsmNamespace, constants.KubeVersion119, egressGatewayManifestFiles...); err != nil {
 		return err
 	}
 

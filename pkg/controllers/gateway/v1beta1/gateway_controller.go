@@ -632,11 +632,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc configurator
 		actionConfig,
 		fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
 		gw.Namespace,
-		&chartutil.KubeVersion{
-			Version: fmt.Sprintf("v%s.%s.0", "1", "21"),
-			Major:   "1",
-			Minor:   "21",
-		},
+		constants.KubeVersion121,
 	)
 	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
