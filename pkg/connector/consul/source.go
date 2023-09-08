@@ -100,11 +100,11 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 	serviceEntries, _, err := s.ConsulClient.Health().Service(string(svcName), s.FilterTag, s.PassingOnly, nil)
 	if err != nil {
 		log.Err(err).Msgf("can't retrieve consul service, name:%s", string(svcName))
-		return nil, "consul"
+		return nil, connector.ConsulDiscoveryService
 	}
 	log.Info().Msgf("PassingOnly:%v FilterTag:%v len(serviceEntries):%d", s.PassingOnly, s.FilterTag, len(serviceEntries))
 	if len(serviceEntries) == 0 {
-		return nil, "consul"
+		return nil, connector.ConsulDiscoveryService
 	}
 
 	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
@@ -165,5 +165,5 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 			svcMeta.Addresses[connector.MicroEndpointAddr(svc.Service.Address)] = 1
 		}
 	}
-	return svcMetaMap, "consul"
+	return svcMetaMap, connector.ConsulDiscoveryService
 }

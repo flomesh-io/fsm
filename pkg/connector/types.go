@@ -14,6 +14,12 @@ const (
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
 	// MeshEndpointAddrAnnotation defines mesh endpoint addr annotation
 	MeshEndpointAddrAnnotation = "flomesh.io/cloud-endpoint-addr"
+
+	//ConsulDiscoveryService defines consul discovery service name
+	ConsulDiscoveryService = "consul"
+
+	//EurekaDiscoveryService defines eureka discovery service name
+	EurekaDiscoveryService = "eureka"
 )
 
 // MicroSvcName defines string as microservice name

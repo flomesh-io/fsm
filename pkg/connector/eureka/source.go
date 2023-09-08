@@ -4,10 +4,11 @@ package eureka
 import (
 	"context"
 	"fmt"
-	"github.com/cenkalti/backoff"
-	"github.com/hudl/fargo"
 	"strings"
 	"time"
+
+	"github.com/cenkalti/backoff"
+	"github.com/hudl/fargo"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -89,12 +90,12 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 	app, err := s.EurekaClient.GetApp(strings.ToUpper(string(svcName)))
 	if err != nil {
 		log.Err(err).Msgf("can't retrieve eureka service, name:%s", string(svcName))
-		return nil, "eureka"
+		return nil, connector.EurekaDiscoveryService
 	}
 	serviceEntries := app.Instances
 	log.Info().Msgf("PassingOnly:%v FilterTag:%v len(serviceEntries):%d", s.PassingOnly, s.FilterTag, len(serviceEntries))
 	if len(serviceEntries) == 0 {
-		return nil, "eureka"
+		return nil, connector.EurekaDiscoveryService
 	}
 
 	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
@@ -114,5 +115,5 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 			svcMeta.Addresses[connector.MicroEndpointAddr(svc.IPAddr)] = httpPort
 		}
 	}
-	return svcMetaMap, "eureka"
+	return svcMetaMap, connector.EurekaDiscoveryService
 }
