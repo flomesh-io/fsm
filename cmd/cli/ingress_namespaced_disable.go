@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
 	"github.com/spf13/cobra"
@@ -75,6 +77,11 @@ func newNamespacedIngressDisableCmd(out io.Writer) *cobra.Command {
 func (cmd *namespacedIngressDisableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if !version.IsSupportedK8sVersion(cmd.kubeClient) {
+		return fmt.Errorf("kubernetes server version %s is not supported, requires at least %s",
+			version.ServerVersion.String(), version.MinK8sVersion.String())
+	}
 
 	fsmNamespace := settings.Namespace()
 

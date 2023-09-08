@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -156,6 +158,11 @@ func newIngressEnable(actionConfig *action.Configuration, out io.Writer) *cobra.
 func (cmd *ingressEnableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	if !version.IsSupportedK8sVersion(cmd.kubeClient) {
+		return fmt.Errorf("kubernetes server version %s is not supported, requires at least %s",
+			version.ServerVersion.String(), version.MinK8sVersion.String())
+	}
 
 	if cmd.serviceType != string(corev1.ServiceTypeLoadBalancer) && cmd.serviceType != string(corev1.ServiceTypeNodePort) {
 		return fmt.Errorf("invalid service type, only support LoadBalancer or NodePort")
