@@ -62,7 +62,7 @@ func (s *Source) Run(ctx context.Context) {
 			k8s := false
 			if len(s.FilterTag) > 0 {
 				for _, instance := range app.Instances {
-					for metaName, _ := range instance.Metadata.GetMap() {
+					for metaName := range instance.Metadata.GetMap() {
 						if metaName == s.FilterTag {
 							k8s = true
 							break
