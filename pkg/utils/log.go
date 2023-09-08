@@ -8,7 +8,10 @@ func PipyLogLevelByVerbosity(verbosity string) string {
 		return "error"
 	case "panic":
 		return "error"
+	case "debug", "info", "warn", "error":
+		return verbosity
+	default:
+		// default to error if verbosity is not recognized
+		return "error"
 	}
-
-	return verbosity
 }
