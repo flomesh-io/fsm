@@ -1,27 +1,3 @@
-/*
- * MIT License
- *
- * Copyright (c) since 2021,  flomesh.io Authors.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 ((
   { isDebugEnabled } = pipy.solve('config.js'),
 
@@ -38,76 +14,133 @@
   ))(),
 
   matchContentType = ext => (
-    extTypes?.[ext] || 'text/html'
+    (ext === '') ? (
+      'text/html'
+    ) : (
+      extTypes?.[ext] || 'application/octet-stream'
+    )
+  ),
+
+  checkFileMode = filepath => (
+    (
+      s = os.stat(filepath)
+    ) => (
+      s ? (
+        ((s.mode & 16384) === 16384) ? 1 : 0
+      ) : -1
+    )
+  )(),
+
+  getExt = url => (
+    (
+      dot = url.lastIndexOf('.'),
+      slash = url.lastIndexOf('/'),
+    ) => (
+      (dot > slash) ? (
+        url.substring(dot + 1)
+      ) : ''
+    )
+  )(),
+
+  dirCache = new algo.Cache(
+    dir => (
+      dir.startsWith('/') ? (
+        new http.Directory(dir, { fs: true, index: (__route.config?.Index || ['index.html']) })
+      ) : (
+        new http.Directory('/static/' + dir, { fs: false, index: (__route.config?.Index || ['index.html']) })
+      )
+    ),
+    null,
+    { ttl: 3600 }
+  ),
+
+  tryFilesCache = new algo.Cache(
+    route => (
+      (
+        uriCache = new algo.Cache(
+          uri => route?.config?.TryFiles && (
+            route.config.TryFiles.map(
+              f => (
+                (
+                  e = f.split('/')
+                ) => (
+                  e.map(
+                    i => i.replace('$uri', uri)
+                  ).join('/').replace('//', '/')
+                )
+              )()
+            )
+          ),
+          null,
+          { ttl: 3600 }
+        ),
+      ) => (
+        uri => uriCache.get(uri)
+      )
+    )()
+  ),
+
+  makeMessage = (uri, msg) => (
+    uri.startsWith('=') ? (
+      (
+        status = uri.substring(1)
+      ) => (
+        (status > 0) ? (
+          new Message({ status })
+        ) : null
+      )
+    )() : (
+      (_dir = dirCache.get(__root)) ? (
+        msg.head.path = _filepath = uri,
+        _extName = getExt(uri),
+        _dir.serve(msg)
+      ) : null
+    )
   ),
 
 ) => pipy({
-  _pos: 0,
-  _file: null,
-  _data: null,
+  _uri: null,
+  _dir: null,
+  _path: null,
+  _message: null,
   _extName: null,
   _filepath: null,
-  _message: undefined,
+  _tryFiles: null,
 })
 
 .export('web-server', {
   __root: null,
 })
 
+.import({
+  __route: 'route',
+})
+
 .pipeline()
 .replaceMessage(
   msg => (
-    msg?.head?.path && (msg.head.path.indexOf('/../') < 0) && (
-      __root?.startsWith('/') ? (
-        _filepath = __root + msg.head.path,
-        msg.head.path.endsWith('/') ? (
-          _filepath = _filepath + 'index.html'
-        ) : (
-          (msg.head.path.lastIndexOf('/') > msg.head.path.lastIndexOf('.')) && (
-            _filepath = _filepath + '/index.html'
-          )
-        ),
-        _filepath = _filepath.replace('//', '/'),
-        ((_pos = _filepath.lastIndexOf('.')) > 0) && (
-          _extName = _filepath.substring(_pos + 1)
-        ),
-        os.stat(_filepath)?.isFile?.() && (_data = os.readFile(_filepath)) && (
-          _message = new Message({ status: 200, headers: {'content-type': matchContentType(_extName)}}, _data)
-        )
-      ) : (
-        __root && (
-          _filepath = 'static/' + __root + msg.head.path,
-          msg.head.path.endsWith('/') ? (
-            _filepath = _filepath + 'index.html'
-          ) : (
-            (msg.head.path.lastIndexOf('/') > msg.head.path.lastIndexOf('.')) && (
-              _filepath = _filepath + '/index.html'
-            )
+    (_path = msg?.head?.path) && (
+      _uri = _path.split('?')[0]
+    ),
+    _uri && (_uri.indexOf('/../') < 0) && (
+      _tryFiles = tryFilesCache.get(__route)?.(_uri),
+      (_tryFiles || [_uri]).find(
+        tf => (
+          (_message = makeMessage(tf, msg)) && _extName && (
+            _message.head.headers['content-type'] = matchContentType(_extName)
           ),
-          _filepath = _filepath.replace('//', '/'),
-          ((_pos = _filepath.lastIndexOf('.')) > 0) && (
-            _extName = _filepath.substring(_pos + 1)
-          ),
-          (_file = http.File.from(_filepath)) && (
-            (_message = _file.toMessage(msg.head?.headers?.['accept-encoding'])) && (
-              _message.head.headers['content-type'] = matchContentType(_extName)
-            )
-          )
+          _message
         )
       )
     ),
-    _message ? (
-      _message
-    ) : (
-      new Message({status: 404}, 'Not Found')
-    )
+     _message || new Message({ status: 404 }, 'Not Found')
   )
 )
 .branch(
   isDebugEnabled, (
-    $=>$.handleMessage(
+    $=>$.handleMessageStart(
       msg => (
-        console.log('[web-server] _filepath, _extName, status, content-type:', _filepath, _extName, msg?.head?.status, msg?.head?.headers?.['content-type'])
+        console.log('[web-server] _path, _filepath, _extName, status, content-type:', _path, _filepath, _extName, msg?.head?.status, msg?.head?.headers?.['content-type'])
       )
     )
   )
