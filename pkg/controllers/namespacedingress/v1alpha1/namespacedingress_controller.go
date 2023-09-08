@@ -31,6 +31,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	ghodssyaml "github.com/ghodss/yaml"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -128,11 +130,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		actionConfig,
 		fmt.Sprintf("namespaced-ingress-%s", nsig.Namespace),
 		nsig.Namespace,
-		&chartutil.KubeVersion{
-			Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
-			Major:   "1",
-			Minor:   "19",
-		},
+		constants.KubeVersion119,
 	)
 	if ctrlResult, err = helm.RenderChart(templateClient, nsig, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		return ctrlResult, err
