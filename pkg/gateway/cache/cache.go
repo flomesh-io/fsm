@@ -39,6 +39,7 @@ type GatewayCache struct {
 	repoClient *repo.PipyRepoClient
 	informers  *informers.InformerCollection
 	kubeClient kubernetes.Interface
+	cfg        configurator.Configurator
 
 	processors map[ProcessorType]Processor
 
@@ -64,6 +65,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		repoClient: repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
 		informers:  informerCollection,
 		kubeClient: kubeClient,
+		cfg:        cfg,
 
 		processors: map[ProcessorType]Processor{
 			ServicesProcessorType:       &ServicesProcessor{},
@@ -430,8 +432,17 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 
 func (c *GatewayCache) defaults() routecfg.Defaults {
 	return routecfg.Defaults{
-		EnableDebug:                    true,
-		DefaultPassthroughUpstreamPort: 443,
+		EnableDebug:                    c.isDebugEnabled(),
+		DefaultPassthroughUpstreamPort: 443, // TODO: enrich this from config
+	}
+}
+
+func (c *GatewayCache) isDebugEnabled() bool {
+	switch c.cfg.GetFSMGatewayLogLevel() {
+	case "debug", "trace":
+		return true
+	default:
+		return false
 	}
 }
 
