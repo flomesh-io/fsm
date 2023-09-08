@@ -15,7 +15,11 @@
 
 ## Setup test environment:
 ### Export environment variables:
-`export K3D_HOST_IP=[you local ip address]`
+```shell
+export K3D_HOST_IP=[you local ip address]
+export CTR_REGISTRY=localhost:5000/flomesh
+export CTR_TAG=latest
+```
 
 ### Create clusters
 `./scripts/k3d-with-registry-multicluster.sh`

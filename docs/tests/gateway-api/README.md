@@ -7,6 +7,8 @@
 
 - Setup a Kubernetes cluster, we'll use `k3d`:
   ```shell
+  export CTR_REGISTRY=localhost:5000/flomesh
+  export CTR_TAG=latest
   ./scripts/k3d-with-registry.sh
   ```
 
