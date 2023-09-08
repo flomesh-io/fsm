@@ -19,8 +19,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/flomesh-io/fsm/pkg/connector"
 	eurekaConnector "github.com/flomesh-io/fsm/pkg/connector/eureka"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/health"
