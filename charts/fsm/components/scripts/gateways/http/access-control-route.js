@@ -1,6 +1,9 @@
 ((
   { isDebugEnabled } = pipy.solve('config.js'),
 
+  { aclCounter } = pipy.solve('lib/metrics.js'),
+  aclRouteCounter = aclCounter.withLabels('route'),
+
   parseIpList = ipList => (
     (ips, ipRanges) => (
       (ipList || []).forEach(
@@ -29,7 +32,7 @@
 
   checkACLs = ip => (
     (
-      acls = aclsCache.get(__port?.AccessControlLists),
+      acls = aclsCache.get(__route?.config?.AccessControlLists),
       white = acls?.whiteList,
       black = acls?.blackList,
       blackMode = true,
@@ -50,15 +53,30 @@
       blackMode ? Boolean(!block) : Boolean(pass)
     )
   )(),
-) => pipy()
+) => pipy({
+  _ips: null,
+  _pass: false,
+})
 
 .import({
-  __port: 'listener',
+  __route: 'route',
 })
 
 .pipeline()
+.handleMessageStart(
+  msg => (
+    __route?.config?.AccessControlLists?.enableXFF && (
+      _ips = msg.head?.headers['x-forwarded-for']
+    ),
+    _ips ? (
+      _pass = _ips.split(',').every(ip => checkACLs(ip.trim()))
+    ) : (
+      _pass = checkACLs(__inbound.remoteAddress)
+    )
+  )
+)
 .branch(
-  () => checkACLs(__inbound.remoteAddress), (
+  () => _pass, (
     $=>$.chain()
   ), (
     $=>$
@@ -66,14 +84,15 @@
       isDebugEnabled, (
         $=>$.handleStreamStart(
           () => (
-            console.log('Blocked IP address:', __inbound.remoteAddress)
+            console.log('[access-control-route] blocked XFF, IP address:', _ips, __inbound.remoteAddress, _pass)
           )
         )
       )
     )
-    .replaceStreamStart(
+    .replaceMessage(
       () => (
-        new StreamEnd('ConnectionReset')
+        aclRouteCounter.increase(),
+        new Message({ status: __route?.config?.AccessControlLists?.status || 403 }, __route?.config?.AccessControlLists?.message || '')
       )
     )
   )

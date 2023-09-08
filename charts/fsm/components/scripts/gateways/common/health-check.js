@@ -1,29 +1,7 @@
-/*
- * MIT License
- *
- * Copyright (c) since 2021,  flomesh.io Authors.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 ((
   { config, isDebugEnabled } = pipy.solve('config.js'),
+
+  { metrics } = pipy.solve('lib/metrics.js'),
 
   healthCheckTargets = {},
 
@@ -37,7 +15,7 @@
         maxFails = serviceConfig.HealthCheck?.MaxFails, // || 3, both
         failTimeout = serviceConfig.HealthCheck?.FailTimeout, // || 300, passivity
         uri = serviceConfig.HealthCheck?.Uri, // for HTTP
-        matches = serviceConfig.HealthCheck?.Matches || [{ Type: "status", Value: "200" }], // for HTTP
+        matches = serviceConfig.HealthCheck?.Matches || [{ Type: "status", Value: [ 200 ] }], // for HTTP
         type = uri ? 'HTTP' : 'TCP',
       ) => (
         {
@@ -60,9 +38,14 @@
                 healthCheckServices[name].remove(target.target)
               ),
               isDebugEnabled && (
-                console.log('[health-check] ok - service, type, target:', name, type, target.target)
+                console.log('[health-check] ok - service, type, target:', name, type, target)
               )
-            )
+            ),
+            metrics.fgwUpstreamStatus.withLabels(
+              name,
+              target.ip,
+              target.port
+            ).increase()
           ),
 
           fail: target => (
@@ -78,9 +61,14 @@
                 )
               ),
               isDebugEnabled && (
-                console.log('[health-check] fail - service, type, target:', name, type, target.target)
+                console.log('[health-check] fail - service, type, target:', name, type, target)
               )
-            )
+            ),
+            metrics.fgwUpstreamStatus.withLabels(
+              name,
+              target.ip,
+              target.port
+            ).set(0)
           ),
 
           available: target => (
@@ -93,7 +81,7 @@
                 m => (
                   (m?.Type === 'status') ? (
                     msg => (
-                      msg?.head?.status == m?.Value
+                      m?.Value?.includes(msg?.head?.status)
                     )
                   ) : (
                     (m?.Type === 'body') ? (
@@ -123,7 +111,8 @@
                 target.service.match(result) ? (
                   target.service.ok(target)
                 ) : (
-                  target.service.fail(target)
+                  target.service.fail(target),
+                  target.reason = "status " + result?.head?.status
                 ),
                 {}
               )
@@ -137,6 +126,7 @@
   healthCheckCache = new algo.Cache(makeHealthCheck),
 
 ) => pipy({
+  _idx: 0,
   _service: null,
   _target: null,
   _resolve: null,
@@ -161,7 +151,10 @@
           (_service = healthCheckCache.get(config.Services[name])) && (
             Object.keys(config.Services[name].Endpoints || {}).forEach(
               target => (
+                _idx = target.lastIndexOf(':'),
                 healthCheckTargets[target + '@' + name] = {
+                  ip: target.substring(0, _idx),
+                  port: target.substring(_idx + 1),
                   target,
                   service: _service,
                   alive: 1,

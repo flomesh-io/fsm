@@ -1,29 +1,5 @@
-/*
- * MIT License
- *
- * Copyright (c) since 2021,  flomesh.io Authors.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 ((
-  { isDebugEnabled } = pipy.solve('config.js'),
+  { config, isDebugEnabled } = pipy.solve('config.js'),
 
   {
     shuffle,
@@ -41,12 +17,24 @@
     serviceConfig && (
       (
         endpointAttributes = {},
-        obj = {
-          targetBalancer: serviceConfig.Endpoints && new algo.RoundRobinLoadBalancer(
-            shuffle(Object.fromEntries(Object.entries(serviceConfig.Endpoints)
+        endpoints = shuffle(
+          Object.fromEntries(
+            Object.entries(serviceConfig.Endpoints)
               .map(([k, v]) => (endpointAttributes[k] = v, v.hash = algo.hash(k), [k, v.Weight]))
-              .filter(([k, v]) => v > 0)
-            ))
+              .filter(([k, v]) => (serviceConfig.Algorithm !== 'RoundRobinLoadBalancer' || v > 0))
+          )
+        ),
+        obj = {
+          targetBalancer: serviceConfig.Endpoints && (
+            (serviceConfig.Algorithm === 'HashingLoadBalancer') ? (
+              new algo.HashingLoadBalancer(Object.keys(endpoints))
+            ) : (
+              (serviceConfig.Algorithm === 'LeastConnectionLoadBalancer') ? (
+                new algo.LeastWorkLoadBalancer(Object.keys(endpoints))
+              ) : (
+                new algo[serviceConfig.Algorithm || 'RoundRobinLoadBalancer'](endpoints)
+              )
+            )
           ),
           endpointAttributes,
           ...(serviceConfig.StickyCookieName && ({
@@ -83,7 +71,7 @@
           retryBackoffLimitCounter: retryBackoffLimitCounter.withLabels(serviceConfig.name),
           muxHttpOptions: {
             version: () => (__domain?.RouteType === 'GRPC' || __domain?.RouteType === 'HTTP2') ? 2 : 1,
-            maxMessages: serviceConfig.ConnectionSettings?.http?.MaxRequestsPerConnection
+            maxMessages: serviceConfig.MaxRequestsPerConnection
           },
         },
       ) => (
@@ -159,6 +147,8 @@
   _isRetry: false,
   _unhealthCache: null,
   _healthCheckTarget: null,
+  _targetResource: null,
+  _balancerKey: undefined,
 })
 
 .import({
@@ -167,6 +157,7 @@
   __cert: 'connect-tls',
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
+  __upstream: 'connect-tcp',
   __healthCheckTargets: 'health-check',
   __healthCheckServices: 'health-check',
 })
@@ -222,7 +213,10 @@
       _cookieId ? (
         __target = _cookieId
       ) : (
-        __target = _targetBalancer?.borrow?.({}, undefined, _unhealthCache)?.id
+        (__service?.Algorithm === 'HashingLoadBalancer') && (_balancerKey = __inbound.remoteAddress),
+        (_targetResource = _targetBalancer?.borrow?.(undefined, _balancerKey, _unhealthCache)) && (
+          __target = _targetResource?.id
+        )
       ),
       __target
     ) && (
@@ -275,7 +269,7 @@
     )
   ),
   (
-    $=>$.muxHTTP(() => undefined, () => _muxHttpOptions).to(
+    $=>$.muxHTTP(() => _targetResource, () => _muxHttpOptions).to(
       $=>$.branch(
         () => __cert, (
           $=>$.use('lib/connect-tls.js')
@@ -286,11 +280,19 @@
     )
     .handleMessage(
       msg => (
+        config?.Configs?.ShowUpstreamStatusInResponseHeader && (
+          (msg?.head?.status > 399) && (__upstream?.error != 'ConnectionRefused') && (
+            msg.head.headers ? (
+              msg.head.headers['X-FGW-Upstream-Status'] = msg.head.status
+            ) : (
+              msg.head.headers = { 'X-FGW-Upstream-Status': msg.head.status }
+            )
+          )
+        ),
         (_healthCheckTarget = __healthCheckTargets?.[__target + '@' + __service.name]) && (
-          (!msg?.head?.status || (msg?.head?.status > 499)) ? (
-            _healthCheckTarget.service.fail(_healthCheckTarget)
-          ) : (
-            _healthCheckTarget.service.ok(_healthCheckTarget)
+          (__upstream?.error === 'ConnectionRefused') && (
+            _healthCheckTarget.service.fail(_healthCheckTarget),
+            _healthCheckTarget.reason = 'ConnectionRefused'
           )
         )
       )
