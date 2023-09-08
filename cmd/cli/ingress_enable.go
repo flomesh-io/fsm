@@ -244,7 +244,7 @@ func (cmd *ingressEnableCmd) run() error {
 		return err
 	}
 
-	if err := installManifests(cmd, mc, fsmNamespace, kubeVersion119, ingressManifestFiles...); err != nil {
+	if err := installManifests(cmd, mc, fsmNamespace, constants.KubeVersion119, ingressManifestFiles...); err != nil {
 		return err
 	}
 
