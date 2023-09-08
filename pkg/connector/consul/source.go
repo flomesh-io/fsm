@@ -33,7 +33,7 @@ type Source struct {
 	PassingOnly  bool
 }
 
-// Run is the long-running runloop for watching Consul services and
+// Run is the long-running loop for watching Consul services and
 // updating the Sink.
 func (s *Source) Run(ctx context.Context) {
 	opts := (&api.QueryOptions{
@@ -96,15 +96,15 @@ func (s *Source) Run(ctx context.Context) {
 // Aggregate micro services
 //
 //lint:ignore U1000 ignore unused
-func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connector.MicroSvcDomainName) map[connector.MicroSvcName]*connector.MicroSvcMeta {
+func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connector.MicroSvcDomainName) (map[connector.MicroSvcName]*connector.MicroSvcMeta, string) {
 	serviceEntries, _, err := s.ConsulClient.Health().Service(string(svcName), s.FilterTag, s.PassingOnly, nil)
 	if err != nil {
 		log.Err(err).Msgf("can't retrieve consul service, name:%s", string(svcName))
-		return nil
+		return nil, "consul"
 	}
 	log.Info().Msgf("PassingOnly:%v FilterTag:%v len(serviceEntries):%d", s.PassingOnly, s.FilterTag, len(serviceEntries))
 	if len(serviceEntries) == 0 {
-		return nil
+		return nil, "consul"
 	}
 
 	svcMetaMap := make(map[connector.MicroSvcName]*connector.MicroSvcMeta)
@@ -155,7 +155,7 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 			if !exists {
 				svcMeta = new(connector.MicroSvcMeta)
 				svcMeta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-				svcMeta.Addresses = make(map[connector.MicroEndpointAddr]uint8)
+				svcMeta.Addresses = make(map[connector.MicroEndpointAddr]int)
 				svcMetaMap[serviceName] = svcMeta
 			}
 			svcMeta.Ports[connector.MicroSvcPort(httpPort)] = connector.MicroSvcAppProtocol(constants.ProtocolHTTP)
@@ -165,5 +165,5 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 			svcMeta.Addresses[connector.MicroEndpointAddr(svc.Service.Address)] = 1
 		}
 	}
-	return svcMetaMap
+	return svcMetaMap, "consul"
 }

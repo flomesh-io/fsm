@@ -360,7 +360,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for cloudName, cloudDNS := range s.sourceServices {
-		svcMetaMap := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
+		svcMetaMap, mode := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
@@ -382,28 +382,53 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					CloudServiceInheritedFromAnnotation: cloudName,
 				}
 
-				ports := make([]int, 0)
-				for port, appProtocol := range svcMeta.Ports {
-					if exists := s.existPort(svc, port, appProtocol); !exists {
-						specPort := apiv1.ServicePort{
-							Name:       fmt.Sprintf("%s%d", appProtocol, port),
-							Protocol:   apiv1.ProtocolTCP,
-							Port:       int32(port),
-							TargetPort: intstr.FromInt(int(port)),
+				if strings.EqualFold(mode, "consul") {
+					ports := make([]int, 0)
+					for port, appProtocol := range svcMeta.Ports {
+						if exists := s.existPort(svc, port, appProtocol); !exists {
+							specPort := apiv1.ServicePort{
+								Name:       fmt.Sprintf("%s%d", appProtocol, port),
+								Protocol:   apiv1.ProtocolTCP,
+								Port:       int32(port),
+								TargetPort: intstr.FromInt(int(port)),
+							}
+							if appProtocol == constants.ProtocolHTTP {
+								specPort.AppProtocol = &protocolHTTP
+							}
+							if appProtocol == constants.ProtocolGRPC {
+								specPort.AppProtocol = &protocolGRPC
+							}
+							svc.Spec.Ports = append(svc.Spec.Ports, specPort)
 						}
-						if appProtocol == constants.ProtocolHTTP {
-							specPort.AppProtocol = &protocolHTTP
-						}
-						if appProtocol == constants.ProtocolGRPC {
-							specPort.AppProtocol = &protocolGRPC
-						}
-						svc.Spec.Ports = append(svc.Spec.Ports, specPort)
+						ports = append(ports, int(port))
 					}
-					ports = append(ports, int(port))
+					sort.Ints(ports)
+					for addr := range svcMeta.Addresses {
+						svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+					}
 				}
-				sort.Ints(ports)
-				for addr := range svcMeta.Addresses {
-					svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+				if strings.EqualFold(mode, "eureka") {
+					for addr, port := range svcMeta.Addresses {
+						appProtocol := svcMeta.Ports[MicroSvcPort(port)]
+						if exists := s.existPort(svc, MicroSvcPort(port), appProtocol); !exists {
+							specPort := apiv1.ServicePort{
+								Name:       fmt.Sprintf("%s%d", appProtocol, port),
+								Protocol:   apiv1.ProtocolTCP,
+								Port:       int32(port),
+								TargetPort: intstr.FromInt(int(port)),
+							}
+							if appProtocol == constants.ProtocolHTTP {
+								specPort.AppProtocol = &protocolHTTP
+							}
+							if appProtocol == constants.ProtocolGRPC {
+								specPort.AppProtocol = &protocolGRPC
+							}
+							svc.Spec.Ports = append(svc.Spec.Ports, specPort)
+						}
+						ports := make([]int, 0)
+						ports = append(ports, port)
+						svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+					}
 				}
 				if preHv == s.serviceHash(svc) {
 					log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
@@ -436,25 +461,51 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 				},
 			}
 
-			ports := make([]int, 0)
-			for port, appProtocol := range svcMeta.Ports {
-				specPort := apiv1.ServicePort{
-					Name:       fmt.Sprintf("%s%d", appProtocol, port),
-					Protocol:   apiv1.ProtocolTCP,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt(int(port)),
+			if strings.EqualFold(mode, "consul") {
+				ports := make([]int, 0)
+				for port, appProtocol := range svcMeta.Ports {
+					specPort := apiv1.ServicePort{
+						Name:       fmt.Sprintf("%s%d", appProtocol, port),
+						Protocol:   apiv1.ProtocolTCP,
+						Port:       int32(port),
+						TargetPort: intstr.FromInt(int(port)),
+					}
+					if appProtocol == constants.ProtocolHTTP {
+						specPort.AppProtocol = &protocolHTTP
+					}
+					if appProtocol == constants.ProtocolGRPC {
+						specPort.AppProtocol = &protocolGRPC
+					}
+					createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 				}
-				if appProtocol == constants.ProtocolHTTP {
-					specPort.AppProtocol = &protocolHTTP
+				sort.Ints(ports)
+				for addr := range svcMeta.Addresses {
+					createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 				}
-				if appProtocol == constants.ProtocolGRPC {
-					specPort.AppProtocol = &protocolGRPC
-				}
-				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 			}
-			sort.Ints(ports)
-			for addr := range svcMeta.Addresses {
-				createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+
+			if strings.EqualFold(mode, "eureka") {
+				for addr, port := range svcMeta.Addresses {
+					appProtocol := svcMeta.Ports[MicroSvcPort(port)]
+					if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
+						specPort := apiv1.ServicePort{
+							Name:       fmt.Sprintf("%s%d", appProtocol, port),
+							Protocol:   apiv1.ProtocolTCP,
+							Port:       int32(port),
+							TargetPort: intstr.FromInt(int(port)),
+						}
+						if appProtocol == constants.ProtocolHTTP {
+							specPort.AppProtocol = &protocolHTTP
+						}
+						if appProtocol == constants.ProtocolGRPC {
+							specPort.AppProtocol = &protocolGRPC
+						}
+						createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
+					}
+					ports := make([]int, 0)
+					ports = append(ports, port)
+					createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+				}
 			}
 
 			if preHv == s.serviceHash(createSvc) {

@@ -179,6 +179,7 @@
                 "enableEgress",
                 "enableReconciler",
                 "deployConsulConnector",
+                "deployEurekaConnector",
                 "deployPrometheus",
                 "deployGrafana",
                 "enableFluentbit",
@@ -354,7 +355,8 @@
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
                                 "fsmInterceptor",
-                                "fsmConsulConnector"
+                                "fsmConsulConnector",
+                                "fsmEurekaConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -410,6 +412,12 @@
                                     "type": "string",
                                     "title": "fsm-consul-connector's image name",
                                     "description": "fsm-consul-connector container's image name."
+                                },
+                                "fsmEurekaConnector": {
+                                  "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmEurekaConnector",
+                                  "type": "string",
+                                  "title": "fsm-eureka-connector's image name",
+                                  "description": "fsm-eureka-connector container's image name."
                                 }
                             }
                         },
@@ -446,7 +454,8 @@
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
                                 "fsmInterceptor",
-                                "fsmConsulConnector"
+                                "fsmConsulConnector",
+                                "fsmEurekaConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -502,6 +511,12 @@
                                     "type": "string",
                                     "title": "fsm-consul-connector's image digest",
                                     "description": "fsm-consul-connector container's image digest."
+                                },
+                                "fsmEurekaConnector": {
+                                  "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmEurekaConnector",
+                                  "type": "string",
+                                  "title": "fsm-eureka-connector's image digest",
+                                  "description": "fsm-eureka-connector container's image digest."
                                 }
                             }
                         }
@@ -857,6 +872,15 @@
                         false
                     ]
                 },
+              "deployEurekaConnector": {
+                "$id": "#/properties/fsm/properties/deployEurekaConnector",
+                "type": "boolean",
+                "title": "The deployEurekaConnector schema",
+                "description": "Indicates whether Eureka Connector should be installed and configured as part of the fsm control plane.",
+                "examples": [
+                  false
+                ]
+              },
                 "deployPrometheus": {
                     "$id": "#/properties/fsm/properties/deployPrometheus",
                     "type": "boolean",
@@ -1407,17 +1431,10 @@
                     "title": "The consul connector schema",
                     "description": "Consul connector configurations",
                     "required": [
-                        "deriveNamespace",
                         "replicaCount",
                         "resource"
                     ],
                     "properties": {
-                        "deriveNamespace": {
-                            "$id": "#/properties/fsm/properties/cloudConnector/properties/deriveNamespace",
-                            "type": "string",
-                            "title": "The derive namespace",
-                            "description": "The derive Namespace"
-                        },
                         "replicaCount": {
                             "$id": "#/properties/fsm/properties/cloudConnector/properties/replicaCount",
                             "type": "integer",
@@ -1463,6 +1480,12 @@
                             "type": "object",
                             "title": "The config schema",
                             "properties": {
+                                "deriveNamespace": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/deriveNamespace",
+                                  "type": "string",
+                                  "title": "The derive namespace",
+                                  "description": "The derive Namespace"
+                                },
                                 "httpAddr": {
                                     "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/httpAddr",
                                     "type": "string",
@@ -1494,7 +1517,50 @@
                                     "description": "Passing Only"
                                 }
                             }
+                        },
+                      "eureka": {
+                        "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka",
+                        "type": "object",
+                        "title": "The config schema",
+                        "properties": {
+                          "deriveNamespace": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/deriveNamespace",
+                            "type": "string",
+                            "title": "The derive namespace",
+                            "description": "The derive Namespace"
+                          },
+                          "httpAddr": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/httpAddr",
+                            "type": "string",
+                            "title": "The http address of Consul Service",
+                            "description": "Http address of Consul Service"
+                          },
+                          "filterTag": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/filterTag",
+                            "type": "string",
+                            "title": "The Tag Filter",
+                            "description": "The Tag Filter"
+                          },
+                          "prefixTag": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/prefixTag",
+                            "type": "string",
+                            "title": "The Prefix Tag",
+                            "description": "The Prefix Tag"
+                          },
+                          "suffixTag": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/suffixTag",
+                            "type": "string",
+                            "title": "The Suffix Tag",
+                            "description": "The Suffix Tag"
+                          },
+                          "passingOnly": {
+                            "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/passingOnly",
+                            "type": "boolean",
+                            "title": "Passing Only",
+                            "description": "Passing Only"
+                          }
                         }
+                      }
                     },
                     "additionalProperties": false
                 },

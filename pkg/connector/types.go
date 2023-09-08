@@ -34,11 +34,11 @@ type MicroSvcAppProtocol string
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
 	Ports     map[MicroSvcPort]MicroSvcAppProtocol
-	Addresses map[MicroEndpointAddr]uint8
+	Addresses map[MicroEndpointAddr]int
 }
 
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta
+	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string)
 }

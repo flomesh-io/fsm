@@ -69,7 +69,7 @@ labels: kustomize ## Attach required labels to gateway-api resources
 .PHONY: build
 build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, the result will be optimized.
 	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector/consul,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector/consul,fsm-connector/eureka,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
 
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
@@ -242,6 +242,10 @@ docker-build-fsm-interceptor:
 docker-build-fsm-consul-connector:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-consul-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-consul-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
+.PHONY: docker-build-fsm-eureka-connector
+docker-build-fsm-eureka-connector:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-eureka-connector:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-eureka-connector --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
+
 .PHONY: docker-build-fsm-ingress
 docker-build-fsm-ingress:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-ingress:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-ingress --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
@@ -250,9 +254,9 @@ docker-build-fsm-ingress:
 docker-build-fsm-gateway:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
 
-TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
-FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-interceptor fsm-ingress fsm-gateway
-E2E_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-ingress fsm-gateway
+TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-eureka-connector fsm-ingress fsm-gateway
+FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-eureka-connector fsm-interceptor fsm-ingress fsm-gateway
+E2E_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-consul-connector fsm-eureka-connector fsm-ingress fsm-gateway
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))

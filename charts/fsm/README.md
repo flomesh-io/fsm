@@ -93,13 +93,19 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.maxReplicas | int | `5` | Maximum replicas for autoscale |
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
+| fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.consul.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
 | fsm.cloudConnector.consul.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.consul.prefixTag | string | `""` |  |
 | fsm.cloudConnector.consul.suffixTag | string | `""` |  |
-| fsm.cloudConnector.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
+| fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.eureka.filterTag | string | `""` |  |
+| fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8500"` |  |
+| fsm.cloudConnector.eureka.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.eureka.prefixTag | string | `""` |  |
+| fsm.cloudConnector.eureka.suffixTag | string | `""` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
@@ -110,6 +116,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
 | fsm.deployConsulConnector | bool | `false` | Deploy Consul Connector with FSM installation |
+| fsm.deployEurekaConnector | bool | `false` | Deploy Eureka Connector with FSM installation |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |
@@ -287,11 +294,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.port | int | `3000` | Grafana service's port |
 | fsm.grafana.rendererImage | string | `"grafana/grafana-image-renderer:3.2.1"` | Image used for Grafana Renderer |
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmEurekaConnector":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
 | fsm.image.digest.fsmConsulConnector | string | `""` | fsm-consul-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
+| fsm.image.digest.fsmEurekaConnector | string | `""` | fsm-eureka-connector's image digest |
 | fsm.image.digest.fsmGateway | string | `""` | fsm-gateway's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
@@ -299,11 +307,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmEurekaConnector":"fsm-eureka-connector","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
 | fsm.image.name.fsmConsulConnector | string | `"fsm-consul-connector"` | fsm-consul-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
+| fsm.image.name.fsmEurekaConnector | string | `"fsm-eureka-connector"` | fsm-eureka-connector's image name |
 | fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |

@@ -2,6 +2,8 @@ package connector
 
 import (
 	"net"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -14,8 +16,12 @@ func SetSyncCloudNamespace(ns string) {
 }
 
 // IsSyncCloudNamespace if sync namespace
-func IsSyncCloudNamespace(ns string) bool {
-	return syncCloudNamespace == ns
+func IsSyncCloudNamespace(ns *corev1.Namespace) bool {
+	if ns != nil {
+		_, exists := ns.Annotations[MeshServiceSyncAnnotation]
+		return exists
+	}
+	return false
 }
 
 // To4 converts the IPv4 address ip to a 4-byte representation.
