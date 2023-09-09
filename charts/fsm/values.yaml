@@ -33,6 +33,8 @@ fsm:
       fsmInterceptor: fsm-interceptor
       # -- fsm-consul-connector's image name
       fsmConsulConnector: fsm-consul-connector
+      # -- fsm-eureka-connector's image name
+      fsmEurekaConnector: fsm-eureka-connector
       # -- fsm-ingress's image name
       fsmIngress: fsm-ingress
       # -- fsm-gateway's image name
@@ -57,6 +59,8 @@ fsm:
       fsmInterceptor: ""
       # -- fsm-consul-connector's image digest
       fsmConsulConnector: ""
+      # -- fsm-eureka-connector's image digest
+      fsmEurekaConnector: ""
       # -- fsm-ingress's image digest
       fsmIngress: ""
       # -- fsm-gateway's image digest
@@ -409,6 +413,9 @@ fsm:
   # -- Deploy Consul Connector with FSM installation
   deployConsulConnector: false
 
+  # -- Deploy Eureka Connector with FSM installation
+  deployEurekaConnector: false
+
   # -- Deploy Prometheus with FSM installation
   deployPrometheus: false
 
@@ -644,8 +651,16 @@ fsm:
   #
   # -- FSM's cloud connector parameters
   cloudConnector:
-    deriveNamespace: ""
     consul:
+      deriveNamespace: ""
+      httpAddr: 127.0.0.1:8500
+      passingOnly: true
+      filterTag: ""
+      prefixTag: ""
+      suffixTag: ""
+
+    eureka:
+      deriveNamespace: ""
       httpAddr: 127.0.0.1:8500
       passingOnly: true
       filterTag: ""

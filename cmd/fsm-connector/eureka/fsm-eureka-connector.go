@@ -1,5 +1,5 @@
-// Package main implements the main entrypoint for fsm-consul-connector and utility routines to
-// bootstrap the various internal components of fsm-consul-connector.
+// Package main implements the main entrypoint for fsm-eureka-connector and utility routines to
+// bootstrap the various internal components of fsm-eureka-connector.
 package main
 
 import (
@@ -13,13 +13,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/hashicorp/consul/command/flags"
+	"github.com/hudl/fargo"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
-	consulConnector "github.com/flomesh-io/fsm/pkg/connector/consul"
+	eurekaConnector "github.com/flomesh-io/fsm/pkg/connector/eureka"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -44,6 +44,7 @@ var (
 	fsmVersion        string
 	trustDomain       string
 	passingOnly       bool
+	httpAddr          string
 	filterTag         string
 	prefixTag         string
 	suffixTag         string
@@ -53,9 +54,8 @@ var (
 )
 
 var (
-	cliFlags  = flag.NewFlagSet("", flag.ContinueOnError)
-	httpFlags = flags.HTTPFlags{}
-	log       = logger.New("fsm-consul-connector")
+	cliFlags = flag.NewFlagSet("", flag.ContinueOnError)
+	log      = logger.New("fsm-eureka-connector")
 )
 
 func init() {
@@ -68,18 +68,18 @@ func init() {
 
 	// TODO (#4502): Remove when we add full MRC support
 	cliFlags.StringVar(&trustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
+	cliFlags.StringVar(&httpAddr, "http-addr", "", "http addr")
 	cliFlags.StringVar(&filterTag, "filter-tag", "", "filter tag")
 	cliFlags.StringVar(&prefixTag, "prefix-tag", "", "prefix tag")
 	cliFlags.StringVar(&suffixTag, "suffix-tag", "", "suffix tag")
 	cliFlags.BoolVar(&passingOnly, "passing-only", true, "passing only")
 	cliFlags.StringVar(&deriveNamespace, "derive-namespace", "", "derive namespace")
-	flags.Merge(cliFlags, httpFlags.ClientFlags())
 
 	_ = clientgoscheme.AddToScheme(scheme)
 }
 
 func main() {
-	log.Info().Msgf("Starting fsm-consul-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Starting fsm-eureka-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := parseFlags(); err != nil {
 		log.Fatal().Err(err).Msg("Error parsing cmd line arguments")
 	}
@@ -98,10 +98,10 @@ func main() {
 
 	connector.SetSyncCloudNamespace(deriveNamespace)
 
-	// Initialize the generic Kubernetes event recorder and associate it with the fsm-consul-connector pod resource
+	// Initialize the generic Kubernetes event recorder and associate it with the fsm-eureka-connector pod resource
 	connectorPod, err := getConnectorPod(kubeClient)
 	if err != nil {
-		log.Fatal().Msg("Error fetching fsm-consul-connector pod")
+		log.Fatal().Msg("Error fetching fsm-eureka-connector pod")
 	}
 	eventRecorder := events.GenericEventRecorder()
 	if err = eventRecorder.Initialize(connectorPod, kubeClient, fsmNamespace); err != nil {
@@ -119,14 +119,11 @@ func main() {
 
 	msgBroker := messaging.NewBroker(stop)
 
-	consulClient, err := httpFlags.APIClient()
-	if err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating consul client")
-	}
+	eurekaClient := fargo.NewConn(httpAddr)
 
 	sink := connector.NewSink(ctx, kubeClient)
-	source := &consulConnector.Source{
-		ConsulClient: consulClient,
+	source := &eurekaConnector.Source{
+		EurekaClient: &eurekaClient,
 		Domain:       trustDomain,
 		Sink:         sink,
 		Prefix:       "",
@@ -146,7 +143,7 @@ func main() {
 
 	version.SetMetric()
 	/*
-	 * Initialize fsm-consul-connector's HTTP server
+	 * Initialize fsm-eureka-connector's HTTP server
 	 */
 	httpServer := httpserver.NewHTTPServer(constants.FSMHTTPServerPort)
 	// Version
@@ -164,7 +161,7 @@ func main() {
 	go k8s.WatchAndUpdateLogLevel(msgBroker, stop)
 
 	<-stop
-	log.Info().Msgf("Stopping fsm-consul-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Stopping fsm-eureka-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 }
 
 func parseFlags() error {
@@ -175,7 +172,7 @@ func parseFlags() error {
 	return nil
 }
 
-// getConnectorPod returns the fsm-consul-connector pod spec.
+// getConnectorPod returns the fsm-eureka-connector pod spec.
 // The pod name is inferred from the 'CONNECTOR_POD_NAME' env variable which is set during deployment.
 func getConnectorPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 	podName := os.Getenv("CONNECTOR_POD_NAME")
@@ -186,8 +183,8 @@ func getConnectorPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 	pod, err := kubeClient.CoreV1().Pods(fsmNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
 	if err != nil {
 		// TODO(#3962): metric might not be scraped before process restart resulting from this error
-		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingConsulConnectorPod)).
-			Msgf("Error retrieving fsm-consul-connector pod %s", podName)
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingEurekaConnectorPod)).
+			Msgf("Error retrieving fsm-eureka-connector pod %s", podName)
 		return nil, err
 	}
 

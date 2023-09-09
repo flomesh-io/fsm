@@ -32,6 +32,7 @@ type AccessControl struct {
 // AccessControlSpec is the type used to represent the AccessControl policy specification.
 type AccessControlSpec struct {
 	// Backends defines the list of backends the AccessControl policy applies to.
+	// +optional
 	Backends []AccessControlBackendSpec `json:"backends"`
 
 	// Sources defines the list of sources the AccessControl policy applies to.
