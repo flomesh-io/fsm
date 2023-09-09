@@ -41,6 +41,12 @@ const (
 	// ErrFetchingConsulService indicates the fsm-consul-connector consul service resource could not be fetched
 	ErrFetchingConsulService
 
+	// ErrFetchingEurekaConnectorPod indicates the fsm-eureka-connector pod resource could not be fetched
+	ErrFetchingEurekaConnectorPod
+
+	// ErrFetchingEurekaService indicates the fsm-eureka-connector eureka service resource could not be fetched
+	ErrFetchingEurekaService
+
 	// ErrStartingIngressClient indicates the Ingress client failed to start
 	ErrStartingIngressClient
 
@@ -403,6 +409,14 @@ The fsm-consul-connector k8s pod resource was not able to be retrieved by the sy
 
 	ErrFetchingConsulService: `
 The fsm-consul-connector consul service resource was not able to be retrieved by the system.
+`,
+
+	ErrFetchingEurekaConnectorPod: `
+The fsm-eureka-connector k8s pod resource was not able to be retrieved by the system.
+`,
+
+	ErrFetchingEurekaService: `
+The fsm-eureka-connector eureka service resource was not able to be retrieved by the system.
 `,
 
 	ErrStartingIngressClient: `

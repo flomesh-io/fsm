@@ -139,7 +139,6 @@ spec:
                   type: object
                 type: array
             required:
-            - backends
             - sources
             type: object
           status:

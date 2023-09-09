@@ -87,7 +87,8 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 	svcList := kubeController.ListServices()
 
 	for _, svc := range svcList {
-		if connector.IsSyncCloudNamespace(svc.Namespace) {
+		ns := kubeController.GetNamespace(svc.Namespace)
+		if connector.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
 				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(net.ParseIP(pod.Status.PodIP).To4()))]; exists {
 					serviceList = append(serviceList, *svc)

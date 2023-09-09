@@ -14,6 +14,12 @@ const (
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
 	// MeshEndpointAddrAnnotation defines mesh endpoint addr annotation
 	MeshEndpointAddrAnnotation = "flomesh.io/cloud-endpoint-addr"
+
+	//ConsulDiscoveryService defines consul discovery service name
+	ConsulDiscoveryService = "consul"
+
+	//EurekaDiscoveryService defines eureka discovery service name
+	EurekaDiscoveryService = "eureka"
 )
 
 // MicroSvcName defines string as microservice name
@@ -34,11 +40,11 @@ type MicroSvcAppProtocol string
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
 	Ports     map[MicroSvcPort]MicroSvcAppProtocol
-	Addresses map[MicroEndpointAddr]uint8
+	Addresses map[MicroEndpointAddr]int
 }
 
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta
+	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string)
 }
