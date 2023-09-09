@@ -439,7 +439,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 }
 
 func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
-	if strings.EqualFold(mode, EurekaDiscoveryService) {
+	if strings.EqualFold(mode, ConsulDiscoveryService) {
 		ports := make([]int, 0)
 		for port, appProtocol := range svcMeta.Ports {
 			specPort := apiv1.ServicePort{
