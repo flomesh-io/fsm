@@ -133,6 +133,10 @@ check-codegen:
 check-scripts:
 	./scripts/check-scripts.sh
 
+.PHONY: check-manifests
+check-manifests:
+	@git diff --exit-code cmd/fsm-bootstrap/crds/ || { echo "----- Please commit the changes made by 'make manifests' -----"; exit 1; }
+
 .PHONY: go-checks
 go-checks: go-lint go-fmt go-mod-tidy check-mocks check-codegen
 

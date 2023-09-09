@@ -30,11 +30,11 @@ type AlgoBalancer string
 
 const (
 	// RoundRobinLoadBalancer is the round-robin load balancer algorithm
-	RoundRobinLoadBalancer AlgoBalancer = "rr"
+	RoundRobinLoadBalancer AlgoBalancer = "round-robin"
 
 	// HashingLoadBalancer is the hashing load balancer algorithm
-	HashingLoadBalancer AlgoBalancer = "hs"
+	HashingLoadBalancer AlgoBalancer = "hashing"
 
 	// LeastWorkLoadBalancer is the least work load balancer algorithm
-	LeastWorkLoadBalancer AlgoBalancer = "lw"
+	LeastWorkLoadBalancer AlgoBalancer = "least-work"
 )

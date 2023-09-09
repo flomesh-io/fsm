@@ -1,46 +1,22 @@
-/*
- * MIT License
- *
- * Copyright (c) since 2021,  flomesh.io Authors.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 ((
   { isDebugEnabled } = pipy.solve('config.js'),
 
   circuitBreakers = {},
 
   makeCircuitBreaker = (serviceConfig) => (
-      serviceConfig?.ConnectionSettings?.http?.CircuitBreaking && (circuitBreakers[serviceConfig.name] = (
+      serviceConfig?.CircuitBreaking && (circuitBreakers[serviceConfig.name] = (
         (
           serviceName = serviceConfig.name || '',
-          minRequestAmount = serviceConfig.ConnectionSettings.http.CircuitBreaking?.MinRequestAmount || 100,
-          statTimeWindow = serviceConfig.ConnectionSettings.http.CircuitBreaking?.StatTimeWindow || 30, // 30s
-          slowTimeThreshold = serviceConfig.ConnectionSettings.http.CircuitBreaking?.SlowTimeThreshold || 5, // 5s
-          slowAmountThreshold = serviceConfig.ConnectionSettings.http.CircuitBreaking?.SlowAmountThreshold || 0,
-          slowRatioThreshold = serviceConfig.ConnectionSettings.http.CircuitBreaking?.SlowRatioThreshold || 0.0,
-          errorAmountThreshold = serviceConfig.ConnectionSettings.http.CircuitBreaking?.ErrorAmountThreshold || 0,
-          errorRatioThreshold = serviceConfig.ConnectionSettings.http.CircuitBreaking?.ErrorRatioThreshold || 0.0,
-          degradedTimeWindow = serviceConfig.ConnectionSettings.http.CircuitBreaking?.DegradedTimeWindow || 30, // 30s
-          degradedStatusCode = serviceConfig.ConnectionSettings.http.CircuitBreaking?.DegradedStatusCode || 409,
-          degradedResponseContent = serviceConfig.ConnectionSettings.http.CircuitBreaking?.DegradedResponseContent || 'Coming soon ...',
+          minRequestAmount = serviceConfig.CircuitBreaking?.MinRequestAmount || 100,
+          statTimeWindow = serviceConfig.CircuitBreaking?.StatTimeWindow || 30, // 30s
+          slowTimeThreshold = serviceConfig.CircuitBreaking?.SlowTimeThreshold || 5, // 5s
+          slowAmountThreshold = serviceConfig.CircuitBreaking?.SlowAmountThreshold || 0,
+          slowRatioThreshold = serviceConfig.CircuitBreaking?.SlowRatioThreshold || 0.0,
+          errorAmountThreshold = serviceConfig.CircuitBreaking?.ErrorAmountThreshold || 0,
+          errorRatioThreshold = serviceConfig.CircuitBreaking?.ErrorRatioThreshold || 0.0,
+          degradedTimeWindow = serviceConfig.CircuitBreaking?.DegradedTimeWindow || 30, // 30s
+          degradedStatusCode = serviceConfig.CircuitBreaking?.DegradedStatusCode || 409,
+          degradedResponseContent = serviceConfig.CircuitBreaking?.DegradedResponseContent || 'Coming soon ...',
           tick = 0,
           delay = 0,
           total = 0,

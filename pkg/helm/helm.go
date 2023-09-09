@@ -30,13 +30,24 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+
+	"k8s.io/client-go/dynamic"
+
+	"helm.sh/helm/v3/pkg/releaseutil"
 
 	"helm.sh/helm/v3/pkg/action"
 	helm "helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -50,16 +61,14 @@ import (
 
 // RenderChart renders a chart and returns the rendered manifest
 func RenderChart(
-	releaseName string,
+	templateClient *helm.Install,
 	object metav1.Object,
 	chartSource []byte,
 	mc configurator.Configurator,
 	client client.Client,
 	scheme *runtime.Scheme,
-	kubeVersion *chartutil.KubeVersion,
 	resolveValues func(metav1.Object, configurator.Configurator) (map[string]interface{}, error),
 ) (ctrl.Result, error) {
-	installClient := helmClient(releaseName, object.GetNamespace(), kubeVersion)
 	chart, err := loader.LoadArchive(bytes.NewReader(chartSource))
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("error loading chart for installation: %s", err)
@@ -72,14 +81,16 @@ func RenderChart(
 	}
 	log.Debug().Msgf("[HELM UTIL] Values = %s", values)
 
-	rel, err := installClient.Run(chart, values)
+	rel, err := templateClient.Run(chart, values)
 	if err != nil {
-		log.Error().Msgf("[HELM UTIL] Error installing chart: %s", err)
-		return ctrl.Result{}, fmt.Errorf("error install %s/%s: %s", object.GetNamespace(), object.GetName(), err)
+		log.Error().Msgf("[HELM UTIL] Error rendering chart: %s", err)
+		return ctrl.Result{}, fmt.Errorf("error rendering templates: %s", err)
 	}
-	log.Debug().Msgf("[HELM UTIL] Manifest = \n%s\n", rel.Manifest)
 
-	if result, err := applyChartYAMLs(object, rel, client, scheme); err != nil {
+	manifests := rel.Manifest
+	log.Debug().Msgf("[HELM UTIL] Manifest = \n%s\n", manifests)
+
+	if result, err := applyChartYAMLs(object, manifests, client, scheme); err != nil {
 		log.Error().Msgf("[HELM UTIL] Error applying chart YAMLs: %s", err)
 		return result, err
 	}
@@ -87,15 +98,9 @@ func RenderChart(
 	return ctrl.Result{}, nil
 }
 
-func helmClient(releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
-	configFlags := &genericclioptions.ConfigFlags{Namespace: &namespace}
-
-	log.Debug().Msgf("[HELM UTIL] Initializing Helm Action Config ...")
-	actionConfig := new(action.Configuration)
-	_ = actionConfig.Init(configFlags, namespace, "secret", log.Debug().Msgf)
-
-	log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
-	installClient := helm.NewInstall(actionConfig)
+func TemplateClient(cfg *helm.Configuration, releaseName, namespace string, kubeVersion *chartutil.KubeVersion) *helm.Install {
+	//log.Debug().Msgf("[HELM UTIL] Creating Helm Install Client ...")
+	installClient := helm.NewInstall(cfg)
 	installClient.ReleaseName = releaseName
 	installClient.Namespace = namespace
 	installClient.CreateNamespace = false
@@ -106,8 +111,17 @@ func helmClient(releaseName, namespace string, kubeVersion *chartutil.KubeVersio
 	return installClient
 }
 
-func applyChartYAMLs(owner metav1.Object, rel *release.Release, client client.Client, scheme *runtime.Scheme) (ctrl.Result, error) {
-	yamlReader := utilyaml.NewYAMLReader(bufio.NewReader(bytes.NewReader([]byte(rel.Manifest))))
+func ActionConfig(namespace string, debugLog action.DebugLog) *helm.Configuration {
+	configFlags := &genericclioptions.ConfigFlags{Namespace: &namespace}
+
+	actionConfig := new(action.Configuration)
+	_ = actionConfig.Init(configFlags, namespace, "secret", debugLog)
+
+	return actionConfig
+}
+
+func applyChartYAMLs(owner metav1.Object, manifests string, client client.Client, scheme *runtime.Scheme) (ctrl.Result, error) {
+	yamlReader := utilyaml.NewYAMLReader(bufio.NewReader(bytes.NewReader([]byte(manifests))))
 	for {
 		buf, err := yamlReader.Read()
 		if err != nil {
@@ -164,22 +178,95 @@ func isValidOwner(owner, object metav1.Object) bool {
 	return true
 }
 
-// MergeMaps merges two maps
-func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
-	out := make(map[string]interface{}, len(a))
-	for k, v := range a {
-		out[k] = v
+func ApplyYAMLs(
+	dynamicClient dynamic.Interface,
+	mapper meta.RESTMapper,
+	manifests string,
+	handler YAMLHandlerFunc,
+	showFiles ...string,
+) error {
+	splitManifests := releaseutil.SplitManifests(manifests)
+	manifestsKeys := make([]string, 0, len(splitManifests))
+	for k := range splitManifests {
+		manifestsKeys = append(manifestsKeys, k)
 	}
-	for k, v := range b {
-		if v, ok := v.(map[string]interface{}); ok {
-			if bv, ok := out[k]; ok {
-				if bv, ok := bv.(map[string]interface{}); ok {
-					out[k] = MergeMaps(bv, v)
+	sort.Sort(releaseutil.BySplitManifestsOrder(manifestsKeys))
+
+	if len(showFiles) > 0 {
+		manifestNameRegex := regexp.MustCompile("# Source: [^/]+/(.+)")
+		var manifestsToRender []string
+		for _, f := range showFiles {
+			missing := true
+			// Use linux-style filepath separators to unify user's input path
+			f = filepath.ToSlash(f)
+			for _, manifestKey := range manifestsKeys {
+				manifest := splitManifests[manifestKey]
+				submatch := manifestNameRegex.FindStringSubmatch(manifest)
+				if len(submatch) == 0 {
 					continue
 				}
+				manifestName := submatch[1]
+				// manifest.Name is rendered using linux-style filepath separators on Windows as
+				// well as macOS/linux.
+				manifestPathSplit := strings.Split(manifestName, "/")
+				// manifest.Path is connected using linux-style filepath separators on Windows as
+				// well as macOS/linux
+				manifestPath := strings.Join(manifestPathSplit, "/")
+
+				// if the filepath provided matches a manifest path in the
+				// chart, render that manifest
+				if matched, _ := filepath.Match(f, manifestPath); !matched {
+					continue
+				}
+				manifestsToRender = append(manifestsToRender, manifest)
+				missing = false
+			}
+			if missing {
+				return fmt.Errorf("could not find template %s in chart", f)
 			}
 		}
-		out[k] = v
+		for _, manifest := range manifestsToRender {
+			if err := handler(dynamicClient, mapper, manifest); err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, manifestKey := range manifestsKeys {
+			manifest := splitManifests[manifestKey]
+			if err := handler(dynamicClient, mapper, manifest); err != nil {
+				return err
+			}
+		}
 	}
-	return out
+
+	return nil
+}
+
+func ApplyManifest(dynamicClient dynamic.Interface, mapper meta.RESTMapper, manifest string) error {
+	obj, err := utils.DecodeYamlToUnstructured([]byte(manifest))
+	if err != nil {
+		return err
+	}
+
+	if err := utils.CreateOrUpdateUnstructured(context.TODO(), dynamicClient, mapper, obj); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteManifest(dynamicClient dynamic.Interface, mapper meta.RESTMapper, manifest string) error {
+	obj, err := utils.DecodeYamlToUnstructured([]byte(manifest))
+	if err != nil {
+		return err
+	}
+
+	if err := utils.DeleteUnstructured(context.TODO(), dynamicClient, mapper, obj); err != nil {
+		// ignore if not found
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
 }

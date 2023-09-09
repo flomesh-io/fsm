@@ -7,7 +7,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/blang/semver"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 const (
@@ -98,6 +98,12 @@ const (
 
 	// FSMGatewayName is the name of the FSM Gateway.
 	FSMGatewayName = "fsm-gateway"
+
+	// FSMEgressGatewayName is the name of the FSM Egress Gateway.
+	FSMEgressGatewayName = "fsm-egress-gateway"
+
+	// FSMServiceLBName is the name of the FSM ServiceLB.
+	FSMServiceLBName = "fsm-servicelb"
 
 	// ProxyServerPort is the port on which the Pipy Repo Service (ADS) listens for new connections from sidecar proxies
 	ProxyServerPort = 6060
@@ -499,9 +505,6 @@ const (
 	// FLBEnabledAnnotation is the annotation used to indicate if the flb is enabled
 	FLBEnabledAnnotation = FLBPrefix + "/enabled"
 
-	// FLBClusterAnnotation is the annotation used to indicate the cluster name
-	FLBClusterAnnotation = FLBPrefix + "/cluster"
-
 	// FLBAddressPoolAnnotation is the annotation used to indicate the address pool
 	FLBAddressPoolAnnotation = FLBPrefix + "/address-pool"
 
@@ -541,9 +544,6 @@ const (
 	// FLBSecretKeyK8sCluster is the key for the k8s cluster which FLB controller is installed
 	FLBSecretKeyK8sCluster = "k8sCluster"
 
-	// FLBSecretKeyDefaultCluster is the key for the default cluster
-	FLBSecretKeyDefaultCluster = "defaultCluster"
-
 	// FLBSecretKeyDefaultAddressPool is the key for the default address pool
 	FLBSecretKeyDefaultAddressPool = "defaultAddressPool"
 
@@ -563,11 +563,13 @@ const (
 	FLBSecretValidatingWebhookPath = "/validate-flb-core-v1-secret"
 )
 
+// MultiCluster variables
 var (
 	// ClusterIDTemplate is a template for cluster ID
 	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
 )
 
+// Webhook constants
 const (
 	// KubernetesEndpointSliceServiceNameLabel is the label used to indicate the name of the service
 	KubernetesEndpointSliceServiceNameLabel = "kubernetes.io/service-name"
@@ -591,6 +593,7 @@ const (
 	DefaultValidatingWebhookConfigurationName = "flomesh-validating-webhook-configuration"
 )
 
+// Webhook variables
 var (
 	// WebhookServerServingCertsPath is the path at which the webhook server serving certs are stored
 	WebhookServerServingCertsPath = fmt.Sprintf(WebhookServerServingCertsPathTpl, os.TempDir())
@@ -611,6 +614,7 @@ const (
 	IngressValidatingWebhookPath = "/validate-networking-v1-ingress"
 )
 
+// Ingress constants
 const (
 	// IngressPipyController is the name of the ingress controller
 	IngressPipyController = "flomesh.io/ingress-pipy"
@@ -664,16 +668,34 @@ const (
 	PipyIngressAnnotationBackendProtocol = PipyIngressAnnotationPrefix + "/upstream-protocol"
 )
 
+// Ingress variables
 var (
 	// DefaultIngressClass is the default ingress class
 	DefaultIngressClass = ""
 
-	// MinK8sVersionForIngressV1 is the minimum k8s version for ingress v1
-	MinK8sVersionForIngressV1 = semver.Version{Major: 1, Minor: 19, Patch: 0}
+	//// MinK8sVersionForIngressV1 is the minimum k8s version for ingress v1
+	//MinK8sVersionForIngressV1 = semver.Version{Major: 1, Minor: 19, Patch: 0}
+	//
+	//// MinK8sVersionForIngressV1beta1 is the minimum k8s version for ingress v1beta1
+	//MinK8sVersionForIngressV1beta1 = semver.Version{Major: 1, Minor: 16, Patch: 0}
+	//
+	//// MinK8sVersionForIngressClassV1beta1 is the minimum k8s version for ingress class v1beta1
+	//MinK8sVersionForIngressClassV1beta1 = semver.Version{Major: 1, Minor: 18, Patch: 0}
+)
 
-	// MinK8sVersionForIngressV1beta1 is the minimum k8s version for ingress v1beta1
-	MinK8sVersionForIngressV1beta1 = semver.Version{Major: 1, Minor: 16, Patch: 0}
+// Helm Chart variables
+var (
+	// KubeVersion119 is the Kubernetes version 1.19 for helm chart rendering
+	KubeVersion119 = &chartutil.KubeVersion{
+		Version: fmt.Sprintf("v%s.%s.0", "1", "19"),
+		Major:   "1",
+		Minor:   "19",
+	}
 
-	// MinK8sVersionForIngressClassV1beta1 is the minimum k8s version for ingress class v1beta1
-	MinK8sVersionForIngressClassV1beta1 = semver.Version{Major: 1, Minor: 18, Patch: 0}
+	// KubeVersion121 is the Kubernetes version 1.21 for helm chart rendering
+	KubeVersion121 = &chartutil.KubeVersion{
+		Version: fmt.Sprintf("v%s.%s.0", "1", "21"),
+		Major:   "1",
+		Minor:   "21",
+	}
 )

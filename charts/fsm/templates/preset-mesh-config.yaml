@@ -89,6 +89,7 @@ data:
         "enabled": {{ and .Values.fsm.fsmIngress.enabled (not .Values.fsm.fsmGateway.enabled )}},
         "namespaced": {{ .Values.fsm.fsmIngress.namespaced }},
         "logLevel": "{{ .Values.fsm.fsmIngress.logLevel }}",
+        "type": "{{ .Values.fsm.fsmIngress.service.type }}",
         "http": {
           "enabled": {{ .Values.fsm.fsmIngress.http.enabled }},
           "bind": {{ .Values.fsm.fsmIngress.http.port }},
@@ -120,9 +121,21 @@ data:
         "strictMode": {{ .Values.fsm.flb.strictMode }},
         "secretName": "{{ .Values.fsm.flb.secretName }}"
       },
+      "egressGateway": {
+        "enabled": {{ .Values.fsm.egressGateway.enabled }},
+        "logLevel": "{{ .Values.fsm.egressGateway.logLevel }}",
+        "mode": "{{ .Values.fsm.egressGateway.mode }}",
+        "port": {{ .Values.fsm.egressGateway.port }},
+        "adminPort": {{ .Values.fsm.egressGateway.adminPort }},
+        "replicas": {{ .Values.fsm.egressGateway.replicaCount }}
+      },
       "image": {
         "registry": "{{ .Values.fsm.image.registry }}",
         "tag": "{{ .Values.fsm.image.tag }}",
         "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
+      },
+      "misc": {
+        "curlImage": "{{ .Values.fsm.curlImage }}",
+        "repoServerImage": "{{ .Values.fsm.repoServer.image }}"
       }
     }

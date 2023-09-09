@@ -82,6 +82,7 @@ type installCmd struct {
 	disableSpinner    bool
 
 	valueFiles []string // -f/--values
+	dryRun     bool
 }
 
 func newInstallCmd(config *helm.Configuration, out io.Writer) *cobra.Command {
@@ -116,6 +117,7 @@ func newInstallCmd(config *helm.Configuration, out io.Writer) *cobra.Command {
 	f.StringArrayVar(&inst.setOptions, "set", nil, "Set arbitrary chart values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.BoolVar(&inst.atomic, "atomic", false, "Automatically clean up resources if installation fails")
 	f.StringSliceVarP(&inst.valueFiles, "values", "f", []string{}, "Specify values in a YAML file (can specify multiple)")
+	f.BoolVar(&inst.dryRun, "dry-run", false, "Simulate an install and output rendered manifests")
 
 	return cmd
 }
@@ -149,6 +151,18 @@ func (i *installCmd) run(config *helm.Configuration) error {
 	installClient.Wait = true
 	installClient.Atomic = i.atomic
 	installClient.Timeout = i.timeout
+	installClient.DryRun = i.dryRun
+
+	if i.dryRun {
+		rel, err := installClient.Run(i.chartRequested, values)
+		if err != nil {
+			return fmt.Errorf("error rendering templates: %s", err)
+		}
+
+		fmt.Fprintf(i.out, "%s", rel.Manifest)
+
+		return nil
+	}
 
 	debug("Beginning FSM installation")
 	if i.disableSpinner || settings.Verbose() {

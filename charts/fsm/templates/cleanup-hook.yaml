@@ -13,6 +13,18 @@ rules:
     resources: ["meshconfigs"]
     verbs: ["delete"]
   - apiGroups: [ "" ]
+    resources: [ "services", "configmaps" ]
+    verbs: [ "delete" ]
+  - apiGroups: [ "app" ]
+    resources: [ "deployments" ]
+    verbs: [ "delete" ]
+  - apiGroups: [ "networking.k8s.io" ]
+    resources: [ "ingressclasses" ]
+    verbs: [ "delete" ]
+  - apiGroups: [ "app" ]
+    resources: [ "daemonsets" ]
+    verbs: [ "get", "list", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "" ]
     resources: [ "secrets"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: ["apiextensions.k8s.io"]
@@ -22,7 +34,10 @@ rules:
     resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses" ]
+    resources: [ "gatewayclasses", "gateways" ]
+    verbs: [ "get", "list", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "flomesh.io" ]
+    resources: [ "namespacedingresses" ]
     verbs: [ "get", "list", "create", "update", "patch", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -92,7 +107,16 @@ spec:
              kubectl delete --ignore-not-found meshrootcertificate -n '{{ include "fsm.namespace" . }}' fsm-mesh-root-certificate;
              kubectl delete mutatingwebhookconfiguration -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-injector --ignore-not-found;
              kubectl delete validatingwebhookconfiguration -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-controller --ignore-not-found;
-             kubectl delete gatewayclasses.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-controller --ignore-not-found;
+             kubectl delete gatewayclasses.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-gateway --ignore-not-found;
+             kubectl delete gateways.gateway.networking.k8s.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-gateway --ignore-not-found;
+             kubectl delete namespacedingresses.flomesh.io -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-ingress --ignore-not-found;
+             kubectl delete daemonsets -l app.kubernetes.io/name=flomesh.io,app.kubernetes.io/instance={{ .Values.fsm.meshName }},app.kubernetes.io/version={{ .Chart.AppVersion }},app=fsm-servicelb --ignore-not-found;
+             kubectl delete ingressclasses pipy --ignore-not-found;
+             kubectl delete deploy fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete svc fsm-ingress -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete deploy fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete svc fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+             kubectl delete cm fsm-egress-gateway-pjs -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
 {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}

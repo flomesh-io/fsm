@@ -5,9 +5,11 @@ metadata:
   name: fsm-egress-gateway
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    {{- include "fsm.egress-gateway.labels" . | nindent 4 }}
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-egress-gateway
+    meshName: {{ .Values.fsm.meshName }}
   annotations:
-    {{- include "fsm.egress-gateway.annotations" . | nindent 4 }}
+    flomesh.io/egress-gateway-mode: {{ .Values.fsm.egressGateway.mode }}
 spec:
   ports:
     - port: {{ .Values.fsm.egressGateway.port }}
@@ -16,5 +18,5 @@ spec:
       protocol: TCP
       appProtocol: tcp
   selector:
-    {{- include "fsm.egress-gateway.selectorLabels" . | nindent 4 }}
+    app: fsm-egress-gateway
 {{- end }}

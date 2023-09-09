@@ -627,13 +627,14 @@ func (r *gatewayReconciler) updateConfig(_ *gwv1beta1.Gateway, _ configurator.Co
 }
 
 func (r *gatewayReconciler) deployGateway(gw *gwv1beta1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
-	releaseName := fmt.Sprintf("fsm-gateway-%s", gw.Namespace)
-	kubeVersion := &chartutil.KubeVersion{
-		Version: fmt.Sprintf("v%s.%s.0", "1", "21"),
-		Major:   "1",
-		Minor:   "21",
-	}
-	if ctrlResult, err := helm.RenderChart(releaseName, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, kubeVersion, r.resolveValues); err != nil {
+	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
+	templateClient := helm.TemplateClient(
+		actionConfig,
+		fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
+		gw.Namespace,
+		constants.KubeVersion121,
+	)
+	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
 		return ctrlResult, err
 	}

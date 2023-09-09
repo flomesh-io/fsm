@@ -18,7 +18,7 @@ metadata:
   {{- end }}
 spec:
   type: {{ default "LoadBalancer" .Values.nsig.spec.serviceType }}
-  {{- $setNodePorts := (or (eq .Values.nsig.spec.serviceType "NodePort") (eq .Values.nsig.spec.serviceType "LoadBalancer")) }}
+  {{- $setNodePorts := (eq .Values.nsig.spec.serviceType "NodePort") }}
   ports:
   {{- if .Values.nsig.spec.http.enabled }}
   - name: http

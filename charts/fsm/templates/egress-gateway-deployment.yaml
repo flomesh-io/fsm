@@ -5,20 +5,21 @@ metadata:
   name: {{ .Values.fsm.egressGateway.name }}
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    {{- include "fsm.egress-gateway.labels" . | nindent 4 }}
-    {{- include "fsm.egress-gateway.selectorLabels" . | nindent 4 }}
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-egress-gateway
+    meshName: {{ .Values.fsm.meshName }}
 spec:
   replicas: {{ .Values.fsm.egressGateway.replicaCount }}
   selector:
     matchLabels:
-      {{- include "fsm.egress-gateway.selectorLabels" . | nindent 6 }}
+      app: fsm-egress-gateway
   strategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        {{- include "fsm.egress-gateway.labels" . | nindent 8 }}
-        {{- include "fsm.egress-gateway.selectorLabels" . | nindent 8 }}
+        {{- include "fsm.labels" . | nindent 8 }}
+        app: fsm-egress-gateway
         {{- with .Values.fsm.egressGateway.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -32,12 +33,12 @@ spec:
     spec:
       containers:
       - name: pipy
-        image: {{ include "fsm.pipy-repo.image" . }}
+        image: {{ .Values.fsm.repoServer.image }}
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         resources:
           {{- toYaml .Values.fsm.egressGateway.resources | nindent 10 }}
         volumeMounts:
-          - name: {{ .Values.fsm.configmaps.egress.name }}
+          - name:  fsm-egress-gateway-pjs
             mountPath: "/repo/egress-gateway.js"
             subPath: egress-gateway.js
             readOnly: true
@@ -53,13 +54,22 @@ spec:
           - "--log-level={{ .Values.fsm.egressGateway.logLevel }}"
           - "--admin-port={{ .Values.fsm.egressGateway.adminPort }}"
         env:
-          {{- include "fsm.common-env" . | nindent 10 }}
+          - name: FSM_NAMESPACE
+            value: {{ include "fsm.namespace" . }}
+          - name: FSM_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: FSM_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
       volumes:
-        - name: {{ .Values.fsm.configmaps.egress.name }}
+        - name:  fsm-egress-gateway-pjs
           configMap:
-            name: {{ .Values.fsm.configmaps.egress.name }}
-      serviceAccountName: {{ include "fsm.serviceAccountName" . }}
-      {{- with .Values.fsm.image.pullSecrets }}
+            name:  fsm-egress-gateway-pjs
+      serviceAccountName: {{ .Release.Name }}
+      {{- with .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}

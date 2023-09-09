@@ -169,7 +169,7 @@ func walkPluginConfig(cataloger catalog.MeshCataloger, plugin2MountPoint2Config 
 				continue
 			}
 			for mountPoint := range *mountPoint2ConfigItem {
-				(*mountPoint2ConfigItem)[mountPoint] = &pluginConfig.Config
+				(*mountPoint2ConfigItem)[mountPoint] = &pluginConfig.Config // #nosec G601
 			}
 			for _, destinationRef := range pluginConfig.DestinationRefs {
 				if destinationRef.Kind == policyv1alpha1.KindService {

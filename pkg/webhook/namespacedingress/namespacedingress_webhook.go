@@ -92,7 +92,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers for the namespacedingress resources
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
+		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config, r.MeshName, r.FSMVersion)),
 		constants.NamespacedIngressValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.nsigClient)),
 	}
 }
@@ -100,12 +100,16 @@ func (r *register) GetHandlers() map[string]http.Handler {
 type defaulter struct {
 	kubeClient kubernetes.Interface
 	cfg        configurator.Configurator
+	meshName   string
+	fsmVersion string
 }
 
-func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator) *defaulter {
+func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator, meshName, fsmVersion string) *defaulter {
 	return &defaulter{
 		kubeClient: kubeClient,
 		cfg:        cfg,
+		meshName:   meshName,
+		fsmVersion: fsmVersion,
 	}
 }
 
@@ -129,6 +133,13 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//if meshConfig == nil {
 	//	return
 	//}
+	if len(c.Labels) == 0 {
+		c.Labels = map[string]string{}
+	}
+	c.Labels[constants.FSMAppNameLabelKey] = constants.FSMAppNameLabelValue
+	c.Labels[constants.FSMAppInstanceLabelKey] = w.meshName
+	c.Labels[constants.FSMAppVersionLabelKey] = w.fsmVersion
+	c.Labels[constants.AppLabel] = constants.FSMIngressName
 
 	if c.Spec.ServiceAccountName == "" {
 		c.Spec.ServiceAccountName = "fsm-namespaced-ingress"

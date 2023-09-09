@@ -8,6 +8,7 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
+    meshName: {{ .Values.fsm.meshName }}
     ingress.flomesh.io/namespaced: "false"
   {{- with .Values.fsm.fsmIngress.service.annotations }}
   annotations:
@@ -15,7 +16,7 @@ metadata:
   {{- end }}
 spec:
   type: {{ .Values.fsm.fsmIngress.service.type }}
-  {{- $setNodePorts := (or (eq .Values.fsm.fsmIngress.service.type "NodePort") (eq .Values.fsm.fsmIngress.service.type "LoadBalancer")) }}
+  {{- $setNodePorts := (eq .Values.fsm.fsmIngress.service.type "NodePort") }}
   ports:
   {{- if and .Values.fsm.fsmIngress.http.enabled (and (not (empty .Values.fsm.fsmIngress.http.port)) (not (empty .Values.fsm.fsmIngress.http.containerPort))) }}
   - name: http
