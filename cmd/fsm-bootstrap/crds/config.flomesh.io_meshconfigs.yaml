@@ -193,10 +193,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote loggings port.
                         type: integer
@@ -363,9 +361,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -453,6 +448,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                 required:
                 - enablePrivilegedInitContainer
                 type: object
@@ -720,10 +719,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer
@@ -931,9 +928,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -1022,6 +1016,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                   tlsMaxProtocolVersion:
                     description: TLSMaxProtocolVersion defines the maximum TLS protocol
                       version that the sidecar supports. Valid TLS protocol versions
@@ -1554,10 +1552,8 @@ spec:
                           logging requests sent to the collector.
                         type: string
                       level:
-                        description: Level on which remote logging is enabled.
+                        description: Level defines the remote logging's level.
                         type: integer
-                        minimum: 0
-                        maximum: 2
                       port:
                         description: Port defines the remote logging's port.
                         type: integer
@@ -1794,9 +1790,6 @@ spec:
                     description: MaxDataPlaneConnections defines the maximum allowed
                       data plane connections from a proxy sidecar to the FSM controller.
                     type: integer
-                  sidecarTimeout:
-                    description: connect/idle/read/write timeout
-                    type: integer
                   resources:
                     description: Resources defines the compute resources for the sidecar.
                     properties:
@@ -1885,6 +1878,10 @@ spec:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.
                     type: string
+                  sidecarTimeout:
+                    description: SidecarTimeout defines the connect/idle/read/write
+                      timeout.
+                    type: integer
                   tlsMaxProtocolVersion:
                     description: TLSMaxProtocolVersion defines the maximum TLS protocol
                       version that the sidecar supports. Valid TLS protocol versions
