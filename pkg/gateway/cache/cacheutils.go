@@ -26,24 +26,42 @@ func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObje
 	return string(*secretRef.Namespace)
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute) routecfg.HTTPRouteRuleSpec {
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
 	httpSpec := routecfg.HTTPRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeHTTP,
 		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
 	}
 
 	for _, rule := range httpRoute.Spec.Rules {
-		backends := map[string]int32{}
+		backends := map[string]routecfg.BackendServiceConfig{}
 
 		for _, bk := range rule.BackendRefs {
 			if svcPort := backendRefToServicePortName(bk.BackendRef, httpRoute.Namespace); svcPort != nil {
-				backends[svcPort.String()] = backendWeight(bk.BackendRef)
+				svcLevelFilters := make([]routecfg.Filter, 0)
+				for _, filter := range bk.Filters {
+					svcLevelFilters = append(svcLevelFilters, filter)
+				}
+
+				backends[svcPort.String()] = routecfg.BackendServiceConfig{
+					Weight:  backendWeight(bk.BackendRef),
+					Filters: svcLevelFilters,
+				}
+
+				services[svcPort.String()] = serviceInfo{
+					svcPortName: *svcPort,
+				}
 			}
+		}
+
+		ruleLevelFilters := make([]routecfg.Filter, 0)
+		for _, ruleFilter := range rule.Filters {
+			ruleLevelFilters = append(ruleLevelFilters, ruleFilter)
 		}
 
 		for _, m := range rule.Matches {
 			match := routecfg.HTTPTrafficMatch{
 				BackendService: backends,
+				Filters:        ruleLevelFilters,
 			}
 
 			if m.Path != nil {
@@ -157,24 +175,42 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map
 	return params
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute) routecfg.GRPCRouteRuleSpec {
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
 	grpcSpec := routecfg.GRPCRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeGRPC,
 		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
 	}
 
 	for _, rule := range grpcRoute.Spec.Rules {
-		backends := map[string]int32{}
+		backends := map[string]routecfg.BackendServiceConfig{}
 
 		for _, bk := range rule.BackendRefs {
 			if svcPort := backendRefToServicePortName(bk.BackendRef, grpcRoute.Namespace); svcPort != nil {
-				backends[svcPort.String()] = backendWeight(bk.BackendRef)
+				svcLevelFilters := make([]routecfg.Filter, 0)
+				for _, filter := range bk.Filters {
+					svcLevelFilters = append(svcLevelFilters, filter)
+				}
+
+				backends[svcPort.String()] = routecfg.BackendServiceConfig{
+					Weight:  backendWeight(bk.BackendRef),
+					Filters: svcLevelFilters,
+				}
+
+				services[svcPort.String()] = serviceInfo{
+					svcPortName: *svcPort,
+				}
 			}
+		}
+
+		ruleLevelFilters := make([]routecfg.Filter, 0)
+		for _, ruleFilter := range rule.Filters {
+			ruleLevelFilters = append(ruleLevelFilters, ruleFilter)
 		}
 
 		for _, m := range rule.Matches {
 			match := routecfg.GRPCTrafficMatch{
 				BackendService: backends,
+				Filters:        ruleLevelFilters,
 			}
 
 			if m.Method != nil {

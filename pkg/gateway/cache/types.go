@@ -100,7 +100,7 @@ type Cache interface {
 
 type serviceInfo struct {
 	svcPortName routecfg.ServicePortName
-	filters     []routecfg.Filter
+	//filters     []routecfg.Filter
 }
 
 type endpointInfo struct {

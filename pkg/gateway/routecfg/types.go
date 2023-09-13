@@ -152,21 +152,28 @@ type UDPRouteRule map[string]int32
 
 var _ RouteRule = &UDPRouteRule{}
 
+type BackendServiceConfig struct {
+	Weight  int32    `json:"Weight"`
+	Filters []Filter `json:"Filters,omitempty" hash:"set"`
+}
+
 // HTTPTrafficMatch is the HTTP traffic match configuration
 type HTTPTrafficMatch struct {
 	Path           *Path                           `json:"Path,omitempty"`
 	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
 	RequestParams  map[MatchType]map[string]string `json:"RequestParams,omitempty"`
 	Methods        []string                        `json:"Methods,omitempty" hash:"set"`
-	BackendService map[string]int32                `json:"BackendService"`
+	BackendService map[string]BackendServiceConfig `json:"BackendService"`
 	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
+	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
 // GRPCTrafficMatch is the GRPC traffic match configuration
 type GRPCTrafficMatch struct {
 	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
 	Method         *GRPCMethod                     `json:"Method,omitempty"`
-	BackendService map[string]int32                `json:"BackendService"`
+	BackendService map[string]BackendServiceConfig `json:"BackendService"`
+	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
 // Path is the path configuration
@@ -197,8 +204,8 @@ type PassthroughRouteMapping map[string]string
 
 // ServiceConfig is the service configuration
 type ServiceConfig struct {
-	Endpoints          map[string]Endpoint   `json:"Endpoints"`
-	Filters            []Filter              `json:"Filters,omitempty" hash:"set"`
+	Endpoints map[string]Endpoint `json:"Endpoints"`
+	//Filters            []Filter              `json:"Filters,omitempty" hash:"set"`
 	ConnectionSettings *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
 	RetryPolicy        *RetryPolicy          `json:"RetryPolicy,omitempty"`
 	MTLS               bool                  `json:"mTLS,omitempty"`
