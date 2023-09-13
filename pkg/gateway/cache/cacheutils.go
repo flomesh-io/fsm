@@ -431,6 +431,7 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 	return mergedRule
 }
 
+//lint:ignore U1000 ignore unused
 func copyMap[K, V comparable](m map[K]V) map[K]V {
 	result := make(map[K]V)
 	for k, v := range m {
