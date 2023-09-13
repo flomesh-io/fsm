@@ -123,7 +123,7 @@ jobs:
         id: [ "sidecar-init", "controller", "injector", "consul-connector", "eureka-connector","crds", "bootstrap", "preinstall", "healthcheck", "interceptor", "ingress", "gateway" ]
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.2.0
+        uses: docker/setup-qemu-action@v3.0.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2.10.0
@@ -182,7 +182,7 @@ jobs:
         id: [ "bookbuyer", "bookthief", "bookstore", "bookwarehouse", "tcp-echo-server", "tcp-client" ]
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2.2.0
+        uses: docker/setup-qemu-action@v3.0.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2.10.0
