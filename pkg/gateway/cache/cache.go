@@ -433,7 +433,8 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 func (c *GatewayCache) defaults() routecfg.Defaults {
 	return routecfg.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
-		DefaultPassthroughUpstreamPort: 443, // TODO: enrich this from config
+		DefaultPassthroughUpstreamPort: 443,  // TODO: enrich this from config
+		StripAnyHostPort:               true, // TODO: enrich this from config
 	}
 }
 

@@ -69,6 +69,7 @@ type ConfigSpec struct {
 type Defaults struct {
 	EnableDebug                    bool   `json:"EnableDebug"`
 	DefaultPassthroughUpstreamPort uint32 `json:"DefaultPassthroughUpstreamPort"`
+	StripAnyHostPort               bool   `json:"StripAnyHostPort"`
 }
 
 // Listener is the listener configuration
