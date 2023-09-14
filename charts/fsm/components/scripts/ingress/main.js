@@ -32,6 +32,7 @@
 
   pipy({
     _passthroughTarget: undefined,
+    _sni: undefined,
   })
   .export('main', {
     __route: undefined,
@@ -65,9 +66,15 @@
         ))()
       )
     )
+    .handleTLSClientHello(
+      hello => (
+        _sni = hello?.serverNames?.[0]
+      )
+    )
     .acceptTLS({
       certificate: (sni, cert) => (
-        console.log('SNI', sni),
+        !sni && (sni = _sni),
+          console.log('SNI', sni),
         sni && ((
           Object.entries(certificates).find(
             ([k, v]) => (
