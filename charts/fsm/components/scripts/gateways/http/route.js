@@ -136,7 +136,10 @@
             )
           )
         ),
-        backendServiceBalancer: new algo.RoundRobinLoadBalancer(rule?.BackendService || {}),
+        backendServiceBalancer: new algo.RoundRobinLoadBalancer(Object.fromEntries(Object.entries(rule?.BackendService || {})
+          .map(([k, v]) => [k, v.Weight])
+          .filter(([k, v]) => v > 0)
+        )),
         ...(rule?.ServerRoot && { serverRoot: rule.ServerRoot })
       }
     )
@@ -166,7 +169,10 @@
             (!matchMethod || matchMethod(message?.head?.path))
           )
         ),
-        backendServiceBalancer: new algo.RoundRobinLoadBalancer(rule?.BackendService || {})
+        backendServiceBalancer: new algo.RoundRobinLoadBalancer(Object.fromEntries(Object.entries(rule?.BackendService || {})
+          .map(([k, v]) => [k, v.Weight])
+          .filter(([k, v]) => v > 0)
+        )),
       }
     )
   )(),

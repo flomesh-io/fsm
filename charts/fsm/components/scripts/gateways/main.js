@@ -32,6 +32,13 @@
     metrics.fgwMetaInfo.withLabels(pipy.uuid || '', pipy.name || '', pipy.source || '', os.env.PIPY_K8S_CLUSTER || '').increase()
   )
 )
+.branch(
+  (config?.Configs?.ResourceUsage?.ScrapeInterval > 0), (
+    $=>$
+    .task()
+    .use('common/resource-usage.js')
+  )
+)
 
 .repeat(
   (config.Listeners || []),

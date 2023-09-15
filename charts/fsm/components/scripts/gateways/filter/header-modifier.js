@@ -13,7 +13,7 @@
           name = val.substring(1, pos),
           member = val.substring(pos + 1),
           (name === 'http') && (
-            content = __http?.headers?.[member] || __http?.[member] || val
+            content = _http?.headers?.[member] || _http?.[member] || val
           ) || (name === 'consumer') && (
             content = __consumer?.[member] || val
           )
@@ -21,6 +21,12 @@
         content
       )
     )() : val
+  ),
+
+  resolvPath = path => (
+    path && path.split('/').map(
+      s => resolvVar(s)
+    ).join('/')
   ),
 
   makeModifierHandler = cfg => (
@@ -31,15 +37,16 @@
     ) => (
       (set || add || remove) && (
         msg => (
+          _http = (cfg.Type === 'RequestHeaderModifier') ? __request?.head : __response?.head,
           set && set.forEach(
-            e => (msg[e.name] = resolvVar(e.value))
+            e => (msg[e.name] = resolvPath(e.value))
           ),
           add && add.forEach(
             e => (
               msg[e.name] ? (
-                msg[e.name] = msg[e.name] + ',' + resolvVar(e.value)
+                msg[e.name] = msg[e.name] + ',' + resolvPath(e.value)
               ) : (
-                msg[e.name] = resolvVar(e.value)
+                msg[e.name] = resolvPath(e.value)
               )
             )
           ),
@@ -51,14 +58,12 @@
     )
   )(),
 
-  modifierHandlers = new algo.Cache(makeModifierHandler),
-
   makeRequestModifierHandler = cfg => (
     (
       handlers = (cfg?.Filters || []).filter(
         e => e?.Type === 'RequestHeaderModifier'
       ).map(
-        e => modifierHandlers.get(e)
+        e => makeModifierHandler(e)
       ).filter(
         e => e
       )
@@ -67,14 +72,27 @@
     )
   )(),
 
-  requestModifierHandlers = new algo.Cache(makeRequestModifierHandler),
+  requestFilterCache = new algo.Cache(
+    route => (
+      (
+        config = route?.config,
+        backendService = config?.BackendService,
+      ) => (
+        new algo.Cache(
+          service => (
+            makeRequestModifierHandler(backendService?.[service]) || makeRequestModifierHandler(config)
+          )
+        )
+      )
+    )()
+  ),
 
   makeResponseModifierHandler = cfg => (
     (
       handlers = (cfg?.Filters || []).filter(
         e => e?.Type === 'ResponseHeaderModifier'
       ).map(
-        e => modifierHandlers.get(e)
+        e => makeModifierHandler(e)
       ).filter(
         e => e
       )
@@ -83,24 +101,40 @@
     )
   )(),
 
-  responseModifierHandlers = new algo.Cache(makeResponseModifierHandler),
+  responseFilterCache = new algo.Cache(
+    route => (
+      (
+        config = route?.config,
+        backendService = config?.BackendService,
+      ) => (
+        new algo.Cache(
+          service => (
+            makeResponseModifierHandler(backendService?.[service]) || makeResponseModifierHandler(config)
+          )
+        )
+      )
+    )()
+  ),
 
 ) => pipy({
+  _http: null,
   _requestHandlers: null,
   _responseHandlers: null,
 })
 
 .import({
+  __route: 'route',
   __service: 'service',
-  __http: 'http',
+  __request: 'http',
+  __response: 'http',
   __consumer: 'consumer',
 })
 
 .pipeline()
 .onStart(
   () => void (
-    _requestHandlers = requestModifierHandlers.get(__service),
-    _responseHandlers = responseModifierHandlers.get(__service)
+    _requestHandlers = requestFilterCache.get(__route)?.get?.(__service?.name),
+    _responseHandlers = responseFilterCache.get(__route)?.get?.(__service?.name)
   )
 )
 .branch(

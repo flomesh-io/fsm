@@ -23,80 +23,51 @@
     )() : val
   ),
 
-  getPrefix = uri => (
-    (
-      path = uri?.split?.('?')[0] || '',
-      elts = path.split('/'),
-    ) => (
-      (elts[0] === '' && elts.length > 1) ? ('/' + (elts[1] || '')) : elts[0]
-    )
-  )(),
-
-  pathPrefix = (path, prefix) => (
-    path.startsWith(prefix) && (
-      prefix.endsWith('/') || (
-        (
-          lastChar = path.charAt(prefix.length),
-        ) => (
-          lastChar === '' || lastChar === '/'
-        )
-      )()
-    )
+  resolvPath = path => (
+    path && path.split('/').map(
+      s => resolvVar(s)
+    ).join('/')
   ),
 
-  makeHeadHandler = cfg => (
+  makeHeadHandler = (path, cfg) => (
     (cfg?.path?.type === 'ReplacePrefixMatch') ? (
-      head => (
-        (
-          match = pathPrefix(head?.path, cfg?.path?.replacePrefixMatch),
-          suffix = match && (head?.path || '').substring(cfg.path.replacePrefixMatch.length),
-          replace = resolvVar(cfg?.path?.replacePrefix || '/'),
-        ) => (
-          match && (
-            replace.endsWith('/') ? (
-              suffix.startsWith('/') ? (
-                head.path = replace + suffix.substring(1)
-              ) : (
-                head.path = replace + suffix
-              )
-            ) : (
-              suffix.startsWith('/') ? (
-                head.path = replace + suffix
-              ) : (
-                head.path = replace + '/' + suffix
-              )
-            ),
-            cfg?.hostname && head.headers && (
-              head.headers.host = cfg.hostname
-            )
+      cfg?.path?.replacePrefixMatch && (
+        head => (
+          head?.path?.length > path.length ? (
+            head.path = resolvPath(cfg.path.replacePrefixMatch) + head.path.substring(path.length)
+          ) : (
+            head.path = resolvPath(cfg.path.replacePrefixMatch)
+          ),
+          cfg?.hostname && head.headers && (
+            head.headers.host = cfg.hostname
           )
         )
-      )()
+      )
     ) : (
       (cfg?.path?.type === 'ReplaceFullPath') ? (
-        head => (
-          (
-            prefix = (head?.path || '').split('?')[0],
-            suffix = (head?.path || '').substring(prefix.length),
-          ) => (
-            head.path = resolvVar(cfg?.path?.replaceFullPath) + suffix,
-            cfg?.hostname && head.headers && (
-              head.headers.host = cfg.hostname
+        cfg?.path?.replaceFullPath && (
+          head => (
+            (
+              prefix = (head?.path || '').split('?')[0],
+              suffix = (head?.path || '').substring(prefix.length),
+            ) => (
+              head.path = resolvPath(cfg.path.replaceFullPath) + suffix,
+              cfg?.hostname && head.headers && (
+                head.headers.host = cfg.hostname
+              )
             )
-          )
-        )()
+          )()
+        )
       ) : null
     )
   ),
 
-  headHandlers = new algo.Cache(makeHeadHandler),
-
-  makeRewriteHandler = cfg => (
+  makeRewriteHandler = (path, cfg) => (
     (
       handlers = (cfg?.Filters || []).filter(
-        e => e?.Type === 'HTTPURLRewriteFilter'
+        e => e?.Type === 'URLRewrite'
       ).map(
-        e => headHandlers.get(e)
+        e => makeHeadHandler(path, e)
       ).filter(
         e => e
       )
@@ -105,13 +76,28 @@
     )
   )(),
 
-  rewriteHandlersCache = new algo.Cache(makeRewriteHandler),
+  filterCache = new algo.Cache(
+    route => (
+      (
+        config = route?.config,
+        path = config?.Path?.Path || '/',
+        backendService = config?.BackendService,
+      ) => (
+        new algo.Cache(
+          service => (
+            makeRewriteHandler(path, backendService?.[service]) || makeRewriteHandler(path, config)
+          )
+        )
+      )
+    )()
+  ),
 
 ) => pipy({
   _rewriteHandlers: null,
 })
 
 .import({
+  __route: 'route',
   __service: 'service',
   __http: 'http',
   __consumer: 'consumer',
@@ -120,7 +106,7 @@
 .pipeline()
 .onStart(
   () => void (
-    _rewriteHandlers = rewriteHandlersCache.get(__service)
+    _rewriteHandlers = filterCache.get(__route)?.get?.(__service?.name)
   )
 )
 .branch(

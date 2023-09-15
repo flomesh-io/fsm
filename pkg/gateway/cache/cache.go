@@ -433,7 +433,8 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 func (c *GatewayCache) defaults() routecfg.Defaults {
 	return routecfg.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
-		DefaultPassthroughUpstreamPort: 443, // TODO: enrich this from config
+		DefaultPassthroughUpstreamPort: 443,  // TODO: enrich this from config
+		StripAnyHostPort:               true, // TODO: enrich this from config
 	}
 }
 
@@ -564,8 +565,8 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 
 		httpRoute := route.(*gwv1beta1.HTTPRoute)
 		log.Debug().Msgf("Processing HTTPRoute %v", httpRoute)
-		processHTTPRoute(gw, validListeners, httpRoute, rules)
-		processHTTPRouteBackendFilters(httpRoute, services)
+		processHTTPRoute(gw, validListeners, httpRoute, rules, services)
+		//processHTTPRouteBackendFilters(httpRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
@@ -582,8 +583,8 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 		}
 
 		grpcRoute := route.(*gwv1alpha2.GRPCRoute)
-		processGRPCRoute(gw, validListeners, grpcRoute, rules)
-		processGRPCRouteBackendFilters(grpcRoute, services)
+		processGRPCRoute(gw, validListeners, grpcRoute, rules, services)
+		//processGRPCRouteBackendFilters(grpcRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
@@ -625,7 +626,7 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	return rules, services
 }
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]routecfg.RouteRule) {
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -648,7 +649,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			httpRule := routecfg.L7RouteRule{}
 			for _, hostname := range hostnames {
-				httpRule[hostname] = generateHTTPRouteConfig(httpRoute)
+				httpRule[hostname] = generateHTTPRouteConfig(httpRoute, services)
 			}
 
 			port := int32(listener.Port)
@@ -663,7 +664,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]routecfg.RouteRule) {
+func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
 	for _, ref := range grpcRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -684,7 +685,7 @@ func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			grpcRule := routecfg.L7RouteRule{}
 			for _, hostname := range hostnames {
-				grpcRule[hostname] = generateGRPCRouteCfg(grpcRoute)
+				grpcRule[hostname] = generateGRPCRouteCfg(grpcRoute, services)
 			}
 
 			port := int32(listener.Port)
@@ -792,63 +793,63 @@ func processTCPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 	}
 }
 
-func processHTTPRouteBackendFilters(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) {
-	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
-	for _, rule := range httpRoute.Spec.Rules {
-		ruleLevelFilters := make(map[gwv1beta1.HTTPRouteFilterType]routecfg.Filter)
+//func processHTTPRouteBackendFilters(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) {
+//	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
+//	for _, rule := range httpRoute.Spec.Rules {
+//		ruleLevelFilters := make(map[gwv1beta1.HTTPRouteFilterType]routecfg.Filter)
+//
+//		for _, ruleFilter := range rule.Filters {
+//			ruleLevelFilters[ruleFilter.Type] = ruleFilter
+//		}
+//
+//		for _, backend := range rule.BackendRefs {
+//			if svcPort := backendRefToServicePortName(backend.BackendRef, httpRoute.Namespace); svcPort != nil {
+//				svcFilters := copyMap(ruleLevelFilters)
+//				for _, svcFilter := range backend.Filters {
+//					svcFilters[svcFilter.Type] = svcFilter
+//				}
+//
+//				svcInfo := serviceInfo{
+//					svcPortName: *svcPort,
+//					filters:     make([]routecfg.Filter, 0),
+//				}
+//				for _, f := range svcFilters {
+//					svcInfo.filters = append(svcInfo.filters, f)
+//				}
+//				services[svcPort.String()] = svcInfo
+//			}
+//		}
+//	}
+//}
 
-		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters[ruleFilter.Type] = ruleFilter
-		}
-
-		for _, backend := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(backend.BackendRef, httpRoute.Namespace); svcPort != nil {
-				svcFilters := copyMap(ruleLevelFilters)
-				for _, svcFilter := range backend.Filters {
-					svcFilters[svcFilter.Type] = svcFilter
-				}
-
-				svcInfo := serviceInfo{
-					svcPortName: *svcPort,
-					filters:     make([]routecfg.Filter, 0),
-				}
-				for _, f := range svcFilters {
-					svcInfo.filters = append(svcInfo.filters, f)
-				}
-				services[svcPort.String()] = svcInfo
-			}
-		}
-	}
-}
-
-func processGRPCRouteBackendFilters(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) {
-	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
-	for _, rule := range grpcRoute.Spec.Rules {
-		ruleLevelFilters := make(map[gwv1alpha2.GRPCRouteFilterType]routecfg.Filter)
-
-		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters[ruleFilter.Type] = ruleFilter
-		}
-
-		for _, backend := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(backend.BackendRef, grpcRoute.Namespace); svcPort != nil {
-				svcFilters := copyMap(ruleLevelFilters)
-				for _, svcFilter := range backend.Filters {
-					svcFilters[svcFilter.Type] = svcFilter
-				}
-
-				svcInfo := serviceInfo{
-					svcPortName: *svcPort,
-					filters:     make([]routecfg.Filter, 0),
-				}
-				for _, f := range svcFilters {
-					svcInfo.filters = append(svcInfo.filters, f)
-				}
-				services[svcPort.String()] = svcInfo
-			}
-		}
-	}
-}
+//func processGRPCRouteBackendFilters(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) {
+//	// For now, ONLY supports unique filter types, cannot specify one type filter multiple times
+//	for _, rule := range grpcRoute.Spec.Rules {
+//		ruleLevelFilters := make(map[gwv1alpha2.GRPCRouteFilterType]routecfg.Filter)
+//
+//		for _, ruleFilter := range rule.Filters {
+//			ruleLevelFilters[ruleFilter.Type] = ruleFilter
+//		}
+//
+//		for _, backend := range rule.BackendRefs {
+//			if svcPort := backendRefToServicePortName(backend.BackendRef, grpcRoute.Namespace); svcPort != nil {
+//				svcFilters := copyMap(ruleLevelFilters)
+//				for _, svcFilter := range backend.Filters {
+//					svcFilters[svcFilter.Type] = svcFilter
+//				}
+//
+//				svcInfo := serviceInfo{
+//					svcPortName: *svcPort,
+//					filters:     make([]routecfg.Filter, 0),
+//				}
+//				for _, f := range svcFilters {
+//					svcInfo.filters = append(svcInfo.filters, f)
+//				}
+//				services[svcPort.String()] = svcInfo
+//			}
+//		}
+//	}
+//}
 
 func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
 	// DO nothing for now
@@ -931,7 +932,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 		}
 
 		svcCfg := routecfg.ServiceConfig{
-			Filters:   svcInfo.filters,
+			//Filters:   svcInfo.filters,
 			Endpoints: make(map[string]routecfg.Endpoint),
 		}
 
