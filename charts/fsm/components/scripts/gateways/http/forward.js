@@ -158,6 +158,7 @@
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
   __upstream: 'connect-tcp',
+  __response: 'http',
   __healthCheckTargets: 'health-check',
   __healthCheckServices: 'health-check',
 })
@@ -299,8 +300,10 @@
     )
     .branch(
       () => _cookieId, (
-        $=>$.handleMessageStart(
+        $=>$
+        .handleMessageStart(
           msg => (
+            __response = { head: msg?.head, resTime: Date.now() },
             msg?.head?.headers && (
               !msg.head.headers['set-cookie'] && (
                 msg.head.headers['set-cookie'] = []
@@ -312,6 +315,9 @@
               )
             )
           )
+        )
+        .handleMessageEnd(
+          msg => __response.tail = msg.tail
         )
       ), (
         $=>$
