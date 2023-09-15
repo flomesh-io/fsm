@@ -9,6 +9,14 @@
       'k8sCluster'
     ]),
 
+    fgwResourceUsage = new stats.Gauge('fgw_resource_usage', [
+      'uuid',
+      'name',
+      'codeBase',
+      'host',
+      'type'
+    ]),
+
     fgwHttpStatus = new stats.Counter('fgw_http_status', [
       'service', 'code', 'route', 'matched_uri', 'matched_host', 'consumer', 'node'
     ]),
@@ -24,7 +32,7 @@
     ]),
 
     fgwUpstreamStatus = new stats.Gauge('fgw_upstream_status', [
-      'name', 'ip', 'port'
+      'name', 'ip', 'port', 'type', 'http_status'
     ]),
 
     fgwHttpLatency = new stats.Histogram('fgw_http_latency', [
@@ -55,6 +63,7 @@
 
     metrics = {
       fgwMetaInfo, // main.js
+      fgwResourceUsage, // resource-usage.js
       fgwHttpRequestsTotal, // codec.js
       fgwHttpCurrentConnections, // codec.js
       fgwUpstreamStatus, // health-check.js

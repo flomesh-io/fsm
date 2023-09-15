@@ -1,5 +1,5 @@
 ((
-  { isDebugEnabled } = pipy.solve('config.js'),
+  { config, isDebugEnabled } = pipy.solve('config.js'),
 
   extTypes = ((mime = JSON.decode(pipy.load('files/mime.json'))) => (
     Object.fromEntries(
@@ -13,12 +13,22 @@
     )
   ))(),
 
-  matchContentType = ext => (
-    (ext === '') ? (
-      'text/html'
-    ) : (
-      extTypes?.[ext] || 'application/octet-stream'
+  defaultMimeTypeCache = new algo.Cache(
+    route => (
+      route?.config?.DefaultMimeType ? (
+        route.config.DefaultMimeType
+      ) : (
+        __domain?.DefaultMimeType ? (
+          __domain.DefaultMimeType
+        ) : (
+          config?.Configs?.DefaultMimeType
+        )
+      )
     )
+  ),
+
+  matchContentType = ext => (
+    extTypes?.[ext] || defaultMimeTypeCache.get(__route) || 'application/octet-stream'
   ),
 
   checkFileMode = filepath => (
@@ -113,6 +123,7 @@
 })
 
 .import({
+  __domain: 'route',
   __route: 'route',
 })
 
@@ -133,7 +144,7 @@
         )
       )
     ),
-     _message || new Message({ status: 404 }, 'Not Found')
+    _message || new Message({ status: 404 }, 'Not Found')
   )
 )
 .branch(

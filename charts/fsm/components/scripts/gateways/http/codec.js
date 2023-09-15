@@ -5,6 +5,7 @@
 .export('http', {
   __http: null,
   __request: null,
+  __response: null,
 })
 
 .pipeline()
