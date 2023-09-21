@@ -39,7 +39,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, services map[string
 			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, httpRoute.Namespace); svcPort != nil {
 				svcLevelFilters := make([]routecfg.Filter, 0)
 				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMHTTPRouteFilter(filter, httpRoute.Namespace))
+					svcLevelFilters = append(svcLevelFilters, toFSMHTTPRouteFilter(filter, httpRoute.Namespace, services))
 				}
 
 				backends[svcPort.String()] = routecfg.BackendServiceConfig{
@@ -55,7 +55,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, services map[string
 
 		ruleLevelFilters := make([]routecfg.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMHTTPRouteFilter(ruleFilter, httpRoute.Namespace))
+			ruleLevelFilters = append(ruleLevelFilters, toFSMHTTPRouteFilter(ruleFilter, httpRoute.Namespace, services))
 		}
 
 		for _, m := range rule.Matches {
@@ -188,7 +188,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]s
 			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, grpcRoute.Namespace); svcPort != nil {
 				svcLevelFilters := make([]routecfg.Filter, 0)
 				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMGRPCRouteFilter(filter, grpcRoute.Namespace))
+					svcLevelFilters = append(svcLevelFilters, toFSMGRPCRouteFilter(filter, grpcRoute.Namespace, services))
 				}
 
 				backends[svcPort.String()] = routecfg.BackendServiceConfig{
@@ -204,7 +204,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]s
 
 		ruleLevelFilters := make([]routecfg.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMGRPCRouteFilter(ruleFilter, grpcRoute.Namespace))
+			ruleLevelFilters = append(ruleLevelFilters, toFSMGRPCRouteFilter(ruleFilter, grpcRoute.Namespace, services))
 		}
 
 		for _, m := range rule.Matches {
@@ -519,7 +519,7 @@ func isMTLSEnabled(gw *gwv1beta1.Gateway) bool {
 	return utils.ParseEnabled(gw.Annotations[constants.GatewayMTLSAnnotation])
 }
 
-func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string) routecfg.Filter {
+func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) routecfg.Filter {
 	result := routecfg.HTTPRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -560,6 +560,10 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string) ro
 			result.RequestMirror = &routecfg.HTTPRequestMirrorFilter{
 				BackendService: svcPort.String(),
 			}
+
+			services[svcPort.String()] = serviceInfo{
+				svcPortName: *svcPort,
+			}
 		}
 	}
 
@@ -571,7 +575,7 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string) ro
 	return result
 }
 
-func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string) routecfg.Filter {
+func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, services map[string]serviceInfo) routecfg.Filter {
 	result := routecfg.GRPCRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -594,6 +598,10 @@ func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string) r
 		if svcPort := backendRefToServicePortName(filter.RequestMirror.BackendRef, defaultNs); svcPort != nil {
 			result.RequestMirror = &routecfg.HTTPRequestMirrorFilter{
 				BackendService: svcPort.String(),
+			}
+
+			services[svcPort.String()] = serviceInfo{
+				svcPortName: *svcPort,
 			}
 		}
 	}
