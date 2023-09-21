@@ -4,8 +4,9 @@ package routecfg
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"k8s.io/apimachinery/pkg/types"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	commons "github.com/flomesh-io/fsm/pkg/apis"
@@ -205,8 +206,7 @@ type PassthroughRouteMapping map[string]string
 
 // ServiceConfig is the service configuration
 type ServiceConfig struct {
-	Endpoints map[string]Endpoint `json:"Endpoints"`
-	//Filters            []Filter              `json:"Filters,omitempty" hash:"set"`
+	Endpoints          map[string]Endpoint   `json:"Endpoints"`
 	ConnectionSettings *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
 	RetryPolicy        *RetryPolicy          `json:"RetryPolicy,omitempty"`
 	MTLS               bool                  `json:"mTLS,omitempty"`
@@ -226,8 +226,115 @@ type Endpoint struct {
 // Filter is the filter configuration
 type Filter interface{}
 
-var _ Filter = &gwv1beta1.HTTPRouteFilter{}
-var _ Filter = &gwv1alpha2.GRPCRouteFilter{}
+type HTTPHeader struct {
+	Name  string `json:"Name"`
+	Value string `json:"Value"`
+}
+
+type HTTPHeaderFilter struct {
+	Set    []HTTPHeader `json:"Set,omitempty" hash:"set"`
+	Add    []HTTPHeader `json:"Add,omitempty" hash:"set"`
+	Remove []string     `json:"Remove,omitempty" hash:"set"`
+}
+
+var _ Filter = &HTTPHeaderFilter{}
+
+type HTTPRequestMirrorFilter struct {
+	BackendService string `json:"BackendService"`
+}
+
+// HTTPPathModifier defines configuration for path modifiers.
+type HTTPPathModifier struct {
+	Type               gwv1beta1.HTTPPathModifierType `json:"Type"`
+	ReplaceFullPath    *string                        `json:"ReplaceFullPath,omitempty"`
+	ReplacePrefixMatch *string                        `json:"ReplacePrefixMatch,omitempty"`
+}
+
+// HTTPURLRewriteFilter defines a filter that modifies a request during
+// forwarding. At most one of these filters may be used on a Route rule.
+type HTTPURLRewriteFilter struct {
+	Hostname *string           `json:"Hostname,omitempty"`
+	Path     *HTTPPathModifier `json:"Path,omitempty"`
+}
+
+// HTTPRequestRedirectFilter defines a filter that redirects a request. This filter
+// MUST NOT be used on the same Route rule as a HTTPURLRewrite filter.
+type HTTPRequestRedirectFilter struct {
+	Scheme     *string           `json:"Scheme,omitempty"`
+	Hostname   *string           `json:"Hostname,omitempty"`
+	Path       *HTTPPathModifier `json:"Path,omitempty"`
+	Port       *int32            `json:"Port,omitempty"`
+	StatusCode *int              `json:"StatusCode,omitempty"`
+}
+
+// HTTPRouteFilter defines processing steps that must be completed during the
+// request or response lifecycle. HTTPRouteFilters are meant as an extension
+// point to express processing that may be done in Gateway implementations. Some
+// examples include request or response modification, implementing
+// authentication strategies, rate-limiting, and traffic shaping. API
+// guarantee/conformance is defined based on the type of the filter.
+type HTTPRouteFilter struct {
+	// Type identifies the type of filter to apply. As with other API fields,
+	// types are classified into three conformance levels:
+	Type gwv1beta1.HTTPRouteFilterType `json:"Type"`
+
+	// RequestHeaderModifier defines a schema for a filter that modifies request
+	RequestHeaderModifier *HTTPHeaderFilter `json:"RequestHeaderModifier,omitempty"`
+
+	// ResponseHeaderModifier defines a schema for a filter that modifies response
+	ResponseHeaderModifier *HTTPHeaderFilter `json:"ResponseHeaderModifier,omitempty"`
+
+	// RequestMirror defines a schema for a filter that mirrors requests.
+	// Requests are sent to the specified destination, but responses from
+	// that destination are ignored.
+	RequestMirror *HTTPRequestMirrorFilter `json:"RequestMirror,omitempty"`
+
+	// RequestRedirect defines a schema for a filter that responds to the
+	// request with an HTTP redirection.
+	RequestRedirect *HTTPRequestRedirectFilter `json:"RequestRedirect,omitempty"`
+
+	// URLRewrite defines a schema for a filter that modifies a request during forwarding.
+	URLRewrite *HTTPURLRewriteFilter `json:"UrlRewrite,omitempty"`
+
+	// ExtensionRef is an optional, implementation-specific extension to the
+	// "filter" behavior.  For example, resource "myroutefilter" in group
+	// "networking.example.net"). ExtensionRef MUST NOT be used for core and
+	// extended filters.
+	ExtensionRef *gwv1beta1.LocalObjectReference `json:"ExtensionRef,omitempty"`
+}
+
+var _ Filter = &HTTPRouteFilter{}
+
+// GRPCRouteFilter defines processing steps that must be completed during the
+// request or response lifecycle. GRPCRouteFilters are meant as an extension
+// point to express processing that may be done in Gateway implementations. Some
+// examples include request or response modification, implementing
+// authentication strategies, rate-limiting, and traffic shaping. API
+// guarantee/conformance is defined based on the type of the filter.
+type GRPCRouteFilter struct {
+	// Type identifies the type of filter to apply. As with other API fields,
+	// types are classified into three conformance levels:
+	Type gwv1alpha2.GRPCRouteFilterType `json:"Type"`
+
+	// RequestHeaderModifier defines a schema for a filter that modifies request
+	// headers.
+	RequestHeaderModifier *HTTPHeaderFilter `json:"RequestHeaderModifier,omitempty"`
+
+	// ResponseHeaderModifier defines a schema for a filter that modifies response
+	// headers.
+	ResponseHeaderModifier *HTTPHeaderFilter `json:"ResponseHeaderModifier,omitempty"`
+
+	// RequestMirror defines a schema for a filter that mirrors requests.
+	// Requests are sent to the specified destination, but responses from
+	// that destination are ignored.
+	RequestMirror *HTTPRequestMirrorFilter `json:"RequestMirror,omitempty"`
+
+	// ExtensionRef is an optional, implementation-specific extension to the
+	// "filter" behavior.  For example, resource "myroutefilter" in group
+	// "networking.example.net"). ExtensionRef MUST NOT be used for core and
+	// extended filters.
+	ExtensionRef *gwv1alpha2.LocalObjectReference `json:"ExtensionRef,omitempty"`
+}
 
 // ConnectionSettings is the connection settings configuration
 type ConnectionSettings struct {
