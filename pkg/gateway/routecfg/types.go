@@ -336,6 +336,8 @@ type GRPCRouteFilter struct {
 	ExtensionRef *gwv1alpha2.LocalObjectReference `json:"ExtensionRef,omitempty"`
 }
 
+var _ Filter = &GRPCRouteFilter{}
+
 // ConnectionSettings is the connection settings configuration
 type ConnectionSettings struct {
 	TCP  *TCPConnectionSettings  `json:"tcp,omitempty"`
