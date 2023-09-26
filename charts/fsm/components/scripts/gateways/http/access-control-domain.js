@@ -24,8 +24,8 @@
   aclsCache = new algo.Cache(
     acls => (
       {
-        blackList: parseIpList(acls?.blacklist),
-        whiteList: parseIpList(acls?.whitelist),
+        blackList: parseIpList(acls?.Blacklist),
+        whiteList: parseIpList(acls?.Whitelist),
       }
     )
   ),
@@ -65,7 +65,7 @@
 .pipeline()
 .handleMessageStart(
   msg => (
-    __domain?.AccessControlLists?.enableXFF && (
+    __domain?.AccessControlLists?.EnableXFF && (
       _ips = msg.head?.headers['x-forwarded-for']
     ),
     _ips ? (
@@ -92,7 +92,7 @@
     .replaceMessage(
       () => (
         aclDomainCounter.increase(),
-        new Message({ status: __domain?.AccessControlLists?.status || 403 }, __domain?.AccessControlLists?.message || '')
+        new Message({ status: __domain?.AccessControlLists?.Status || 403 }, __domain?.AccessControlLists?.Message || '')
       )
     )
   )

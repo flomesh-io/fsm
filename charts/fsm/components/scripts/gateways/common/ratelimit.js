@@ -11,13 +11,13 @@ pipy()
 
 .pipeline('ratelimit')
 .branch(
-  () => __port?.bpsLimit > 0, (
+  () => __port?.BpsLimit > 0, (
     $=>$.throttleDataRate(
       () => (
         new algo.Quota(
-          __port.bpsLimit,
+          __port.BpsLimit,
           {
-            produce: __port.bpsLimit,
+            produce: __port.BpsLimit,
             per: '1s',
           }
         )

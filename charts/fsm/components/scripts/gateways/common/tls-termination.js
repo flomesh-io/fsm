@@ -104,10 +104,10 @@
 .branch(
   () => Boolean(_tls), (
     $=>$.branch(
-      () => __port?.TLS?.mTLS, (
+      () => __port?.TLS?.MTLS, (
         $=>$.acceptTLS({
           certificate: (sni, cert) => (
-            __consumer = {sni, cert, mTLS: true, type: 'terminate'},
+            __consumer = {sni, cert, mtls: true, type: 'terminate'},
             {
               cert: _tls.cert,
               key: _tls.key,
