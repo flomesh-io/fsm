@@ -332,6 +332,12 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if flb.IsFLBEnabled(svc, r.fctx.KubeClient) {
 		log.Debug().Msgf("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
 
+		oldSvc, found := r.cache[req.NamespacedName]
+		if found && oldSvc.ResourceVersion == svc.ResourceVersion {
+			log.Info().Msgf("Service %s/%s hasn't changed or not processed yet, ResourceRevision=%s, skipping ...", req.Namespace, req.Name, svc.ResourceVersion)
+			return ctrl.Result{}, nil
+		}
+
 		r.cache[req.NamespacedName] = svc.DeepCopy()
 		mc := r.fctx.Config
 
