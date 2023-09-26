@@ -858,7 +858,7 @@ func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
 func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(backend, tcpRoute.Namespace); svcPort != nil {
+			if svcPort := backendRefToServicePortName(backend.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
 				services[svcPort.String()] = serviceInfo{
 					svcPortName: *svcPort,
 				}

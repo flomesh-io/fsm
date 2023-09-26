@@ -30,19 +30,19 @@
   ),
 
   makeRedirectHandler = cfg => (
-    msg => cfg?.statusCode ? (
+    msg => cfg?.StatusCode ? (
       (
-        scheme = cfg?.scheme || msg?.scheme || 'http',
-        hostname = cfg?.hostname || msg?.host,
-        path = resolvPath(cfg?.path) || msg?.path,
-        port = cfg?.port,
+        scheme = cfg?.Scheme || msg?.scheme || 'http',
+        hostname = cfg?.Hostname || msg?.host,
+        path = resolvPath(cfg?.Path) || msg?.path,
+        port = cfg?.Port,
       ) => (
         port && hostname && (
           hostname = hostname.split(':')[0] + ':' + port
         ),
         hostname && path ? (
           new Message({
-            status: cfg.statusCode,
+            status: cfg.StatusCode,
             headers: {
               Location: scheme + '://' + hostname + path
             }
@@ -56,7 +56,7 @@
     (svc?.Filters || []).filter(
       e => e?.Type === 'RequestRedirect'
     ).map(
-      e => makeRedirectHandler(e)
+      e => makeRedirectHandler(e.RequestRedirect)
     ).filter(
       e => e
     )?.[0]

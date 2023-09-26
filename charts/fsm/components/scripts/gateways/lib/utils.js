@@ -54,5 +54,24 @@
       ))() : null
     ),
 
+    getNonNegativeNumber: num => (
+      (
+        n = +num,
+        str = ('' + num).toLowerCase(),
+      ) => (
+        str.endsWith('m') ? (
+          n = +str.substring(0, str.length - 1) * 1000000
+        ) : str.endsWith('k') && (
+          n = +str.substring(0, str.length - 1) * 1000
+        ),
+        (n >= 0) ? (
+          n
+        ) : (
+          console.log(`Bad non-negative number: ${num}, set it to a default value of 0.`),
+          0
+        )
+      )
+    )(),
+
   }
 ))()
