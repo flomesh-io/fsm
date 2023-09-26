@@ -80,13 +80,13 @@ type Listener struct {
 	Listen             gwv1beta1.PortNumber   `json:"Listen"`
 	TLS                *TLS                   `json:"TLS,omitempty"`
 	AccessControlLists *AccessControlLists    `json:"AccessControlLists,omitempty"`
-	BpsLimit           *int64                 `json:"bpsLimit,omitempty"`
+	BpsLimit           *int64                 `json:"BpsLimit,omitempty"`
 }
 
 // AccessControlLists is the access control lists configuration
 type AccessControlLists struct {
-	Blacklist []string `json:"blacklist,omitempty"`
-	Whitelist []string `json:"whitelist,omitempty"`
+	Blacklist []string `json:"Blacklist,omitempty"`
+	Whitelist []string `json:"Whitelist,omitempty"`
 }
 
 // TLS is the TLS configuration
@@ -340,8 +340,8 @@ var _ Filter = &GRPCRouteFilter{}
 
 // ConnectionSettings is the connection settings configuration
 type ConnectionSettings struct {
-	TCP  *TCPConnectionSettings  `json:"tcp,omitempty"`
-	HTTP *HTTPConnectionSettings `json:"http,omitempty"`
+	TCP  *TCPConnectionSettings  `json:"TCP,omitempty"`
+	HTTP *HTTPConnectionSettings `json:"HTTP,omitempty"`
 }
 
 // TCPConnectionSettings is the TCP connection settings configuration
