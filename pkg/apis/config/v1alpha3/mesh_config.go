@@ -182,6 +182,12 @@ type TrafficSpec struct {
 	// names to exclude from inbound and outbound traffic interception by the
 	// sidecar proxy.
 	NetworkInterfaceExclusionList []string `json:"networkInterfaceExclusionList"`
+
+	// HTTP1PerRequestLoadBalancing defines a boolean indicating if load balancing based on request is enabled for http1.
+	HTTP1PerRequestLoadBalancing bool `json:"http1PerRequestLoadBalancing"`
+
+	// HTTP1PerRequestLoadBalancing defines a boolean indicating if load balancing based on request is enabled for http2.
+	HTTP2PerRequestLoadBalancing bool `json:"http2PerRequestLoadBalancing"`
 }
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.

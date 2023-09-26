@@ -109,6 +109,12 @@ type TrafficSpec struct {
 	// InboundExternalAuthorization defines a ruleset that, if enabled, will configure a remote external authorization endpoint
 	// for all inbound and ingress traffic in the mesh.
 	InboundExternalAuthorization ExternalAuthzSpec `json:"inboundExternalAuthorization,omitempty"`
+
+	// HTTP1PerRequestLoadBalancing defines a boolean indicating if load balancing based on request is enabled for http1.
+	HTTP1PerRequestLoadBalancing bool `json:"http1PerRequestLoadBalancing"`
+
+	// HTTP1PerRequestLoadBalancing defines a boolean indicating if load balancing based on request is enabled for http2.
+	HTTP2PerRequestLoadBalancing bool `json:"http2PerRequestLoadBalancing"`
 }
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.

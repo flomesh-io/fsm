@@ -32,6 +32,8 @@ data:
         "interceptionMode": {{.Values.fsm.trafficInterceptionMode | mustToJson}},
         "enableEgress": {{.Values.fsm.enableEgress | mustToJson}},
         "enablePermissiveTrafficPolicyMode": {{.Values.fsm.enablePermissiveTrafficPolicy | mustToJson}},
+        "http1PerRequestLoadBalancing": {{.Values.fsm.http1PerRequestLoadBalancing | mustToJson}},
+        "http2PerRequestLoadBalancing": {{.Values.fsm.http2PerRequestLoadBalancing | mustToJson}},
         "serviceAccessMode": {{.Values.fsm.serviceAccessMode | mustToJson}},
         "outboundPortExclusionList": {{.Values.fsm.outboundPortExclusionList | mustToJson}},
         "inboundPortExclusionList": {{.Values.fsm.inboundPortExclusionList | mustToJson}},
