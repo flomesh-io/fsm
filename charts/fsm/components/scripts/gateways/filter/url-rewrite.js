@@ -30,33 +30,37 @@
   ),
 
   makeHeadHandler = (path, cfg) => (
-    (cfg?.path?.type === 'ReplacePrefixMatch') ? (
-      cfg?.path?.replacePrefixMatch && (
+    (cfg?.Path?.Type === 'ReplacePrefixMatch') ? (
+      cfg?.Path?.ReplacePrefixMatch && (
         head => (
           head?.path?.length > path.length ? (
-            head.path = resolvPath(cfg.path.replacePrefixMatch) + head.path.substring(path.length)
+            head.path = resolvPath(cfg.Path.ReplacePrefixMatch) + head.path.substring(path.length)
           ) : (
-            head.path = resolvPath(cfg.path.replacePrefixMatch)
+            head.path = resolvPath(cfg.Path.ReplacePrefixMatch)
           ),
-          cfg?.hostname && head.headers && (
-            head.headers.host = cfg.hostname
+          cfg?.Hostname && head.headers && (
+            head.headers.host = cfg.Hostname
           )
         )
       )
     ) : (
-      (cfg?.path?.type === 'ReplaceFullPath') ? (
-        cfg?.path?.replaceFullPath && (
+      (cfg?.Path?.Type === 'ReplaceFullPath') ? (
+        cfg?.Path?.ReplaceFullPath && (
           head => (
             (
               prefix = (head?.path || '').split('?')[0],
               suffix = (head?.path || '').substring(prefix.length),
             ) => (
-              head.path = resolvPath(cfg.path.replaceFullPath) + suffix,
-              cfg?.hostname && head.headers && (
-                head.headers.host = cfg.hostname
+              head.path = resolvPath(cfg.Path.ReplaceFullPath) + suffix,
+              cfg?.Hostname && head.headers && (
+                head.headers.host = cfg.Hostname
               )
             )
           )()
+        )
+      ) : cfg?.Hostname ? (
+        head => head.headers && (
+          head.headers.host = cfg.Hostname
         )
       ) : null
     )
@@ -67,7 +71,7 @@
       handlers = (cfg?.Filters || []).filter(
         e => e?.Type === 'URLRewrite'
       ).map(
-        e => makeHeadHandler(path, e)
+        e => makeHeadHandler(path, e.UrlRewrite)
       ).filter(
         e => e
       )

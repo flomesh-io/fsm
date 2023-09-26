@@ -92,7 +92,7 @@ type AccessControlLists struct {
 // TLS is the TLS configuration
 type TLS struct {
 	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
-	MTLS         bool                  `json:"mTLS,omitempty"`
+	MTLS         bool                  `json:"MTLS,omitempty"`
 	Certificates []Certificate         `json:"Certificates,omitempty"`
 }
 
@@ -209,7 +209,7 @@ type ServiceConfig struct {
 	Endpoints          map[string]Endpoint   `json:"Endpoints"`
 	ConnectionSettings *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
 	RetryPolicy        *RetryPolicy          `json:"RetryPolicy,omitempty"`
-	MTLS               bool                  `json:"mTLS,omitempty"`
+	MTLS               bool                  `json:"MTLS,omitempty"`
 	UpstreamCert       *UpstreamCert         `json:"UpstreamCert,omitempty"`
 	SessionSticky      bool                  `json:"SessionSticky,omitempty"`
 	LoadBalancer       *commons.AlgoBalancer `json:"LoadBalancer,omitempty"`
@@ -219,7 +219,7 @@ type ServiceConfig struct {
 type Endpoint struct {
 	Weight       int               `json:"Weight"`
 	Tags         map[string]string `json:"Tags,omitempty"`
-	MTLS         bool              `json:"mTLS,omitempty"`
+	MTLS         bool              `json:"MTLS,omitempty"`
 	UpstreamCert *UpstreamCert     `json:"UpstreamCert,omitempty"`
 }
 

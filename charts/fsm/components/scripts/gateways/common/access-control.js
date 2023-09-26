@@ -21,8 +21,8 @@
   aclsCache = new algo.Cache(
     acls => (
       {
-        blackList: parseIpList(acls?.blacklist),
-        whiteList: parseIpList(acls?.whitelist),
+        blackList: parseIpList(acls?.Blacklist),
+        whiteList: parseIpList(acls?.Whitelist),
       }
     )
   ),
