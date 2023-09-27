@@ -85,6 +85,20 @@ func (p *PipyConf) setEnableEgress(enableEgress bool) (update bool) {
 	return
 }
 
+func (p *PipyConf) setHTTP1PerRequestLoadBalancing(http1PerRequestLoadBalancing bool) (update bool) {
+	if update = p.Spec.Traffic.HTTP1PerRequestLoadBalancing != http1PerRequestLoadBalancing; update {
+		p.Spec.Traffic.HTTP1PerRequestLoadBalancing = http1PerRequestLoadBalancing
+	}
+	return
+}
+
+func (p *PipyConf) setHTTP2PerRequestLoadBalancing(http2PerRequestLoadBalancing bool) (update bool) {
+	if update = p.Spec.Traffic.HTTP2PerRequestLoadBalancing != http2PerRequestLoadBalancing; update {
+		p.Spec.Traffic.HTTP2PerRequestLoadBalancing = http2PerRequestLoadBalancing
+	}
+	return
+}
+
 func (p *PipyConf) setEnablePermissiveTrafficPolicyMode(enablePermissiveTrafficPolicyMode bool) (update bool) {
 	if update = p.Spec.Traffic.enablePermissiveTrafficPolicyMode != enablePermissiveTrafficPolicyMode; update {
 		p.Spec.Traffic.enablePermissiveTrafficPolicyMode = enablePermissiveTrafficPolicyMode

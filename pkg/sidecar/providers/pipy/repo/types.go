@@ -192,6 +192,8 @@ type FeatureFlags struct {
 type TrafficSpec struct {
 	EnableEgress                      bool
 	enablePermissiveTrafficPolicyMode bool
+	HTTP1PerRequestLoadBalancing      bool
+	HTTP2PerRequestLoadBalancing      bool
 }
 
 // UpstreamDNSServers defines upstream DNS servers for local DNS Proxy.
