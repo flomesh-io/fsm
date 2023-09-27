@@ -159,6 +159,22 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
 						return true
 					}
+
+					for _, filter := range backend.Filters {
+						if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
+							if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+								return true
+							}
+						}
+					}
+				}
+
+				for _, filter := range rule.Filters {
+					if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
+						if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+							return true
+						}
+					}
 				}
 			}
 		}
@@ -172,6 +188,22 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
 						return true
+					}
+
+					for _, filter := range backend.Filters {
+						if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
+							if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+								return true
+							}
+						}
+					}
+				}
+
+				for _, filter := range rule.Filters {
+					if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
+						if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+							return true
+						}
 					}
 				}
 			}
