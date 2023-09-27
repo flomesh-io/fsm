@@ -76,7 +76,7 @@ fsm:
   sidecarDrivers:
     - sidecarName: pipy
       # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.90.3-2
+      sidecarImage: flomesh/pipy:0.90.3-38
       # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
       proxyServerPort: 6060
   # -- Curl image for control plane init container
@@ -89,7 +89,7 @@ fsm:
   # -- Pipy RepoServer
   repoServer:
     # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.90.3-2
+    image: flomesh/pipy-repo:0.90.3-38
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
@@ -398,8 +398,14 @@ fsm:
   # -- Enable permissive traffic policy mode
   enablePermissiveTrafficPolicy: true
 
+  # -- Specifies a boolean indicating if load balancing based on request is enabled for http1.
+  http1PerRequestLoadBalancing: false
+
+  # -- Specifies a boolean indicating if load balancing based on request is enabled for http2.
+  http2PerRequestLoadBalancing: true
+
   # -- Service access mode
-  serviceAccessMode: domain
+  serviceAccessMode: mixed
 
   # -- Traffic interception mode in the mesh
   trafficInterceptionMode: iptables
@@ -745,7 +751,7 @@ fsm:
     enableIngressBackendPolicy: true
     # -- Enables FSM's AccessControl policy API.
     # When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends
-    enableAccessControlPolicy: false
+    enableAccessControlPolicy: true
     # When enabled, FSM can issue certificates for external services.
     enableAccessCertPolicy: false
     # -- Enable Sidecar active health checks

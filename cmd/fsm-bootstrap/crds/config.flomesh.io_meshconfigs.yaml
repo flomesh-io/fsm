@@ -467,6 +467,14 @@ spec:
                     description: EnablePermissiveTrafficPolicyMode defines a boolean
                       indicating if permissive traffic policy mode is enabled mesh-wide.
                     type: boolean
+                  http1PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http1.
+                    type: boolean
+                  http2PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http2.
+                    type: boolean
                   inboundExternalAuthorization:
                     description: InboundExternalAuthorization defines a ruleset that,
                       if enabled, will configure a remote external authorization endpoint
@@ -534,6 +542,8 @@ spec:
                 required:
                 - enableEgress
                 - enablePermissiveTrafficPolicyMode
+                - http1PerRequestLoadBalancing
+                - http2PerRequestLoadBalancing
                 - inboundPortExclusionList
                 - interceptionMode
                 - outboundIPRangeExclusionList
@@ -1045,6 +1055,14 @@ spec:
                     description: EnablePermissiveTrafficPolicyMode defines a boolean
                       indicating if permissive traffic policy mode is enabled mesh-wide.
                     type: boolean
+                  http1PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http1.
+                    type: boolean
+                  http2PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http2.
+                    type: boolean
                   inboundExternalAuthorization:
                     description: InboundExternalAuthorization defines a ruleset that,
                       if enabled, will configure a remote external authorization endpoint
@@ -1127,6 +1145,8 @@ spec:
                 required:
                 - enableEgress
                 - enablePermissiveTrafficPolicyMode
+                - http1PerRequestLoadBalancing
+                - http2PerRequestLoadBalancing
                 - inboundPortExclusionList
                 - interceptionMode
                 - networkInterfaceExclusionList
@@ -1982,6 +2002,14 @@ spec:
                     description: EnablePermissiveTrafficPolicyMode defines a boolean
                       indicating if permissive traffic policy mode is enabled mesh-wide.
                     type: boolean
+                  http1PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http1.
+                    type: boolean
+                  http2PerRequestLoadBalancing:
+                    description: HTTP1PerRequestLoadBalancing defines a boolean indicating
+                      if load balancing based on request is enabled for http2.
+                    type: boolean
                   inboundExternalAuthorization:
                     description: InboundExternalAuthorization defines a ruleset that,
                       if enabled, will configure a remote external authorization endpoint
@@ -2064,6 +2092,8 @@ spec:
                 required:
                 - enableEgress
                 - enablePermissiveTrafficPolicyMode
+                - http1PerRequestLoadBalancing
+                - http2PerRequestLoadBalancing
                 - inboundPortExclusionList
                 - interceptionMode
                 - networkInterfaceExclusionList
