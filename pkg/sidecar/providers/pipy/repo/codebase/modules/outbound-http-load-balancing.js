@@ -1,5 +1,7 @@
 ((
   config = pipy.solve('config.js'),
+  http1PerRequestLoadBalancing = Boolean(config?.Spec?.Traffic?.HTTP1PerRequestLoadBalancing),
+  http2PerRequestLoadBalancing = Boolean(config?.Spec?.Traffic?.HTTP2PerRequestLoadBalancing),
   certChain = config?.Certificate?.CertChain,
   privateKey = config?.Certificate?.PrivateKey,
   isDebugEnabled = config?.Spec?.SidecarLogLevel === 'debug',
@@ -86,6 +88,7 @@
   _failoverObject: null,
   _targetObject: null,
   _muxHttpOptions: null,
+  _session: null,
 })
 
 .import({
@@ -103,6 +106,7 @@
 .pipeline()
 .onStart(
   () => void (
+    _session = {},
     (_clusterConfig = clusterConfigs.get(__cluster)) && (
       _muxHttpOptions = _clusterConfig.muxHttpOptions,
       _clusterConfig.failoverBalancer && (
@@ -111,10 +115,23 @@
     )
   )
 )
+.onEnd(() => void ( _session = null))
 .handleMessageStart(
   msg => (
     _clusterConfig && (
-      _targetObject = _clusterConfig.targetBalancer?.borrow?.({}),
+      __isHTTP2 ? (
+        http2PerRequestLoadBalancing ? (
+          _targetObject = _clusterConfig.targetBalancer?.borrow?.({})
+        ) : (
+          _targetObject = _clusterConfig.targetBalancer?.borrow?.()
+        )
+      ) : (
+        http1PerRequestLoadBalancing ? (
+          _targetObject = _clusterConfig.targetBalancer?.borrow?.(_session)
+        ) : (
+          _targetObject = _clusterConfig.targetBalancer?.borrow?.()
+        )
+      ),
       __target = _targetObject?.id
     ) && (
       (
