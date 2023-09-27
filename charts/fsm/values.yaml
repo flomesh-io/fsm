@@ -405,7 +405,7 @@ fsm:
   http2PerRequestLoadBalancing: true
 
   # -- Service access mode
-  serviceAccessMode: domain
+  serviceAccessMode: mixed
 
   # -- Traffic interception mode in the mesh
   trafficInterceptionMode: iptables
@@ -751,7 +751,7 @@ fsm:
     enableIngressBackendPolicy: true
     # -- Enables FSM's AccessControl policy API.
     # When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends
-    enableAccessControlPolicy: false
+    enableAccessControlPolicy: true
     # When enabled, FSM can issue certificates for external services.
     enableAccessCertPolicy: false
     # -- Enable Sidecar active health checks

@@ -138,7 +138,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.enableReconciler | bool | `false` | Enable reconciler for FSM's CRDs and mutating webhook |
 | fsm.enforceSingleMesh | bool | `true` | Enforce only deploying one mesh in the cluster |
 | fsm.featureFlags.enableAccessCertPolicy | bool | `false` |  |
-| fsm.featureFlags.enableAccessControlPolicy | bool | `false` | Enables FSM's AccessControl policy API. When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends |
+| fsm.featureFlags.enableAccessControlPolicy | bool | `true` | Enables FSM's AccessControl policy API. When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends |
 | fsm.featureFlags.enableAsyncProxyServiceMapping | bool | `false` | Enable async proxy-service mapping |
 | fsm.featureFlags.enableAutoDefaultRoute | bool | `false` | Eneable AutoDefaultRoute |
 | fsm.featureFlags.enableEgressPolicy | bool | `true` | Enable FSM's Egress policy API. When enabled, fine grained control over Egress (external) traffic is enforced |
@@ -448,7 +448,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.repoServer.image | string | `"flomesh/pipy-repo:0.90.3-38"` | Image used for Pipy RepoServer |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
-| fsm.serviceAccessMode | string | `"domain"` | Service access mode |
+| fsm.serviceAccessMode | string | `"mixed"` | Service access mode |
 | fsm.serviceLB.enabled | bool | `false` |  |
 | fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
