@@ -66,13 +66,13 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 }
 
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
-	for _, checkFunc := range []func(client.ObjectKey) bool{
+	for _, checkRoutableFunc := range []func(client.ObjectKey) bool{
 		c.isRoutableHTTPService,
 		c.isRoutableGRPCService,
 		c.isRoutableTLSService,
 		c.isRoutableTCPService,
 	} {
-		if checkFunc(service) {
+		if checkRoutableFunc(service) {
 			return true
 		}
 	}
