@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -18,6 +20,70 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
+func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectKey, ns string) bool {
+	if ref.Group != nil {
+		switch string(*ref.Group) {
+		case GroupCore, GroupFlomeshIo:
+			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
+		default:
+			return false
+		}
+	}
+
+	if ref.Kind != nil {
+		switch string(*ref.Kind) {
+		case KindService, KindServiceImport:
+			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
+		default:
+			return false
+		}
+	}
+
+	if ref.Namespace == nil {
+		if ns != service.Namespace {
+			return false
+		}
+	} else {
+		if string(*ref.Namespace) != service.Namespace {
+			return false
+		}
+	}
+
+	return string(ref.Name) == service.Name
+}
+
+func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
+	if ref.Group != nil {
+		switch string(*ref.Group) {
+		case "":
+			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
+		default:
+			return false
+		}
+	}
+
+	if ref.Kind != nil {
+		switch string(*ref.Kind) {
+		case KindSecret:
+			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
+		default:
+			return false
+		}
+	}
+
+	if ref.Namespace == nil {
+		if ns != secret.Namespace {
+			return false
+		}
+	} else {
+		if string(*ref.Namespace) != secret.Namespace {
+			return false
+		}
+	}
+
+	return string(ref.Name) == secret.Name
+}
+
 func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) string {
 	if secretRef.Namespace == nil {
 		return gw.Namespace
@@ -26,67 +92,38 @@ func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObje
 	return string(*secretRef.Namespace)
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
-	httpSpec := routecfg.HTTPRouteRuleSpec{
-		RouteType: routecfg.L7RouteTypeHTTP,
-		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
-	}
-
-	for _, rule := range httpRoute.Spec.Rules {
-		backends := map[string]routecfg.BackendServiceConfig{}
-
-		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, httpRoute.Namespace); svcPort != nil {
-				svcLevelFilters := make([]routecfg.Filter, 0)
-				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMHTTPRouteFilter(filter, httpRoute.Namespace, services))
-				}
-
-				backends[svcPort.String()] = routecfg.BackendServiceConfig{
-					Weight:  backendWeight(bk.BackendRef),
-					Filters: svcLevelFilters,
-				}
-
-				services[svcPort.String()] = serviceInfo{
-					svcPortName: *svcPort,
-				}
-			}
-		}
-
-		ruleLevelFilters := make([]routecfg.Filter, 0)
-		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMHTTPRouteFilter(ruleFilter, httpRoute.Namespace, services))
-		}
-
-		for _, m := range rule.Matches {
-			match := routecfg.HTTPTrafficMatch{
-				BackendService: backends,
-				Filters:        ruleLevelFilters,
-			}
-
-			if m.Path != nil {
-				match.Path = &routecfg.Path{
-					MatchType: httpPathMatchType(m.Path.Type),
-					Path:      httpPath(m.Path.Value),
-				}
-			}
-
-			if m.Method != nil {
-				match.Methods = []string{string(*m.Method)}
-			}
-
-			if len(m.Headers) > 0 {
-				match.Headers = httpMatchHeaders(m)
-			}
-
-			if len(m.QueryParams) > 0 {
-				match.RequestParams = httpMatchQueryParams(m)
-			}
-
-			httpSpec.Matches = append(httpSpec.Matches, match)
+func allowedListeners(
+	parentRef gwv1beta1.ParentReference,
+	routeGvk schema.GroupVersionKind,
+	validListeners []gwtypes.Listener,
+) []gwtypes.Listener {
+	var selectedListeners []gwtypes.Listener
+	for _, validListener := range validListeners {
+		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
+			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
+			selectedListeners = append(selectedListeners, validListener)
 		}
 	}
-	return httpSpec
+	log.Debug().Msgf("[GW-CACHE] selectedListeners: %v", selectedListeners)
+
+	if len(selectedListeners) == 0 {
+		return nil
+	}
+
+	allowedListeners := make([]gwtypes.Listener, 0)
+	for _, selectedListener := range selectedListeners {
+		if !selectedListener.AllowsKind(routeGvk) {
+			continue
+		}
+
+		allowedListeners = append(allowedListeners, selectedListener)
+	}
+
+	if len(allowedListeners) == 0 {
+		return nil
+	}
+
+	return allowedListeners
 }
 
 func httpPathMatchType(matchType *gwv1beta1.PathMatchType) routecfg.MatchType {
@@ -175,63 +212,6 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map
 	return params
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
-	grpcSpec := routecfg.GRPCRouteRuleSpec{
-		RouteType: routecfg.L7RouteTypeGRPC,
-		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
-	}
-
-	for _, rule := range grpcRoute.Spec.Rules {
-		backends := map[string]routecfg.BackendServiceConfig{}
-
-		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, grpcRoute.Namespace); svcPort != nil {
-				svcLevelFilters := make([]routecfg.Filter, 0)
-				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMGRPCRouteFilter(filter, grpcRoute.Namespace, services))
-				}
-
-				backends[svcPort.String()] = routecfg.BackendServiceConfig{
-					Weight:  backendWeight(bk.BackendRef),
-					Filters: svcLevelFilters,
-				}
-
-				services[svcPort.String()] = serviceInfo{
-					svcPortName: *svcPort,
-				}
-			}
-		}
-
-		ruleLevelFilters := make([]routecfg.Filter, 0)
-		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMGRPCRouteFilter(ruleFilter, grpcRoute.Namespace, services))
-		}
-
-		for _, m := range rule.Matches {
-			match := routecfg.GRPCTrafficMatch{
-				BackendService: backends,
-				Filters:        ruleLevelFilters,
-			}
-
-			if m.Method != nil {
-				match.Method = &routecfg.GRPCMethod{
-					MatchType: grpcMethodMatchType(m.Method.Type),
-					Service:   m.Method.Service,
-					Method:    m.Method.Method,
-				}
-			}
-
-			if len(m.Headers) > 0 {
-				match.Headers = grpcMatchHeaders(m)
-			}
-
-			grpcSpec.Matches = append(grpcSpec.Matches, match)
-		}
-	}
-
-	return grpcSpec
-}
-
 func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) routecfg.MatchType {
 	if matchType == nil {
 		return routecfg.MatchTypeExact
@@ -276,79 +256,6 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[routecfg.MatchType]map[st
 	}
 
 	return headers
-}
-
-func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) routecfg.TLSBackendService {
-	backends := routecfg.TLSBackendService{}
-
-	for _, rule := range tcpRoute.Spec.Rules {
-		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
-				backends[svcPort.String()] = backendWeight(bk)
-			}
-		}
-	}
-
-	return backends
-}
-
-func generateTLSPassthroughRouteCfg(tlsRoute *gwv1alpha2.TLSRoute) *string {
-	for _, rule := range tlsRoute.Spec.Rules {
-		for _, bk := range rule.BackendRefs {
-			// return the first ONE
-			return passthroughTarget(bk)
-		}
-	}
-
-	return nil
-}
-
-func generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) routecfg.RouteRule {
-	backends := routecfg.TCPRouteRule{}
-
-	for _, rule := range tcpRoute.Spec.Rules {
-		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
-				backends[svcPort.String()] = backendWeight(bk)
-			}
-		}
-	}
-
-	return backends
-}
-
-func allowedListeners(
-	parentRef gwv1beta1.ParentReference,
-	routeGvk schema.GroupVersionKind,
-	validListeners []gwtypes.Listener,
-) []gwtypes.Listener {
-	var selectedListeners []gwtypes.Listener
-	for _, validListener := range validListeners {
-		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
-			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
-		}
-	}
-	log.Debug().Msgf("[GW-CACHE] selectedListeners: %v", selectedListeners)
-
-	if len(selectedListeners) == 0 {
-		return nil
-	}
-
-	allowedListeners := make([]gwtypes.Listener, 0)
-	for _, selectedListener := range selectedListeners {
-		if !selectedListener.AllowsKind(routeGvk) {
-			continue
-		}
-
-		allowedListeners = append(allowedListeners, selectedListener)
-	}
-
-	if len(allowedListeners) == 0 {
-		return nil
-	}
-
-	return allowedListeners
 }
 
 func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs string) *routecfg.ServicePortName {
