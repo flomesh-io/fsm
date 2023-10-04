@@ -114,10 +114,11 @@ type defaulter struct {
 
 func newDefaulter(kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, cfg configurator.Configurator, meshName, fsmVersion string) *defaulter {
 	return &defaulter{
-		kubeClient: kubeClient,
-		cfg:        cfg,
-		meshName:   meshName,
-		fsmVersion: fsmVersion,
+		kubeClient:       kubeClient,
+		gatewayAPIClient: gatewayAPIClient,
+		cfg:              cfg,
+		meshName:         meshName,
+		fsmVersion:       fsmVersion,
 	}
 }
 
