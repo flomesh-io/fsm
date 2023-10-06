@@ -172,7 +172,7 @@
             (
               grpc = (path || '').split('/'),
             ) => (
-              (path === '/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo') || (
+              path?.startsWith('/grpc.reflection.') || (
                 (rule?.Method?.Service === grpc[1]) && (rule?.Method?.Method === grpc[2])
               )
             )
@@ -280,7 +280,7 @@
     !__domain && config?.Configs?.StripAnyHostPort && (
       handleMessage(msg?.head?.headers?.host?.split(':')?.[0], msg)
     ),
-    __route && (
+    __route && (__domain.RouteType === 'HTTP') && (
       _clientMaxBodySize = clientMaxBodySizeCache.get(__route)
     )
   )
