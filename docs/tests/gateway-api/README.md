@@ -229,7 +229,7 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv -H "Host: httptest.localhost" http://localhost:8090/bar
+❯ curl -iv http://httptest.localhost:8090/bar
 *   Trying 127.0.0.1:8090...
 * Connected to localhost (127.0.0.1) port 8090 (#0)
 > GET /bar HTTP/1.1
@@ -274,7 +274,7 @@ spec:
         app: grpcbin
     spec:
       containers:
-        - image: moul/grpcbin
+        - image: flomesh/grpcbin
           resources:
             limits:
               cpu: 100m
@@ -342,7 +342,7 @@ EOF
 
 #### Test it:
 ```shell
-grpcurl -vv -H "Host: grpctest.localhost" -plaintext -d '{"greeting":"Flomesh"}' localhost:8090 hello.HelloService/SayHello
+grpcurl -vv -plaintext -d '{"greeting":"Flomesh"}' grpctest.localhost:8090 hello.HelloService/SayHello
 
 Resolved method descriptor:
 rpc SayHello ( .hello.HelloRequest ) returns ( .hello.HelloResponse );
@@ -486,7 +486,7 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv --cacert https.crt -H "Host: httptest.localhost" https://httptest.localhost:7443/bar
+❯ curl -iv --cacert https.crt https://httptest.localhost:7443/bar
 *   Trying 127.0.0.1:7443...
 * Connected to httptest.localhost (127.0.0.1) port 7443 (#0)
 * ALPN: offers h2,http/1.1
@@ -605,7 +605,7 @@ EOF
 
 #### Test it:
 ```shell
-❯ curl -iv --cacert https.crt -H "Host: httptest.localhost" https://httptest.localhost:9443
+❯ curl -iv --cacert https.crt https://httptest.localhost:9443
 *   Trying 127.0.0.1:9443...
 * Connected to httptest.localhost (127.0.0.1) port 9443 (#0)
 * ALPN: offers h2,http/1.1
