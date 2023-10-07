@@ -650,8 +650,10 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 			prevSpec.Traffic.HTTP2PerRequestLoadBalancing != newSpec.Traffic.HTTP2PerRequestLoadBalancing ||
 			prevSpec.Traffic.ServiceAccessMode != newSpec.Traffic.ServiceAccessMode ||
 			prevSpec.Observability.Tracing != newSpec.Observability.Tracing ||
+			prevSpec.Observability.RemoteLogging != newSpec.Observability.RemoteLogging ||
 			prevSpec.Sidecar.LogLevel != newSpec.Sidecar.LogLevel ||
 			prevSpec.Sidecar.SidecarTimeout != newSpec.Sidecar.SidecarTimeout ||
+			prevSpec.Sidecar.LocalDNSProxy != newSpec.Sidecar.LocalDNSProxy ||
 			prevSpec.Traffic.InboundExternalAuthorization.Enable != newSpec.Traffic.InboundExternalAuthorization.Enable ||
 			// Only trigger an update on InboundExternalAuthorization field changes if the new spec has the 'Enable' flag set to true.
 			(newSpec.Traffic.InboundExternalAuthorization.Enable && (prevSpec.Traffic.InboundExternalAuthorization != newSpec.Traffic.InboundExternalAuthorization)) ||
