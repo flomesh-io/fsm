@@ -42,7 +42,8 @@ spec:
                   the queue
                 type: integer
               burst:
-                description: Burst is the number of requests allowed to be bursted
+                description: Burst is the number of requests allowed to be bursted,
+                  if not specified, it will be the same as Requests
                 type: integer
               requests:
                 description: Requests is the number of requests allowed per statTimeWindow

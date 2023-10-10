@@ -13,24 +13,24 @@ type RateLimitPolicySpec struct {
 	// +optional
 	// +kubebuilder:default=10
 	// Backlog is the number of requests allowed to wait in the queue
-	Backlog *int `json:"backlog" json:"backlog,omitempty"`
+	Backlog *int `json:"backlog,omitempty"`
 
 	// Requests is the number of requests allowed per statTimeWindow
-	Requests int `json:"requests" json:"requests,omitempty"`
+	Requests int `json:"requests"`
 
-	// Burst is the number of requests allowed to be bursted
+	// Burst is the number of requests allowed to be bursted, if not specified, it will be the same as Requests
 	// +optional
-	Burst *int `json:"burst" json:"burst,omitempty"`
+	Burst *int `json:"burst,omitempty"`
 
 	// StatTimeWindow is the time window in seconds
-	StatTimeWindow int `json:"statTimeWindow" json:"statTimeWindow,omitempty"`
+	StatTimeWindow int `json:"statTimeWindow"`
 
 	// ResponseStatusCode is the response status code to be returned when the rate limit is exceeded
-	ResponseStatusCode int `json:"responseStatusCode" json:"responseStatusCode,omitempty"`
+	ResponseStatusCode int `json:"responseStatusCode"`
 
 	// +optional
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
-	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty" json:"responseHeadersToAdd,omitempty"`
+	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy
