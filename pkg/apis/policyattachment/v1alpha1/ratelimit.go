@@ -7,13 +7,30 @@ import (
 
 // RateLimitPolicySpec defines the desired state of RateLimitPolicy
 type RateLimitPolicySpec struct {
-	TargetRef            gwv1alpha2.PolicyTargetReference `json:"targetRef"`
-	Backlog              int                              `json:"backlog" json:"backlog,omitempty"`
-	Requests             int                              `json:"requests" json:"requests,omitempty"`
-	Burst                int                              `json:"burst" json:"burst,omitempty"`
-	StatTimeWindow       int                              `json:"statTimeWindow" json:"statTimeWindow,omitempty"`
-	ResponseStatusCode   int                              `json:"responseStatusCode" json:"responseStatusCode,omitempty"`
-	ResponseHeadersToAdd map[string]string                `json:"responseHeadersToAdd,omitempty" json:"responseHeadersToAdd,omitempty"`
+	// TargetRef is the reference to the target resource to which the policy is applied
+	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+
+	// +optional
+	// +kubebuilder:default=10
+	// Backlog is the number of requests allowed to wait in the queue
+	Backlog *int `json:"backlog" json:"backlog,omitempty"`
+
+	// Requests is the number of requests allowed per statTimeWindow
+	Requests int `json:"requests" json:"requests,omitempty"`
+
+	// Burst is the number of requests allowed to be bursted
+	// +optional
+	Burst *int `json:"burst" json:"burst,omitempty"`
+
+	// StatTimeWindow is the time window in seconds
+	StatTimeWindow int `json:"statTimeWindow" json:"statTimeWindow,omitempty"`
+
+	// ResponseStatusCode is the response status code to be returned when the rate limit is exceeded
+	ResponseStatusCode int `json:"responseStatusCode" json:"responseStatusCode,omitempty"`
+
+	// +optional
+	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
+	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty" json:"responseHeadersToAdd,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy

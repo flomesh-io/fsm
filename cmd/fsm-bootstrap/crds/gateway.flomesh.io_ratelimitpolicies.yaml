@@ -37,25 +37,32 @@ spec:
             description: RateLimitPolicySpec defines the desired state of RateLimitPolicy
             properties:
               backlog:
+                default: 10
+                description: Backlog is the number of requests allowed to wait in
+                  the queue
                 type: integer
               burst:
+                description: Burst is the number of requests allowed to be bursted
                 type: integer
               requests:
+                description: Requests is the number of requests allowed per statTimeWindow
                 type: integer
               responseHeadersToAdd:
                 additionalProperties:
                   type: string
+                description: ResponseHeadersToAdd is the response headers to be added
+                  when the rate limit is exceeded
                 type: object
               responseStatusCode:
+                description: ResponseStatusCode is the response status code to be
+                  returned when the rate limit is exceeded
                 type: integer
               statTimeWindow:
+                description: StatTimeWindow is the time window in seconds
                 type: integer
               targetRef:
-                description: PolicyTargetReference identifies an API object to apply
-                  policy to. This should be used as part of Policy resources that
-                  can target Gateway API resources. For more information on how this
-                  policy attachment model works, and a sample Policy resource, refer
-                  to the policy attachment documentation for Gateway API.
+                description: TargetRef is the reference to the target resource to
+                  which the policy is applied
                 properties:
                   group:
                     description: Group is the group of the target resource.
@@ -88,8 +95,6 @@ spec:
                 - name
                 type: object
             required:
-            - backlog
-            - burst
             - requests
             - responseStatusCode
             - statTimeWindow

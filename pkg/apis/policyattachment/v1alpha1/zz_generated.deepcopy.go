@@ -88,6 +88,16 @@ func (in *RateLimitPolicyList) DeepCopyObject() runtime.Object {
 func (in *RateLimitPolicySpec) DeepCopyInto(out *RateLimitPolicySpec) {
 	*out = *in
 	in.TargetRef.DeepCopyInto(&out.TargetRef)
+	if in.Backlog != nil {
+		in, out := &in.Backlog, &out.Backlog
+		*out = new(int)
+		**out = **in
+	}
+	if in.Burst != nil {
+		in, out := &in.Burst, &out.Burst
+		*out = new(int)
+		**out = **in
+	}
 	if in.ResponseHeadersToAdd != nil {
 		in, out := &in.ResponseHeadersToAdd, &out.ResponseHeadersToAdd
 		*out = make(map[string]string, len(*in))
