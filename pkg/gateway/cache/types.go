@@ -66,6 +66,9 @@ const (
 
 	// TLSRoutesProcessorType is the type used to represent the TLS routes processor
 	TLSRoutesProcessorType ProcessorType = "tlsroutes"
+
+	// RateLimitPoliciesProcessorType is the type used to represent the rate limit policies processor
+	RateLimitPoliciesProcessorType ProcessorType = "ratelimits"
 )
 
 const (

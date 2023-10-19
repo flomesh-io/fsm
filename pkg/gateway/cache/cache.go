@@ -44,6 +44,7 @@ type GatewayCache struct {
 	grpcroutes     map[client.ObjectKey]struct{}
 	tcproutes      map[client.ObjectKey]struct{}
 	tlsroutes      map[client.ObjectKey]struct{}
+	ratelimits     map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -62,13 +63,14 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			ServiceImportsProcessorType: &ServiceImportsProcessor{},
 			EndpointSlicesProcessorType: &EndpointSlicesProcessor{},
 			//EndpointsProcessorType:      &EndpointsProcessor{},
-			SecretsProcessorType:        &SecretProcessor{},
-			GatewayClassesProcessorType: &GatewayClassesProcessor{},
-			GatewaysProcessorType:       &GatewaysProcessor{},
-			HTTPRoutesProcessorType:     &HTTPRoutesProcessor{},
-			GRPCRoutesProcessorType:     &GRPCRoutesProcessor{},
-			TCPRoutesProcessorType:      &TCPRoutesProcessor{},
-			TLSRoutesProcessorType:      &TLSRoutesProcessor{},
+			SecretsProcessorType:           &SecretProcessor{},
+			GatewayClassesProcessorType:    &GatewayClassesProcessor{},
+			GatewaysProcessorType:          &GatewaysProcessor{},
+			HTTPRoutesProcessorType:        &HTTPRoutesProcessor{},
+			GRPCRoutesProcessorType:        &GRPCRoutesProcessor{},
+			TCPRoutesProcessorType:         &TCPRoutesProcessor{},
+			TLSRoutesProcessorType:         &TLSRoutesProcessor{},
+			RateLimitPoliciesProcessorType: &RateLimitPoliciesProcessor{},
 		},
 
 		gateways:       make(map[string]client.ObjectKey),
@@ -81,6 +83,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		grpcroutes: make(map[client.ObjectKey]struct{}),
 		tcproutes:  make(map[client.ObjectKey]struct{}),
 		tlsroutes:  make(map[client.ObjectKey]struct{}),
+		ratelimits: make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}

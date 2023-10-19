@@ -3,6 +3,8 @@ package gateway
 import (
 	"context"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
@@ -81,6 +83,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyGatewayAPIGRPCRoute,
 		fsminformers.InformerKeyGatewayAPITLSRoute,
 		fsminformers.InformerKeyGatewayAPITCPRoute,
+		fsminformers.InformerKeyRateLimitPolicy,
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
@@ -203,6 +206,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITLSRoute)
 	case *gwv1alpha2.TCPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITCPRoute)
+	case *gwpav1alpha1.RateLimitPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyRateLimitPolicy)
 	}
 
 	return nil
@@ -269,6 +274,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayAPITCPRouteAdded,
 			Update: announcements.GatewayAPITCPRouteUpdated,
 			Delete: announcements.GatewayAPITCPRouteDeleted,
+		}
+	case fsminformers.InformerKeyRateLimitPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.RateLimitPolicyAdded,
+			Update: announcements.RateLimitPolicyUpdated,
+			Delete: announcements.RateLimitPolicyDeleted,
 		}
 	}
 

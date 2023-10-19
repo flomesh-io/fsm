@@ -386,6 +386,17 @@ const (
 
 	// GatewayAPITCPRouteUpdated is the type of announcement emitted when we observe an update to tcproutes.gateway.networking.k8s.io
 	GatewayAPITCPRouteUpdated Kind = "gwapi-tcproute-updated"
+
+	// ---
+
+	// RateLimitPolicyAdded is the type of announcement emitted when we observe an addition of ratelimitpolicies.gateway.flomesh.io
+	RateLimitPolicyAdded Kind = "ratelimitpolicy-added"
+
+	// RateLimitPolicyDeleted the type of announcement emitted when we observe a deletion of ratelimitpolicies.gateway.flomesh.io
+	RateLimitPolicyDeleted Kind = "ratelimitpolicy-deleted"
+
+	// RateLimitPolicyUpdated is the type of announcement emitted when we observe an update to ratelimitpolicies.gateway.flomesh.io
+	RateLimitPolicyUpdated Kind = "ratelimitpolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

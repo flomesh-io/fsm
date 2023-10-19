@@ -429,6 +429,15 @@ const (
 	TLSRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
 )
 
+// PolicyAttachment constants
+const (
+	// RateLimitPolicyMutatingWebhookPath is the path at which the RateLimitPolicy mutating webhook is served
+	RateLimitPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
+
+	// RateLimitPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
+	RateLimitPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
+)
+
 // PIPY Repo constants
 const (
 	// DefaultPipyRepoPath is the default path for the PIPY repo

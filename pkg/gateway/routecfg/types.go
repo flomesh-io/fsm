@@ -4,6 +4,7 @@ package routecfg
 import (
 	"fmt"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -193,12 +194,13 @@ type GRPCMethod struct {
 
 // RateLimit is the rate limit configuration
 type RateLimit struct {
-	Backlog              int               `json:"Backlog"`
-	Requests             int               `json:"Requests"`
-	Burst                int               `json:"Burst"`
-	StatTimeWindow       int               `json:"StatTimeWindow"`
-	ResponseStatusCode   int               `json:"ResponseStatusCode"`
-	ResponseHeadersToAdd map[string]string `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
+	Mode                 gwpav1alpha1.RateLimitPolicyMode `json:"Mode"`
+	Backlog              int                              `json:"Backlog"`
+	Requests             int                              `json:"Requests"`
+	Burst                int                              `json:"Burst"`
+	StatTimeWindow       int                              `json:"StatTimeWindow"`
+	ResponseStatusCode   int                              `json:"ResponseStatusCode"`
+	ResponseHeadersToAdd map[string]string                `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
 // PassthroughRouteMapping is the passthrough route mapping configuration

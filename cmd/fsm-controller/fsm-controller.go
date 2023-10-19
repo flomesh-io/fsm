@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -239,6 +241,7 @@ func main() {
 	smiTrafficTargetClientSet := smiAccessClient.NewForConfigOrDie(kubeConfig)
 	gatewayAPIClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 	namespacedIngressClient := nsigClientset.NewForConfigOrDie(kubeConfig)
+	policyAttachmentClient := policyAttachmentClientset.NewForConfigOrDie(kubeConfig)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
 		informers.WithKubeClient(kubeClient),
@@ -250,6 +253,7 @@ func main() {
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
+		informers.WithPolicyAttachmentClient(policyAttachmentClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")

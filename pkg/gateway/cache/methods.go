@@ -200,6 +200,50 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 	return false
 }
 
+func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTargetReference) bool {
+	if targetRef.Group != "gateway.networking.k8s.io" {
+		return false
+	}
+
+	if targetRef.Kind == "Gateway" {
+		if len(c.gateways) == 0 {
+			return false
+		}
+
+		for _, gw := range c.gateways {
+			if gwutils.IsRefToTarget(targetRef, gw) {
+				return true
+			}
+		}
+	}
+
+	if targetRef.Kind == "HTTPRoute" {
+		if len(c.httproutes) == 0 {
+			return false
+		}
+
+		for route := range c.httproutes {
+			if gwutils.IsRefToTarget(targetRef, route) {
+				return true
+			}
+		}
+	}
+
+	if targetRef.Kind == "GRPCRoute" {
+		if len(c.grpcroutes) == 0 {
+			return false
+		}
+
+		for route := range c.grpcroutes {
+			if gwutils.IsRefToTarget(targetRef, route) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) bool {
 	//ctx := context.TODO()
 	for _, key := range c.gateways {

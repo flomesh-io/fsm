@@ -30,6 +30,8 @@ import (
 	"strings"
 	"time"
 
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,6 +103,15 @@ func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKe
 	}
 
 	return string(parentRef.Name) == gateway.Name
+}
+
+// IsRefToTarget returns true if the target reference is to the target object
+func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.ObjectKey) bool {
+	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.Namespace {
+		return false
+	}
+
+	return string(targetRef.Name) == object.Name
 }
 
 // ObjectKey returns the object key for the given object
@@ -242,4 +253,19 @@ func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gw
 func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	g := glob.MustCompile(wildcardHostname, '.')
 	return g.Match(hostname)
+}
+
+func IsActiveRoute(parentStatus []gwv1beta1.RouteParentStatus) bool {
+	if len(parentStatus) == 0 {
+		return false
+	}
+
+	for _, p := range parentStatus {
+		if metautil.IsStatusConditionTrue(p.Conditions, string(gwv1beta1.RouteConditionAccepted)) &&
+			metautil.IsStatusConditionTrue(p.Conditions, string(gwv1beta1.RouteConditionResolvedRefs)) {
+			return true
+		}
+	}
+
+	return false
 }
