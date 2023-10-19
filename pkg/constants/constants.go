@@ -529,6 +529,9 @@ const (
 	// FLBTagsAnnotation is the annotation used to indicate the tags
 	FLBTagsAnnotation = FLBPrefix + "/tags"
 
+	// FLBServiceHashAnnotation is the annotation used to indicate the hash of the service
+	FLBServiceHashAnnotation = FLBPrefix + "/hash"
+
 	// FLBSecretLabel is the label used to indicate the secret
 	FLBSecretLabel = FLBPrefix + "/config"
 
