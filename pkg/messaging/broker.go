@@ -573,6 +573,8 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		//
 		// K8s native resource events
 		//
+		// Namepace event
+		announcements.NamespaceUpdated,
 		// Endpoint event
 		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
 		// k8s Ingress event
