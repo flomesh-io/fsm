@@ -3,6 +3,7 @@ package messaging
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -570,11 +571,31 @@ func (b *Broker) Unsub(pubSub *pubsub.PubSub, ch chan interface{}) {
 func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 	switch msg.Kind {
 	case
+		// Namepace event
+		announcements.NamespaceUpdated:
+		prevExclusionList := ``
+		newExclusionList := ``
+		if ns, okPrevCast := msg.OldObj.(*corev1.Namespace); okPrevCast {
+			if len(ns.Annotations) > 0 {
+				prevExclusionList = ns.Annotations[constants.ServiceExclusionListAnnotation]
+			}
+		}
+		if ns, okNewCast := msg.NewObj.(*corev1.Namespace); okNewCast {
+			if len(ns.Annotations) > 0 {
+				newExclusionList = ns.Annotations[constants.ServiceExclusionListAnnotation]
+			}
+		}
+		if !strings.EqualFold(prevExclusionList, newExclusionList) {
+			return &proxyUpdateEvent{
+				msg:   msg,
+				topic: announcements.ProxyUpdate.String(),
+			}
+		}
+		return nil
+	case
 		//
 		// K8s native resource events
 		//
-		// Namepace event
-		announcements.NamespaceUpdated,
 		// Endpoint event
 		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
 		// k8s Ingress event
