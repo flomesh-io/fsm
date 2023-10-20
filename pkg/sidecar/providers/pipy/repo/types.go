@@ -210,20 +210,55 @@ type LocalDNSProxy struct {
 	UpstreamDNSServers *UpstreamDNSServers `json:"UpstreamDNSServers,omitempty"`
 }
 
+// TracingSpec is the type to represent tracing configuration.
+type TracingSpec struct {
+	// Address defines the tracing collectio's hostname.
+	Address string `json:"address,omitempty"`
+
+	// Endpoint defines the API endpoint for tracing requests sent to the collector.
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// SampledFraction defines the sampled fraction.
+	SampledFraction string `json:"sampledFraction,omitempty"`
+}
+
+// RemoteLoggingSpec is the type to represent remote logging configuration.
+type RemoteLoggingSpec struct {
+	// Level defines the remote logging's level.
+	Level string `json:"level,omitempty"`
+	// Address defines the remote logging's hostname.
+	Address string `json:"address,omitempty"`
+	// Endpoint defines the API endpoint for remote logging requests sent to the collector.
+	Endpoint string `json:"endpoint,omitempty"`
+	// Authorization defines the access entity that allows to authorize someone in remote logging service.
+	Authorization string `json:"authorization,omitempty"`
+	// SampledFraction defines the sampled fraction.
+	SampledFraction string `json:"sampledFraction,omitempty"`
+}
+
+// ObservabilitySpec is the type to represent OSM's observability configurations.
+type ObservabilitySpec struct {
+	// Tracing defines OSM's tracing configuration.
+	Tracing *TracingSpec `json:"tracing,omitempty"`
+
+	// RemoteLogging defines OSM's remote logging configuration.
+	RemoteLogging *RemoteLoggingSpec `json:"remoteLogging,omitempty"`
+}
+
 // MeshConfigSpec represents the spec of mesh config
 type MeshConfigSpec struct {
-	SidecarLogLevel    string
-	SidecarTimeout     int
-	RemoteLoggingLevel uint16
-	Traffic            TrafficSpec
-	FeatureFlags       FeatureFlags
-	Probes             struct {
+	SidecarLogLevel string
+	SidecarTimeout  int
+	Traffic         TrafficSpec
+	FeatureFlags    FeatureFlags
+	Probes          struct {
 		ReadinessProbes []v1.Probe `json:"ReadinessProbes,omitempty"`
 		LivenessProbes  []v1.Probe `json:"LivenessProbes,omitempty"`
 		StartupProbes   []v1.Probe `json:"StartupProbes,omitempty"`
 	}
 	ClusterSet    map[string]string
-	LocalDNSProxy *LocalDNSProxy `json:"LocalDNSProxy,omitempty"`
+	LocalDNSProxy *LocalDNSProxy    `json:"LocalDNSProxy,omitempty"`
+	Observability ObservabilitySpec `json:"Observability,omitempty"`
 }
 
 // Certificate represents an x509 certificate.
