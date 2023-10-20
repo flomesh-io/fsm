@@ -143,6 +143,31 @@ func (c *client) ListMonitoredNamespaces() ([]string, error) {
 	return namespaces, nil
 }
 
+func (c *client) isExclusionService(svc *corev1.Service) bool {
+	exclude, ok := svc.Annotations[constants.ServiceExclusionAnnotation]
+	if ok {
+		switch strings.ToLower(exclude) {
+		case "enabled", "yes", "true":
+			return true
+		default:
+			return false
+		}
+	}
+	if ns := c.GetNamespace(svc.Namespace); ns != nil {
+		if svcsToExcludeStr, exist := ns.Annotations[constants.ServiceExclusionListAnnotation]; exist {
+			svcsToExclude := strings.Split(svcsToExcludeStr, ",")
+			for _, svcStr := range svcsToExclude {
+				svcName := strings.TrimSpace(svcStr)
+				svcName = strings.ToLower(svcName)
+				if strings.EqualFold(svcName, svc.Name) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 // GetService retrieves the Kubernetes Services resource for the given MeshService
 func (c *client) GetService(svc service.MeshService) *corev1.Service {
 	// client-go cache uses <namespace>/<name> as key
@@ -160,8 +185,10 @@ func (c *client) ListServices() []*corev1.Service {
 
 	for _, serviceInterface := range c.informers.List(fsminformers.InformerKeyService) {
 		svc := serviceInterface.(*corev1.Service)
-
 		if !c.IsMonitoredNamespace(svc.Namespace) {
+			continue
+		}
+		if c.isExclusionService(svc) {
 			continue
 		}
 		services = append(services, svc)

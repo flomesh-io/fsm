@@ -300,13 +300,15 @@ func (c *Client) GetProxyServerPort() uint32 {
 
 // GetSidecarDisabledMTLS returns the status of mTLS
 func (c *Client) GetSidecarDisabledMTLS() bool {
-	disabledMTLS := false
-	sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
-	sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
-	for _, sidecarDriver := range sidecarDrivers {
-		if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
-			disabledMTLS = sidecarDriver.SidecarDisabledMTLS
-			break
+	disabledMTLS := c.getMeshConfig().Spec.Sidecar.SidecarDisabledMTLS
+	if !disabledMTLS {
+		sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
+		sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
+		for _, sidecarDriver := range sidecarDrivers {
+			if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
+				disabledMTLS = sidecarDriver.SidecarDisabledMTLS
+				break
+			}
 		}
 	}
 	return disabledMTLS
