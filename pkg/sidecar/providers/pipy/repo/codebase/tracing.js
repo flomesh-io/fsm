@@ -1,14 +1,15 @@
 (
   (
+    config = pipy.solve('config.js'),
     {
       namespace,
       kind,
       name,
       pod,
     } = pipy.solve('utils.js'),
-    tracingAddress = os.env.TRACING_ADDRESS,
-    tracingEndpoint = (os.env.TRACING_ENDPOINT || '/api/v2/spans'),
-    tracingLimitedID = os.env.TRACING_SAMPLED_FRACTION && (os.env.TRACING_SAMPLED_FRACTION * Math.pow(2, 63)),
+    tracingAddress = config?.Spec?.Observability?.tracing?.address,
+    tracingEndpoint = (config?.Spec?.Observability?.tracing?.endpoint || '/api/v2/spans'),
+    tracingLimitedID = config?.Spec?.Observability?.tracing?.sampledFraction && (+config.Spec.Observability.tracing.sampledFraction * Math.pow(2, 63)),
     logZipkin = tracingAddress && new logging.JSONLogger('zipkin').toHTTP('http://' + tracingAddress + tracingEndpoint, {
       batch: {
         timeout: 1,
