@@ -1,7 +1,7 @@
 ((
   config = pipy.solve('config.js'),
   dnsServers = { primary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Primary, secondary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Secondary },
-  dnsSvcAddress = (dnsServers?.primary || dnsServers?.secondary || os.env.LOCAL_DNS_PROXY_PRIMARY_UPSTREAM || '10.96.0.10') + ":53",
+  dnsSvcAddress = (dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
   dnsRecordSets = {},
 ) => (
   config?.DNSResolveDB && (
