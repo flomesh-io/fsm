@@ -143,71 +143,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 		},
 	}
 
-	if injCtx.Configurator.IsTracingEnabled() {
-		if len(injCtx.Configurator.GetTracingHost()) > 0 && injCtx.Configurator.GetTracingPort() > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "TRACING_ADDRESS",
-				Value: fmt.Sprintf("%s:%d", injCtx.Configurator.GetTracingHost(), injCtx.Configurator.GetTracingPort()),
-			})
-		}
-		if len(injCtx.Configurator.GetTracingEndpoint()) > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "TRACING_ENDPOINT",
-				Value: injCtx.Configurator.GetTracingEndpoint(),
-			})
-		}
-		sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-			Name:  "TRACING_SAMPLED_FRACTION",
-			Value: fmt.Sprintf("%0.2f", injCtx.Configurator.GetTracingSampledFraction()),
-		})
-	}
-
-	if injCtx.Configurator.IsRemoteLoggingEnabled() {
-		sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-			Name:  "REMOTE_LOGGING_LEVEL",
-			Value: fmt.Sprintf("%d", injCtx.Configurator.GetRemoteLoggingLevel()),
-		})
-		if len(injCtx.Configurator.GetRemoteLoggingHost()) > 0 && injCtx.Configurator.GetRemoteLoggingPort() > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "REMOTE_LOGGING_ADDRESS",
-				Value: fmt.Sprintf("%s:%d", injCtx.Configurator.GetRemoteLoggingHost(), injCtx.Configurator.GetRemoteLoggingPort()),
-			})
-		}
-		if len(injCtx.Configurator.GetRemoteLoggingEndpoint()) > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "REMOTE_LOGGING_ENDPOINT",
-				Value: injCtx.Configurator.GetRemoteLoggingEndpoint(),
-			})
-		}
-		if len(injCtx.Configurator.GetRemoteLoggingAuthorization()) > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "REMOTE_LOGGING_AUTHORIZATION",
-				Value: injCtx.Configurator.GetRemoteLoggingAuthorization(),
-			})
-		}
-		sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-			Name:  "REMOTE_LOGGING_SAMPLED_FRACTION",
-			Value: fmt.Sprintf("%0.2f", injCtx.Configurator.GetRemoteLoggingSampledFraction()),
-		})
-	}
-
 	if injCtx.Configurator.IsLocalDNSProxyEnabled() {
-		sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-			Name:  "LOCAL_DNS_PROXY",
-			Value: "true",
-		})
-		if len(injCtx.Configurator.GetLocalDNSProxyPrimaryUpstream()) > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "LOCAL_DNS_PROXY_PRIMARY_UPSTREAM",
-				Value: injCtx.Configurator.GetLocalDNSProxyPrimaryUpstream(),
-			})
-		}
-		if len(injCtx.Configurator.GetLocalDNSProxySecondaryUpstream()) > 0 {
-			sidecarContainer.Env = append(sidecarContainer.Env, corev1.EnvVar{
-				Name:  "LOCAL_DNS_PROXY_SECONDARY_UPSTREAM",
-				Value: injCtx.Configurator.GetLocalDNSProxySecondaryUpstream(),
-			})
-		}
 		if fsmControllerSvc, err := getFSMControllerSvc(injCtx.KubeClient, injCtx.FsmNamespace); err == nil {
 			pod.Spec.HostAliases = append(pod.Spec.HostAliases, corev1.HostAlias{
 				IP:        fsmControllerSvc.Spec.ClusterIP,

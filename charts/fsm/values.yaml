@@ -72,6 +72,8 @@ fsm:
   sidecarClass: pipy
   # -- Sidecar image for Linux workloads
   sidecarImage: ""
+  # -- Sidecar runs without mTLS
+  sidecarDisabledMTLS: false
   # -- Sidecar drivers supported by fsm
   sidecarDrivers:
     - sidecarName: pipy

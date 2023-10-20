@@ -7,10 +7,10 @@
       name,
       pod,
     } = pipy.solve('utils.js'),
-    address = os.env.REMOTE_LOGGING_ADDRESS,
-    tracingLimitedID = os.env.REMOTE_LOGGING_SAMPLED_FRACTION && (os.env.REMOTE_LOGGING_SAMPLED_FRACTION * Math.pow(2, 63)),
+    address = config?.Spec?.Observability?.remoteLogging?.address,
+    tracingLimitedID = config?.Spec?.Observability?.remoteLogging?.sampledFraction && (+config.Spec.Observability.remoteLogging.sampledFraction * Math.pow(2, 63)),
     logLogging = address && new logging.JSONLogger('access-logger').toHTTP('http://' + address +
-      (os.env.REMOTE_LOGGING_ENDPOINT || '/?query=insert%20into%20log(message)%20format%20JSONAsString'), {
+      (config?.Spec?.Observability?.remoteLogging?.endpoint || '/?query=insert%20into%20log(message)%20format%20JSONAsString'), {
       batch: {
         timeout: 1,
         interval: 1,
@@ -20,7 +20,7 @@
       },
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': os.env.REMOTE_LOGGING_AUTHORIZATION || ''
+        'Authorization': config?.Spec?.Observability?.remoteLogging?.authorization || ''
       }
     }).log,
     {
@@ -56,8 +56,8 @@
           sampled = false,
         ) => (
           msg?.head?.headers && (
-            (config?.Spec?.RemoteLoggingLevel > 0) ? (
-              ((config.Spec.RemoteLoggingLevel === 2 && isOutbound) || !msg.head.headers['x-b3-traceid']) && (
+            (config?.Spec?.Observability?.remoteLogging?.level > 0) ? (
+              ((config.Spec.Observability.remoteLogging.level === 2 && isOutbound) || !msg.head.headers['x-b3-traceid']) && (
                 initTracingHeaders(msg.head.headers)
               ),
               sampled = (!tracingLimitedID || toInt63(msg.head.headers['x-b3-traceid']) < tracingLimitedID)
