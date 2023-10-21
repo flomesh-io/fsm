@@ -442,19 +442,22 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 	if strings.EqualFold(mode, ConsulDiscoveryService) {
 		ports := make([]int, 0)
 		for port, appProtocol := range svcMeta.Ports {
-			specPort := apiv1.ServicePort{
-				Name:       fmt.Sprintf("%s%d", appProtocol, port),
-				Protocol:   apiv1.ProtocolTCP,
-				Port:       int32(port),
-				TargetPort: intstr.FromInt(int(port)),
+			if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
+				specPort := apiv1.ServicePort{
+					Name:       fmt.Sprintf("%s%d", appProtocol, port),
+					Protocol:   apiv1.ProtocolTCP,
+					Port:       int32(port),
+					TargetPort: intstr.FromInt(int(port)),
+				}
+				if appProtocol == constants.ProtocolHTTP {
+					specPort.AppProtocol = &protocolHTTP
+				}
+				if appProtocol == constants.ProtocolGRPC {
+					specPort.AppProtocol = &protocolGRPC
+				}
+				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 			}
-			if appProtocol == constants.ProtocolHTTP {
-				specPort.AppProtocol = &protocolHTTP
-			}
-			if appProtocol == constants.ProtocolGRPC {
-				specPort.AppProtocol = &protocolGRPC
-			}
-			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
+			ports = append(ports, int(port))
 		}
 		sort.Ints(ports)
 		for addr := range svcMeta.Addresses {
