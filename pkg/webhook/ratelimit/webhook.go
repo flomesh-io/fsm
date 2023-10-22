@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/flomesh-io/fsm/pkg/utils"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
@@ -99,41 +104,32 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	if policy.Spec.TargetRef.Group == "gateway.networking.k8s.io" && policy.Spec.TargetRef.Kind == "Gateway" {
-		// do nothing
-	}
-
-	if policy.Spec.TargetRef.Group == "gateway.networking.k8s.io" && (policy.Spec.TargetRef.Kind == "HTTPRoute" || policy.Spec.TargetRef.Kind == "GRPCRoute") {
-		if policy.Spec.HostnameBasedRateLimit != nil {
-			if policy.Spec.HostnameBasedRateLimit.Mode == nil {
-				policy.Spec.HostnameBasedRateLimit.Mode = rateLimitPolicyModePointer(gwpav1alpha1.RateLimitPolicyModeLocal)
-			}
-
-			if policy.Spec.HostnameBasedRateLimit.Backlog == nil {
-				policy.Spec.HostnameBasedRateLimit.Backlog = pointer.Int(10)
-			}
-
-			if policy.Spec.HostnameBasedRateLimit.Burst == nil {
-				policy.Spec.HostnameBasedRateLimit.Burst = &policy.Spec.HostnameBasedRateLimit.Requests
-			}
-		}
-
-		if policy.Spec.RouteBasedRateLimit != nil {
-			if policy.Spec.RouteBasedRateLimit.Mode == nil {
-				policy.Spec.RouteBasedRateLimit.Mode = rateLimitPolicyModePointer(gwpav1alpha1.RateLimitPolicyModeLocal)
-			}
-
-			if policy.Spec.RouteBasedRateLimit.Backlog == nil {
-				policy.Spec.RouteBasedRateLimit.Backlog = pointer.Int(10)
-			}
-
-			if policy.Spec.RouteBasedRateLimit.Burst == nil {
-				policy.Spec.RouteBasedRateLimit.Burst = &policy.Spec.RouteBasedRateLimit.Requests
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
+		if policy.Spec.TargetRef.Kind == constants.HTTPRouteKind ||
+			policy.Spec.TargetRef.Kind == constants.GRPCRouteKind {
+			if len(policy.Spec.Match.Hostnames) > 0 || policy.Spec.Match.Route != nil {
+				if policy.Spec.RateLimit.L7RateLimit != nil {
+					setDefaults(policy)
+				}
 			}
 		}
 	}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
+}
+
+func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
+	if policy.Spec.RateLimit.L7RateLimit.Mode == nil {
+		policy.Spec.RateLimit.L7RateLimit.Mode = rateLimitPolicyModePointer(gwpav1alpha1.RateLimitPolicyModeLocal)
+	}
+
+	if policy.Spec.RateLimit.L7RateLimit.Backlog == nil {
+		policy.Spec.RateLimit.L7RateLimit.Backlog = pointer.Int(10)
+	}
+
+	if policy.Spec.RateLimit.L7RateLimit.Burst == nil {
+		policy.Spec.RateLimit.L7RateLimit.Burst = &policy.Spec.RateLimit.L7RateLimit.Requests
+	}
 }
 
 func rateLimitPolicyModePointer(mode gwpav1alpha1.RateLimitPolicyMode) *gwpav1alpha1.RateLimitPolicyMode {
@@ -176,26 +172,116 @@ func doValidation(obj interface{}) error {
 		return nil
 	}
 
-	if policy.Spec.TargetRef.Group == "gateway.networking.k8s.io" && policy.Spec.TargetRef.Kind == "Gateway" {
-		if policy.Spec.Match.Port == nil {
-			return fmt.Errorf("port is required for TargetRef Gateway")
-		}
+	errorList := validateTargetRef(policy.Spec.TargetRef)
+	errorList = append(errorList, validateMatch(policy)...)
+	errorList = append(errorList, validateConfig(policy)...)
 
-		if policy.Spec.RateLimit.L4RateLimit == nil {
-			return fmt.Errorf("bps is required for TargetRef Gateway")
-		}
-
-		if policy.Spec.RateLimit.L7RateLimit != nil {
-			return fmt.Errorf("either hostnameBasedRateLimit or routeBasedRateLimit is required for TargetRef Gateway")
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == "gateway.networking.k8s.io" && (policy.Spec.TargetRef.Kind == "HTTPRoute" || policy.Spec.TargetRef.Kind == "GRPCRoute") {
-
-		if policy.Spec.RateLimit.L7RateLimit == nil {
-			return fmt.Errorf("either hostnameBasedRateLimit or routeBasedRateLimit is required for TargetRef HTTPRoute or GRPCRoute")
-		}
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
 	}
 
 	return nil
+}
+
+func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
+	var errs field.ErrorList
+
+	if ref.Group != constants.GatewayAPIGroup {
+		path := field.NewPath("spec").Child("targetRef").Child("group")
+		errs = append(errs, field.Invalid(path, ref.Group, "group must be set to gateway.networking.k8s.io"))
+	}
+
+	switch ref.Kind {
+	case constants.GatewayKind, constants.HTTPRouteKind, constants.GRPCRouteKind:
+		// do nothing
+	default:
+		path := field.NewPath("spec").Child("targetRef").Child("kind")
+		errs = append(errs, field.Invalid(path, ref.Kind, "kind must be set to Gateway, HTTPRoute or GRPCRoute"))
+	}
+
+	return errs
+}
+
+func validateMatch(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
+	var errs field.ErrorList
+
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup && policy.Spec.TargetRef.Kind == constants.GatewayKind {
+		if policy.Spec.Match.Port == nil && len(policy.Spec.Match.Hostnames) == 0 {
+			path := field.NewPath("spec").Child("match")
+			errs = append(errs, field.Invalid(path, policy.Spec.Match, "either port or hostnames must be set for Gateway target"))
+		}
+
+		if policy.Spec.Match.Port != nil && len(policy.Spec.Match.Hostnames) > 0 {
+			path := field.NewPath("spec").Child("match")
+			errs = append(errs, field.Invalid(path, policy.Spec.Match, "only one of port or hostnames can be set for Gateway target"))
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
+		(policy.Spec.TargetRef.Kind == constants.HTTPRouteKind || policy.Spec.TargetRef.Kind == constants.GRPCRouteKind) {
+		if len(policy.Spec.Match.Hostnames) == 0 && policy.Spec.Match.Route == nil {
+			path := field.NewPath("spec").Child("match")
+			errs = append(errs, field.Invalid(path, policy.Spec.Match, "either hostnames or route must be set for HTTPRoute or GRPCRoute target"))
+		}
+
+		if len(policy.Spec.Match.Hostnames) > 0 && policy.Spec.Match.Route != nil {
+			path := field.NewPath("spec").Child("match")
+			errs = append(errs, field.Invalid(path, policy.Spec.Match, "only one of hostnames or route can be set for HTTPRoute or GRPCRoute target"))
+		}
+	}
+
+	if len(policy.Spec.Match.Hostnames) != 0 {
+		errs = append(errs, validateHostnames(policy.Spec.Match.Hostnames)...)
+	}
+
+	return errs
+}
+
+func validateHostnames(hostnames []gwv1beta1.Hostname) field.ErrorList {
+	var errs field.ErrorList
+
+	for i, hostname := range hostnames {
+		h := string(hostname)
+		if err := webhook.IsValidHostname(h); err != nil {
+			path := field.NewPath("spec").
+				Child("match").
+				Child("hostnames").Index(i)
+
+			errs = append(errs, field.Invalid(path, h, fmt.Sprintf("%s", err)))
+		}
+	}
+
+	return errs
+}
+
+func validateConfig(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
+	var errs field.ErrorList
+
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup && policy.Spec.TargetRef.Kind == constants.GatewayKind {
+		if policy.Spec.Match.Port != nil {
+			if policy.Spec.RateLimit.L4RateLimit == nil {
+				path := field.NewPath("spec").Child("rateLimit").Child("bps")
+				errs = append(errs, field.Required(path, "bps must be set as spec.match.port is set"))
+			}
+		}
+
+		if len(policy.Spec.Match.Hostnames) > 0 {
+			if policy.Spec.RateLimit.L7RateLimit == nil {
+				path := field.NewPath("spec").Child("rateLimit").Child("config")
+				errs = append(errs, field.Required(path, "config must be set as spec.match.hostnames is set"))
+			}
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
+		(policy.Spec.TargetRef.Kind == constants.HTTPRouteKind || policy.Spec.TargetRef.Kind == constants.GRPCRouteKind) {
+		if len(policy.Spec.Match.Hostnames) > 0 || policy.Spec.Match.Route != nil {
+			if policy.Spec.RateLimit.L7RateLimit == nil {
+				path := field.NewPath("spec").Child("rateLimit").Child("config")
+				errs = append(errs, field.Required(path, "config must be set as spec.match.hostnames/route is set"))
+			}
+		}
+	}
+
+	return errs
 }

@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -42,9 +44,10 @@ func (c *GatewayCache) BuildConfigs() {
 		gw := obj.(*gwv1beta1.Gateway)
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
 		log.Debug().Msgf("[GW-CACHE] validListeners: %v", validListeners)
+		acceptedRateLimits := c.rateLimits()
 
-		listenerCfg := c.listeners(gw, validListeners)
-		rules, referredServices := c.routeRules(gw, validListeners)
+		listenerCfg := c.listeners(gw, validListeners, acceptedRateLimits)
+		rules, referredServices := c.routeRules(gw, validListeners, acceptedRateLimits)
 		svcConfigs := c.serviceConfigs(referredServices)
 
 		configSpec := &routecfg.ConfigSpec{
@@ -133,7 +136,7 @@ func (c *GatewayCache) isDebugEnabled() bool {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener) []routecfg.Listener {
+func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, acceptedRateLimits []gwpav1alpha1.RateLimitPolicy) []routecfg.Listener {
 	listeners := make([]routecfg.Listener, 0)
 	for _, l := range validListeners {
 		listener := routecfg.Listener{
@@ -146,10 +149,43 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 			listener.TLS = tls
 		}
 
+		for _, rateLimit := range acceptedRateLimits {
+			// RateLimitPolicy is attached to Gateway
+			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(gw)) {
+				if rateLimit.Spec.Match.Port != nil && *rateLimit.Spec.Match.Port == l.Port {
+					listener.BpsLimit = rateLimit.Spec.RateLimit.L4RateLimit
+				}
+			}
+		}
+
 		listeners = append(listeners, listener)
 	}
 
 	return listeners
+}
+
+func (c *GatewayCache) rateLimits() []gwpav1alpha1.RateLimitPolicy {
+	rateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
+
+	for key := range c.ratelimits {
+		policy, exists, err := c.informers.GetByKey(informers.InformerKeyRateLimitPolicy, key.String())
+		if !exists {
+			log.Error().Msgf("RateLimitPolicy %s does not exist", key)
+			continue
+		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get RateLimitPolicy %s: %s", key, err)
+			continue
+		}
+
+		rateLimitPolicy := policy.(*gwpav1alpha1.RateLimitPolicy)
+		if gwutils.IsRateLimitPolicyAccepted(rateLimitPolicy) {
+			rateLimits = append(rateLimits, *rateLimitPolicy)
+		}
+	}
+
+	return rateLimits
 }
 
 func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
@@ -232,7 +268,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, acceptedRateLimits []gwpav1alpha1.RateLimitPolicy) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
 	rules := make(map[int32]routecfg.RouteRule)
 	services := make(map[string]serviceInfo)
 
@@ -251,7 +287,7 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 
 		httpRoute := route.(*gwv1beta1.HTTPRoute)
 		log.Debug().Msgf("Processing HTTPRoute %v", httpRoute)
-		processHTTPRoute(gw, validListeners, httpRoute, rules, services)
+		processHTTPRoute(gw, validListeners, httpRoute, acceptedRateLimits, rules, services)
 		//processHTTPRouteBackendFilters(httpRoute, services)
 	}
 
@@ -312,7 +348,14 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	return rules, services
 }
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, acceptedRateLimits []gwpav1alpha1.RateLimitPolicy, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+	rateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
+	for _, rateLimit := range acceptedRateLimits {
+		if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(httpRoute)) {
+			rateLimits = append(rateLimits, rateLimit)
+		}
+	}
+
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -335,6 +378,13 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			httpRule := routecfg.L7RouteRule{}
 			for _, hostname := range hostnames {
+				for _, rateLimit := range rateLimits {
+					if len(rateLimit.Spec.Match.Hostnames) > 0 {
+						for _, rateLimitHostname := range rateLimit.Spec.Match.Hostnames {
+
+						}
+					}
+				}
 				httpRule[hostname] = generateHTTPRouteConfig(httpRoute, services)
 			}
 

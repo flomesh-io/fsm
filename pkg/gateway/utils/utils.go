@@ -30,6 +30,8 @@ import (
 	"strings"
 	"time"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/gobwas/glob"
@@ -41,6 +43,7 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
@@ -88,13 +91,17 @@ func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
+func IsRateLimitPolicyAccepted(policy *gwpav1alpha1.RateLimitPolicy) bool {
+	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+}
+
 // IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
 		return false
 	}
 
-	if parentRef.Kind != nil && string(*parentRef.Kind) != "Gateway" {
+	if parentRef.Kind != nil && string(*parentRef.Kind) != constants.GatewayKind {
 		return false
 	}
 
@@ -247,6 +254,27 @@ func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gw
 	}
 
 	return hostnames.UnsortedList()
+}
+
+func RouteHostnameMatchesHostnames(routeHostname gwv1beta1.Hostname, hostnames []gwv1beta1.Hostname) bool {
+	for i := range hostnames {
+		hostname := string(hostnames[i])
+		switch {
+		case string(routeHostname) == hostname:
+			return true
+
+		case strings.HasPrefix(string(routeHostname), "*"):
+			if HostnameMatchesWildcardHostname(hostname, string(routeHostname)) {
+				return true
+			}
+
+		case strings.HasPrefix(hostname, "*"):
+			if HostnameMatchesWildcardHostname(string(routeHostname), hostname) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // HostnameMatchesWildcardHostname returns true if the hostname matches the wildcard hostname

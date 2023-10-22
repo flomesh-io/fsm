@@ -378,6 +378,30 @@ const (
 	ServiceAccessModeMixed = "mixed"
 )
 
+// GatewayAPI Group and Kinds
+const (
+	// GatewayAPIGroup is the group name used in Gateway API
+	GatewayAPIGroup = "gateway.networking.k8s.io"
+
+	// GatewayKind is the kind name of Gateway used in Gateway API
+	GatewayKind = "Gateway"
+
+	// HTTPRouteKind is the kind name of HTTPRoute used in Gateway API
+	HTTPRouteKind = "HTTPRoute"
+
+	// GRPCRouteKind is the kind name of GRPCRoute used in Gateway API
+	GRPCRouteKind = "GRPCRoute"
+
+	// TLSRouteKind is the kind name of TLSRoute used in Gateway API
+	TLSRouteKind = "TLSRoute"
+
+	// TCPRouteKind is the kind name of TCPRoute used in Gateway API
+	TCPRouteKind = "TCPRoute"
+
+	// UDPRouteKind is the kind name of UDPRoute used in Gateway API
+	UDPRouteKind = "UDPRoute"
+)
+
 // Gateway API constants
 const (
 	// FSMGatewayClassName is the name of FSM GatewayClass

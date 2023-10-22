@@ -1,6 +1,8 @@
 package cache
 
 import (
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -60,6 +62,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[TCPRoutesProcessorType]
 	case *gwv1alpha2.TLSRoute:
 		return c.processors[TLSRoutesProcessorType]
+	case *gwpav1alpha1.RateLimitPolicy:
+		return c.processors[RateLimitPoliciesProcessorType]
 	}
 
 	return nil
@@ -201,11 +205,11 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 }
 
 func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTargetReference) bool {
-	if targetRef.Group != "gateway.networking.k8s.io" {
+	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
 	}
 
-	if targetRef.Kind == "Gateway" {
+	if targetRef.Kind == constants.GatewayKind {
 		if len(c.gateways) == 0 {
 			return false
 		}
@@ -217,7 +221,7 @@ func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTar
 		}
 	}
 
-	if targetRef.Kind == "HTTPRoute" {
+	if targetRef.Kind == constants.HTTPRouteKind {
 		if len(c.httproutes) == 0 {
 			return false
 		}
@@ -229,7 +233,7 @@ func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTar
 		}
 	}
 
-	if targetRef.Kind == "GRPCRoute" {
+	if targetRef.Kind == constants.GRPCRouteKind {
 		if len(c.grpcroutes) == 0 {
 			return false
 		}

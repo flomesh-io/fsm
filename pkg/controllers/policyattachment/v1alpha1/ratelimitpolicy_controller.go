@@ -26,10 +26,22 @@ package v1beta1
 
 import (
 	"context"
+	"fmt"
+	"time"
+
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"k8s.io/apimachinery/pkg/types"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,9 +90,158 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
+	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	if err := r.fctx.Status().Update(ctx, policy); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	r.fctx.EventHandler.OnAdd(policy)
 
 	return ctrl.Result{}, nil
+}
+
+func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RateLimitPolicy) metav1.Condition {
+	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
+		return metav1.Condition{
+			Type:               string(gwv1alpha2.PolicyConditionAccepted),
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: policy.Generation,
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+			Message:            "Invalid target reference group, only gateway.networking.k8s.io is supported",
+		}
+	}
+
+	switch policy.Spec.TargetRef.Kind {
+	case constants.GatewayKind:
+		gateway := &gwv1beta1.Gateway{}
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
+			if errors.IsNotFound(err) {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
+					Message:            "Invalid target reference, cannot find target Gateway",
+				}
+			} else {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+					Message:            fmt.Sprintf("Failed to get target Gateway: %s", err),
+				}
+			}
+		}
+		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+			}
+		}
+	case constants.HTTPRouteKind:
+		httpRoute := &gwv1beta1.HTTPRoute{}
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
+			if errors.IsNotFound(err) {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
+					Message:            "Invalid target reference, cannot find target HTTPRoute",
+				}
+			} else {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+					Message:            fmt.Sprintf("Failed to get target HTTPRoute: %s", err),
+				}
+			}
+		}
+		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+			}
+		}
+	case constants.GRPCRouteKind:
+		grpcRoute := &gwv1alpha2.GRPCRoute{}
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
+			if errors.IsNotFound(err) {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
+					Message:            "Invalid target reference, cannot find target GRPCRoute",
+				}
+			} else {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+					Message:            fmt.Sprintf("Failed to get target GRPCRoute: %s", err),
+				}
+			}
+		}
+		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+			}
+		}
+	default:
+		return metav1.Condition{
+			Type:               string(gwv1alpha2.PolicyConditionAccepted),
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: policy.Generation,
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+			Message:            "Invalid target reference kind, only Gateway, HTTPRoute and GRCPRoute are supported",
+		}
+	}
+
+	return metav1.Condition{
+		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		Status:             metav1.ConditionTrue,
+		ObservedGeneration: policy.Generation,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
+		Message:            string(gwv1alpha2.PolicyReasonAccepted),
+	}
+}
+
+func getTargetNamespace(policy *gwpav1alpha1.RateLimitPolicy) string {
+	if policy.Spec.TargetRef.Namespace == nil {
+		return policy.Namespace
+	}
+
+	return string(*policy.Spec.TargetRef.Namespace)
 }
 
 // SetupWithManager sets up the controller with the Manager.

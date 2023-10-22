@@ -13,15 +13,16 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 var (
-	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), "HTTPRoute")
-	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "TLSRoute")
-	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "TCPRoute")
-	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "GRPCRoute")
+	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.HTTPRouteKind)
+	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TLSRouteKind)
+	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TCPRouteKind)
+	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GRPCRouteKind)
 )
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway

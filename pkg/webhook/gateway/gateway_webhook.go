@@ -68,7 +68,7 @@ func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-		[]string{"gateway.networking.k8s.io"},
+		[]string{constants.GatewayAPIGroup},
 		[]string{"v1beta1"},
 		[]string{"gateways"},
 	)
