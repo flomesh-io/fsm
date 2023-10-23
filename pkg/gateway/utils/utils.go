@@ -292,7 +292,6 @@ func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, policy
 		reflect.DeepEqual(routeMatch.Headers, policyRouteMatch.Headers) &&
 		reflect.DeepEqual(routeMatch.Method, policyRouteMatch.Method) &&
 		reflect.DeepEqual(routeMatch.QueryParams, policyRouteMatch.QueryParams)
-
 }
 
 // GRPCRouteMatchesRateLimitPolicy returns true if the GRPC route matches the rate limit policy
