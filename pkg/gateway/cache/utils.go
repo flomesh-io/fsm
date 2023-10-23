@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -563,4 +565,16 @@ func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
 	}
 
 	return pointer.Int32(int32(*port))
+}
+
+func newRateLimit(rateLimit gwpav1alpha1.RateLimitPolicy) *routecfg.RateLimit {
+	return &routecfg.RateLimit{
+		Mode:                 *rateLimit.Spec.RateLimit.L7RateLimit.Mode,
+		Backlog:              *rateLimit.Spec.RateLimit.L7RateLimit.Backlog,
+		Requests:             rateLimit.Spec.RateLimit.L7RateLimit.Requests,
+		Burst:                *rateLimit.Spec.RateLimit.L7RateLimit.Burst,
+		StatTimeWindow:       rateLimit.Spec.RateLimit.L7RateLimit.StatTimeWindow,
+		ResponseStatusCode:   *rateLimit.Spec.RateLimit.L7RateLimit.ResponseStatusCode,
+		ResponseHeadersToAdd: rateLimit.Spec.RateLimit.L7RateLimit.ResponseHeadersToAdd,
+	}
 }

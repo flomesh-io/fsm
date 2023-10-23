@@ -16,6 +16,8 @@
             content = _http?.headers?.[member] || _http?.[member] || val
           ) || (name === 'consumer') && (
             content = __consumer?.[member] || val
+          ) || (name === 'inbound') && (
+            content = __inbound?.[member] || val
           )
         ),
         content
@@ -153,7 +155,7 @@
 .branch(
   isDebugEnabled, (
     $=>$.handleStreamStart(
-      msg => (
+      msg => _requestHandlers && (
         console.log('[header-modifier] request message:', msg)
       )
     )
@@ -176,7 +178,7 @@
 .branch(
   isDebugEnabled, (
     $=>$.handleStreamStart(
-      msg => (
+      msg => _responseHandlers && (
         console.log('[header-modifier] response message:', msg)
       )
     )

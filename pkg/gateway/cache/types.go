@@ -111,6 +111,24 @@ type endpointInfo struct {
 	port    int32
 }
 
+// RateLimitPolicyMatchType is the type used to represent the rate limit policy match type
+type RateLimitPolicyMatchType string
+
+const (
+	// RateLimitPolicyMatchTypePort is the type used to represent the rate limit policy match type port
+	RateLimitPolicyMatchTypePort RateLimitPolicyMatchType = "port"
+
+	// RateLimitPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
+	RateLimitPolicyMatchTypeHostnames RateLimitPolicyMatchType = "hostnames"
+
+	// RateLimitPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
+	RateLimitPolicyMatchTypeRoute RateLimitPolicyMatchType = "route"
+)
+
+//type policyAttachments struct {
+//	rateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy
+//}
+
 var (
 	log = logger.New("fsm-gateway/cache")
 )

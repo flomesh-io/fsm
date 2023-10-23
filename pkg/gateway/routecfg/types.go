@@ -128,6 +128,7 @@ var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 type GRPCRouteRuleSpec struct {
 	RouteType L7RouteType        `json:"RouteType"`
 	Matches   []GRPCTrafficMatch `json:"Matches" hash:"set"`
+	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
@@ -176,6 +177,7 @@ type GRPCTrafficMatch struct {
 	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
 	Method         *GRPCMethod                     `json:"Method,omitempty"`
 	BackendService map[string]BackendServiceConfig `json:"BackendService"`
+	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
 	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 

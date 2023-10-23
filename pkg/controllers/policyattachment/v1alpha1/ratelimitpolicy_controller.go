@@ -31,8 +31,6 @@ import (
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/types"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -100,6 +98,7 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
+// TODO: handle conflict
 func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RateLimitPolicy) metav1.Condition {
 	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
 		return metav1.Condition{
@@ -136,17 +135,17 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
+		//polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		//if err != nil {
+		//	return metav1.Condition{
+		//		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		//		Status:             metav1.ConditionFalse,
+		//		ObservedGeneration: policy.Generation,
+		//		LastTransitionTime: metav1.Time{Time: time.Now()},
+		//		Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+		//		Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+		//	}
+		//}
 	case constants.HTTPRouteKind:
 		httpRoute := &gwv1beta1.HTTPRoute{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
@@ -170,17 +169,22 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
+		//polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		//if err != nil {
+		//	return metav1.Condition{
+		//		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		//		Status:             metav1.ConditionFalse,
+		//		ObservedGeneration: policy.Generation,
+		//		LastTransitionTime: metav1.Time{Time: time.Now()},
+		//		Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+		//		Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+		//	}
+		//}
+		//for _, p := range polices.Items {
+		//	if gwutils.IsAcceptedRateLimitPolicy(&p) {
+		//
+		//	}
+		//}
 	case constants.GRPCRouteKind:
 		grpcRoute := &gwv1alpha2.GRPCRoute{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
@@ -204,17 +208,17 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
+		//polices, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		//if err != nil {
+		//	return metav1.Condition{
+		//		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		//		Status:             metav1.ConditionFalse,
+		//		ObservedGeneration: policy.Generation,
+		//		LastTransitionTime: metav1.Time{Time: time.Now()},
+		//		Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+		//		Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+		//	}
+		//}
 	default:
 		return metav1.Condition{
 			Type:               string(gwv1alpha2.PolicyConditionAccepted),

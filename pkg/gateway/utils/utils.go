@@ -27,6 +27,7 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -91,7 +92,7 @@ func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
-func IsRateLimitPolicyAccepted(policy *gwpav1alpha1.RateLimitPolicy) bool {
+func IsAcceptedRateLimitPolicy(policy *gwpav1alpha1.RateLimitPolicy) bool {
 	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
 
@@ -256,24 +257,26 @@ func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gw
 	return hostnames.UnsortedList()
 }
 
-func RouteHostnameMatchesHostnames(routeHostname gwv1beta1.Hostname, hostnames []gwv1beta1.Hostname) bool {
+// RouteHostnameMatchesHostnames returns true if the route hostname matches the hostnames
+func RouteHostnameMatchesHostnames(routeHostname string, hostnames []gwv1beta1.Hostname) bool {
 	for i := range hostnames {
 		hostname := string(hostnames[i])
 		switch {
-		case string(routeHostname) == hostname:
+		case routeHostname == hostname:
 			return true
 
-		case strings.HasPrefix(string(routeHostname), "*"):
-			if HostnameMatchesWildcardHostname(hostname, string(routeHostname)) {
+		case strings.HasPrefix(routeHostname, "*"):
+			if HostnameMatchesWildcardHostname(hostname, routeHostname) {
 				return true
 			}
 
 		case strings.HasPrefix(hostname, "*"):
-			if HostnameMatchesWildcardHostname(string(routeHostname), hostname) {
+			if HostnameMatchesWildcardHostname(routeHostname, hostname) {
 				return true
 			}
 		}
 	}
+
 	return false
 }
 
@@ -283,17 +286,17 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	return g.Match(hostname)
 }
 
-func IsActiveRoute(parentStatus []gwv1beta1.RouteParentStatus) bool {
-	if len(parentStatus) == 0 {
-		return false
-	}
+// HTTPRouteMatchesRateLimitPolicy returns true if the HTTP route matches the rate limit policy
+func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, policyRouteMatch gwpav1alpha1.HTTPRouteRateLimitMatch) bool {
+	return reflect.DeepEqual(routeMatch.Path, policyRouteMatch.Path) &&
+		reflect.DeepEqual(routeMatch.Headers, policyRouteMatch.Headers) &&
+		reflect.DeepEqual(routeMatch.Method, policyRouteMatch.Method) &&
+		reflect.DeepEqual(routeMatch.QueryParams, policyRouteMatch.QueryParams)
 
-	for _, p := range parentStatus {
-		if metautil.IsStatusConditionTrue(p.Conditions, string(gwv1beta1.RouteConditionAccepted)) &&
-			metautil.IsStatusConditionTrue(p.Conditions, string(gwv1beta1.RouteConditionResolvedRefs)) {
-			return true
-		}
-	}
+}
 
-	return false
+// GRPCRouteMatchesRateLimitPolicy returns true if the GRPC route matches the rate limit policy
+func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, policyRouteMatch gwpav1alpha1.GRPCRouteRateLimitMatch) bool {
+	return reflect.DeepEqual(routeMatch.Headers, policyRouteMatch.Headers) &&
+		reflect.DeepEqual(routeMatch.Method, policyRouteMatch.Method)
 }

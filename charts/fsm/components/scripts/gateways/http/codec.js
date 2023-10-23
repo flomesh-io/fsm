@@ -1,5 +1,10 @@
 ((
   { metrics } = pipy.solve('lib/metrics.js'),
+  acceptedMetric = metrics.fgwHttpCurrentConnections.withLabels('accepted'),
+  activeMetric = metrics.fgwHttpCurrentConnections.withLabels('active'),
+  handledMetric = metrics.fgwHttpCurrentConnections.withLabels('handled'),
+  fgwHttpRequestsTotal = metrics.fgwHttpRequestsTotal,
+
 ) => pipy()
 
 .export('http', {
@@ -11,14 +16,14 @@
 .pipeline()
 .handleStreamStart(
   () => (
-    metrics.fgwHttpCurrentConnections.withLabels('accepted').increase(),
-    metrics.fgwHttpCurrentConnections.withLabels('active').increase()
+    acceptedMetric.increase(),
+    activeMetric.increase()
   )
 )
 .handleStreamEnd(
   () => (
-    metrics.fgwHttpCurrentConnections.withLabels('handled').increase(),
-    metrics.fgwHttpCurrentConnections.withLabels('active').decrease()
+    handledMetric.increase(),
+    activeMetric.decrease()
   )
 )
 .demuxHTTP().to(
@@ -27,7 +32,7 @@
     msg => (
       __http = msg?.head,
       __request = { head: msg?.head, reqTime: Date.now() },
-      metrics.fgwHttpRequestsTotal.increase()
+      fgwHttpRequestsTotal.increase()
     )
   )
   .handleMessageEnd(

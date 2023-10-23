@@ -39,7 +39,7 @@ type RateLimitPolicyMatch struct {
 
 	// +optional
 	// Route defines the match condition of route for the rate limit
-	Route *RouteBasedRateLimitMatch `json:"route,omitempty"`
+	Route *RouteRateLimitMatch `json:"route,omitempty"`
 }
 
 // RateLimitPolicyConfig defines the rate limit configuration
@@ -85,16 +85,16 @@ type L7RateLimitPolicy struct {
 	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty"`
 }
 
-// RouteBasedRateLimitMatch defines the route based rate limit
-type RouteBasedRateLimitMatch struct {
+// RouteRateLimitMatch defines the route based rate limit
+type RouteRateLimitMatch struct {
 	// +optional
-	HTTPRouteBasedRateLimit *HTTPRouteBasedRateLimit `json:"http,omitempty"`
+	HTTPRouteRateLimitMatch *HTTPRouteRateLimitMatch `json:"http,omitempty"`
 
 	// +optional
-	GRPCRouteBasedRateLimit *GRPCRouteBasedRateLimit `json:"grpc,omitempty"`
+	GRPCRouteRateLimitMatch *GRPCRouteRateLimitMatch `json:"grpc,omitempty"`
 }
 
-type HTTPRouteBasedRateLimit struct {
+type HTTPRouteRateLimitMatch struct {
 	// Path specifies a HTTP request path matcher. If this field is not
 	// specified, a default prefix match on the "/" path is provided.
 	//
@@ -134,7 +134,7 @@ type HTTPRouteBasedRateLimit struct {
 	Method *gwv1beta1.HTTPMethod `json:"method,omitempty"`
 }
 
-type GRPCRouteBasedRateLimit struct {
+type GRPCRouteRateLimitMatch struct {
 	// Method specifies a gRPC request service/method matcher. If this field is
 	// not specified, all services and methods will match.
 	//

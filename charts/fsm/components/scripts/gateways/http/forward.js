@@ -136,6 +136,10 @@
     )
   )(),
 
+  proxyPreserveHostCache = new algo.Cache(
+    route => route?.config?.ProxyPreserveHost || __domain?.ProxyPreserveHost || config?.Configs?.ProxyPreserveHost
+  ),
+
 ) => pipy({
   _retryCount: 0,
   _serviceConfig: null,
@@ -153,6 +157,7 @@
 
 .import({
   __domain: 'route',
+  __route: 'route',
   __service: 'service',
   __cert: 'connect-tls',
   __target: 'connect-tcp',
@@ -181,7 +186,7 @@
   () => _serviceConfig?.needRetry || _failoverBalancer, (
     $=>$
     .replay({
-      delay: () => _serviceConfig.retryBackoffBaseInterval * Math.min(10, Math.pow(2, _retryCount-1)|0)
+      delay: () => _serviceConfig.retryBackoffBaseInterval * Math.min(10, Math.pow(2, _retryCount - 1) | 0)
     }).to(
       $=>$
       .link('upstream')
@@ -221,6 +226,9 @@
       ),
       __target
     ) && (
+      !proxyPreserveHostCache.get(__route) && msg?.head?.headers?.host && (
+        msg.head.headers.host = __target
+      ),
       (
         attrs = _serviceConfig?.endpointAttributes?.[__target]
       ) => (

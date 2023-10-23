@@ -87,7 +87,7 @@
         (_serviceConfig = serviceConfigs.get(__service)) && (
           __metricLabel = __service.name,
           _unhealthCache = __healthCheckServices?.[__service.name],
-          (__target = _serviceConfig.targetBalancer?.borrow?.({}, undefined, _unhealthCache)?.id) && (
+          (__target = _serviceConfig.targetBalancer?.borrow?.(__inbound, undefined, _unhealthCache)?.id) && (
             (
               attrs = _serviceConfig?.endpointAttributes?.[__target]
             ) => (
