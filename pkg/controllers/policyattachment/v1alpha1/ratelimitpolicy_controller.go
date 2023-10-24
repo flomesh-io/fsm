@@ -34,8 +34,9 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	corev1 "k8s.io/api/core/v1"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -278,6 +279,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
 	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
 	for _, p := range allRateLimitPolicies.Items {
+		p := p
 		if gwutils.IsAcceptedRateLimitPolicy(&p) &&
 			gwutils.IsRefToTarget(p.Spec.TargetRef, gwutils.ObjectKey(route)) {
 			if len(p.Spec.Match.Hostnames) > 0 {
@@ -452,6 +454,7 @@ func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
 	for _, p := range allRateLimitPolicies.Items {
+		p := p
 		if gwutils.IsAcceptedRateLimitPolicy(&p) &&
 			gwutils.IsRefToTarget(p.Spec.TargetRef, gwutils.ObjectKey(gateway)) &&
 			p.Spec.Match.Port != nil {
