@@ -27,6 +27,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -287,6 +288,20 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 			}
 		}
 	}
+	sort.Slice(hostnamesRateLimits, func(i, j int) bool {
+		if hostnamesRateLimits[i].CreationTimestamp.Time.Equal(hostnamesRateLimits[j].CreationTimestamp.Time) {
+			return hostnamesRateLimits[i].Name < hostnamesRateLimits[j].Name
+		}
+
+		return hostnamesRateLimits[i].CreationTimestamp.Time.Before(hostnamesRateLimits[j].CreationTimestamp.Time)
+	})
+	sort.Slice(routeRateLimits, func(i, j int) bool {
+		if routeRateLimits[i].CreationTimestamp.Time.Equal(routeRateLimits[j].CreationTimestamp.Time) {
+			return routeRateLimits[i].Name < routeRateLimits[j].Name
+		}
+
+		return routeRateLimits[i].CreationTimestamp.Time.Before(routeRateLimits[j].CreationTimestamp.Time)
+	})
 
 	switch route := route.(type) {
 	case *gwv1beta1.HTTPRoute:
