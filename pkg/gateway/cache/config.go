@@ -821,11 +821,11 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []g
 			}
 
 			for _, rateLimit := range routeRateLimits {
-				if rateLimit.Spec.Match.Route.HTTPRouteRateLimitMatch == nil {
+				if len(rateLimit.Spec.Match.Route.HTTPRouteMatch) == 0 {
 					continue
 				}
 
-				if gwutils.HTTPRouteMatchesRateLimitPolicy(m, *rateLimit.Spec.Match.Route.HTTPRouteRateLimitMatch) && match.RateLimit == nil {
+				if gwutils.HTTPRouteMatchesRateLimitPolicy(m, rateLimit) && match.RateLimit == nil {
 					match.RateLimit = newRateLimit(rateLimit)
 				}
 			}
@@ -887,11 +887,11 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routeRateLimits []gwp
 			}
 
 			for _, rateLimit := range routeRateLimits {
-				if rateLimit.Spec.Match.Route.GRPCRouteRateLimitMatch == nil {
+				if len(rateLimit.Spec.Match.Route.GRPCRouteMatch) == 0 {
 					continue
 				}
 
-				if gwutils.GRPCRouteMatchesRateLimitPolicy(m, *rateLimit.Spec.Match.Route.GRPCRouteRateLimitMatch) && match.RateLimit == nil {
+				if gwutils.GRPCRouteMatchesRateLimitPolicy(m, rateLimit) && match.RateLimit == nil {
 					match.RateLimit = newRateLimit(rateLimit)
 				}
 			}

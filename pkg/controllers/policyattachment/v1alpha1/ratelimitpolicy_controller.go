@@ -401,12 +401,12 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
 				for _, rateLimit := range routeRateLimits {
-					if rateLimit.Spec.Match.Route.HTTPRouteRateLimitMatch == nil {
+					if len(rateLimit.Spec.Match.Route.HTTPRouteMatch) == 0 {
 						continue
 					}
 
-					if gwutils.HTTPRouteMatchesRateLimitPolicy(m, *rateLimit.Spec.Match.Route.HTTPRouteRateLimitMatch) &&
-						gwutils.HTTPRouteMatchesRateLimitPolicy(m, *rateLimitPolicy.Spec.Match.Route.HTTPRouteRateLimitMatch) {
+					if gwutils.HTTPRouteMatchesRateLimitPolicy(m, rateLimit) &&
+						gwutils.HTTPRouteMatchesRateLimitPolicy(m, *rateLimitPolicy) {
 						return &types.NamespacedName{
 							Name:      rateLimit.Name,
 							Namespace: rateLimit.Namespace,
@@ -419,12 +419,12 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
 				for _, rateLimit := range routeRateLimits {
-					if rateLimit.Spec.Match.Route.GRPCRouteRateLimitMatch == nil {
+					if len(rateLimit.Spec.Match.Route.GRPCRouteMatch) == 0 {
 						continue
 					}
 
-					if gwutils.GRPCRouteMatchesRateLimitPolicy(m, *rateLimit.Spec.Match.Route.GRPCRouteRateLimitMatch) &&
-						gwutils.GRPCRouteMatchesRateLimitPolicy(m, *rateLimitPolicy.Spec.Match.Route.GRPCRouteRateLimitMatch) {
+					if gwutils.GRPCRouteMatchesRateLimitPolicy(m, rateLimit) &&
+						gwutils.GRPCRouteMatchesRateLimitPolicy(m, *rateLimitPolicy) {
 						return &types.NamespacedName{
 							Name:      rateLimit.Name,
 							Namespace: rateLimit.Namespace,

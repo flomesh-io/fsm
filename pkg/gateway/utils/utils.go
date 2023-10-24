@@ -322,15 +322,23 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 }
 
 // HTTPRouteMatchesRateLimitPolicy returns true if the HTTP route matches the rate limit policy
-func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, policyRouteMatch gwpav1alpha1.HTTPRouteRateLimitMatch) bool {
-	return reflect.DeepEqual(routeMatch.Path, policyRouteMatch.Path) &&
-		reflect.DeepEqual(routeMatch.Headers, policyRouteMatch.Headers) &&
-		reflect.DeepEqual(routeMatch.Method, policyRouteMatch.Method) &&
-		reflect.DeepEqual(routeMatch.QueryParams, policyRouteMatch.QueryParams)
+func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+	for _, policyRouteMatch := range rateLimitPolicy.Spec.Match.Route.HTTPRouteMatch {
+		if reflect.DeepEqual(routeMatch, policyRouteMatch) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GRPCRouteMatchesRateLimitPolicy returns true if the GRPC route matches the rate limit policy
-func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, policyRouteMatch gwpav1alpha1.GRPCRouteRateLimitMatch) bool {
-	return reflect.DeepEqual(routeMatch.Headers, policyRouteMatch.Headers) &&
-		reflect.DeepEqual(routeMatch.Method, policyRouteMatch.Method)
+func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+	for _, policyRouteMatch := range rateLimitPolicy.Spec.Match.Route.GRPCRouteMatch {
+		if reflect.DeepEqual(routeMatch, policyRouteMatch) {
+			return true
+		}
+	}
+
+	return false
 }

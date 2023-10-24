@@ -88,68 +88,12 @@ type L7RateLimitPolicy struct {
 // RouteRateLimitMatch defines the route based rate limit
 type RouteRateLimitMatch struct {
 	// +optional
-	HTTPRouteRateLimitMatch *HTTPRouteRateLimitMatch `json:"http,omitempty"`
+	// HTTPRouteMatch defines the match condition of HTTP route for the rate limit
+	HTTPRouteMatch []gwv1beta1.HTTPRouteMatch `json:"http,omitempty"`
 
 	// +optional
-	GRPCRouteRateLimitMatch *GRPCRouteRateLimitMatch `json:"grpc,omitempty"`
-}
-
-type HTTPRouteRateLimitMatch struct {
-	// Path specifies a HTTP request path matcher. If this field is not
-	// specified, a default prefix match on the "/" path is provided.
-	//
-	// +optional
-	// +kubebuilder:default={type: "PathPrefix", value: "/"}
-	Path *gwv1beta1.HTTPPathMatch `json:"path,omitempty"`
-
-	// Headers specifies HTTP request header matchers. Multiple match values are
-	// ANDed together, meaning, a request must match all the specified headers
-	// to select the route.
-	//
-	// +listType=map
-	// +listMapKey=name
-	// +optional
-	// +kubebuilder:validation:MaxItems=16
-	Headers []gwv1beta1.HTTPHeaderMatch `json:"headers,omitempty"`
-
-	// QueryParams specifies HTTP query parameter matchers. Multiple match
-	// values are ANDed together, meaning, a request must match all the
-	// specified query parameters to select the route.
-	//
-	// Support: Extended
-	//
-	// +listType=map
-	// +listMapKey=name
-	// +optional
-	// +kubebuilder:validation:MaxItems=16
-	QueryParams []gwv1beta1.HTTPQueryParamMatch `json:"queryParams,omitempty"`
-
-	// Method specifies HTTP method matcher.
-	// When specified, this route will be matched only if the request has the
-	// specified method.
-	//
-	// Support: Extended
-	//
-	// +optional
-	Method *gwv1beta1.HTTPMethod `json:"method,omitempty"`
-}
-
-type GRPCRouteRateLimitMatch struct {
-	// Method specifies a gRPC request service/method matcher. If this field is
-	// not specified, all services and methods will match.
-	//
-	// +optional
-	Method *gwv1alpha2.GRPCMethodMatch `json:"method,omitempty"`
-
-	// Headers specifies gRPC request header matchers. Multiple match values are
-	// ANDed together, meaning, a request MUST match all the specified headers
-	// to select the route.
-	//
-	// +listType=map
-	// +listMapKey=name
-	// +optional
-	// +kubebuilder:validation:MaxItems=16
-	Headers []gwv1alpha2.GRPCHeaderMatch `json:"headers,omitempty"`
+	// GRPCRouteMatch defines the match condition of GRPC route for the rate limit
+	GRPCRouteMatch []gwv1alpha2.GRPCRouteMatch `json:"grpc,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy
