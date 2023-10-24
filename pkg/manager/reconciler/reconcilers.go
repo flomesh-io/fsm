@@ -33,6 +33,7 @@ import (
 	gatewayv1beta1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1beta1"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/mcs/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/namespacedingress/v1alpha1"
+	pav1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/policyattachment/v1alpha1"
 	svclb "github.com/flomesh-io/fsm/pkg/controllers/servicelb"
 	"github.com/flomesh-io/fsm/pkg/version"
 )
@@ -62,6 +63,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["GatewayAPI(GRPCRoute)"] = gatewayv1alpha2.NewGRPCRouteReconciler(ctx)
 		reconcilers["GatewayAPI(TCPRoute)"] = gatewayv1alpha2.NewTCPRouteReconciler(ctx)
 		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(ctx)
+		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(ctx)
 	}
 
 	if mc.IsNamespacedIngressEnabled() {
