@@ -163,8 +163,8 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 	return validListeners
 }
 
-// GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(
+// GetAllowedListenersAndSetStatus returns the allowed listeners and set status
+func GetAllowedListenersAndSetStatus(
 	parentRef gwv1beta1.ParentReference,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
@@ -211,6 +211,41 @@ func GetAllowedListeners(
 			Message:            fmt.Sprintf("No matched listeners of parent ref %s/%s", *parentRef.Namespace, parentRef.Name),
 		})
 
+		return nil
+	}
+
+	return allowedListeners
+}
+
+// GetAllowedListeners returns the allowed listeners
+func GetAllowedListeners(
+	parentRef gwv1beta1.ParentReference,
+	routeGvk schema.GroupVersionKind,
+	routeGeneration int64,
+	validListeners []gwtypes.Listener,
+) []gwtypes.Listener {
+	var selectedListeners []gwtypes.Listener
+	for _, validListener := range validListeners {
+		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
+			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
+			selectedListeners = append(selectedListeners, validListener)
+		}
+	}
+
+	if len(selectedListeners) == 0 {
+		return nil
+	}
+
+	var allowedListeners []gwtypes.Listener
+	for _, selectedListener := range selectedListeners {
+		if !selectedListener.AllowsKind(routeGvk) {
+			continue
+		}
+
+		allowedListeners = append(allowedListeners, selectedListener)
+	}
+
+	if len(allowedListeners) == 0 {
 		return nil
 	}
 

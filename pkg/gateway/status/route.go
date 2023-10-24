@@ -119,7 +119,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 				Conditions:     make([]metav1.Condition, 0),
 			}
 
-			allowedListeners := gwutils.GetAllowedListeners(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
+			allowedListeners := gwutils.GetAllowedListenersAndSetStatus(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
 			//if len(allowedListeners) == 0 {
 			//
 			//}
