@@ -2013,7 +2013,11 @@
                         "enableRetryPolicy",
                         "enablePluginPolicy",
                         "enableMeshRootCertificate",
-                        "enableAutoDefaultRoute"
+                        "enableAutoDefaultRoute",
+                        "enableValidateGatewayListenerHostname",
+                        "enableValidateHTTPRouteHostnames",
+                        "enableValidateGRPCRouteHostnames",
+                        "enableValidateTLSRouteHostnames"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2114,6 +2118,42 @@
                             "examples": [
                                 false
                             ]
+                        },
+                        "enableValidateGatewayListenerHostname": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableValidateGatewayListenerHostname",
+                          "type": "boolean",
+                          "title": "Enable validate Gateway listener hostname",
+                          "description": "Enable validate Gateway listener hostname",
+                          "examples": [
+                            true
+                          ]
+                        },
+                        "enableValidateHTTPRouteHostnames": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableValidateHTTPRouteHostnames",
+                          "type": "boolean",
+                          "title": "Enable validate HTTP route hostnames",
+                          "description": "Enable validate HTTP route hostnames",
+                          "examples": [
+                            true
+                          ]
+                        },
+                        "enableValidateGRPCRouteHostnames": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableValidateGRPCRouteHostnames",
+                          "type": "boolean",
+                          "title": "Enable validate GRPC route hostnames",
+                          "description": "Enable validate GRPC route hostnames",
+                          "examples": [
+                            true
+                          ]
+                        },
+                        "enableValidateTLSRouteHostnames": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableValidateGRPCRouteHostnames",
+                          "type": "boolean",
+                          "title": "Enable validate TLS route hostnames",
+                          "description": "Enable validate TLS route hostnames",
+                          "examples": [
+                            true
+                          ]
                         }
                     },
                     "additionalProperties": false
