@@ -140,7 +140,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableAccessCertPolicy | bool | `false` |  |
 | fsm.featureFlags.enableAccessControlPolicy | bool | `true` | Enables FSM's AccessControl policy API. When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends |
 | fsm.featureFlags.enableAsyncProxyServiceMapping | bool | `false` | Enable async proxy-service mapping |
-| fsm.featureFlags.enableAutoDefaultRoute | bool | `false` | Eneable AutoDefaultRoute |
+| fsm.featureFlags.enableAutoDefaultRoute | bool | `false` | Enable AutoDefaultRoute |
 | fsm.featureFlags.enableEgressPolicy | bool | `true` | Enable FSM's Egress policy API. When enabled, fine grained control over Egress (external) traffic is enforced |
 | fsm.featureFlags.enableIngressBackendPolicy | bool | `true` | Enables FSM's IngressBackend policy API. When enabled, FSM will use the IngressBackend API allow ingress traffic to mesh backends |
 | fsm.featureFlags.enableMeshRootCertificate | bool | `false` | Enable the MeshRootCertificate to configure the FSM certificate provider |
@@ -148,6 +148,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableRetryPolicy | bool | `false` | Enable Retry Policy for automatic request retries |
 | fsm.featureFlags.enableSidecarActiveHealthChecks | bool | `false` | Enable Sidecar active health checks |
 | fsm.featureFlags.enableSnapshotCacheMode | bool | `false` | Enables SnapshotCache feature for Sidecar xDS server. |
+| fsm.featureFlags.enableValidateGRPCRouteHostnames | bool | `true` | Enable validate GRPC route hostnames, enforce the hostname is DNS name not IP address |
+| fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
+| fsm.featureFlags.enableValidateHTTPRouteHostnames | bool | `true` | Enable validate HTTP route hostnames, enforce the hostname is DNS name not IP address |
+| fsm.featureFlags.enableValidateTLSRouteHostnames | bool | `true` | Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
 | fsm.flb.defaultAddressPool | string | `"default"` |  |
 | fsm.flb.defaultAlgo | string | `"rr"` |  |
