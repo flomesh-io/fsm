@@ -100,7 +100,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Config, r.MeshName, r.FSMVersion)),
-		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.Config)),
 	}
 }
 
@@ -165,6 +165,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 
 type validator struct {
 	kubeClient kubernetes.Interface
+	cfg        configurator.Configurator
 }
 
 // RuntimeObject returns the runtime object of gateway
@@ -187,9 +188,10 @@ func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
-func newValidator(kubeClient kubernetes.Interface) *validator {
+func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator) *validator {
 	return &validator{
 		kubeClient: kubeClient,
+		cfg:        cfg,
 	}
 }
 
@@ -201,8 +203,10 @@ func (w *validator) doValidation(obj interface{}) error {
 
 	errorList := gwv1beta1validation.ValidateGateway(gateway)
 	errorList = append(errorList, w.validateListenerPort(gateway)...)
-	errorList = append(errorList, w.validateListenerHostname(gateway)...)
 	errorList = append(errorList, w.validateCertificateSecret(gateway)...)
+	if w.cfg.GetFeatureFlags().EnableValidateGatewayListenerHostname {
+		errorList = append(errorList, w.validateListenerHostname(gateway)...)
+	}
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}

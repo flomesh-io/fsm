@@ -342,6 +342,18 @@ type FeatureFlags struct {
 
 	// EnableAutoDefaultRoute defines if auto default route is enabled.
 	EnableAutoDefaultRoute bool `json:"enableAutoDefaultRoute"`
+
+	// EnableValidateGatewayListenerHostname defines if validate gateway listener hostname is enabled.
+	EnableValidateGatewayListenerHostname bool `json:"enableValidateGatewayListenerHostname"`
+
+	// EnableValidateHTTPRouteHostnames defines if validate http route hostnames is enabled.
+	EnableValidateHTTPRouteHostnames bool `json:"enableValidateHTTPRouteHostnames"`
+
+	// EnableValidateGRPCRouteHostnames defines if validate grpc route hostnames is enabled.
+	EnableValidateGRPCRouteHostnames bool `json:"enableValidateGRPCRouteHostnames"`
+
+	// EnableValidateTCPRouteHostnames defines if validate tcp route hostnames is enabled.
+	EnableValidateTLSRouteHostnames bool `json:"enableValidateTLSRouteHostnames"`
 }
 
 // SidecarDriverSpec is the type to represent FSM's sidecar driver define.

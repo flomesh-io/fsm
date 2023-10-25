@@ -1372,6 +1372,22 @@ spec:
                     description: EnableSnapshotCacheMode defines if XDS server starts
                       with snapshot cache.
                     type: boolean
+                  enableValidateGRPCRouteHostnames:
+                    description: EnableValidateGRPCRouteHostnames defines if validate
+                      grpc route hostnames is enabled.
+                    type: boolean
+                  enableValidateGatewayListenerHostname:
+                    description: EnableValidateGatewayListenerHostname defines if
+                      validate gateway listener hostname is enabled.
+                    type: boolean
+                  enableValidateHTTPRouteHostnames:
+                    description: EnableValidateHTTPRouteHostnames defines if validate
+                      http route hostnames is enabled.
+                    type: boolean
+                  enableValidateTLSRouteHostnames:
+                    description: EnableValidateTCPRouteHostnames defines if validate
+                      tcp route hostnames is enabled.
+                    type: boolean
                 required:
                 - enableAccessCertPolicy
                 - enableAccessControlPolicy
@@ -1383,6 +1399,10 @@ spec:
                 - enableRetryPolicy
                 - enableSidecarActiveHealthChecks
                 - enableSnapshotCacheMode
+                - enableValidateGRPCRouteHostnames
+                - enableValidateGatewayListenerHostname
+                - enableValidateHTTPRouteHostnames
+                - enableValidateTLSRouteHostnames
                 type: object
               flb:
                 description: FLB defines the configurations of FLB features.
