@@ -88,7 +88,7 @@ data:
         "enableValidateGatewayListenerHostname": {{.Values.fsm.featureFlags.enableValidateGatewayListenerHostname | mustToJson}},
         "enableValidateHTTPRouteHostnames": {{.Values.fsm.featureFlags.enableValidateHTTPRouteHostnames | mustToJson}},
         "enableValidateGRPCRouteHostnames": {{.Values.fsm.featureFlags.enableValidateGRPCRouteHostnames | mustToJson}},
-        "enableValidateTLSRouteHostnames": {{.Values.fsm.featureFlags.enableValidateTLSRouteHostnames | mustToJson}},
+        "enableValidateTLSRouteHostnames": {{.Values.fsm.featureFlags.enableValidateTLSRouteHostnames | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
       "ingress": {
