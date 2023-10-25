@@ -87,7 +87,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.HTTPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.HTTPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.HTTPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.Config)),
 	}
 }
 
@@ -129,6 +129,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 
 type validator struct {
 	kubeClient kubernetes.Interface
+	cfg        configurator.Configurator
 }
 
 // RuntimeObject returns the runtime object for the webhook
@@ -138,12 +139,12 @@ func (w *validator) RuntimeObject() runtime.Object {
 
 // ValidateCreate validates the creation of the HTTPRoute
 func (w *validator) ValidateCreate(obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateUpdate validates the update of the HTTPRoute
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateDelete validates the deletion of the HTTPRoute
@@ -151,13 +152,14 @@ func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
-func newValidator(kubeClient kubernetes.Interface) *validator {
+func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator) *validator {
 	return &validator{
 		kubeClient: kubeClient,
+		cfg:        cfg,
 	}
 }
 
-func doValidation(obj interface{}) error {
+func (w *validator) doValidation(obj interface{}) error {
 	route, ok := obj.(*gwv1beta1.HTTPRoute)
 	if !ok {
 		return nil
@@ -165,7 +167,9 @@ func doValidation(obj interface{}) error {
 
 	errorList := gwv1beta1validation.ValidateHTTPRoute(route)
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
-	errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)
+	if w.cfg.GetFeatureFlags().EnableValidateHTTPRouteHostnames {
+		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)
+	}
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}
