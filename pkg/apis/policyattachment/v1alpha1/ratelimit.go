@@ -30,8 +30,8 @@ type RateLimitPolicySpec struct {
 
 type RateLimitPolicyMatch struct {
 	// +optional
-	// Port defines the match condition of port for the rate limit
-	Port *gwv1beta1.PortNumber `json:"port,omitempty"`
+	// Ports defines the match condition of port for the rate limit
+	Ports []gwv1beta1.PortNumber `json:"ports,omitempty"`
 
 	// +optional
 	// Hostnames defines the match condition of hostnames for the rate limit

@@ -157,8 +157,8 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 				if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(gw)) {
 					// A matched rate limit policy and no rate limit is set on the listener,
 					//  as the rate limits are sorted by timestamp, the first one wins
-					if rateLimit.Spec.Match.Port != nil &&
-						*rateLimit.Spec.Match.Port == l.Port &&
+					if len(rateLimit.Spec.Match.Ports) > 0 &&
+						gwutils.PortMatchesRateLimitPolicy(l.Port, rateLimit) &&
 						listener.BpsLimit == nil {
 						listener.BpsLimit = rateLimit.Spec.RateLimit.L4RateLimit
 					}
@@ -197,7 +197,7 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 		rateLimitPolicy := policy.(*gwpav1alpha1.RateLimitPolicy)
 		if gwutils.IsAcceptedRateLimitPolicy(rateLimitPolicy) {
 			switch {
-			case rateLimitPolicy.Spec.Match.Port != nil:
+			case len(rateLimitPolicy.Spec.Match.Ports) > 0:
 				rateLimits[RateLimitPolicyMatchTypePort] = append(rateLimits[RateLimitPolicyMatchTypePort], *rateLimitPolicy)
 			case len(rateLimitPolicy.Spec.Match.Hostnames) > 0:
 				rateLimits[RateLimitPolicyMatchTypeHostnames] = append(rateLimits[RateLimitPolicyMatchTypeHostnames], *rateLimitPolicy)
@@ -426,7 +426,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 				r := generateHTTPRouteConfig(httpRoute, routeRateLimits, services)
 
 				for _, rateLimit := range hostnamesRateLimits {
-					if gwutils.RouteHostnameMatchesHostnames(hostname, rateLimit.Spec.Match.Hostnames) && r.RateLimit == nil {
+					if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, rateLimit) && r.RateLimit == nil {
 						r.RateLimit = newRateLimit(rateLimit)
 					}
 				}
@@ -488,7 +488,7 @@ func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 				r := generateGRPCRouteCfg(grpcRoute, routeRateLimits, services)
 
 				for _, rateLimit := range hostnamesRateLimits {
-					if gwutils.RouteHostnameMatchesHostnames(hostname, rateLimit.Spec.Match.Hostnames) && r.RateLimit == nil {
+					if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, rateLimit) && r.RateLimit == nil {
 						r.RateLimit = newRateLimit(rateLimit)
 					}
 				}
