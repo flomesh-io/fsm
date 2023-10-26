@@ -30,11 +30,11 @@
   ),
 
   makeRedirectHandler = cfg => (
-    msg => cfg?.StatusCode ? (
+    head => cfg?.StatusCode ? (
       (
-        scheme = cfg?.Scheme || msg?.scheme || 'http',
-        hostname = cfg?.Hostname || msg?.host,
-        path = resolvPath(cfg?.Path) || msg?.path,
+        scheme = cfg?.Scheme || head?.scheme || 'http',
+        hostname = cfg?.Hostname || head?.headers?.host,
+        path = resolvPath(cfg?.Path) || head?.path,
         port = cfg?.Port,
       ) => (
         port && hostname && (
@@ -99,7 +99,7 @@
   () => _redirectHandler, (
     $=>$.handleMessageStart(
       msg => (
-        _redirectMessage = _redirectHandler(msg?.head?.headers)
+        _redirectMessage = _redirectHandler(msg?.head)
       )
     )
     .branch(

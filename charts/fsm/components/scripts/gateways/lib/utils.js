@@ -14,20 +14,21 @@
     traceId,
 
     initRateLimit: rateLimit => (
-      rateLimit?.Local ? (
+      rateLimit ? (
         {
+          mode: rateLimit.Mode, // default "Local"
           count: 0,
-          backlog: rateLimit.Local.Backlog || 0,
+          backlog: rateLimit.Backlog || 0,
           quota: new algo.Quota(
-            rateLimit.Local.Burst || rateLimit.Local.Requests || 0,
+            rateLimit.Burst || rateLimit.Requests || 0,
             {
-              produce: rateLimit.Local.Requests || 0,
-              per: rateLimit.Local.StatTimeWindow || 0,
+              produce: rateLimit.Requests || 0,
+              per: rateLimit.StatTimeWindow || 0,
             }
           ),
           response: new Message({
-            status: rateLimit.Local.ResponseStatusCode || 429,
-            headers: Object.fromEntries((rateLimit.Local.ResponseHeadersToAdd || []).map(({ Name, Value }) => [Name, Value])),
+            status: rateLimit.ResponseStatusCode || 429,
+            headers: rateLimit.ResponseHeadersToAdd || {},
           }),
         }
       ) : null
