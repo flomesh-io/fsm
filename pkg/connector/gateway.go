@@ -65,11 +65,6 @@ func (s *Sink) updateGatewayRoute(createdSvc *apiv1.Service) {
 			}
 			protocol = strings.ToUpper(protocol)
 
-			//fwdProtocol := protocol
-			//if strings.EqualFold(fwdProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
-			//	fwdProtocol = strings.ToUpper(constants.ProtocolHTTP)
-			//}
-
 			var parentRefs []gwv1beta1.ParentReference
 
 			for _, gatewayEntry := range gatewayList {
