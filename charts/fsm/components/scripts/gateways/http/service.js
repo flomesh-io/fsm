@@ -11,6 +11,7 @@
   serviceHandlers = new algo.Cache(makeServiceHandler),
 
 ) => pipy({
+  _xff: null,
   _serviceName: null,
   _unauthorized: undefined,
 })
@@ -27,7 +28,7 @@
 
 .pipeline()
 .handleMessageStart(
-  () => (
+  msg => (
     __route?.config?.EnableHeadersAuthorization && (
       (!__consumer || !__consumer?.['Headers-Authorization']) ? (_unauthorized = true) : (_unauthorized = false)
     ),
@@ -35,7 +36,13 @@
       __root = __route.serverRoot
     ) : (
       (_serviceName = __route?.backendServiceBalancer?.borrow?.({})?.id) && (
-        __service = serviceHandlers.get(_serviceName)
+        (__service = serviceHandlers.get(_serviceName)) && msg?.head?.headers && (
+          (_xff = msg.head.headers['x-forwarded-for']) ? (
+            msg.head.headers['x-forwarded-for'] = _xff + ', ' + __inbound.localAddress
+          ) : (
+            msg.head.headers['x-forwarded-for'] = __inbound.localAddress
+          )
+        )
       )
     )
   )
@@ -60,7 +67,10 @@
     )
   ),
   () => __root, (
-    $=>$.use('server/web-server.js')
+    $=>$
+    .use('http/error-page.js', 'request')
+    .use('server/web-server.js')
+    .use('http/error-page.js', 'response')
   ),
   () => __service, (
     $=>$.chain()

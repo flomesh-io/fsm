@@ -1,37 +1,46 @@
 ((
   { metrics } = pipy.solve('lib/metrics.js'),
+  acceptedMetric = metrics.fgwHttpCurrentConnections.withLabels('accepted'),
+  activeMetric = metrics.fgwHttpCurrentConnections.withLabels('active'),
+  handledMetric = metrics.fgwHttpCurrentConnections.withLabels('handled'),
+  fgwHttpRequestsTotal = metrics.fgwHttpRequestsTotal,
+
 ) => pipy()
 
 .export('http', {
   __http: null,
-  __request: null,
-  __response: null,
+  __requestHead: null,
+  __requestTail: null,
+  __requestTime: null,
+  __responseHead: null,
+  __responseTail: null,
 })
 
 .pipeline()
 .handleStreamStart(
   () => (
-    metrics.fgwHttpCurrentConnections.withLabels('accepted').increase(),
-    metrics.fgwHttpCurrentConnections.withLabels('active').increase()
+    acceptedMetric.increase(),
+    activeMetric.increase()
   )
 )
 .handleStreamEnd(
   () => (
-    metrics.fgwHttpCurrentConnections.withLabels('handled').increase(),
-    metrics.fgwHttpCurrentConnections.withLabels('active').decrease()
+    handledMetric.increase(),
+    activeMetric.decrease()
   )
 )
 .demuxHTTP().to(
   $=>$
   .handleMessageStart(
     msg => (
-      __http = msg?.head,
-      __request = { head: msg?.head, reqTime: Date.now() },
-      metrics.fgwHttpRequestsTotal.increase()
+      __http = msg.head,
+      __requestHead = msg.head,
+      __requestTime = Date.now(),
+      fgwHttpRequestsTotal.increase()
     )
   )
   .handleMessageEnd(
-    msg => __request.tail = msg.tail
+    msg => __requestTail = msg.tail
   )
   .chain()
 )

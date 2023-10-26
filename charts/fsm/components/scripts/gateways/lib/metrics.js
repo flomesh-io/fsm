@@ -32,7 +32,7 @@
     ]),
 
     fgwUpstreamStatus = new stats.Gauge('fgw_upstream_status', [
-      'name', 'ip', 'port', 'type', 'http_status'
+      'name', 'ip', 'port', 'type', 'http_status', 'changed'
     ]),
 
     fgwHttpLatency = new stats.Histogram('fgw_http_latency', [

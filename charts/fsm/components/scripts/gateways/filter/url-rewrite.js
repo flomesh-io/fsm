@@ -31,7 +31,7 @@
 
   makeHeadHandler = (path, cfg) => (
     (cfg?.Path?.Type === 'ReplacePrefixMatch') ? (
-      cfg?.Path?.ReplacePrefixMatch && (
+      (cfg?.Path?.ReplacePrefixMatch !== undefined) && (
         head => (
           head?.path?.length > path.length ? (
             head.path = resolvPath(cfg.Path.ReplacePrefixMatch) + head.path.substring(path.length)
@@ -45,7 +45,7 @@
       )
     ) : (
       (cfg?.Path?.Type === 'ReplaceFullPath') ? (
-        cfg?.Path?.ReplaceFullPath && (
+        (cfg?.Path?.ReplaceFullPath !== undefined) && (
           head => (
             (
               prefix = (head?.path || '').split('?')[0],
@@ -129,7 +129,7 @@
 .branch(
   isDebugEnabled, (
     $=>$.handleStreamStart(
-      msg => (
+      msg => _rewriteHandlers && (
         console.log('[url-rewrite] message:', msg)
       )
     )

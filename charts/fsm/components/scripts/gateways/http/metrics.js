@@ -13,7 +13,8 @@ pipy({
 })
 
 .import({
-  __request: 'http',
+  __requestTail: 'http',
+  __requestTime: 'http',
   __domain: 'route',
   __route: 'route',
   __service: 'service',
@@ -36,12 +37,12 @@ pipy({
     _status = msg?.head?.status,
     _metrics = metricsCache.get(__service?.name),
 
-    __request.tail && _metrics.fgwBandwidth.withLabels(
+    __requestTail && _metrics.fgwBandwidth.withLabels(
       'egress',
       _route,
       _consumer,
       __inbound.remoteAddress || ''
-    ).increase(__request.tail.headSize + __request.tail.bodySize),
+    ).increase(__requestTail.headSize + __requestTail.bodySize),
 
     _status && _metrics.fgwHttpStatus.withLabels(
       _status,
@@ -67,13 +68,13 @@ pipy({
       _consumer,
       'fgw',
       _target
-    ).observe(_requestTime - __request.reqTime),
+    ).observe(_requestTime - __requestTime),
     _metrics.fgwHttpLatency.withLabels(
       _route,
       _consumer,
       'request',
       _target
-    ).observe(_responseTime - __request.reqTime),
+    ).observe(_responseTime - __requestTime),
 
     msg.tail && _metrics.fgwBandwidth.withLabels(
       'ingress',
