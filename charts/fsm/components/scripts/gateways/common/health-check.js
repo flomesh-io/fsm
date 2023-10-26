@@ -1,6 +1,8 @@
 ((
   { config, isDebugEnabled } = pipy.solve('config.js'),
 
+  { healthCheckTargets, healthCheckServices } = pipy.solve('common/variables.js'),
+
   hcLogging = config?.Configs?.HealthCheckLog?.StorageAddress && new logging.JSONLogger('health-check-logger').toHTTP(config.Configs.HealthCheckLog.StorageAddress, {
     batch: {
       timeout: 1,
@@ -20,10 +22,6 @@
   pipy_id = pipy.name || '',
 
   { metrics } = pipy.solve('lib/metrics.js'),
-
-  healthCheckTargets = {},
-
-  healthCheckServices = {},
 
   makeHealthCheck = (serviceConfig) => (
     serviceConfig?.HealthCheck && (
@@ -49,7 +47,7 @@
           ),
 
           ok: target => (
-            (target.alive === 0) && (
+            (target.alive === 0) ? (
               target.alive = 1,
               target.errorCount = 0,
               healthCheckServices[name] && healthCheckServices[name].get(target.target) && (
@@ -57,14 +55,18 @@
               ),
               isDebugEnabled && (
                 console.log('[health-check] ok - service, type, target:', name, type, target)
-              )
+              ),
+              _changed = 1
+            ) : (
+              _changed = 0
             ),
             metrics.fgwUpstreamStatus.withLabels(
               name,
               target.ip,
               target.port,
               target.reason = 'ok',
-              target.http_status || ''
+              target.http_status || '',
+              _changed
             ).increase(),
             hcLogging?.({
               k8s_cluster,
@@ -73,12 +75,13 @@
               upstream_ip: target.ip,
               upstream_port: target.port,
               type: 'ok',
-              http_status: target.http_status || ''
+              http_status: target.http_status || '',
+              change_status: _changed
             })
           ),
 
           fail: target => (
-            (++target.errorCount >= maxFails && target.alive) && (
+            (++target.errorCount >= maxFails && target.alive) ? (
               target.alive = 0,
               target.failTick = 0,
               !healthCheckServices[name] ? (
@@ -91,14 +94,18 @@
               ),
               isDebugEnabled && (
                 console.log('[health-check] fail - service, type, target:', name, type, target)
-              )
+              ),
+              _changed = -1
+            ) : (
+              _changed = 0
             ),
             metrics.fgwUpstreamStatus.withLabels(
               name,
               target.ip,
               target.port,
               target.reason || 'fail',
-              target.http_status || ''
+              target.http_status || '',
+              _changed
             ).decrease(),
             hcLogging?.({
               k8s_cluster,
@@ -107,7 +114,8 @@
               upstream_ip: target.ip,
               upstream_port: target.port,
               type: target.reason || 'fail',
-              http_status: target.http_status || ''
+              http_status: target.http_status || '',
+              change_status: _changed
             })
           ),
 
@@ -168,16 +176,12 @@
 
 ) => pipy({
   _idx: 0,
+  _changed: 0,
   _service: null,
   _target: null,
   _resolve: null,
   _tcpTargets: null,
   _targetPromises: null,
-})
-
-.export('health-check', {
-  __healthCheckTargets: healthCheckTargets,
-  __healthCheckServices: healthCheckServices,
 })
 
 .pipeline()

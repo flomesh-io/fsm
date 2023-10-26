@@ -43,7 +43,7 @@
         (+ram * 4 * 100 / memSize).toFixed(2)
       )
     ),
-    hostname = pipy.exec('hostname')?.toString?.()?.replaceAll?.('\n', ''),
+    hostname = os.env.POD_IP || os.env.HOST_IP || pipy.exec('hostname -I')?.toString?.()?.replaceAll?.('\n', ''),
     cpuUsageMetric = metrics.fgwResourceUsage.withLabels(pipy.uuid || '', pipy.name || '', pipy.source || '', hostname, 'cpu'),
     memUsageMetric = metrics.fgwResourceUsage.withLabels(pipy.uuid || '', pipy.name || '', pipy.source || '', hostname, 'mem'),
   ) => pipy({

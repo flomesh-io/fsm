@@ -52,12 +52,65 @@
     )
   )(),
 
+  gzipCache = new algo.Cache(
+    route => (
+      (
+        gz = route?.config?.Gzip || __domain?.Gzip || config?.Configs?.Gzip,
+        gzipTypes,
+        httpVersion,
+        userAgentRegex,
+        gzipMinLength = 1024,
+      ) => (
+        gz && !gz.DisableGzip && (
+          (gz.GzipMinLength >= 0) && (
+            gzipMinLength = gz.GzipMinLength
+          ),
+          gzipTypes = gz.GzipTypes || [],
+          gz.GzipHttpVersion && (httpVersion = 'HTTP/' + gz.GzipHttpVersion),
+          gz.GzipDisable && (userAgentRegex = new RegExp(gz.GzipDisable)),
+          (size, contentType, version, userAgent) => (
+            (size >= gzipMinLength) && gzipTypes.includes(contentType) && (
+              !httpVersion || version >= httpVersion
+            ) && (
+              !userAgentRegex || !userAgentRegex.test(userAgent)
+            )
+          )
+        )
+      )
+    )()
+  ),
+
+  contentTypes = (request, pathname) => (
+    _filepath = pathname,
+    _extName = getExt(pathname),
+    _contentType = matchContentType(_extName)
+  ),
+
+  compression = (head, acceptEncoding, pathname, size) => (
+    _filepath = pathname,
+    _extName = getExt(pathname),
+    _contentType = matchContentType(_extName),
+    acceptEncoding.gzip && (_gzip = gzipCache.get(__route)) && (
+      _gzip(size, _contentType, head.protocol, head.headers?.['user-agent'])
+    ) ? 'gzip' : ''
+  ),
+
   dirCache = new algo.Cache(
     dir => (
       dir.startsWith('/') ? (
-        new http.Directory(dir, { fs: true, index: (__route.config?.Index || ['index.html']) })
+        new http.Directory(dir, {
+          fs: true,
+          index: (__route.config?.Index || ['index.html']),
+          contentTypes,
+          compression,
+        })
       ) : (
-        new http.Directory('/static/' + dir, { fs: false, index: (__route.config?.Index || ['index.html']) })
+        new http.Directory('/static/' + dir, {
+          fs: false,
+          index: (__route.config?.Index || ['index.html']),
+          contentTypes,
+          compression,
+        })
       )
     ),
     null,
@@ -116,6 +169,8 @@
   _extName: null,
   _filepath: null,
   _tryFiles: null,
+  _contentType: null,
+  _gzip: null,
 })
 
 .export('web-server', {
@@ -131,16 +186,11 @@
 .replaceMessage(
   msg => (
     (_path = msg?.head?.path) && (
-      _uri = _path.split('?')[0]
-    ),
-    _uri && (_uri.indexOf('/../') < 0) && (
+      _uri = _path.split('?')[0],
       _tryFiles = tryFilesCache.get(__route)?.(_uri),
       (_tryFiles || [_uri]).find(
         tf => (
-          (_message = makeMessage(tf, msg)) && _extName && (
-            _message.head.headers['content-type'] = matchContentType(_extName)
-          ),
-          _message
+          _message = makeMessage(tf, msg)
         )
       )
     ),

@@ -10,7 +10,7 @@ pipy({
 .export('connect-tcp', {
   __target: null,
   __metricLabel: null,
-  __upstream: null,
+  __upstreamError: null,
 })
 
 .pipeline()
@@ -43,7 +43,7 @@ pipy({
 )
 .connect(() => __target, socketTimeoutOptions)
 .handleStreamEnd(
-  e => e.error && (__upstream = {error: e.error})
+  e => e.error && (__upstreamError = e.error)
 )
 .handleData(
   data => (

@@ -1,0 +1,6 @@
+(
+  {
+    healthCheckTargets: {},
+    healthCheckServices: {},
+  }
+)
