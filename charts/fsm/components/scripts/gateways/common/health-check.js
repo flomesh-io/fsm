@@ -1,6 +1,8 @@
 ((
   { config, isDebugEnabled } = pipy.solve('config.js'),
 
+  { healthCheckTargets, healthCheckServices } = pipy.solve('common/variables.js'),
+
   hcLogging = config?.Configs?.HealthCheckLog?.StorageAddress && new logging.JSONLogger('health-check-logger').toHTTP(config.Configs.HealthCheckLog.StorageAddress, {
     batch: {
       timeout: 1,
@@ -20,10 +22,6 @@
   pipy_id = pipy.name || '',
 
   { metrics } = pipy.solve('lib/metrics.js'),
-
-  healthCheckTargets = {},
-
-  healthCheckServices = {},
 
   makeHealthCheck = (serviceConfig) => (
     serviceConfig?.HealthCheck && (
@@ -184,11 +182,6 @@
   _resolve: null,
   _tcpTargets: null,
   _targetPromises: null,
-})
-
-.export('health-check', {
-  __healthCheckTargets: healthCheckTargets,
-  __healthCheckServices: healthCheckServices,
 })
 
 .pipeline()

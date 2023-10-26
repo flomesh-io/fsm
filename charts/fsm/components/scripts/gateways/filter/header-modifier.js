@@ -39,7 +39,7 @@
     ) => (
       (set || add || remove) && (
         msg => (
-          _http = (cfg.Type === 'RequestHeaderModifier') ? __request?.head : __response?.head,
+          _http = (cfg.Type === 'RequestHeaderModifier') ? __requestHead : __responseHead,
           set && set.forEach(
             e => (msg[e.Name] = resolvPath(e.Value))
           ),
@@ -127,8 +127,8 @@
 .import({
   __route: 'route',
   __service: 'service',
-  __request: 'http',
-  __response: 'http',
+  __requestHead: 'http',
+  __responseHead: 'http',
   __consumer: 'consumer',
 })
 

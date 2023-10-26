@@ -11,7 +11,7 @@
     )()
   ),
 
-  formatFn = () => `${__inbound.remoteAddress} "${__consumer?.name || ''}" [${new Date(__request?.reqTime).toString()}] ${Date.now() - __request?.reqTime} ${_host || ''} "${_path}" ${__request?.tail?.headSize} ${__request?.tail?.bodySize} ${__response?.head?.status} ${__response?.tail?.headSize || 0} ${__response?.tail?.bodySize || 0} "${__request?.head?.headers?.['user-agent'] || ''}" "${_xff || ''}" "${__request?.head?.headers?.referer || ''}"`
+  formatFn = () => `${__inbound.remoteAddress} "${__consumer?.name || ''}" [${new Date(__requestTime).toString()}] ${Date.now() - __requestTime} ${_host || ''} "${_path}" ${__requestTail?.headSize} ${__requestTail?.bodySize} ${__responseHead?.status} ${__responseTail?.headSize || 0} ${__responseTail?.bodySize || 0} "${__requestHead?.headers?.['user-agent'] || ''}" "${_xff || ''}" "${__requestHead?.headers?.referer || ''}"`
 
 ) => pipy({
   _accessLog: null,
@@ -22,8 +22,11 @@
 
 .import({
   __consumer: 'consumer',
-  __request: 'http',
-  __response: 'http',
+  __requestHead: 'http',
+  __requestTail: 'http',
+  __requestTime: 'http',
+  __responseHead: 'http',
+  __responseTail: 'http',
   __domain: 'route',
   __route: 'route',
 })
@@ -42,12 +45,12 @@
     $=>$
     .handleMessageStart(
       msg => (
-        !__response && (__response = msg)
+        !__responseHead && (__responseHead = msg.head)
       )
     )
     .handleMessageEnd(
       msg => (
-        !__response.tail && (__response.tail = msg.tail),
+        !__responseTail && (__responseTail = msg.tail),
         _accessLog(formatFn())
       )
     )

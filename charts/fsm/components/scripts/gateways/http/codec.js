@@ -9,8 +9,11 @@
 
 .export('http', {
   __http: null,
-  __request: null,
-  __response: null,
+  __requestHead: null,
+  __requestTail: null,
+  __requestTime: null,
+  __responseHead: null,
+  __responseTail: null,
 })
 
 .pipeline()
@@ -30,13 +33,14 @@
   $=>$
   .handleMessageStart(
     msg => (
-      __http = msg?.head,
-      __request = { head: msg?.head, reqTime: Date.now() },
+      __http = msg.head,
+      __requestHead = msg.head,
+      __requestTime = Date.now(),
       fgwHttpRequestsTotal.increase()
     )
   )
   .handleMessageEnd(
-    msg => __request.tail = msg.tail
+    msg => __requestTail = msg.tail
   )
   .chain()
 )

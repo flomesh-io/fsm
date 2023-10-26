@@ -1,6 +1,8 @@
 ((
   { config, isDebugEnabled } = pipy.solve('config.js'),
 
+  { healthCheckTargets, healthCheckServices } = pipy.solve('common/variables.js'),
+
   {
     shuffle,
     failover,
@@ -162,10 +164,9 @@
   __cert: 'connect-tls',
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
-  __upstream: 'connect-tcp',
-  __response: 'http',
-  __healthCheckTargets: 'health-check',
-  __healthCheckServices: 'health-check',
+  __upstreamError: 'connect-tcp',
+  __responseHead: 'http',
+  __responseTail: 'http',
 })
 
 .pipeline()
@@ -178,7 +179,7 @@
       _serviceConfig.failoverBalancer && (
         _failoverBalancer = _serviceConfig.failoverBalancer
       ),
-      _unhealthCache = __healthCheckServices?.[__service.name]
+      _unhealthCache = healthCheckServices?.[__service.name]
     )
   )
 )
@@ -290,7 +291,7 @@
     .handleMessage(
       msg => (
         config?.Configs?.ShowUpstreamStatusInResponseHeader && (
-          (msg?.head?.status > 399) && (__upstream?.error != 'ConnectionRefused') && (
+          (msg?.head?.status > 399) && (__upstreamError != 'ConnectionRefused') && (
             msg.head.headers ? (
               msg.head.headers['X-FGW-Upstream-Status'] = msg.head.status
             ) : (
@@ -298,8 +299,8 @@
             )
           )
         ),
-        (_healthCheckTarget = __healthCheckTargets?.[__target + '@' + __service.name]) && (
-          (__upstream?.error === 'ConnectionRefused') && (
+        (_healthCheckTarget = healthCheckTargets?.[__target + '@' + __service.name]) && (
+          (__upstreamError === 'ConnectionRefused') && (
             _healthCheckTarget.service.fail(_healthCheckTarget),
             _healthCheckTarget.reason = 'ConnectionRefused'
           )
@@ -311,7 +312,7 @@
         $=>$
         .handleMessageStart(
           msg => (
-            __response = { head: msg?.head, resTime: Date.now() },
+            __responseHead = msg.head,
             msg?.head?.headers && (
               !msg.head.headers['set-cookie'] && (
                 msg.head.headers['set-cookie'] = []
@@ -325,7 +326,7 @@
           )
         )
         .handleMessageEnd(
-          msg => __response.tail = msg.tail
+          msg => __responseTail = msg.tail
         )
       ), (
         $=>$
