@@ -173,7 +173,7 @@
               grpc = (path || '').split('/'),
             ) => (
               path?.startsWith('/grpc.reflection.') || (
-                (rule?.Method?.Service === grpc[1]) && (rule?.Method?.Method === grpc[2])
+                (!rule?.Method?.Service || rule?.Method?.Service === grpc[1]) && (!rule?.Method?.Method || rule?.Method?.Method === grpc[2])
               )
             )
           )()
