@@ -36,13 +36,13 @@ spec:
           spec:
             description: RateLimitPolicySpec defines the desired state of RateLimitPolicy
             properties:
-              match:
-                description: Match defines the match condition of the rate limit policy
-                properties:
-                  hostnames:
-                    description: Hostnames defines the match condition of hostnames
-                      for the rate limit
-                    items:
+              hostnames:
+                description: Hostnames defines the rate limit configuration for hostnames
+                items:
+                  description: HostnameRateLimit defines the rate limit configuration
+                    for a hostname
+                  properties:
+                    hostname:
                       description: "Hostname is the fully qualified domain name of
                         a network host. This matches the RFC 1123 definition of a
                         hostname with 2 notable exceptions: \n 1. IPs are not allowed.
@@ -59,299 +59,382 @@ spec:
                       minLength: 1
                       pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                       type: string
-                    type: array
-                  port:
-                    description: Port defines the match condition of port for the
-                      rate limit
-                    format: int32
-                    maximum: 65535
-                    minimum: 1
-                    type: integer
-                  route:
-                    description: Route defines the match condition of route for the
-                      rate limit
+                    rateLimit:
+                      description: L7RateLimit defines the rate limit configuration
+                        for a route
+                      properties:
+                        backlog:
+                          default: 10
+                          description: Backlog is the number of requests allowed to
+                            wait in the queue
+                          type: integer
+                        burst:
+                          description: Burst is the number of requests allowed to
+                            be bursted, if not specified, it will be the same as Requests
+                          type: integer
+                        mode:
+                          default: Local
+                          description: Mode is the mode of the rate limit policy,
+                            Local or Global, default is Local
+                          enum:
+                          - Local
+                          - Global
+                          type: string
+                        requests:
+                          description: Requests is the number of requests allowed
+                            per statTimeWindow
+                          type: integer
+                        responseHeadersToAdd:
+                          additionalProperties:
+                            type: string
+                          description: ResponseHeadersToAdd is the response headers
+                            to be added when the rate limit is exceeded
+                          type: object
+                        responseStatusCode:
+                          default: 429
+                          description: ResponseStatusCode is the response status code
+                            to be returned when the rate limit is exceeded
+                          type: integer
+                        statTimeWindow:
+                          description: StatTimeWindow is the time window in seconds
+                          type: integer
+                      required:
+                      - requests
+                      - statTimeWindow
+                      type: object
+                  required:
+                  - hostname
+                  type: object
+                properties:
+                  rateLimit:
+                    description: L7RateLimit defines the rate limit configuration
+                      for a route
                     properties:
-                      grpc:
-                        description: GRPCRouteMatch defines the match condition of
-                          GRPC route for the rate limit
-                        items:
-                          description: "GRPCRouteMatch defines the predicate used
-                            to match requests to a given action. Multiple match types
-                            are ANDed together, i.e. the match will evaluate to true
-                            only if all conditions are satisfied. \n For example,
-                            the match below will match a gRPC request only if its
-                            service is `foo` AND it contains the `version: v1` header:
-                            \n ``` matches: - method: type: Exact service: \"foo\"
-                            headers: - name: \"version\" value \"v1\" \n ```"
-                          properties:
-                            headers:
-                              description: Headers specifies gRPC request header matchers.
-                                Multiple match values are ANDed together, meaning,
-                                a request MUST match all the specified headers to
-                                select the route.
-                              items:
-                                description: GRPCHeaderMatch describes how to select
-                                  a gRPC route by matching gRPC request headers.
-                                properties:
-                                  name:
-                                    description: "Name is the name of the gRPC Header
-                                      to be matched. \n If multiple entries specify
-                                      equivalent header names, only the first entry
-                                      with an equivalent name MUST be considered for
-                                      a match. Subsequent entries with an equivalent
-                                      header name MUST be ignored. Due to the case-insensitivity
-                                      of header names, \"foo\" and \"Foo\" are considered
-                                      equivalent."
-                                    maxLength: 256
-                                    minLength: 1
-                                    pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                                    type: string
-                                  type:
-                                    default: Exact
-                                    description: Type specifies how to match against
-                                      the value of the header.
-                                    enum:
-                                    - Exact
-                                    - RegularExpression
-                                    type: string
-                                  value:
-                                    description: Value is the value of the gRPC Header
-                                      to be matched.
-                                    maxLength: 4096
-                                    minLength: 1
-                                    type: string
-                                required:
-                                - name
-                                - value
-                                type: object
-                              maxItems: 16
-                              type: array
-                              x-kubernetes-list-map-keys:
-                              - name
-                              x-kubernetes-list-type: map
-                            method:
-                              description: Method specifies a gRPC request service/method
-                                matcher. If this field is not specified, all services
-                                and methods will match.
-                              properties:
-                                method:
-                                  description: "Value of the method to match against.
-                                    If left empty or omitted, will match all services.
-                                    \n At least one of Service and Method MUST be
-                                    a non-empty string."
-                                  maxLength: 1024
-                                  type: string
-                                service:
-                                  description: "Value of the service to match against.
-                                    If left empty or omitted, will match any service.
-                                    \n At least one of Service and Method MUST be
-                                    a non-empty string."
-                                  maxLength: 1024
-                                  type: string
-                                type:
-                                  default: Exact
-                                  description: "Type specifies how to match against
-                                    the service and/or method. Support: Core (Exact
-                                    with service and method specified) \n Support:
-                                    Implementation-specific (Exact with method specified
-                                    but no service specified) \n Support: Implementation-specific
-                                    (RegularExpression)"
-                                  enum:
-                                  - Exact
-                                  - RegularExpression
-                                  type: string
-                              type: object
-                          type: object
-                        type: array
-                      http:
-                        description: HTTPRouteMatch defines the match condition of
-                          HTTP route for the rate limit
-                        items:
-                          description: "HTTPRouteMatch defines the predicate used
-                            to match requests to a given action. Multiple match types
-                            are ANDed together, i.e. the match will evaluate to true
-                            only if all conditions are satisfied. \n For example,
-                            the match below will match a HTTP request only if its
-                            path starts with `/foo` AND it contains the `version:
-                            v1` header: \n ``` match: \n path: value: \"/foo\" headers:
-                            - name: \"version\" value \"v1\" \n ```"
-                          properties:
-                            headers:
-                              description: Headers specifies HTTP request header matchers.
-                                Multiple match values are ANDed together, meaning,
-                                a request must match all the specified headers to
-                                select the route.
-                              items:
-                                description: HTTPHeaderMatch describes how to select
-                                  a HTTP route by matching HTTP request headers.
-                                properties:
-                                  name:
-                                    description: "Name is the name of the HTTP Header
-                                      to be matched. Name matching MUST be case insensitive.
-                                      (See https://tools.ietf.org/html/rfc7230#section-3.2).
-                                      \n If multiple entries specify equivalent header
-                                      names, only the first entry with an equivalent
-                                      name MUST be considered for a match. Subsequent
-                                      entries with an equivalent header name MUST
-                                      be ignored. Due to the case-insensitivity of
-                                      header names, \"foo\" and \"Foo\" are considered
-                                      equivalent. \n When a header is repeated in
-                                      an HTTP request, it is implementation-specific
-                                      behavior as to how this is represented. Generally,
-                                      proxies should follow the guidance from the
-                                      RFC: https://www.rfc-editor.org/rfc/rfc7230.html#section-3.2.2
-                                      regarding processing a repeated header, with
-                                      special handling for \"Set-Cookie\"."
-                                    maxLength: 256
-                                    minLength: 1
-                                    pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                                    type: string
-                                  type:
-                                    default: Exact
-                                    description: "Type specifies how to match against
-                                      the value of the header. \n Support: Core (Exact)
-                                      \n Support: Implementation-specific (RegularExpression)
-                                      \n Since RegularExpression HeaderMatchType has
-                                      implementation-specific conformance, implementations
-                                      can support POSIX, PCRE or any other dialects
-                                      of regular expressions. Please read the implementation's
-                                      documentation to determine the supported dialect."
-                                    enum:
-                                    - Exact
-                                    - RegularExpression
-                                    type: string
-                                  value:
-                                    description: Value is the value of HTTP Header
-                                      to be matched.
-                                    maxLength: 4096
-                                    minLength: 1
-                                    type: string
-                                required:
-                                - name
-                                - value
-                                type: object
-                              maxItems: 16
-                              type: array
-                              x-kubernetes-list-map-keys:
-                              - name
-                              x-kubernetes-list-type: map
-                            method:
-                              description: "Method specifies HTTP method matcher.
-                                When specified, this route will be matched only if
-                                the request has the specified method. \n Support:
-                                Extended"
-                              enum:
-                              - GET
-                              - HEAD
-                              - POST
-                              - PUT
-                              - DELETE
-                              - CONNECT
-                              - OPTIONS
-                              - TRACE
-                              - PATCH
-                              type: string
-                            path:
-                              default:
-                                type: PathPrefix
-                                value: /
-                              description: Path specifies a HTTP request path matcher.
-                                If this field is not specified, a default prefix match
-                                on the "/" path is provided.
-                              properties:
-                                type:
-                                  default: PathPrefix
-                                  description: "Type specifies how to match against
-                                    the path Value. \n Support: Core (Exact, PathPrefix)
-                                    \n Support: Implementation-specific (RegularExpression)"
-                                  enum:
-                                  - Exact
-                                  - PathPrefix
-                                  - RegularExpression
-                                  type: string
-                                value:
-                                  default: /
-                                  description: Value of the HTTP path to match against.
-                                  maxLength: 1024
-                                  type: string
-                              type: object
-                            queryParams:
-                              description: "QueryParams specifies HTTP query parameter
-                                matchers. Multiple match values are ANDed together,
-                                meaning, a request must match all the specified query
-                                parameters to select the route. \n Support: Extended"
-                              items:
-                                description: HTTPQueryParamMatch describes how to
-                                  select a HTTP route by matching HTTP query parameters.
-                                properties:
-                                  name:
-                                    description: "Name is the name of the HTTP query
-                                      param to be matched. This must be an exact string
-                                      match. (See https://tools.ietf.org/html/rfc7230#section-2.7.3).
-                                      \n If multiple entries specify equivalent query
-                                      param names, only the first entry with an equivalent
-                                      name MUST be considered for a match. Subsequent
-                                      entries with an equivalent query param name
-                                      MUST be ignored. \n If a query param is repeated
-                                      in an HTTP request, the behavior is purposely
-                                      left undefined, since different data planes
-                                      have different capabilities. However, it is
-                                      *recommended* that implementations should match
-                                      against the first value of the param if the
-                                      data plane supports it, as this behavior is
-                                      expected in other load balancing contexts outside
-                                      of the Gateway API. \n Users SHOULD NOT route
-                                      traffic based on repeated query params to guard
-                                      themselves against potential differences in
-                                      the implementations."
-                                    maxLength: 256
-                                    minLength: 1
-                                    pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                                    type: string
-                                  type:
-                                    default: Exact
-                                    description: "Type specifies how to match against
-                                      the value of the query parameter. \n Support:
-                                      Extended (Exact) \n Support: Implementation-specific
-                                      (RegularExpression) \n Since RegularExpression
-                                      QueryParamMatchType has Implementation-specific
-                                      conformance, implementations can support POSIX,
-                                      PCRE or any other dialects of regular expressions.
-                                      Please read the implementation's documentation
-                                      to determine the supported dialect."
-                                    enum:
-                                    - Exact
-                                    - RegularExpression
-                                    type: string
-                                  value:
-                                    description: Value is the value of HTTP query
-                                      param to be matched.
-                                    maxLength: 1024
-                                    minLength: 1
-                                    type: string
-                                required:
-                                - name
-                                - value
-                                type: object
-                              maxItems: 16
-                              type: array
-                              x-kubernetes-list-map-keys:
-                              - name
-                              x-kubernetes-list-type: map
-                          type: object
-                        type: array
+                      backlog:
+                        default: 10
+                        description: Backlog is the number of requests allowed to
+                          wait in the queue
+                        type: integer
+                      burst:
+                        description: Burst is the number of requests allowed to be
+                          bursted, if not specified, it will be the same as Requests
+                        type: integer
+                      mode:
+                        default: Local
+                        description: Mode is the mode of the rate limit policy, Local
+                          or Global, default is Local
+                        enum:
+                        - Local
+                        - Global
+                        type: string
+                      requests:
+                        description: Requests is the number of requests allowed per
+                          statTimeWindow
+                        type: integer
+                      responseHeadersToAdd:
+                        additionalProperties:
+                          type: string
+                        description: ResponseHeadersToAdd is the response headers
+                          to be added when the rate limit is exceeded
+                        type: object
+                      responseStatusCode:
+                        default: 429
+                        description: ResponseStatusCode is the response status code
+                          to be returned when the rate limit is exceeded
+                        type: integer
+                      statTimeWindow:
+                        description: StatTimeWindow is the time window in seconds
+                        type: integer
+                    required:
+                    - requests
+                    - statTimeWindow
                     type: object
-                type: object
-              rateLimit:
-                description: RateLimit defines the rate limit details
+                type: array
+              ports:
+                description: Ports defines the rate limit configuration for ports
+                items:
+                  description: PortRateLimit defines the rate limit configuration
+                    for a port
+                  properties:
+                    bps:
+                      format: int64
+                      type: integer
+                    port:
+                      description: PortNumber defines a network port.
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                  required:
+                  - port
+                  type: object
                 properties:
                   bps:
-                    description: L4RateLimit is the rate limit in bytes per second
                     format: int64
                     type: integer
-                  config:
-                    description: L7RateLimit defines the rate limit details for Layer
-                      7 protocols, for now it's HTTP/GRPC
+                type: array
+              routes:
+                description: Routes defines the rate limit configuration for routes
+                properties:
+                  grpc:
+                    items:
+                      description: "GRPCRouteMatch defines the predicate used to match
+                        requests to a given action. Multiple match types are ANDed
+                        together, i.e. the match will evaluate to true only if all
+                        conditions are satisfied. \n For example, the match below
+                        will match a gRPC request only if its service is `foo` AND
+                        it contains the `version: v1` header: \n ``` matches: - method:
+                        type: Exact service: \"foo\" headers: - name: \"version\"
+                        value \"v1\" \n ```"
+                      properties:
+                        headers:
+                          description: Headers specifies gRPC request header matchers.
+                            Multiple match values are ANDed together, meaning, a request
+                            MUST match all the specified headers to select the route.
+                          items:
+                            description: GRPCHeaderMatch describes how to select a
+                              gRPC route by matching gRPC request headers.
+                            properties:
+                              name:
+                                description: "Name is the name of the gRPC Header
+                                  to be matched. \n If multiple entries specify equivalent
+                                  header names, only the first entry with an equivalent
+                                  name MUST be considered for a match. Subsequent
+                                  entries with an equivalent header name MUST be ignored.
+                                  Due to the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: Type specifies how to match against the
+                                  value of the header.
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of the gRPC Header
+                                  to be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        method:
+                          description: Method specifies a gRPC request service/method
+                            matcher. If this field is not specified, all services
+                            and methods will match.
+                          properties:
+                            method:
+                              description: "Value of the method to match against.
+                                If left empty or omitted, will match all services.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            service:
+                              description: "Value of the service to match against.
+                                If left empty or omitted, will match any service.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            type:
+                              default: Exact
+                              description: "Type specifies how to match against the
+                                service and/or method. Support: Core (Exact with service
+                                and method specified) \n Support: Implementation-specific
+                                (Exact with method specified but no service specified)
+                                \n Support: Implementation-specific (RegularExpression)"
+                              enum:
+                              - Exact
+                              - RegularExpression
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                  http:
+                    items:
+                      description: "HTTPRouteMatch defines the predicate used to match
+                        requests to a given action. Multiple match types are ANDed
+                        together, i.e. the match will evaluate to true only if all
+                        conditions are satisfied. \n For example, the match below
+                        will match a HTTP request only if its path starts with `/foo`
+                        AND it contains the `version: v1` header: \n ``` match: \n
+                        path: value: \"/foo\" headers: - name: \"version\" value \"v1\"
+                        \n ```"
+                      properties:
+                        headers:
+                          description: Headers specifies HTTP request header matchers.
+                            Multiple match values are ANDed together, meaning, a request
+                            must match all the specified headers to select the route.
+                          items:
+                            description: HTTPHeaderMatch describes how to select a
+                              HTTP route by matching HTTP request headers.
+                            properties:
+                              name:
+                                description: "Name is the name of the HTTP Header
+                                  to be matched. Name matching MUST be case insensitive.
+                                  (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                  \n If multiple entries specify equivalent header
+                                  names, only the first entry with an equivalent name
+                                  MUST be considered for a match. Subsequent entries
+                                  with an equivalent header name MUST be ignored.
+                                  Due to the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent. \n When a
+                                  header is repeated in an HTTP request, it is implementation-specific
+                                  behavior as to how this is represented. Generally,
+                                  proxies should follow the guidance from the RFC:
+                                  https://www.rfc-editor.org/rfc/rfc7230.html#section-3.2.2
+                                  regarding processing a repeated header, with special
+                                  handling for \"Set-Cookie\"."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: "Type specifies how to match against
+                                  the value of the header. \n Support: Core (Exact)
+                                  \n Support: Implementation-specific (RegularExpression)
+                                  \n Since RegularExpression HeaderMatchType has implementation-specific
+                                  conformance, implementations can support POSIX,
+                                  PCRE or any other dialects of regular expressions.
+                                  Please read the implementation's documentation to
+                                  determine the supported dialect."
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of HTTP Header to
+                                  be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        method:
+                          description: "Method specifies HTTP method matcher. When
+                            specified, this route will be matched only if the request
+                            has the specified method. \n Support: Extended"
+                          enum:
+                          - GET
+                          - HEAD
+                          - POST
+                          - PUT
+                          - DELETE
+                          - CONNECT
+                          - OPTIONS
+                          - TRACE
+                          - PATCH
+                          type: string
+                        path:
+                          default:
+                            type: PathPrefix
+                            value: /
+                          description: Path specifies a HTTP request path matcher.
+                            If this field is not specified, a default prefix match
+                            on the "/" path is provided.
+                          properties:
+                            type:
+                              default: PathPrefix
+                              description: "Type specifies how to match against the
+                                path Value. \n Support: Core (Exact, PathPrefix) \n
+                                Support: Implementation-specific (RegularExpression)"
+                              enum:
+                              - Exact
+                              - PathPrefix
+                              - RegularExpression
+                              type: string
+                            value:
+                              default: /
+                              description: Value of the HTTP path to match against.
+                              maxLength: 1024
+                              type: string
+                          type: object
+                        queryParams:
+                          description: "QueryParams specifies HTTP query parameter
+                            matchers. Multiple match values are ANDed together, meaning,
+                            a request must match all the specified query parameters
+                            to select the route. \n Support: Extended"
+                          items:
+                            description: HTTPQueryParamMatch describes how to select
+                              a HTTP route by matching HTTP query parameters.
+                            properties:
+                              name:
+                                description: "Name is the name of the HTTP query param
+                                  to be matched. This must be an exact string match.
+                                  (See https://tools.ietf.org/html/rfc7230#section-2.7.3).
+                                  \n If multiple entries specify equivalent query
+                                  param names, only the first entry with an equivalent
+                                  name MUST be considered for a match. Subsequent
+                                  entries with an equivalent query param name MUST
+                                  be ignored. \n If a query param is repeated in an
+                                  HTTP request, the behavior is purposely left undefined,
+                                  since different data planes have different capabilities.
+                                  However, it is *recommended* that implementations
+                                  should match against the first value of the param
+                                  if the data plane supports it, as this behavior
+                                  is expected in other load balancing contexts outside
+                                  of the Gateway API. \n Users SHOULD NOT route traffic
+                                  based on repeated query params to guard themselves
+                                  against potential differences in the implementations."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: "Type specifies how to match against
+                                  the value of the query parameter. \n Support: Extended
+                                  (Exact) \n Support: Implementation-specific (RegularExpression)
+                                  \n Since RegularExpression QueryParamMatchType has
+                                  Implementation-specific conformance, implementations
+                                  can support POSIX, PCRE or any other dialects of
+                                  regular expressions. Please read the implementation's
+                                  documentation to determine the supported dialect."
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of HTTP query param
+                                  to be matched.
+                                maxLength: 1024
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                      type: object
+                    type: array
+                  rateLimit:
+                    description: L7RateLimit defines the rate limit configuration
+                      for a route
                     properties:
                       backlog:
                         default: 10
@@ -428,8 +511,6 @@ spec:
                 - name
                 type: object
             required:
-            - match
-            - rateLimit
             - targetRef
             type: object
           status:

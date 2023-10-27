@@ -300,12 +300,12 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 
 // RouteHostnameMatchesRateLimitPolicy returns true if the route hostname matches the hostnames
 func RouteHostnameMatchesRateLimitPolicy(routeHostname string, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
-	if len(rateLimitPolicy.Spec.Match.Hostnames) == 0 {
+	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
 		return false
 	}
 
-	for i := range rateLimitPolicy.Spec.Match.Hostnames {
-		hostname := string(rateLimitPolicy.Spec.Match.Hostnames[i])
+	for i := range rateLimitPolicy.Spec.Hostnames {
+		hostname := string(rateLimitPolicy.Spec.Hostnames[i].Hostname)
 		switch {
 		case routeHostname == hostname:
 			return true
@@ -327,12 +327,12 @@ func RouteHostnameMatchesRateLimitPolicy(routeHostname string, rateLimitPolicy g
 
 // HTTPRouteMatchesRateLimitPolicy returns true if the HTTP route matches the rate limit policy
 func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
-	if len(rateLimitPolicy.Spec.Match.Route.HTTPRouteMatch) == 0 {
+	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 {
 		return false
 	}
 
-	for _, policyRouteMatch := range rateLimitPolicy.Spec.Match.Route.HTTPRouteMatch {
-		if reflect.DeepEqual(routeMatch, policyRouteMatch) {
+	for _, hr := range rateLimitPolicy.Spec.HTTPRateLimits {
+		if reflect.DeepEqual(routeMatch, hr.Match) {
 			return true
 		}
 	}
@@ -342,12 +342,12 @@ func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLi
 
 // GRPCRouteMatchesRateLimitPolicy returns true if the GRPC route matches the rate limit policy
 func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
-	if len(rateLimitPolicy.Spec.Match.Route.GRPCRouteMatch) == 0 {
+	if len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
 		return false
 	}
 
-	for _, policyRouteMatch := range rateLimitPolicy.Spec.Match.Route.GRPCRouteMatch {
-		if reflect.DeepEqual(routeMatch, policyRouteMatch) {
+	for _, gr := range rateLimitPolicy.Spec.GRPCRateLimits {
+		if reflect.DeepEqual(routeMatch, gr.Match) {
 			return true
 		}
 	}
@@ -357,12 +357,12 @@ func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateL
 
 // PortMatchesRateLimitPolicy returns true if the port matches the rate limit policy
 func PortMatchesRateLimitPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
-	if len(rateLimitPolicy.Spec.Match.Ports) == 0 {
+	if len(rateLimitPolicy.Spec.Ports) == 0 {
 		return false
 	}
 
-	for _, policyPort := range rateLimitPolicy.Spec.Match.Ports {
-		if port == policyPort {
+	for _, policyPort := range rateLimitPolicy.Spec.Ports {
+		if port == policyPort.Port {
 			return true
 		}
 	}

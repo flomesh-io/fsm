@@ -578,3 +578,13 @@ func newRateLimit(rateLimit gwpav1alpha1.RateLimitPolicy) *routecfg.RateLimit {
 		ResponseHeadersToAdd: rateLimit.Spec.RateLimit.L7RateLimit.ResponseHeadersToAdd,
 	}
 }
+
+func bpsRateLimit(listenerPort gwv1beta1.PortNumber, policy gwpav1alpha1.RateLimitPolicy) *int64 {
+	for _, port := range policy.Spec.Ports {
+		if listenerPort == port.Port && port.BPS != nil {
+			return port.BPS
+		}
+	}
+
+	return policy.Spec.DefaultBPS
+}

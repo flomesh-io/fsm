@@ -282,10 +282,10 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 		p := p
 		if gwutils.IsAcceptedRateLimitPolicy(&p) &&
 			gwutils.IsRefToTarget(p.Spec.TargetRef, gwutils.ObjectKey(route)) {
-			if len(p.Spec.Match.Hostnames) > 0 {
+			if len(p.Spec.Hostnames) > 0 {
 				hostnamesRateLimits = append(hostnamesRateLimits, p)
 			}
-			if p.Spec.Match.Route != nil {
+			if len(p.Spec.HTTPRateLimits) > 0 || len(p.Spec.HTTPRateLimits) > 0 {
 				routeRateLimits = append(routeRateLimits, p)
 			}
 		}
@@ -349,7 +349,7 @@ type routeInfo struct {
 }
 
 func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route routeInfo, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, hostnamesRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Match.Hostnames) == 0 {
+	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
@@ -366,20 +366,18 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 
 			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.gvk, route.generation, validListeners)
 			for _, listener := range allowedListeners {
-				if len(rateLimitPolicy.Spec.Match.Hostnames) > 0 {
-					hostnames := gwutils.GetValidHostnames(listener.Hostname, route.hostnames)
-					if len(hostnames) == 0 {
-						// no valid hostnames, should ignore it
-						continue
-					}
-					for _, hostname := range hostnames {
-						for _, hr := range hostnamesRateLimits {
-							if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, hr) &&
-								gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, *rateLimitPolicy) {
-								return &types.NamespacedName{
-									Name:      hr.Name,
-									Namespace: hr.Namespace,
-								}
+				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.hostnames)
+				if len(hostnames) == 0 {
+					// no valid hostnames, should ignore it
+					continue
+				}
+				for _, hostname := range hostnames {
+					for _, hr := range hostnamesRateLimits {
+						if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, hr) &&
+							gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, *rateLimitPolicy) {
+							return &types.NamespacedName{
+								Name:      hr.Name,
+								Namespace: hr.Namespace,
 							}
 						}
 					}
@@ -392,7 +390,8 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 }
 
 func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route client.Object, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, routeRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if rateLimitPolicy.Spec.Match.Route == nil {
+	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 &&
+		len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
 		return nil
 	}
 
@@ -401,7 +400,7 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
 				for _, rateLimit := range routeRateLimits {
-					if len(rateLimit.Spec.Match.Route.HTTPRouteMatch) == 0 {
+					if len(rateLimit.Spec.HTTPRateLimits) == 0 {
 						continue
 					}
 
@@ -419,7 +418,7 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
 				for _, rr := range routeRateLimits {
-					if len(rr.Spec.Match.Route.GRPCRouteMatch) == 0 {
+					if len(rr.Spec.GRPCRateLimits) == 0 {
 						continue
 					}
 
@@ -448,7 +447,7 @@ func getRouteParentKey(route metav1.Object, parent gwv1beta1.RouteParentStatus) 
 }
 
 func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies *gwpav1alpha1.RateLimitPolicyList) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Match.Ports) == 0 {
+	if len(rateLimitPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
@@ -457,7 +456,7 @@ func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1
 		pr := p
 		if gwutils.IsAcceptedRateLimitPolicy(&pr) &&
 			gwutils.IsRefToTarget(pr.Spec.TargetRef, gwutils.ObjectKey(gateway)) &&
-			len(pr.Spec.Match.Ports) > 0 {
+			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
 				if gwutils.PortMatchesRateLimitPolicy(listener.Port, pr) &&
 					gwutils.PortMatchesRateLimitPolicy(listener.Port, *rateLimitPolicy) {

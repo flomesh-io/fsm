@@ -157,10 +157,10 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 				if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(gw)) {
 					// A matched rate limit policy and no rate limit is set on the listener,
 					//  as the rate limits are sorted by timestamp, the first one wins
-					if len(rateLimit.Spec.Match.Ports) > 0 &&
+					if len(rateLimit.Spec.Ports) > 0 &&
 						gwutils.PortMatchesRateLimitPolicy(l.Port, rateLimit) &&
 						listener.BpsLimit == nil {
-						listener.BpsLimit = rateLimit.Spec.RateLimit.L4RateLimit
+						listener.BpsLimit = bpsRateLimit(l.Port, rateLimit)
 					}
 				}
 			}
@@ -197,11 +197,11 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 		rateLimitPolicy := policy.(*gwpav1alpha1.RateLimitPolicy)
 		if gwutils.IsAcceptedRateLimitPolicy(rateLimitPolicy) {
 			switch {
-			case len(rateLimitPolicy.Spec.Match.Ports) > 0:
+			case len(rateLimitPolicy.Spec.Ports) > 0:
 				rateLimits[RateLimitPolicyMatchTypePort] = append(rateLimits[RateLimitPolicyMatchTypePort], *rateLimitPolicy)
-			case len(rateLimitPolicy.Spec.Match.Hostnames) > 0:
+			case len(rateLimitPolicy.Spec.Hostnames) > 0:
 				rateLimits[RateLimitPolicyMatchTypeHostnames] = append(rateLimits[RateLimitPolicyMatchTypeHostnames], *rateLimitPolicy)
-			case rateLimitPolicy.Spec.Match.Route != nil:
+			case len(rateLimitPolicy.Spec.HTTPRateLimits) > 0 || len(rateLimitPolicy.Spec.GRPCRateLimits) > 0:
 				rateLimits[RateLimitPolicyMatchTypeRoute] = append(rateLimits[RateLimitPolicyMatchTypeRoute], *rateLimitPolicy)
 			}
 		}
@@ -427,7 +427,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 				for _, rateLimit := range hostnamesRateLimits {
 					if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, rateLimit) && r.RateLimit == nil {
-						r.RateLimit = newRateLimit(rateLimit)
+						r.RateLimit = newRateLimit(hostname, rateLimit)
 					}
 				}
 

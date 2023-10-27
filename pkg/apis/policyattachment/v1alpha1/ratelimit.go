@@ -21,39 +21,64 @@ type RateLimitPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
-	// Match defines the match condition of the rate limit policy
-	Match RateLimitPolicyMatch `json:"match"`
+	// +optional
+	// Ports is the rate limit configuration for ports
+	Ports []PortRateLimit `json:"ports,omitempty"`
 
-	// RateLimit defines the rate limit details
-	RateLimit RateLimitPolicyConfig `json:"rateLimit"`
+	// +optional
+	// DefaultBPS is the default rate limit for all ports
+	DefaultBPS *int64 `json:"bps,omitempty"`
+
+	// +optional
+	// Hostnames is the rate limit configuration for hostnames
+	Hostnames []HostnameRateLimit `json:"hostnames,omitempty"`
+
+	// +optional
+	// HTTPRateLimits is the rate limit configuration for HTTP routes
+	HTTPRateLimits []HTTPRateLimit `json:"http,omitempty"`
+
+	// +optional
+	// GRPCRateLimits is the rate limit configuration for GRPC routes
+	GRPCRateLimits []GRPCRateLimit `json:"grpc,omitempty"`
+
+	// +optional
+	// DefaultRateLimit is the default rate limit for all routes and hostnames
+	DefaultL7RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
 }
 
-type RateLimitPolicyMatch struct {
-	// +optional
-	// Ports defines the match condition of port for the rate limit
-	Ports []gwv1beta1.PortNumber `json:"ports,omitempty"`
-
-	// +optional
-	// Hostnames defines the match condition of hostnames for the rate limit
-	Hostnames []gwv1beta1.Hostname `json:"hostnames,omitempty"`
-
-	// +optional
-	// Route defines the match condition of route for the rate limit
-	Route *RouteRateLimitMatch `json:"route,omitempty"`
+// PortRateLimit defines the rate limit configuration for a port
+type PortRateLimit struct {
+	Port gwv1beta1.PortNumber `json:"port"`
+	BPS  *int64               `json:"bps,omitempty"`
 }
 
-// RateLimitPolicyConfig defines the rate limit configuration
-type RateLimitPolicyConfig struct {
-	// +optional
-	// L4RateLimit is the rate limit in bytes per second
-	L4RateLimit *int64 `json:"bps,omitempty"`
-
-	// +optional
-	// L7RateLimit defines the rate limit details for Layer 7 protocols, for now it's HTTP/GRPC
-	L7RateLimit *L7RateLimitPolicy `json:"config,omitempty"`
+// HostnameRateLimit defines the rate limit configuration for a hostname
+type HostnameRateLimit struct {
+	Hostname  gwv1beta1.Hostname `json:"hostname"`
+	RateLimit *L7RateLimit       `json:"rateLimit,omitempty"`
 }
 
-type L7RateLimitPolicy struct {
+// RouteRateLimitConfig defines the rate limit configuration for routes
+type RouteRateLimitConfig struct {
+	HttpRateLimits   []HTTPRateLimit `json:"http,omitempty"`
+	GrpcRateLimits   []GRPCRateLimit `json:"grpc,omitempty"`
+	DefaultRateLimit *L7RateLimit    `json:"rateLimit,omitempty"`
+}
+
+// HTTPRateLimit defines the rate limit configuration for a HTTP route
+type HTTPRateLimit struct {
+	Match     gwv1beta1.HTTPRouteMatch `json:"match"`
+	RateLimit *L7RateLimit             `json:"rateLimit,omitempty"`
+}
+
+// GRPCRateLimit defines the rate limit configuration for a GRPC route
+type GRPCRateLimit struct {
+	Match     gwv1alpha2.GRPCRouteMatch `json:"match"`
+	RateLimit *L7RateLimit              `json:"rateLimit,omitempty"`
+}
+
+// L7RateLimit defines the rate limit configuration for a route
+type L7RateLimit struct {
 	// +optional
 	// +kubebuilder:default=Local
 	// +kubebuilder:validation:Enum=Local;Global
@@ -83,17 +108,6 @@ type L7RateLimitPolicy struct {
 	// +optional
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
 	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty"`
-}
-
-// RouteRateLimitMatch defines the route based rate limit
-type RouteRateLimitMatch struct {
-	// +optional
-	// HTTPRouteMatch defines the match condition of HTTP route for the rate limit
-	HTTPRouteMatch []gwv1beta1.HTTPRouteMatch `json:"http,omitempty"`
-
-	// +optional
-	// GRPCRouteMatch defines the match condition of GRPC route for the rate limit
-	GRPCRouteMatch []gwv1alpha2.GRPCRouteMatch `json:"grpc,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy
