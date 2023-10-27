@@ -29,10 +29,10 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
-{{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
+{{- if (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
   - apiGroups: ["discovery.k8s.io"]
     resources: ["endpointslices"]
-    verbs: ["get", "list", "watch", "update", "patch"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
 
   # Port forwarding is needed for the FSM pod to be able to connect
