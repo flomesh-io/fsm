@@ -57,6 +57,7 @@ spec:
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-derive-namespace={{.Values.fsm.cloudConnector.eureka.deriveNamespace}}",
+            "-with-gateway-api={{.Values.fsm.fsmGateway.enabled}}",
             "-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-passing-only={{.Values.fsm.cloudConnector.eureka.passingOnly}}",
             "-filter-tag={{.Values.fsm.cloudConnector.eureka.filterTag}}",

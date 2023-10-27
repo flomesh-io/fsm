@@ -17,6 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/retry"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -32,15 +35,17 @@ const (
 )
 
 var (
-	protocolHTTP = "http"
-	protocolGRPC = "grpc"
+	protocolHTTP = constants.ProtocolHTTP
+	protocolGRPC = constants.ProtocolGRPC
 )
 
 // NewSink creates a new mesh sink
-func NewSink(ctx context.Context, kubeClient kubernetes.Interface) *Sink {
+func NewSink(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface, fsmNamespace string) *Sink {
 	sink := Sink{
 		Ctx:                ctx,
 		KubeClient:         kubeClient,
+		gatewayClient:      gatewayClient,
+		fsmNamespace:       fsmNamespace,
 		serviceKeyToName:   make(map[string]string),
 		serviceMapCache:    make(map[string]*apiv1.Service),
 		serviceHashMap:     make(map[string]uint64),
@@ -54,8 +59,16 @@ func NewSink(ctx context.Context, kubeClient kubernetes.Interface) *Sink {
 // While in practice we only have one sink (K8S), the interface abstraction
 // makes it easy and possible to test the Source in isolation.
 type Sink struct {
-	KubeClient      kubernetes.Interface
+	fsmNamespace string
+
+	KubeClient    kubernetes.Interface
+	gatewayClient gwapi.Interface
+
 	MicroAggregator Aggregator
+
+	servicesInformer  cache.SharedIndexInformer
+	endpointsInformer cache.SharedIndexInformer
+	gatewaysInformer  cache.SharedIndexInformer
 
 	// SyncPeriod is the duration to wait between registering or deregistering
 	// services in Kubernetes. This can be fairly short since no work will be
@@ -125,38 +138,63 @@ func (s *Sink) Ready() {
 // ServiceInformer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
 func (s *Sink) ServiceInformer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return s.KubeClient.CoreV1().Services(s.namespace()).List(s.Ctx, options)
+	if s.servicesInformer == nil {
+		s.servicesInformer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return s.KubeClient.CoreV1().Services(s.namespace()).List(s.Ctx, options)
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					return s.KubeClient.CoreV1().Services(s.namespace()).Watch(s.Ctx, options)
+				},
 			},
-
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return s.KubeClient.CoreV1().Services(s.namespace()).Watch(s.Ctx, options)
-			},
-		},
-		&apiv1.Service{},
-		0,
-		cache.Indexers{},
-	)
+			&apiv1.Service{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return s.servicesInformer
 }
 
 // EndpointsInformer tells Kubernetes that we want to watch for changes to Endpoints.
 func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return s.KubeClient.CoreV1().Endpoints(s.namespace()).List(s.Ctx, options)
+	if s.endpointsInformer == nil {
+		s.endpointsInformer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return s.KubeClient.CoreV1().Endpoints(s.namespace()).List(s.Ctx, options)
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					return s.KubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.Ctx, options)
+				},
 			},
+			&apiv1.Endpoints{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return s.endpointsInformer
+}
 
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return s.KubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.Ctx, options)
+// GatewayInformer implements the controller.Resource interface.
+// It tells Kubernetes that we want to watch for changes to Gateways.
+func (s *Sink) GatewayInformer() cache.SharedIndexInformer {
+	if s.gatewaysInformer == nil {
+		s.gatewaysInformer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).List(s.Ctx, options)
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).Watch(s.Ctx, options)
+				},
 			},
-		},
-		&apiv1.Endpoints{},
-		0,
-		cache.Indexers{},
-	)
+			&gwv1beta1.Gateway{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return s.gatewaysInformer
 }
 
 // UpsertService implements the controller.Resource interface.
@@ -183,7 +221,7 @@ func (s *Sink) UpsertService(key string, raw interface{}) error {
 		s.trigger() // Always trigger sync
 	}
 
-	log.Info().Msgf("UpsertService, key:%s", key)
+	log.Trace().Msgf("UpsertService, key:%s", key)
 	return nil
 }
 
@@ -238,11 +276,15 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 					endpoints.Annotations = make(map[string]string)
 				}
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
-				if _, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
-					log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
-					return err
-				}
-				return nil
+				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
+						log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
+						return err
+					} else {
+						s.updateGatewayEndpointSlice(s.Ctx, updatedEpt)
+					}
+					return nil
+				})
 			}
 		}
 	}
@@ -266,6 +308,7 @@ func (s *Sink) DeleteService(key string, _ interface{}) error {
 
 	delete(s.serviceKeyToName, key)
 	delete(s.serviceMapCache, name)
+	delete(s.serviceHashMap, name)
 
 	// If the service that is deleted is part of cloud services, then
 	// we need to trigger a sync to recreate it.
@@ -325,27 +368,41 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		}
 
 		s.lock.Lock()
-		createSvcs, updateSvcs, deleteSvcs := s.crudList()
+		creates, updates, deletes := s.crudList()
 		s.lock.Unlock()
-		log.Debug().Msgf("sync triggered, create:%d update:%d delete:%d", len(createSvcs), len(updateSvcs), len(deleteSvcs))
+		if len(creates) > 0 || len(updates) > 0 || len(deletes) > 0 {
+			log.Info().Msgf("sync triggered, create:%d update:%d delete:%d", len(creates), len(updates), len(deletes))
+		}
 
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
-		for _, name := range deleteSvcs {
-			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
+		for _, name := range deletes {
+			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err == nil {
+				if gatewayAPIEnabled {
+					s.deleteGatewayRoute(name)
+				}
+			} else {
 				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
 			}
 		}
 
-		for _, svc := range updateSvcs {
-			_, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{})
-			if err != nil {
+		for _, svc := range updates {
+			if updatedSvc, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err == nil {
+				if len(updatedSvc.Spec.Ports) > 0 {
+					if gatewayAPIEnabled {
+						s.updateGatewayRoute(updatedSvc)
+					}
+				}
+			} else {
 				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 
-		for _, svc := range createSvcs {
-			_, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{})
-			if err != nil {
+		for _, svc := range creates {
+			if createdSvc, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err == nil {
+				if gatewayAPIEnabled {
+					s.updateGatewayRoute(createdSvc)
+				}
+			} else {
 				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
@@ -383,7 +440,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 				}
 				s.fillService(mode, svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
-					log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
+					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
 				}
 				updateSvcs = append(updateSvcs, svc)

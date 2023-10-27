@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/hashicorp/consul/command/flags"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,6 +49,7 @@ var (
 	prefixTag         string
 	suffixTag         string
 	deriveNamespace   string
+	withGatewayAPI    bool
 
 	scheme = runtime.NewScheme()
 )
@@ -72,6 +74,7 @@ func init() {
 	cliFlags.StringVar(&prefixTag, "prefix-tag", "", "prefix tag")
 	cliFlags.StringVar(&suffixTag, "suffix-tag", "", "suffix tag")
 	cliFlags.BoolVar(&passingOnly, "passing-only", true, "passing only")
+	cliFlags.BoolVar(&withGatewayAPI, "with-gateway-api", false, "with gateway api")
 	cliFlags.StringVar(&deriveNamespace, "derive-namespace", "", "derive namespace")
 	flags.Merge(cliFlags, httpFlags.ClientFlags())
 
@@ -93,9 +96,11 @@ func main() {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", kubeConfigFile)
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
+	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 
 	k8s.SetTrustDomain(trustDomain)
 
+	connector.EnabledGatewayAPI(withGatewayAPI)
 	connector.SetSyncCloudNamespace(deriveNamespace)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-consul-connector pod resource
@@ -124,7 +129,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating consul client")
 	}
 
-	sink := connector.NewSink(ctx, kubeClient)
+	sink := connector.NewSink(ctx, kubeClient, gatewayClient, fsmNamespace)
 	source := &consulConnector.Source{
 		ConsulClient: consulClient,
 		Domain:       trustDomain,
@@ -161,7 +166,7 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go k8s.WatchAndUpdateLogLevel(msgBroker, stop)
+	go connector.WatchMeshConfigUpdated(msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-consul-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
