@@ -11,11 +11,16 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
+	"github.com/flomesh-io/fsm/pkg/announcements"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/messaging"
 )
 
 var (
-	log = logger.New("cloud-connector")
+	log               = logger.New("cloud-connector")
+	gatewayAPIEnabled = false
 )
 
 // Controller is a generic cache.Controller implementation that watches
@@ -24,8 +29,9 @@ var (
 type Controller struct {
 	Resource Resource
 
-	serviceInformer   cache.SharedIndexInformer
+	servicesInformer  cache.SharedIndexInformer
 	endpointsInformer cache.SharedIndexInformer
+	gatewaysInformer  cache.SharedIndexInformer
 }
 
 // Event is something that occurred to the resources we're watching.
@@ -52,10 +58,15 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 	c.Resource.Ready()
 
 	// Create an informer so we can keep track of all service changes.
-	c.serviceInformer = c.Resource.ServiceInformer()
+	c.servicesInformer = c.Resource.ServiceInformer()
 
 	// Create an informer so we can keep track of all endpoints changes.
 	c.endpointsInformer = c.Resource.EndpointsInformer()
+
+	// Create an informer so we can keep track of all gateway changes.
+	c.gatewaysInformer = c.Resource.GatewayInformer()
+
+	go c.syncGateway(stopCh)
 
 	go c.syncService(stopCh)
 
@@ -72,7 +83,7 @@ func (c *Controller) syncService(stopCh <-chan struct{}) {
 	// Add an event handler when data is received from the informer. The
 	// event handlers here will block the informer so we just offload them
 	// immediately into a workqueue.
-	_, err := c.serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := c.servicesInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			// convert the resource object into a key (in this case
 			// we are just doing it in the format of 'namespace/name')
@@ -127,7 +138,7 @@ func (c *Controller) syncService(stopCh <-chan struct{}) {
 
 	// Run the informer to start requesting resources
 	go func() {
-		c.serviceInformer.Run(stopCh)
+		c.servicesInformer.Run(stopCh)
 
 		// We have to shut down the queue here if we stop so that
 		// wait.Until stops below too. We can't wait until the defer at
@@ -136,7 +147,7 @@ func (c *Controller) syncService(stopCh <-chan struct{}) {
 	}()
 
 	// Initial sync
-	if !cache.WaitForCacheSync(stopCh, c.serviceInformer.HasSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.servicesInformer.HasSynced) {
 		utilruntime.HandleError(fmt.Errorf("error syncing service cache"))
 		return
 	}
@@ -144,7 +155,7 @@ func (c *Controller) syncService(stopCh <-chan struct{}) {
 
 	// run the runWorker method every second with a stop channel
 	wait.Until(func() {
-		for c.processSingleService(queue, c.serviceInformer) {
+		for c.processSingleService(queue, c.servicesInformer) {
 			// Process
 		}
 	}, time.Second, stopCh)
@@ -238,6 +249,94 @@ func (c *Controller) syncEndpoints(stopCh <-chan struct{}) {
 	}, time.Second, stopCh)
 }
 
+func (c *Controller) syncGateway(stopCh <-chan struct{}) {
+	// Create a queue for storing items to process from the informer.
+	var queueOnce sync.Once
+	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	shutdown := func() { queue.ShutDown() }
+	defer queueOnce.Do(shutdown)
+
+	// Add an event handler when data is received from the informer. The
+	// event handlers here will block the informer so we just offload them
+	// immediately into a workqueue.
+	_, err := c.gatewaysInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			// convert the resource object into a key (in this case
+			// we are just doing it in the format of 'namespace/name')
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			log.Debug().Msgf("queue op add gateway key:%s", key)
+			if err == nil {
+				queue.Add(Event{Key: key, Obj: obj})
+			}
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(newObj)
+			log.Debug().Msgf("queue op update gateway key:%s", key)
+			if err == nil {
+				queue.Add(Event{Key: key, Obj: newObj})
+			}
+		},
+		DeleteFunc: c.informerDeleteHandler(queue),
+	})
+	if err != nil {
+		log.Err(err).Msg("error adding gateway informer event handlers")
+	}
+
+	// If the type is a background syncer, then we startup the background
+	// process.
+	if bg, ok := c.Resource.(Backgrounder); ok {
+		ctx, cancelF := context.WithCancel(context.Background())
+
+		// Run the backgrounder
+		doneCh := make(chan struct{})
+		go func() {
+			defer close(doneCh)
+			bg.Run(ctx.Done())
+		}()
+
+		// Start a goroutine that automatically closes the context when we stop
+		go func() {
+			select {
+			case <-stopCh:
+				cancelF()
+
+			case <-ctx.Done():
+				// Cancelled outside
+			}
+		}()
+
+		// When we exit, close the context so the backgrounder ends
+		defer func() {
+			cancelF()
+			<-doneCh
+		}()
+	}
+
+	// Run the informer to start requesting resources
+	go func() {
+		c.gatewaysInformer.Run(stopCh)
+
+		// We have to shut down the queue here if we stop so that
+		// wait.Until stops below too. We can't wait until the defer at
+		// the top since wait.Until will block.
+		queueOnce.Do(shutdown)
+	}()
+
+	// Initial sync
+	if !cache.WaitForCacheSync(stopCh, c.gatewaysInformer.HasSynced) {
+		utilruntime.HandleError(fmt.Errorf("error syncing gateway cache"))
+		return
+	}
+	log.Debug().Msg("initial gateway cache sync complete")
+
+	// run the runWorker method every second with a stop channel
+	wait.Until(func() {
+		for c.processSingleGateway(queue, c.gatewaysInformer) {
+			// Process
+		}
+	}, time.Second, stopCh)
+}
+
 func (c *Controller) processSingleService(
 	queue workqueue.RateLimitingInterface,
 	serviceInformer cache.SharedIndexInformer) bool {
@@ -261,7 +360,7 @@ func (c *Controller) processSingleService(
 
 	// If we got the item successfully, call the proper method
 	if serviceErr == nil {
-		log.Debug().Msgf("processing service object, key:%s exists:%v", key, serviceExists)
+		log.Trace().Msgf("processing service object, key:%s exists:%v", key, serviceExists)
 		log.Trace().Msgf("processing service object, object:%v", serviceItem)
 		if !serviceExists {
 			// In the case of deletes, the item is no longer in the cache so
@@ -313,7 +412,7 @@ func (c *Controller) processSingleEndpoints(
 
 	// If we got the item successfully, call the proper method
 	if endpointsErr == nil {
-		log.Debug().Msgf("processing endpoints object, key:%s exists:%v", key, endpointsExists)
+		log.Trace().Msgf("processing endpoints object, key:%s exists:%v", key, endpointsExists)
 		log.Trace().Msgf("processing endpoints object, object:%v", endpointsItem)
 		if !endpointsExists {
 			// In the case of deletes, the item is no longer in the cache so
@@ -342,6 +441,58 @@ func (c *Controller) processSingleEndpoints(
 	return true
 }
 
+func (c *Controller) processSingleGateway(
+	queue workqueue.RateLimitingInterface,
+	gatewayInformer cache.SharedIndexInformer) bool {
+	// Fetch the next item
+	rawEvent, quit := queue.Get()
+	if quit {
+		return false
+	}
+	defer queue.Done(rawEvent)
+
+	event, ok := rawEvent.(Event)
+	if !ok {
+		log.Warn().Msgf("processSingleGateway: dropping event with unexpected type, event:%s", rawEvent)
+		return true
+	}
+
+	// Get the item from the informer to ensure we have the most up-to-date
+	// copy.
+	key := event.Key
+	gatewayItem, gatewayExists, gatewayErr := gatewayInformer.GetIndexer().GetByKey(key)
+
+	// If we got the item successfully, call the proper method
+	if gatewayErr == nil {
+		log.Trace().Msgf("processing gateway object, key:%s exists:%v", key, gatewayExists)
+		log.Trace().Msgf("processing gateway object, object:%v", gatewayItem)
+		if !gatewayExists {
+			// In the case of deletes, the item is no longer in the cache so
+			// we use the copy we got at the time of the event (event.Obj).
+			gatewayErr = c.Resource.DeleteGateway(key, event.Obj)
+		} else {
+			gatewayErr = c.Resource.UpsertGateway(key, gatewayItem)
+		}
+
+		if gatewayErr == nil {
+			queue.Forget(rawEvent)
+		}
+	}
+
+	if gatewayErr != nil {
+		if queue.NumRequeues(event) < 5 {
+			log.Err(gatewayErr).Msgf("failed processing gateway item, retrying key:%s", key)
+			queue.AddRateLimited(rawEvent)
+		} else {
+			log.Err(gatewayErr).Msgf("failed processing gateway item, no more retries, key:%s", key)
+			queue.Forget(rawEvent)
+			utilruntime.HandleError(gatewayErr)
+		}
+	}
+
+	return true
+}
+
 // informerDeleteHandler returns a function that implements
 // `DeleteFunc` from the `ResourceEventHandlerFuncs` interface.
 // It is split out as its own method to aid in testing.
@@ -357,6 +508,50 @@ func (c *Controller) informerDeleteHandler(queue workqueue.RateLimitingInterface
 				queue.Add(Event{Key: key, Obj: d.Obj})
 			} else {
 				queue.Add(Event{Key: key, Obj: obj})
+			}
+		}
+	}
+}
+
+// EnabledGatewayAPI set gatewayAPIEnabled
+func EnabledGatewayAPI(enabled bool) {
+	gatewayAPIEnabled = enabled
+}
+
+// WatchMeshConfigUpdated watches update of meshconfig
+func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
+	kubePubSub := msgBroker.GetKubeEventPubSub()
+	meshCfgUpdateChan := kubePubSub.Sub(announcements.MeshConfigUpdated.String())
+	defer msgBroker.Unsub(kubePubSub, meshCfgUpdateChan)
+
+	for {
+		select {
+		case <-stop:
+			log.Info().Msg("Received stop signal, exiting log level update routine")
+			return
+
+		case event := <-meshCfgUpdateChan:
+			msg, ok := event.(events.PubSubMessage)
+			if !ok {
+				log.Error().Msgf("Error casting to PubSubMessage, got type %T", msg)
+				continue
+			}
+
+			prevObj, prevOk := msg.OldObj.(*configv1alpha3.MeshConfig)
+			newObj, newOk := msg.NewObj.(*configv1alpha3.MeshConfig)
+			if !prevOk || !newOk {
+				log.Error().Msgf("Error casting to *MeshConfig, got type prev=%T, new=%T", prevObj, newObj)
+			}
+
+			// Update the log level if necessary
+			if prevObj.Spec.Observability.FSMLogLevel != newObj.Spec.Observability.FSMLogLevel {
+				if err := logger.SetLogLevel(newObj.Spec.Observability.FSMLogLevel); err != nil {
+					log.Error().Err(err).Msgf("Error setting controller log level to %s", newObj.Spec.Observability.FSMLogLevel)
+				}
+			}
+
+			if prevObj.Spec.GatewayAPI.Enabled != newObj.Spec.GatewayAPI.Enabled {
+				gatewayAPIEnabled = newObj.Spec.GatewayAPI.Enabled
 			}
 		}
 	}
