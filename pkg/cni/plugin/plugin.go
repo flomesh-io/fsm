@@ -17,11 +17,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/cni/config"
 	"github.com/flomesh-io/fsm/pkg/cni/util"
-)
-
-const (
-	// SidecarInjectionAnnotation is the annotation used for sidecar injection
-	SidecarInjectionAnnotation = "flomesh.io/sidecar-injection"
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // K8sArgs is the valid CNI_ARGS used for Kubernetes
@@ -106,7 +102,7 @@ func ignoreMeshlessPod(namespace, name string, pod *podInfo) bool {
 }
 
 func isAnnotatedForInjection(annotations map[string]string) (exists bool, enabled bool, err error) {
-	inject, ok := annotations[SidecarInjectionAnnotation]
+	inject, ok := annotations[constants.SidecarInjectionAnnotation]
 	if !ok {
 		return
 	}
@@ -117,7 +113,7 @@ func isAnnotatedForInjection(annotations map[string]string) (exists bool, enable
 	case "disabled", "no", "false":
 		enabled = false
 	default:
-		err = fmt.Errorf("invalid annotation value for key %q: %s", SidecarInjectionAnnotation, inject)
+		err = fmt.Errorf("invalid annotation value for key %q: %s", constants.SidecarInjectionAnnotation, inject)
 	}
 	return
 }

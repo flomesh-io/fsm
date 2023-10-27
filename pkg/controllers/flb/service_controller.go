@@ -332,11 +332,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if flb.IsFLBEnabled(svc, r.fctx.KubeClient) {
 		log.Debug().Msgf("Type of service %s/%s is LoadBalancer", req.Namespace, req.Name)
 
-		oldSvc, found := r.cache[req.NamespacedName]
-		if found && oldSvc.ResourceVersion == svc.ResourceVersion {
-			log.Info().Msgf("Service %s/%s hasn't changed or not processed yet, ResourceRevision=%s, skipping ...", req.Namespace, req.Name, svc.ResourceVersion)
-			return ctrl.Result{}, nil
-		}
+		//oldSvc, found := r.cache[req.NamespacedName]
+		//if found && oldSvc.ResourceVersion == svc.ResourceVersion {
+		//	log.Info().Msgf("Service %s/%s hasn't changed or not processed yet, ResourceRevision=%s, skipping ...", req.Namespace, req.Name, svc.ResourceVersion)
+		//	return ctrl.Result{}, nil
+		//}
 
 		r.cache[req.NamespacedName] = svc.DeepCopy()
 		mc := r.fctx.Config
@@ -510,24 +510,41 @@ func (r *reconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Ser
 	log.Debug().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
 
 	params := r.getFLBParameters(svc)
-	resp, err := r.updateFLB(svc, params, endpoints, false)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
 
-	if len(resp.LBIPs) == 0 {
-		// it should always assign a VIP for the service, not matter it has endpoints or not
-		defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "IPNotAssigned", "FLB hasn't assigned any external IP yet")
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, fmt.Errorf("FLB hasn't assigned any external IP for service %s/%s", svc.Namespace, svc.Name)
-	}
+	oldHash := getServiceHash(svc)
+	hash := fmt.Sprintf("%s-%s", utils.SimpleHash(endpoints), utils.SimpleHash(params))
+	if oldHash != hash {
+		resp, err := r.updateFLB(svc, params, endpoints, false)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 
-	log.Debug().Msgf("External IPs assigned by FLB: %#v", resp)
+		if len(resp.LBIPs) == 0 {
+			// it should always assign a VIP for the service, not matter it has endpoints or not
+			defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "IPNotAssigned", "FLB hasn't assigned any external IP yet")
+			return ctrl.Result{RequeueAfter: 5 * time.Second}, fmt.Errorf("FLB hasn't assigned any external IP for service %s/%s", svc.Namespace, svc.Name)
+		}
 
-	if err := r.updateService(ctx, svc, mc, resp.LBIPs); err != nil {
-		return ctrl.Result{}, err
+		log.Debug().Msgf("External IPs assigned by FLB: %#v", resp)
+
+		if err := r.updateService(ctx, svc, mc, resp.LBIPs); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		svc.Annotations[constants.FLBServiceHashAnnotation] = hash
+		if err := r.fctx.Update(ctx, svc); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func getServiceHash(svc *corev1.Service) string {
+	if len(svc.Annotations) == 0 {
+		return ""
+	}
+	return svc.Annotations[constants.FLBServiceHashAnnotation]
 }
 
 func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ configurator.Configurator) (map[string][]string, error) {
@@ -580,6 +597,12 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 				}
 			}
 		}
+	}
+
+	// for each service key, sort the endpoints to make sure the order is consistent
+	for svcKey, eps := range result {
+		sort.Strings(eps)
+		result[svcKey] = eps
 	}
 
 	return result, nil

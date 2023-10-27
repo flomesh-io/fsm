@@ -543,6 +543,15 @@
                         "flomesh/pipy-nightly:latest"
                     ]
                 },
+                "sidecarDisabledMTLS": {
+                  "$id": "#/properties/fsm/properties/sidecarDisabledMTLS",
+                  "type": "boolean",
+                  "title": "The sidecarDisabledMTLS schema",
+                  "description": "The proxy side car runs without mTLS",
+                  "examples": [
+                    false
+                  ]
+                },
                 "sidecarDrivers": {
                     "$id": "#/properties/fsm/properties/sidecarDrivers",
                     "type": "array",

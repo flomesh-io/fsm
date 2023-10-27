@@ -11,6 +11,7 @@ import (
 
 	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -40,16 +41,11 @@ func (p *PipyConf) setSidecarTimeout(sidecarTimeout int) (update bool) {
 	return
 }
 
-func (p *PipyConf) setRemoteLoggingLevel(remoteLoggingLevel uint16) (update bool) {
-	if update = p.Spec.RemoteLoggingLevel != remoteLoggingLevel; update {
-		p.Spec.RemoteLoggingLevel = remoteLoggingLevel
-	}
-	return
-}
-
-func (p *PipyConf) setLocalDNSProxy(enable bool, primary, secondary string) {
+func (p *PipyConf) setLocalDNSProxy(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.LocalDNSProxy = new(LocalDNSProxy)
+		primary := (*conf).GetLocalDNSProxyPrimaryUpstream()
+		secondary := (*conf).GetLocalDNSProxySecondaryUpstream()
 		if len(primary) > 0 || len(secondary) > 0 {
 			p.Spec.LocalDNSProxy.UpstreamDNSServers = new(UpstreamDNSServers)
 			if len(primary) > 0 {
@@ -61,6 +57,32 @@ func (p *PipyConf) setLocalDNSProxy(enable bool, primary, secondary string) {
 		}
 	} else {
 		p.Spec.LocalDNSProxy = nil
+	}
+}
+
+func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Configurator) {
+	if enable {
+		p.Spec.Observability.Tracing = &TracingSpec{
+			Address:         fmt.Sprintf("%s:%d", (*conf).GetTracingHost(), (*conf).GetTracingPort()),
+			Endpoint:        (*conf).GetTracingEndpoint(),
+			SampledFraction: fmt.Sprintf("%0.2f", (*conf).GetTracingSampledFraction()),
+		}
+	} else {
+		p.Spec.Observability.Tracing = nil
+	}
+}
+
+func (p *PipyConf) setObservabilityRemoteLogging(enable bool, conf *configurator.Configurator) {
+	if enable {
+		p.Spec.Observability.RemoteLogging = &RemoteLoggingSpec{
+			Level:           fmt.Sprintf("%d", (*conf).GetRemoteLoggingLevel()),
+			Address:         fmt.Sprintf("%s:%d", (*conf).GetRemoteLoggingHost(), (*conf).GetRemoteLoggingPort()),
+			Endpoint:        (*conf).GetRemoteLoggingEndpoint(),
+			Authorization:   (*conf).GetRemoteLoggingAuthorization(),
+			SampledFraction: fmt.Sprintf("%0.2f", (*conf).GetRemoteLoggingSampledFraction()),
+		}
+	} else {
+		p.Spec.Observability.RemoteLogging = nil
 	}
 }
 

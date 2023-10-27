@@ -456,6 +456,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.enabled | bool | `false` |  |
 | fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
+| fsm.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
 | fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.3-38","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
 | fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
 | fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.3-38"` | Sidecar image for Linux workloads |

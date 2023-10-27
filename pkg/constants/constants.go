@@ -202,6 +202,12 @@ const (
 
 	// MetricsAnnotation is the annotation used for enabling/disabling metrics
 	MetricsAnnotation = "flomesh.io/metrics"
+
+	// ServiceExclusionListAnnotation is the annotation used for service exclusions
+	ServiceExclusionListAnnotation = "flomesh.io/service-exclusion-list"
+
+	// ServiceExclusionAnnotation is the annotation used for service exclusion
+	ServiceExclusionAnnotation = "flomesh.io/service-exclusion"
 )
 
 // Annotations and labels used by the MeshRootCertificate
@@ -561,6 +567,9 @@ const (
 
 	// FLBTagsAnnotation is the annotation used to indicate the tags
 	FLBTagsAnnotation = FLBPrefix + "/tags"
+
+	// FLBServiceHashAnnotation is the annotation used to indicate the hash of the service
+	FLBServiceHashAnnotation = FLBPrefix + "/hash"
 
 	// FLBSecretLabel is the label used to indicate the secret
 	FLBSecretLabel = FLBPrefix + "/config"

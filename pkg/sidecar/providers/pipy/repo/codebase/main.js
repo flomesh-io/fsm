@@ -55,7 +55,7 @@
 // Local DNS server
 //
 .branch(
-  Boolean(os.env.LOCAL_DNS_PROXY), (
+  Boolean(config?.Spec?.LocalDNSProxy), (
     $=>$
     .listen('127.0.0.153:5300', { protocol: 'udp' })
     .chain(['dns-main.js'])

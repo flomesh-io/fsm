@@ -110,6 +110,9 @@ type SidecarSpec struct {
 	// SidecarImage defines the container image used for the proxy sidecar.
 	SidecarImage string `json:"sidecarImage,omitempty"`
 
+	// SidecarDisabledMTLS defines whether mTLS is disabled.
+	SidecarDisabledMTLS bool `json:"sidecarDisabledMTLS"`
+
 	// InitContainerImage defines the container image used for the init container injected to meshed pods.
 	InitContainerImage string `json:"initContainerImage,omitempty"`
 

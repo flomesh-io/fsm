@@ -413,6 +413,9 @@ spec:
                     description: SidecarClass defines the container provider used
                       for the proxy sidecar.
                     type: string
+                  sidecarDisabledMTLS:
+                    description: SidecarDisabledMTLS defines whether mTLS is disabled.
+                    type: boolean
                   sidecarDrivers:
                     description: SidecarDrivers defines the sidecar supported.
                     items:
@@ -454,6 +457,7 @@ spec:
                     type: integer
                 required:
                 - enablePrivilegedInitContainer
+                - sidecarDisabledMTLS
                 type: object
               traffic:
                 description: Traffic defines the traffic management configurations
@@ -990,6 +994,9 @@ spec:
                     description: SidecarClass defines the class used for the proxy
                       sidecar.
                     type: string
+                  sidecarDisabledMTLS:
+                    description: SidecarDisabledMTLS defines whether mTLS is disabled.
+                    type: boolean
                   sidecarDrivers:
                     description: SidecarDrivers defines the sidecar supported.
                     items:
@@ -1042,6 +1049,7 @@ spec:
                     type: string
                 required:
                 - enablePrivilegedInitContainer
+                - sidecarDisabledMTLS
                 type: object
               traffic:
                 description: Traffic defines the traffic management configurations
@@ -1957,6 +1965,9 @@ spec:
                     description: SidecarClass defines the class used for the proxy
                       sidecar.
                     type: string
+                  sidecarDisabledMTLS:
+                    description: SidecarDisabledMTLS defines whether mTLS is disabled.
+                    type: boolean
                   sidecarDrivers:
                     description: SidecarDrivers defines the sidecar supported.
                     items:
@@ -2009,6 +2020,7 @@ spec:
                     type: string
                 required:
                 - enablePrivilegedInitContainer
+                - sidecarDisabledMTLS
                 type: object
               traffic:
                 description: Traffic defines the traffic management configurations

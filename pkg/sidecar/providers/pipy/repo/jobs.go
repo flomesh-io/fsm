@@ -299,14 +299,15 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 		proxy.MeshConf = meshConf
 		pipyConf.setSidecarLogLevel((*meshConf).GetMeshConfig().Spec.Sidecar.LogLevel)
 		pipyConf.setSidecarTimeout((*meshConf).GetMeshConfig().Spec.Sidecar.SidecarTimeout)
-		pipyConf.setRemoteLoggingLevel((*meshConf).GetMeshConfig().Spec.Observability.RemoteLogging.Level)
 		pipyConf.setEnableSidecarActiveHealthChecks((*meshConf).GetFeatureFlags().EnableSidecarActiveHealthChecks)
 		pipyConf.setEnableAutoDefaultRoute((*meshConf).GetFeatureFlags().EnableAutoDefaultRoute)
 		pipyConf.setEnableEgress((*meshConf).IsEgressEnabled())
 		pipyConf.setHTTP1PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP1PerRequestLoadBalancing)
 		pipyConf.setHTTP2PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP2PerRequestLoadBalancing)
 		pipyConf.setEnablePermissiveTrafficPolicyMode((*meshConf).IsPermissiveTrafficPolicyMode())
-		pipyConf.setLocalDNSProxy((*meshConf).IsLocalDNSProxyEnabled(), (*meshConf).GetLocalDNSProxyPrimaryUpstream(), (*meshConf).GetLocalDNSProxySecondaryUpstream())
+		pipyConf.setLocalDNSProxy((*meshConf).IsLocalDNSProxyEnabled(), meshConf)
+		pipyConf.setObservabilityTracing((*meshConf).IsTracingEnabled(), meshConf)
+		pipyConf.setObservabilityRemoteLogging((*meshConf).IsRemoteLoggingEnabled(), meshConf)
 		clusterProps := (*meshConf).GetMeshConfig().Spec.ClusterSet.Properties
 		if len(clusterProps) > 0 {
 			pipyConf.Spec.ClusterSet = make(map[string]string)

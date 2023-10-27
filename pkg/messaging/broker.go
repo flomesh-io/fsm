@@ -3,6 +3,7 @@ package messaging
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -570,6 +571,10 @@ func (b *Broker) Unsub(pubSub *pubsub.PubSub, ch chan interface{}) {
 func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 	switch msg.Kind {
 	case
+		// Namepace event
+		announcements.NamespaceUpdated:
+		return namespaceUpdated(msg)
+	case
 		//
 		// K8s native resource events
 		//
@@ -633,65 +638,96 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		}
 
 	case announcements.MeshConfigUpdated:
-		prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
-		newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
-		if !okPrevCast || !okNewCast {
-			log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
-			return nil
-		}
-
-		prevSpec := prevMeshConfig.Spec
-		newSpec := newMeshConfig.Spec
-		// A proxy config update must only be triggered when a MeshConfig field that maps to a proxy config
-		// changes.
-		if prevSpec.Traffic.EnableEgress != newSpec.Traffic.EnableEgress ||
-			prevSpec.Traffic.EnablePermissiveTrafficPolicyMode != newSpec.Traffic.EnablePermissiveTrafficPolicyMode ||
-			prevSpec.Traffic.HTTP1PerRequestLoadBalancing != newSpec.Traffic.HTTP1PerRequestLoadBalancing ||
-			prevSpec.Traffic.HTTP2PerRequestLoadBalancing != newSpec.Traffic.HTTP2PerRequestLoadBalancing ||
-			prevSpec.Traffic.ServiceAccessMode != newSpec.Traffic.ServiceAccessMode ||
-			prevSpec.Observability.Tracing != newSpec.Observability.Tracing ||
-			prevSpec.Sidecar.LogLevel != newSpec.Sidecar.LogLevel ||
-			prevSpec.Sidecar.SidecarTimeout != newSpec.Sidecar.SidecarTimeout ||
-			prevSpec.Traffic.InboundExternalAuthorization.Enable != newSpec.Traffic.InboundExternalAuthorization.Enable ||
-			// Only trigger an update on InboundExternalAuthorization field changes if the new spec has the 'Enable' flag set to true.
-			(newSpec.Traffic.InboundExternalAuthorization.Enable && (prevSpec.Traffic.InboundExternalAuthorization != newSpec.Traffic.InboundExternalAuthorization)) ||
-			prevSpec.FeatureFlags != newSpec.FeatureFlags ||
-			!reflect.DeepEqual(prevSpec.PluginChains, newSpec.PluginChains) ||
-			!reflect.DeepEqual(prevSpec.ClusterSet, newSpec.ClusterSet) {
-			return &proxyUpdateEvent{
-				msg:   msg,
-				topic: announcements.ProxyUpdate.String(),
-			}
-		}
-		return nil
+		return meshConfigUpdated(msg)
 
 	case announcements.PodUpdated:
-		// Only trigger a proxy update for proxies associated with this pod based on the proxy UUID
-		prevPod, okPrevCast := msg.OldObj.(*corev1.Pod)
-		newPod, okNewCast := msg.NewObj.(*corev1.Pod)
-		if !okPrevCast || !okNewCast {
-			log.Error().Msgf("Expected *Pod type, got previous=%T, new=%T", okPrevCast, okNewCast)
-			return nil
-		}
-		prevMetricAnnotation := prevPod.Annotations[constants.PrometheusScrapeAnnotation]
-		newMetricAnnotation := newPod.Annotations[constants.PrometheusScrapeAnnotation]
-		if prevMetricAnnotation != newMetricAnnotation {
-			proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]
-			return &proxyUpdateEvent{
-				msg:   msg,
-				topic: GetPubSubTopicForProxyUUID(proxyUUID),
-			}
-		} else if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
-			return &proxyUpdateEvent{
-				msg:   msg,
-				topic: announcements.ProxyUpdate.String(),
-			}
-		}
-		return nil
+		return podUpdated(msg)
 
 	default:
 		return nil
 	}
+}
+
+func namespaceUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
+	prevExclusionList := ``
+	newExclusionList := ``
+	if ns, okPrevCast := msg.OldObj.(*corev1.Namespace); okPrevCast {
+		if len(ns.Annotations) > 0 {
+			prevExclusionList = ns.Annotations[constants.ServiceExclusionListAnnotation]
+		}
+	}
+	if ns, okNewCast := msg.NewObj.(*corev1.Namespace); okNewCast {
+		if len(ns.Annotations) > 0 {
+			newExclusionList = ns.Annotations[constants.ServiceExclusionListAnnotation]
+		}
+	}
+	if !strings.EqualFold(prevExclusionList, newExclusionList) {
+		return &proxyUpdateEvent{
+			msg:   msg,
+			topic: announcements.ProxyUpdate.String(),
+		}
+	}
+	return nil
+}
+
+func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
+	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
+	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
+	if !okPrevCast || !okNewCast {
+		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
+		return nil
+	}
+	prevSpec := prevMeshConfig.Spec
+	newSpec := newMeshConfig.Spec
+	// A proxy config update must only be triggered when a MeshConfig field that maps to a proxy config
+	// changes.
+	if prevSpec.Traffic.EnableEgress != newSpec.Traffic.EnableEgress ||
+		prevSpec.Traffic.EnablePermissiveTrafficPolicyMode != newSpec.Traffic.EnablePermissiveTrafficPolicyMode ||
+		prevSpec.Traffic.HTTP1PerRequestLoadBalancing != newSpec.Traffic.HTTP1PerRequestLoadBalancing ||
+		prevSpec.Traffic.HTTP2PerRequestLoadBalancing != newSpec.Traffic.HTTP2PerRequestLoadBalancing ||
+		prevSpec.Traffic.ServiceAccessMode != newSpec.Traffic.ServiceAccessMode ||
+		prevSpec.Observability.Tracing != newSpec.Observability.Tracing ||
+		prevSpec.Observability.RemoteLogging != newSpec.Observability.RemoteLogging ||
+		prevSpec.Sidecar.LogLevel != newSpec.Sidecar.LogLevel ||
+		prevSpec.Sidecar.SidecarTimeout != newSpec.Sidecar.SidecarTimeout ||
+		prevSpec.Sidecar.LocalDNSProxy != newSpec.Sidecar.LocalDNSProxy ||
+		prevSpec.Traffic.InboundExternalAuthorization.Enable != newSpec.Traffic.InboundExternalAuthorization.Enable ||
+		// Only trigger an update on InboundExternalAuthorization field changes if the new spec has the 'Enable' flag set to true.
+		(newSpec.Traffic.InboundExternalAuthorization.Enable && (prevSpec.Traffic.InboundExternalAuthorization != newSpec.Traffic.InboundExternalAuthorization)) ||
+		prevSpec.FeatureFlags != newSpec.FeatureFlags ||
+		!reflect.DeepEqual(prevSpec.PluginChains, newSpec.PluginChains) ||
+		!reflect.DeepEqual(prevSpec.ClusterSet, newSpec.ClusterSet) {
+		return &proxyUpdateEvent{
+			msg:   msg,
+			topic: announcements.ProxyUpdate.String(),
+		}
+	}
+	return nil
+}
+
+func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
+	// Only trigger a proxy update for proxies associated with this pod based on the proxy UUID
+	prevPod, okPrevCast := msg.OldObj.(*corev1.Pod)
+	newPod, okNewCast := msg.NewObj.(*corev1.Pod)
+	if !okPrevCast || !okNewCast {
+		log.Error().Msgf("Expected *Pod type, got previous=%T, new=%T", okPrevCast, okNewCast)
+		return nil
+	}
+	prevMetricAnnotation := prevPod.Annotations[constants.PrometheusScrapeAnnotation]
+	newMetricAnnotation := newPod.Annotations[constants.PrometheusScrapeAnnotation]
+	if prevMetricAnnotation != newMetricAnnotation {
+		proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]
+		return &proxyUpdateEvent{
+			msg:   msg,
+			topic: GetPubSubTopicForProxyUUID(proxyUUID),
+		}
+	} else if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
+		return &proxyUpdateEvent{
+			msg:   msg,
+			topic: announcements.ProxyUpdate.String(),
+		}
+	}
+	return nil
 }
 
 // getIngressUpdateEvent returns a ingressUpdateEvent type indicating whether the given PubSubMessage should
