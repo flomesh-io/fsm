@@ -8,6 +8,9 @@
     failover,
   } = pipy.solve('lib/utils.js'),
 
+  http1PerRequestLoadBalancing = Boolean(config?.Configs?.HTTP1PerRequestLoadBalancing),
+  http2PerRequestLoadBalancing = (config?.Configs?.HTTP2PerRequestLoadBalancing === undefined) || Boolean(config?.Configs?.HTTP2PerRequestLoadBalancing),
+
   retryCounter = new stats.Counter('fgw_upstream_rq_retry', ['service_name']),
   retrySuccessCounter = new stats.Counter('fgw_upstream_rq_retry_success', ['service_name']),
   retryLimitCounter = new stats.Counter('fgw_upstream_rq_retry_limit_exceeded', ['service_name']),
@@ -148,6 +151,8 @@
   _targetBalancer: null,
   _failoverBalancer: null,
   _muxHttpOptions: null,
+  _version: null,
+  _session: null,
   _cookies: null,
   _cookieId: null,
   _isRetry: false,
@@ -162,6 +167,8 @@
   __route: 'route',
   __service: 'service',
   __cert: 'connect-tls',
+  __host: 'connect-tls',
+  __useSSL: 'connect-tls',
   __target: 'connect-tcp',
   __metricLabel: 'connect-tcp',
   __upstreamError: 'connect-tcp',
@@ -175,6 +182,8 @@
     (_serviceConfig = serviceConfigs.get(__service)) && (
       __metricLabel = __service.name,
       _muxHttpOptions = _serviceConfig.muxHttpOptions,
+      _version = _muxHttpOptions.version(),
+      _session = {},
       _targetBalancer = _serviceConfig.targetBalancer,
       _serviceConfig.failoverBalancer && (
         _failoverBalancer = _serviceConfig.failoverBalancer
@@ -183,6 +192,7 @@
     )
   )
 )
+.onEnd(() => void (_session = null))
 .branch(
   () => _serviceConfig?.needRetry || _failoverBalancer, (
     $=>$
@@ -221,18 +231,32 @@
         __target = _cookieId
       ) : (
         (__service?.Algorithm === 'HashingLoadBalancer') && (_balancerKey = __inbound.remoteAddress),
-        (_targetResource = _targetBalancer?.borrow?.(undefined, _balancerKey, _unhealthCache)) && (
+        (_version === 2) ? (
+          http2PerRequestLoadBalancing ? (
+            _targetResource = _targetBalancer?.borrow?.({}, _balancerKey, _unhealthCache)
+          ) : (
+            _targetResource = _targetBalancer?.borrow?.(__inbound, _balancerKey, _unhealthCache)
+          )
+        ) : http1PerRequestLoadBalancing ? (
+          _targetResource = _targetBalancer?.borrow?.(_session, _balancerKey, _unhealthCache)
+        ) : (
+          _targetResource = _targetBalancer?.borrow?.(__inbound, _balancerKey, _unhealthCache)
+        ),
+        _targetResource && (
           __target = _targetResource?.id
         )
       ),
       __target
     ) && (
-      !proxyPreserveHostCache.get(__route) && msg?.head?.headers?.host && (
-        msg.head.headers.host = __target
-      ),
       (
         attrs = _serviceConfig?.endpointAttributes?.[__target]
       ) => (
+        (__host = attrs?.Host) ? (
+          msg.head.headers.host = __host
+        ) : !proxyPreserveHostCache.get(__route) && (
+          msg.head.headers.host = __target
+        ),
+        __useSSL = Boolean(attrs?.UseSSL),
         attrs?.UpstreamCert ? (
           __cert = attrs?.UpstreamCert
         ) : (
@@ -255,7 +279,7 @@
   isDebugEnabled, (
     $=>$.handleStreamStart(
       () => (
-        console.log('[forward] target, cert:', __target, Boolean(__cert))
+        console.log('[forward] target, cert, host/sni, useSSL:', __target, Boolean(__cert), __host, __useSSL)
       )
     )
   )
@@ -281,7 +305,7 @@
   (
     $=>$.muxHTTP(() => _targetResource, () => _muxHttpOptions).to(
       $=>$.branch(
-        () => __cert, (
+        () => __cert || __useSSL, (
           $=>$.use('lib/connect-tls.js')
         ), (
           $=>$.use('lib/connect-tcp.js')
