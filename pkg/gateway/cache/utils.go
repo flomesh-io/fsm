@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"slices"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -563,4 +564,13 @@ func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
 	}
 
 	return pointer.Int32(int32(*port))
+}
+
+func insertAgentServiceScript(chains []string) []string {
+	httpCodecIndex := slices.Index(chains, httpCodecScript)
+	if httpCodecIndex != -1 {
+		return slices.Insert(chains, httpCodecIndex+1, agentServiceScript)
+	}
+
+	return chains
 }
