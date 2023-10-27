@@ -776,6 +776,8 @@ fsm:
     enableValidateGRPCRouteHostnames: true
     # -- Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address
     enableValidateTLSRouteHostnames: true
+    # -- Enable Gateway Agent Service
+    enableGatewayAgentService: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.

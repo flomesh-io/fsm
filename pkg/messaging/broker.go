@@ -806,9 +806,32 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 			msg:   msg,
 			topic: announcements.GatewayUpdate.String(),
 		}
+	case announcements.MeshConfigUpdated:
+		return gatewayInterestedConfigChanged(msg)
 	default:
 		return nil
 	}
+}
+
+func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEvent {
+	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
+	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
+	if !okPrevCast || !okNewCast {
+		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
+		return nil
+	}
+	prevSpec := prevMeshConfig.Spec
+	newSpec := newMeshConfig.Spec
+
+	if prevSpec.GatewayAPI.LogLevel != newSpec.GatewayAPI.LogLevel ||
+		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService {
+		return &gatewayUpdateEvent{
+			msg:   msg,
+			topic: announcements.GatewayUpdate.String(),
+		}
+	}
+
+	return nil
 }
 
 // getMCSUpdateEvent returns a mcsUpdateEvent type indicating whether the given PubSubMessage should
