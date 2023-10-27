@@ -2017,7 +2017,8 @@
                         "enableValidateGatewayListenerHostname",
                         "enableValidateHTTPRouteHostnames",
                         "enableValidateGRPCRouteHostnames",
-                        "enableValidateTLSRouteHostnames"
+                        "enableValidateTLSRouteHostnames",
+                        "enableGatewayAgentService"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2153,6 +2154,15 @@
                           "description": "Enable validate TLS route hostnames",
                           "examples": [
                             true
+                          ]
+                        },
+                        "enableGatewayAgentService": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableGatewayAgentService",
+                          "type": "boolean",
+                          "title": "Enable Agent Service",
+                          "description": "Enable Agent Service",
+                          "examples": [
+                            false
                           ]
                         }
                     },
