@@ -88,7 +88,7 @@ func (s *Source) Run(ctx context.Context) {
 				services[connector.MicroSvcName(s.Prefix+name)] = connector.MicroSvcDomainName(fmt.Sprintf("%s.service.%s", name, s.Domain))
 			}
 		}
-		log.Info().Msgf("received services from Consul, count:%d", len(services))
+		log.Trace().Msgf("received services from Consul, count:%d", len(services))
 		s.Sink.SetServices(services)
 	}
 }
@@ -102,7 +102,7 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 		log.Err(err).Msgf("can't retrieve consul service, name:%s", string(svcName))
 		return nil, connector.ConsulDiscoveryService
 	}
-	log.Info().Msgf("PassingOnly:%v FilterTag:%v len(serviceEntries):%d", s.PassingOnly, s.FilterTag, len(serviceEntries))
+	log.Trace().Msgf("PassingOnly:[%v] FilterTag:[%v] len(serviceEntries):[%d]", s.PassingOnly, s.FilterTag, len(serviceEntries))
 	if len(serviceEntries) == 0 {
 		return nil, connector.ConsulDiscoveryService
 	}
