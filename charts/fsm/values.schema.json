@@ -1830,7 +1830,12 @@
                     "title": "The gatewayApi Schema",
                     "required": [
                         "enabled",
-                        "logLevel"
+                        "logLevel",
+                        "fgwLogLevel",
+                        "stripAnyHostPort",
+                        "sslPassthroughUpstreamPort",
+                        "http1PerRequestLoadBalancing",
+                        "http2PerRequestLoadBalancing"
                     ],
                     "properties": {
                         "enabled": {
@@ -1842,6 +1847,31 @@
                             "type": "string",
                             "default": "info",
                             "title": "The logLevel Schema"
+                        },
+                        "fgwLogLevel": {
+                          "type": "string",
+                          "default": "info",
+                          "title": "The FGW logLevel Schema"
+                        },
+                        "stripAnyHostPort": {
+                          "type": "boolean",
+                          "default": true,
+                          "title": "The stripAnyHostPort Schema"
+                        },
+                        "sslPassthroughUpstreamPort": {
+                          "type": "integer",
+                          "default": 443,
+                          "title": "The sslPassthroughUpstreamPort Schema"
+                        },
+                        "http1PerRequestLoadBalancing": {
+                          "type": "boolean",
+                          "default": false,
+                          "title": "The http1PerRequestLoadBalancing Schema"
+                        },
+                        "http2PerRequestLoadBalancing": {
+                          "type": "boolean",
+                          "default": true,
+                          "title": "The http2PerRequestLoadBalancing Schema"
                         }
                     }
                 },
