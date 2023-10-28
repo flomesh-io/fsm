@@ -936,6 +936,11 @@ fsm:
   fsmGateway:
     enabled: false
     logLevel: info
+    fgwLogLevel: info
+    stripAnyHostPort: true
+    sslPassthroughUpstreamPort: 443
+    http1PerRequestLoadBalancing: false
+    http2PerRequestLoadBalancing: true
 
   #
   # -- FSM ServiceLB parameters

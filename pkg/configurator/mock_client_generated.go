@@ -80,6 +80,34 @@ func (mr *MockConfiguratorMockRecorder) GetConfigResyncInterval() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigResyncInterval", reflect.TypeOf((*MockConfigurator)(nil).GetConfigResyncInterval))
 }
 
+// GetFGWLogLevel mocks base method.
+func (m *MockConfigurator) GetFGWLogLevel() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFGWLogLevel")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetFGWLogLevel indicates an expected call of GetFGWLogLevel.
+func (mr *MockConfiguratorMockRecorder) GetFGWLogLevel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFGWLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFGWLogLevel))
+}
+
+// GetFGWSSLPassthroughUpstreamPort mocks base method.
+func (m *MockConfigurator) GetFGWSSLPassthroughUpstreamPort() int32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFGWSSLPassthroughUpstreamPort")
+	ret0, _ := ret[0].(int32)
+	return ret0
+}
+
+// GetFGWSSLPassthroughUpstreamPort indicates an expected call of GetFGWSSLPassthroughUpstreamPort.
+func (mr *MockConfiguratorMockRecorder) GetFGWSSLPassthroughUpstreamPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFGWSSLPassthroughUpstreamPort", reflect.TypeOf((*MockConfigurator)(nil).GetFGWSSLPassthroughUpstreamPort))
+}
+
 // GetFLBSecretName mocks base method.
 func (m *MockConfigurator) GetFLBSecretName() string {
 	m.ctrl.T.Helper()
@@ -737,6 +765,48 @@ func (m *MockConfigurator) IsEgressEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsEgressEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEgressEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsEgressEnabled))
+}
+
+// IsFGWHTTP1PerRequestLoadBalancingEnabled mocks base method.
+func (m *MockConfigurator) IsFGWHTTP1PerRequestLoadBalancingEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFGWHTTP1PerRequestLoadBalancingEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFGWHTTP1PerRequestLoadBalancingEnabled indicates an expected call of IsFGWHTTP1PerRequestLoadBalancingEnabled.
+func (mr *MockConfiguratorMockRecorder) IsFGWHTTP1PerRequestLoadBalancingEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFGWHTTP1PerRequestLoadBalancingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFGWHTTP1PerRequestLoadBalancingEnabled))
+}
+
+// IsFGWHTTP2PerRequestLoadBalancingEnabled mocks base method.
+func (m *MockConfigurator) IsFGWHTTP2PerRequestLoadBalancingEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFGWHTTP2PerRequestLoadBalancingEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFGWHTTP2PerRequestLoadBalancingEnabled indicates an expected call of IsFGWHTTP2PerRequestLoadBalancingEnabled.
+func (mr *MockConfiguratorMockRecorder) IsFGWHTTP2PerRequestLoadBalancingEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFGWHTTP2PerRequestLoadBalancingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFGWHTTP2PerRequestLoadBalancingEnabled))
+}
+
+// IsFGWStripAnyHostPort mocks base method.
+func (m *MockConfigurator) IsFGWStripAnyHostPort() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFGWStripAnyHostPort")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFGWStripAnyHostPort indicates an expected call of IsFGWStripAnyHostPort.
+func (mr *MockConfiguratorMockRecorder) IsFGWStripAnyHostPort() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFGWStripAnyHostPort", reflect.TypeOf((*MockConfigurator)(nil).IsFGWStripAnyHostPort))
 }
 
 // IsFLBEnabled mocks base method.

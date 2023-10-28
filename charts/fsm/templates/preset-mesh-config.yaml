@@ -117,7 +117,12 @@ data:
       },
       "gatewayAPI": {
         "enabled": {{ and .Values.fsm.fsmGateway.enabled (not .Values.fsm.fsmIngress.enabled) }},
-        "logLevel": "{{ .Values.fsm.fsmGateway.logLevel }}"
+        "logLevel": "{{ .Values.fsm.fsmGateway.logLevel }}",
+        "fgwLogLevel": "{{ .Values.fsm.fsmGateway.fgwLogLevel }}",
+        "stripAnyHostPort": {{ .Values.fsm.fsmGateway.stripAnyHostPort }},
+        "sslPassthroughUpstreamPort": {{ .Values.fsm.fsmGateway.sslPassthroughUpstreamPort }},
+        "http1PerRequestLoadBalancing": {{ .Values.fsm.fsmGateway.http1PerRequestLoadBalancing }},
+        "http2PerRequestLoadBalancing": {{ .Values.fsm.fsmGateway.http2PerRequestLoadBalancing }}
       },
       "serviceLB": {
         "enabled": {{ .Values.fsm.serviceLB.enabled }},
