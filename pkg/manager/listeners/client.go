@@ -15,6 +15,31 @@ type client struct {
 	mc *configv1alpha3.MeshConfig
 }
 
+func (c *client) GetFGWLogLevel() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) IsFGWStripAnyHostPort() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) GetFGWSSLPassthroughUpstreamPort() int32 {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) IsFGWHTTP1PerRequestLoadBalancingEnabled() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) IsFGWHTTP2PerRequestLoadBalancingEnabled() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetRemoteLoggingLevel() uint16 {
 	//TODO implement me
 	panic("implement me")
