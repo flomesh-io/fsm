@@ -93,6 +93,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
+	golang.org/x/exp v0.0.0-20220827204233-334a2380cb91
 	k8s.io/kubectl v0.26.6
 	k8s.io/kubernetes v1.26.6
 	sigs.k8s.io/yaml v1.3.0

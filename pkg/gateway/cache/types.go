@@ -132,3 +132,82 @@ const (
 var (
 	log = logger.New("fsm-gateway/cache")
 )
+
+var (
+	defaultHTTPChains = []string{
+		"common/access-control.js",
+		"common/ratelimit.js",
+		"common/consumer.js",
+		"http/codec.js",
+		"http/access-log.js",
+		"http/auth.js",
+		"http/route.js",
+		"http/fault-injection.js",
+		"filter/request-redirect.js",
+		"filter/header-modifier.js",
+		"filter/url-rewrite.js",
+		"http/service.js",
+		"http/metrics.js",
+		"http/tracing.js",
+		"http/logging.js",
+		"http/circuit-breaker.js",
+		"http/throttle-domain.js",
+		"http/throttle-route.js",
+		"http/error-page.js",
+		"http/proxy-redirect.js",
+		"http/forward.js",
+		"http/default.js",
+	}
+
+	defaultHTTPSChains = []string{
+		"common/access-control.js",
+		"common/ratelimit.js",
+		"common/tls-termination.js",
+		"common/consumer.js",
+		"http/codec.js",
+		"http/access-log.js",
+		"http/auth.js",
+		"http/route.js",
+		"http/fault-injection.js",
+		"filter/request-redirect.js",
+		"filter/header-modifier.js",
+		"filter/url-rewrite.js",
+		"http/service.js",
+		"http/metrics.js",
+		"http/tracing.js",
+		"http/logging.js",
+		"http/circuit-breaker.js",
+		"http/throttle-domain.js",
+		"http/throttle-route.js",
+		"http/error-page.js",
+		"http/proxy-redirect.js",
+		"http/forward.js",
+		"http/default.js",
+	}
+
+	defaultTLSPassthroughChains = []string{
+		"common/access-control.js",
+		"common/ratelimit.js",
+		"tls/passthrough.js",
+		"common/consumer.js",
+	}
+
+	defaultTLSTerminateChains = []string{
+		"common/access-control.js",
+		"common/ratelimit.js",
+		"common/tls-termination.js",
+		"common/consumer.js",
+		"tls/forward.js",
+	}
+
+	defaultTCPChains = []string{
+		"common/access-control.js",
+		"common/ratelimit.js",
+		"tcp/forward.js",
+	}
+)
+
+const (
+	httpCodecScript    = "http/codec.js"
+	agentServiceScript = "extension/agent-service.js"
+)

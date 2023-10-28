@@ -56,7 +56,7 @@ func (c *GatewayCache) BuildConfigs() {
 			Listeners:  listenerCfg,
 			RouteRules: rules,
 			Services:   svcConfigs,
-			Chains:     chains(),
+			Chains:     c.chains(),
 		}
 		configSpec.Version = utils.SimpleHash(configSpec)
 		configs[ns] = configSpec
@@ -699,77 +699,23 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 	return configs
 }
 
-func chains() routecfg.Chains {
+func (c *GatewayCache) chains() routecfg.Chains {
+	if c.cfg.GetFeatureFlags().EnableGatewayAgentService {
+		return routecfg.Chains{
+			HTTPRoute:      insertAgentServiceScript(defaultHTTPChains),
+			HTTPSRoute:     insertAgentServiceScript(defaultHTTPSChains),
+			TLSPassthrough: defaultTLSPassthroughChains,
+			TLSTerminate:   defaultTLSTerminateChains,
+			TCPRoute:       defaultTCPChains,
+		}
+	}
+
 	return routecfg.Chains{
-		HTTPRoute: []string{
-			"common/access-control.js",
-			"common/ratelimit.js",
-			"common/consumer.js",
-			"http/codec.js",
-			"extension/agent-service.js",
-			"http/access-log.js",
-			"http/auth.js",
-			"http/route.js",
-			"http/fault-injection.js",
-			"filter/request-redirect.js",
-			"filter/header-modifier.js",
-			"filter/url-rewrite.js",
-			"http/service.js",
-			"http/metrics.js",
-			"http/tracing.js",
-			"http/logging.js",
-			"http/circuit-breaker.js",
-			"http/throttle-domain.js",
-			"http/throttle-route.js",
-			"http/error-page.js",
-			"http/proxy-redirect.js",
-			"http/forward.js",
-			"http/default.js",
-		},
-		HTTPSRoute: []string{
-			"common/access-control.js",
-			"common/ratelimit.js",
-			"common/tls-termination.js",
-			"common/consumer.js",
-			"http/codec.js",
-			"extension/agent-service.js",
-			"http/access-log.js",
-			"http/auth.js",
-			"http/route.js",
-			"http/fault-injection.js",
-			"filter/request-redirect.js",
-			"filter/header-modifier.js",
-			"filter/url-rewrite.js",
-			"http/service.js",
-			"http/metrics.js",
-			"http/tracing.js",
-			"http/logging.js",
-			"http/circuit-breaker.js",
-			"http/throttle-domain.js",
-			"http/throttle-route.js",
-			"http/error-page.js",
-			"http/proxy-redirect.js",
-			"http/forward.js",
-			"http/default.js",
-		},
-		TLSPassthrough: []string{
-			"common/access-control.js",
-			"common/ratelimit.js",
-			"tls/passthrough.js",
-			"common/consumer.js",
-		},
-		TLSTerminate: []string{
-			"common/access-control.js",
-			"common/ratelimit.js",
-			"common/tls-termination.js",
-			"common/consumer.js",
-			"tls/forward.js",
-		},
-		TCPRoute: []string{
-			"common/access-control.js",
-			"common/ratelimit.js",
-			"tcp/forward.js",
-		},
+		HTTPRoute:      defaultHTTPChains,
+		HTTPSRoute:     defaultHTTPSChains,
+		TLSPassthrough: defaultTLSPassthroughChains,
+		TLSTerminate:   defaultTLSTerminateChains,
+		TCPRoute:       defaultTCPChains,
 	}
 }
 

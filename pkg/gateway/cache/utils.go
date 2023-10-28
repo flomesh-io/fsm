@@ -6,6 +6,8 @@ import (
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
+	"golang.org/x/exp/slices"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -627,4 +629,13 @@ func bpsRateLimit(listenerPort gwv1beta1.PortNumber, policy gwpav1alpha1.RateLim
 	}
 
 	return policy.Spec.DefaultBPS
+}
+
+func insertAgentServiceScript(chains []string) []string {
+	httpCodecIndex := slices.Index(chains, httpCodecScript)
+	if httpCodecIndex != -1 {
+		return slices.Insert(chains, httpCodecIndex+1, agentServiceScript)
+	}
+
+	return chains
 }

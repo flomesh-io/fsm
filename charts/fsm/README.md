@@ -142,6 +142,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableAsyncProxyServiceMapping | bool | `false` | Enable async proxy-service mapping |
 | fsm.featureFlags.enableAutoDefaultRoute | bool | `false` | Enable AutoDefaultRoute |
 | fsm.featureFlags.enableEgressPolicy | bool | `true` | Enable FSM's Egress policy API. When enabled, fine grained control over Egress (external) traffic is enforced |
+| fsm.featureFlags.enableGatewayAgentService | bool | `false` | Enable Gateway Agent Service |
 | fsm.featureFlags.enableIngressBackendPolicy | bool | `true` | Enables FSM's IngressBackend policy API. When enabled, FSM will use the IngressBackend API allow ingress traffic to mesh backends |
 | fsm.featureFlags.enableMeshRootCertificate | bool | `false` | Enable the MeshRootCertificate to configure the FSM certificate provider |
 | fsm.featureFlags.enablePluginPolicy | bool | `false` | Enable Plugin Policy for extend |
