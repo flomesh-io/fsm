@@ -299,7 +299,6 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
 		(policy.Spec.TargetRef.Kind == constants.HTTPRouteKind || policy.Spec.TargetRef.Kind == constants.GRPCRouteKind) {
-
 		if len(policy.Spec.Ports) > 0 {
 			path := field.NewPath("spec").Child("ports")
 			errs = append(errs, field.Invalid(path, policy.Spec.Ports, "must be empty for HTTPRoute/GRPCRoute target"))

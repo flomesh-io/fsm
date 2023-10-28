@@ -155,15 +155,16 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 		l4RateLimits := acceptedRateLimits[RateLimitPolicyMatchTypePort]
 		if len(l4RateLimits) > 0 {
 			for _, rateLimit := range l4RateLimits {
-				// RateLimitPolicy is attached to Gateway
-				if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(gw)) {
-					// A matched rate limit policy and no rate limit is set on the listener,
-					//  as the rate limits are sorted by timestamp, the first one wins
-					if len(rateLimit.Spec.Ports) > 0 &&
-						gwutils.PortMatchesRateLimitPolicy(l.Port, rateLimit) &&
-						listener.BpsLimit == nil {
-						listener.BpsLimit = bpsRateLimit(l.Port, rateLimit)
-					}
+				if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gwutils.ObjectKey(gw)) {
+					continue
+				}
+
+				if len(rateLimit.Spec.Ports) == 0 {
+					continue
+				}
+
+				if r := gwutils.GetRateLimitIfPortMatchesPolicy(l.Port, rateLimit); r != nil && listener.BpsLimit == nil {
+					listener.BpsLimit = r
 				}
 			}
 		}
@@ -428,8 +429,8 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 				r := generateHTTPRouteConfig(httpRoute, routeRateLimits, services)
 
 				for _, rateLimit := range hostnamesRateLimits {
-					if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, rateLimit) && r.RateLimit == nil {
-						r.RateLimit = newHostnameRateLimit(hostname, rateLimit)
+					if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
+						r.RateLimit = newRateLimitConfig(rl)
 					}
 				}
 
@@ -490,8 +491,8 @@ func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 				r := generateGRPCRouteCfg(grpcRoute, routeRateLimits, services)
 
 				for _, rateLimit := range hostnamesRateLimits {
-					if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, rateLimit) && r.RateLimit == nil {
-						r.RateLimit = newHostnameRateLimit(hostname, rateLimit)
+					if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
+						r.RateLimit = newRateLimitConfig(rl)
 					}
 				}
 
@@ -783,8 +784,8 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []g
 					continue
 				}
 
-				if gwutils.HTTPRouteMatchesRateLimitPolicy(m, rateLimit) && match.RateLimit == nil {
-					match.RateLimit = newHTTPRouteRateLimit(m, rateLimit)
+				if r := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit); r != nil && match.RateLimit == nil {
+					match.RateLimit = newRateLimitConfig(r)
 				}
 			}
 
@@ -849,8 +850,8 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routeRateLimits []gwp
 					continue
 				}
 
-				if gwutils.GRPCRouteMatchesRateLimitPolicy(m, rateLimit) && match.RateLimit == nil {
-					match.RateLimit = newGRPCRouteRateLimit(m, rateLimit)
+				if r := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, rateLimit); r != nil && match.RateLimit == nil {
+					match.RateLimit = newRateLimitConfig(r)
 				}
 			}
 

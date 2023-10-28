@@ -27,6 +27,7 @@ package v1beta1
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -107,7 +108,6 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-// TODO: handle conflict
 func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RateLimitPolicy) metav1.Condition {
 	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
 		return metav1.Condition{
@@ -285,7 +285,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 			if len(p.Spec.Hostnames) > 0 {
 				hostnamesRateLimits = append(hostnamesRateLimits, p)
 			}
-			if len(p.Spec.HTTPRateLimits) > 0 || len(p.Spec.HTTPRateLimits) > 0 {
+			if len(p.Spec.HTTPRateLimits) > 0 || len(p.Spec.GRPCRateLimits) > 0 {
 				routeRateLimits = append(routeRateLimits, p)
 			}
 		}
@@ -373,12 +373,23 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesRateLimits {
-						if gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, hr) &&
-							gwutils.RouteHostnameMatchesRateLimitPolicy(hostname, *rateLimitPolicy) {
-							return &types.NamespacedName{
-								Name:      hr.Name,
-								Namespace: hr.Namespace,
-							}
+						r1 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
+						if r1 == nil {
+							continue
+						}
+
+						r2 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *rateLimitPolicy)
+						if r2 == nil {
+							continue
+						}
+
+						if reflect.DeepEqual(r1, r2) {
+							continue
+						}
+
+						return &types.NamespacedName{
+							Name:      hr.Name,
+							Namespace: hr.Namespace,
 						}
 					}
 				}
@@ -404,12 +415,23 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 						continue
 					}
 
-					if gwutils.HTTPRouteMatchesRateLimitPolicy(m, rateLimit) &&
-						gwutils.HTTPRouteMatchesRateLimitPolicy(m, *rateLimitPolicy) {
-						return &types.NamespacedName{
-							Name:      rateLimit.Name,
-							Namespace: rateLimit.Namespace,
-						}
+					r1 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit)
+					if r1 == nil {
+						continue
+					}
+
+					r2 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, *rateLimitPolicy)
+					if r2 == nil {
+						continue
+					}
+
+					if reflect.DeepEqual(r1, r2) {
+						continue
+					}
+
+					return &types.NamespacedName{
+						Name:      rateLimit.Name,
+						Namespace: rateLimit.Namespace,
 					}
 				}
 			}
@@ -422,12 +444,23 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 						continue
 					}
 
-					if gwutils.GRPCRouteMatchesRateLimitPolicy(m, rr) &&
-						gwutils.GRPCRouteMatchesRateLimitPolicy(m, *rateLimitPolicy) {
-						return &types.NamespacedName{
-							Name:      rr.Name,
-							Namespace: rr.Namespace,
-						}
+					r1 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, rr)
+					if r1 == nil {
+						continue
+					}
+
+					r2 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, *rateLimitPolicy)
+					if r2 == nil {
+						continue
+					}
+
+					if reflect.DeepEqual(r1, r2) {
+						continue
+					}
+
+					return &types.NamespacedName{
+						Name:      rr.Name,
+						Namespace: rr.Namespace,
 					}
 				}
 			}
@@ -458,12 +491,23 @@ func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1
 			gwutils.IsRefToTarget(pr.Spec.TargetRef, gwutils.ObjectKey(gateway)) &&
 			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				if gwutils.PortMatchesRateLimitPolicy(listener.Port, pr) &&
-					gwutils.PortMatchesRateLimitPolicy(listener.Port, *rateLimitPolicy) {
-					return &types.NamespacedName{
-						Name:      pr.Name,
-						Namespace: pr.Namespace,
-					}
+				r1 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
+				if r1 == nil {
+					continue
+				}
+
+				r2 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, *rateLimitPolicy)
+				if r2 == nil {
+					continue
+				}
+
+				if *r1 == *r2 {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      pr.Name,
+					Namespace: pr.Namespace,
 				}
 			}
 		}

@@ -36,148 +36,18 @@ spec:
           spec:
             description: RateLimitPolicySpec defines the desired state of RateLimitPolicy
             properties:
-              hostnames:
-                description: Hostnames defines the rate limit configuration for hostnames
+              bps:
+                description: DefaultBPS is the default rate limit for all ports
+                format: int64
+                type: integer
+              grpc:
+                description: GRPCRateLimits is the rate limit configuration for GRPC
+                  routes
                 items:
-                  description: HostnameRateLimit defines the rate limit configuration
-                    for a hostname
+                  description: GRPCRateLimit defines the rate limit configuration
+                    for a GRPC route
                   properties:
-                    hostname:
-                      description: "Hostname is the fully qualified domain name of
-                        a network host. This matches the RFC 1123 definition of a
-                        hostname with 2 notable exceptions: \n 1. IPs are not allowed.
-                        2. A hostname may be prefixed with a wildcard label (`*.`).
-                        The wildcard label must appear by itself as the first label.
-                        \n Hostname can be \"precise\" which is a domain name without
-                        the terminating dot of a network host (e.g. \"foo.example.com\")
-                        or \"wildcard\", which is a domain name prefixed with a single
-                        wildcard label (e.g. `*.example.com`). \n Note that as per
-                        RFC1035 and RFC1123, a *label* must consist of lower case
-                        alphanumeric characters or '-', and must start and end with
-                        an alphanumeric character. No other punctuation is allowed."
-                      maxLength: 253
-                      minLength: 1
-                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                      type: string
-                    rateLimit:
-                      description: L7RateLimit defines the rate limit configuration
-                        for a route
-                      properties:
-                        backlog:
-                          default: 10
-                          description: Backlog is the number of requests allowed to
-                            wait in the queue
-                          type: integer
-                        burst:
-                          description: Burst is the number of requests allowed to
-                            be bursted, if not specified, it will be the same as Requests
-                          type: integer
-                        mode:
-                          default: Local
-                          description: Mode is the mode of the rate limit policy,
-                            Local or Global, default is Local
-                          enum:
-                          - Local
-                          - Global
-                          type: string
-                        requests:
-                          description: Requests is the number of requests allowed
-                            per statTimeWindow
-                          type: integer
-                        responseHeadersToAdd:
-                          additionalProperties:
-                            type: string
-                          description: ResponseHeadersToAdd is the response headers
-                            to be added when the rate limit is exceeded
-                          type: object
-                        responseStatusCode:
-                          default: 429
-                          description: ResponseStatusCode is the response status code
-                            to be returned when the rate limit is exceeded
-                          type: integer
-                        statTimeWindow:
-                          description: StatTimeWindow is the time window in seconds
-                          type: integer
-                      required:
-                      - requests
-                      - statTimeWindow
-                      type: object
-                  required:
-                  - hostname
-                  type: object
-                properties:
-                  rateLimit:
-                    description: L7RateLimit defines the rate limit configuration
-                      for a route
-                    properties:
-                      backlog:
-                        default: 10
-                        description: Backlog is the number of requests allowed to
-                          wait in the queue
-                        type: integer
-                      burst:
-                        description: Burst is the number of requests allowed to be
-                          bursted, if not specified, it will be the same as Requests
-                        type: integer
-                      mode:
-                        default: Local
-                        description: Mode is the mode of the rate limit policy, Local
-                          or Global, default is Local
-                        enum:
-                        - Local
-                        - Global
-                        type: string
-                      requests:
-                        description: Requests is the number of requests allowed per
-                          statTimeWindow
-                        type: integer
-                      responseHeadersToAdd:
-                        additionalProperties:
-                          type: string
-                        description: ResponseHeadersToAdd is the response headers
-                          to be added when the rate limit is exceeded
-                        type: object
-                      responseStatusCode:
-                        default: 429
-                        description: ResponseStatusCode is the response status code
-                          to be returned when the rate limit is exceeded
-                        type: integer
-                      statTimeWindow:
-                        description: StatTimeWindow is the time window in seconds
-                        type: integer
-                    required:
-                    - requests
-                    - statTimeWindow
-                    type: object
-                type: array
-              ports:
-                description: Ports defines the rate limit configuration for ports
-                items:
-                  description: PortRateLimit defines the rate limit configuration
-                    for a port
-                  properties:
-                    bps:
-                      format: int64
-                      type: integer
-                    port:
-                      description: PortNumber defines a network port.
-                      format: int32
-                      maximum: 65535
-                      minimum: 1
-                      type: integer
-                  required:
-                  - port
-                  type: object
-                properties:
-                  bps:
-                    format: int64
-                    type: integer
-                type: array
-              routes:
-                description: Routes defines the rate limit configuration for routes
-                properties:
-                  grpc:
-                    items:
+                    match:
                       description: "GRPCRouteMatch defines the predicate used to match
                         requests to a given action. Multiple match types are ANDed
                         together, i.e. the match will evaluate to true only if all
@@ -262,9 +132,131 @@ spec:
                               type: string
                           type: object
                       type: object
-                    type: array
-                  http:
-                    items:
+                    rateLimit:
+                      description: L7RateLimit defines the rate limit configuration
+                        for a route
+                      properties:
+                        backlog:
+                          default: 10
+                          description: Backlog is the number of requests allowed to
+                            wait in the queue
+                          type: integer
+                        burst:
+                          description: Burst is the number of requests allowed to
+                            be bursted, if not specified, it will be the same as Requests
+                          type: integer
+                        mode:
+                          default: Local
+                          description: Mode is the mode of the rate limit policy,
+                            Local or Global, default is Local
+                          enum:
+                          - Local
+                          - Global
+                          type: string
+                        requests:
+                          description: Requests is the number of requests allowed
+                            per statTimeWindow
+                          type: integer
+                        responseHeadersToAdd:
+                          additionalProperties:
+                            type: string
+                          description: ResponseHeadersToAdd is the response headers
+                            to be added when the rate limit is exceeded
+                          type: object
+                        responseStatusCode:
+                          default: 429
+                          description: ResponseStatusCode is the response status code
+                            to be returned when the rate limit is exceeded
+                          type: integer
+                        statTimeWindow:
+                          description: StatTimeWindow is the time window in seconds
+                          type: integer
+                      required:
+                      - requests
+                      - statTimeWindow
+                      type: object
+                  required:
+                  - match
+                  type: object
+                type: array
+              hostnames:
+                description: Hostnames is the rate limit configuration for hostnames
+                items:
+                  description: HostnameRateLimit defines the rate limit configuration
+                    for a hostname
+                  properties:
+                    hostname:
+                      description: "Hostname is the fully qualified domain name of
+                        a network host. This matches the RFC 1123 definition of a
+                        hostname with 2 notable exceptions: \n 1. IPs are not allowed.
+                        2. A hostname may be prefixed with a wildcard label (`*.`).
+                        The wildcard label must appear by itself as the first label.
+                        \n Hostname can be \"precise\" which is a domain name without
+                        the terminating dot of a network host (e.g. \"foo.example.com\")
+                        or \"wildcard\", which is a domain name prefixed with a single
+                        wildcard label (e.g. `*.example.com`). \n Note that as per
+                        RFC1035 and RFC1123, a *label* must consist of lower case
+                        alphanumeric characters or '-', and must start and end with
+                        an alphanumeric character. No other punctuation is allowed."
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                    rateLimit:
+                      description: L7RateLimit defines the rate limit configuration
+                        for a route
+                      properties:
+                        backlog:
+                          default: 10
+                          description: Backlog is the number of requests allowed to
+                            wait in the queue
+                          type: integer
+                        burst:
+                          description: Burst is the number of requests allowed to
+                            be bursted, if not specified, it will be the same as Requests
+                          type: integer
+                        mode:
+                          default: Local
+                          description: Mode is the mode of the rate limit policy,
+                            Local or Global, default is Local
+                          enum:
+                          - Local
+                          - Global
+                          type: string
+                        requests:
+                          description: Requests is the number of requests allowed
+                            per statTimeWindow
+                          type: integer
+                        responseHeadersToAdd:
+                          additionalProperties:
+                            type: string
+                          description: ResponseHeadersToAdd is the response headers
+                            to be added when the rate limit is exceeded
+                          type: object
+                        responseStatusCode:
+                          default: 429
+                          description: ResponseStatusCode is the response status code
+                            to be returned when the rate limit is exceeded
+                          type: integer
+                        statTimeWindow:
+                          description: StatTimeWindow is the time window in seconds
+                          type: integer
+                      required:
+                      - requests
+                      - statTimeWindow
+                      type: object
+                  required:
+                  - hostname
+                  type: object
+                type: array
+              http:
+                description: HTTPRateLimits is the rate limit configuration for HTTP
+                  routes
+                items:
+                  description: HTTPRateLimit defines the rate limit configuration
+                    for a HTTP route
+                  properties:
+                    match:
                       description: "HTTPRouteMatch defines the predicate used to match
                         requests to a given action. Multiple match types are ANDed
                         together, i.e. the match will evaluate to true only if all
@@ -431,50 +423,113 @@ spec:
                           - name
                           x-kubernetes-list-type: map
                       type: object
-                    type: array
-                  rateLimit:
-                    description: L7RateLimit defines the rate limit configuration
-                      for a route
-                    properties:
-                      backlog:
-                        default: 10
-                        description: Backlog is the number of requests allowed to
-                          wait in the queue
-                        type: integer
-                      burst:
-                        description: Burst is the number of requests allowed to be
-                          bursted, if not specified, it will be the same as Requests
-                        type: integer
-                      mode:
-                        default: Local
-                        description: Mode is the mode of the rate limit policy, Local
-                          or Global, default is Local
-                        enum:
-                        - Local
-                        - Global
-                        type: string
-                      requests:
-                        description: Requests is the number of requests allowed per
-                          statTimeWindow
-                        type: integer
-                      responseHeadersToAdd:
-                        additionalProperties:
+                    rateLimit:
+                      description: L7RateLimit defines the rate limit configuration
+                        for a route
+                      properties:
+                        backlog:
+                          default: 10
+                          description: Backlog is the number of requests allowed to
+                            wait in the queue
+                          type: integer
+                        burst:
+                          description: Burst is the number of requests allowed to
+                            be bursted, if not specified, it will be the same as Requests
+                          type: integer
+                        mode:
+                          default: Local
+                          description: Mode is the mode of the rate limit policy,
+                            Local or Global, default is Local
+                          enum:
+                          - Local
+                          - Global
                           type: string
-                        description: ResponseHeadersToAdd is the response headers
-                          to be added when the rate limit is exceeded
-                        type: object
-                      responseStatusCode:
-                        default: 429
-                        description: ResponseStatusCode is the response status code
-                          to be returned when the rate limit is exceeded
-                        type: integer
-                      statTimeWindow:
-                        description: StatTimeWindow is the time window in seconds
-                        type: integer
-                    required:
-                    - requests
-                    - statTimeWindow
+                        requests:
+                          description: Requests is the number of requests allowed
+                            per statTimeWindow
+                          type: integer
+                        responseHeadersToAdd:
+                          additionalProperties:
+                            type: string
+                          description: ResponseHeadersToAdd is the response headers
+                            to be added when the rate limit is exceeded
+                          type: object
+                        responseStatusCode:
+                          default: 429
+                          description: ResponseStatusCode is the response status code
+                            to be returned when the rate limit is exceeded
+                          type: integer
+                        statTimeWindow:
+                          description: StatTimeWindow is the time window in seconds
+                          type: integer
+                      required:
+                      - requests
+                      - statTimeWindow
+                      type: object
+                  required:
+                  - match
+                  type: object
+                type: array
+              ports:
+                description: Ports is the rate limit configuration for ports
+                items:
+                  description: PortRateLimit defines the rate limit configuration
+                    for a port
+                  properties:
+                    bps:
+                      format: int64
+                      type: integer
+                    port:
+                      description: PortNumber defines a network port.
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                  required:
+                  - port
+                  type: object
+                type: array
+              rateLimit:
+                description: DefaultRateLimit is the default rate limit for all routes
+                  and hostnames
+                properties:
+                  backlog:
+                    default: 10
+                    description: Backlog is the number of requests allowed to wait
+                      in the queue
+                    type: integer
+                  burst:
+                    description: Burst is the number of requests allowed to be bursted,
+                      if not specified, it will be the same as Requests
+                    type: integer
+                  mode:
+                    default: Local
+                    description: Mode is the mode of the rate limit policy, Local
+                      or Global, default is Local
+                    enum:
+                    - Local
+                    - Global
+                    type: string
+                  requests:
+                    description: Requests is the number of requests allowed per statTimeWindow
+                    type: integer
+                  responseHeadersToAdd:
+                    additionalProperties:
+                      type: string
+                    description: ResponseHeadersToAdd is the response headers to be
+                      added when the rate limit is exceeded
                     type: object
+                  responseStatusCode:
+                    default: 429
+                    description: ResponseStatusCode is the response status code to
+                      be returned when the rate limit is exceeded
+                    type: integer
+                  statTimeWindow:
+                    description: StatTimeWindow is the time window in seconds
+                    type: integer
+                required:
+                - requests
+                - statTimeWindow
                 type: object
               targetRef:
                 description: TargetRef is the reference to the target resource to

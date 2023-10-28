@@ -298,74 +298,91 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	return g.Match(hostname)
 }
 
-// RouteHostnameMatchesRateLimitPolicy returns true if the route hostname matches the hostnames
-func RouteHostnameMatchesRateLimitPolicy(routeHostname string, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+// GetRateLimitIfRouteHostnameMatchesPolicy returns the rate limit config if the route hostname matches the policy
+func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
-		return false
+		return nil
 	}
 
 	for i := range rateLimitPolicy.Spec.Hostnames {
 		hostname := string(rateLimitPolicy.Spec.Hostnames[i].Hostname)
+		rateLimit := rateLimitPolicy.Spec.Hostnames[i].RateLimit
+		if rateLimit == nil {
+			rateLimit = rateLimitPolicy.Spec.DefaultL7RateLimit
+		}
+
 		switch {
 		case routeHostname == hostname:
-			return true
+			return rateLimit
 
 		case strings.HasPrefix(routeHostname, "*"):
 			if HostnameMatchesWildcardHostname(hostname, routeHostname) {
-				return true
+				return rateLimit
 			}
 
 		case strings.HasPrefix(hostname, "*"):
 			if HostnameMatchesWildcardHostname(routeHostname, hostname) {
-				return true
+				return rateLimit
 			}
 		}
 	}
 
-	return false
+	return nil
 }
 
-// HTTPRouteMatchesRateLimitPolicy returns true if the HTTP route matches the rate limit policy
-func HTTPRouteMatchesRateLimitPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+// GetRateLimitIfHTTPRouteMatchesPolicy returns the rate limit config if the HTTP route matches the policy
+func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 {
-		return false
+		return nil
 	}
 
 	for _, hr := range rateLimitPolicy.Spec.HTTPRateLimits {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
-			return true
+			if hr.RateLimit != nil {
+				return hr.RateLimit
+			}
+
+			return rateLimitPolicy.Spec.DefaultL7RateLimit
 		}
 	}
 
-	return false
+	return nil
 }
 
-// GRPCRouteMatchesRateLimitPolicy returns true if the GRPC route matches the rate limit policy
-func GRPCRouteMatchesRateLimitPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+// GetRateLimitIfGRPCRouteMatchesPolicy returns the rate limit config if the GRPC route matches the policy
+func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
-		return false
+		return nil
 	}
 
 	for _, gr := range rateLimitPolicy.Spec.GRPCRateLimits {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
-			return true
+			if gr.RateLimit != nil {
+				return gr.RateLimit
+			}
+
+			return rateLimitPolicy.Spec.DefaultL7RateLimit
 		}
 	}
 
-	return false
+	return nil
 }
 
-// PortMatchesRateLimitPolicy returns true if the port matches the rate limit policy
-func PortMatchesRateLimitPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) bool {
+// GetRateLimitIfPortMatchesPolicy returns true if the port matches the rate limit policy
+func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
 	if len(rateLimitPolicy.Spec.Ports) == 0 {
-		return false
+		return nil
 	}
 
 	for _, policyPort := range rateLimitPolicy.Spec.Ports {
 		if port == policyPort.Port {
-			return true
+			if policyPort.BPS != nil {
+				return policyPort.BPS
+			}
+
+			return rateLimitPolicy.Spec.DefaultBPS
 		}
 	}
 
-	return false
+	return nil
 }

@@ -2,7 +2,6 @@ package cache
 
 import (
 	"fmt"
-	"reflect"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
@@ -570,45 +569,6 @@ func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
 	return pointer.Int32(int32(*port))
 }
 
-func newHostnameRateLimit(hostname string, rateLimit gwpav1alpha1.RateLimitPolicy) *routecfg.RateLimit {
-	for _, h := range rateLimit.Spec.Hostnames {
-		if string(h.Hostname) == hostname {
-			if h.RateLimit == nil {
-				return newRateLimitConfig(rateLimit.Spec.DefaultL7RateLimit)
-			}
-			return newRateLimitConfig(h.RateLimit)
-		}
-	}
-
-	return nil
-}
-
-func newHTTPRouteRateLimit(match gwv1beta1.HTTPRouteMatch, rateLimit gwpav1alpha1.RateLimitPolicy) *routecfg.RateLimit {
-	for _, hr := range rateLimit.Spec.HTTPRateLimits {
-		if reflect.DeepEqual(match, hr.Match) {
-			if hr.RateLimit == nil {
-				return newRateLimitConfig(rateLimit.Spec.DefaultL7RateLimit)
-			}
-			return newRateLimitConfig(hr.RateLimit)
-		}
-	}
-
-	return nil
-}
-
-func newGRPCRouteRateLimit(match gwv1alpha2.GRPCRouteMatch, rateLimit gwpav1alpha1.RateLimitPolicy) *routecfg.RateLimit {
-	for _, hr := range rateLimit.Spec.HTTPRateLimits {
-		if reflect.DeepEqual(match, hr.Match) {
-			if hr.RateLimit == nil {
-				return newRateLimitConfig(rateLimit.Spec.DefaultL7RateLimit)
-			}
-			return newRateLimitConfig(hr.RateLimit)
-		}
-	}
-
-	return nil
-}
-
 func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit {
 	return &routecfg.RateLimit{
 		Mode:                 *rateLimit.Mode,
@@ -619,16 +579,6 @@ func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit
 		ResponseStatusCode:   *rateLimit.ResponseStatusCode,
 		ResponseHeadersToAdd: rateLimit.ResponseHeadersToAdd,
 	}
-}
-
-func bpsRateLimit(listenerPort gwv1beta1.PortNumber, policy gwpav1alpha1.RateLimitPolicy) *int64 {
-	for _, port := range policy.Spec.Ports {
-		if listenerPort == port.Port && port.BPS != nil {
-			return port.BPS
-		}
-	}
-
-	return policy.Spec.DefaultBPS
 }
 
 func insertAgentServiceScript(chains []string) []string {
