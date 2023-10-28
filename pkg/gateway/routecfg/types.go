@@ -68,9 +68,11 @@ type ConfigSpec struct {
 
 // Defaults is the default configuration
 type Defaults struct {
-	EnableDebug                    bool   `json:"EnableDebug"`
-	DefaultPassthroughUpstreamPort uint32 `json:"DefaultPassthroughUpstreamPort"`
-	StripAnyHostPort               bool   `json:"StripAnyHostPort"`
+	EnableDebug                    bool  `json:"EnableDebug"`
+	DefaultPassthroughUpstreamPort int32 `json:"DefaultPassthroughUpstreamPort"`
+	StripAnyHostPort               bool  `json:"StripAnyHostPort"`
+	HTTP1PerRequestLoadBalancing   bool  `json:"HTTP1PerRequestLoadBalancing"`
+	HTTP2PerRequestLoadBalancing   bool  `json:"HTTP2PerRequestLoadBalancing"`
 }
 
 // Listener is the listener configuration
