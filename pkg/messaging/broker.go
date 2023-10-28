@@ -823,8 +823,12 @@ func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEven
 	prevSpec := prevMeshConfig.Spec
 	newSpec := newMeshConfig.Spec
 
-	if prevSpec.GatewayAPI.LogLevel != newSpec.GatewayAPI.LogLevel ||
-		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService {
+	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
+		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
+		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
+		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
+		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
+		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
 		return &gatewayUpdateEvent{
 			msg:   msg,
 			topic: announcements.GatewayUpdate.String(),

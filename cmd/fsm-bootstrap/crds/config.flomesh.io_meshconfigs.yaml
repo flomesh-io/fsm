@@ -1440,9 +1440,37 @@ spec:
               gatewayAPI:
                 description: GatewayAPI defines the configurations of GatewayAPI features.
                 properties:
+                  StripAnyHostPort:
+                    default: false
+                    description: StripAnyHostPort defines if strip any host port is
+                      enabled.
+                    type: boolean
                   enabled:
                     default: false
                     description: Enabled defines if gateway api is enabled.
+                    type: boolean
+                  fgwLogLevel:
+                    default: info
+                    description: FGWLogLevel defines the log level of FGW.
+                    enum:
+                    - trace
+                    - debug
+                    - info
+                    - warn
+                    - error
+                    - fatal
+                    - panic
+                    - disabled
+                    type: string
+                  http1PerRequestLoadBalancing:
+                    default: false
+                    description: HTTP1PerRequestLoadBalancing defines if load balancing
+                      based on per-request is enabled for http1.
+                    type: boolean
+                  http2PerRequestLoadBalancing:
+                    default: false
+                    description: HTTP2PerRequestLoadBalancing defines if load balancing
+                      based on per-request is enabled for http2.
                     type: boolean
                   logLevel:
                     default: info
@@ -1457,9 +1485,20 @@ spec:
                     - panic
                     - disabled
                     type: string
+                  sslPassthroughUpstreamPort:
+                    default: 443
+                    description: SSLPassthroughUpstreamPort defines the default upstream
+                      port of SSL passthrough.
+                    format: int32
+                    type: integer
                 required:
+                - StripAnyHostPort
                 - enabled
+                - fgwLogLevel
+                - http1PerRequestLoadBalancing
+                - http2PerRequestLoadBalancing
                 - logLevel
+                - sslPassthroughUpstreamPort
                 type: object
               image:
                 description: Image defines the configurations of Image info

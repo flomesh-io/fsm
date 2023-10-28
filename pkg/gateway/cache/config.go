@@ -119,13 +119,15 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 func (c *GatewayCache) defaults() routecfg.Defaults {
 	return routecfg.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
-		DefaultPassthroughUpstreamPort: 443,  // TODO: enrich this from config
-		StripAnyHostPort:               true, // TODO: enrich this from config
+		DefaultPassthroughUpstreamPort: c.cfg.GetFGWSSLPassthroughUpstreamPort(),
+		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
+		HTTP1PerRequestLoadBalancing:   c.cfg.IsFGWHTTP1PerRequestLoadBalancingEnabled(),
+		HTTP2PerRequestLoadBalancing:   c.cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
 	}
 }
 
 func (c *GatewayCache) isDebugEnabled() bool {
-	switch c.cfg.GetFSMGatewayLogLevel() {
+	switch c.cfg.GetFGWLogLevel() {
 	case "debug", "trace":
 		return true
 	default:
