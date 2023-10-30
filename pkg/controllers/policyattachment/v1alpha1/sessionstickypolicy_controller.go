@@ -2,6 +2,19 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
+	"sort"
+	"time"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+
+	"k8s.io/apimachinery/pkg/types"
+
+	corev1 "k8s.io/api/core/v1"
+
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -70,4 +83,228 @@ func (r *sessionStickyPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.SessionStickyPolicy{}).
 		Complete(r)
+}
+
+func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.SessionStickyPolicy) metav1.Condition {
+	if policy.Spec.TargetRef.Group != "" || policy.Spec.TargetRef.Kind != "flomesh.io" {
+		return metav1.Condition{
+			Type:               string(gwv1alpha2.PolicyConditionAccepted),
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: policy.Generation,
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+			Message:            "Invalid target reference group, only kubernetes core or flomesh.io is supported",
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == "" && policy.Spec.TargetRef.Kind != "Service" {
+		return metav1.Condition{
+			Type:               string(gwv1alpha2.PolicyConditionAccepted),
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: policy.Generation,
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+			Message:            "Invalid target reference kind, only Service is supported for kubernetes core group",
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == "flomesh.io" && policy.Spec.TargetRef.Kind != "ServiceImport" {
+		return metav1.Condition{
+			Type:               string(gwv1alpha2.PolicyConditionAccepted),
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: policy.Generation,
+			LastTransitionTime: metav1.Time{Time: time.Now()},
+			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+			Message:            "Invalid target reference kind, only ServiceImport is supported for flomesh.io group",
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == "" && policy.Spec.TargetRef.Kind == "Service" {
+		svc := &corev1.Service{}
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
+			if errors.IsNotFound(err) {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
+					Message:            "Invalid target reference, cannot find target Service",
+				}
+			} else {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+					Message:            fmt.Sprintf("Failed to get target Service: %s", err),
+				}
+			}
+		}
+
+		sessionStickyPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().SessionStickyPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+				Message:            fmt.Sprintf("Failed to list SessionStickyPolicies: %s", err),
+			}
+		}
+
+		sessionStickies := make([]gwpav1alpha1.SessionStickyPolicy, 0)
+		for _, p := range sessionStickyPolicyList.Items {
+			p := p
+			if gwutils.IsAcceptedSessionStickyPolicy(&p) &&
+				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+				sessionStickies = append(sessionStickies, p)
+			}
+		}
+
+		sort.Slice(sessionStickies, func(i, j int) bool {
+			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
+				return sessionStickies[i].Name < sessionStickies[j].Name
+			}
+
+			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+		})
+
+		if conflict := r.getConflictedPolicyByService(policy, sessionStickies, svc); conflict != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
+				Message:            fmt.Sprintf("Conflict with SessionStickyPolicy: %s", conflict),
+			}
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == "flomesh.io" && policy.Spec.TargetRef.Kind == "ServiceImport" {
+		svcimp := &mcsv1alpha1.ServiceImport{}
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
+			if errors.IsNotFound(err) {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
+					Message:            "Invalid target reference, cannot find target ServiceImport",
+				}
+			} else {
+				return metav1.Condition{
+					Type:               string(gwv1alpha2.PolicyConditionAccepted),
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: policy.Generation,
+					LastTransitionTime: metav1.Time{Time: time.Now()},
+					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+					Message:            fmt.Sprintf("Failed to get target ServiceImport: %s", err),
+				}
+			}
+		}
+
+		sessionStickyPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().SessionStickyPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
+				Message:            fmt.Sprintf("Failed to list SessionStickyPolicies: %s", err),
+			}
+		}
+
+		sessionStickies := make([]gwpav1alpha1.SessionStickyPolicy, 0)
+		for _, p := range sessionStickyPolicyList.Items {
+			p := p
+			if gwutils.IsAcceptedSessionStickyPolicy(&p) &&
+				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
+				sessionStickies = append(sessionStickies, p)
+			}
+		}
+
+		sort.Slice(sessionStickies, func(i, j int) bool {
+			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
+				return sessionStickies[i].Name < sessionStickies[j].Name
+			}
+
+			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+		})
+
+		if conflict := r.getConflictedPolicyByServiceImport(policy, sessionStickies, svcimp); conflict != nil {
+			return metav1.Condition{
+				Type:               string(gwv1alpha2.PolicyConditionAccepted),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: policy.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
+				Message:            fmt.Sprintf("Conflict with SessionStickyPolicy: %s", conflict),
+			}
+		}
+	}
+
+	return metav1.Condition{
+		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		Status:             metav1.ConditionTrue,
+		ObservedGeneration: policy.Generation,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
+		Message:            string(gwv1alpha2.PolicyReasonAccepted),
+	}
+}
+
+func (r *sessionStickyPolicyReconciler) getConflictedPolicyByService(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svc *corev1.Service) *types.NamespacedName {
+	for _, p := range allSessionStickyPolicies {
+		p := p
+		if !gwutils.SessionStickyPolicyMatchesService(&p, svc) {
+			continue
+		}
+
+		if !gwutils.SessionStickyPolicyMatchesService(sessionStickyPolicy, svc) {
+			continue
+		}
+
+		if *p.Spec.CookieName == *sessionStickyPolicy.Spec.CookieName &&
+			*p.Spec.Expires == *sessionStickyPolicy.Spec.Expires {
+			continue
+		}
+
+		return &types.NamespacedName{
+			Name:      p.Name,
+			Namespace: p.Namespace,
+		}
+	}
+
+	return nil
+}
+
+func (r *sessionStickyPolicyReconciler) getConflictedPolicyByServiceImport(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
+	for _, p := range allSessionStickyPolicies {
+		p := p
+		if !gwutils.SessionStickyPolicyMatchesServiceImport(&p, svcimp) {
+			continue
+		}
+
+		if !gwutils.SessionStickyPolicyMatchesServiceImport(sessionStickyPolicy, svcimp) {
+			continue
+		}
+
+		if *p.Spec.CookieName == *sessionStickyPolicy.Spec.CookieName &&
+			*p.Spec.Expires == *sessionStickyPolicy.Spec.Expires {
+			continue
+		}
+
+		return &types.NamespacedName{
+			Name:      p.Name,
+			Namespace: p.Namespace,
+		}
+	}
+
+	return nil
 }

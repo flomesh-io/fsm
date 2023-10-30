@@ -31,6 +31,10 @@ import (
 	"strings"
 	"time"
 
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+
+	corev1 "k8s.io/api/core/v1"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -118,12 +122,22 @@ func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKe
 }
 
 // IsRefToTarget returns true if the target reference is to the target object
-func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.ObjectKey) bool {
-	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.Namespace {
+func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Object) bool {
+	gvk := object.GetObjectKind().GroupVersionKind()
+
+	if string(targetRef.Group) != gvk.Group {
 		return false
 	}
 
-	return string(targetRef.Name) == object.Name
+	if string(targetRef.Kind) != gvk.Kind {
+		return false
+	}
+
+	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.GetNamespace() {
+		return false
+	}
+
+	return string(targetRef.Name) == object.GetName()
 }
 
 // ObjectKey returns the object key for the given object
@@ -389,4 +403,34 @@ func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy 
 	}
 
 	return nil
+}
+
+// SessionStickyPolicyMatchesService returns true if the service matches the policy
+func SessionStickyPolicyMatchesService(policy *gwpav1alpha1.SessionStickyPolicy, svc *corev1.Service) bool {
+	if !IsRefToTarget(policy.Spec.TargetRef, svc) {
+		return false
+	}
+
+	for _, p := range svc.Spec.Ports {
+		if int32(policy.Spec.Port) == p.Port {
+			return true
+		}
+	}
+
+	return false
+}
+
+// SessionStickyPolicyMatchesServiceImport returns true if the ServiceImport matches the policy
+func SessionStickyPolicyMatchesServiceImport(policy *gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) bool {
+	if !IsRefToTarget(policy.Spec.TargetRef, svcimp) {
+		return false
+	}
+
+	for _, p := range svcimp.Spec.Ports {
+		if int32(policy.Spec.Port) == p.Port {
+			return true
+		}
+	}
+
+	return false
 }

@@ -123,7 +123,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 	switch policy.Spec.TargetRef.Kind {
 	case constants.GatewayKind:
 		gateway := &gwv1beta1.Gateway{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
 			if errors.IsNotFound(err) {
 				return metav1.Condition{
 					Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -168,7 +168,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 
 	case constants.HTTPRouteKind:
 		httpRoute := &gwv1beta1.HTTPRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
 			if errors.IsNotFound(err) {
 				return metav1.Condition{
 					Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -212,7 +212,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 		}
 	case constants.GRPCRouteKind:
 		grpcRoute := &gwv1alpha2.GRPCRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
+		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
 			if errors.IsNotFound(err) {
 				return metav1.Condition{
 					Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -281,7 +281,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 	for _, p := range allRateLimitPolicies.Items {
 		p := p
 		if gwutils.IsAcceptedRateLimitPolicy(&p) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, gwutils.ObjectKey(route)) {
+			gwutils.IsRefToTarget(p.Spec.TargetRef, route) {
 			if len(p.Spec.Hostnames) > 0 {
 				hostnamesRateLimits = append(hostnamesRateLimits, p)
 			}
@@ -488,7 +488,7 @@ func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1
 	for _, p := range allRateLimitPolicies.Items {
 		pr := p
 		if gwutils.IsAcceptedRateLimitPolicy(&pr) &&
-			gwutils.IsRefToTarget(pr.Spec.TargetRef, gwutils.ObjectKey(gateway)) &&
+			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
 			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
 				r1 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
@@ -514,14 +514,6 @@ func getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1
 	}
 
 	return nil
-}
-
-func getTargetNamespace(policy *gwpav1alpha1.RateLimitPolicy) string {
-	if policy.Spec.TargetRef.Namespace == nil {
-		return policy.Namespace
-	}
-
-	return string(*policy.Spec.TargetRef.Namespace)
 }
 
 // SetupWithManager sets up the controller with the Manager.
