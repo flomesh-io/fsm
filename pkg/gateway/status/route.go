@@ -119,7 +119,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 				Conditions:     make([]metav1.Condition, 0),
 			}
 
-			allowedListeners := gwutils.GetAllowedListeners(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
+			allowedListeners := gwutils.GetAllowedListenersAndSetStatus(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
 			//if len(allowedListeners) == 0 {
 			//
 			//}
@@ -136,7 +136,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 			}
 
 			switch params.RouteGvk.Kind {
-			case "HTTPRoute", "TLSRoute", "GRPCRoute":
+			case constants.HTTPRouteKind, constants.TLSRouteKind, constants.GRPCRouteKind:
 				if count == 0 && metautil.FindStatusCondition(routeParentStatus.Conditions, string(gwv1beta1.RouteConditionAccepted)) == nil {
 					metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
 						Type:               string(gwv1beta1.RouteConditionAccepted),

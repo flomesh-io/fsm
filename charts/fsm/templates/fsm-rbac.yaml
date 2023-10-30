@@ -130,6 +130,17 @@ rules:
     resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status" ]
     verbs: [ "get", "patch", "update" ]
 
+  # PolicyAttachment
+  - apiGroups: [ "gateway.flomesh.io" ]
+    resources: [ "ratelimitpolicies" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "gateway.flomesh.io" ]
+    resources: [ "ratelimitpolicies/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "gateway.flomesh.io" ]
+    resources: [ "ratelimitpolicies/status"]
+    verbs: [ "get", "patch", "update" ]
+
   # Used for interacting with cert-manager CertificateRequest resources.
   - apiGroups: ["cert-manager.io"]
     resources: ["certificaterequests"]

@@ -7,6 +7,9 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -60,6 +63,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[TCPRoutesProcessorType]
 	case *gwv1alpha2.TLSRoute:
 		return c.processors[TLSRoutesProcessorType]
+	case *gwpav1alpha1.RateLimitPolicy:
+		return c.processors[RateLimitPoliciesProcessorType]
 	}
 
 	return nil
@@ -192,6 +197,50 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 	for _, parentRef := range parentRefs {
 		for _, gw := range c.gateways {
 			if gwutils.IsRefToGateway(parentRef, gw) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTargetReference) bool {
+	if targetRef.Group != constants.GatewayAPIGroup {
+		return false
+	}
+
+	if targetRef.Kind == constants.GatewayKind {
+		if len(c.gateways) == 0 {
+			return false
+		}
+
+		for _, gw := range c.gateways {
+			if gwutils.IsRefToTarget(targetRef, gw) {
+				return true
+			}
+		}
+	}
+
+	if targetRef.Kind == constants.HTTPRouteKind {
+		if len(c.httproutes) == 0 {
+			return false
+		}
+
+		for route := range c.httproutes {
+			if gwutils.IsRefToTarget(targetRef, route) {
+				return true
+			}
+		}
+	}
+
+	if targetRef.Kind == constants.GRPCRouteKind {
+		if len(c.grpcroutes) == 0 {
+			return false
+		}
+
+		for route := range c.grpcroutes {
+			if gwutils.IsRefToTarget(targetRef, route) {
 				return true
 			}
 		}

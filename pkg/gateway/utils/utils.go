@@ -27,8 +27,13 @@ package utils
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
+
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -39,6 +44,7 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
@@ -86,13 +92,17 @@ func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
+func IsAcceptedRateLimitPolicy(policy *gwpav1alpha1.RateLimitPolicy) bool {
+	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+}
+
 // IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
 		return false
 	}
 
-	if parentRef.Kind != nil && string(*parentRef.Kind) != "Gateway" {
+	if parentRef.Kind != nil && string(*parentRef.Kind) != constants.GatewayKind {
 		return false
 	}
 
@@ -101,6 +111,15 @@ func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKe
 	}
 
 	return string(parentRef.Name) == gateway.Name
+}
+
+// IsRefToTarget returns true if the target reference is to the target object
+func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.ObjectKey) bool {
+	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.Namespace {
+		return false
+	}
+
+	return string(targetRef.Name) == object.Name
 }
 
 // ObjectKey returns the object key for the given object
@@ -144,8 +163,8 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 	return validListeners
 }
 
-// GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(
+// GetAllowedListenersAndSetStatus returns the allowed listeners and set status
+func GetAllowedListenersAndSetStatus(
 	parentRef gwv1beta1.ParentReference,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
@@ -198,6 +217,41 @@ func GetAllowedListeners(
 	return allowedListeners
 }
 
+// GetAllowedListeners returns the allowed listeners
+func GetAllowedListeners(
+	parentRef gwv1beta1.ParentReference,
+	routeGvk schema.GroupVersionKind,
+	routeGeneration int64,
+	validListeners []gwtypes.Listener,
+) []gwtypes.Listener {
+	var selectedListeners []gwtypes.Listener
+	for _, validListener := range validListeners {
+		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
+			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
+			selectedListeners = append(selectedListeners, validListener)
+		}
+	}
+
+	if len(selectedListeners) == 0 {
+		return nil
+	}
+
+	var allowedListeners []gwtypes.Listener
+	for _, selectedListener := range selectedListeners {
+		if !selectedListener.AllowsKind(routeGvk) {
+			continue
+		}
+
+		allowedListeners = append(allowedListeners, selectedListener)
+	}
+
+	if len(allowedListeners) == 0 {
+		return nil
+	}
+
+	return allowedListeners
+}
+
 // GetValidHostnames returns the valid hostnames
 func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gwv1beta1.Hostname) []string {
 	if len(routeHostnames) == 0 {
@@ -242,4 +296,93 @@ func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gw
 func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	g := glob.MustCompile(wildcardHostname, '.')
 	return g.Match(hostname)
+}
+
+// GetRateLimitIfRouteHostnameMatchesPolicy returns the rate limit config if the route hostname matches the policy
+func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
+		return nil
+	}
+
+	for i := range rateLimitPolicy.Spec.Hostnames {
+		hostname := string(rateLimitPolicy.Spec.Hostnames[i].Hostname)
+		rateLimit := rateLimitPolicy.Spec.Hostnames[i].RateLimit
+		if rateLimit == nil {
+			rateLimit = rateLimitPolicy.Spec.DefaultL7RateLimit
+		}
+
+		switch {
+		case routeHostname == hostname:
+			return rateLimit
+
+		case strings.HasPrefix(routeHostname, "*"):
+			if HostnameMatchesWildcardHostname(hostname, routeHostname) {
+				return rateLimit
+			}
+
+		case strings.HasPrefix(hostname, "*"):
+			if HostnameMatchesWildcardHostname(routeHostname, hostname) {
+				return rateLimit
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetRateLimitIfHTTPRouteMatchesPolicy returns the rate limit config if the HTTP route matches the policy
+func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 {
+		return nil
+	}
+
+	for _, hr := range rateLimitPolicy.Spec.HTTPRateLimits {
+		if reflect.DeepEqual(routeMatch, hr.Match) {
+			if hr.RateLimit != nil {
+				return hr.RateLimit
+			}
+
+			return rateLimitPolicy.Spec.DefaultL7RateLimit
+		}
+	}
+
+	return nil
+}
+
+// GetRateLimitIfGRPCRouteMatchesPolicy returns the rate limit config if the GRPC route matches the policy
+func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+	if len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
+		return nil
+	}
+
+	for _, gr := range rateLimitPolicy.Spec.GRPCRateLimits {
+		if reflect.DeepEqual(routeMatch, gr.Match) {
+			if gr.RateLimit != nil {
+				return gr.RateLimit
+			}
+
+			return rateLimitPolicy.Spec.DefaultL7RateLimit
+		}
+	}
+
+	return nil
+}
+
+// GetRateLimitIfPortMatchesPolicy returns true if the port matches the rate limit policy
+func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
+	if len(rateLimitPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	for _, policyPort := range rateLimitPolicy.Spec.Ports {
+		if port == policyPort.Port {
+			if policyPort.BPS != nil {
+				return policyPort.BPS
+			}
+
+			return rateLimitPolicy.Spec.DefaultBPS
+		}
+	}
+
+	return nil
 }

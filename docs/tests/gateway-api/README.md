@@ -750,3 +750,74 @@ date: Thu, 06 Jul 2023 04:44:06 GMT
 </body></html>
 * Connection #0 to host bing.com left intact
 ```
+
+### Test RateLimitPolicy
+
+#### Test Port Based Rate Limit
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: ratelimit-port
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: test-gw-1
+    namespace: default
+  ports:
+    - port: 80
+      bps: 100000
+EOF
+```
+
+
+#### Test Hostname Based Rate Limit
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: ratelimit-hostname-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  hostnames:
+    - hostname: httptest.localhost
+      rateLimit: 
+        mode: Local
+        backlog: 15
+        requests: 100
+        statTimeWindow: 60
+EOF
+```
+
+#### Test Route Based Rate Limit
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  name: ratelimit-route-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /bar
+    rateLimit: 
+      mode: Local
+      backlog: 15
+      requests: 100
+      statTimeWindow: 60
+EOF
+```

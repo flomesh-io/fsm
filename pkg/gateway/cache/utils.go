@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	"golang.org/x/exp/slices"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -565,6 +567,18 @@ func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
 	}
 
 	return pointer.Int32(int32(*port))
+}
+
+func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit {
+	return &routecfg.RateLimit{
+		Mode:                 *rateLimit.Mode,
+		Backlog:              *rateLimit.Backlog,
+		Requests:             rateLimit.Requests,
+		Burst:                *rateLimit.Burst,
+		StatTimeWindow:       rateLimit.StatTimeWindow,
+		ResponseStatusCode:   *rateLimit.ResponseStatusCode,
+		ResponseHeadersToAdd: rateLimit.ResponseHeadersToAdd,
+	}
 }
 
 func insertAgentServiceScript(chains []string) []string {

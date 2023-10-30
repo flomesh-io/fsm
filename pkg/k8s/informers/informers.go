@@ -39,6 +39,9 @@ import (
 	pluginInformers "github.com/flomesh-io/fsm/pkg/gen/client/plugin/informers/externalversions"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	policyInformers "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions"
+
+	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+	policyAttachmentInformers "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/informers/externalversions"
 )
 
 // InformerCollectionOption is a function that modifies an informer collection
@@ -216,6 +219,16 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Informer()
 
 		ic.listers.NamespacedIngress = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Lister()
+	}
+}
+
+// WithPolicyAttachmentClient sets the PolicyAttachment client for the InformerCollection
+func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
+		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 	}
 }
 

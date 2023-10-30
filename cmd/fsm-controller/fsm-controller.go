@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -38,6 +40,7 @@ import (
 
 	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
+	pascheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -162,6 +165,7 @@ func init() {
 	_ = gwscheme.AddToScheme(scheme)
 	_ = mcscheme.AddToScheme(scheme)
 	_ = nsigscheme.AddToScheme(scheme)
+	_ = pascheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -239,6 +243,7 @@ func main() {
 	smiTrafficTargetClientSet := smiAccessClient.NewForConfigOrDie(kubeConfig)
 	gatewayAPIClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 	namespacedIngressClient := nsigClientset.NewForConfigOrDie(kubeConfig)
+	policyAttachmentClient := policyAttachmentClientset.NewForConfigOrDie(kubeConfig)
 
 	informerCollection, err := informers.NewInformerCollection(meshName, stop,
 		informers.WithKubeClient(kubeClient),
@@ -250,6 +255,7 @@ func main() {
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
+		informers.WithPolicyAttachmentClient(policyAttachmentClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
