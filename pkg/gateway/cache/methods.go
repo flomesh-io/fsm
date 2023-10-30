@@ -12,7 +12,6 @@ import (
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 // Insert inserts an object into the cache
@@ -90,8 +89,8 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 	for key := range c.httproutes {
 		// Get HTTPRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String()); exists && err == nil {
-			r := r.(*gwv1beta1.HTTPRoute)
+		if r, err := c.informers.GetListers().HTTPRoute.HTTPRoutes(key.Namespace).Get(key.Name); err == nil {
+			//r := r.(*gwv1beta1.HTTPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -124,8 +123,8 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 	for key := range c.grpcroutes {
 		// Get GRPCRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String()); exists && err == nil {
-			r := r.(*gwv1alpha2.GRPCRoute)
+		if r, err := c.informers.GetListers().GRPCRoute.GRPCRoutes(key.Namespace).Get(key.Name); err == nil {
+			//r := r.(*gwv1alpha2.GRPCRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -158,8 +157,8 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 func (c *GatewayCache) isRoutableTLSService(service client.ObjectKey) bool {
 	for key := range c.tlsroutes {
 		// Get TLSRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String()); exists && err == nil {
-			r := r.(*gwv1alpha2.TLSRoute)
+		if r, err := c.informers.GetListers().TLSRoute.TLSRoutes(key.Namespace).Get(key.Name); err == nil {
+			//r := r.(*gwv1alpha2.TLSRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -176,8 +175,8 @@ func (c *GatewayCache) isRoutableTLSService(service client.ObjectKey) bool {
 func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
 	for key := range c.tcproutes {
 		// Get TCPRoute from client-go cache
-		if r, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String()); exists && err == nil {
-			r := r.(*gwv1alpha2.TCPRoute)
+		if r, err := c.informers.GetListers().TCPRoute.TCPRoutes(key.Namespace).Get(key.Name); err == nil {
+			//r := r.(*gwv1alpha2.TCPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -212,36 +211,54 @@ func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTar
 		return false
 	}
 
-	if targetRef.Kind == constants.GatewayKind {
+	if targetRef.Kind == constants.GatewayAPIGatewayKind {
 		if len(c.gateways) == 0 {
 			return false
 		}
 
 		for _, gw := range c.gateways {
-			if gwutils.IsRefToTarget(targetRef, gw) {
+			gateway, err := c.informers.GetListers().Gateway.Gateways(gw.Namespace).Get(gw.Name)
+			if err != nil {
+				log.Error().Msgf("Failed to get Gateway %s: %s", gw, err)
+				continue
+			}
+
+			if gwutils.IsRefToTarget(targetRef, gateway) {
 				return true
 			}
 		}
 	}
 
-	if targetRef.Kind == constants.HTTPRouteKind {
+	if targetRef.Kind == constants.GatewayAPIHTTPRouteKind {
 		if len(c.httproutes) == 0 {
 			return false
 		}
 
-		for route := range c.httproutes {
+		for key := range c.httproutes {
+			route, err := c.informers.GetListers().HTTPRoute.HTTPRoutes(key.Namespace).Get(key.Name)
+			if err != nil {
+				log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
+				continue
+			}
+
 			if gwutils.IsRefToTarget(targetRef, route) {
 				return true
 			}
 		}
 	}
 
-	if targetRef.Kind == constants.GRPCRouteKind {
+	if targetRef.Kind == constants.GatewayAPIGRPCRouteKind {
 		if len(c.grpcroutes) == 0 {
 			return false
 		}
 
-		for route := range c.grpcroutes {
+		for key := range c.grpcroutes {
+			route, err := c.informers.GetListers().GRPCRoute.GRPCRoutes(key.Namespace).Get(key.Name)
+			if err != nil {
+				log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
+				continue
+			}
+
 			if gwutils.IsRefToTarget(targetRef, route) {
 				return true
 			}
@@ -260,8 +277,8 @@ func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gw
 		key.Namespace = string(*targetRef.Namespace)
 	}
 
-	if (targetRef.Group == GroupCore && targetRef.Kind == KindService) ||
-		(targetRef.Group == GroupFlomeshIo && targetRef.Kind == KindServiceImport) {
+	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 		return c.isRoutableService(key)
 	}
 
@@ -276,17 +293,18 @@ func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) boo
 		//	log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 		//	continue
 		//}
-		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
+		gw, err := c.informers.GetListers().Gateway.Gateways(key.Namespace).Get(key.Name)
+		//obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
 		if err != nil {
 			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 			continue
 		}
-		if !exists {
-			log.Error().Msgf("Gateway %s doesn't exist", key)
-			continue
-		}
-
-		gw := obj.(*gwv1beta1.Gateway)
+		//if !exists {
+		//	log.Error().Msgf("Gateway %s doesn't exist", key)
+		//	continue
+		//}
+		//
+		//gw := obj.(*gwv1beta1.Gateway)
 
 		for _, l := range gw.Spec.Listeners {
 			switch l.Protocol {

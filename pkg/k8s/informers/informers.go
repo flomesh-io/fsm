@@ -229,6 +229,7 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 
 		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
+		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
 	}
 }
 

@@ -110,7 +110,7 @@ func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKe
 		return false
 	}
 
-	if parentRef.Kind != nil && string(*parentRef.Kind) != constants.GatewayKind {
+	if parentRef.Kind != nil && string(*parentRef.Kind) != constants.GatewayAPIGatewayKind {
 		return false
 	}
 

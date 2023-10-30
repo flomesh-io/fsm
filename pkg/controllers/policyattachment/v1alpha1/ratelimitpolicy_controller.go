@@ -121,7 +121,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 	}
 
 	switch policy.Spec.TargetRef.Kind {
-	case constants.GatewayKind:
+	case constants.GatewayAPIGatewayKind:
 		gateway := &gwv1beta1.Gateway{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
 			if errors.IsNotFound(err) {
@@ -166,7 +166,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 			}
 		}
 
-	case constants.HTTPRouteKind:
+	case constants.GatewayAPIHTTPRouteKind:
 		httpRoute := &gwv1beta1.HTTPRoute{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
 			if errors.IsNotFound(err) {
@@ -210,7 +210,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
 			}
 		}
-	case constants.GRPCRouteKind:
+	case constants.GatewayAPIGRPCRouteKind:
 		grpcRoute := &gwv1alpha2.GRPCRoute{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
 			if errors.IsNotFound(err) {

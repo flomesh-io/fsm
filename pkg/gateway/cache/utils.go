@@ -25,67 +25,56 @@ import (
 )
 
 func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectKey, ns string) bool {
-	if ref.Group != nil {
-		switch string(*ref.Group) {
-		case GroupCore, GroupFlomeshIo:
-			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
-		default:
-			return false
-		}
+	if ref.Group == nil {
+		return false
 	}
 
-	if ref.Kind != nil {
-		switch string(*ref.Kind) {
-		case KindService, KindServiceImport:
-			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
-		default:
-			return false
-		}
+	if ref.Kind == nil {
+		return false
 	}
 
-	if ref.Namespace == nil {
-		if ns != service.Namespace {
-			return false
+	if (string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesServiceKind) ||
+		(string(*ref.Group) == constants.FlomeshAPIGroup && string(*ref.Kind) == constants.FlomeshAPIServiceImportKind) {
+		if ref.Namespace == nil {
+			if ns != service.Namespace {
+				return false
+			}
+		} else {
+			if string(*ref.Namespace) != service.Namespace {
+				return false
+			}
 		}
-	} else {
-		if string(*ref.Namespace) != service.Namespace {
-			return false
-		}
+
+		return string(ref.Name) == service.Name
 	}
 
-	return string(ref.Name) == service.Name
+	return false
 }
 
 func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
-	if ref.Group != nil {
-		switch string(*ref.Group) {
-		case "":
-			log.Debug().Msgf("Ref group is %q", string(*ref.Group))
-		default:
-			return false
-		}
+	if ref.Group == nil {
+		return false
 	}
 
-	if ref.Kind != nil {
-		switch string(*ref.Kind) {
-		case KindSecret:
-			log.Debug().Msgf("Ref kind is %q", string(*ref.Kind))
-		default:
-			return false
-		}
+	if ref.Kind == nil {
+		return false
 	}
 
-	if ref.Namespace == nil {
-		if ns != secret.Namespace {
-			return false
+	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
+		if ref.Namespace == nil {
+			if ns != secret.Namespace {
+				return false
+			}
+		} else {
+			if string(*ref.Namespace) != secret.Namespace {
+				return false
+			}
 		}
-	} else {
-		if string(*ref.Namespace) != secret.Namespace {
-			return false
-		}
+
+		return string(ref.Name) == secret.Name
 	}
 
-	return string(ref.Name) == secret.Name
+	return false
 }
 
 func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) string {
@@ -264,7 +253,8 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[routecfg.MatchType]map[st
 
 func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs string) *routecfg.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
-	if (*ref.Kind == KindService && *ref.Group == GroupCore) || (*ref.Kind == KindServiceImport && *ref.Group == GroupFlomeshIo) {
+	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
+		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
 		ns := defaultNs
 		if ref.Namespace != nil {
 			ns = string(*ref.Namespace)
@@ -284,7 +274,8 @@ func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs
 
 func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs string, port int32) *routecfg.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
-	if (ref.Kind == KindService && ref.Group == GroupCore) || (ref.Kind == KindServiceImport && ref.Group == GroupFlomeshIo) {
+	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
+		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
 		ns := defaultNs
 		if ref.Namespace != nil {
 			ns = string(*ref.Namespace)
@@ -304,7 +295,7 @@ func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs 
 
 func passthroughTarget(ref gwv1beta1.BackendRef) *string {
 	// ONLY supports service backend now
-	if *ref.Kind == KindService && *ref.Group == GroupCore {
+	if *ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup {
 		port := int32(443)
 		if ref.Port != nil {
 			port = int32(*ref.Port)

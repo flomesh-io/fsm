@@ -104,9 +104,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
 	targetRef := policy.Spec.TargetRef
-	if (targetRef.Group == "" && targetRef.Kind == "Service") ||
-		(targetRef.Group == "flomesh.io" && targetRef.Kind == "ServiceImport") {
-
+	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 		if policy.Spec.CookieName == nil {
 			policy.Spec.CookieName = pointer.String("_srv_id")
 		}
@@ -168,13 +167,13 @@ func doValidation(obj interface{}) error {
 func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	var errs field.ErrorList
 
-	if ref.Group != "" && ref.Group != "flomesh.io" {
+	if ref.Group != constants.KubernetesCoreGroup && ref.Group != constants.FlomeshAPIGroup {
 		path := field.NewPath("spec").Child("targetRef").Child("group")
 		errs = append(errs, field.Invalid(path, ref.Group, "group must be set to flomesh.io or core"))
 	}
 
-	if (ref.Group == "" && ref.Kind == "Service") ||
-		(ref.Group == "flomesh.io" && ref.Kind == "ServiceImport") {
+	if (ref.Group == constants.KubernetesCoreGroup && ref.Kind == constants.KubernetesServiceKind) ||
+		(ref.Group == constants.FlomeshAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind) {
 		// do nothing
 	} else {
 		path := field.NewPath("spec").Child("targetRef").Child("kind")

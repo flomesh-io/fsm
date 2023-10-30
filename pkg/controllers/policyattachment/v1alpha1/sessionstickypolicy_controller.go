@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
@@ -20,12 +22,13 @@ import (
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -86,7 +89,7 @@ func (r *sessionStickyPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error
 }
 
 func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.SessionStickyPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != "" || policy.Spec.TargetRef.Kind != "flomesh.io" {
+	if policy.Spec.TargetRef.Group != constants.KubernetesCoreGroup && policy.Spec.TargetRef.Group != constants.FlomeshAPIGroup {
 		return metav1.Condition{
 			Type:               string(gwv1alpha2.PolicyConditionAccepted),
 			Status:             metav1.ConditionFalse,
@@ -97,7 +100,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == "" && policy.Spec.TargetRef.Kind != "Service" {
+	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind != constants.KubernetesServiceKind {
 		return metav1.Condition{
 			Type:               string(gwv1alpha2.PolicyConditionAccepted),
 			Status:             metav1.ConditionFalse,
@@ -108,7 +111,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == "flomesh.io" && policy.Spec.TargetRef.Kind != "ServiceImport" {
+	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind != constants.FlomeshAPIServiceImportKind {
 		return metav1.Condition{
 			Type:               string(gwv1alpha2.PolicyConditionAccepted),
 			Status:             metav1.ConditionFalse,
@@ -119,7 +122,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == "" && policy.Spec.TargetRef.Kind == "Service" {
+	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind == constants.KubernetesServiceKind {
 		svc := &corev1.Service{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
 			if errors.IsNotFound(err) {
@@ -184,7 +187,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == "flomesh.io" && policy.Spec.TargetRef.Kind == "ServiceImport" {
+	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind == constants.FlomeshAPIServiceImportKind {
 		svcimp := &mcsv1alpha1.ServiceImport{}
 		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
 			if errors.IsNotFound(err) {

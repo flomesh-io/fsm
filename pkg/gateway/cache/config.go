@@ -18,7 +18,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -31,18 +30,19 @@ func (c *GatewayCache) BuildConfigs() {
 	configs := make(map[string]*routecfg.ConfigSpec)
 
 	for ns, key := range c.gateways {
-		obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
-		if !exists {
-			log.Error().Msgf("Gateway %s doesn't exist", key)
-			continue
-		}
+		gw, err := c.informers.GetListers().Gateway.Gateways(ns).Get(key.Name)
+		//obj, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
+		//if !exists {
+		//	log.Error().Msgf("Gateway %s doesn't exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 			continue
 		}
 
-		gw := obj.(*gwv1beta1.Gateway)
+		//gw := obj.(*gwv1beta1.Gateway)
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
 		log.Debug().Msgf("[GW-CACHE] validListeners: %v", validListeners)
 		acceptedRateLimits := c.rateLimits()
@@ -186,18 +186,19 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 	}
 
 	for key := range c.ratelimits {
-		policy, exists, err := c.informers.GetByKey(informers.InformerKeyRateLimitPolicy, key.String())
-		if !exists {
-			log.Error().Msgf("RateLimitPolicy %s does not exist", key)
-			continue
-		}
+		rateLimitPolicy, err := c.informers.GetListers().RateLimitPolicy.RateLimitPolicies(key.Namespace).Get(key.Name)
+		//policy, exists, err := c.informers.GetByKey(informers.InformerKeyRateLimitPolicy, key.String())
+		//if !exists {
+		//	log.Error().Msgf("RateLimitPolicy %s does not exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get RateLimitPolicy %s: %s", key, err)
 			continue
 		}
 
-		rateLimitPolicy := policy.(*gwpav1alpha1.RateLimitPolicy)
+		//rateLimitPolicy := policy.(*gwpav1alpha1.RateLimitPolicy)
 		if gwutils.IsAcceptedRateLimitPolicy(rateLimitPolicy) {
 			switch {
 			case len(rateLimitPolicy.Spec.Ports) > 0:
@@ -279,7 +280,7 @@ func (c *GatewayCache) tlsPassthroughCfg() *routecfg.TLS {
 func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) []routecfg.Certificate {
 	certs := make([]routecfg.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
-		if string(*ref.Kind) == KindSecret && string(*ref.Group) == GroupCore {
+		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
 			ns := getSecretRefNamespace(gw, ref)
 			name := string(ref.Name)
 			secret, err := c.informers.GetListers().Secret.Secrets(ns).Get(name)
@@ -311,18 +312,19 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 
 	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
 	for key := range c.httproutes {
-		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String())
-		if !exists {
-			log.Error().Msgf("HTTPRoute %s does not exist", key)
-			continue
-		}
+		httpRoute, err := c.informers.GetListers().HTTPRoute.HTTPRoutes(key.Namespace).Get(key.Name)
+		//route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIHTTPRoute, key.String())
+		//if !exists {
+		//	log.Error().Msgf("HTTPRoute %s does not exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
 			continue
 		}
 
-		httpRoute := route.(*gwv1beta1.HTTPRoute)
+		//httpRoute := route.(*gwv1beta1.HTTPRoute)
 		log.Debug().Msgf("Processing HTTPRoute %v", httpRoute)
 		processHTTPRoute(gw, validListeners, httpRoute, acceptedRateLimits, rules, services)
 		//processHTTPRouteBackendFilters(httpRoute, services)
@@ -330,54 +332,57 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
 	for key := range c.grpcroutes {
-		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String())
-		if !exists {
-			log.Error().Msgf("GRPCRoute %s does not exist", key)
-			continue
-		}
+		grpcRoute, err := c.informers.GetListers().GRPCRoute.GRPCRoutes(key.Namespace).Get(key.Name)
+		//route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPIGRPCRoute, key.String())
+		//if !exists {
+		//	log.Error().Msgf("GRPCRoute %s does not exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
 			continue
 		}
 
-		grpcRoute := route.(*gwv1alpha2.GRPCRoute)
+		//grpcRoute := route.(*gwv1alpha2.GRPCRoute)
 		processGRPCRoute(gw, validListeners, grpcRoute, acceptedRateLimits, rules, services)
 		//processGRPCRouteBackendFilters(grpcRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
 	for key := range c.tlsroutes {
-		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String())
-		if !exists {
-			log.Error().Msgf("TLSRoute %s does not exist", key)
-			continue
-		}
+		tlsRoute, err := c.informers.GetListers().TLSRoute.TLSRoutes(key.Namespace).Get(key.Name)
+		//route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITLSRoute, key.String())
+		//if !exists {
+		//	log.Error().Msgf("TLSRoute %s does not exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
 			continue
 		}
 
-		tlsRoute := route.(*gwv1alpha2.TLSRoute)
+		//tlsRoute := route.(*gwv1alpha2.TLSRoute)
 		processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TCPRoutes", len(c.tcproutes))
 	for key := range c.tcproutes {
-		route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String())
-		if !exists {
-			log.Error().Msgf("TCPRoute %s does not exist", key)
-			continue
-		}
+		tcpRoute, err := c.informers.GetListers().TCPRoute.TCPRoutes(key.Namespace).Get(key.Name)
+		//route, exists, err := c.informers.GetByKey(informers.InformerKeyGatewayAPITCPRoute, key.String())
+		//if !exists {
+		//	log.Error().Msgf("TCPRoute %s does not exist", key)
+		//	continue
+		//}
 
 		if err != nil {
 			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
 			continue
 		}
 
-		tcpRoute := route.(*gwv1alpha2.TCPRoute)
+		//tcpRoute := route.(*gwv1alpha2.TCPRoute)
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
 	}
@@ -624,18 +629,13 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyP
 	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyPolicy)
 
 	for key := range c.sessionstickies {
-		policy, exists, err := c.informers.GetByKey(informers.InformerKeySessionStickyPolicy, key.String())
-		if !exists {
-			log.Error().Msgf("SessionStickyPolicy %s does not exist", key)
-			continue
-		}
+		sessionSticky, err := c.informers.GetListers().SessionStickyPolicy.SessionStickyPolicies(key.Namespace).Get(key.Name)
 
 		if err != nil {
 			log.Error().Msgf("Failed to get SessionStickyPolicy %s: %s", key, err)
 			continue
 		}
 
-		sessionSticky := policy.(*gwpav1alpha1.SessionStickyPolicy)
 		if gwutils.IsAcceptedSessionStickyPolicy(sessionSticky) {
 			if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(sessionSticky.Spec.Port)); svcPortName != nil {
 				sessionStickies[svcPortName.String()] = sessionSticky
@@ -652,17 +652,12 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
-		obj, exists, err := c.informers.GetByKey(informers.InformerKeyService, svcKey.String())
+		svc, err := c.informers.GetListers().Service.Services(svcKey.Namespace).Get(svcKey.Name)
+
 		if err != nil {
 			log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
 			continue
 		}
-		if !exists {
-			log.Error().Msgf("Service %s doesn't exist", svcKey)
-			continue
-		}
-
-		svc := obj.(*corev1.Service)
 
 		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 			MatchLabels: map[string]string{

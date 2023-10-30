@@ -19,10 +19,10 @@ import (
 )
 
 var (
-	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.HTTPRouteKind)
-	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TLSRouteKind)
-	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TCPRouteKind)
-	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GRPCRouteKind)
+	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
+	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
+	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
+	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
 )
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway

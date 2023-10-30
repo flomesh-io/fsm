@@ -105,8 +105,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
-		if policy.Spec.TargetRef.Kind == constants.HTTPRouteKind ||
-			policy.Spec.TargetRef.Kind == constants.GRPCRouteKind {
+		if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
+			policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
 			if len(policy.Spec.Hostnames) > 0 || len(policy.Spec.HTTPRateLimits) > 0 || len(policy.Spec.GRPCRateLimits) > 0 {
 				setDefaults(policy)
 			}
@@ -235,7 +235,7 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	}
 
 	switch ref.Kind {
-	case constants.GatewayKind, constants.HTTPRouteKind, constants.GRPCRouteKind:
+	case constants.GatewayAPIGatewayKind, constants.GatewayAPIHTTPRouteKind, constants.GatewayAPIGRPCRouteKind:
 		// do nothing
 	default:
 		path := field.NewPath("spec").Child("targetRef").Child("kind")
@@ -256,7 +256,7 @@ func validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 	var errs field.ErrorList
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
-		policy.Spec.TargetRef.Kind == constants.GatewayKind {
+		policy.Spec.TargetRef.Kind == constants.GatewayAPIGatewayKind {
 		if len(policy.Spec.Ports) == 0 {
 			path := field.NewPath("spec").Child("ports")
 			errs = append(errs, field.Invalid(path, policy.Spec.Ports, "cannot be empty for Gateway target"))
@@ -298,7 +298,7 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 	var errs field.ErrorList
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
-		(policy.Spec.TargetRef.Kind == constants.HTTPRouteKind || policy.Spec.TargetRef.Kind == constants.GRPCRouteKind) {
+		(policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind || policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind) {
 		if len(policy.Spec.Ports) > 0 {
 			path := field.NewPath("spec").Child("ports")
 			errs = append(errs, field.Invalid(path, policy.Spec.Ports, "must be empty for HTTPRoute/GRPCRoute target"))
