@@ -40,6 +40,7 @@ import (
 
 	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
+	pascheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -164,6 +165,7 @@ func init() {
 	_ = gwscheme.AddToScheme(scheme)
 	_ = mcscheme.AddToScheme(scheme)
 	_ = nsigscheme.AddToScheme(scheme)
+	_ = pascheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
