@@ -69,6 +69,9 @@ const (
 
 	// RateLimitPoliciesProcessorType is the type used to represent the rate limit policies processor
 	RateLimitPoliciesProcessorType ProcessorType = "ratelimits"
+
+	// SessionStickyPoliciesProcessorType is the type used to represent the session sticky policies processor
+	SessionStickyPoliciesProcessorType ProcessorType = "sessionstickies"
 )
 
 const (

@@ -65,6 +65,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[TLSRoutesProcessorType]
 	case *gwpav1alpha1.RateLimitPolicy:
 		return c.processors[RateLimitPoliciesProcessorType]
+	case *gwpav1alpha1.SessionStickyPolicy:
+		return c.processors[SessionStickyPoliciesProcessorType]
 	}
 
 	return nil
@@ -244,6 +246,23 @@ func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTar
 				return true
 			}
 		}
+	}
+
+	return false
+}
+
+func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
+	key := client.ObjectKey{
+		Name:      string(targetRef.Name),
+		Namespace: owner.GetNamespace(),
+	}
+	if targetRef.Namespace != nil {
+		key.Namespace = string(*targetRef.Namespace)
+	}
+
+	if (targetRef.Group == GroupCore && targetRef.Kind == KindService) ||
+		(targetRef.Group == GroupFlomeshIo && targetRef.Kind == KindServiceImport) {
+		return c.isRoutableService(key)
 	}
 
 	return false

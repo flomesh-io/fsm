@@ -282,6 +282,26 @@ func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs
 	return nil
 }
 
+func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs string, port int32) *routecfg.ServicePortName {
+	// ONLY supports Service and ServiceImport backend now
+	if (ref.Kind == KindService && ref.Group == GroupCore) || (ref.Kind == KindServiceImport && ref.Group == GroupFlomeshIo) {
+		ns := defaultNs
+		if ref.Namespace != nil {
+			ns = string(*ref.Namespace)
+		}
+
+		return &routecfg.ServicePortName{
+			NamespacedName: types.NamespacedName{
+				Namespace: ns,
+				Name:      string(ref.Name),
+			},
+			Port: pointer.Int32(port),
+		}
+	}
+
+	return nil
+}
+
 func passthroughTarget(ref gwv1beta1.BackendRef) *string {
 	// ONLY supports service backend now
 	if *ref.Kind == KindService && *ref.Group == GroupCore {

@@ -213,13 +213,14 @@ type PassthroughRouteMapping map[string]string
 
 // ServiceConfig is the service configuration
 type ServiceConfig struct {
-	Endpoints          map[string]Endpoint   `json:"Endpoints"`
-	ConnectionSettings *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
-	RetryPolicy        *RetryPolicy          `json:"RetryPolicy,omitempty"`
-	MTLS               bool                  `json:"MTLS,omitempty"`
-	UpstreamCert       *UpstreamCert         `json:"UpstreamCert,omitempty"`
-	SessionSticky      bool                  `json:"SessionSticky,omitempty"`
-	LoadBalancer       *commons.AlgoBalancer `json:"LoadBalancer,omitempty"`
+	Endpoints           map[string]Endpoint   `json:"Endpoints"`
+	ConnectionSettings  *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
+	RetryPolicy         *RetryPolicy          `json:"RetryPolicy,omitempty"`
+	MTLS                bool                  `json:"MTLS,omitempty"`
+	UpstreamCert        *UpstreamCert         `json:"UpstreamCert,omitempty"`
+	StickyCookieName    *string               `json:"StickyCookieName,omitempty"`
+	StickyCookieExpires *int32                `json:"StickyCookieExpires,omitempty"`
+	LoadBalancer        *commons.AlgoBalancer `json:"LoadBalancer,omitempty"`
 }
 
 // Endpoint is the endpoint configuration

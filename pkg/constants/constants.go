@@ -466,6 +466,12 @@ const (
 
 	// RateLimitPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
 	RateLimitPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
+
+	// SessionStickyPolicyMutatingWebhookPath is the path at which the RateLimitPolicy mutating webhook is served
+	SessionStickyPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
+
+	// SessionStickyPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
+	SessionStickyPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
 )
 
 // PIPY Repo constants

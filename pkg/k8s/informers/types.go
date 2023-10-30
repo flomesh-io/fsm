@@ -103,6 +103,8 @@ const (
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
 	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
+	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
+	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
 )
 
 const (

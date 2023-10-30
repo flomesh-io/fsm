@@ -52,6 +52,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=gateway.flomesh.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("ratelimitpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RateLimitPolicies().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("sessionstickypolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().SessionStickyPolicies().Informer()}, nil
 
 	}
 

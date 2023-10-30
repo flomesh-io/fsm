@@ -96,6 +96,10 @@ func IsAcceptedRateLimitPolicy(policy *gwpav1alpha1.RateLimitPolicy) bool {
 	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
 
+func IsAcceptedSessionStickyPolicy(policy *gwpav1alpha1.SessionStickyPolicy) bool {
+	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+}
+
 // IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {

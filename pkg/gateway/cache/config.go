@@ -620,8 +620,35 @@ func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]servi
 	}
 }
 
+func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyPolicy {
+	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyPolicy)
+
+	for key := range c.sessionstickies {
+		policy, exists, err := c.informers.GetByKey(informers.InformerKeySessionStickyPolicy, key.String())
+		if !exists {
+			log.Error().Msgf("SessionStickyPolicy %s does not exist", key)
+			continue
+		}
+
+		if err != nil {
+			log.Error().Msgf("Failed to get SessionStickyPolicy %s: %s", key, err)
+			continue
+		}
+
+		sessionSticky := policy.(*gwpav1alpha1.SessionStickyPolicy)
+		if gwutils.IsAcceptedSessionStickyPolicy(sessionSticky) {
+			if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(sessionSticky.Spec.Port)); svcPortName != nil {
+				sessionStickies[svcPortName.String()] = sessionSticky
+			}
+		}
+	}
+
+	return sessionStickies
+}
+
 func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]routecfg.ServiceConfig {
 	configs := make(map[string]routecfg.ServiceConfig)
+	sessionStickies := c.sessionStickies()
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
@@ -694,6 +721,11 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			svcCfg.Endpoints[hostport] = routecfg.Endpoint{
 				Weight: 1,
 			}
+		}
+
+		if sessionSticky, exists := sessionStickies[svcPortName]; exists {
+			svcCfg.StickyCookieName = sessionSticky.Spec.CookieName
+			svcCfg.StickyCookieExpires = sessionSticky.Spec.Expires
 		}
 
 		configs[svcPortName] = svcCfg
