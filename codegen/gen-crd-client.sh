@@ -89,3 +89,6 @@ generate_client "plugin" "v1alpha1"
 
 echo "##### Generating flomesh.io NamespacedIngress client ######"
 generate_client "namespacedingress" "v1alpha1"
+
+echo "##### Generating gateway.flomesh.io PolicyAttachment client ######"
+generate_client "policyattachment" "v1alpha1"

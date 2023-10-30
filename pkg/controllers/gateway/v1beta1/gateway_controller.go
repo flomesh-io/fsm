@@ -416,37 +416,37 @@ func supportedRouteGroupKindsByProtocol(protocol gwv1beta1.ProtocolType) []gwv1b
 	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "HTTPRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.HTTPRouteKind,
 			},
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "GRPCRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.GRPCRouteKind,
 			},
 		}
 	case gwv1beta1.TLSProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "TLSRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.TLSRouteKind,
 			},
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "TCPRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.TCPRouteKind,
 			},
 		}
 	case gwv1beta1.TCPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "TCPRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.TCPRouteKind,
 			},
 		}
 	case gwv1beta1.UDPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
-				Group: gwutils.GroupPointer("gateway.networking.k8s.io"),
-				Kind:  "UDPRoute",
+				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+				Kind:  constants.UDPRouteKind,
 			},
 		}
 	}

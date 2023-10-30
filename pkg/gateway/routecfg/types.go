@@ -6,6 +6,8 @@ import (
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/types"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -129,6 +131,7 @@ var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 type GRPCRouteRuleSpec struct {
 	RouteType L7RouteType        `json:"RouteType"`
 	Matches   []GRPCTrafficMatch `json:"Matches" hash:"set"`
+	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
@@ -177,6 +180,7 @@ type GRPCTrafficMatch struct {
 	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
 	Method         *GRPCMethod                     `json:"Method,omitempty"`
 	BackendService map[string]BackendServiceConfig `json:"BackendService"`
+	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
 	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
@@ -195,12 +199,13 @@ type GRPCMethod struct {
 
 // RateLimit is the rate limit configuration
 type RateLimit struct {
-	Backlog              int               `json:"Backlog"`
-	Requests             int               `json:"Requests"`
-	Burst                int               `json:"Burst"`
-	StatTimeWindow       int               `json:"StatTimeWindow"`
-	ResponseStatusCode   int               `json:"ResponseStatusCode"`
-	ResponseHeadersToAdd map[string]string `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
+	Mode                 gwpav1alpha1.RateLimitPolicyMode `json:"Mode"`
+	Backlog              int                              `json:"Backlog"`
+	Requests             int                              `json:"Requests"`
+	Burst                int                              `json:"Burst"`
+	StatTimeWindow       int                              `json:"StatTimeWindow"`
+	ResponseStatusCode   int                              `json:"ResponseStatusCode"`
+	ResponseHeadersToAdd map[string]string                `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
 // PassthroughRouteMapping is the passthrough route mapping configuration

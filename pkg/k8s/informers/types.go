@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha1"
+
 	v1 "k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
@@ -95,10 +97,12 @@ const (
 	InformerKeyGatewayAPIHTTPRoute InformerKey = "HTTPRoute-gwapi"
 	// InformerKeyGatewayAPIGRPCRoute is the InformerKey for a GRPCRoute informer
 	InformerKeyGatewayAPIGRPCRoute InformerKey = "GRPCRoute-gwapi"
-	// InformerKeyGatewayAPITLSRoute is the InformerKey for a IngressClass informer
+	// InformerKeyGatewayAPITLSRoute is the InformerKey for a TLSRoute informer
 	InformerKeyGatewayAPITLSRoute InformerKey = "TLSRoute-gwapi"
-	// InformerKeyGatewayAPITCPRoute is the InformerKey for a IngressClass informer
+	// InformerKeyGatewayAPITCPRoute is the InformerKey for a TCPRoute informer
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
+	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
+	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
 )
 
 const (
@@ -138,4 +142,5 @@ type Lister struct {
 	K8sIngressClass   networkingv1.IngressClassLister
 	K8sIngress        networkingv1.IngressLister
 	NamespacedIngress nsigv1alpha1.NamespacedIngressLister
+	RateLimitPolicy   gwpav1alpha1.RateLimitPolicyLister
 }

@@ -13,15 +13,16 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 var (
-	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), "HTTPRoute")
-	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "TLSRoute")
-	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "TCPRoute")
-	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), "GRPCRoute")
+	httpRouteGVK = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.HTTPRouteKind)
+	tlsRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TLSRouteKind)
+	tcpRouteGVK  = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.TCPRouteKind)
+	grpcRouteGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GRPCRouteKind)
 )
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway
@@ -44,6 +45,7 @@ type GatewayCache struct {
 	grpcroutes     map[client.ObjectKey]struct{}
 	tcproutes      map[client.ObjectKey]struct{}
 	tlsroutes      map[client.ObjectKey]struct{}
+	ratelimits     map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -62,13 +64,14 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			ServiceImportsProcessorType: &ServiceImportsProcessor{},
 			EndpointSlicesProcessorType: &EndpointSlicesProcessor{},
 			//EndpointsProcessorType:      &EndpointsProcessor{},
-			SecretsProcessorType:        &SecretProcessor{},
-			GatewayClassesProcessorType: &GatewayClassesProcessor{},
-			GatewaysProcessorType:       &GatewaysProcessor{},
-			HTTPRoutesProcessorType:     &HTTPRoutesProcessor{},
-			GRPCRoutesProcessorType:     &GRPCRoutesProcessor{},
-			TCPRoutesProcessorType:      &TCPRoutesProcessor{},
-			TLSRoutesProcessorType:      &TLSRoutesProcessor{},
+			SecretsProcessorType:           &SecretProcessor{},
+			GatewayClassesProcessorType:    &GatewayClassesProcessor{},
+			GatewaysProcessorType:          &GatewaysProcessor{},
+			HTTPRoutesProcessorType:        &HTTPRoutesProcessor{},
+			GRPCRoutesProcessorType:        &GRPCRoutesProcessor{},
+			TCPRoutesProcessorType:         &TCPRoutesProcessor{},
+			TLSRoutesProcessorType:         &TLSRoutesProcessor{},
+			RateLimitPoliciesProcessorType: &RateLimitPoliciesProcessor{},
 		},
 
 		gateways:       make(map[string]client.ObjectKey),
@@ -81,6 +84,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		grpcroutes: make(map[client.ObjectKey]struct{}),
 		tcproutes:  make(map[client.ObjectKey]struct{}),
 		tlsroutes:  make(map[client.ObjectKey]struct{}),
+		ratelimits: make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}
