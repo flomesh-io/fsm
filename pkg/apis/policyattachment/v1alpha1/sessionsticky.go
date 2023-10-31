@@ -21,6 +21,7 @@ type SessionStickyPolicySpec struct {
 
 	// +optional
 	// +kubebuilder:default=3600
+	// +kubebuilder:validation:Minimum=1
 	// Expires is the expiration time of the cookie in seconds
 	Expires *int32 `json:"expires,omitempty"`
 }

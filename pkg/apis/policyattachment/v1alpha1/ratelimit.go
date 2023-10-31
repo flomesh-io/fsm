@@ -22,59 +22,74 @@ type RateLimitPolicySpec struct {
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// Ports is the rate limit configuration for ports
 	Ports []PortRateLimit `json:"ports,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:Minimum=1
 	// DefaultBPS is the default rate limit for all ports
 	DefaultBPS *int64 `json:"bps,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// Hostnames is the rate limit configuration for hostnames
 	Hostnames []HostnameRateLimit `json:"hostnames,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// HTTPRateLimits is the rate limit configuration for HTTP routes
 	HTTPRateLimits []HTTPRateLimit `json:"http,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// GRPCRateLimits is the rate limit configuration for GRPC routes
 	GRPCRateLimits []GRPCRateLimit `json:"grpc,omitempty"`
 
 	// +optional
-	// DefaultRateLimit is the default rate limit for all routes and hostnames
+	// DefaultL7RateLimit is the default rate limit for all routes and hostnames
 	DefaultL7RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
 }
 
 // PortRateLimit defines the rate limit configuration for a port
 type PortRateLimit struct {
+	// Port is the port number for matching the rate limit
 	Port gwv1beta1.PortNumber `json:"port"`
-	BPS  *int64               `json:"bps,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// BPS is the rate limit in bytes per second for the port
+	BPS *int64 `json:"bps,omitempty"`
 }
 
 // HostnameRateLimit defines the rate limit configuration for a hostname
 type HostnameRateLimit struct {
-	Hostname  gwv1beta1.Hostname `json:"hostname"`
-	RateLimit *L7RateLimit       `json:"rateLimit,omitempty"`
-}
+	// Hostname is the hostname for matching the rate limit
+	Hostname gwv1beta1.Hostname `json:"hostname"`
 
-// RouteRateLimitConfig defines the rate limit configuration for routes
-type RouteRateLimitConfig struct {
-	HttpRateLimits   []HTTPRateLimit `json:"http,omitempty"`
-	GrpcRateLimits   []GRPCRateLimit `json:"grpc,omitempty"`
-	DefaultRateLimit *L7RateLimit    `json:"rateLimit,omitempty"`
+	// +optional
+	// RateLimit is the rate limit configuration for the hostname
+	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
 }
 
 // HTTPRateLimit defines the rate limit configuration for a HTTP route
 type HTTPRateLimit struct {
-	Match     gwv1beta1.HTTPRouteMatch `json:"match"`
-	RateLimit *L7RateLimit             `json:"rateLimit,omitempty"`
+	// Match is the match condition for the HTTP route
+	Match gwv1beta1.HTTPRouteMatch `json:"match"`
+
+	// +optional
+	// RateLimit is the rate limit configuration for the HTTP route
+	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
 }
 
 // GRPCRateLimit defines the rate limit configuration for a GRPC route
 type GRPCRateLimit struct {
-	Match     gwv1alpha2.GRPCRouteMatch `json:"match"`
-	RateLimit *L7RateLimit              `json:"rateLimit,omitempty"`
+	// Match is the match condition for the GRPC route
+	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+
+	// +optional
+	// RateLimit is the rate limit configuration for the GRPC route
+	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
 }
 
 // L7RateLimit defines the rate limit configuration for a route
@@ -87,23 +102,29 @@ type L7RateLimit struct {
 
 	// +optional
 	// +kubebuilder:default=10
+	// +kubebuilder:validation:Minimum=1
 	// Backlog is the number of requests allowed to wait in the queue
-	Backlog *int `json:"backlog,omitempty"`
+	Backlog *int32 `json:"backlog,omitempty"`
 
 	// Requests is the number of requests allowed per statTimeWindow
-	Requests int `json:"requests"`
+	// +kubebuilder:validation:Minimum=1
+	Requests int32 `json:"requests"`
 
-	// Burst is the number of requests allowed to be bursted, if not specified, it will be the same as Requests
 	// +optional
-	Burst *int `json:"burst,omitempty"`
+	// +kubebuilder:validation:Minimum=1
+	// Burst is the number of requests allowed to be bursted, if not specified, it will be the same as Requests
+	Burst *int32 `json:"burst,omitempty"`
 
+	// +kubebuilder:validation:Minimum=1
 	// StatTimeWindow is the time window in seconds
-	StatTimeWindow int `json:"statTimeWindow"`
+	StatTimeWindow int32 `json:"statTimeWindow"`
 
-	// ResponseStatusCode is the response status code to be returned when the rate limit is exceeded
 	// +optional
 	// +kubebuilder:default=429
-	ResponseStatusCode *int `json:"responseStatusCode"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10000
+	// ResponseStatusCode is the response status code to be returned when the rate limit is exceeded
+	ResponseStatusCode *int32 `json:"responseStatusCode"`
 
 	// +optional
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded

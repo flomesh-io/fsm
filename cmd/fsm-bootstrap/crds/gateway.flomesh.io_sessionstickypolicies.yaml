@@ -46,6 +46,7 @@ spec:
                 default: 3600
                 description: Expires is the expiration time of the cookie in seconds
                 format: int32
+                minimum: 1
                 type: integer
               port:
                 description: Port is the port number of the target service
