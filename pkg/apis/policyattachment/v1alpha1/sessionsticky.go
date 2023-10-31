@@ -17,12 +17,12 @@ type SessionStickyPolicySpec struct {
 	// +optional
 	// +kubebuilder:default=_srv_id
 	// CookieName is the name of the cookie used for sticky session
-	CookieName *string `json:"cookieName"`
+	CookieName *string `json:"cookieName,omitempty"`
 
 	// +optional
 	// +kubebuilder:default=3600
 	// Expires is the expiration time of the cookie in seconds
-	Expires *int32 `json:"expires"`
+	Expires *int32 `json:"expires,omitempty"`
 }
 
 // SessionStickyPolicyStatus defines the observed state of SessionStickyPolicy

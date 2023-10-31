@@ -105,6 +105,8 @@ const (
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
 	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
 	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
+	// InformerKeyLoadBalancerPolicy is the InformerKey for a LoadBalancerPolicy informer
+	InformerKeyLoadBalancerPolicy InformerKey = "LoadBalancerPolicy"
 )
 
 const (
@@ -146,4 +148,5 @@ type Lister struct {
 	NamespacedIngress   nsigv1alpha1.NamespacedIngressLister
 	RateLimitPolicy     gwpav1alpha1.RateLimitPolicyLister
 	SessionStickyPolicy gwpav1alpha1.SessionStickyPolicyLister
+	LoadBalancerPolicy  gwpav1alpha1.LoadBalancerPolicyLister
 }

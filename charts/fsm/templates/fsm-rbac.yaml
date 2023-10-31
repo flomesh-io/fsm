@@ -132,13 +132,13 @@ rules:
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies", "sessionstickypolicies" ]
+    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers" ]
+    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status" ]
+    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

@@ -10,8 +10,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	commons "github.com/flomesh-io/fsm/pkg/apis"
 )
 
 // ServicePortName is a combination of a service name, namespace, and port
@@ -213,14 +211,14 @@ type PassthroughRouteMapping map[string]string
 
 // ServiceConfig is the service configuration
 type ServiceConfig struct {
-	Endpoints           map[string]Endpoint   `json:"Endpoints"`
-	ConnectionSettings  *ConnectionSettings   `json:"ConnectionSettings,omitempty"`
-	RetryPolicy         *RetryPolicy          `json:"RetryPolicy,omitempty"`
-	MTLS                bool                  `json:"MTLS,omitempty"`
-	UpstreamCert        *UpstreamCert         `json:"UpstreamCert,omitempty"`
-	StickyCookieName    *string               `json:"StickyCookieName,omitempty"`
-	StickyCookieExpires *int32                `json:"StickyCookieExpires,omitempty"`
-	LoadBalancer        *commons.AlgoBalancer `json:"LoadBalancer,omitempty"`
+	Endpoints           map[string]Endpoint            `json:"Endpoints"`
+	ConnectionSettings  *ConnectionSettings            `json:"ConnectionSettings,omitempty"`
+	RetryPolicy         *RetryPolicy                   `json:"RetryPolicy,omitempty"`
+	MTLS                bool                           `json:"MTLS,omitempty"`
+	UpstreamCert        *UpstreamCert                  `json:"UpstreamCert,omitempty"`
+	StickyCookieName    *string                        `json:"StickyCookieName,omitempty"`
+	StickyCookieExpires *int32                         `json:"StickyCookieExpires,omitempty"`
+	LoadBalancer        *gwpav1alpha1.LoadBalancerType `json:"Algorithm,omitempty"`
 }
 
 // Endpoint is the endpoint configuration

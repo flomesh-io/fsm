@@ -15,6 +15,14 @@ limitations under the License.
 
 package v1alpha1
 
+// LoadBalancerPolicyListerExpansion allows custom methods to be added to
+// LoadBalancerPolicyLister.
+type LoadBalancerPolicyListerExpansion interface{}
+
+// LoadBalancerPolicyNamespaceListerExpansion allows custom methods to be added to
+// LoadBalancerPolicyNamespaceLister.
+type LoadBalancerPolicyNamespaceListerExpansion interface{}
+
 // RateLimitPolicyListerExpansion allows custom methods to be added to
 // RateLimitPolicyLister.
 type RateLimitPolicyListerExpansion interface{}

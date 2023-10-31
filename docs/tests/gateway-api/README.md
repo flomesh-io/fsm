@@ -841,3 +841,22 @@ spec:
   expires: 600
 EOF
 ```
+
+### Test LoadBalancerPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: LoadBalancerPolicy
+metadata:
+  name: lb-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+    namespace: httpbin
+  port: 8080
+  type: HashingLoadBalancer
+EOF
+```

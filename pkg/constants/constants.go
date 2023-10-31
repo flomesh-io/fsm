@@ -427,6 +427,9 @@ const (
 
 	// SessionStickyPolicyKind is the kind name of SessionStickyPolicy used in Flomesh API
 	SessionStickyPolicyKind = "SessionStickyPolicy"
+
+	// LoadBalancerPolicyKind is the kind name of LoadBalancerPolicy used in Flomesh API
+	LoadBalancerPolicyKind = "LoadBalancerPolicy"
 )
 
 // Gateway API constants
@@ -488,11 +491,17 @@ const (
 	// RateLimitPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
 	RateLimitPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
 
-	// SessionStickyPolicyMutatingWebhookPath is the path at which the RateLimitPolicy mutating webhook is served
+	// SessionStickyPolicyMutatingWebhookPath is the path at which the SessionStickyPolicy mutating webhook is served
 	SessionStickyPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
 
-	// SessionStickyPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
+	// SessionStickyPolicyValidatingWebhookPath is the path at which the SessionStickyPolicy validating webhook is served
 	SessionStickyPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
+
+	// LoadBalancerPolicyMutatingWebhookPath is the path at which the LoadBalancerPolicy mutating webhook is served
+	LoadBalancerPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-loadbalancerpolicy"
+
+	// LoadBalancerPolicyValidatingWebhookPath is the path at which the LoadBalancerPolicy validating webhook is served
+	LoadBalancerPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-loadbalancerpolicy"
 )
 
 // PIPY Repo constants

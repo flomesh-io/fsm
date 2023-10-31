@@ -21,6 +21,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// LoadBalancerPolicies returns a LoadBalancerPolicyInformer.
+	LoadBalancerPolicies() LoadBalancerPolicyInformer
 	// RateLimitPolicies returns a RateLimitPolicyInformer.
 	RateLimitPolicies() RateLimitPolicyInformer
 	// SessionStickyPolicies returns a SessionStickyPolicyInformer.
@@ -36,6 +38,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// LoadBalancerPolicies returns a LoadBalancerPolicyInformer.
+func (v *version) LoadBalancerPolicies() LoadBalancerPolicyInformer {
+	return &loadBalancerPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RateLimitPolicies returns a RateLimitPolicyInformer.
