@@ -37,23 +37,57 @@ spec:
           spec:
             description: SessionStickyPolicySpec defines the desired state of SessionStickyPolicy
             properties:
-              cookieName:
-                default: _srv_id
-                description: CookieName is the name of the cookie used for sticky
-                  session
-                type: string
-              expires:
-                default: 3600
-                description: Expires is the expiration time of the cookie in seconds
-                format: int32
-                minimum: 1
-                type: integer
-              port:
-                description: Port is the port number of the target service
-                format: int32
-                maximum: 65535
-                minimum: 1
-                type: integer
+              config:
+                description: DefaultConfig is the default session sticky configuration
+                  for all ports
+                properties:
+                  cookieName:
+                    default: _srv_id
+                    description: CookieName is the name of the cookie used for sticky
+                      session
+                    type: string
+                  expires:
+                    default: 3600
+                    description: Expires is the expiration time of the cookie in seconds
+                    format: int32
+                    minimum: 1
+                    type: integer
+                type: object
+              ports:
+                description: Ports is the session sticky configuration for ports
+                items:
+                  description: PortSessionSticky defines the session sticky configuration
+                    for a port
+                  properties:
+                    config:
+                      description: Config is the session sticky configuration for
+                        the port
+                      properties:
+                        cookieName:
+                          default: _srv_id
+                          description: CookieName is the name of the cookie used for
+                            sticky session
+                          type: string
+                        expires:
+                          default: 3600
+                          description: Expires is the expiration time of the cookie
+                            in seconds
+                          format: int32
+                          minimum: 1
+                          type: integer
+                      type: object
+                    port:
+                      description: Port is the port number of the target service
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                  required:
+                  - port
+                  type: object
+                maxItems: 16
+                minItems: 1
+                type: array
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied
@@ -89,7 +123,6 @@ spec:
                 - name
                 type: object
             required:
-            - port
             - targetRef
             type: object
           status:

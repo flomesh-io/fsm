@@ -366,14 +366,14 @@ type HTTPConnectionSettings struct {
 type CircuitBreaking struct {
 	MinRequestAmount        int32    `json:"MinRequestAmount"`
 	StatTimeWindow          int32    `json:"StatTimeWindow"`
-	SlowTimeThreshold       *float64 `json:"SlowTimeThreshold"`
+	SlowTimeThreshold       *float32 `json:"SlowTimeThreshold"`
 	SlowAmountThreshold     *int32   `json:"SlowAmountThreshold"`
-	SlowRatioThreshold      *float64 `json:"SlowRatioThreshold"`
-	ErrorAmountThreshold    int32    `json:"ErrorAmountThreshold"`
-	ErrorRatioThreshold     float64  `json:"ErrorRatioThreshold"`
+	SlowRatioThreshold      *float32 `json:"SlowRatioThreshold"`
+	ErrorAmountThreshold    *int32   `json:"ErrorAmountThreshold"`
+	ErrorRatioThreshold     *float32 `json:"ErrorRatioThreshold"`
 	DegradedTimeWindow      int32    `json:"DegradedTimeWindow"`
 	DegradedStatusCode      int32    `json:"DegradedStatusCode"`
-	DegradedResponseContent string   `json:"DegradedResponseContent"`
+	DegradedResponseContent *string  `json:"DegradedResponseContent"`
 }
 
 // UpstreamCert is the upstream certificate configuration

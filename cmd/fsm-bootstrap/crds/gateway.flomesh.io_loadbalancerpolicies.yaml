@@ -36,12 +36,32 @@ spec:
           spec:
             description: LoadBalancerPolicySpec defines the desired state of LoadBalancerPolicy
             properties:
-              port:
-                description: Port is the port number of the target service
-                format: int32
-                maximum: 65535
-                minimum: 1
-                type: integer
+              ports:
+                description: Ports is the load balancer configuration for ports
+                items:
+                  description: PortLoadBalancer defines the load balancer configuration
+                    for a port
+                  properties:
+                    port:
+                      description: Port is the port number for matching the load balancer
+                      format: int32
+                      maximum: 65535
+                      minimum: 1
+                      type: integer
+                    type:
+                      default: RoundRobinLoadBalancer
+                      description: Type is the type of the load balancer
+                      enum:
+                      - RoundRobinLoadBalancer
+                      - HashingLoadBalancer
+                      - LeastConnectionLoadBalancer
+                      type: string
+                  required:
+                  - port
+                  type: object
+                maxItems: 16
+                minItems: 1
+                type: array
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied
@@ -78,14 +98,14 @@ spec:
                 type: object
               type:
                 default: RoundRobinLoadBalancer
-                description: Type is the type of the load balancer
+                description: DefaultType is the default type of the load balancer
+                  for all ports
                 enum:
                 - RoundRobinLoadBalancer
                 - HashingLoadBalancer
                 - LeastConnectionLoadBalancer
                 type: string
             required:
-            - port
             - targetRef
             type: object
           status:

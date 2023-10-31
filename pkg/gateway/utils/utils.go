@@ -31,10 +31,6 @@ import (
 	"strings"
 	"time"
 
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-
-	corev1 "k8s.io/api/core/v1"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -409,62 +405,40 @@ func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy 
 	return nil
 }
 
-// SessionStickyPolicyMatchesService returns true if the service matches the policy
-func SessionStickyPolicyMatchesService(policy *gwpav1alpha1.SessionStickyPolicy, svc *corev1.Service) bool {
-	if !IsRefToTarget(policy.Spec.TargetRef, svc) {
-		return false
+// GetSessionStickyConfigIfPortMatchesPolicy returns true if the port matches the session sticky policy
+func GetSessionStickyConfigIfPortMatchesPolicy(port int32, sessionStickyPolicy gwpav1alpha1.SessionStickyPolicy) *gwpav1alpha1.SessionStickyConfig {
+	if len(sessionStickyPolicy.Spec.Ports) == 0 {
+		return nil
 	}
 
-	for _, p := range svc.Spec.Ports {
-		if int32(policy.Spec.Port) == p.Port {
-			return true
+	for _, policyPort := range sessionStickyPolicy.Spec.Ports {
+		if port == int32(policyPort.Port) {
+			if policyPort.Config != nil {
+				return policyPort.Config
+			}
+
+			return sessionStickyPolicy.Spec.DefaultConfig
 		}
 	}
 
-	return false
+	return nil
 }
 
-// SessionStickyPolicyMatchesServiceImport returns true if the ServiceImport matches the policy
-func SessionStickyPolicyMatchesServiceImport(policy *gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) bool {
-	if !IsRefToTarget(policy.Spec.TargetRef, svcimp) {
-		return false
+// GetLoadBalancerTypeIfPortMatchesPolicy returns true if the port matches the load balancer policy
+func GetLoadBalancerTypeIfPortMatchesPolicy(port int32, loadBalancerPolicy gwpav1alpha1.LoadBalancerPolicy) *gwpav1alpha1.LoadBalancerType {
+	if len(loadBalancerPolicy.Spec.Ports) == 0 {
+		return nil
 	}
 
-	for _, p := range svcimp.Spec.Ports {
-		if int32(policy.Spec.Port) == p.Port {
-			return true
+	for _, policyPort := range loadBalancerPolicy.Spec.Ports {
+		if port == int32(policyPort.Port) {
+			if policyPort.Type != nil {
+				return policyPort.Type
+			}
+
+			return loadBalancerPolicy.Spec.DefaultType
 		}
 	}
 
-	return false
-}
-
-// LoadBalancerPolicyMatchesService returns true if the service matches the policy
-func LoadBalancerPolicyMatchesService(policy *gwpav1alpha1.LoadBalancerPolicy, svc *corev1.Service) bool {
-	if !IsRefToTarget(policy.Spec.TargetRef, svc) {
-		return false
-	}
-
-	for _, p := range svc.Spec.Ports {
-		if int32(policy.Spec.Port) == p.Port {
-			return true
-		}
-	}
-
-	return false
-}
-
-// LoadBalancerPolicyMatchesServiceImport returns true if the ServiceImport matches the policy
-func LoadBalancerPolicyMatchesServiceImport(policy *gwpav1alpha1.LoadBalancerPolicy, svcimp *mcsv1alpha1.ServiceImport) bool {
-	if !IsRefToTarget(policy.Spec.TargetRef, svcimp) {
-		return false
-	}
-
-	for _, p := range svcimp.Spec.Ports {
-		if int32(policy.Spec.Port) == p.Port {
-			return true
-		}
-	}
-
-	return false
+	return nil
 }
