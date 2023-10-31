@@ -799,6 +799,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
 		// SessionStickyPolicy event
 		announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
+		// LoadBalancerPolicy event
+		announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
 
 		//
 		// MultiCluster events

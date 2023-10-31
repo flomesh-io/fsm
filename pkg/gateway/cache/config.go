@@ -38,7 +38,6 @@ func (c *GatewayCache) BuildConfigs() {
 			continue
 		}
 
-		//gw := obj.(*gwv1beta1.Gateway)
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
 		log.Debug().Msgf("[GW-CACHE] validListeners: %v", validListeners)
 		acceptedRateLimits := c.rateLimits()
@@ -605,9 +604,31 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyP
 	return sessionStickies
 }
 
+func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerPolicy {
+	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerPolicy)
+
+	for key := range c.loadbalancers {
+		lb, err := c.getLoadBalancerPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get LoadBalancerPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedLoadBalancerPolicy(lb) {
+			if svcPortName := targetRefToServicePortName(lb.Spec.TargetRef, lb.Namespace, int32(lb.Spec.Port)); svcPortName != nil {
+				loadBalancers[svcPortName.String()] = lb
+			}
+		}
+	}
+
+	return loadBalancers
+}
+
 func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]routecfg.ServiceConfig {
 	configs := make(map[string]routecfg.ServiceConfig)
 	sessionStickies := c.sessionStickies()
+	loadBalancers := c.loadBalancers()
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
@@ -680,6 +701,10 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 		if sessionSticky, exists := sessionStickies[svcPortName]; exists {
 			svcCfg.StickyCookieName = sessionSticky.Spec.CookieName
 			svcCfg.StickyCookieExpires = sessionSticky.Spec.Expires
+		}
+
+		if loadBalancer, exists := loadBalancers[svcPortName]; exists {
+			svcCfg.LoadBalancer = loadBalancer.Spec.Type
 		}
 
 		configs[svcPortName] = svcCfg

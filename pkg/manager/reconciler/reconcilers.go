@@ -65,6 +65,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(ctx)
 		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(SessionSticky)"] = pav1alpha1.NewSessionStickyPolicyReconciler(ctx)
+		reconcilers["PolicyAttachment(LoadBalancer)"] = pav1alpha1.NewLoadBalancerPolicyReconciler(ctx)
 	}
 
 	if mc.IsNamespacedIngressEnabled() {

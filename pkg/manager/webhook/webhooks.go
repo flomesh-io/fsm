@@ -50,6 +50,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/webhook/grpcroute"
 	"github.com/flomesh-io/fsm/pkg/webhook/httproute"
 	"github.com/flomesh-io/fsm/pkg/webhook/ingress"
+	"github.com/flomesh-io/fsm/pkg/webhook/loadbalancer"
 	"github.com/flomesh-io/fsm/pkg/webhook/namespacedingress"
 	"github.com/flomesh-io/fsm/pkg/webhook/ratelimit"
 	"github.com/flomesh-io/fsm/pkg/webhook/serviceexport"
@@ -254,6 +255,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, tlsroute.NewRegister(regCfg))
 		result = append(result, ratelimit.NewRegister(regCfg))
 		result = append(result, sessionsticky.NewRegister(regCfg))
+		result = append(result, loadbalancer.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {
