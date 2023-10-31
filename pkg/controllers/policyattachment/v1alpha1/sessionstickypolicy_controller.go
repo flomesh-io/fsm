@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -265,16 +266,8 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 func (r *sessionStickyPolicyReconciler) getConflictedPolicyByService(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svc *corev1.Service) *types.NamespacedName {
 	for _, p := range allSessionStickyPolicies {
 		p := p
-		if !gwutils.SessionStickyPolicyMatchesService(&p, svc) {
-			continue
-		}
-
-		if !gwutils.SessionStickyPolicyMatchesService(sessionStickyPolicy, svc) {
-			continue
-		}
-
-		if *p.Spec.CookieName == *sessionStickyPolicy.Spec.CookieName &&
-			*p.Spec.Expires == *sessionStickyPolicy.Spec.Expires {
+		if gwutils.SessionStickyPolicyMatchesService(&p, svc) &&
+			reflect.DeepEqual(p.Spec, sessionStickyPolicy.Spec) {
 			continue
 		}
 
@@ -290,16 +283,8 @@ func (r *sessionStickyPolicyReconciler) getConflictedPolicyByService(sessionStic
 func (r *sessionStickyPolicyReconciler) getConflictedPolicyByServiceImport(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
 	for _, p := range allSessionStickyPolicies {
 		p := p
-		if !gwutils.SessionStickyPolicyMatchesServiceImport(&p, svcimp) {
-			continue
-		}
-
-		if !gwutils.SessionStickyPolicyMatchesServiceImport(sessionStickyPolicy, svcimp) {
-			continue
-		}
-
-		if *p.Spec.CookieName == *sessionStickyPolicy.Spec.CookieName &&
-			*p.Spec.Expires == *sessionStickyPolicy.Spec.Expires {
+		if gwutils.SessionStickyPolicyMatchesServiceImport(&p, svcimp) &&
+			reflect.DeepEqual(p.Spec, sessionStickyPolicy.Spec) {
 			continue
 		}
 

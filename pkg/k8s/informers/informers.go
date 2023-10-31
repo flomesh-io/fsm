@@ -228,6 +228,8 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
 
 		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
+		ic.informers[InformerKeySessionStickyPolicy] = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Informer()
+
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
 	}

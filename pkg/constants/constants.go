@@ -421,6 +421,12 @@ const (
 
 	// FlomeshAPIServiceImportKind is the kind name of ServiceImport used in Flomesh API
 	FlomeshAPIServiceImportKind = "ServiceImport"
+
+	// RateLimitPolicyKind is the kind name of RateLimitPolicy used in Flomesh API
+	RateLimitPolicyKind = "RateLimitPolicy"
+
+	// SessionStickyPolicyKind is the kind name of SessionStickyPolicy used in Flomesh API
+	SessionStickyPolicyKind = "SessionStickyPolicy"
 )
 
 // Gateway API constants

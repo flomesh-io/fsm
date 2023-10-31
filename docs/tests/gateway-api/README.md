@@ -821,3 +821,23 @@ spec:
       statTimeWindow: 60
 EOF
 ```
+
+### Test SessionStickyPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: SessionStickyPolicy
+metadata:
+  name: session-sticky-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+    namespace: httpbin
+  port: 8080
+  cookieName: xxx
+  expires: 600
+EOF
+```
