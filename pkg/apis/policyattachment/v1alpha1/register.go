@@ -39,6 +39,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&RateLimitPolicy{},
 		&RateLimitPolicyList{},
+		&SessionStickyPolicy{},
+		&SessionStickyPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

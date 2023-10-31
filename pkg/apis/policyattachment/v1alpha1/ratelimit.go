@@ -129,7 +129,7 @@ type RateLimitPolicyStatus struct {
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
 
-// RateLimitPolicy is the Schema for the RateLimitPolicys API
+// RateLimitPolicy is the Schema for the RateLimitPolicy API
 type RateLimitPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

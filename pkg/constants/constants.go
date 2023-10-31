@@ -389,23 +389,44 @@ const (
 	// GatewayAPIGroup is the group name used in Gateway API
 	GatewayAPIGroup = "gateway.networking.k8s.io"
 
-	// GatewayKind is the kind name of Gateway used in Gateway API
-	GatewayKind = "Gateway"
+	// FlomeshAPIGroup is the group name used in Flomesh API
+	FlomeshAPIGroup = "flomesh.io"
 
-	// HTTPRouteKind is the kind name of HTTPRoute used in Gateway API
-	HTTPRouteKind = "HTTPRoute"
+	// KubernetesCoreGroup is the group name used in Kubernetes Core API
+	KubernetesCoreGroup = ""
 
-	// GRPCRouteKind is the kind name of GRPCRoute used in Gateway API
-	GRPCRouteKind = "GRPCRoute"
+	// GatewayAPIGatewayKind is the kind name of Gateway used in Gateway API
+	GatewayAPIGatewayKind = "Gateway"
 
-	// TLSRouteKind is the kind name of TLSRoute used in Gateway API
-	TLSRouteKind = "TLSRoute"
+	// GatewayAPIHTTPRouteKind is the kind name of HTTPRoute used in Gateway API
+	GatewayAPIHTTPRouteKind = "HTTPRoute"
 
-	// TCPRouteKind is the kind name of TCPRoute used in Gateway API
-	TCPRouteKind = "TCPRoute"
+	// GatewayAPIGRPCRouteKind is the kind name of GRPCRoute used in Gateway API
+	GatewayAPIGRPCRouteKind = "GRPCRoute"
 
-	// UDPRouteKind is the kind name of UDPRoute used in Gateway API
-	UDPRouteKind = "UDPRoute"
+	// GatewayAPITLSRouteKind is the kind name of TLSRoute used in Gateway API
+	GatewayAPITLSRouteKind = "TLSRoute"
+
+	// GatewayAPITCPRouteKind is the kind name of TCPRoute used in Gateway API
+	GatewayAPITCPRouteKind = "TCPRoute"
+
+	// GatewayAPIUDPRouteKind is the kind name of UDPRoute used in Gateway API
+	GatewayAPIUDPRouteKind = "UDPRoute"
+
+	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
+	KubernetesServiceKind = "Service"
+
+	// KubernetesSecretKind is the kind name of Secret used in Kubernetes Core API
+	KubernetesSecretKind = "Secret"
+
+	// FlomeshAPIServiceImportKind is the kind name of ServiceImport used in Flomesh API
+	FlomeshAPIServiceImportKind = "ServiceImport"
+
+	// RateLimitPolicyKind is the kind name of RateLimitPolicy used in Flomesh API
+	RateLimitPolicyKind = "RateLimitPolicy"
+
+	// SessionStickyPolicyKind is the kind name of SessionStickyPolicy used in Flomesh API
+	SessionStickyPolicyKind = "SessionStickyPolicy"
 )
 
 // Gateway API constants
@@ -466,6 +487,12 @@ const (
 
 	// RateLimitPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
 	RateLimitPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
+
+	// SessionStickyPolicyMutatingWebhookPath is the path at which the RateLimitPolicy mutating webhook is served
+	SessionStickyPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
+
+	// SessionStickyPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
+	SessionStickyPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
 )
 
 // PIPY Repo constants

@@ -423,36 +423,36 @@ func supportedRouteGroupKindsByProtocol(protocol gwv1beta1.ProtocolType) []gwv1b
 		return []gwv1beta1.RouteGroupKind{
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.HTTPRouteKind,
+				Kind:  constants.GatewayAPIHTTPRouteKind,
 			},
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GRPCRouteKind,
+				Kind:  constants.GatewayAPIGRPCRouteKind,
 			},
 		}
 	case gwv1beta1.TLSProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.TLSRouteKind,
+				Kind:  constants.GatewayAPITLSRouteKind,
 			},
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.TCPRouteKind,
+				Kind:  constants.GatewayAPITCPRouteKind,
 			},
 		}
 	case gwv1beta1.TCPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.TCPRouteKind,
+				Kind:  constants.GatewayAPITCPRouteKind,
 			},
 		}
 	case gwv1beta1.UDPProtocolType:
 		return []gwv1beta1.RouteGroupKind{
 			{
 				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.UDPRouteKind,
+				Kind:  constants.GatewayAPIUDPRouteKind,
 			},
 		}
 	}

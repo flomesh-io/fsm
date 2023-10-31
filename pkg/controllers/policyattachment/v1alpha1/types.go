@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-// Package v1beta1 contains controller logic for the Gateway API v1beta1.
-package v1beta1
+// Package v1alpha1 contains controller logic for the Gateway API v1beta1.
+package v1alpha1
 
 //var (
 //	log = logger.New("gatewayapi/policyattachment")

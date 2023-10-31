@@ -23,6 +23,8 @@ import (
 type Interface interface {
 	// RateLimitPolicies returns a RateLimitPolicyInformer.
 	RateLimitPolicies() RateLimitPolicyInformer
+	// SessionStickyPolicies returns a SessionStickyPolicyInformer.
+	SessionStickyPolicies() SessionStickyPolicyInformer
 }
 
 type version struct {
@@ -39,4 +41,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // RateLimitPolicies returns a RateLimitPolicyInformer.
 func (v *version) RateLimitPolicies() RateLimitPolicyInformer {
 	return &rateLimitPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// SessionStickyPolicies returns a SessionStickyPolicyInformer.
+func (v *version) SessionStickyPolicies() SessionStickyPolicyInformer {
+	return &sessionStickyPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
