@@ -607,7 +607,7 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyP
 func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerPolicy {
 	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerPolicy)
 
-	for key := range c.sessionstickies {
+	for key := range c.loadbalancers {
 		lb, err := c.getLoadBalancerPolicyFromCache(key)
 
 		if err != nil {
