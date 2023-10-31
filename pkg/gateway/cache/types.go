@@ -26,14 +26,15 @@
 package cache
 
 import (
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
-	"github.com/flomesh-io/fsm/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 // ProcessorType is the type used to represent the type of processor
