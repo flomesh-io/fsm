@@ -26,6 +26,7 @@ import (
 type GatewayV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	RateLimitPoliciesGetter
+	SessionStickyPoliciesGetter
 }
 
 // GatewayV1alpha1Client is used to interact with features provided by the gateway.flomesh.io group.
@@ -35,6 +36,10 @@ type GatewayV1alpha1Client struct {
 
 func (c *GatewayV1alpha1Client) RateLimitPolicies(namespace string) RateLimitPolicyInterface {
 	return newRateLimitPolicies(c, namespace)
+}
+
+func (c *GatewayV1alpha1Client) SessionStickyPolicies(namespace string) SessionStickyPolicyInterface {
+	return newSessionStickyPolicies(c, namespace)
 }
 
 // NewForConfig creates a new GatewayV1alpha1Client for the given config.

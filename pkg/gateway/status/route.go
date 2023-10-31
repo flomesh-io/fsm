@@ -136,7 +136,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 			}
 
 			switch params.RouteGvk.Kind {
-			case constants.HTTPRouteKind, constants.TLSRouteKind, constants.GRPCRouteKind:
+			case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
 				if count == 0 && metautil.FindStatusCondition(routeParentStatus.Conditions, string(gwv1beta1.RouteConditionAccepted)) == nil {
 					metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
 						Type:               string(gwv1beta1.RouteConditionAccepted),

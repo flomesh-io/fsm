@@ -29,6 +29,10 @@ func (c *FakeGatewayV1alpha1) RateLimitPolicies(namespace string) v1alpha1.RateL
 	return &FakeRateLimitPolicies{c, namespace}
 }
 
+func (c *FakeGatewayV1alpha1) SessionStickyPolicies(namespace string) v1alpha1.SessionStickyPolicyInterface {
+	return &FakeSessionStickyPolicies{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeGatewayV1alpha1) RESTClient() rest.Interface {

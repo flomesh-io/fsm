@@ -103,6 +103,8 @@ const (
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
 	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
+	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
+	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
 )
 
 const (
@@ -128,19 +130,20 @@ type InformerCollection struct {
 
 // Lister is the listers for the informers in the collection
 type Lister struct {
-	Service           v1.ServiceLister
-	ServiceImport     mcsv1alpha1.ServiceImportLister
-	Endpoints         v1.EndpointsLister
-	EndpointSlice     discoveryv1.EndpointSliceLister
-	Secret            v1.SecretLister
-	GatewayClass      gwv1beta1.GatewayClassLister
-	Gateway           gwv1beta1.GatewayLister
-	HTTPRoute         gwv1beta1.HTTPRouteLister
-	GRPCRoute         gwv1alpha2.GRPCRouteLister
-	TLSRoute          gwv1alpha2.TLSRouteLister
-	TCPRoute          gwv1alpha2.TCPRouteLister
-	K8sIngressClass   networkingv1.IngressClassLister
-	K8sIngress        networkingv1.IngressLister
-	NamespacedIngress nsigv1alpha1.NamespacedIngressLister
-	RateLimitPolicy   gwpav1alpha1.RateLimitPolicyLister
+	Service             v1.ServiceLister
+	ServiceImport       mcsv1alpha1.ServiceImportLister
+	Endpoints           v1.EndpointsLister
+	EndpointSlice       discoveryv1.EndpointSliceLister
+	Secret              v1.SecretLister
+	GatewayClass        gwv1beta1.GatewayClassLister
+	Gateway             gwv1beta1.GatewayLister
+	HTTPRoute           gwv1beta1.HTTPRouteLister
+	GRPCRoute           gwv1alpha2.GRPCRouteLister
+	TLSRoute            gwv1alpha2.TLSRouteLister
+	TCPRoute            gwv1alpha2.TCPRouteLister
+	K8sIngressClass     networkingv1.IngressClassLister
+	K8sIngress          networkingv1.IngressLister
+	NamespacedIngress   nsigv1alpha1.NamespacedIngressLister
+	RateLimitPolicy     gwpav1alpha1.RateLimitPolicyLister
+	SessionStickyPolicy gwpav1alpha1.SessionStickyPolicyLister
 }

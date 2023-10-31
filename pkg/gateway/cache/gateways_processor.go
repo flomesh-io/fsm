@@ -4,7 +4,6 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 // GatewaysProcessor is responsible for processing Gateway objects
@@ -24,17 +23,18 @@ func (p *GatewaysProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	//	log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 	//	return false
 	//}
-	obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
+	gw, err := cache.informers.GetListers().Gateway.Gateways(gw.Namespace).Get(gw.Name)
+	//obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGateway, key.String())
 	if err != nil {
 		log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 		return false
 	}
-	if !exists {
-		log.Error().Msgf("Gateway %s doesn't exist", key)
-		return false
-	}
-
-	gw = obj.(*gwv1beta1.Gateway)
+	//if !exists {
+	//	log.Error().Msgf("Gateway %s doesn't exist", key)
+	//	return false
+	//}
+	//
+	//gw = obj.(*gwv1beta1.Gateway)
 	if utils.IsActiveGateway(gw) {
 		cache.gateways[gw.Namespace] = utils.ObjectKey(gw)
 		return true

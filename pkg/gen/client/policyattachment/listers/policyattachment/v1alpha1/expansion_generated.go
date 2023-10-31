@@ -22,3 +22,11 @@ type RateLimitPolicyListerExpansion interface{}
 // RateLimitPolicyNamespaceListerExpansion allows custom methods to be added to
 // RateLimitPolicyNamespaceLister.
 type RateLimitPolicyNamespaceListerExpansion interface{}
+
+// SessionStickyPolicyListerExpansion allows custom methods to be added to
+// SessionStickyPolicyLister.
+type SessionStickyPolicyListerExpansion interface{}
+
+// SessionStickyPolicyNamespaceListerExpansion allows custom methods to be added to
+// SessionStickyPolicyNamespaceLister.
+type SessionStickyPolicyNamespaceListerExpansion interface{}

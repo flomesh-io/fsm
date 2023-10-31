@@ -19,7 +19,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: RateLimitPolicy is the Schema for the RateLimitPolicys API
+        description: RateLimitPolicy is the Schema for the RateLimitPolicy API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

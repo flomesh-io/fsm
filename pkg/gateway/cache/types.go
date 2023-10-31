@@ -26,6 +26,13 @@
 package cache
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
@@ -69,23 +76,9 @@ const (
 
 	// RateLimitPoliciesProcessorType is the type used to represent the rate limit policies processor
 	RateLimitPoliciesProcessorType ProcessorType = "ratelimits"
-)
 
-const (
-	// KindService is the kind used to represent the service
-	KindService = "Service"
-
-	// KindServiceImport is the kind used to represent the service import
-	KindServiceImport = "ServiceImport"
-
-	// KindSecret is the kind used to represent the secret
-	KindSecret = "Secret"
-
-	// GroupFlomeshIo is the group used to represent the flomesh.io group
-	GroupFlomeshIo = "flomesh.io"
-
-	// GroupCore is the group used to represent the core group
-	GroupCore = ""
+	// SessionStickyPoliciesProcessorType is the type used to represent the session sticky policies processor
+	SessionStickyPoliciesProcessorType ProcessorType = "sessionstickies"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -210,4 +203,16 @@ var (
 const (
 	httpCodecScript    = "http/codec.js"
 	agentServiceScript = "extension/agent-service.js"
+)
+
+var (
+	gatewayGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIGatewayKind)
+	httpRouteGVK           = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
+	tlsRouteGVK            = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
+	tcpRouteGVK            = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
+	grpcRouteGVK           = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
+	secretGVK              = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesSecretKind)
+	serviceGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)
+	rateLimitPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
+	sessionStickyPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
 )

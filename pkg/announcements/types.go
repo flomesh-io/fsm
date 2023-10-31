@@ -397,6 +397,17 @@ const (
 
 	// RateLimitPolicyUpdated is the type of announcement emitted when we observe an update to ratelimitpolicies.gateway.flomesh.io
 	RateLimitPolicyUpdated Kind = "ratelimitpolicy-updated"
+
+	// ---
+
+	// SessionStickyPolicyAdded is the type of announcement emitted when we observe an addition of sessionstickypolicies.gateway.flomesh.io
+	SessionStickyPolicyAdded Kind = "sessionstickypolicy-added"
+
+	// SessionStickyPolicyDeleted the type of announcement emitted when we observe a deletion of sessionstickypolicies.gateway.flomesh.io
+	SessionStickyPolicyDeleted Kind = "sessionstickypolicy-deleted"
+
+	// SessionStickyPolicyUpdated is the type of announcement emitted when we observe an update to sessionstickypolicies.gateway.flomesh.io
+	SessionStickyPolicyUpdated Kind = "sessionstickypolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

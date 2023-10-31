@@ -4,7 +4,6 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 // GatewayClassesProcessor is responsible for processing GatewayClass objects
@@ -24,17 +23,18 @@ func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 	//	log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 	//	return false
 	//}
-	obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGatewayClass, key)
+	class, err := cache.informers.GetListers().GatewayClass.Get(key)
+	//obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGatewayClass, key)
 	if err != nil {
 		log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 		return false
 	}
-	if !exists {
-		log.Error().Msgf("GatewayClass %s doesn't exist", key)
-		return false
-	}
+	//if !exists {
+	//	log.Error().Msgf("GatewayClass %s doesn't exist", key)
+	//	return false
+	//}
 
-	class = obj.(*gwv1beta1.GatewayClass)
+	//class = obj.(*gwv1beta1.GatewayClass)
 	if utils.IsEffectiveGatewayClass(class) {
 		cache.gatewayclass = class
 		return true
