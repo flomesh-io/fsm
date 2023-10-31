@@ -66,6 +66,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[RateLimitPoliciesProcessorType]
 	case *gwpav1alpha1.SessionStickyPolicy:
 		return c.processors[SessionStickyPoliciesProcessorType]
+	case *gwpav1alpha1.LoadBalancerPolicy:
+		return c.processors[LoadBalancerPoliciesProcessorType]
 	}
 
 	return nil
@@ -414,6 +416,17 @@ func (c *GatewayCache) getSessionStickyPolicyFromCache(key client.ObjectKey) (*g
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(sessionStickyPolicyGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getLoadBalancerPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.LoadBalancerPolicy, error) {
+	obj, err := c.informers.GetListers().LoadBalancerPolicy.LoadBalancerPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(loadBalancerPolicyGVK)
 
 	return obj, nil
 }

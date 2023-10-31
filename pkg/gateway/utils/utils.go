@@ -104,6 +104,10 @@ func IsAcceptedSessionStickyPolicy(policy *gwpav1alpha1.SessionStickyPolicy) boo
 	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
 
+func IsAcceptedLoadBalancerPolicy(policy *gwpav1alpha1.LoadBalancerPolicy) bool {
+	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+}
+
 // IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
@@ -422,6 +426,36 @@ func SessionStickyPolicyMatchesService(policy *gwpav1alpha1.SessionStickyPolicy,
 
 // SessionStickyPolicyMatchesServiceImport returns true if the ServiceImport matches the policy
 func SessionStickyPolicyMatchesServiceImport(policy *gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) bool {
+	if !IsRefToTarget(policy.Spec.TargetRef, svcimp) {
+		return false
+	}
+
+	for _, p := range svcimp.Spec.Ports {
+		if int32(policy.Spec.Port) == p.Port {
+			return true
+		}
+	}
+
+	return false
+}
+
+// LoadBalancerPolicyMatchesService returns true if the service matches the policy
+func LoadBalancerPolicyMatchesService(policy *gwpav1alpha1.LoadBalancerPolicy, svc *corev1.Service) bool {
+	if !IsRefToTarget(policy.Spec.TargetRef, svc) {
+		return false
+	}
+
+	for _, p := range svc.Spec.Ports {
+		if int32(policy.Spec.Port) == p.Port {
+			return true
+		}
+	}
+
+	return false
+}
+
+// LoadBalancerPolicyMatchesServiceImport returns true if the ServiceImport matches the policy
+func LoadBalancerPolicyMatchesServiceImport(policy *gwpav1alpha1.LoadBalancerPolicy, svcimp *mcsv1alpha1.ServiceImport) bool {
 	if !IsRefToTarget(policy.Spec.TargetRef, svcimp) {
 		return false
 	}

@@ -79,6 +79,9 @@ const (
 
 	// SessionStickyPoliciesProcessorType is the type used to represent the session sticky policies processor
 	SessionStickyPoliciesProcessorType ProcessorType = "sessionstickies"
+
+	// LoadBalancerPoliciesProcessorType is the type used to represent the load balancer policies processor
+	LoadBalancerPoliciesProcessorType ProcessorType = "loadbalancers"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -215,4 +218,5 @@ var (
 	serviceGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)
 	rateLimitPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
 	sessionStickyPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
+	loadBalancerPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
 )

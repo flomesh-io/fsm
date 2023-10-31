@@ -41,6 +41,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&RateLimitPolicyList{},
 		&SessionStickyPolicy{},
 		&SessionStickyPolicyList{},
+		&LoadBalancerPolicy{},
+		&LoadBalancerPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

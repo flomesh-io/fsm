@@ -36,6 +36,7 @@ type GatewayCache struct {
 	tlsroutes       map[client.ObjectKey]struct{}
 	ratelimits      map[client.ObjectKey]struct{}
 	sessionstickies map[client.ObjectKey]struct{}
+	loadbalancers   map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -63,6 +64,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			TLSRoutesProcessorType:             &TLSRoutesProcessor{},
 			RateLimitPoliciesProcessorType:     &RateLimitPoliciesProcessor{},
 			SessionStickyPoliciesProcessorType: &SessionStickyPoliciesProcessor{},
+			LoadBalancerPoliciesProcessorType:  &LoadBalancerPoliciesProcessor{},
 		},
 
 		gateways:       make(map[string]client.ObjectKey),
@@ -77,6 +79,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		tlsroutes:       make(map[client.ObjectKey]struct{}),
 		ratelimits:      make(map[client.ObjectKey]struct{}),
 		sessionstickies: make(map[client.ObjectKey]struct{}),
+		loadbalancers:   make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}
