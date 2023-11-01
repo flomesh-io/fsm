@@ -87,8 +87,11 @@ type Listener struct {
 
 // AccessControlLists is the access control lists configuration
 type AccessControlLists struct {
-	Blacklist []string `json:"Blacklist,omitempty"`
-	Whitelist []string `json:"Whitelist,omitempty"`
+	Blacklist  []string `json:"Blacklist,omitempty"`
+	Whitelist  []string `json:"Whitelist,omitempty"`
+	EnableXFF  *bool    `json:"EnableXFF,omitempty"`
+	StatusCode *int32   `json:"Status,omitempty"`
+	Message    *string  `json:"Message,omitempty"`
 }
 
 // TLS is the TLS configuration
@@ -118,18 +121,20 @@ var _ RouteRule = &L7RouteRule{}
 
 // HTTPRouteRuleSpec is the HTTP route rule configuration
 type HTTPRouteRuleSpec struct {
-	RouteType L7RouteType        `json:"RouteType"`
-	Matches   []HTTPTrafficMatch `json:"Matches" hash:"set"`
-	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
+	RouteType          L7RouteType         `json:"RouteType"`
+	Matches            []HTTPTrafficMatch  `json:"Matches" hash:"set"`
+	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
+	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 
 // GRPCRouteRuleSpec is the GRPC route rule configuration
 type GRPCRouteRuleSpec struct {
-	RouteType L7RouteType        `json:"RouteType"`
-	Matches   []GRPCTrafficMatch `json:"Matches" hash:"set"`
-	RateLimit *RateLimit         `json:"RateLimit,omitempty"`
+	RouteType          L7RouteType         `json:"RouteType"`
+	Matches            []GRPCTrafficMatch  `json:"Matches" hash:"set"`
+	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
+	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
@@ -164,22 +169,24 @@ type BackendServiceConfig struct {
 
 // HTTPTrafficMatch is the HTTP traffic match configuration
 type HTTPTrafficMatch struct {
-	Path           *Path                           `json:"Path,omitempty"`
-	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
-	RequestParams  map[MatchType]map[string]string `json:"RequestParams,omitempty"`
-	Methods        []string                        `json:"Methods,omitempty" hash:"set"`
-	BackendService map[string]BackendServiceConfig `json:"BackendService"`
-	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
-	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
+	Path               *Path                           `json:"Path,omitempty"`
+	Headers            map[MatchType]map[string]string `json:"Headers,omitempty"`
+	RequestParams      map[MatchType]map[string]string `json:"RequestParams,omitempty"`
+	Methods            []string                        `json:"Methods,omitempty" hash:"set"`
+	BackendService     map[string]BackendServiceConfig `json:"BackendService"`
+	RateLimit          *RateLimit                      `json:"RateLimit,omitempty"`
+	AccessControlLists *AccessControlLists             `json:"AccessControlLists,omitempty"`
+	Filters            []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
 // GRPCTrafficMatch is the GRPC traffic match configuration
 type GRPCTrafficMatch struct {
-	Headers        map[MatchType]map[string]string `json:"Headers,omitempty"`
-	Method         *GRPCMethod                     `json:"Method,omitempty"`
-	BackendService map[string]BackendServiceConfig `json:"BackendService"`
-	RateLimit      *RateLimit                      `json:"RateLimit,omitempty"`
-	Filters        []Filter                        `json:"Filters,omitempty" hash:"set"`
+	Headers            map[MatchType]map[string]string `json:"Headers,omitempty"`
+	Method             *GRPCMethod                     `json:"Method,omitempty"`
+	BackendService     map[string]BackendServiceConfig `json:"BackendService"`
+	RateLimit          *RateLimit                      `json:"RateLimit,omitempty"`
+	AccessControlLists *AccessControlLists             `json:"AccessControlLists,omitempty"`
+	Filters            []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
 // Path is the path configuration

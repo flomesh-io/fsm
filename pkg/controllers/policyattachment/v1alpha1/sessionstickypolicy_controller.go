@@ -163,8 +163,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 
 		sessionStickies := make([]gwpav1alpha1.SessionStickyPolicy, 0)
 		for _, p := range sessionStickyPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedSessionStickyPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
 				sessionStickies = append(sessionStickies, p)
 			}
@@ -228,8 +227,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 
 		sessionStickies := make([]gwpav1alpha1.SessionStickyPolicy, 0)
 		for _, p := range sessionStickyPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedSessionStickyPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
 				sessionStickies = append(sessionStickies, p)
 			}

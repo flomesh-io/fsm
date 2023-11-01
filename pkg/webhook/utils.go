@@ -31,6 +31,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	netutils "k8s.io/utils/net"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
@@ -81,4 +82,25 @@ func ValidateRouteHostnames(hostnames []gwv1beta1.Hostname) field.ErrorList {
 	}
 
 	return errs
+}
+
+// IsValidIPOrCIDR tests that the argument is a valid IP address.
+func IsValidIPOrCIDR(value string) []string {
+	if netutils.IsIPv4String(value) {
+		return nil
+	}
+
+	if netutils.IsIPv6String(value) {
+		return nil
+	}
+
+	if netutils.IsIPv4CIDRString(value) {
+		return nil
+	}
+
+	if netutils.IsIPv6CIDRString(value) {
+		return nil
+	}
+
+	return []string{"must be a valid IP address or CIDR, (e.g. 10.9.8.7 or 2001:db8::ffff or 192.0.2.0/24 or 2001:db8::/32)"}
 }

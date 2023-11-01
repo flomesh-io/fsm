@@ -45,6 +45,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&LoadBalancerPolicyList{},
 		&CircuitBreakingPolicy{},
 		&CircuitBreakingPolicyList{},
+		&AccessControlPolicy{},
+		&AccessControlPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

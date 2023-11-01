@@ -15,6 +15,14 @@ limitations under the License.
 
 package v1alpha1
 
+// AccessControlPolicyListerExpansion allows custom methods to be added to
+// AccessControlPolicyLister.
+type AccessControlPolicyListerExpansion interface{}
+
+// AccessControlPolicyNamespaceListerExpansion allows custom methods to be added to
+// AccessControlPolicyNamespaceLister.
+type AccessControlPolicyNamespaceListerExpansion interface{}
+
 // CircuitBreakingPolicyListerExpansion allows custom methods to be added to
 // CircuitBreakingPolicyLister.
 type CircuitBreakingPolicyListerExpansion interface{}
