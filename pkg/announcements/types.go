@@ -422,14 +422,25 @@ const (
 
 	// ---
 
-	// CircuitBreakingPolicyAdded is the type of announcement emitted when we observe an addition of circuitbreakings.gateway.flomesh.io
+	// CircuitBreakingPolicyAdded is the type of announcement emitted when we observe an addition of circuitbreakingpolicies.gateway.flomesh.io
 	CircuitBreakingPolicyAdded Kind = "circuitbreaking-added"
 
-	// CircuitBreakingPolicyDeleted the type of announcement emitted when we observe a deletion of circuitbreakings.gateway.flomesh.io
+	// CircuitBreakingPolicyDeleted the type of announcement emitted when we observe a deletion of circuitbreakingpolicies.gateway.flomesh.io
 	CircuitBreakingPolicyDeleted Kind = "circuitbreaking-deleted"
 
-	// CircuitBreakingPolicyUpdated is the type of announcement emitted when we observe an update to circuitbreakings.gateway.flomesh.io
+	// CircuitBreakingPolicyUpdated is the type of announcement emitted when we observe an update to circuitbreakingpolicies.gateway.flomesh.io
 	CircuitBreakingPolicyUpdated Kind = "circuitbreaking-updated"
+
+	// ---
+
+	// AccessControlPolicyAdded is the type of announcement emitted when we observe an addition of accesscontrolpolicies.gateway.flomesh.io
+	AccessControlPolicyAdded Kind = "accesscontrolpolicy-added"
+
+	// AccessControlPolicyDeleted the type of announcement emitted when we observe a deletion of accesscontrolpolicies.gateway.flomesh.io
+	AccessControlPolicyDeleted Kind = "accesscontrolpolicy-deleted"
+
+	// AccessControlPolicyUpdated is the type of announcement emitted when we observe an update to accesscontrolpolicies.gateway.flomesh.io
+	AccessControlPolicyUpdated Kind = "accesscontrolpolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

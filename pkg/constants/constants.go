@@ -433,6 +433,9 @@ const (
 
 	// CircuitBreakingPolicyKind is the kind name of CircuitBreakingPolicy used in Flomesh API
 	CircuitBreakingPolicyKind = "CircuitBreakingPolicy"
+
+	// AccessControlPolicyKind is the kind name of AccessControlPolicy used in Flomesh API
+	AccessControlPolicyKind = "AccessControlPolicy"
 )
 
 // Gateway API constants
@@ -511,6 +514,12 @@ const (
 
 	// CircuitBreakingPolicyValidatingWebhookPath is the path at which the CircuitBreakingPolicy validating webhook is served
 	CircuitBreakingPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-circuitbreakingpolicy"
+
+	// AccessControlPolicyMutatingWebhookPath is the path at which the AccessControlPolicy mutating webhook is served
+	AccessControlPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-accesscontrolpolicy"
+
+	// AccessControlPolicyValidatingWebhookPath is the path at which the AccessControlPolicy validating webhook is served
+	AccessControlPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-accesscontrolpolicy"
 )
 
 // PIPY Repo constants

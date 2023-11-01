@@ -888,3 +888,90 @@ spec:
         degradedResponseContent: "Service Unavailable"
 EOF
 ```
+
+### Test AccessControlPolicy
+
+#### Test Port Based Access Control
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  name: access-control-port
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: test-gw-1
+    namespace: default
+  ports:
+    - port: 80
+      config: 
+        blacklist:
+          - 10.0.0.1
+          - 192.168.0.0/24
+        whitelist:
+          - 192.168.77.1
+        enableXFF: true
+        statusCode: 403
+        message: "Forbidden"
+EOF
+```
+
+
+#### Test Hostname Based Access Control
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  name: access-control-hostname-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        blacklist:
+          - 10.0.1.1
+          - 192.168.1.0/24
+        whitelist:
+          - 192.168.88.1
+        enableXFF: true
+        statusCode: 403
+        message: "Forbidden"
+EOF
+```
+
+#### Test Route Based Access Control
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  name: access-control-route-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /bar
+    config: 
+      blacklist:
+        - 10.0.2.1
+        - 192.168.2.0/24
+      whitelist:
+        - 192.168.99.1
+      enableXFF: true
+      statusCode: 403
+      message: "Forbidden"
+EOF
+```

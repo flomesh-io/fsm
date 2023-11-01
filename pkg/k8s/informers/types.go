@@ -109,6 +109,8 @@ const (
 	InformerKeyLoadBalancerPolicy InformerKey = "LoadBalancerPolicy"
 	// InformerKeyCircuitBreakingPolicy is the InformerKey for a CircuitBreakingPolicy informer
 	InformerKeyCircuitBreakingPolicy InformerKey = "CircuitBreakingPolicy"
+	// InformerKeyAccessControlPolicy is the InformerKey for a AccessControlPolicy informer
+	InformerKeyAccessControlPolicy InformerKey = "AccessControlPolicy"
 )
 
 const (
@@ -152,4 +154,5 @@ type Lister struct {
 	SessionStickyPolicy   gwpav1alpha1.SessionStickyPolicyLister
 	LoadBalancerPolicy    gwpav1alpha1.LoadBalancerPolicyLister
 	CircuitBreakingPolicy gwpav1alpha1.CircuitBreakingPolicyLister
+	AccessControlPolicy   gwpav1alpha1.AccessControlPolicyLister
 }

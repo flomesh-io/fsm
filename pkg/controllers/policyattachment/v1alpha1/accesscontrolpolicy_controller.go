@@ -61,29 +61,29 @@ import (
 	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
-type rateLimitPolicyReconciler struct {
+type accessControlPolicyReconciler struct {
 	recorder                  record.EventRecorder
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
-// NewRateLimitPolicyReconciler returns a new RateLimitPolicy Reconciler
-func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &rateLimitPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("RateLimitPolicy"),
+// NewAccessControlPolicyReconciler returns a new AccessControlPolicy Reconciler
+func NewAccessControlPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+	return &accessControlPolicyReconciler{
+		recorder:                  ctx.Manager.GetEventRecorderFor("AccessControlPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 }
 
-// Reconcile reads that state of the cluster for a RateLimitPolicy object and makes changes based on the state read
-func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	policy := &gwpav1alpha1.RateLimitPolicy{}
+// Reconcile reads that state of the cluster for a AccessControlPolicy object and makes changes based on the state read
+func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	policy := &gwpav1alpha1.AccessControlPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwpav1alpha1.RateLimitPolicy{
+		r.fctx.EventHandler.OnDelete(&gwpav1alpha1.AccessControlPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -106,7 +106,7 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RateLimitPolicy) metav1.Condition {
+func (r *accessControlPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.AccessControlPolicy) metav1.Condition {
 	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
 		return metav1.Condition{
 			Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -142,7 +142,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -150,17 +150,17 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedPort(gateway, policy, rateLimitPolicyList); conflict != nil {
+		if conflict := r.getConflictedPort(gateway, policy, accessControlPolicyList); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
+				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
 			}
 		}
 
@@ -187,7 +187,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -195,17 +195,17 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedRateLimitPolicy(httpRoute, policy, rateLimitPolicyList); conflict != nil {
+		if conflict := r.getConflictedHostnamesOrRouteBasedAccessControlPolicy(httpRoute, policy, accessControlPolicyList); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
+				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
 			}
 		}
 	case constants.GatewayAPIGRPCRouteKind:
@@ -231,7 +231,7 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				}
 			}
 		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
@@ -239,17 +239,17 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
+				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedRateLimitPolicy(grpcRoute, policy, rateLimitPolicyList); conflict != nil {
+		if conflict := r.getConflictedHostnamesOrRouteBasedAccessControlPolicy(grpcRoute, policy, accessControlPolicyList); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
 				ObservedGeneration: policy.Generation,
 				LastTransitionTime: metav1.Time{Time: time.Now()},
 				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
+				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
 			}
 		}
 	default:
@@ -273,33 +273,33 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 	}
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitPolicy(route client.Object, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies *gwpav1alpha1.RateLimitPolicyList) *types.NamespacedName {
-	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	for _, p := range allRateLimitPolicies.Items {
+func (r *accessControlPolicyReconciler) getConflictedHostnamesOrRouteBasedAccessControlPolicy(route client.Object, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies *gwpav1alpha1.AccessControlPolicyList) *types.NamespacedName {
+	hostnamesAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
+	routeAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
+	for _, p := range allAccessControlPolicies.Items {
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 			gwutils.IsRefToTarget(p.Spec.TargetRef, route) {
 			if len(p.Spec.Hostnames) > 0 {
-				hostnamesRateLimits = append(hostnamesRateLimits, p)
+				hostnamesAccessControls = append(hostnamesAccessControls, p)
 			}
-			if len(p.Spec.HTTPRateLimits) > 0 || len(p.Spec.GRPCRateLimits) > 0 {
-				routeRateLimits = append(routeRateLimits, p)
+			if len(p.Spec.HTTPAccessControls) > 0 || len(p.Spec.GRPCAccessControls) > 0 {
+				routeAccessControls = append(routeAccessControls, p)
 			}
 		}
 	}
-	sort.Slice(hostnamesRateLimits, func(i, j int) bool {
-		if hostnamesRateLimits[i].CreationTimestamp.Time.Equal(hostnamesRateLimits[j].CreationTimestamp.Time) {
-			return hostnamesRateLimits[i].Name < hostnamesRateLimits[j].Name
+	sort.Slice(hostnamesAccessControls, func(i, j int) bool {
+		if hostnamesAccessControls[i].CreationTimestamp.Time.Equal(hostnamesAccessControls[j].CreationTimestamp.Time) {
+			return hostnamesAccessControls[i].Name < hostnamesAccessControls[j].Name
 		}
 
-		return hostnamesRateLimits[i].CreationTimestamp.Time.Before(hostnamesRateLimits[j].CreationTimestamp.Time)
+		return hostnamesAccessControls[i].CreationTimestamp.Time.Before(hostnamesAccessControls[j].CreationTimestamp.Time)
 	})
-	sort.Slice(routeRateLimits, func(i, j int) bool {
-		if routeRateLimits[i].CreationTimestamp.Time.Equal(routeRateLimits[j].CreationTimestamp.Time) {
-			return routeRateLimits[i].Name < routeRateLimits[j].Name
+	sort.Slice(routeAccessControls, func(i, j int) bool {
+		if routeAccessControls[i].CreationTimestamp.Time.Equal(routeAccessControls[j].CreationTimestamp.Time) {
+			return routeAccessControls[i].Name < routeAccessControls[j].Name
 		}
 
-		return routeRateLimits[i].CreationTimestamp.Time.Before(routeRateLimits[j].CreationTimestamp.Time)
+		return routeAccessControls[i].CreationTimestamp.Time.Before(routeAccessControls[j].CreationTimestamp.Time)
 	})
 
 	switch route := route.(type) {
@@ -311,10 +311,10 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 			generation: route.Generation,
 			hostnames:  route.Spec.Hostnames,
 		}
-		if conflict := r.getConflictedHostnamesBasedRateLimitPolicy(info, rateLimitPolicy, hostnamesRateLimits); conflict != nil {
+		if conflict := r.getConflictedHostnamesBasedAccessControlPolicy(info, accessControlPolicy, hostnamesAccessControls); conflict != nil {
 			return conflict
 		}
-		if conflict := r.getConflictedRouteBasedRateLimitPolicy(route, rateLimitPolicy, routeRateLimits); conflict != nil {
+		if conflict := r.getConflictedRouteBasedAccessControlPolicy(route, accessControlPolicy, routeAccessControls); conflict != nil {
 			return conflict
 		}
 
@@ -326,10 +326,10 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 			generation: route.Generation,
 			hostnames:  route.Spec.Hostnames,
 		}
-		if conflict := r.getConflictedHostnamesBasedRateLimitPolicy(info, rateLimitPolicy, hostnamesRateLimits); conflict != nil {
+		if conflict := r.getConflictedHostnamesBasedAccessControlPolicy(info, accessControlPolicy, hostnamesAccessControls); conflict != nil {
 			return conflict
 		}
-		if conflict := r.getConflictedRouteBasedRateLimitPolicy(route, rateLimitPolicy, routeRateLimits); conflict != nil {
+		if conflict := r.getConflictedRouteBasedAccessControlPolicy(route, accessControlPolicy, routeAccessControls); conflict != nil {
 			return conflict
 		}
 	}
@@ -337,8 +337,8 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route routeInfo, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, hostnamesRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
+func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControlPolicy(route routeInfo, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, hostnamesAccessControls []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
+	if len(accessControlPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
@@ -361,13 +361,13 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 					continue
 				}
 				for _, hostname := range hostnames {
-					for _, hr := range hostnamesRateLimits {
-						r1 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
+					for _, hr := range hostnamesAccessControls {
+						r1 := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *rateLimitPolicy)
+						r2 := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *accessControlPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -389,9 +389,9 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route client.Object, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, routeRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 &&
-		len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
+func (r *accessControlPolicyReconciler) getConflictedRouteBasedAccessControlPolicy(route client.Object, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, routeAccessControls []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
+	if len(accessControlPolicy.Spec.HTTPAccessControls) == 0 &&
+		len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
 		return nil
 	}
 
@@ -399,17 +399,17 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 	case *gwv1beta1.HTTPRoute:
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
-				for _, rateLimit := range routeRateLimits {
-					if len(rateLimit.Spec.HTTPRateLimits) == 0 {
+				for _, accessControl := range routeAccessControls {
+					if len(accessControl.Spec.HTTPAccessControls) == 0 {
 						continue
 					}
 
-					r1 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit)
+					r1 := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, accessControl)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, *rateLimitPolicy)
+					r2 := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *accessControlPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -419,8 +419,8 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 					}
 
 					return &types.NamespacedName{
-						Name:      rateLimit.Name,
-						Namespace: rateLimit.Namespace,
+						Name:      accessControl.Name,
+						Namespace: accessControl.Namespace,
 					}
 				}
 			}
@@ -428,17 +428,17 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 	case *gwv1alpha2.GRPCRoute:
 		for _, rule := range route.Spec.Rules {
 			for _, m := range rule.Matches {
-				for _, rr := range routeRateLimits {
-					if len(rr.Spec.GRPCRateLimits) == 0 {
+				for _, rr := range routeAccessControls {
+					if len(rr.Spec.GRPCAccessControls) == 0 {
 						continue
 					}
 
-					r1 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, rr)
+					r1 := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, rr)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, *rateLimitPolicy)
+					r2 := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *accessControlPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -459,28 +459,28 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies *gwpav1alpha1.RateLimitPolicyList) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Ports) == 0 {
+func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies *gwpav1alpha1.AccessControlPolicyList) *types.NamespacedName {
+	if len(accessControlPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
-	for _, pr := range allRateLimitPolicies.Items {
+	for _, pr := range allAccessControlPolicies.Items {
 		if gwutils.IsAcceptedPolicyAttachment(pr.Status.Conditions) &&
 			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
 			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
+				r1 := gwutils.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, *rateLimitPolicy)
+				r2 := gwutils.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *accessControlPolicy)
 				if r2 == nil {
 					continue
 				}
 
-				if *r1 == *r2 {
+				if reflect.DeepEqual(r1, r2) {
 					continue
 				}
 
@@ -496,8 +496,8 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *rateLimitPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *accessControlPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gwpav1alpha1.RateLimitPolicy{}).
+		For(&gwpav1alpha1.AccessControlPolicy{}).
 		Complete(r)
 }

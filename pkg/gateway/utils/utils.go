@@ -92,20 +92,8 @@ func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
-func IsAcceptedRateLimitPolicy(policy *gwpav1alpha1.RateLimitPolicy) bool {
-	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
-}
-
-func IsAcceptedSessionStickyPolicy(policy *gwpav1alpha1.SessionStickyPolicy) bool {
-	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
-}
-
-func IsAcceptedLoadBalancerPolicy(policy *gwpav1alpha1.LoadBalancerPolicy) bool {
-	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
-}
-
-func IsAcceptedCircuitBreakingPolicy(policy *gwpav1alpha1.CircuitBreakingPolicy) bool {
-	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+func IsAcceptedPolicyAttachment(conditions []metav1.Condition) bool {
+	return metautil.IsStatusConditionTrue(conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
 
 // IsRefToGateway returns true if the parent reference is to the gateway
@@ -390,6 +378,25 @@ func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, 
 	return nil
 }
 
+// GetAccessControlConfigIfPortMatchesPolicy returns true if the port matches the access control policy
+func GetAccessControlConfigIfPortMatchesPolicy(port gwv1beta1.PortNumber, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(accessControlPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	for _, policyPort := range accessControlPolicy.Spec.Ports {
+		if port == policyPort.Port {
+			if policyPort.Config != nil {
+				return policyPort.Config
+			}
+
+			return accessControlPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
 // GetRateLimitIfPortMatchesPolicy returns true if the port matches the rate limit policy
 func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
 	if len(rateLimitPolicy.Spec.Ports) == 0 {
@@ -460,6 +467,76 @@ func GetCircuitBreakingConfigIfPortMatchesPolicy(port int32, sessionStickyPolicy
 			}
 
 			return sessionStickyPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
+// GetAccessControlConfigIfRouteHostnameMatchesPolicy returns the access control config if the route hostname matches the policy
+func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(accessControlPolicy.Spec.Hostnames) == 0 {
+		return nil
+	}
+
+	for i := range accessControlPolicy.Spec.Hostnames {
+		hostname := string(accessControlPolicy.Spec.Hostnames[i].Hostname)
+		config := accessControlPolicy.Spec.Hostnames[i].Config
+		if config == nil {
+			config = accessControlPolicy.Spec.DefaultConfig
+		}
+
+		switch {
+		case routeHostname == hostname:
+			return config
+
+		case strings.HasPrefix(routeHostname, "*"):
+			if HostnameMatchesWildcardHostname(hostname, routeHostname) {
+				return config
+			}
+
+		case strings.HasPrefix(hostname, "*"):
+			if HostnameMatchesWildcardHostname(routeHostname, hostname) {
+				return config
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetAccessControlConfigIfHTTPRouteMatchesPolicy returns the access control config if the HTTP route matches the policy
+func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(rateLimitPolicy.Spec.HTTPAccessControls) == 0 {
+		return nil
+	}
+
+	for _, hr := range rateLimitPolicy.Spec.HTTPAccessControls {
+		if reflect.DeepEqual(routeMatch, hr.Match) {
+			if hr.Config != nil {
+				return hr.Config
+			}
+
+			return rateLimitPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
+// GetAccessControlConfigIfGRPCRouteMatchesPolicy returns the access control config if the GRPC route matches the policy
+func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(rateLimitPolicy.Spec.GRPCAccessControls) == 0 {
+		return nil
+	}
+
+	for _, gr := range rateLimitPolicy.Spec.GRPCAccessControls {
+		if reflect.DeepEqual(routeMatch, gr.Match) {
+			if gr.Config != nil {
+				return gr.Config
+			}
+
+			return rateLimitPolicy.Spec.DefaultConfig
 		}
 	}
 
