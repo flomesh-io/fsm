@@ -33,51 +33,52 @@ type PortCircuitBreaking struct {
 type CircuitBreakingConfig struct {
 	// +kubebuilder:validation:Minimum=1
 	// MinRequestAmount is the minimum number of requests in the StatTimeWindow
-	MinRequestAmount int32 `json:"MinRequestAmount"`
+	MinRequestAmount int32 `json:"minRequestAmount"`
 
 	// +kubebuilder:validation:Minimum=1
 	// StatTimeWindow is the time window in seconds to collect statistics
-	StatTimeWindow int32 `json:"StatTimeWindow"`
+	StatTimeWindow int32 `json:"statTimeWindow"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=0.0001
 	// SlowTimeThreshold is the threshold in seconds to determine a slow request
-	SlowTimeThreshold *float32 `json:"SlowTimeThreshold"`
+	SlowTimeThreshold *float32 `json:"slowTimeThreshold,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=1
 	// SlowAmountThreshold is the threshold of slow requests in the StatTimeWindow to trigger circuit breaking
-	SlowAmountThreshold *int32 `json:"SlowAmountThreshold"`
+	SlowAmountThreshold *int32 `json:"slowAmountThreshold,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=0.00
 	// +kubebuilder:validation:Maximum=1.00
 	// SlowRatioThreshold is the threshold of slow requests ratio in the StatTimeWindow to trigger circuit breaking
-	SlowRatioThreshold *float32 `json:"SlowRatioThreshold"`
+	SlowRatioThreshold *float32 `json:"slowRatioThreshold,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=1
 	// ErrorAmountThreshold is the threshold of error requests in the StatTimeWindow to trigger circuit breaking
-	ErrorAmountThreshold *int32 `json:"ErrorAmountThreshold"`
+	ErrorAmountThreshold *int32 `json:"errorAmountThreshold,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=0.00
 	// +kubebuilder:validation:Maximum=1.00
 	// ErrorRatioThreshold is the threshold of error requests ratio in the StatTimeWindow to trigger circuit breaking
-	ErrorRatioThreshold *float32 `json:"ErrorRatioThreshold"`
+	ErrorRatioThreshold *float32 `json:"errorRatioThreshold,omitempty"`
 
 	// +kubebuilder:validation:Minimum=1
 	// DegradedTimeWindow is the time window in seconds to degrade the service
-	DegradedTimeWindow int32 `json:"DegradedTimeWindow"`
+	DegradedTimeWindow int32 `json:"degradedTimeWindow"`
 
+	// +kubebuilder:default=503
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=10000
 	// DegradedStatusCode is the status code to return when the service is degraded
-	DegradedStatusCode int32 `json:"DegradedStatusCode"`
+	DegradedStatusCode int32 `json:"degradedStatusCode"`
 
 	// +optional
 	// DegradedResponseContent is the response content to return when the service is degraded
-	DegradedResponseContent *string `json:"DegradedResponseContent"`
+	DegradedResponseContent *string `json:"degradedResponseContent,omitempty"`
 }
 
 // CircuitBreakingPolicyStatus defines the observed state of CircuitBreakingPolicy

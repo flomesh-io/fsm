@@ -41,69 +41,70 @@ spec:
                 description: DefaultConfig is the default circuit breaking configuration
                   for all ports
                 properties:
-                  DegradedResponseContent:
+                  degradedResponseContent:
                     description: DegradedResponseContent is the response content to
                       return when the service is degraded
                     type: string
-                  DegradedStatusCode:
+                  degradedStatusCode:
+                    default: 503
                     description: DegradedStatusCode is the status code to return when
                       the service is degraded
                     format: int32
                     maximum: 10000
                     minimum: 1
                     type: integer
-                  DegradedTimeWindow:
+                  degradedTimeWindow:
                     description: DegradedTimeWindow is the time window in seconds
                       to degrade the service
                     format: int32
                     minimum: 1
                     type: integer
-                  ErrorAmountThreshold:
+                  errorAmountThreshold:
                     description: ErrorAmountThreshold is the threshold of error requests
                       in the StatTimeWindow to trigger circuit breaking
                     format: int32
                     minimum: 1
                     type: integer
-                  ErrorRatioThreshold:
+                  errorRatioThreshold:
                     description: ErrorRatioThreshold is the threshold of error requests
                       ratio in the StatTimeWindow to trigger circuit breaking
                     maximum: 1
                     minimum: 0
                     type: number
-                  MinRequestAmount:
+                  minRequestAmount:
                     description: MinRequestAmount is the minimum number of requests
                       in the StatTimeWindow
                     format: int32
                     minimum: 1
                     type: integer
-                  SlowAmountThreshold:
+                  slowAmountThreshold:
                     description: SlowAmountThreshold is the threshold of slow requests
                       in the StatTimeWindow to trigger circuit breaking
                     format: int32
                     minimum: 1
                     type: integer
-                  SlowRatioThreshold:
+                  slowRatioThreshold:
                     description: SlowRatioThreshold is the threshold of slow requests
                       ratio in the StatTimeWindow to trigger circuit breaking
                     maximum: 1
                     minimum: 0
                     type: number
-                  SlowTimeThreshold:
+                  slowTimeThreshold:
                     description: SlowTimeThreshold is the threshold in seconds to
                       determine a slow request
                     minimum: 0.0001
                     type: number
-                  StatTimeWindow:
+                  statTimeWindow:
                     description: StatTimeWindow is the time window in seconds to collect
                       statistics
                     format: int32
                     minimum: 1
                     type: integer
                 required:
-                - DegradedStatusCode
-                - DegradedTimeWindow
-                - MinRequestAmount
-                - StatTimeWindow
+                - degradedStatusCode
+                - degradedTimeWindow
+                - minRequestAmount
+                - statTimeWindow
                 type: object
               ports:
                 description: Ports is the circuit breaking configuration for ports
@@ -113,71 +114,72 @@ spec:
                       description: Config is the circuit breaking configuration for
                         the port
                       properties:
-                        DegradedResponseContent:
+                        degradedResponseContent:
                           description: DegradedResponseContent is the response content
                             to return when the service is degraded
                           type: string
-                        DegradedStatusCode:
+                        degradedStatusCode:
+                          default: 503
                           description: DegradedStatusCode is the status code to return
                             when the service is degraded
                           format: int32
                           maximum: 10000
                           minimum: 1
                           type: integer
-                        DegradedTimeWindow:
+                        degradedTimeWindow:
                           description: DegradedTimeWindow is the time window in seconds
                             to degrade the service
                           format: int32
                           minimum: 1
                           type: integer
-                        ErrorAmountThreshold:
+                        errorAmountThreshold:
                           description: ErrorAmountThreshold is the threshold of error
                             requests in the StatTimeWindow to trigger circuit breaking
                           format: int32
                           minimum: 1
                           type: integer
-                        ErrorRatioThreshold:
+                        errorRatioThreshold:
                           description: ErrorRatioThreshold is the threshold of error
                             requests ratio in the StatTimeWindow to trigger circuit
                             breaking
                           maximum: 1
                           minimum: 0
                           type: number
-                        MinRequestAmount:
+                        minRequestAmount:
                           description: MinRequestAmount is the minimum number of requests
                             in the StatTimeWindow
                           format: int32
                           minimum: 1
                           type: integer
-                        SlowAmountThreshold:
+                        slowAmountThreshold:
                           description: SlowAmountThreshold is the threshold of slow
                             requests in the StatTimeWindow to trigger circuit breaking
                           format: int32
                           minimum: 1
                           type: integer
-                        SlowRatioThreshold:
+                        slowRatioThreshold:
                           description: SlowRatioThreshold is the threshold of slow
                             requests ratio in the StatTimeWindow to trigger circuit
                             breaking
                           maximum: 1
                           minimum: 0
                           type: number
-                        SlowTimeThreshold:
+                        slowTimeThreshold:
                           description: SlowTimeThreshold is the threshold in seconds
                             to determine a slow request
                           minimum: 0.0001
                           type: number
-                        StatTimeWindow:
+                        statTimeWindow:
                           description: StatTimeWindow is the time window in seconds
                             to collect statistics
                           format: int32
                           minimum: 1
                           type: integer
                       required:
-                      - DegradedStatusCode
-                      - DegradedTimeWindow
-                      - MinRequestAmount
-                      - StatTimeWindow
+                      - degradedStatusCode
+                      - degradedTimeWindow
+                      - minRequestAmount
+                      - statTimeWindow
                       type: object
                     port:
                       description: Port is the port number of the target service
