@@ -836,9 +836,11 @@ spec:
     kind: Service
     name: httpbin
     namespace: httpbin
-  port: 8080
-  cookieName: xxx
-  expires: 600
+  ports:
+  - port: 8080
+    config:
+      cookieName: xxx
+      expires: 600
 EOF
 ```
 
@@ -856,7 +858,8 @@ spec:
     kind: Service
     name: httpbin
     namespace: httpbin
-  port: 8080
-  type: HashingLoadBalancer
+  ports:
+    - port: 8080
+      type: HashingLoadBalancer
 EOF
 ```
