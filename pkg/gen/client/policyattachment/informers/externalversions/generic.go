@@ -50,6 +50,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=gateway.flomesh.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("accesscontrolpolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().AccessControlPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("circuitbreakingpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("loadbalancerpolicies"):

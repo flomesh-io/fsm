@@ -25,6 +25,7 @@ import (
 
 type GatewayV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	AccessControlPoliciesGetter
 	CircuitBreakingPoliciesGetter
 	LoadBalancerPoliciesGetter
 	RateLimitPoliciesGetter
@@ -34,6 +35,10 @@ type GatewayV1alpha1Interface interface {
 // GatewayV1alpha1Client is used to interact with features provided by the gateway.flomesh.io group.
 type GatewayV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *GatewayV1alpha1Client) AccessControlPolicies(namespace string) AccessControlPolicyInterface {
+	return newAccessControlPolicies(c, namespace)
 }
 
 func (c *GatewayV1alpha1Client) CircuitBreakingPolicies(namespace string) CircuitBreakingPolicyInterface {

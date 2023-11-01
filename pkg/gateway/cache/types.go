@@ -85,6 +85,9 @@ const (
 
 	// CircuitBreakingPoliciesProcessorType is the type used to represent the circuit breaking policies processor
 	CircuitBreakingPoliciesProcessorType ProcessorType = "circuitbreakings"
+
+	// AccessControlPoliciesProcessorType is the type used to represent the access control policies processor
+	AccessControlPoliciesProcessorType ProcessorType = "accesscontrols"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -124,9 +127,19 @@ const (
 	RateLimitPolicyMatchTypeRoute RateLimitPolicyMatchType = "route"
 )
 
-//type policyAttachments struct {
-//	rateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy
-//}
+// AccessControlPolicyMatchType is the type used to represent the rate limit policy match type
+type AccessControlPolicyMatchType string
+
+const (
+	// AccessControlPolicyMatchTypePort is the type used to represent the rate limit policy match type port
+	AccessControlPolicyMatchTypePort AccessControlPolicyMatchType = "port"
+
+	// AccessControlPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
+	AccessControlPolicyMatchTypeHostnames AccessControlPolicyMatchType = "hostnames"
+
+	// AccessControlPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
+	AccessControlPolicyMatchTypeRoute AccessControlPolicyMatchType = "route"
+)
 
 var (
 	log = logger.New("fsm-gateway/cache")
@@ -222,5 +235,6 @@ var (
 	rateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
 	sessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
 	loadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
-	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
+	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.CircuitBreakingPolicyKind)
+	accessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.AccessControlPolicyKind)
 )

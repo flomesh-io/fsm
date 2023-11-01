@@ -337,7 +337,7 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 				}
 			}
 
-			if len(policy.Spec.Hostnames) > 0 {
+			if len(policy.Spec.GRPCRateLimits) > 0 {
 				path := field.NewPath("spec").Child("grpc")
 				for i, g := range policy.Spec.GRPCRateLimits {
 					if g.RateLimit == nil {

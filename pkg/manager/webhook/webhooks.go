@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/webhook/accesscontrol"
+
 	"github.com/flomesh-io/fsm/pkg/version"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -258,6 +260,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, sessionsticky.NewRegister(regCfg))
 		result = append(result, loadbalancer.NewRegister(regCfg))
 		result = append(result, circuitbreaking.NewRegister(regCfg))
+		result = append(result, accesscontrol.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {

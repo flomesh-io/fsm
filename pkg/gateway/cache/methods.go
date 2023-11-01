@@ -210,7 +210,7 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 	return false
 }
 
-func (c *GatewayCache) isEffectiveRateLimitPolicy(targetRef gwv1alpha2.PolicyTargetReference) bool {
+func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetReference) bool {
 	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
 	}
@@ -440,6 +440,17 @@ func (c *GatewayCache) getCircuitBreakingPolicyFromCache(key client.ObjectKey) (
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(circuitBreakingPolicyGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getAccessControlPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.AccessControlPolicy, error) {
+	obj, err := c.informers.GetListers().AccessControlPolicy.AccessControlPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(accessControlPolicyGVK)
 
 	return obj, nil
 }

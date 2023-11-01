@@ -162,8 +162,7 @@ func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, p
 
 		loadBalancers := make([]gwpav1alpha1.LoadBalancerPolicy, 0)
 		for _, p := range loadBalancerPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedLoadBalancerPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
 				loadBalancers = append(loadBalancers, p)
 			}
@@ -227,8 +226,7 @@ func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, p
 
 		loadBalancers := make([]gwpav1alpha1.LoadBalancerPolicy, 0)
 		for _, p := range loadBalancerPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedLoadBalancerPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
 				loadBalancers = append(loadBalancers, p)
 			}

@@ -161,24 +161,23 @@ func (r *circuitBreakingPolicyReconciler) getStatusCondition(ctx context.Context
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
+		circuitBreakings := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
 		for _, p := range circuitBreakingPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedCircuitBreakingPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				sessionStickies = append(sessionStickies, p)
+				circuitBreakings = append(circuitBreakings, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(circuitBreakings, func(i, j int) bool {
+			if circuitBreakings[i].CreationTimestamp.Time.Equal(circuitBreakings[j].CreationTimestamp.Time) {
+				return circuitBreakings[i].Name < circuitBreakings[j].Name
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return circuitBreakings[i].CreationTimestamp.Time.Before(circuitBreakings[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByService(policy, sessionStickies, svc); conflict != nil {
+		if conflict := r.getConflictedPolicyByService(policy, circuitBreakings, svc); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -228,8 +227,7 @@ func (r *circuitBreakingPolicyReconciler) getStatusCondition(ctx context.Context
 
 		sessionStickies := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
 		for _, p := range circuitBreakingPolicyList.Items {
-			p := p
-			if gwutils.IsAcceptedCircuitBreakingPolicy(&p) &&
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
 				sessionStickies = append(sessionStickies, p)
 			}

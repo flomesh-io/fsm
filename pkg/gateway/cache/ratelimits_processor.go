@@ -20,7 +20,7 @@ func (p *RateLimitPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache
 
 	cache.ratelimits[utils.ObjectKey(policy)] = struct{}{}
 
-	return cache.isEffectiveRateLimitPolicy(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
 }
 
 // Delete removes a RateLimitPolicy from the cache and returns true if the policy was found

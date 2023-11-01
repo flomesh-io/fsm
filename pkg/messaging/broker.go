@@ -803,6 +803,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
 		// CircuitBreakingPolicy event
 		announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
+		// AccessControlPolicy event
+		announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
 
 		//
 		// MultiCluster events

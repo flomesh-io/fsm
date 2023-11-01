@@ -38,6 +38,7 @@ type GatewayCache struct {
 	sessionstickies  map[client.ObjectKey]struct{}
 	loadbalancers    map[client.ObjectKey]struct{}
 	circuitbreakings map[client.ObjectKey]struct{}
+	accesscontrols   map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -67,13 +68,14 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			SessionStickyPoliciesProcessorType:   &SessionStickyPoliciesProcessor{},
 			LoadBalancerPoliciesProcessorType:    &LoadBalancerPoliciesProcessor{},
 			CircuitBreakingPoliciesProcessorType: &CircuitBreakingPoliciesProcessor{},
+			AccessControlPoliciesProcessorType:   &AccessControlPoliciesProcessor{},
 		},
 
-		gateways:       make(map[string]client.ObjectKey),
-		services:       make(map[client.ObjectKey]struct{}),
-		serviceimports: make(map[client.ObjectKey]struct{}),
-		endpointslices: make(map[client.ObjectKey]map[client.ObjectKey]struct{}),
 		//endpoints:      make(map[client.ObjectKey]struct{}),
+		gateways:         make(map[string]client.ObjectKey),
+		services:         make(map[client.ObjectKey]struct{}),
+		serviceimports:   make(map[client.ObjectKey]struct{}),
+		endpointslices:   make(map[client.ObjectKey]map[client.ObjectKey]struct{}),
 		secrets:          make(map[client.ObjectKey]struct{}),
 		httproutes:       make(map[client.ObjectKey]struct{}),
 		grpcroutes:       make(map[client.ObjectKey]struct{}),
@@ -83,6 +85,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		sessionstickies:  make(map[client.ObjectKey]struct{}),
 		loadbalancers:    make(map[client.ObjectKey]struct{}),
 		circuitbreakings: make(map[client.ObjectKey]struct{}),
+		accesscontrols:   make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}

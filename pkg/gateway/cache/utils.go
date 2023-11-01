@@ -592,6 +592,16 @@ func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit
 	}
 }
 
+func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.AccessControlLists {
+	return &routecfg.AccessControlLists{
+		Blacklist:  c.Blacklist,
+		Whitelist:  c.Whitelist,
+		EnableXFF:  c.EnableXFF,
+		StatusCode: c.StatusCode,
+		Message:    c.Message,
+	}
+}
+
 func insertAgentServiceScript(chains []string) []string {
 	httpCodecIndex := slices.Index(chains, httpCodecScript)
 	if httpCodecIndex != -1 {
