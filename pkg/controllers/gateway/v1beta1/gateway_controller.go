@@ -272,27 +272,29 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		return ctrl.Result{}, err
 	}
 
-	if lbSvc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		if len(lbSvc.Status.LoadBalancer.Ingress) > 0 {
-			addresses := gatewayAddresses(activeGateway, lbSvc)
-			if len(addresses) > 0 {
-				activeGateway.Status.Addresses = addresses
-				if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
-					//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
+	if lbSvc.Spec.Type != corev1.ServiceTypeLoadBalancer {
+		return ctrl.Result{}, nil
+	}
 
-					return ctrl.Result{}, err
-				}
-			}
+	if len(lbSvc.Status.LoadBalancer.Ingress) == 0 {
+		if len(activeGateway.Status.Addresses) == 0 {
+			defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
+		}
 
-			defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
-		} else {
-			if len(activeGateway.Status.Addresses) == 0 {
-				defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
+		return ctrl.Result{Requeue: true}, nil
+	}
 
-				return ctrl.Result{Requeue: true}, nil
-			}
+	addresses := gatewayAddresses(activeGateway, lbSvc)
+	if len(addresses) > 0 {
+		activeGateway.Status.Addresses = addresses
+		if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
+			//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
+
+			return ctrl.Result{}, err
 		}
 	}
+
+	defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
 
 	// if there's any previous active gateways and has been assigned addresses, clean it up
 	gatewayList := &gwv1beta1.GatewayList{}
