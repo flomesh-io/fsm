@@ -149,7 +149,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	result, err = r.updateGatewayAddresses(ctx, gateway)
-	if err != nil {
+	if err != nil || result.RequeueAfter > 0 || result.Requeue {
 		return result, err
 	}
 
@@ -272,27 +272,33 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		return ctrl.Result{}, err
 	}
 
-	if lbSvc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		if len(lbSvc.Status.LoadBalancer.Ingress) > 0 {
-			addresses := gatewayAddresses(activeGateway, lbSvc)
-			if len(addresses) > 0 {
-				activeGateway.Status.Addresses = addresses
-				if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
-					//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
+	if lbSvc.Spec.Type != corev1.ServiceTypeLoadBalancer {
+		return ctrl.Result{}, nil
+	}
 
-					return ctrl.Result{}, err
-				}
-			}
+	if len(lbSvc.Status.LoadBalancer.Ingress) == 0 {
+		log.Debug().Msgf("[GW] No ingress IPs found for service %s/%s", lbSvc.Namespace, lbSvc.Name)
+		if len(activeGateway.Status.Addresses) == 0 {
+			log.Debug().Msgf("[GW] No addresses found for gateway %s/%s", activeGateway.Namespace, activeGateway.Name)
+			defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
+		}
 
-			defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
-		} else {
-			if len(activeGateway.Status.Addresses) == 0 {
-				defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway has not been assigned yet")
+		log.Debug().Msgf("[GW] Requeue gateway %s/%s after 3 second", activeGateway.Namespace, activeGateway.Name)
+		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+	}
 
-				return ctrl.Result{Requeue: true}, nil
-			}
+	addresses := gatewayAddresses(activeGateway, lbSvc)
+	if len(addresses) > 0 {
+		log.Debug().Msgf("[GW] Addresses of gateway %s/%s will be updated to: %s", activeGateway.Namespace, activeGateway.Name, strings.Join(addressesToStrings(addresses), ","))
+		activeGateway.Status.Addresses = addresses
+		if err := r.fctx.Status().Update(ctx, activeGateway); err != nil {
+			//defer r.recorder.Eventf(activeGateway, corev1.EventTypeWarning, "UpdateAddresses", "Failed to update addresses of gateway: %s", err)
+
+			return ctrl.Result{}, err
 		}
 	}
+
+	defer r.recorder.Eventf(activeGateway, corev1.EventTypeNormal, "UpdateAddresses", "Addresses of gateway is updated: %s", strings.Join(addressesToStrings(addresses), ","))
 
 	// if there's any previous active gateways and has been assigned addresses, clean it up
 	gatewayList := &gwv1beta1.GatewayList{}
