@@ -86,6 +86,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyRateLimitPolicy,
 		fsminformers.InformerKeySessionStickyPolicy,
 		fsminformers.InformerKeyLoadBalancerPolicy,
+		fsminformers.InformerKeyCircuitBreakingPolicy,
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
@@ -214,6 +215,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeySessionStickyPolicy)
 	case *gwpav1alpha1.LoadBalancerPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyLoadBalancerPolicy)
+	case *gwpav1alpha1.CircuitBreakingPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyCircuitBreakingPolicy)
 	}
 
 	return nil
@@ -298,6 +301,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.LoadBalancerPolicyAdded,
 			Update: announcements.LoadBalancerPolicyUpdated,
 			Delete: announcements.LoadBalancerPolicyDeleted,
+		}
+	case fsminformers.InformerKeyCircuitBreakingPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.CircuitBreakingPolicyAdded,
+			Update: announcements.CircuitBreakingPolicyUpdated,
+			Delete: announcements.CircuitBreakingPolicyDeleted,
 		}
 	}
 

@@ -430,6 +430,9 @@ const (
 
 	// LoadBalancerPolicyKind is the kind name of LoadBalancerPolicy used in Flomesh API
 	LoadBalancerPolicyKind = "LoadBalancerPolicy"
+
+	// CircuitBreakingPolicyKind is the kind name of CircuitBreakingPolicy used in Flomesh API
+	CircuitBreakingPolicyKind = "CircuitBreakingPolicy"
 )
 
 // Gateway API constants
@@ -502,6 +505,12 @@ const (
 
 	// LoadBalancerPolicyValidatingWebhookPath is the path at which the LoadBalancerPolicy validating webhook is served
 	LoadBalancerPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-loadbalancerpolicy"
+
+	// CircuitBreakingPolicyMutatingWebhookPath is the path at which the CircuitBreakingPolicy mutating webhook is served
+	CircuitBreakingPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-circuitbreakingpolicy"
+
+	// CircuitBreakingPolicyValidatingWebhookPath is the path at which the CircuitBreakingPolicy validating webhook is served
+	CircuitBreakingPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-circuitbreakingpolicy"
 )
 
 // PIPY Repo constants
