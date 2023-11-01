@@ -863,3 +863,28 @@ spec:
       type: HashingLoadBalancer
 EOF
 ```
+
+### Test CircuitBreakingPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: CircuitBreakingPolicy
+metadata:
+  name: circuit-breaking-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+    namespace: httpbin
+  ports:
+    - port: 8080
+      config: 
+        minRequestAmount: 10
+        statTimeWindow: 60
+        degradedTimeWindow: 60
+        degradedStatusCode: 503
+        degradedResponseContent: "Service Unavailable"
+EOF
+```
