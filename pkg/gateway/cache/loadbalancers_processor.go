@@ -6,11 +6,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// LoadBalancerPoliciesProcessor is responsible for processing TLSRoute objects
+// LoadBalancerPoliciesProcessor is responsible for processing LoadBalancerPolicy objects
 type LoadBalancerPoliciesProcessor struct {
 }
 
-// Insert adds a TLSRoute to the cache and returns true if the route is effective
+// Insert adds a LoadBalancerPolicy to the cache and returns true if the target service is routable
 func (p *LoadBalancerPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.LoadBalancerPolicy)
 	if !ok {
@@ -23,7 +23,7 @@ func (p *LoadBalancerPoliciesProcessor) Insert(obj interface{}, cache *GatewayCa
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
-// Delete removes a TLSRoute from the cache and returns true if the route was found
+// Delete removes a LoadBalancerPolicy from the cache and returns true if the policy was found
 func (p *LoadBalancerPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.LoadBalancerPolicy)
 	if !ok {

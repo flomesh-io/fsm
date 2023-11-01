@@ -43,6 +43,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&SessionStickyPolicyList{},
 		&LoadBalancerPolicy{},
 		&LoadBalancerPolicyList{},
+		&CircuitBreakingPolicy{},
+		&CircuitBreakingPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

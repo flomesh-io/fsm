@@ -6,11 +6,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// RateLimitPoliciesProcessor is responsible for processing TLSRoute objects
+// RateLimitPoliciesProcessor is responsible for processing RateLimitPolicy objects
 type RateLimitPoliciesProcessor struct {
 }
 
-// Insert adds a TLSRoute to the cache and returns true if the route is effective
+// Insert adds a RateLimitPolicy to the cache and returns true if the target service is routable
 func (p *RateLimitPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.RateLimitPolicy)
 	if !ok {
@@ -23,7 +23,7 @@ func (p *RateLimitPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache
 	return cache.isEffectiveRateLimitPolicy(policy.Spec.TargetRef)
 }
 
-// Delete removes a TLSRoute from the cache and returns true if the route was found
+// Delete removes a RateLimitPolicy from the cache and returns true if the policy was found
 func (p *RateLimitPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.RateLimitPolicy)
 	if !ok {

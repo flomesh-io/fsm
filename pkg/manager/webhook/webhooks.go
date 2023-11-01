@@ -41,6 +41,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/webhook"
+	"github.com/flomesh-io/fsm/pkg/webhook/circuitbreaking"
 	"github.com/flomesh-io/fsm/pkg/webhook/cluster"
 	flbsecret "github.com/flomesh-io/fsm/pkg/webhook/flb/secret"
 	flbservice "github.com/flomesh-io/fsm/pkg/webhook/flb/service"
@@ -256,6 +257,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, ratelimit.NewRegister(regCfg))
 		result = append(result, sessionsticky.NewRegister(regCfg))
 		result = append(result, loadbalancer.NewRegister(regCfg))
+		result = append(result, circuitbreaking.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {

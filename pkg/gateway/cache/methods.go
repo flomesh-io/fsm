@@ -40,12 +40,12 @@ func (c *GatewayCache) Delete(obj interface{}) bool {
 
 func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 	switch obj.(type) {
+	//case *corev1.Endpoints:
+	//	return c.processors[EndpointsProcessorType]
 	case *corev1.Service:
 		return c.processors[ServicesProcessorType]
 	case *mcsv1alpha1.ServiceImport:
 		return c.processors[ServiceImportsProcessorType]
-	//case *corev1.Endpoints:
-	//	return c.processors[EndpointsProcessorType]
 	case *discoveryv1.EndpointSlice:
 		return c.processors[EndpointSlicesProcessorType]
 	case *corev1.Secret:
@@ -68,6 +68,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[SessionStickyPoliciesProcessorType]
 	case *gwpav1alpha1.LoadBalancerPolicy:
 		return c.processors[LoadBalancerPoliciesProcessorType]
+	case *gwpav1alpha1.CircuitBreakingPolicy:
+		return c.processors[CircuitBreakingPoliciesProcessorType]
 	}
 
 	return nil
@@ -427,6 +429,17 @@ func (c *GatewayCache) getLoadBalancerPolicyFromCache(key client.ObjectKey) (*gw
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(loadBalancerPolicyGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getCircuitBreakingPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.CircuitBreakingPolicy, error) {
+	obj, err := c.informers.GetListers().CircuitBreakingPolicy.CircuitBreakingPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(circuitBreakingPolicyGVK)
 
 	return obj, nil
 }

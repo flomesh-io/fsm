@@ -66,6 +66,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(SessionSticky)"] = pav1alpha1.NewSessionStickyPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(LoadBalancer)"] = pav1alpha1.NewLoadBalancerPolicyReconciler(ctx)
+		reconcilers["PolicyAttachment(CircuitBreaking)"] = pav1alpha1.NewCircuitBreakingPolicyReconciler(ctx)
 	}
 
 	if mc.IsNamespacedIngressEnabled() {
