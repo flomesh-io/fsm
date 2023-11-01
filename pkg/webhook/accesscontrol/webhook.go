@@ -259,12 +259,12 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 func validateConfig(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 	errs := validateL4AccessControl(policy)
 	errs = append(errs, validateL7AccessControl(policy)...)
-	errs = append(errs, validateIPs(policy)...)
+	errs = append(errs, validateDetails(policy)...)
 
 	return errs
 }
 
-func validateIPs(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
+func validateDetails(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 	var errs field.ErrorList
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
@@ -279,6 +279,7 @@ func validateIPs(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 			for i, p := range policy.Spec.Ports {
 				if p.Config != nil {
 					path := field.NewPath("spec").Child("ports").Index(i).Child("config")
+					errs = append(errs, validateACLs(path, p.Config)...)
 					errs = append(errs, validateIPAddresses(path, p.Config)...)
 				}
 			}
@@ -288,6 +289,7 @@ func validateIPs(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 			for i, h := range policy.Spec.Hostnames {
 				if h.Config != nil {
 					path := field.NewPath("spec").Child("hostnames").Index(i).Child("config")
+					errs = append(errs, validateACLs(path, h.Config)...)
 					errs = append(errs, validateIPAddresses(path, h.Config)...)
 				}
 			}
@@ -297,6 +299,7 @@ func validateIPs(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 			for i, h := range policy.Spec.HTTPAccessControls {
 				if h.Config != nil {
 					path := field.NewPath("spec").Child("http").Index(i).Child("config")
+					errs = append(errs, validateACLs(path, h.Config)...)
 					errs = append(errs, validateIPAddresses(path, h.Config)...)
 				}
 			}
@@ -306,10 +309,21 @@ func validateIPs(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 			for i, g := range policy.Spec.GRPCAccessControls {
 				if g.Config != nil {
 					path := field.NewPath("spec").Child("grpc").Index(i).Child("config")
+					errs = append(errs, validateACLs(path, g.Config)...)
 					errs = append(errs, validateIPAddresses(path, g.Config)...)
 				}
 			}
 		}
+	}
+
+	return errs
+}
+
+func validateACLs(path *field.Path, config *gwpav1alpha1.AccessControlConfig) field.ErrorList {
+	var errs field.ErrorList
+
+	if len(config.Blacklist) == 0 && len(config.Whitelist) == 0 {
+		errs = append(errs, field.Invalid(path, config, "blacklist and whitelist cannot be empty at the same time"))
 	}
 
 	return errs
