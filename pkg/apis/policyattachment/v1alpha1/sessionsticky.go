@@ -11,9 +11,28 @@ type SessionStickyPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
+	// Ports is the session sticky configuration for ports
+	Ports []PortSessionSticky `json:"ports,omitempty"`
+
+	// +optional
+	// DefaultConfig is the default session sticky configuration for all ports
+	DefaultConfig *SessionStickyConfig `json:"config,omitempty"`
+}
+
+// PortSessionSticky defines the session sticky configuration for a port
+type PortSessionSticky struct {
 	// Port is the port number of the target service
 	Port gwv1beta1.PortNumber `json:"port"`
 
+	// +optional
+	// Config is the session sticky configuration for the port
+	Config *SessionStickyConfig `json:"config,omitempty"`
+}
+
+// SessionStickyConfig defines the session sticky configuration
+type SessionStickyConfig struct {
 	// +optional
 	// +kubebuilder:default=_srv_id
 	// CookieName is the name of the cookie used for sticky session
@@ -21,6 +40,7 @@ type SessionStickyPolicySpec struct {
 
 	// +optional
 	// +kubebuilder:default=3600
+	// +kubebuilder:validation:Minimum=1
 	// Expires is the expiration time of the cookie in seconds
 	Expires *int32 `json:"expires,omitempty"`
 }

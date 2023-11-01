@@ -39,6 +39,7 @@ spec:
               bps:
                 description: DefaultBPS is the default rate limit for all ports
                 format: int64
+                minimum: 1
                 type: integer
               grpc:
                 description: GRPCRateLimits is the rate limit configuration for GRPC
@@ -48,14 +49,7 @@ spec:
                     for a GRPC route
                   properties:
                     match:
-                      description: "GRPCRouteMatch defines the predicate used to match
-                        requests to a given action. Multiple match types are ANDed
-                        together, i.e. the match will evaluate to true only if all
-                        conditions are satisfied. \n For example, the match below
-                        will match a gRPC request only if its service is `foo` AND
-                        it contains the `version: v1` header: \n ``` matches: - method:
-                        type: Exact service: \"foo\" headers: - name: \"version\"
-                        value \"v1\" \n ```"
+                      description: Match is the match condition for the GRPC route
                       properties:
                         headers:
                           description: Headers specifies gRPC request header matchers.
@@ -133,17 +127,21 @@ spec:
                           type: object
                       type: object
                     rateLimit:
-                      description: L7RateLimit defines the rate limit configuration
-                        for a route
+                      description: RateLimit is the rate limit configuration for the
+                        GRPC route
                       properties:
                         backlog:
                           default: 10
                           description: Backlog is the number of requests allowed to
                             wait in the queue
+                          format: int32
+                          minimum: 1
                           type: integer
                         burst:
                           description: Burst is the number of requests allowed to
                             be bursted, if not specified, it will be the same as Requests
+                          format: int32
+                          minimum: 1
                           type: integer
                         mode:
                           default: Local
@@ -156,6 +154,8 @@ spec:
                         requests:
                           description: Requests is the number of requests allowed
                             per statTimeWindow
+                          format: int32
+                          minimum: 1
                           type: integer
                         responseHeadersToAdd:
                           additionalProperties:
@@ -167,9 +167,14 @@ spec:
                           default: 429
                           description: ResponseStatusCode is the response status code
                             to be returned when the rate limit is exceeded
+                          format: int32
+                          maximum: 10000
+                          minimum: 1
                           type: integer
                         statTimeWindow:
                           description: StatTimeWindow is the time window in seconds
+                          format: int32
+                          minimum: 1
                           type: integer
                       required:
                       - requests
@@ -178,6 +183,7 @@ spec:
                   required:
                   - match
                   type: object
+                maxItems: 16
                 type: array
               hostnames:
                 description: Hostnames is the rate limit configuration for hostnames
@@ -186,34 +192,28 @@ spec:
                     for a hostname
                   properties:
                     hostname:
-                      description: "Hostname is the fully qualified domain name of
-                        a network host. This matches the RFC 1123 definition of a
-                        hostname with 2 notable exceptions: \n 1. IPs are not allowed.
-                        2. A hostname may be prefixed with a wildcard label (`*.`).
-                        The wildcard label must appear by itself as the first label.
-                        \n Hostname can be \"precise\" which is a domain name without
-                        the terminating dot of a network host (e.g. \"foo.example.com\")
-                        or \"wildcard\", which is a domain name prefixed with a single
-                        wildcard label (e.g. `*.example.com`). \n Note that as per
-                        RFC1035 and RFC1123, a *label* must consist of lower case
-                        alphanumeric characters or '-', and must start and end with
-                        an alphanumeric character. No other punctuation is allowed."
+                      description: Hostname is the hostname for matching the rate
+                        limit
                       maxLength: 253
                       minLength: 1
                       pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                       type: string
                     rateLimit:
-                      description: L7RateLimit defines the rate limit configuration
-                        for a route
+                      description: RateLimit is the rate limit configuration for the
+                        hostname
                       properties:
                         backlog:
                           default: 10
                           description: Backlog is the number of requests allowed to
                             wait in the queue
+                          format: int32
+                          minimum: 1
                           type: integer
                         burst:
                           description: Burst is the number of requests allowed to
                             be bursted, if not specified, it will be the same as Requests
+                          format: int32
+                          minimum: 1
                           type: integer
                         mode:
                           default: Local
@@ -226,6 +226,8 @@ spec:
                         requests:
                           description: Requests is the number of requests allowed
                             per statTimeWindow
+                          format: int32
+                          minimum: 1
                           type: integer
                         responseHeadersToAdd:
                           additionalProperties:
@@ -237,9 +239,14 @@ spec:
                           default: 429
                           description: ResponseStatusCode is the response status code
                             to be returned when the rate limit is exceeded
+                          format: int32
+                          maximum: 10000
+                          minimum: 1
                           type: integer
                         statTimeWindow:
                           description: StatTimeWindow is the time window in seconds
+                          format: int32
+                          minimum: 1
                           type: integer
                       required:
                       - requests
@@ -248,6 +255,7 @@ spec:
                   required:
                   - hostname
                   type: object
+                maxItems: 16
                 type: array
               http:
                 description: HTTPRateLimits is the rate limit configuration for HTTP
@@ -257,14 +265,7 @@ spec:
                     for a HTTP route
                   properties:
                     match:
-                      description: "HTTPRouteMatch defines the predicate used to match
-                        requests to a given action. Multiple match types are ANDed
-                        together, i.e. the match will evaluate to true only if all
-                        conditions are satisfied. \n For example, the match below
-                        will match a HTTP request only if its path starts with `/foo`
-                        AND it contains the `version: v1` header: \n ``` match: \n
-                        path: value: \"/foo\" headers: - name: \"version\" value \"v1\"
-                        \n ```"
+                      description: Match is the match condition for the HTTP route
                       properties:
                         headers:
                           description: Headers specifies HTTP request header matchers.
@@ -424,17 +425,21 @@ spec:
                           x-kubernetes-list-type: map
                       type: object
                     rateLimit:
-                      description: L7RateLimit defines the rate limit configuration
-                        for a route
+                      description: RateLimit is the rate limit configuration for the
+                        HTTP route
                       properties:
                         backlog:
                           default: 10
                           description: Backlog is the number of requests allowed to
                             wait in the queue
+                          format: int32
+                          minimum: 1
                           type: integer
                         burst:
                           description: Burst is the number of requests allowed to
                             be bursted, if not specified, it will be the same as Requests
+                          format: int32
+                          minimum: 1
                           type: integer
                         mode:
                           default: Local
@@ -447,6 +452,8 @@ spec:
                         requests:
                           description: Requests is the number of requests allowed
                             per statTimeWindow
+                          format: int32
+                          minimum: 1
                           type: integer
                         responseHeadersToAdd:
                           additionalProperties:
@@ -458,9 +465,14 @@ spec:
                           default: 429
                           description: ResponseStatusCode is the response status code
                             to be returned when the rate limit is exceeded
+                          format: int32
+                          maximum: 10000
+                          minimum: 1
                           type: integer
                         statTimeWindow:
                           description: StatTimeWindow is the time window in seconds
+                          format: int32
+                          minimum: 1
                           type: integer
                       required:
                       - requests
@@ -469,6 +481,7 @@ spec:
                   required:
                   - match
                   type: object
+                maxItems: 16
                 type: array
               ports:
                 description: Ports is the rate limit configuration for ports
@@ -477,10 +490,13 @@ spec:
                     for a port
                   properties:
                     bps:
+                      description: BPS is the rate limit in bytes per second for the
+                        port
                       format: int64
+                      minimum: 1
                       type: integer
                     port:
-                      description: PortNumber defines a network port.
+                      description: Port is the port number for matching the rate limit
                       format: int32
                       maximum: 65535
                       minimum: 1
@@ -488,19 +504,24 @@ spec:
                   required:
                   - port
                   type: object
+                maxItems: 16
                 type: array
               rateLimit:
-                description: DefaultRateLimit is the default rate limit for all routes
-                  and hostnames
+                description: DefaultL7RateLimit is the default rate limit for all
+                  routes and hostnames
                 properties:
                   backlog:
                     default: 10
                     description: Backlog is the number of requests allowed to wait
                       in the queue
+                    format: int32
+                    minimum: 1
                     type: integer
                   burst:
                     description: Burst is the number of requests allowed to be bursted,
                       if not specified, it will be the same as Requests
+                    format: int32
+                    minimum: 1
                     type: integer
                   mode:
                     default: Local
@@ -512,6 +533,8 @@ spec:
                     type: string
                   requests:
                     description: Requests is the number of requests allowed per statTimeWindow
+                    format: int32
+                    minimum: 1
                     type: integer
                   responseHeadersToAdd:
                     additionalProperties:
@@ -523,9 +546,14 @@ spec:
                     default: 429
                     description: ResponseStatusCode is the response status code to
                       be returned when the rate limit is exceeded
+                    format: int32
+                    maximum: 10000
+                    minimum: 1
                     type: integer
                   statTimeWindow:
                     description: StatTimeWindow is the time window in seconds
+                    format: int32
+                    minimum: 1
                     type: integer
                 required:
                 - requests

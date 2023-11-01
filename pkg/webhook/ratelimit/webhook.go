@@ -166,7 +166,7 @@ func l7RateLimitDefaults(rateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7Ra
 	}
 
 	if result.Backlog == nil {
-		result.Backlog = pointer.Int(10)
+		result.Backlog = pointer.Int32(10)
 	}
 
 	if result.Burst == nil {
