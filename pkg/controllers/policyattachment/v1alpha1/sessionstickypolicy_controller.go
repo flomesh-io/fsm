@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -264,16 +266,9 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 }
 
 func (r *sessionStickyPolicyReconciler) getConflictedPolicyByService(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, p := range allSessionStickyPolicies {
-		p := p
-		if gwutils.SessionStickyPolicyMatchesService(&p, svc) &&
-			reflect.DeepEqual(p.Spec, sessionStickyPolicy.Spec) {
-			continue
-		}
-
-		return &types.NamespacedName{
-			Name:      p.Name,
-			Namespace: p.Namespace,
+	for _, port := range svc.Spec.Ports {
+		if conflict := r.findConflict(sessionStickyPolicy, allSessionStickyPolicies, svc, port.Port); conflict != nil {
+			return conflict
 		}
 	}
 
@@ -281,16 +276,38 @@ func (r *sessionStickyPolicyReconciler) getConflictedPolicyByService(sessionStic
 }
 
 func (r *sessionStickyPolicyReconciler) getConflictedPolicyByServiceImport(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, p := range allSessionStickyPolicies {
-		p := p
-		if gwutils.SessionStickyPolicyMatchesServiceImport(&p, svcimp) &&
-			reflect.DeepEqual(p.Spec, sessionStickyPolicy.Spec) {
+	for _, port := range svcimp.Spec.Ports {
+		if conflict := r.findConflict(sessionStickyPolicy, allSessionStickyPolicies, svcimp, port.Port); conflict != nil {
+			return conflict
+		}
+	}
+
+	return nil
+}
+
+func (r *sessionStickyPolicyReconciler) findConflict(sessionStickyPolicy *gwpav1alpha1.SessionStickyPolicy, allSessionStickyPolicies []gwpav1alpha1.SessionStickyPolicy, svc client.Object, port int32) *types.NamespacedName {
+	for _, policy := range allSessionStickyPolicies {
+		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
+			continue
+		}
+
+		c1 := gwutils.GetSessionStickyConfigIfPortMatchesPolicy(port, policy)
+		if c1 == nil {
+			continue
+		}
+
+		c2 := gwutils.GetSessionStickyConfigIfPortMatchesPolicy(port, *sessionStickyPolicy)
+		if c2 == nil {
+			continue
+		}
+
+		if reflect.DeepEqual(c1, c2) {
 			continue
 		}
 
 		return &types.NamespacedName{
-			Name:      p.Name,
-			Namespace: p.Namespace,
+			Name:      policy.Name,
+			Namespace: policy.Namespace,
 		}
 	}
 

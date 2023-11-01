@@ -3,9 +3,10 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 
@@ -264,16 +265,9 @@ func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, p
 }
 
 func (r *loadBalancerPolicyReconciler) getConflictedPolicyByService(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allLoadBalancerPolicies []gwpav1alpha1.LoadBalancerPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, p := range allLoadBalancerPolicies {
-		p := p
-		if gwutils.LoadBalancerPolicyMatchesService(&p, svc) &&
-			reflect.DeepEqual(p.Spec, loadBalancerPolicy.Spec) {
-			continue
-		}
-
-		return &types.NamespacedName{
-			Name:      p.Name,
-			Namespace: p.Namespace,
+	for _, port := range svc.Spec.Ports {
+		if conflict := r.findConflict(loadBalancerPolicy, allLoadBalancerPolicies, svc, port.Port); conflict != nil {
+			return conflict
 		}
 	}
 
@@ -281,16 +275,38 @@ func (r *loadBalancerPolicyReconciler) getConflictedPolicyByService(loadBalancer
 }
 
 func (r *loadBalancerPolicyReconciler) getConflictedPolicyByServiceImport(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allLoadBalancerPolicies []gwpav1alpha1.LoadBalancerPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, p := range allLoadBalancerPolicies {
-		p := p
-		if gwutils.LoadBalancerPolicyMatchesServiceImport(&p, svcimp) &&
-			reflect.DeepEqual(p.Spec, loadBalancerPolicy.Spec) {
+	for _, port := range svcimp.Spec.Ports {
+		if conflict := r.findConflict(loadBalancerPolicy, allLoadBalancerPolicies, svcimp, port.Port); conflict != nil {
+			return conflict
+		}
+	}
+
+	return nil
+}
+
+func (r *loadBalancerPolicyReconciler) findConflict(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allSessionStickyPolicies []gwpav1alpha1.LoadBalancerPolicy, svc client.Object, port int32) *types.NamespacedName {
+	for _, policy := range allSessionStickyPolicies {
+		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
+			continue
+		}
+
+		t1 := gwutils.GetLoadBalancerTypeIfPortMatchesPolicy(port, policy)
+		if t1 == nil {
+			continue
+		}
+
+		t2 := gwutils.GetLoadBalancerTypeIfPortMatchesPolicy(port, *loadBalancerPolicy)
+		if t2 == nil {
+			continue
+		}
+
+		if *t1 == *t2 {
 			continue
 		}
 
 		return &types.NamespacedName{
-			Name:      p.Name,
-			Namespace: p.Namespace,
+			Name:      policy.Name,
+			Namespace: policy.Namespace,
 		}
 	}
 

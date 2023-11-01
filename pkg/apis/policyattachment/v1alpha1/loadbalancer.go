@@ -19,7 +19,21 @@ type LoadBalancerPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
-	// Port is the port number of the target service
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
+	// Ports is the load balancer configuration for ports
+	Ports []PortLoadBalancer `json:"ports,omitempty"`
+
+	// +optional
+	// +kubebuilder:default=RoundRobinLoadBalancer
+	// +kubebuilder:validation:Enum=RoundRobinLoadBalancer;HashingLoadBalancer;LeastConnectionLoadBalancer
+	// DefaultType is the default type of the load balancer for all ports
+	DefaultType *LoadBalancerType `json:"type,omitempty"`
+}
+
+// PortLoadBalancer defines the load balancer configuration for a port
+type PortLoadBalancer struct {
+	// Port is the port number for matching the load balancer
 	Port gwv1beta1.PortNumber `json:"port"`
 
 	// +optional

@@ -583,8 +583,8 @@ func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]servi
 	}
 }
 
-func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyPolicy {
-	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyPolicy)
+func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
+	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyConfig)
 
 	for key := range c.sessionstickies {
 		sessionSticky, err := c.getSessionStickyPolicyFromCache(key)
@@ -595,8 +595,19 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyP
 		}
 
 		if gwutils.IsAcceptedSessionStickyPolicy(sessionSticky) {
-			if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(sessionSticky.Spec.Port)); svcPortName != nil {
-				sessionStickies[svcPortName.String()] = sessionSticky
+			for _, p := range sessionSticky.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(p.Port)); svcPortName != nil {
+					c := p.Config
+					if c == nil {
+						c = sessionSticky.Spec.DefaultConfig
+					}
+
+					if c == nil {
+						continue
+					}
+
+					sessionStickies[svcPortName.String()] = c
+				}
 			}
 		}
 	}
@@ -604,8 +615,8 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyP
 	return sessionStickies
 }
 
-func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerPolicy {
-	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerPolicy)
+func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
+	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerType)
 
 	for key := range c.loadbalancers {
 		lb, err := c.getLoadBalancerPolicyFromCache(key)
@@ -616,8 +627,19 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerPoli
 		}
 
 		if gwutils.IsAcceptedLoadBalancerPolicy(lb) {
-			if svcPortName := targetRefToServicePortName(lb.Spec.TargetRef, lb.Namespace, int32(lb.Spec.Port)); svcPortName != nil {
-				loadBalancers[svcPortName.String()] = lb
+			for _, p := range lb.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(lb.Spec.TargetRef, lb.Namespace, int32(p.Port)); svcPortName != nil {
+					t := p.Type
+					if t == nil {
+						t = lb.Spec.DefaultType
+					}
+
+					if t == nil {
+						continue
+					}
+
+					loadBalancers[svcPortName.String()] = t
+				}
 			}
 		}
 	}
@@ -698,13 +720,13 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			}
 		}
 
-		if sessionSticky, exists := sessionStickies[svcPortName]; exists {
-			svcCfg.StickyCookieName = sessionSticky.Spec.CookieName
-			svcCfg.StickyCookieExpires = sessionSticky.Spec.Expires
+		if ssCfg, exists := sessionStickies[svcPortName]; exists {
+			svcCfg.StickyCookieName = ssCfg.CookieName
+			svcCfg.StickyCookieExpires = ssCfg.Expires
 		}
 
-		if loadBalancer, exists := loadBalancers[svcPortName]; exists {
-			svcCfg.LoadBalancer = loadBalancer.Spec.Type
+		if lbType, exists := loadBalancers[svcPortName]; exists {
+			svcCfg.LoadBalancer = lbType
 		}
 
 		configs[svcPortName] = svcCfg

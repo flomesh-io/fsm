@@ -198,11 +198,11 @@ type GRPCMethod struct {
 // RateLimit is the rate limit configuration
 type RateLimit struct {
 	Mode                 gwpav1alpha1.RateLimitPolicyMode `json:"Mode"`
-	Backlog              int                              `json:"Backlog"`
-	Requests             int                              `json:"Requests"`
-	Burst                int                              `json:"Burst"`
-	StatTimeWindow       int                              `json:"StatTimeWindow"`
-	ResponseStatusCode   int                              `json:"ResponseStatusCode"`
+	Backlog              int32                            `json:"Backlog"`
+	Requests             int32                            `json:"Requests"`
+	Burst                int32                            `json:"Burst"`
+	StatTimeWindow       int32                            `json:"StatTimeWindow"`
+	ResponseStatusCode   int32                            `json:"ResponseStatusCode"`
 	ResponseHeadersToAdd map[string]string                `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
@@ -219,11 +219,12 @@ type ServiceConfig struct {
 	StickyCookieName    *string                        `json:"StickyCookieName,omitempty"`
 	StickyCookieExpires *int32                         `json:"StickyCookieExpires,omitempty"`
 	LoadBalancer        *gwpav1alpha1.LoadBalancerType `json:"Algorithm,omitempty"`
+	CircuitBreaking     *CircuitBreaking               `json:"CircuitBreaking,omitempty"`
 }
 
 // Endpoint is the endpoint configuration
 type Endpoint struct {
-	Weight       int               `json:"Weight"`
+	Weight       int32             `json:"Weight"`
 	Tags         map[string]string `json:"Tags,omitempty"`
 	MTLS         bool              `json:"MTLS,omitempty"`
 	UpstreamCert *UpstreamCert     `json:"UpstreamCert,omitempty"`
@@ -357,23 +358,22 @@ type TCPConnectionSettings struct {
 
 // HTTPConnectionSettings is the HTTP connection settings configuration
 type HTTPConnectionSettings struct {
-	MaxRequestsPerConnection int             `json:"MaxRequestsPerConnection"`
-	MaxPendingRequests       int             `json:"MaxPendingRequests"`
-	CircuitBreaker           *CircuitBreaker `json:"CircuitBreaker,omitempty"`
+	MaxRequestsPerConnection int `json:"MaxRequestsPerConnection"`
+	MaxPendingRequests       int `json:"MaxPendingRequests"`
 }
 
-// CircuitBreaker is the circuit breaker configuration
-type CircuitBreaker struct {
-	MinRequestAmount        int     `json:"MinRequestAmount"`
-	StatTimeWindow          int     `json:"StatTimeWindow"`
-	SlowTimeThreshold       float64 `json:"SlowTimeThreshold"`
-	SlowAmountThreshold     int     `json:"SlowAmountThreshold"`
-	SlowRatioThreshold      float64 `json:"SlowRatioThreshold"`
-	ErrorAmountThreshold    int     `json:"ErrorAmountThreshold"`
-	ErrorRatioThreshold     float64 `json:"ErrorRatioThreshold"`
-	DegradedTimeWindow      int     `json:"DegradedTimeWindow"`
-	DegradedStatusCode      int     `json:"DegradedStatusCode"`
-	DegradedResponseContent string  `json:"DegradedResponseContent"`
+// CircuitBreaking is the circuit breaker configuration
+type CircuitBreaking struct {
+	MinRequestAmount        int32    `json:"MinRequestAmount"`
+	StatTimeWindow          int32    `json:"StatTimeWindow"`
+	SlowTimeThreshold       *float32 `json:"SlowTimeThreshold"`
+	SlowAmountThreshold     *int32   `json:"SlowAmountThreshold"`
+	SlowRatioThreshold      *float32 `json:"SlowRatioThreshold"`
+	ErrorAmountThreshold    *int32   `json:"ErrorAmountThreshold"`
+	ErrorRatioThreshold     *float32 `json:"ErrorRatioThreshold"`
+	DegradedTimeWindow      int32    `json:"DegradedTimeWindow"`
+	DegradedStatusCode      int32    `json:"DegradedStatusCode"`
+	DegradedResponseContent *string  `json:"DegradedResponseContent"`
 }
 
 // UpstreamCert is the upstream certificate configuration

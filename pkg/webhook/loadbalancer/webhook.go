@@ -1,6 +1,7 @@
 package loadbalancer
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -105,8 +106,16 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	targetRef := policy.Spec.TargetRef
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
 		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if policy.Spec.Type == nil {
-			policy.Spec.Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+		if len(policy.Spec.Ports) > 0 {
+			for i, p := range policy.Spec.Ports {
+				if p.Type == nil && policy.Spec.DefaultType != nil {
+					policy.Spec.Ports[i].Type = policy.Spec.DefaultType
+				}
+
+				if p.Type == nil {
+					policy.Spec.Ports[i].Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+				}
+			}
 		}
 	}
 
@@ -154,6 +163,8 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
+	errorList = append(errorList, validateConfig(policy)...)
+	// TODO: validate ports exist in the referenced service
 
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
@@ -176,6 +187,31 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	} else {
 		path := field.NewPath("spec").Child("targetRef").Child("kind")
 		errs = append(errs, field.Invalid(path, ref.Kind, "kind must be set to Service for group core or ServiceImport for group flomesh.io"))
+	}
+
+	return errs
+}
+
+func validateConfig(policy *gwpav1alpha1.LoadBalancerPolicy) field.ErrorList {
+	var errs field.ErrorList
+
+	if len(policy.Spec.Ports) == 0 {
+		path := field.NewPath("spec").Child("ports")
+		errs = append(errs, field.Invalid(path, policy.Spec.Ports, "cannot be empty"))
+	}
+
+	if len(policy.Spec.Ports) > 16 {
+		path := field.NewPath("spec").Child("ports")
+		errs = append(errs, field.Invalid(path, policy.Spec.Ports, "max port items cannot be greater than 16"))
+	}
+
+	if policy.Spec.DefaultType == nil {
+		path := field.NewPath("spec").Child("ports")
+		for i, port := range policy.Spec.Ports {
+			if port.Type == nil {
+				errs = append(errs, field.Required(path.Index(i).Child("type"), fmt.Sprintf("type must be set for port %d, as there's no default type", port.Port)))
+			}
+		}
 	}
 
 	return errs

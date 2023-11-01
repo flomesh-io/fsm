@@ -1,6 +1,7 @@
 package sessionsticky
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -106,16 +107,34 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	targetRef := policy.Spec.TargetRef
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
 		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if policy.Spec.CookieName == nil {
-			policy.Spec.CookieName = pointer.String("_srv_id")
-		}
+		if len(policy.Spec.Ports) > 0 {
+			for i, p := range policy.Spec.Ports {
+				if p.Config == nil && policy.Spec.DefaultConfig != nil {
+					policy.Spec.Ports[i].Config = policy.Spec.DefaultConfig
+				}
 
-		if policy.Spec.Expires == nil {
-			policy.Spec.Expires = pointer.Int32(3600)
+				if p.Config != nil {
+					policy.Spec.Ports[i].Config = setDefaults(p.Config)
+				}
+			}
 		}
 	}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
+}
+
+func setDefaults(config *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+	config = config.DeepCopy()
+
+	if config.CookieName == nil {
+		config.CookieName = pointer.String("_srv_id")
+	}
+
+	if config.Expires == nil {
+		config.Expires = pointer.Int32(3600)
+	}
+
+	return config
 }
 
 type validator struct {
@@ -155,7 +174,7 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateExpires(policy)...)
+	errorList = append(errorList, validateConfig(policy)...)
 
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
@@ -180,15 +199,38 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 		errs = append(errs, field.Invalid(path, ref.Kind, "kind must be set to Service for group core or ServiceImport for group flomesh.io"))
 	}
 
+	// TODO: validate ports exist in the referenced service
+	//if ref.Group == constants.KubernetesCoreGroup && ref.Kind == constants.KubernetesServiceKind {
+	//
+	//}
+	//
+	//if ref.Group == constants.FlomeshAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind {
+	//
+	//}
+
 	return errs
 }
 
-func validateExpires(policy *gwpav1alpha1.SessionStickyPolicy) field.ErrorList {
+func validateConfig(policy *gwpav1alpha1.SessionStickyPolicy) field.ErrorList {
 	var errs field.ErrorList
 
-	if *policy.Spec.Expires < 0 {
-		path := field.NewPath("spec").Child("expires")
-		errs = append(errs, field.Invalid(path, policy.Spec.Expires, "must be greater than or equal to 0"))
+	if len(policy.Spec.Ports) == 0 {
+		path := field.NewPath("spec").Child("ports")
+		errs = append(errs, field.Invalid(path, policy.Spec.Ports, "cannot be empty"))
+	}
+
+	if len(policy.Spec.Ports) > 16 {
+		path := field.NewPath("spec").Child("ports")
+		errs = append(errs, field.Invalid(path, policy.Spec.Ports, "max port items cannot be greater than 16"))
+	}
+
+	if policy.Spec.DefaultConfig == nil {
+		path := field.NewPath("spec").Child("ports")
+		for i, port := range policy.Spec.Ports {
+			if port.Config == nil {
+				errs = append(errs, field.Required(path.Index(i).Child("config"), fmt.Sprintf("config must be set for port %d, as there's no default config", port.Port)))
+			}
+		}
 	}
 
 	return errs
