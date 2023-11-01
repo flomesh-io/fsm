@@ -230,10 +230,12 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
 		ic.informers[InformerKeySessionStickyPolicy] = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Informer()
 		ic.informers[InformerKeyLoadBalancerPolicy] = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Informer()
+		ic.informers[InformerKeyCircuitBreakingPolicy] = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
 		ic.listers.LoadBalancerPolicy = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Lister()
+		ic.listers.CircuitBreakingPolicy = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Lister()
 	}
 }
 

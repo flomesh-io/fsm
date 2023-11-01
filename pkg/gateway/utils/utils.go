@@ -104,6 +104,10 @@ func IsAcceptedLoadBalancerPolicy(policy *gwpav1alpha1.LoadBalancerPolicy) bool 
 	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
 
+func IsAcceptedCircuitBreakingPolicy(policy *gwpav1alpha1.CircuitBreakingPolicy) bool {
+	return metautil.IsStatusConditionTrue(policy.Status.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+}
+
 // IsRefToGateway returns true if the parent reference is to the gateway
 func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
@@ -437,6 +441,25 @@ func GetLoadBalancerTypeIfPortMatchesPolicy(port int32, loadBalancerPolicy gwpav
 			}
 
 			return loadBalancerPolicy.Spec.DefaultType
+		}
+	}
+
+	return nil
+}
+
+// GetCircuitBreakingConfigIfPortMatchesPolicy returns true if the port matches the circuit breaking policy
+func GetCircuitBreakingConfigIfPortMatchesPolicy(port int32, sessionStickyPolicy gwpav1alpha1.CircuitBreakingPolicy) *gwpav1alpha1.CircuitBreakingConfig {
+	if len(sessionStickyPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	for _, policyPort := range sessionStickyPolicy.Spec.Ports {
+		if port == int32(policyPort.Port) {
+			if policyPort.Config != nil {
+				return policyPort.Config
+			}
+
+			return sessionStickyPolicy.Spec.DefaultConfig
 		}
 	}
 

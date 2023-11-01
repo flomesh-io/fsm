@@ -82,6 +82,9 @@ const (
 
 	// LoadBalancerPoliciesProcessorType is the type used to represent the load balancer policies processor
 	LoadBalancerPoliciesProcessorType ProcessorType = "loadbalancers"
+
+	// CircuitBreakingPoliciesProcessorType is the type used to represent the circuit breaking policies processor
+	CircuitBreakingPoliciesProcessorType ProcessorType = "circuitbreakings"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -209,14 +212,15 @@ const (
 )
 
 var (
-	gatewayGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIGatewayKind)
-	httpRouteGVK           = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
-	tlsRouteGVK            = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
-	tcpRouteGVK            = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
-	grpcRouteGVK           = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
-	secretGVK              = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesSecretKind)
-	serviceGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)
-	rateLimitPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
-	sessionStickyPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
-	loadBalancerPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
+	gatewayGVK               = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIGatewayKind)
+	httpRouteGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
+	tlsRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
+	tcpRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
+	grpcRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
+	secretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesSecretKind)
+	serviceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)
+	rateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
+	sessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
+	loadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
+	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
 )

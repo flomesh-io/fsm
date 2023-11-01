@@ -15,6 +15,14 @@ limitations under the License.
 
 package v1alpha1
 
+// CircuitBreakingPolicyListerExpansion allows custom methods to be added to
+// CircuitBreakingPolicyLister.
+type CircuitBreakingPolicyListerExpansion interface{}
+
+// CircuitBreakingPolicyNamespaceListerExpansion allows custom methods to be added to
+// CircuitBreakingPolicyNamespaceLister.
+type CircuitBreakingPolicyNamespaceListerExpansion interface{}
+
 // LoadBalancerPolicyListerExpansion allows custom methods to be added to
 // LoadBalancerPolicyLister.
 type LoadBalancerPolicyListerExpansion interface{}

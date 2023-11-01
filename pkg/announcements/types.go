@@ -419,6 +419,17 @@ const (
 
 	// LoadBalancerPolicyUpdated is the type of announcement emitted when we observe an update to loadbalancerpolicies.gateway.flomesh.io
 	LoadBalancerPolicyUpdated Kind = "loadbalancerpolicy-updated"
+
+	// ---
+
+	// CircuitBreakingPolicyAdded is the type of announcement emitted when we observe an addition of circuitbreakings.gateway.flomesh.io
+	CircuitBreakingPolicyAdded Kind = "circuitbreaking-added"
+
+	// CircuitBreakingPolicyDeleted the type of announcement emitted when we observe a deletion of circuitbreakings.gateway.flomesh.io
+	CircuitBreakingPolicyDeleted Kind = "circuitbreaking-deleted"
+
+	// CircuitBreakingPolicyUpdated is the type of announcement emitted when we observe an update to circuitbreakings.gateway.flomesh.io
+	CircuitBreakingPolicyUpdated Kind = "circuitbreaking-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

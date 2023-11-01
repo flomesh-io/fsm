@@ -21,6 +21,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// CircuitBreakingPolicies returns a CircuitBreakingPolicyInformer.
+	CircuitBreakingPolicies() CircuitBreakingPolicyInformer
 	// LoadBalancerPolicies returns a LoadBalancerPolicyInformer.
 	LoadBalancerPolicies() LoadBalancerPolicyInformer
 	// RateLimitPolicies returns a RateLimitPolicyInformer.
@@ -38,6 +40,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// CircuitBreakingPolicies returns a CircuitBreakingPolicyInformer.
+func (v *version) CircuitBreakingPolicies() CircuitBreakingPolicyInformer {
+	return &circuitBreakingPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // LoadBalancerPolicies returns a LoadBalancerPolicyInformer.

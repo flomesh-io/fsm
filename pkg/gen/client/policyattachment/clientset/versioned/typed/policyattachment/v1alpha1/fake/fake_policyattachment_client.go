@@ -25,6 +25,10 @@ type FakeGatewayV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeGatewayV1alpha1) CircuitBreakingPolicies(namespace string) v1alpha1.CircuitBreakingPolicyInterface {
+	return &FakeCircuitBreakingPolicies{c, namespace}
+}
+
 func (c *FakeGatewayV1alpha1) LoadBalancerPolicies(namespace string) v1alpha1.LoadBalancerPolicyInterface {
 	return &FakeLoadBalancerPolicies{c, namespace}
 }

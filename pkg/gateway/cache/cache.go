@@ -23,20 +23,21 @@ type GatewayCache struct {
 
 	processors map[ProcessorType]Processor
 
-	gatewayclass    *gwv1beta1.GatewayClass
-	gateways        map[string]client.ObjectKey // ns -> gateway
-	services        map[client.ObjectKey]struct{}
-	serviceimports  map[client.ObjectKey]struct{}
-	endpoints       map[client.ObjectKey]struct{}
-	endpointslices  map[client.ObjectKey]map[client.ObjectKey]struct{} // svc -> endpointslices
-	secrets         map[client.ObjectKey]struct{}
-	httproutes      map[client.ObjectKey]struct{}
-	grpcroutes      map[client.ObjectKey]struct{}
-	tcproutes       map[client.ObjectKey]struct{}
-	tlsroutes       map[client.ObjectKey]struct{}
-	ratelimits      map[client.ObjectKey]struct{}
-	sessionstickies map[client.ObjectKey]struct{}
-	loadbalancers   map[client.ObjectKey]struct{}
+	gatewayclass     *gwv1beta1.GatewayClass
+	gateways         map[string]client.ObjectKey // ns -> gateway
+	services         map[client.ObjectKey]struct{}
+	serviceimports   map[client.ObjectKey]struct{}
+	endpoints        map[client.ObjectKey]struct{}
+	endpointslices   map[client.ObjectKey]map[client.ObjectKey]struct{} // svc -> endpointslices
+	secrets          map[client.ObjectKey]struct{}
+	httproutes       map[client.ObjectKey]struct{}
+	grpcroutes       map[client.ObjectKey]struct{}
+	tcproutes        map[client.ObjectKey]struct{}
+	tlsroutes        map[client.ObjectKey]struct{}
+	ratelimits       map[client.ObjectKey]struct{}
+	sessionstickies  map[client.ObjectKey]struct{}
+	loadbalancers    map[client.ObjectKey]struct{}
+	circuitbreakings map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -51,20 +52,21 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		cfg:        cfg,
 
 		processors: map[ProcessorType]Processor{
-			ServicesProcessorType:       &ServicesProcessor{},
-			ServiceImportsProcessorType: &ServiceImportsProcessor{},
-			EndpointSlicesProcessorType: &EndpointSlicesProcessor{},
 			//EndpointsProcessorType:      &EndpointsProcessor{},
-			SecretsProcessorType:               &SecretProcessor{},
-			GatewayClassesProcessorType:        &GatewayClassesProcessor{},
-			GatewaysProcessorType:              &GatewaysProcessor{},
-			HTTPRoutesProcessorType:            &HTTPRoutesProcessor{},
-			GRPCRoutesProcessorType:            &GRPCRoutesProcessor{},
-			TCPRoutesProcessorType:             &TCPRoutesProcessor{},
-			TLSRoutesProcessorType:             &TLSRoutesProcessor{},
-			RateLimitPoliciesProcessorType:     &RateLimitPoliciesProcessor{},
-			SessionStickyPoliciesProcessorType: &SessionStickyPoliciesProcessor{},
-			LoadBalancerPoliciesProcessorType:  &LoadBalancerPoliciesProcessor{},
+			ServicesProcessorType:                &ServicesProcessor{},
+			ServiceImportsProcessorType:          &ServiceImportsProcessor{},
+			EndpointSlicesProcessorType:          &EndpointSlicesProcessor{},
+			SecretsProcessorType:                 &SecretProcessor{},
+			GatewayClassesProcessorType:          &GatewayClassesProcessor{},
+			GatewaysProcessorType:                &GatewaysProcessor{},
+			HTTPRoutesProcessorType:              &HTTPRoutesProcessor{},
+			GRPCRoutesProcessorType:              &GRPCRoutesProcessor{},
+			TCPRoutesProcessorType:               &TCPRoutesProcessor{},
+			TLSRoutesProcessorType:               &TLSRoutesProcessor{},
+			RateLimitPoliciesProcessorType:       &RateLimitPoliciesProcessor{},
+			SessionStickyPoliciesProcessorType:   &SessionStickyPoliciesProcessor{},
+			LoadBalancerPoliciesProcessorType:    &LoadBalancerPoliciesProcessor{},
+			CircuitBreakingPoliciesProcessorType: &CircuitBreakingPoliciesProcessor{},
 		},
 
 		gateways:       make(map[string]client.ObjectKey),
@@ -72,14 +74,15 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		serviceimports: make(map[client.ObjectKey]struct{}),
 		endpointslices: make(map[client.ObjectKey]map[client.ObjectKey]struct{}),
 		//endpoints:      make(map[client.ObjectKey]struct{}),
-		secrets:         make(map[client.ObjectKey]struct{}),
-		httproutes:      make(map[client.ObjectKey]struct{}),
-		grpcroutes:      make(map[client.ObjectKey]struct{}),
-		tcproutes:       make(map[client.ObjectKey]struct{}),
-		tlsroutes:       make(map[client.ObjectKey]struct{}),
-		ratelimits:      make(map[client.ObjectKey]struct{}),
-		sessionstickies: make(map[client.ObjectKey]struct{}),
-		loadbalancers:   make(map[client.ObjectKey]struct{}),
+		secrets:          make(map[client.ObjectKey]struct{}),
+		httproutes:       make(map[client.ObjectKey]struct{}),
+		grpcroutes:       make(map[client.ObjectKey]struct{}),
+		tcproutes:        make(map[client.ObjectKey]struct{}),
+		tlsroutes:        make(map[client.ObjectKey]struct{}),
+		ratelimits:       make(map[client.ObjectKey]struct{}),
+		sessionstickies:  make(map[client.ObjectKey]struct{}),
+		loadbalancers:    make(map[client.ObjectKey]struct{}),
+		circuitbreakings: make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}

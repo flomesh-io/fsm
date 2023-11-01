@@ -647,10 +647,43 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 	return loadBalancers
 }
 
+func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
+	configs := make(map[string]*gwpav1alpha1.CircuitBreakingConfig)
+
+	for key := range c.circuitbreakings {
+		circuitBreaking, err := c.getCircuitBreakingPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get CircuitBreakingPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedCircuitBreakingPolicy(circuitBreaking) {
+			for _, p := range circuitBreaking.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(circuitBreaking.Spec.TargetRef, circuitBreaking.Namespace, int32(p.Port)); svcPortName != nil {
+					c := p.Config
+					if c == nil {
+						c = circuitBreaking.Spec.DefaultConfig
+					}
+
+					if c == nil {
+						continue
+					}
+
+					configs[svcPortName.String()] = c
+				}
+			}
+		}
+	}
+
+	return configs
+}
+
 func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]routecfg.ServiceConfig {
 	configs := make(map[string]routecfg.ServiceConfig)
 	sessionStickies := c.sessionStickies()
 	loadBalancers := c.loadBalancers()
+	circuitBreakings := c.circuitBreakings()
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
@@ -727,6 +760,21 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 
 		if lbType, exists := loadBalancers[svcPortName]; exists {
 			svcCfg.LoadBalancer = lbType
+		}
+
+		if cbCfg, exists := circuitBreakings[svcPortName]; exists {
+			svcCfg.CircuitBreaking = &routecfg.CircuitBreaking{
+				MinRequestAmount:        cbCfg.MinRequestAmount,
+				StatTimeWindow:          cbCfg.StatTimeWindow,
+				SlowAmountThreshold:     cbCfg.SlowAmountThreshold,
+				SlowRatioThreshold:      cbCfg.SlowRatioThreshold,
+				SlowTimeThreshold:       cbCfg.SlowTimeThreshold,
+				ErrorAmountThreshold:    cbCfg.ErrorAmountThreshold,
+				ErrorRatioThreshold:     cbCfg.ErrorRatioThreshold,
+				DegradedTimeWindow:      cbCfg.DegradedTimeWindow,
+				DegradedStatusCode:      cbCfg.DegradedStatusCode,
+				DegradedResponseContent: cbCfg.DegradedResponseContent,
+			}
 		}
 
 		configs[svcPortName] = svcCfg

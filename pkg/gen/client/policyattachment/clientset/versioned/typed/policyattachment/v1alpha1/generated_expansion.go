@@ -15,6 +15,8 @@ limitations under the License.
 
 package v1alpha1
 
+type CircuitBreakingPolicyExpansion interface{}
+
 type LoadBalancerPolicyExpansion interface{}
 
 type RateLimitPolicyExpansion interface{}
