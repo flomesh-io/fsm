@@ -65,8 +65,9 @@ type HealthCheckMatch struct {
 	Body *string `json:"body,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// Headers is the list of response headers to match
-	Headers map[gwv1beta1.HTTPHeaderName]string `json:"headers,omitempty"`
+	Headers []gwv1beta1.HTTPHeader `json:"headers,omitempty"`
 }
 
 //type HealthCheckMatchType string

@@ -494,10 +494,8 @@ func (in *HealthCheckMatch) DeepCopyInto(out *HealthCheckMatch) {
 	}
 	if in.Headers != nil {
 		in, out := &in.Headers, &out.Headers
-		*out = make(map[v1beta1.HTTPHeaderName]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]v1beta1.HTTPHeader, len(*in))
+		copy(*out, *in)
 	}
 	return
 }
@@ -692,10 +690,8 @@ func (in *L7RateLimit) DeepCopyInto(out *L7RateLimit) {
 	}
 	if in.ResponseHeadersToAdd != nil {
 		in, out := &in.ResponseHeadersToAdd, &out.ResponseHeadersToAdd
-		*out = make(map[v1beta1.HTTPHeaderName]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
+		*out = make([]v1beta1.HTTPHeader, len(*in))
+		copy(*out, *in)
 	}
 	return
 }

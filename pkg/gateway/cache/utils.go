@@ -581,15 +581,23 @@ func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
 }
 
 func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit {
-	return &routecfg.RateLimit{
-		Mode:                 *rateLimit.Mode,
-		Backlog:              *rateLimit.Backlog,
-		Requests:             rateLimit.Requests,
-		Burst:                *rateLimit.Burst,
-		StatTimeWindow:       rateLimit.StatTimeWindow,
-		ResponseStatusCode:   *rateLimit.ResponseStatusCode,
-		ResponseHeadersToAdd: rateLimit.ResponseHeadersToAdd,
+	r := &routecfg.RateLimit{
+		Mode:               *rateLimit.Mode,
+		Backlog:            *rateLimit.Backlog,
+		Requests:           rateLimit.Requests,
+		Burst:              *rateLimit.Burst,
+		StatTimeWindow:     rateLimit.StatTimeWindow,
+		ResponseStatusCode: *rateLimit.ResponseStatusCode,
 	}
+
+	if len(rateLimit.ResponseHeadersToAdd) > 0 {
+		r.ResponseHeadersToAdd = make(map[gwv1beta1.HTTPHeaderName]string)
+		for _, header := range rateLimit.ResponseHeadersToAdd {
+			r.ResponseHeadersToAdd[header.Name] = header.Value
+		}
+	}
+
+	return r
 }
 
 func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.AccessControlLists {
@@ -613,11 +621,19 @@ func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
 	if len(hc.Matches) > 0 {
 		h.Matches = make([]routecfg.HealthCheckMatch, 0)
 		for _, m := range hc.Matches {
-			h.Matches = append(h.Matches, routecfg.HealthCheckMatch{
+			match := routecfg.HealthCheckMatch{
 				StatusCodes: m.StatusCodes,
 				Body:        m.Body,
-				Headers:     m.Headers,
-			})
+			}
+
+			if len(m.Headers) > 0 {
+				match.Headers = make(map[gwv1beta1.HTTPHeaderName]string)
+				for _, header := range m.Headers {
+					match.Headers[header.Name] = header.Value
+				}
+			}
+
+			h.Matches = append(h.Matches, match)
 		}
 	}
 
