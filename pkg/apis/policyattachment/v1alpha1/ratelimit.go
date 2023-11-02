@@ -128,7 +128,7 @@ type L7RateLimit struct {
 
 	// +optional
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
-	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty"`
+	ResponseHeadersToAdd map[gwv1beta1.HTTPHeaderName]string `json:"responseHeadersToAdd,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy

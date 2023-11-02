@@ -126,10 +126,6 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 
 	if len(policy.Spec.Ports) > 0 {
 		for i, port := range policy.Spec.Ports {
-			if port.Config == nil && policy.Spec.DefaultConfig != nil {
-				policy.Spec.Ports[i].Config = policy.Spec.DefaultConfig
-			}
-
 			if port.Config != nil {
 				policy.Spec.Ports[i].Config = configDefaults(port.Config)
 			}
@@ -138,10 +134,6 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 
 	if len(policy.Spec.Hostnames) > 0 {
 		for i, hostname := range policy.Spec.Hostnames {
-			if hostname.Config == nil && policy.Spec.DefaultConfig != nil {
-				policy.Spec.Hostnames[i].Config = policy.Spec.DefaultConfig
-			}
-
 			if hostname.Config != nil {
 				policy.Spec.Hostnames[i].Config = configDefaults(hostname.Config)
 			}
@@ -150,10 +142,6 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 
 	if len(policy.Spec.HTTPAccessControls) > 0 {
 		for i, hr := range policy.Spec.HTTPAccessControls {
-			if hr.Config == nil && policy.Spec.DefaultConfig != nil {
-				policy.Spec.HTTPAccessControls[i].Config = policy.Spec.DefaultConfig
-			}
-
 			if hr.Config != nil {
 				policy.Spec.HTTPAccessControls[i].Config = configDefaults(hr.Config)
 			}
@@ -162,10 +150,6 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 
 	if len(policy.Spec.GRPCAccessControls) > 0 {
 		for i, gr := range policy.Spec.GRPCAccessControls {
-			if gr.Config == nil && policy.Spec.DefaultConfig != nil {
-				policy.Spec.GRPCAccessControls[i].Config = policy.Spec.DefaultConfig
-			}
-
 			if gr.Config != nil {
 				policy.Spec.GRPCAccessControls[i].Config = configDefaults(gr.Config)
 			}
@@ -228,7 +212,7 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateConfig(policy)...)
+	errorList = append(errorList, validateSpec(policy)...)
 
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
@@ -256,15 +240,15 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	return errs
 }
 
-func validateConfig(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
+func validateSpec(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 	errs := validateL4AccessControl(policy)
 	errs = append(errs, validateL7AccessControl(policy)...)
-	errs = append(errs, validateDetails(policy)...)
+	errs = append(errs, validateConfig(policy)...)
 
 	return errs
 }
 
-func validateDetails(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
+func validateConfig(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 	var errs field.ErrorList
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&

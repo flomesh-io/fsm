@@ -602,6 +602,43 @@ func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.Access
 	}
 }
 
+func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
+	h := &routecfg.HealthCheck{
+		Interval:    hc.Interval,
+		MaxFails:    hc.MaxFails,
+		FailTimeout: hc.FailTimeout,
+		Path:        hc.Path,
+	}
+
+	if len(hc.Matches) > 0 {
+		h.Matches = make([]routecfg.HealthCheckMatch, 0)
+		for _, m := range hc.Matches {
+			h.Matches = append(h.Matches, routecfg.HealthCheckMatch{
+				StatusCodes: m.StatusCodes,
+				Body:        m.Body,
+				Headers:     m.Headers,
+			})
+		}
+	}
+
+	return h
+}
+
+func newCircuitBreaking(cbCfg *gwpav1alpha1.CircuitBreakingConfig) *routecfg.CircuitBreaking {
+	return &routecfg.CircuitBreaking{
+		MinRequestAmount:        cbCfg.MinRequestAmount,
+		StatTimeWindow:          cbCfg.StatTimeWindow,
+		SlowAmountThreshold:     cbCfg.SlowAmountThreshold,
+		SlowRatioThreshold:      cbCfg.SlowRatioThreshold,
+		SlowTimeThreshold:       cbCfg.SlowTimeThreshold,
+		ErrorAmountThreshold:    cbCfg.ErrorAmountThreshold,
+		ErrorRatioThreshold:     cbCfg.ErrorRatioThreshold,
+		DegradedTimeWindow:      cbCfg.DegradedTimeWindow,
+		DegradedStatusCode:      cbCfg.DegradedStatusCode,
+		DegradedResponseContent: cbCfg.DegradedResponseContent,
+	}
+}
+
 func insertAgentServiceScript(chains []string) []string {
 	httpCodecIndex := slices.Index(chains, httpCodecScript)
 	if httpCodecIndex != -1 {
