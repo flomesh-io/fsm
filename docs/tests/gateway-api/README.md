@@ -991,19 +991,19 @@ spec:
     name: httpbin
     namespace: httpbin
   ports:
-    - port: 8080
-      config: 
-        interval: 10
-        maxFails: 3
-        failTimeout: 1
-        path: /healthz
-        matches:
-          statusCodes: 
-            - 200
-            - 201
-          body: "OK"
-          headers:
-            - name: Content-Type
-              value: application/json
+  - port: 8080
+    config: 
+      interval: 10
+      maxFails: 3
+      failTimeout: 1
+      path: /healthz
+      matches:
+      - statusCodes: 
+        - 200
+        - 201
+        body: "OK"
+        headers:
+          - name: Content-Type
+            value: application/json
 EOF
 ```
