@@ -40,7 +40,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.3
 	gomodules.xyz/jsonpatch/v2 v2.2.0
-	google.golang.org/grpc v1.51.0
+	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.1.1
@@ -68,7 +68,7 @@ require (
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.2.0
 	golang.org/x/sys v0.8.0
-	google.golang.org/genproto v0.0.0-20230109162033-3c3c17ce83e6 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	honnef.co/go/tools v0.1.1 // indirect
 )
 
@@ -101,11 +101,11 @@ require (
 
 require (
 	4d63.com/gochecknoglobals v0.0.0-20201008074935-acfc0b28355a // indirect
-	cloud.google.com/go/compute v1.14.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/iam v0.8.0 // indirect
-	cloud.google.com/go/kms v1.8.0 // indirect
-	cloud.google.com/go/monitoring v1.11.0 // indirect
+	cloud.google.com/go/iam v0.13.0 // indirect
+	cloud.google.com/go/kms v1.10.1 // indirect
+	cloud.google.com/go/monitoring v1.13.0 // indirect
 	github.com/Azure/azure-sdk-for-go v66.0.0+incompatible // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
@@ -145,7 +145,7 @@ require (
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/circonus-labs/circonus-gometrics v2.3.1+incompatible // indirect
 	github.com/circonus-labs/circonusllhist v0.1.3 // indirect
@@ -221,8 +221,8 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.1 // indirect
-	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
+	github.com/googleapis/gax-go/v2 v2.7.1 // indirect
 	github.com/gophercloud/gophercloud v0.3.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.1.0 // indirect
 	github.com/gostaticanalysis/comment v1.3.0 // indirect
@@ -409,12 +409,12 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
+	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
-	google.golang.org/api v0.106.0 // indirect
+	google.golang.org/api v0.114.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
