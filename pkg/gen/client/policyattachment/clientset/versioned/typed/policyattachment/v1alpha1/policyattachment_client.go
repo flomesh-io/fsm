@@ -27,8 +27,8 @@ type GatewayV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AccessControlPoliciesGetter
 	CircuitBreakingPoliciesGetter
-	HealthCheckPoliciesGetter
 	FaultInjectionPoliciesGetter
+	HealthCheckPoliciesGetter
 	LoadBalancerPoliciesGetter
 	RateLimitPoliciesGetter
 	SessionStickyPoliciesGetter
@@ -47,12 +47,12 @@ func (c *GatewayV1alpha1Client) CircuitBreakingPolicies(namespace string) Circui
 	return newCircuitBreakingPolicies(c, namespace)
 }
 
-func (c *GatewayV1alpha1Client) HealthCheckPolicies(namespace string) HealthCheckPolicyInterface {
-	return newHealthCheckPolicies(c, namespace)
-}
-
 func (c *GatewayV1alpha1Client) FaultInjectionPolicies(namespace string) FaultInjectionPolicyInterface {
 	return newFaultInjectionPolicies(c, namespace)
+}
+
+func (c *GatewayV1alpha1Client) HealthCheckPolicies(namespace string) HealthCheckPolicyInterface {
+	return newHealthCheckPolicies(c, namespace)
 }
 
 func (c *GatewayV1alpha1Client) LoadBalancerPolicies(namespace string) LoadBalancerPolicyInterface {

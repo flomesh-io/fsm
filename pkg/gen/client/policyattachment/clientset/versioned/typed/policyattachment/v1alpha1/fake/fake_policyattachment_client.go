@@ -33,12 +33,12 @@ func (c *FakeGatewayV1alpha1) CircuitBreakingPolicies(namespace string) v1alpha1
 	return &FakeCircuitBreakingPolicies{c, namespace}
 }
 
-func (c *FakeGatewayV1alpha1) HealthCheckPolicies(namespace string) v1alpha1.HealthCheckPolicyInterface {
-	return &FakeHealthCheckPolicies{c, namespace}
-}
-
 func (c *FakeGatewayV1alpha1) FaultInjectionPolicies(namespace string) v1alpha1.FaultInjectionPolicyInterface {
 	return &FakeFaultInjectionPolicies{c, namespace}
+}
+
+func (c *FakeGatewayV1alpha1) HealthCheckPolicies(namespace string) v1alpha1.HealthCheckPolicyInterface {
+	return &FakeHealthCheckPolicies{c, namespace}
 }
 
 func (c *FakeGatewayV1alpha1) LoadBalancerPolicies(namespace string) v1alpha1.LoadBalancerPolicyInterface {

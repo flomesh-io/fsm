@@ -25,10 +25,10 @@ type Interface interface {
 	AccessControlPolicies() AccessControlPolicyInformer
 	// CircuitBreakingPolicies returns a CircuitBreakingPolicyInformer.
 	CircuitBreakingPolicies() CircuitBreakingPolicyInformer
-	// HealthCheckPolicies returns a HealthCheckPolicyInformer.
-	HealthCheckPolicies() HealthCheckPolicyInformer
 	// FaultInjectionPolicies returns a FaultInjectionPolicyInformer.
 	FaultInjectionPolicies() FaultInjectionPolicyInformer
+	// HealthCheckPolicies returns a HealthCheckPolicyInformer.
+	HealthCheckPolicies() HealthCheckPolicyInformer
 	// LoadBalancerPolicies returns a LoadBalancerPolicyInformer.
 	LoadBalancerPolicies() LoadBalancerPolicyInformer
 	// RateLimitPolicies returns a RateLimitPolicyInformer.
@@ -58,14 +58,14 @@ func (v *version) CircuitBreakingPolicies() CircuitBreakingPolicyInformer {
 	return &circuitBreakingPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// HealthCheckPolicies returns a HealthCheckPolicyInformer.
-func (v *version) HealthCheckPolicies() HealthCheckPolicyInformer {
-	return &healthCheckPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // FaultInjectionPolicies returns a FaultInjectionPolicyInformer.
 func (v *version) FaultInjectionPolicies() FaultInjectionPolicyInformer {
 	return &faultInjectionPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// HealthCheckPolicies returns a HealthCheckPolicyInformer.
+func (v *version) HealthCheckPolicies() HealthCheckPolicyInformer {
+	return &healthCheckPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // LoadBalancerPolicies returns a LoadBalancerPolicyInformer.

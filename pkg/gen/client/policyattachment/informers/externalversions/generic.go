@@ -54,10 +54,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().AccessControlPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("circuitbreakingpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("healthcheckpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().HealthCheckPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("faultinjectionpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().FaultInjectionPolicies().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("healthcheckpolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().HealthCheckPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("loadbalancerpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().LoadBalancerPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("ratelimitpolicies"):
