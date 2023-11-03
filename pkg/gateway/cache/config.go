@@ -30,6 +30,7 @@ func (c *GatewayCache) BuildConfigs() {
 	defer c.mutex.Unlock()
 
 	configs := make(map[string]*routecfg.ConfigSpec)
+	policies := c.policyAttachments()
 
 	for ns, key := range c.gateways {
 		gw, err := c.getGatewayFromCache(key)
@@ -39,7 +40,6 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
-		policies := c.policyAttachments()
 		listenerCfg := c.listeners(gw, validListeners, policies)
 		rules, referredServices := c.routeRules(gw, validListeners, policies)
 		svcConfigs := c.serviceConfigs(referredServices)
