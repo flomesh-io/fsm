@@ -29,6 +29,12 @@ type FaultInjectionPolicySpec struct {
 	// +optional
 	// DefaultConfig is the default access control for all ports, routes and hostnames
 	DefaultConfig *FaultInjectionConfig `json:"config,omitempty"`
+
+	// +optional
+	// +kubebuilder:validation:Enum=ms;s;m;h;d
+	// +kubebuilder:default=ms
+	// Unit is the unit of delay duration, default Unit is ms
+	Unit *string `json:"unit,omitempty"`
 }
 
 // HostnameFaultInjection defines the access control configuration for a hostname
@@ -85,14 +91,24 @@ type FaultInjectionDelay struct {
 	Fixed *int64 `json:"fixed,omitempty"`
 
 	// +optional
-	// Range is the range of delay duration, default Unit is ms
-	Range *string `json:"range,omitempty"`
+	// Range is the range of delay duration
+	Range *FaultInjectionRange `json:"range,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Enum=ms;s;m;h;d
 	// +kubebuilder:default=ms
 	// Unit is the unit of delay duration, default Unit is ms
 	Unit *string `json:"unit,omitempty"`
+}
+
+type FaultInjectionRange struct {
+	// +kubebuilder:validation:Minimum=0
+	// Min is the minimum value of the range, default Unit is ms
+	Min int32 `json:"min"`
+
+	// +kubebuilder:validation:Minimum=1
+	// Max is the maximum value of the range, default Unit is ms
+	Max int32 `json:"max"`
 }
 
 // FaultInjectionAbort defines the abort configuration
@@ -105,8 +121,8 @@ type FaultInjectionAbort struct {
 	// +optional
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=10000
-	// Status is the HTTP status code to return for the aborted request
-	Status *int32 `json:"status,omitempty"`
+	// StatusCode is the HTTP status code to return for the aborted request
+	StatusCode *int32 `json:"statusCode,omitempty"`
 
 	// +optional
 	// Message is the HTTP status message to return for the aborted request

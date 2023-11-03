@@ -94,6 +94,27 @@ type AccessControlLists struct {
 	Message    *string  `json:"Message,omitempty"`
 }
 
+// FaultInjection is the fault injection configuration
+type FaultInjection struct {
+	Delay *FaultInjectionDelay `json:"FaultInjectionDelay,omitempty"`
+	Abort *FaultInjectionAbort `json:"FaultInjectionAbort,omitempty"`
+}
+
+// FaultInjectionDelay is the delay configuration for fault injection
+type FaultInjectionDelay struct {
+	Percent int32   `json:"Percent"`
+	Fixed   *int64  `json:"Fixed,omitempty"`
+	Range   *string `json:"Range,omitempty"`
+	Unit    *string `json:"Unit,omitempty"`
+}
+
+// FaultInjectionAbort is the abort configuration for fault injection
+type FaultInjectionAbort struct {
+	Percent int32   `json:"Percent"`
+	Status  *int32  `json:"StatusCode,omitempty"`
+	Message *string `json:"Message,omitempty"`
+}
+
 // TLS is the TLS configuration
 type TLS struct {
 	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
@@ -125,6 +146,7 @@ type HTTPRouteRuleSpec struct {
 	Matches            []HTTPTrafficMatch  `json:"Matches" hash:"set"`
 	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
+	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
@@ -135,6 +157,7 @@ type GRPCRouteRuleSpec struct {
 	Matches            []GRPCTrafficMatch  `json:"Matches" hash:"set"`
 	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
+	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
@@ -176,6 +199,7 @@ type HTTPTrafficMatch struct {
 	BackendService     map[string]BackendServiceConfig `json:"BackendService"`
 	RateLimit          *RateLimit                      `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists             `json:"AccessControlLists,omitempty"`
+	FaultInjection     *FaultInjection                 `json:"Fault,omitempty"`
 	Filters            []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 
@@ -186,6 +210,7 @@ type GRPCTrafficMatch struct {
 	BackendService     map[string]BackendServiceConfig `json:"BackendService"`
 	RateLimit          *RateLimit                      `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists             `json:"AccessControlLists,omitempty"`
+	FaultInjection     *FaultInjection                 `json:"Fault,omitempty"`
 	Filters            []Filter                        `json:"Filters,omitempty" hash:"set"`
 }
 

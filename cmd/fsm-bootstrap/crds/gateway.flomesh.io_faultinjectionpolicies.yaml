@@ -54,9 +54,9 @@ spec:
                         maximum: 100
                         minimum: 0
                         type: integer
-                      status:
-                        description: Status is the HTTP status code to return for
-                          the aborted request
+                      statusCode:
+                        description: StatusCode is the HTTP status code to return
+                          for the aborted request
                         format: int32
                         maximum: 10000
                         minimum: 1
@@ -78,9 +78,24 @@ spec:
                         minimum: 0
                         type: integer
                       range:
-                        description: Range is the range of delay duration, default
-                          Unit is ms
-                        type: string
+                        description: Range is the range of delay duration
+                        properties:
+                          max:
+                            description: Max is the maximum value of the range, default
+                              Unit is ms
+                            format: int32
+                            minimum: 1
+                            type: integer
+                          min:
+                            description: Min is the minimum value of the range, default
+                              Unit is ms
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        required:
+                        - max
+                        - min
+                        type: object
                       unit:
                         default: ms
                         description: Unit is the unit of delay duration, default Unit
@@ -119,8 +134,8 @@ spec:
                               maximum: 100
                               minimum: 0
                               type: integer
-                            status:
-                              description: Status is the HTTP status code to return
+                            statusCode:
+                              description: StatusCode is the HTTP status code to return
                                 for the aborted request
                               format: int32
                               maximum: 10000
@@ -144,9 +159,24 @@ spec:
                               minimum: 0
                               type: integer
                             range:
-                              description: Range is the range of delay duration, default
-                                Unit is ms
-                              type: string
+                              description: Range is the range of delay duration
+                              properties:
+                                max:
+                                  description: Max is the maximum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                min:
+                                  description: Min is the minimum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - max
+                              - min
+                              type: object
                             unit:
                               default: ms
                               description: Unit is the unit of delay duration, default
@@ -267,8 +297,8 @@ spec:
                               maximum: 100
                               minimum: 0
                               type: integer
-                            status:
-                              description: Status is the HTTP status code to return
+                            statusCode:
+                              description: StatusCode is the HTTP status code to return
                                 for the aborted request
                               format: int32
                               maximum: 10000
@@ -292,9 +322,24 @@ spec:
                               minimum: 0
                               type: integer
                             range:
-                              description: Range is the range of delay duration, default
-                                Unit is ms
-                              type: string
+                              description: Range is the range of delay duration
+                              properties:
+                                max:
+                                  description: Max is the maximum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                min:
+                                  description: Min is the minimum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - max
+                              - min
+                              type: object
                             unit:
                               default: ms
                               description: Unit is the unit of delay duration, default
@@ -345,8 +390,8 @@ spec:
                               maximum: 100
                               minimum: 0
                               type: integer
-                            status:
-                              description: Status is the HTTP status code to return
+                            statusCode:
+                              description: StatusCode is the HTTP status code to return
                                 for the aborted request
                               format: int32
                               maximum: 10000
@@ -370,9 +415,24 @@ spec:
                               minimum: 0
                               type: integer
                             range:
-                              description: Range is the range of delay duration, default
-                                Unit is ms
-                              type: string
+                              description: Range is the range of delay duration
+                              properties:
+                                max:
+                                  description: Max is the maximum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 1
+                                  type: integer
+                                min:
+                                  description: Min is the minimum value of the range,
+                                    default Unit is ms
+                                  format: int32
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - max
+                              - min
+                              type: object
                             unit:
                               default: ms
                               description: Unit is the unit of delay duration, default
@@ -585,6 +645,16 @@ spec:
                 - kind
                 - name
                 type: object
+              unit:
+                default: ms
+                description: Unit is the unit of delay duration, default Unit is ms
+                enum:
+                - ms
+                - s
+                - m
+                - h
+                - d
+                type: string
             required:
             - targetRef
             type: object

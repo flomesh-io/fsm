@@ -91,6 +91,9 @@ const (
 
 	// HealthCheckPoliciesProcessorType is the type used to represent the health check policies processor
 	HealthCheckPoliciesProcessorType ProcessorType = "healthchecks"
+
+	// FaultInjectionPoliciesProcessorType is the type used to represent the fault injection policies processor
+	FaultInjectionPoliciesProcessorType ProcessorType = "faultinjections"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -143,6 +146,35 @@ const (
 	// AccessControlPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
 	AccessControlPolicyMatchTypeRoute AccessControlPolicyMatchType = "route"
 )
+
+// FaultInjectionPolicyMatchType is the type used to represent the fault injection policy match type
+type FaultInjectionPolicyMatchType string
+
+const (
+	// FaultInjectionPolicyMatchTypePort is the type used to represent the fault injection policy match type port
+	//FaultInjectionPolicyMatchTypePort FaultInjectionPolicyMatchType = "port"
+
+	// FaultInjectionPolicyMatchTypeHostnames is the type used to represent the fault injection policy match type hostnames
+	FaultInjectionPolicyMatchTypeHostnames FaultInjectionPolicyMatchType = "hostnames"
+
+	// FaultInjectionPolicyMatchTypeRoute is the type used to represent the fault injection policy match type route
+	FaultInjectionPolicyMatchTypeRoute FaultInjectionPolicyMatchType = "route"
+)
+
+type globalPolicyAttachments struct {
+	rateLimits      map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy
+	accessControls  map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy
+	faultInjections map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy
+}
+
+type routePolicies struct {
+	hostnamesRateLimits      []gwpav1alpha1.RateLimitPolicy
+	routeRateLimits          []gwpav1alpha1.RateLimitPolicy
+	hostnamesAccessControls  []gwpav1alpha1.AccessControlPolicy
+	routeAccessControls      []gwpav1alpha1.AccessControlPolicy
+	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+	routeFaultInjections     []gwpav1alpha1.FaultInjectionPolicy
+}
 
 var (
 	log = logger.New("fsm-gateway/cache")
@@ -243,4 +275,5 @@ var (
 	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.CircuitBreakingPolicyKind)
 	accessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.AccessControlPolicyKind)
 	healthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.HealthCheckPolicyKind)
+	faultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.FaultInjectionPolicyKind)
 )

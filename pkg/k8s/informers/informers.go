@@ -233,6 +233,7 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyCircuitBreakingPolicy] = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()
 		ic.informers[InformerKeyAccessControlPolicy] = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Informer()
 		ic.informers[InformerKeyHealthCheckPolicy] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
+		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
@@ -240,6 +241,7 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.listers.CircuitBreakingPolicy = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Lister()
 		ic.listers.AccessControlPolicy = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Lister()
 		ic.listers.HealthCheckPolicy = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Lister()
+		ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
 	}
 }
 

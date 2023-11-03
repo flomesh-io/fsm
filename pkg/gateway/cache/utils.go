@@ -610,6 +610,36 @@ func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.Access
 	}
 }
 
+func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.FaultInjection {
+	result := &routecfg.FaultInjection{}
+
+	if fault.Delay != nil {
+		fd := fault.Delay
+		delay := &routecfg.FaultInjectionDelay{
+			Percent: fd.Percent,
+			Fixed:   fd.Fixed,
+			Unit:    fd.Unit,
+		}
+
+		if fd.Range != nil {
+			delay.Range = pointer.String(fmt.Sprintf("%d-%d", fd.Range.Min, fd.Range.Max))
+		}
+
+		result.Delay = delay
+	}
+
+	if fault.Abort != nil {
+		fa := fault.Abort
+		result.Abort = &routecfg.FaultInjectionAbort{
+			Percent: fa.Percent,
+			Status:  fa.StatusCode,
+			Message: fa.Message,
+		}
+	}
+
+	return result
+}
+
 func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
 	h := &routecfg.HealthCheck{
 		Interval:    hc.Interval,
