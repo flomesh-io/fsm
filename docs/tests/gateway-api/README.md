@@ -1007,3 +1007,57 @@ spec:
             value: application/json
 EOF
 ```
+
+### Test FaultInjectionPolicy
+
+
+#### Test Hostname Based Fault Injection
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: FaultInjectionPolicy
+metadata:
+  name: fault-injection-hostname-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        delay:
+          percent: 50
+          fixed: 10
+          unit: s
+EOF
+```
+
+#### Test Route Based Fault Injection
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: FaultInjectionPolicy
+metadata:
+  name: fault-injection-route-http
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: http-app-1
+    namespace: httpbin
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /bar
+    config: 
+      delay:
+        percent: 20
+        range: 
+          min: 1
+          max: 10
+        unit: ms
+EOF
+```
