@@ -1,0 +1,673 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: faultinjectionpolicies.gateway.flomesh.io
+spec:
+  group: gateway.flomesh.io
+  names:
+    kind: FaultInjectionPolicy
+    listKind: FaultInjectionPolicyList
+    plural: faultinjectionpolicies
+    singular: faultinjectionpolicy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: FaultInjectionPolicy is the Schema for the FaultInjectionPolicy
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FaultInjectionPolicySpec defines the desired state of FaultInjectionPolicy
+            properties:
+              config:
+                description: DefaultConfig is the default access control for all ports,
+                  routes and hostnames
+                properties:
+                  abort:
+                    description: Abort defines the abort configuration
+                    properties:
+                      message:
+                        description: Message is the HTTP status message to return
+                          for the aborted request
+                        type: string
+                      percent:
+                        description: Percent is the percentage of requests to abort
+                        format: int32
+                        maximum: 100
+                        minimum: 0
+                        type: integer
+                      status:
+                        description: Status is the HTTP status code to return for
+                          the aborted request
+                        format: int32
+                        maximum: 10000
+                        minimum: 1
+                        type: integer
+                    type: object
+                  delay:
+                    description: Delay defines the delay configuration
+                    properties:
+                      fixed:
+                        description: Fixed is the fixed delay duration, default Unit
+                          is ms
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      percent:
+                        description: Percent is the percentage of requests to delay
+                        format: int32
+                        maximum: 100
+                        minimum: 0
+                        type: integer
+                      range:
+                        description: Range is the range of delay duration, default
+                          Unit is ms
+                        type: string
+                      unit:
+                        default: ms
+                        description: Unit is the unit of delay duration, default Unit
+                          is ms
+                        enum:
+                        - ms
+                        - s
+                        - m
+                        - h
+                        - d
+                        type: string
+                    type: object
+                type: object
+              grpc:
+                description: GRPCFaultInjections is the access control configuration
+                  for GRPC routes
+                items:
+                  description: GRPCFaultInjection defines the access control configuration
+                    for a GRPC route
+                  properties:
+                    config:
+                      description: Config is the access control configuration for
+                        the GRPC route
+                      properties:
+                        abort:
+                          description: Abort defines the abort configuration
+                          properties:
+                            message:
+                              description: Message is the HTTP status message to return
+                                for the aborted request
+                              type: string
+                            percent:
+                              description: Percent is the percentage of requests to
+                                abort
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            status:
+                              description: Status is the HTTP status code to return
+                                for the aborted request
+                              format: int32
+                              maximum: 10000
+                              minimum: 1
+                              type: integer
+                          type: object
+                        delay:
+                          description: Delay defines the delay configuration
+                          properties:
+                            fixed:
+                              description: Fixed is the fixed delay duration, default
+                                Unit is ms
+                              format: int64
+                              minimum: 0
+                              type: integer
+                            percent:
+                              description: Percent is the percentage of requests to
+                                delay
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            range:
+                              description: Range is the range of delay duration, default
+                                Unit is ms
+                              type: string
+                            unit:
+                              default: ms
+                              description: Unit is the unit of delay duration, default
+                                Unit is ms
+                              enum:
+                              - ms
+                              - s
+                              - m
+                              - h
+                              - d
+                              type: string
+                          type: object
+                      type: object
+                    match:
+                      description: Match is the match condition for the GRPC route
+                      properties:
+                        headers:
+                          description: Headers specifies gRPC request header matchers.
+                            Multiple match values are ANDed together, meaning, a request
+                            MUST match all the specified headers to select the route.
+                          items:
+                            description: GRPCHeaderMatch describes how to select a
+                              gRPC route by matching gRPC request headers.
+                            properties:
+                              name:
+                                description: "Name is the name of the gRPC Header
+                                  to be matched. \n If multiple entries specify equivalent
+                                  header names, only the first entry with an equivalent
+                                  name MUST be considered for a match. Subsequent
+                                  entries with an equivalent header name MUST be ignored.
+                                  Due to the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: Type specifies how to match against the
+                                  value of the header.
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of the gRPC Header
+                                  to be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        method:
+                          description: Method specifies a gRPC request service/method
+                            matcher. If this field is not specified, all services
+                            and methods will match.
+                          properties:
+                            method:
+                              description: "Value of the method to match against.
+                                If left empty or omitted, will match all services.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            service:
+                              description: "Value of the service to match against.
+                                If left empty or omitted, will match any service.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            type:
+                              default: Exact
+                              description: "Type specifies how to match against the
+                                service and/or method. Support: Core (Exact with service
+                                and method specified) \n Support: Implementation-specific
+                                (Exact with method specified but no service specified)
+                                \n Support: Implementation-specific (RegularExpression)"
+                              enum:
+                              - Exact
+                              - RegularExpression
+                              type: string
+                          type: object
+                      type: object
+                  required:
+                  - match
+                  type: object
+                maxItems: 16
+                type: array
+              hostnames:
+                description: Hostnames is the access control configuration for hostnames
+                items:
+                  description: HostnameFaultInjection defines the access control configuration
+                    for a hostname
+                  properties:
+                    config:
+                      description: Config is the access control configuration for
+                        the hostname
+                      properties:
+                        abort:
+                          description: Abort defines the abort configuration
+                          properties:
+                            message:
+                              description: Message is the HTTP status message to return
+                                for the aborted request
+                              type: string
+                            percent:
+                              description: Percent is the percentage of requests to
+                                abort
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            status:
+                              description: Status is the HTTP status code to return
+                                for the aborted request
+                              format: int32
+                              maximum: 10000
+                              minimum: 1
+                              type: integer
+                          type: object
+                        delay:
+                          description: Delay defines the delay configuration
+                          properties:
+                            fixed:
+                              description: Fixed is the fixed delay duration, default
+                                Unit is ms
+                              format: int64
+                              minimum: 0
+                              type: integer
+                            percent:
+                              description: Percent is the percentage of requests to
+                                delay
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            range:
+                              description: Range is the range of delay duration, default
+                                Unit is ms
+                              type: string
+                            unit:
+                              default: ms
+                              description: Unit is the unit of delay duration, default
+                                Unit is ms
+                              enum:
+                              - ms
+                              - s
+                              - m
+                              - h
+                              - d
+                              type: string
+                          type: object
+                      type: object
+                    hostname:
+                      description: Hostname is the hostname for matching the access
+                        control
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                  required:
+                  - hostname
+                  type: object
+                maxItems: 16
+                type: array
+              http:
+                description: HTTPFaultInjections is the access control configuration
+                  for HTTP routes
+                items:
+                  description: HTTPFaultInjection defines the access control configuration
+                    for a HTTP route
+                  properties:
+                    config:
+                      description: Config is the access control configuration for
+                        the HTTP route
+                      properties:
+                        abort:
+                          description: Abort defines the abort configuration
+                          properties:
+                            message:
+                              description: Message is the HTTP status message to return
+                                for the aborted request
+                              type: string
+                            percent:
+                              description: Percent is the percentage of requests to
+                                abort
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            status:
+                              description: Status is the HTTP status code to return
+                                for the aborted request
+                              format: int32
+                              maximum: 10000
+                              minimum: 1
+                              type: integer
+                          type: object
+                        delay:
+                          description: Delay defines the delay configuration
+                          properties:
+                            fixed:
+                              description: Fixed is the fixed delay duration, default
+                                Unit is ms
+                              format: int64
+                              minimum: 0
+                              type: integer
+                            percent:
+                              description: Percent is the percentage of requests to
+                                delay
+                              format: int32
+                              maximum: 100
+                              minimum: 0
+                              type: integer
+                            range:
+                              description: Range is the range of delay duration, default
+                                Unit is ms
+                              type: string
+                            unit:
+                              default: ms
+                              description: Unit is the unit of delay duration, default
+                                Unit is ms
+                              enum:
+                              - ms
+                              - s
+                              - m
+                              - h
+                              - d
+                              type: string
+                          type: object
+                      type: object
+                    match:
+                      description: Match is the match condition for the HTTP route
+                      properties:
+                        headers:
+                          description: Headers specifies HTTP request header matchers.
+                            Multiple match values are ANDed together, meaning, a request
+                            must match all the specified headers to select the route.
+                          items:
+                            description: HTTPHeaderMatch describes how to select a
+                              HTTP route by matching HTTP request headers.
+                            properties:
+                              name:
+                                description: "Name is the name of the HTTP Header
+                                  to be matched. Name matching MUST be case insensitive.
+                                  (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                  \n If multiple entries specify equivalent header
+                                  names, only the first entry with an equivalent name
+                                  MUST be considered for a match. Subsequent entries
+                                  with an equivalent header name MUST be ignored.
+                                  Due to the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent. \n When a
+                                  header is repeated in an HTTP request, it is implementation-specific
+                                  behavior as to how this is represented. Generally,
+                                  proxies should follow the guidance from the RFC:
+                                  https://www.rfc-editor.org/rfc/rfc7230.html#section-3.2.2
+                                  regarding processing a repeated header, with special
+                                  handling for \"Set-Cookie\"."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: "Type specifies how to match against
+                                  the value of the header. \n Support: Core (Exact)
+                                  \n Support: Implementation-specific (RegularExpression)
+                                  \n Since RegularExpression HeaderMatchType has implementation-specific
+                                  conformance, implementations can support POSIX,
+                                  PCRE or any other dialects of regular expressions.
+                                  Please read the implementation's documentation to
+                                  determine the supported dialect."
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of HTTP Header to
+                                  be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        method:
+                          description: "Method specifies HTTP method matcher. When
+                            specified, this route will be matched only if the request
+                            has the specified method. \n Support: Extended"
+                          enum:
+                          - GET
+                          - HEAD
+                          - POST
+                          - PUT
+                          - DELETE
+                          - CONNECT
+                          - OPTIONS
+                          - TRACE
+                          - PATCH
+                          type: string
+                        path:
+                          default:
+                            type: PathPrefix
+                            value: /
+                          description: Path specifies a HTTP request path matcher.
+                            If this field is not specified, a default prefix match
+                            on the "/" path is provided.
+                          properties:
+                            type:
+                              default: PathPrefix
+                              description: "Type specifies how to match against the
+                                path Value. \n Support: Core (Exact, PathPrefix) \n
+                                Support: Implementation-specific (RegularExpression)"
+                              enum:
+                              - Exact
+                              - PathPrefix
+                              - RegularExpression
+                              type: string
+                            value:
+                              default: /
+                              description: Value of the HTTP path to match against.
+                              maxLength: 1024
+                              type: string
+                          type: object
+                        queryParams:
+                          description: "QueryParams specifies HTTP query parameter
+                            matchers. Multiple match values are ANDed together, meaning,
+                            a request must match all the specified query parameters
+                            to select the route. \n Support: Extended"
+                          items:
+                            description: HTTPQueryParamMatch describes how to select
+                              a HTTP route by matching HTTP query parameters.
+                            properties:
+                              name:
+                                description: "Name is the name of the HTTP query param
+                                  to be matched. This must be an exact string match.
+                                  (See https://tools.ietf.org/html/rfc7230#section-2.7.3).
+                                  \n If multiple entries specify equivalent query
+                                  param names, only the first entry with an equivalent
+                                  name MUST be considered for a match. Subsequent
+                                  entries with an equivalent query param name MUST
+                                  be ignored. \n If a query param is repeated in an
+                                  HTTP request, the behavior is purposely left undefined,
+                                  since different data planes have different capabilities.
+                                  However, it is *recommended* that implementations
+                                  should match against the first value of the param
+                                  if the data plane supports it, as this behavior
+                                  is expected in other load balancing contexts outside
+                                  of the Gateway API. \n Users SHOULD NOT route traffic
+                                  based on repeated query params to guard themselves
+                                  against potential differences in the implementations."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: "Type specifies how to match against
+                                  the value of the query parameter. \n Support: Extended
+                                  (Exact) \n Support: Implementation-specific (RegularExpression)
+                                  \n Since RegularExpression QueryParamMatchType has
+                                  Implementation-specific conformance, implementations
+                                  can support POSIX, PCRE or any other dialects of
+                                  regular expressions. Please read the implementation's
+                                  documentation to determine the supported dialect."
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of HTTP query param
+                                  to be matched.
+                                maxLength: 1024
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                      type: object
+                  required:
+                  - match
+                  type: object
+                maxItems: 16
+                type: array
+              targetRef:
+                description: TargetRef is the reference to the target resource to
+                  which the policy is applied
+                properties:
+                  group:
+                    description: Group is the group of the target resource.
+                    maxLength: 253
+                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                    type: string
+                  kind:
+                    description: Kind is kind of the target resource.
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                    type: string
+                  name:
+                    description: Name is the name of the target resource.
+                    maxLength: 253
+                    minLength: 1
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the referent. When
+                      unspecified, the local namespace is inferred. Even when policy
+                      targets a resource in a different namespace, it MUST only apply
+                      to traffic originating from the same namespace as the policy.
+                    maxLength: 63
+                    minLength: 1
+                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    type: string
+                required:
+                - group
+                - kind
+                - name
+                type: object
+            required:
+            - targetRef
+            type: object
+          status:
+            description: FaultInjectionPolicyStatus defines the observed state of
+              FaultInjectionPolicy
+            properties:
+              conditions:
+                description: Conditions describe the current conditions of the FaultInjectionPolicy.
+                items:
+                  description: "Condition contains details for one aspect of the current
+                    state of this API Resource. --- This struct is intended for direct
+                    use as an array at the field path .status.conditions.  For example,
+                    \n type FooStatus struct{ // Represents the observations of a
+                    foo's current state. // Known .status.conditions.type are: \"Available\",
+                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
+                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
+                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
+                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                  properties:
+                    lastTransitionTime:
+                      description: lastTransitionTime is the last time the condition
+                        transitioned from one status to another. This should be when
+                        the underlying condition changed.  If that is not known, then
+                        using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: message is a human readable message indicating
+                        details about the transition. This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: observedGeneration represents the .metadata.generation
+                        that the condition was set based upon. For instance, if .metadata.generation
+                        is currently 12, but the .status.conditions[x].observedGeneration
+                        is 9, the condition is out of date with respect to the current
+                        state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: reason contains a programmatic identifier indicating
+                        the reason for the condition's last transition. Producers
+                        of specific condition types may define expected values and
+                        meanings for this field, and whether the values are considered
+                        a guaranteed API. The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                        --- Many .condition.type values are consistent across resources
+                        like Available, but because arbitrary conditions can be useful
+                        (see .node.status.conditions), the ability to deconflict is
+                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                maxItems: 8
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
