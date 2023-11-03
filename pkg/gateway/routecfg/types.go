@@ -96,8 +96,8 @@ type AccessControlLists struct {
 
 // FaultInjection is the fault injection configuration
 type FaultInjection struct {
-	Delay *FaultInjectionDelay `json:"FaultInjectionDelay,omitempty"`
-	Abort *FaultInjectionAbort `json:"FaultInjectionAbort,omitempty"`
+	Delay *FaultInjectionDelay `json:"Delay,omitempty"`
+	Abort *FaultInjectionAbort `json:"Abort,omitempty"`
 }
 
 // FaultInjectionDelay is the delay configuration for fault injection

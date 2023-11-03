@@ -39,13 +39,7 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
-		log.Debug().Msgf("[GW-CACHE] validListeners: %v", validListeners)
-		policies := &globalPolicyAttachments{
-			rateLimits:      c.rateLimits(),
-			accessControls:  c.accessControls(),
-			faultInjections: c.faultInjections(),
-		}
-
+		policies := c.policyAttachments()
 		listenerCfg := c.listeners(gw, validListeners, policies)
 		rules, referredServices := c.routeRules(gw, validListeners, policies)
 		svcConfigs := c.serviceConfigs(referredServices)
@@ -105,6 +99,14 @@ func (c *GatewayCache) BuildConfigs() {
 	}
 }
 
+func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
+	return globalPolicyAttachments{
+		rateLimits:      c.rateLimits(),
+		accessControls:  c.accessControls(),
+		faultInjections: c.faultInjections(),
+	}
+}
+
 func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 	path := fmt.Sprintf("%s/config.json", basepath)
 
@@ -138,7 +140,7 @@ func (c *GatewayCache) isDebugEnabled() bool {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies *globalPolicyAttachments) []routecfg.Listener {
+func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []routecfg.Listener {
 	listeners := make([]routecfg.Listener, 0)
 	for _, l := range validListeners {
 		listener := routecfg.Listener{
@@ -288,7 +290,7 @@ func (c *GatewayCache) faultInjections() map[FaultInjectionPolicyMatchType][]gwp
 		faultInjections[matchType] = make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	}
 
-	for key := range c.accesscontrols {
+	for key := range c.faultinjections {
 		faultInjectionPolicy, err := c.getFaultInjectionPolicyFromCache(key)
 		if err != nil {
 			log.Error().Msgf("Failed to get FaultInjectionPolicy %s: %s", key, err)
@@ -400,7 +402,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies *globalPolicyAttachments) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
 	rules := make(map[int32]routecfg.RouteRule)
 	services := make(map[string]serviceInfo)
 
@@ -454,8 +456,9 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	return rules, services
 }
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies *globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
 	routePolicies := filterPoliciesByRoute(policies, httpRoute)
+	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
@@ -514,8 +517,9 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies *globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
 	routePolicies := filterPoliciesByRoute(policies, grpcRoute)
+	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
@@ -665,69 +669,65 @@ func processTCPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 	}
 }
 
-func filterPoliciesByRoute(policies *globalPolicyAttachments, route client.Object) *routePolicies {
-	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
+func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object) routePolicies {
+	result := routePolicies{
+		hostnamesRateLimits:      make([]gwpav1alpha1.RateLimitPolicy, 0),
+		routeRateLimits:          make([]gwpav1alpha1.RateLimitPolicy, 0),
+		hostnamesAccessControls:  make([]gwpav1alpha1.AccessControlPolicy, 0),
+		routeAccessControls:      make([]gwpav1alpha1.AccessControlPolicy, 0),
+		hostnamesFaultInjections: make([]gwpav1alpha1.FaultInjectionPolicy, 0),
+		routeFaultInjections:     make([]gwpav1alpha1.FaultInjectionPolicy, 0),
+	}
+
 	if len(policies.rateLimits[RateLimitPolicyMatchTypeHostnames]) > 0 {
 		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
-				hostnamesRateLimits = append(hostnamesRateLimits, rateLimit)
+				result.hostnamesRateLimits = append(result.hostnamesRateLimits, rateLimit)
 			}
 		}
 	}
 
-	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
 	if len(policies.rateLimits[RateLimitPolicyMatchTypeRoute]) > 0 {
 		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeRoute] {
 			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
-				routeRateLimits = append(routeRateLimits, rateLimit)
+				result.routeRateLimits = append(result.routeRateLimits, rateLimit)
 			}
 		}
 	}
 
-	hostnamesAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
 	if len(policies.accessControls[AccessControlPolicyMatchTypeHostnames]) > 0 {
 		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
-				hostnamesAccessControls = append(hostnamesAccessControls, ac)
+				result.hostnamesAccessControls = append(result.hostnamesAccessControls, ac)
 			}
 		}
 	}
 
-	routeAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
 	if len(policies.accessControls[AccessControlPolicyMatchTypeRoute]) > 0 {
 		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeRoute] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
-				routeAccessControls = append(routeAccessControls, ac)
+				result.routeAccessControls = append(result.routeAccessControls, ac)
 			}
 		}
 	}
 
-	hostnamesFaultInjections := make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames]) > 0 {
 		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
-				hostnamesFaultInjections = append(hostnamesFaultInjections, fj)
+				result.hostnamesFaultInjections = append(result.hostnamesFaultInjections, fj)
 			}
 		}
 	}
 
-	routeFaultInjections := make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeRoute]) > 0 {
 		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeRoute] {
 			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
-				routeFaultInjections = append(routeFaultInjections, fj)
+				result.routeFaultInjections = append(result.routeFaultInjections, fj)
 			}
 		}
 	}
 
-	return &routePolicies{
-		hostnamesRateLimits:      hostnamesRateLimits,
-		routeRateLimits:          routeRateLimits,
-		hostnamesAccessControls:  hostnamesAccessControls,
-		routeAccessControls:      routeAccessControls,
-		hostnamesFaultInjections: hostnamesFaultInjections,
-		routeFaultInjections:     routeFaultInjections,
-	}
+	return result
 }
 
 func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
@@ -992,7 +992,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies *routePolicies, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
 	httpSpec := routecfg.HTTPRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeHTTP,
 		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
@@ -1085,7 +1085,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies *rout
 	return httpSpec
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies *routePolicies, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
 	grpcSpec := routecfg.GRPCRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeGRPC,
 		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
