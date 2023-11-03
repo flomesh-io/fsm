@@ -132,6 +132,18 @@ func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Obj
 	return string(targetRef.Name) == object.GetName()
 }
 
+func IsTargetRefToGVK(targetRef gwv1alpha2.PolicyTargetReference, gvk schema.GroupVersionKind) bool {
+	if string(targetRef.Group) != gvk.Group {
+		return false
+	}
+
+	if string(targetRef.Kind) != gvk.Kind {
+		return false
+	}
+
+	return true
+}
+
 // ObjectKey returns the object key for the given object
 func ObjectKey(obj client.Object) client.ObjectKey {
 	ns := obj.GetNamespace()

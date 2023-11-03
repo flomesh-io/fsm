@@ -129,8 +129,11 @@ const (
 	// RateLimitPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
 	RateLimitPolicyMatchTypeHostnames RateLimitPolicyMatchType = "hostnames"
 
-	// RateLimitPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
-	RateLimitPolicyMatchTypeRoute RateLimitPolicyMatchType = "route"
+	// RateLimitPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
+	RateLimitPolicyMatchTypeHTTPRoute RateLimitPolicyMatchType = "httproute"
+
+	// RateLimitPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
+	RateLimitPolicyMatchTypeGRPCRoute RateLimitPolicyMatchType = "grpcroute"
 )
 
 // AccessControlPolicyMatchType is the type used to represent the rate limit policy match type
@@ -143,8 +146,11 @@ const (
 	// AccessControlPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
 	AccessControlPolicyMatchTypeHostnames AccessControlPolicyMatchType = "hostnames"
 
-	// AccessControlPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
-	AccessControlPolicyMatchTypeRoute AccessControlPolicyMatchType = "route"
+	// AccessControlPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
+	AccessControlPolicyMatchTypeHTTPRoute AccessControlPolicyMatchType = "httproute"
+
+	// AccessControlPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
+	AccessControlPolicyMatchTypeGRPCRoute AccessControlPolicyMatchType = "grpcroute"
 )
 
 // FaultInjectionPolicyMatchType is the type used to represent the fault injection policy match type
@@ -157,8 +163,11 @@ const (
 	// FaultInjectionPolicyMatchTypeHostnames is the type used to represent the fault injection policy match type hostnames
 	FaultInjectionPolicyMatchTypeHostnames FaultInjectionPolicyMatchType = "hostnames"
 
-	// FaultInjectionPolicyMatchTypeRoute is the type used to represent the fault injection policy match type route
-	FaultInjectionPolicyMatchTypeRoute FaultInjectionPolicyMatchType = "route"
+	// FaultInjectionPolicyMatchTypeHTTPRoute is the type used to represent the fault injection policy match type httproute
+	FaultInjectionPolicyMatchTypeHTTPRoute FaultInjectionPolicyMatchType = "httproute"
+
+	// FaultInjectionPolicyMatchTypeGRPCRoute is the type used to represent the fault injection policy match type grpcroute
+	FaultInjectionPolicyMatchTypeGRPCRoute FaultInjectionPolicyMatchType = "grpcroute"
 )
 
 type globalPolicyAttachments struct {
@@ -169,11 +178,14 @@ type globalPolicyAttachments struct {
 
 type routePolicies struct {
 	hostnamesRateLimits      []gwpav1alpha1.RateLimitPolicy
-	routeRateLimits          []gwpav1alpha1.RateLimitPolicy
+	httpRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
+	grpcRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
 	hostnamesAccessControls  []gwpav1alpha1.AccessControlPolicy
-	routeAccessControls      []gwpav1alpha1.AccessControlPolicy
+	httpRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
+	grpcRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
 	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
-	routeFaultInjections     []gwpav1alpha1.FaultInjectionPolicy
+	httpRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+	grpcRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
 }
 
 var (
