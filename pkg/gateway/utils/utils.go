@@ -525,18 +525,18 @@ func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, ac
 }
 
 // GetAccessControlConfigIfHTTPRouteMatchesPolicy returns the access control config if the HTTP route matches the policy
-func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
-	if len(rateLimitPolicy.Spec.HTTPAccessControls) == 0 {
+func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(accessControlPolicy.Spec.HTTPAccessControls) == 0 {
 		return nil
 	}
 
-	for _, hr := range rateLimitPolicy.Spec.HTTPAccessControls {
+	for _, hr := range accessControlPolicy.Spec.HTTPAccessControls {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
 			if hr.Config != nil {
 				return hr.Config
 			}
 
-			return rateLimitPolicy.Spec.DefaultConfig
+			return accessControlPolicy.Spec.DefaultConfig
 		}
 	}
 
@@ -544,18 +544,88 @@ func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRou
 }
 
 // GetAccessControlConfigIfGRPCRouteMatchesPolicy returns the access control config if the GRPC route matches the policy
-func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
-	if len(rateLimitPolicy.Spec.GRPCAccessControls) == 0 {
+func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+	if len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
 		return nil
 	}
 
-	for _, gr := range rateLimitPolicy.Spec.GRPCAccessControls {
+	for _, gr := range accessControlPolicy.Spec.GRPCAccessControls {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
 			if gr.Config != nil {
 				return gr.Config
 			}
 
-			return rateLimitPolicy.Spec.DefaultConfig
+			return accessControlPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
+// GetFaultInjectionConfigIfRouteHostnameMatchesPolicy returns the fault injection config if the route hostname matches the policy
+func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+	if len(faultInjectionPolicy.Spec.Hostnames) == 0 {
+		return nil
+	}
+
+	for i := range faultInjectionPolicy.Spec.Hostnames {
+		hostname := string(faultInjectionPolicy.Spec.Hostnames[i].Hostname)
+		config := faultInjectionPolicy.Spec.Hostnames[i].Config
+		if config == nil {
+			config = faultInjectionPolicy.Spec.DefaultConfig
+		}
+
+		switch {
+		case routeHostname == hostname:
+			return config
+
+		case strings.HasPrefix(routeHostname, "*"):
+			if HostnameMatchesWildcardHostname(hostname, routeHostname) {
+				return config
+			}
+
+		case strings.HasPrefix(hostname, "*"):
+			if HostnameMatchesWildcardHostname(routeHostname, hostname) {
+				return config
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetFaultInjectionConfigIfHTTPRouteMatchesPolicy returns the fault injection config if the HTTP route matches the policy
+func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+	if len(faultInjectionPolicy.Spec.HTTPFaultInjections) == 0 {
+		return nil
+	}
+
+	for _, hr := range faultInjectionPolicy.Spec.HTTPFaultInjections {
+		if reflect.DeepEqual(routeMatch, hr.Match) {
+			if hr.Config != nil {
+				return hr.Config
+			}
+
+			return faultInjectionPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
+// GetFaultInjectionConfigIfGRPCRouteMatchesPolicy returns the fault injection config if the GRPC route matches the policy
+func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+	if len(faultInjectionPolicy.Spec.GRPCFaultInjections) == 0 {
+		return nil
+	}
+
+	for _, gr := range faultInjectionPolicy.Spec.GRPCFaultInjections {
+		if reflect.DeepEqual(routeMatch, gr.Match) {
+			if gr.Config != nil {
+				return gr.Config
+			}
+
+			return faultInjectionPolicy.Spec.DefaultConfig
 		}
 	}
 

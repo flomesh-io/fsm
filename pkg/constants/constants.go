@@ -439,6 +439,9 @@ const (
 
 	// HealthCheckPolicyKind is the kind name of HealthCheckPolicy used in Flomesh API
 	HealthCheckPolicyKind = "HealthCheckPolicy"
+
+	// FaultInjectionPolicyKind is the kind name of FaultInjectionPolicy used in Flomesh API
+	FaultInjectionPolicyKind = "FaultInjectionPolicy"
 )
 
 // Gateway API constants
@@ -529,6 +532,12 @@ const (
 
 	// HealthCheckPolicyValidatingWebhookPath is the path at which the HealthCheckPolicy validating webhook is served
 	HealthCheckPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-healthcheckpolicy"
+
+	// FaultInjectionPolicyMutatingWebhookPath is the path at which the FaultInjectionPolicy mutating webhook is served
+	FaultInjectionPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-faultinjectionpolicy"
+
+	// FaultInjectionPolicyValidatingWebhookPath is the path at which the FaultInjectionPolicy validating webhook is served
+	FaultInjectionPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-faultinjectionpolicy"
 )
 
 // PIPY Repo constants

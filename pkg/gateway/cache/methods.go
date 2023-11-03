@@ -402,3 +402,14 @@ func (c *GatewayCache) getHealthCheckPolicyFromCache(key client.ObjectKey) (*gwp
 
 	return obj, nil
 }
+
+func (c *GatewayCache) getFaultInjectionPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.FaultInjectionPolicy, error) {
+	obj, err := c.informers.GetListers().FaultInjectionPolicy.FaultInjectionPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(faultInjectionPolicyGVK)
+
+	return obj, nil
+}

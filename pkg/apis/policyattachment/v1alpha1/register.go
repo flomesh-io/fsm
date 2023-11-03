@@ -49,6 +49,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&AccessControlPolicyList{},
 		&HealthCheckPolicy{},
 		&HealthCheckPolicyList{},
+		&FaultInjectionPolicy{},
+		&FaultInjectionPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

@@ -31,6 +31,14 @@ type CircuitBreakingPolicyListerExpansion interface{}
 // CircuitBreakingPolicyNamespaceLister.
 type CircuitBreakingPolicyNamespaceListerExpansion interface{}
 
+// FaultInjectionPolicyListerExpansion allows custom methods to be added to
+// FaultInjectionPolicyLister.
+type FaultInjectionPolicyListerExpansion interface{}
+
+// FaultInjectionPolicyNamespaceListerExpansion allows custom methods to be added to
+// FaultInjectionPolicyNamespaceLister.
+type FaultInjectionPolicyNamespaceListerExpansion interface{}
+
 // HealthCheckPolicyListerExpansion allows custom methods to be added to
 // HealthCheckPolicyLister.
 type HealthCheckPolicyListerExpansion interface{}
