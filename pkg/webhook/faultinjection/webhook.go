@@ -286,6 +286,10 @@ func validateConfigFormat(path *field.Path, config *gwpav1alpha1.FaultInjectionC
 		errs = append(errs, field.Required(path, "either delay or abort must be set"))
 	}
 
+	if config.Delay != nil && config.Abort != nil {
+		errs = append(errs, field.Invalid(path, config, "only one of delay or abort can be set at the same time"))
+	}
+
 	if config.Delay != nil {
 		if config.Delay.Fixed == nil && config.Delay.Range == nil {
 			errs = append(errs, field.Required(path.Child("delay"), "either fixed or range must be set"))
