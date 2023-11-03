@@ -123,10 +123,6 @@ func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 
 	if len(policy.Spec.Hostnames) > 0 {
 		for i, hostname := range policy.Spec.Hostnames {
-			if hostname.RateLimit == nil && policy.Spec.DefaultL7RateLimit != nil {
-				policy.Spec.Hostnames[i].RateLimit = policy.Spec.DefaultL7RateLimit
-			}
-
 			if hostname.RateLimit != nil {
 				policy.Spec.Hostnames[i].RateLimit = l7RateLimitDefaults(hostname.RateLimit)
 			}
@@ -135,10 +131,6 @@ func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 
 	if len(policy.Spec.HTTPRateLimits) > 0 {
 		for i, hr := range policy.Spec.HTTPRateLimits {
-			if hr.RateLimit == nil && policy.Spec.DefaultL7RateLimit != nil {
-				policy.Spec.HTTPRateLimits[i].RateLimit = policy.Spec.DefaultL7RateLimit
-			}
-
 			if hr.RateLimit != nil {
 				policy.Spec.HTTPRateLimits[i].RateLimit = l7RateLimitDefaults(hr.RateLimit)
 			}
@@ -147,10 +139,6 @@ func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 
 	if len(policy.Spec.GRPCRateLimits) > 0 {
 		for i, gr := range policy.Spec.GRPCRateLimits {
-			if gr.RateLimit == nil && policy.Spec.DefaultL7RateLimit != nil {
-				policy.Spec.GRPCRateLimits[i].RateLimit = policy.Spec.DefaultL7RateLimit
-			}
-
 			if gr.RateLimit != nil {
 				policy.Spec.GRPCRateLimits[i].RateLimit = l7RateLimitDefaults(gr.RateLimit)
 			}

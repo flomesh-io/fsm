@@ -441,6 +441,17 @@ const (
 
 	// AccessControlPolicyUpdated is the type of announcement emitted when we observe an update to accesscontrolpolicies.gateway.flomesh.io
 	AccessControlPolicyUpdated Kind = "accesscontrolpolicy-updated"
+
+	// ---
+
+	// HealthCheckPolicyAdded is the type of announcement emitted when we observe an addition of healthcheckpolicies.gateway.flomesh.io
+	HealthCheckPolicyAdded Kind = "healthcheckpolicy-added"
+
+	// HealthCheckPolicyDeleted the type of announcement emitted when we observe a deletion of healthcheckpolicies.gateway.flomesh.io
+	HealthCheckPolicyDeleted Kind = "healthcheckpolicy-deleted"
+
+	// HealthCheckPolicyUpdated is the type of announcement emitted when we observe an update to healthcheckpolicies.gateway.flomesh.io
+	HealthCheckPolicyUpdated Kind = "healthcheckpolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

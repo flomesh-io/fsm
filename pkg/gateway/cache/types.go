@@ -88,6 +88,9 @@ const (
 
 	// AccessControlPoliciesProcessorType is the type used to represent the access control policies processor
 	AccessControlPoliciesProcessorType ProcessorType = "accesscontrols"
+
+	// HealthCheckPoliciesProcessorType is the type used to represent the health check policies processor
+	HealthCheckPoliciesProcessorType ProcessorType = "healthchecks"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -155,9 +158,6 @@ var (
 		"http/auth.js",
 		"http/route.js",
 		"http/fault-injection.js",
-		"filter/request-redirect.js",
-		"filter/header-modifier.js",
-		"filter/url-rewrite.js",
 		"http/service.js",
 		"http/metrics.js",
 		"http/tracing.js",
@@ -167,6 +167,10 @@ var (
 		"http/throttle-route.js",
 		"http/error-page.js",
 		"http/proxy-redirect.js",
+		"filter/request-redirect.js",
+		"filter/header-modifier.js",
+		"filter/url-rewrite.js",
+		"filter/request-mirror.js",
 		"http/forward.js",
 		"http/default.js",
 	}
@@ -181,9 +185,6 @@ var (
 		"http/auth.js",
 		"http/route.js",
 		"http/fault-injection.js",
-		"filter/request-redirect.js",
-		"filter/header-modifier.js",
-		"filter/url-rewrite.js",
 		"http/service.js",
 		"http/metrics.js",
 		"http/tracing.js",
@@ -193,6 +194,10 @@ var (
 		"http/throttle-route.js",
 		"http/error-page.js",
 		"http/proxy-redirect.js",
+		"filter/request-redirect.js",
+		"filter/header-modifier.js",
+		"filter/url-rewrite.js",
+		"filter/request-mirror.js",
 		"http/forward.js",
 		"http/default.js",
 	}
@@ -237,4 +242,5 @@ var (
 	loadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
 	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.CircuitBreakingPolicyKind)
 	accessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.AccessControlPolicyKind)
+	healthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.HealthCheckPolicyKind)
 )
