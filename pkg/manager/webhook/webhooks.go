@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/webhook/healthcheck"
+
 	"github.com/flomesh-io/fsm/pkg/webhook/accesscontrol"
 
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -261,6 +263,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, loadbalancer.NewRegister(regCfg))
 		result = append(result, circuitbreaking.NewRegister(regCfg))
 		result = append(result, accesscontrol.NewRegister(regCfg))
+		result = append(result, healthcheck.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {

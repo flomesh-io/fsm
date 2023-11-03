@@ -391,3 +391,14 @@ func (c *GatewayCache) getAccessControlPolicyFromCache(key client.ObjectKey) (*g
 
 	return obj, nil
 }
+
+func (c *GatewayCache) getHealthCheckPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.HealthCheckPolicy, error) {
+	obj, err := c.informers.GetListers().HealthCheckPolicy.HealthCheckPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(healthCheckPolicyGVK)
+
+	return obj, nil
+}

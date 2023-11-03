@@ -30,20 +30,20 @@
         interval = serviceConfig.HealthCheck?.Interval, // || 15, active
         maxFails = serviceConfig.HealthCheck?.MaxFails, // || 3, both
         failTimeout = serviceConfig.HealthCheck?.FailTimeout, // || 300, passivity
-        uri = serviceConfig.HealthCheck?.Uri, // for HTTP
-        matches = serviceConfig.HealthCheck?.Matches || [{ Type: "status", Value: [200] }], // for HTTP
-        type = uri ? 'HTTP' : 'TCP',
+        path = serviceConfig.HealthCheck?.Path, // for HTTP
+        matches = serviceConfig.HealthCheck?.Matches || [{ StatusCodes: [200] }], // for HTTP
+        type = path ? 'HTTP' : 'TCP',
       ) => (
         {
           name,
           interval,
           maxFails,
           failTimeout,
-          uri,
+          path,
           matches,
 
           toString: () => (
-            'service: ' + name + ', interval: ' + interval + ', maxFails: ' + maxFails + ', uri: ' + uri + ', matches: ' + matches
+            'service: ' + name + ', interval: ' + interval + ', maxFails: ' + maxFails + ', path: ' + path + ', matches: ' + matches
           ),
 
           ok: target => (
@@ -123,48 +123,83 @@
             target.alive > 0
           ),
 
-          match: msg => (
+          match: (
             (
+              rules,
               match_rules = matches.map(
                 m => (
-                  (m?.Type === 'status') ? (
-                    msg => (
-                      m?.Value?.includes(msg?.head?.status)
-                    )
-                  ) : (
-                    (m?.Type === 'body') ? (
+                  rules = [],
+                  m?.StatusCodes && (
+                    rules.push(
                       msg => (
-                        msg?.body?.toString?.()?.includes(m?.Value)
-                      )
-                    ) : (
-                      (m?.Type === 'headers') ? (
-                        msg => (
-                          msg?.head?.headers?.[m?.Name?.toLowerCase?.()] === m?.Value
-                        )
-                      ) : (
-                        () => false
+                        m.StatusCodes.includes(msg?.head?.status) || -1
                       )
                     )
+                  ),
+                  m?.Body && (
+                    rules.push(
+                      msg => (
+                        msg?.body?.toString?.()?.includes(m.Body) || -2
+                      )
+                    )
+                  ),
+                  m?.Headers && (
+                    rules.push(
+                      Object.entries(m.Headers).map(
+                        ([k, v]) => (
+                          msg => (
+                            (msg?.head?.headers?.[k.toLowerCase?.()] == v) || -3
+                          )
+                        )
+                      )
+                    )
+                  ),
+                  (rules.length === 0) ? (
+                    () => -100
+                  ) : (
+                    rules.flat()
                   )
                 )
-              ),
+              ).flat()
             ) => (
-              match_rules.every(m => m(msg))
+              msg => (
+                (
+                  err = 0
+                ) => (
+                  match_rules.every(
+                    m => (
+                      (err = m(msg)) > 0
+                    )
+                  ) || err
+                )
+              )()
             )
           )(),
 
           check: target => (
-            new http.Agent(target.target).request('GET', uri).then(
+            new http.Agent(target.target).request('GET', path).then(
               result => (
-                target.http_status = result?.head?.status,
-                target.service.match(result) ? (
-                  target.service.ok(target)
-                ) : (
-                  target.reason = "BadHttpStatus",
-                  target.service.fail(target)
-                ),
-                {}
-              )
+                (
+                  code = target.service.match(result)
+                ) => (
+                  target.http_status = result?.head?.status,
+                  (code > 0) ? (
+                    target.service.ok(target)
+                  ) : (
+                    (code == -1) ? (
+                      target.reason = "Bad-StatusCode"
+                    ) : (code == -2) ? (
+                      target.reason = "Bad-Body"
+                    ) : (code == -3) ? (
+                      target.reason = "Bad-Header"
+                    ) : (
+                      target.reason = "Bad-Matches"
+                    ),
+                    target.service.fail(target)
+                  ),
+                  {}
+                )
+              )()
             )
           ),
         }
@@ -173,7 +208,6 @@
   ),
 
   healthCheckCache = new algo.Cache(makeHealthCheck),
-
 ) => pipy({
   _idx: 0,
   _changed: 0,
@@ -228,7 +262,7 @@
       target => (
         (target.service.interval > 0 && ++target.tick >= target.service.interval) && (
           target.tick = 0,
-          target.service.uri ? ( // for HTTP
+          target.service.path ? ( // for HTTP
             target.service.check(target)
           ) : ( // for TCP
             _targetPromises.push(new Promise(r => _resolve = r)),
