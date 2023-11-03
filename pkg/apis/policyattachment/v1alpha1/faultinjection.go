@@ -104,11 +104,11 @@ type FaultInjectionDelay struct {
 type FaultInjectionRange struct {
 	// +kubebuilder:validation:Minimum=0
 	// Min is the minimum value of the range, default Unit is ms
-	Min int32 `json:"min"`
+	Min int64 `json:"min"`
 
 	// +kubebuilder:validation:Minimum=1
 	// Max is the maximum value of the range, default Unit is ms
-	Max int32 `json:"max"`
+	Max int64 `json:"max"`
 }
 
 // FaultInjectionAbort defines the abort configuration

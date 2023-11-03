@@ -83,13 +83,13 @@ spec:
                           max:
                             description: Max is the maximum value of the range, default
                               Unit is ms
-                            format: int32
+                            format: int64
                             minimum: 1
                             type: integer
                           min:
                             description: Min is the minimum value of the range, default
                               Unit is ms
-                            format: int32
+                            format: int64
                             minimum: 0
                             type: integer
                         required:
@@ -164,13 +164,13 @@ spec:
                                 max:
                                   description: Max is the maximum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 1
                                   type: integer
                                 min:
                                   description: Min is the minimum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 0
                                   type: integer
                               required:
@@ -327,13 +327,13 @@ spec:
                                 max:
                                   description: Max is the maximum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 1
                                   type: integer
                                 min:
                                   description: Min is the minimum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 0
                                   type: integer
                               required:
@@ -420,13 +420,13 @@ spec:
                                 max:
                                   description: Max is the maximum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 1
                                   type: integer
                                 min:
                                   description: Min is the minimum value of the range,
                                     default Unit is ms
-                                  format: int32
+                                  format: int64
                                   minimum: 0
                                   type: integer
                               required:
