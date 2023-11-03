@@ -789,11 +789,44 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 	return configs
 }
 
+func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
+	configs := make(map[string]*gwpav1alpha1.HealthCheckConfig)
+
+	for key := range c.healthchecks {
+		healthCheck, err := c.getHealthCheckPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get HealthCheckPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedPolicyAttachment(healthCheck.Status.Conditions) {
+			for _, p := range healthCheck.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(healthCheck.Spec.TargetRef, healthCheck.Namespace, int32(p.Port)); svcPortName != nil {
+					c := p.Config
+					if c == nil {
+						c = healthCheck.Spec.DefaultConfig
+					}
+
+					if c == nil {
+						continue
+					}
+
+					configs[svcPortName.String()] = c
+				}
+			}
+		}
+	}
+
+	return configs
+}
+
 func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]routecfg.ServiceConfig {
 	configs := make(map[string]routecfg.ServiceConfig)
 	sessionStickies := c.sessionStickies()
 	loadBalancers := c.loadBalancers()
 	circuitBreakings := c.circuitBreakings()
+	healthChecks := c.healthChecks()
 
 	for svcPortName, svcInfo := range services {
 		svcKey := svcInfo.svcPortName.NamespacedName
@@ -873,18 +906,11 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 		}
 
 		if cbCfg, exists := circuitBreakings[svcPortName]; exists {
-			svcCfg.CircuitBreaking = &routecfg.CircuitBreaking{
-				MinRequestAmount:        cbCfg.MinRequestAmount,
-				StatTimeWindow:          cbCfg.StatTimeWindow,
-				SlowAmountThreshold:     cbCfg.SlowAmountThreshold,
-				SlowRatioThreshold:      cbCfg.SlowRatioThreshold,
-				SlowTimeThreshold:       cbCfg.SlowTimeThreshold,
-				ErrorAmountThreshold:    cbCfg.ErrorAmountThreshold,
-				ErrorRatioThreshold:     cbCfg.ErrorRatioThreshold,
-				DegradedTimeWindow:      cbCfg.DegradedTimeWindow,
-				DegradedStatusCode:      cbCfg.DegradedStatusCode,
-				DegradedResponseContent: cbCfg.DegradedResponseContent,
-			}
+			svcCfg.CircuitBreaking = newCircuitBreaking(cbCfg)
+		}
+
+		if hc, exists := healthChecks[svcPortName]; exists {
+			svcCfg.HealthCheck = newHealthCheck(hc)
 		}
 
 		configs[svcPortName] = svcCfg

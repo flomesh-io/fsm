@@ -12,7 +12,7 @@ pipy()
 .branch(
   isDebugEnabled, (
     $=>$.handleStreamStart(
-      () => (
+      () => __consumer && (
         console.log('[consumer]:', __consumer)
       )
     )

@@ -1,4 +1,4 @@
-package sessionsticky
+package healthcheck
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -23,44 +22,44 @@ import (
 )
 
 var (
-	log = logger.New("webhook/sessionsticky")
+	log = logger.New("webhook/healthcheck")
 )
 
 type register struct {
 	*webhook.RegisterConfig
 }
 
-// NewRegister creates a new SessionStickyPolicy webhook register
+// NewRegister creates a new HealthCheckPolicy webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
-// GetWebhooks returns the webhooks to be registered for SessionStickyPolicy
+// GetWebhooks returns the webhooks to be registered for HealthCheckPolicy
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
 		[]string{"gateway.flomesh.io"},
 		[]string{"v1alpha1"},
-		[]string{"sessionstickypolicies"},
+		[]string{"healthcheckpolicies"},
 	)
 
 	return []admissionregv1.MutatingWebhook{flomeshadmission.NewMutatingWebhook(
-			"msessionstickypolicy.kb.flomesh.io",
+			"mhealthcheckpolicy.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.SessionStickyPolicyMutatingWebhookPath,
+			constants.HealthCheckPolicyMutatingWebhookPath,
 			r.CaBundle,
 			nil,
 			nil,
 			admissionregv1.Ignore,
 			[]admissionregv1.RuleWithOperations{rule},
 		)}, []admissionregv1.ValidatingWebhook{flomeshadmission.NewValidatingWebhook(
-			"vsessionstickypolicy.kb.flomesh.io",
+			"vhealthcheckpolicy.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.SessionStickyPolicyValidatingWebhookPath,
+			constants.HealthCheckPolicyValidatingWebhookPath,
 			r.CaBundle,
 			nil,
 			nil,
@@ -69,11 +68,11 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
-// GetHandlers returns the handlers to be registered for SessionStickyPolicy
+// GetHandlers returns the handlers to be registered for HealthCheckPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.SessionStickyPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.SessionStickyPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.HealthCheckPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
+		constants.HealthCheckPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
 	}
 }
 
@@ -91,12 +90,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
-	return &gwpav1alpha1.SessionStickyPolicy{}
+	return &gwpav1alpha1.HealthCheckPolicy{}
 }
 
-// SetDefaults sets the default values for the SessionStickyPolicy
+// SetDefaults sets the default values for the HealthCheckPolicy
 func (w *defaulter) SetDefaults(obj interface{}) {
-	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
+	policy, ok := obj.(*gwpav1alpha1.HealthCheckPolicy)
 	if !ok {
 		return
 	}
@@ -123,15 +122,15 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
-func setDefaults(config *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+func setDefaults(config *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
 	config = config.DeepCopy()
 
-	if config.CookieName == nil {
-		config.CookieName = pointer.String("_srv_id")
-	}
-
-	if config.Expires == nil {
-		config.Expires = pointer.Int32(3600)
+	if config.Path != nil && len(config.Matches) == 0 {
+		config.Matches = []gwpav1alpha1.HealthCheckMatch{
+			{
+				StatusCodes: []int32{200},
+			},
+		}
 	}
 
 	return config
@@ -143,20 +142,20 @@ type validator struct {
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
-	return &gwpav1alpha1.SessionStickyPolicy{}
+	return &gwpav1alpha1.HealthCheckPolicy{}
 }
 
-// ValidateCreate validates the creation of the SessionStickyPolicy
+// ValidateCreate validates the creation of the HealthCheckPolicy
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return doValidation(obj)
 }
 
-// ValidateUpdate validates the update of the SessionStickyPolicy
+// ValidateUpdate validates the update of the HealthCheckPolicy
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return doValidation(obj)
 }
 
-// ValidateDelete validates the deletion of the SessionStickyPolicy
+// ValidateDelete validates the deletion of the HealthCheckPolicy
 func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
@@ -168,13 +167,13 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 }
 
 func doValidation(obj interface{}) error {
-	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
+	policy, ok := obj.(*gwpav1alpha1.HealthCheckPolicy)
 	if !ok {
 		return nil
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateConfig(policy)...)
+	errorList = append(errorList, validateSpec(policy)...)
 
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
@@ -211,7 +210,7 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	return errs
 }
 
-func validateConfig(policy *gwpav1alpha1.SessionStickyPolicy) field.ErrorList {
+func validateSpec(policy *gwpav1alpha1.HealthCheckPolicy) field.ErrorList {
 	var errs field.ErrorList
 
 	if len(policy.Spec.Ports) == 0 {
@@ -229,6 +228,41 @@ func validateConfig(policy *gwpav1alpha1.SessionStickyPolicy) field.ErrorList {
 		for i, port := range policy.Spec.Ports {
 			if port.Config == nil {
 				errs = append(errs, field.Required(path.Index(i).Child("config"), fmt.Sprintf("config must be set for port %d, as there's no default config", port.Port)))
+			}
+		}
+	}
+
+	if policy.Spec.DefaultConfig != nil {
+		errs = validateConfig(field.NewPath("spec").Child("config"), policy.Spec.DefaultConfig)
+	}
+
+	if len(policy.Spec.Ports) > 0 {
+		path := field.NewPath("spec").Child("ports")
+		for i, port := range policy.Spec.Ports {
+			if port.Config != nil {
+				errs = append(errs, validateConfig(path.Index(i).Child("config"), port.Config)...)
+			}
+		}
+	}
+
+	return errs
+}
+
+func validateConfig(path *field.Path, config *gwpav1alpha1.HealthCheckConfig) field.ErrorList {
+	var errs field.ErrorList
+
+	if config.Path != nil && len(config.Matches) == 0 {
+		errs = append(errs, field.Invalid(path.Child("matches"), config.Matches, "must be set if path is set"))
+	}
+
+	if len(config.Matches) != 0 && config.Path == nil {
+		errs = append(errs, field.Invalid(path.Child("path"), config.Path, "must be set if matches is set"))
+	}
+
+	if len(config.Matches) > 0 {
+		for i, match := range config.Matches {
+			if len(match.StatusCodes) == 0 && match.Body == nil && len(match.Headers) == 0 {
+				errs = append(errs, field.Invalid(path.Child("matches").Index(i), match, "must have at least one of statusCodes, body or headers"))
 			}
 		}
 	}

@@ -455,18 +455,37 @@ func GetLoadBalancerTypeIfPortMatchesPolicy(port int32, loadBalancerPolicy gwpav
 }
 
 // GetCircuitBreakingConfigIfPortMatchesPolicy returns true if the port matches the circuit breaking policy
-func GetCircuitBreakingConfigIfPortMatchesPolicy(port int32, sessionStickyPolicy gwpav1alpha1.CircuitBreakingPolicy) *gwpav1alpha1.CircuitBreakingConfig {
-	if len(sessionStickyPolicy.Spec.Ports) == 0 {
+func GetCircuitBreakingConfigIfPortMatchesPolicy(port int32, circuitBreakingPolicy gwpav1alpha1.CircuitBreakingPolicy) *gwpav1alpha1.CircuitBreakingConfig {
+	if len(circuitBreakingPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
-	for _, policyPort := range sessionStickyPolicy.Spec.Ports {
+	for _, policyPort := range circuitBreakingPolicy.Spec.Ports {
 		if port == int32(policyPort.Port) {
 			if policyPort.Config != nil {
 				return policyPort.Config
 			}
 
-			return sessionStickyPolicy.Spec.DefaultConfig
+			return circuitBreakingPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}
+
+// GetHealthCheckConfigIfPortMatchesPolicy returns true if the port matches the circuit breaking policy
+func GetHealthCheckConfigIfPortMatchesPolicy(port int32, healthCheckPolicy gwpav1alpha1.HealthCheckPolicy) *gwpav1alpha1.HealthCheckConfig {
+	if len(healthCheckPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	for _, policyPort := range healthCheckPolicy.Spec.Ports {
+		if port == int32(policyPort.Port) {
+			if policyPort.Config != nil {
+				return policyPort.Config
+			}
+
+			return healthCheckPolicy.Spec.DefaultConfig
 		}
 	}
 

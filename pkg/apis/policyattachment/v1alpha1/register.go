@@ -47,6 +47,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&CircuitBreakingPolicyList{},
 		&AccessControlPolicy{},
 		&AccessControlPolicyList{},
+		&HealthCheckPolicy{},
+		&HealthCheckPolicyList{},
 		&FaultInjectionPolicy{},
 		&FaultInjectionPolicyList{},
 	)

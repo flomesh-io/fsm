@@ -26,6 +26,8 @@ const (
 	//#nosec G101
 	tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
+	listSuffix = "list"
+
 	kubeConfigTemplate = `# Kubeconfig file for FSM CNI plugin.
 apiVersion: v1
 kind: Config
@@ -237,11 +239,11 @@ func writeCNIConfig(ctx context.Context, cniConfig []byte) (string, error) {
 	if strings.HasSuffix(cniConfigFilepath, ".conf") {
 		// If the old CNI config filename ends with .conf, rename it to .conflist, because it has to be changed to a list
 		log.Info().Msgf("Renaming %s extension to .conflist", cniConfigFilepath)
-		err = os.Rename(cniConfigFilepath, cniConfigFilepath+"list")
+		err = os.Rename(cniConfigFilepath, cniConfigFilepath+listSuffix)
 		if err != nil {
 			return "", err
 		}
-		cniConfigFilepath += "list"
+		cniConfigFilepath += listSuffix
 	}
 
 	log.Info().Msgf("Created CNI config %s", cniConfigFilepath)
@@ -273,9 +275,9 @@ func getCNIConfigFilepath(ctx context.Context) (string, error) {
 	cniConfigFilepath := filepath.Join(config.CNIConfigDir, filename)
 
 	for !util.Exists(cniConfigFilepath) {
-		if strings.HasSuffix(cniConfigFilepath, ".conf") && util.Exists(cniConfigFilepath+"list") {
+		if strings.HasSuffix(cniConfigFilepath, ".conf") && util.Exists(cniConfigFilepath+listSuffix) {
 			log.Info().Msgf("%s doesn't exist, but %[1]slist does; Using it as the CNI config file instead.", cniConfigFilepath)
-			cniConfigFilepath += "list"
+			cniConfigFilepath += listSuffix
 		} else if strings.HasSuffix(cniConfigFilepath, ".conflist") && util.Exists(cniConfigFilepath[:len(cniConfigFilepath)-4]) {
 			log.Info().Msgf("%s doesn't exist, but %s does; Using it as the CNI config file instead.", cniConfigFilepath, cniConfigFilepath[:len(cniConfigFilepath)-4])
 			cniConfigFilepath = cniConfigFilepath[:len(cniConfigFilepath)-4]

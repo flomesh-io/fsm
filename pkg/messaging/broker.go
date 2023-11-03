@@ -805,6 +805,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
 		// AccessControlPolicy event
 		announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
+		// HealthCheckPolicy event
+		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
 
 		//
 		// MultiCluster events

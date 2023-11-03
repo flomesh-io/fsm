@@ -127,8 +127,9 @@ type L7RateLimit struct {
 	ResponseStatusCode *int32 `json:"responseStatusCode"`
 
 	// +optional
+	// +kubebuilder:validation:MaxItems=16
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
-	ResponseHeadersToAdd map[string]string `json:"responseHeadersToAdd,omitempty"`
+	ResponseHeadersToAdd []gwv1beta1.HTTPHeader `json:"responseHeadersToAdd,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy

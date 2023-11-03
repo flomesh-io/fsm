@@ -103,27 +103,19 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	targetRef := policy.Spec.TargetRef
-	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if len(policy.Spec.Ports) > 0 {
-			for i, p := range policy.Spec.Ports {
-				if p.Type == nil && policy.Spec.DefaultType != nil {
-					policy.Spec.Ports[i].Type = policy.Spec.DefaultType
-				}
-
-				if p.Type == nil {
-					policy.Spec.Ports[i].Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
-				}
-			}
-		}
-	}
+	//targetRef := policy.Spec.TargetRef
+	//if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+	//	if len(policy.Spec.Ports) > 0 {
+	//		for i, p := range policy.Spec.Ports {
+	//			if p.Type == nil {
+	//				policy.Spec.Ports[i].Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+	//			}
+	//		}
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
-}
-
-func loadBalancerType(t gwpav1alpha1.LoadBalancerType) *gwpav1alpha1.LoadBalancerType {
-	return &t
 }
 
 type validator struct {

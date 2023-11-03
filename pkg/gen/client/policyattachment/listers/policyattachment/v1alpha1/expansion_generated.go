@@ -39,6 +39,14 @@ type FaultInjectionPolicyListerExpansion interface{}
 // FaultInjectionPolicyNamespaceLister.
 type FaultInjectionPolicyNamespaceListerExpansion interface{}
 
+// HealthCheckPolicyListerExpansion allows custom methods to be added to
+// HealthCheckPolicyLister.
+type HealthCheckPolicyListerExpansion interface{}
+
+// HealthCheckPolicyNamespaceListerExpansion allows custom methods to be added to
+// HealthCheckPolicyNamespaceLister.
+type HealthCheckPolicyNamespaceListerExpansion interface{}
+
 // LoadBalancerPolicyListerExpansion allows custom methods to be added to
 // LoadBalancerPolicyLister.
 type LoadBalancerPolicyListerExpansion interface{}

@@ -19,6 +19,8 @@ type AccessControlPolicyExpansion interface{}
 
 type CircuitBreakingPolicyExpansion interface{}
 
+type HealthCheckPolicyExpansion interface{}
+
 type FaultInjectionPolicyExpansion interface{}
 
 type LoadBalancerPolicyExpansion interface{}

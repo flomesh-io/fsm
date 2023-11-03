@@ -87,8 +87,8 @@ type Listener struct {
 
 // AccessControlLists is the access control lists configuration
 type AccessControlLists struct {
-	Blacklist  []string `json:"Blacklist,omitempty"`
-	Whitelist  []string `json:"Whitelist,omitempty"`
+	Blacklist  []string `json:"Blacklist,omitempty" hash:"set"`
+	Whitelist  []string `json:"Whitelist,omitempty" hash:"set"`
 	EnableXFF  *bool    `json:"EnableXFF,omitempty"`
 	StatusCode *int32   `json:"Status,omitempty"`
 	Message    *string  `json:"Message,omitempty"`
@@ -204,13 +204,13 @@ type GRPCMethod struct {
 
 // RateLimit is the rate limit configuration
 type RateLimit struct {
-	Mode                 gwpav1alpha1.RateLimitPolicyMode `json:"Mode"`
-	Backlog              int32                            `json:"Backlog"`
-	Requests             int32                            `json:"Requests"`
-	Burst                int32                            `json:"Burst"`
-	StatTimeWindow       int32                            `json:"StatTimeWindow"`
-	ResponseStatusCode   int32                            `json:"ResponseStatusCode"`
-	ResponseHeadersToAdd map[string]string                `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
+	Mode                 gwpav1alpha1.RateLimitPolicyMode    `json:"Mode"`
+	Backlog              int32                               `json:"Backlog"`
+	Requests             int32                               `json:"Requests"`
+	Burst                int32                               `json:"Burst"`
+	StatTimeWindow       int32                               `json:"StatTimeWindow"`
+	ResponseStatusCode   int32                               `json:"ResponseStatusCode"`
+	ResponseHeadersToAdd map[gwv1beta1.HTTPHeaderName]string `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
 // PassthroughRouteMapping is the passthrough route mapping configuration
@@ -227,6 +227,7 @@ type ServiceConfig struct {
 	StickyCookieExpires *int32                         `json:"StickyCookieExpires,omitempty"`
 	LoadBalancer        *gwpav1alpha1.LoadBalancerType `json:"Algorithm,omitempty"`
 	CircuitBreaking     *CircuitBreaking               `json:"CircuitBreaking,omitempty"`
+	HealthCheck         *HealthCheck                   `json:"HealthCheck,omitempty"`
 }
 
 // Endpoint is the endpoint configuration
@@ -383,6 +384,22 @@ type CircuitBreaking struct {
 	DegradedResponseContent *string  `json:"DegradedResponseContent,omitempty"`
 }
 
+// HealthCheck is the health check configuration
+type HealthCheck struct {
+	Interval    int32              `json:"Interval"`
+	MaxFails    int32              `json:"MaxFails"`
+	FailTimeout *int32             `json:"FailTimeout,omitempty"`
+	Path        *string            `json:"Path,omitempty"`
+	Matches     []HealthCheckMatch `json:"Matches,omitempty" hash:"set"`
+}
+
+// HealthCheckMatch is the health check match configuration
+type HealthCheckMatch struct {
+	StatusCodes []int32                             `json:"StatusCodes,omitempty"`
+	Body        *string                             `json:"Body,omitempty"`
+	Headers     map[gwv1beta1.HTTPHeaderName]string `json:"Headers,omitempty" hash:"set"`
+}
+
 // UpstreamCert is the upstream certificate configuration
 type UpstreamCert Certificate
 
@@ -396,11 +413,11 @@ type RetryPolicy struct {
 
 // Chains is the chains configuration
 type Chains struct {
-	HTTPRoute      []string `json:"HTTPRoute"`
-	HTTPSRoute     []string `json:"HTTPSRoute"`
-	TLSPassthrough []string `json:"TLSPassthrough"`
-	TLSTerminate   []string `json:"TLSTerminate"`
-	TCPRoute       []string `json:"TCPRoute"`
+	HTTPRoute      []string `json:"HTTPRoute" hash:"set"`
+	HTTPSRoute     []string `json:"HTTPSRoute" hash:"set"`
+	TLSPassthrough []string `json:"TLSPassthrough" hash:"set"`
+	TLSTerminate   []string `json:"TLSTerminate" hash:"set"`
+	TCPRoute       []string `json:"TCPRoute" hash:"set"`
 }
 
 // Features is the features configuration

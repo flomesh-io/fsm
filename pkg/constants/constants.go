@@ -436,6 +436,9 @@ const (
 
 	// AccessControlPolicyKind is the kind name of AccessControlPolicy used in Flomesh API
 	AccessControlPolicyKind = "AccessControlPolicy"
+
+	// HealthCheckPolicyKind is the kind name of HealthCheckPolicy used in Flomesh API
+	HealthCheckPolicyKind = "HealthCheckPolicy"
 )
 
 // Gateway API constants
@@ -520,6 +523,12 @@ const (
 
 	// AccessControlPolicyValidatingWebhookPath is the path at which the AccessControlPolicy validating webhook is served
 	AccessControlPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-accesscontrolpolicy"
+
+	// HealthCheckPolicyMutatingWebhookPath is the path at which the HealthCheckPolicy mutating webhook is served
+	HealthCheckPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-healthcheckpolicy"
+
+	// HealthCheckPolicyValidatingWebhookPath is the path at which the HealthCheckPolicy validating webhook is served
+	HealthCheckPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-healthcheckpolicy"
 )
 
 // PIPY Repo constants
