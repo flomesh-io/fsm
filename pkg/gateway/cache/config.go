@@ -39,12 +39,9 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
-		log.Debug().Msgf("[GW-CACHE] validListeners: %v", validListeners)
-		acceptedRateLimits := c.rateLimits()
-		acceptedAccessControls := c.accessControls()
-
-		listenerCfg := c.listeners(gw, validListeners, acceptedRateLimits, acceptedAccessControls)
-		rules, referredServices := c.routeRules(gw, validListeners, acceptedRateLimits, acceptedAccessControls)
+		policies := c.policyAttachments()
+		listenerCfg := c.listeners(gw, validListeners, policies)
+		rules, referredServices := c.routeRules(gw, validListeners, policies)
 		svcConfigs := c.serviceConfigs(referredServices)
 
 		configSpec := &routecfg.ConfigSpec{
@@ -102,6 +99,14 @@ func (c *GatewayCache) BuildConfigs() {
 	}
 }
 
+func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
+	return globalPolicyAttachments{
+		rateLimits:      c.rateLimits(),
+		accessControls:  c.accessControls(),
+		faultInjections: c.faultInjections(),
+	}
+}
+
 func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 	path := fmt.Sprintf("%s/config.json", basepath)
 
@@ -135,7 +140,7 @@ func (c *GatewayCache) isDebugEnabled() bool {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, acceptedRateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy, acceptedAccessControls map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy) []routecfg.Listener {
+func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []routecfg.Listener {
 	listeners := make([]routecfg.Listener, 0)
 	for _, l := range validListeners {
 		listener := routecfg.Listener{
@@ -148,7 +153,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 			listener.TLS = tls
 		}
 
-		l4RateLimits := acceptedRateLimits[RateLimitPolicyMatchTypePort]
+		l4RateLimits := policies.rateLimits[RateLimitPolicyMatchTypePort]
 		if len(l4RateLimits) > 0 {
 			for _, rateLimit := range l4RateLimits {
 				if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
@@ -165,7 +170,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 			}
 		}
 
-		l4AccessControls := acceptedAccessControls[AccessControlPolicyMatchTypePort]
+		l4AccessControls := policies.accessControls[AccessControlPolicyMatchTypePort]
 		if len(l4AccessControls) > 0 {
 			for _, accessControl := range l4AccessControls {
 				if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
@@ -261,7 +266,7 @@ func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav
 		}
 	}
 
-	// sort each type of rate limits by creation timestamp
+	// sort each type of access controls by creation timestamp
 	for matchType, policies := range accessControls {
 		sort.Slice(policies, func(i, j int) bool {
 			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
@@ -274,6 +279,47 @@ func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav
 	}
 
 	return accessControls
+}
+
+func (c *GatewayCache) faultInjections() map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy {
+	faultInjections := make(map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy)
+	for _, matchType := range []FaultInjectionPolicyMatchType{
+		FaultInjectionPolicyMatchTypeHostnames,
+		FaultInjectionPolicyMatchTypeRoute,
+	} {
+		faultInjections[matchType] = make([]gwpav1alpha1.FaultInjectionPolicy, 0)
+	}
+
+	for key := range c.faultinjections {
+		faultInjectionPolicy, err := c.getFaultInjectionPolicyFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get FaultInjectionPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedPolicyAttachment(faultInjectionPolicy.Status.Conditions) {
+			switch {
+			case len(faultInjectionPolicy.Spec.Hostnames) > 0:
+				faultInjections[FaultInjectionPolicyMatchTypeHostnames] = append(faultInjections[FaultInjectionPolicyMatchTypeHostnames], *faultInjectionPolicy)
+			case len(faultInjectionPolicy.Spec.HTTPFaultInjections) > 0 || len(faultInjectionPolicy.Spec.GRPCFaultInjections) > 0:
+				faultInjections[FaultInjectionPolicyMatchTypeRoute] = append(faultInjections[FaultInjectionPolicyMatchTypeRoute], *faultInjectionPolicy)
+			}
+		}
+	}
+
+	// sort each type of fault injections by creation timestamp
+	for matchType, policies := range faultInjections {
+		sort.Slice(policies, func(i, j int) bool {
+			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
+				return policies[i].Name < policies[j].Name
+			}
+
+			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
+		})
+		faultInjections[matchType] = policies
+	}
+
+	return faultInjections
 }
 
 func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
@@ -356,7 +402,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, acceptedRateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy, acceptedAccessControls map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
 	rules := make(map[int32]routecfg.RouteRule)
 	services := make(map[string]serviceInfo)
 
@@ -369,7 +415,7 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 		}
 
 		log.Debug().Msgf("Processing HTTPRoute %v", httpRoute)
-		processHTTPRoute(gw, validListeners, httpRoute, acceptedRateLimits, acceptedAccessControls, rules, services)
+		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
@@ -380,7 +426,7 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 			continue
 		}
 
-		processGRPCRoute(gw, validListeners, grpcRoute, acceptedRateLimits, acceptedAccessControls, rules, services)
+		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
@@ -410,42 +456,9 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	return rules, services
 }
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, acceptedRateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy, acceptedAccessControls map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
-	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	if len(acceptedRateLimits[RateLimitPolicyMatchTypeHostnames]) > 0 {
-		for _, rateLimit := range acceptedRateLimits[RateLimitPolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, httpRoute) {
-				hostnamesRateLimits = append(hostnamesRateLimits, rateLimit)
-			}
-		}
-	}
-
-	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	if len(acceptedRateLimits[RateLimitPolicyMatchTypeRoute]) > 0 {
-		for _, rateLimit := range acceptedRateLimits[RateLimitPolicyMatchTypeRoute] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, httpRoute) {
-				routeRateLimits = append(routeRateLimits, rateLimit)
-			}
-		}
-	}
-
-	hostnamesAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	if len(acceptedAccessControls[AccessControlPolicyMatchTypeHostnames]) > 0 {
-		for _, ac := range acceptedAccessControls[AccessControlPolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, httpRoute) {
-				hostnamesAccessControls = append(hostnamesAccessControls, ac)
-			}
-		}
-	}
-
-	routeAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	if len(acceptedAccessControls[AccessControlPolicyMatchTypeRoute]) > 0 {
-		for _, ac := range acceptedAccessControls[AccessControlPolicyMatchTypeRoute] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, httpRoute) {
-				routeAccessControls = append(routeAccessControls, ac)
-			}
-		}
-	}
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+	routePolicies := filterPoliciesByRoute(policies, httpRoute)
+	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
@@ -469,17 +482,23 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			httpRule := routecfg.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := generateHTTPRouteConfig(httpRoute, routeRateLimits, routeAccessControls, services)
+				r := generateHTTPRouteConfig(httpRoute, routePolicies, services)
 
-				for _, rateLimit := range hostnamesRateLimits {
+				for _, rateLimit := range routePolicies.hostnamesRateLimits {
 					if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
 						r.RateLimit = newRateLimitConfig(rl)
 					}
 				}
 
-				for _, ac := range hostnamesAccessControls {
+				for _, ac := range routePolicies.hostnamesAccessControls {
 					if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.AccessControlLists == nil {
 						r.AccessControlLists = newAccessControlLists(cfg)
+					}
+				}
+
+				for _, fj := range routePolicies.hostnamesFaultInjections {
+					if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.FaultInjection == nil {
+						r.FaultInjection = newFaultInjection(cfg)
 					}
 				}
 
@@ -498,42 +517,9 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, acceptedRateLimits map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy, acceptedAccessControls map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
-	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	if len(acceptedRateLimits[RateLimitPolicyMatchTypeHostnames]) > 0 {
-		for _, rateLimit := range acceptedRateLimits[RateLimitPolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, grpcRoute) {
-				hostnamesRateLimits = append(hostnamesRateLimits, rateLimit)
-			}
-		}
-	}
-
-	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	if len(acceptedRateLimits[RateLimitPolicyMatchTypeRoute]) > 0 {
-		for _, rateLimit := range acceptedRateLimits[RateLimitPolicyMatchTypeRoute] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, grpcRoute) {
-				routeRateLimits = append(routeRateLimits, rateLimit)
-			}
-		}
-	}
-
-	hostnamesAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	if len(acceptedAccessControls[AccessControlPolicyMatchTypeHostnames]) > 0 {
-		for _, ac := range acceptedAccessControls[AccessControlPolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, grpcRoute) {
-				hostnamesAccessControls = append(hostnamesAccessControls, ac)
-			}
-		}
-	}
-
-	routeAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	if len(acceptedAccessControls[AccessControlPolicyMatchTypeRoute]) > 0 {
-		for _, ac := range acceptedAccessControls[AccessControlPolicyMatchTypeRoute] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, grpcRoute) {
-				routeAccessControls = append(routeAccessControls, ac)
-			}
-		}
-	}
+func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+	routePolicies := filterPoliciesByRoute(policies, grpcRoute)
+	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
@@ -555,17 +541,23 @@ func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			grpcRule := routecfg.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := generateGRPCRouteCfg(grpcRoute, routeRateLimits, routeAccessControls, services)
+				r := generateGRPCRouteCfg(grpcRoute, routePolicies, services)
 
-				for _, rateLimit := range hostnamesRateLimits {
+				for _, rateLimit := range routePolicies.hostnamesRateLimits {
 					if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
 						r.RateLimit = newRateLimitConfig(rl)
 					}
 				}
 
-				for _, ac := range hostnamesAccessControls {
+				for _, ac := range routePolicies.hostnamesAccessControls {
 					if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.AccessControlLists == nil {
 						r.AccessControlLists = newAccessControlLists(cfg)
+					}
+				}
+
+				for _, fj := range routePolicies.hostnamesFaultInjections {
+					if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.FaultInjection == nil {
+						r.FaultInjection = newFaultInjection(cfg)
 					}
 				}
 
@@ -675,6 +667,67 @@ func processTCPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 			}
 		}
 	}
+}
+
+func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object) routePolicies {
+	result := routePolicies{
+		hostnamesRateLimits:      make([]gwpav1alpha1.RateLimitPolicy, 0),
+		routeRateLimits:          make([]gwpav1alpha1.RateLimitPolicy, 0),
+		hostnamesAccessControls:  make([]gwpav1alpha1.AccessControlPolicy, 0),
+		routeAccessControls:      make([]gwpav1alpha1.AccessControlPolicy, 0),
+		hostnamesFaultInjections: make([]gwpav1alpha1.FaultInjectionPolicy, 0),
+		routeFaultInjections:     make([]gwpav1alpha1.FaultInjectionPolicy, 0),
+	}
+
+	if len(policies.rateLimits[RateLimitPolicyMatchTypeHostnames]) > 0 {
+		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeHostnames] {
+			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
+				result.hostnamesRateLimits = append(result.hostnamesRateLimits, rateLimit)
+			}
+		}
+	}
+
+	if len(policies.rateLimits[RateLimitPolicyMatchTypeRoute]) > 0 {
+		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeRoute] {
+			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
+				result.routeRateLimits = append(result.routeRateLimits, rateLimit)
+			}
+		}
+	}
+
+	if len(policies.accessControls[AccessControlPolicyMatchTypeHostnames]) > 0 {
+		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeHostnames] {
+			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
+				result.hostnamesAccessControls = append(result.hostnamesAccessControls, ac)
+			}
+		}
+	}
+
+	if len(policies.accessControls[AccessControlPolicyMatchTypeRoute]) > 0 {
+		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeRoute] {
+			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
+				result.routeAccessControls = append(result.routeAccessControls, ac)
+			}
+		}
+	}
+
+	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames]) > 0 {
+		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames] {
+			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
+				result.hostnamesFaultInjections = append(result.hostnamesFaultInjections, fj)
+			}
+		}
+	}
+
+	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeRoute]) > 0 {
+		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeRoute] {
+			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
+				result.routeFaultInjections = append(result.routeFaultInjections, fj)
+			}
+		}
+	}
+
+	return result
 }
 
 func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
@@ -939,7 +992,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []gwpav1alpha1.RateLimitPolicy, routeAccessControls []gwpav1alpha1.AccessControlPolicy, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
 	httpSpec := routecfg.HTTPRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeHTTP,
 		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
@@ -996,7 +1049,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []g
 				match.RequestParams = httpMatchQueryParams(m)
 			}
 
-			for _, rateLimit := range routeRateLimits {
+			for _, rateLimit := range routePolicies.routeRateLimits {
 				if len(rateLimit.Spec.HTTPRateLimits) == 0 {
 					continue
 				}
@@ -1006,13 +1059,23 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []g
 				}
 			}
 
-			for _, ac := range routeAccessControls {
+			for _, ac := range routePolicies.routeAccessControls {
 				if len(ac.Spec.HTTPAccessControls) == 0 {
 					continue
 				}
 
-				if cfg := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, ac); cfg != nil && match.RateLimit == nil {
+				if cfg := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, ac); cfg != nil && match.AccessControlLists == nil {
 					match.AccessControlLists = newAccessControlLists(cfg)
+				}
+			}
+
+			for _, fj := range routePolicies.routeFaultInjections {
+				if len(fj.Spec.HTTPFaultInjections) == 0 {
+					continue
+				}
+
+				if cfg := gwutils.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, fj); cfg != nil && match.FaultInjection == nil {
+					match.FaultInjection = newFaultInjection(cfg)
 				}
 			}
 
@@ -1022,7 +1085,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routeRateLimits []g
 	return httpSpec
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routeRateLimits []gwpav1alpha1.RateLimitPolicy, routeAccessControls []gwpav1alpha1.AccessControlPolicy, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
 	grpcSpec := routecfg.GRPCRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeGRPC,
 		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
@@ -1072,7 +1135,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routeRateLimits []gwp
 				match.Headers = grpcMatchHeaders(m)
 			}
 
-			for _, rateLimit := range routeRateLimits {
+			for _, rateLimit := range routePolicies.routeRateLimits {
 				if len(rateLimit.Spec.GRPCRateLimits) == 0 {
 					continue
 				}
@@ -1082,13 +1145,23 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routeRateLimits []gwp
 				}
 			}
 
-			for _, ac := range routeAccessControls {
+			for _, ac := range routePolicies.routeAccessControls {
 				if len(ac.Spec.GRPCAccessControls) == 0 {
 					continue
 				}
 
-				if cfg := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, ac); cfg != nil && match.RateLimit == nil {
+				if cfg := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, ac); cfg != nil && match.AccessControlLists == nil {
 					match.AccessControlLists = newAccessControlLists(cfg)
+				}
+			}
+
+			for _, fj := range routePolicies.routeFaultInjections {
+				if len(fj.Spec.GRPCFaultInjections) == 0 {
+					continue
+				}
+
+				if cfg := gwutils.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, fj); cfg != nil && match.FaultInjection == nil {
+					match.FaultInjection = newFaultInjection(cfg)
 				}
 			}
 

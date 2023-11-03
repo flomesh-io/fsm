@@ -105,7 +105,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
-		if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
+		if policy.Spec.TargetRef.Kind == constants.GatewayAPIGatewayKind ||
+			policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
 			policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
 			if len(policy.Spec.Ports) > 0 ||
 				len(policy.Spec.Hostnames) > 0 ||
@@ -257,8 +258,10 @@ func validateConfig(policy *gwpav1alpha1.AccessControlPolicy) field.ErrorList {
 			policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind) {
 		if policy.Spec.DefaultConfig != nil {
 			path := field.NewPath("spec").Child("config")
+			errs = append(errs, validateACLs(path, policy.Spec.DefaultConfig)...)
 			errs = append(errs, validateIPAddresses(path, policy.Spec.DefaultConfig)...)
 		}
+
 		if len(policy.Spec.Ports) > 0 {
 			for i, p := range policy.Spec.Ports {
 				if p.Config != nil {
