@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// CircuitBreakingPoliciesProcessor is responsible for processing CircuitBreakingPolicy objects
-type CircuitBreakingPoliciesProcessor struct {
+// CircuitBreakingPoliciesTrigger is responsible for processing CircuitBreakingPolicy objects
+type CircuitBreakingPoliciesTrigger struct {
 }
 
 // Insert adds a CircuitBreakingPolicy to the cache and returns true if the target service is routable
-func (p *CircuitBreakingPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *CircuitBreakingPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.CircuitBreakingPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *CircuitBreakingPoliciesProcessor) Insert(obj interface{}, cache *Gatewa
 }
 
 // Delete removes a CircuitBreakingPolicy from the cache and returns true if the policy was found
-func (p *CircuitBreakingPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *CircuitBreakingPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.CircuitBreakingPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

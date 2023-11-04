@@ -28,7 +28,7 @@ type GatewayCache struct {
 	kubeClient kubernetes.Interface
 	cfg        configurator.Configurator
 
-	processors map[ProcessorType]Processor
+	processors map[TriggerType]Processor
 
 	gatewayclass     *gwv1beta1.GatewayClass
 	gateways         map[string]client.ObjectKey // ns -> gateway
@@ -61,25 +61,25 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		kubeClient: kubeClient,
 		cfg:        cfg,
 
-		processors: map[ProcessorType]Processor{
-			//EndpointsProcessorType:      &EndpointsProcessor{},
-			ServicesProcessorType:                &ServicesProcessor{},
-			ServiceImportsProcessorType:          &ServiceImportsProcessor{},
-			EndpointSlicesProcessorType:          &EndpointSlicesProcessor{},
-			SecretsProcessorType:                 &SecretProcessor{},
-			GatewayClassesProcessorType:          &GatewayClassesProcessor{},
-			GatewaysProcessorType:                &GatewaysProcessor{},
-			HTTPRoutesProcessorType:              &HTTPRoutesProcessor{},
-			GRPCRoutesProcessorType:              &GRPCRoutesProcessor{},
-			TCPRoutesProcessorType:               &TCPRoutesProcessor{},
-			TLSRoutesProcessorType:               &TLSRoutesProcessor{},
-			RateLimitPoliciesProcessorType:       &RateLimitPoliciesProcessor{},
-			SessionStickyPoliciesProcessorType:   &SessionStickyPoliciesProcessor{},
-			LoadBalancerPoliciesProcessorType:    &LoadBalancerPoliciesProcessor{},
-			CircuitBreakingPoliciesProcessorType: &CircuitBreakingPoliciesProcessor{},
-			AccessControlPoliciesProcessorType:   &AccessControlPoliciesProcessor{},
-			HealthCheckPoliciesProcessorType:     &HealthCheckPoliciesProcessor{},
-			FaultInjectionPoliciesProcessorType:  &FaultInjectionPoliciesProcessor{},
+		processors: map[TriggerType]Processor{
+			//EndpointsTriggerType:      &EndpointsTrigger{},
+			ServicesTriggerType:                &ServicesTrigger{},
+			ServiceImportsTriggerType:          &ServiceImportsTrigger{},
+			EndpointSlicesTriggerType:          &EndpointSlicesTrigger{},
+			SecretsTriggerType:                 &SecretTrigger{},
+			GatewayClassesTriggerType:          &GatewayClassesTrigger{},
+			GatewaysTriggerType:                &GatewaysTrigger{},
+			HTTPRoutesTriggerType:              &HTTPRoutesTrigger{},
+			GRPCRoutesTriggerType:              &GRPCRoutesTrigger{},
+			TCPRoutesTriggerType:               &TCPRoutesTrigger{},
+			TLSRoutesTriggerType:               &TLSRoutesTrigger{},
+			RateLimitPoliciesTriggerType:       &RateLimitPoliciesTrigger{},
+			SessionStickyPoliciesTriggerType:   &SessionStickyPoliciesTrigger{},
+			LoadBalancerPoliciesTriggerType:    &LoadBalancerPoliciesTrigger{},
+			CircuitBreakingPoliciesTriggerType: &CircuitBreakingPoliciesTrigger{},
+			AccessControlPoliciesTriggerType:   &AccessControlPoliciesTrigger{},
+			HealthCheckPoliciesTriggerType:     &HealthCheckPoliciesTrigger{},
+			FaultInjectionPoliciesTriggerType:  &FaultInjectionPoliciesTrigger{},
 		},
 
 		//endpoints:      make(map[client.ObjectKey]struct{}),
@@ -131,41 +131,41 @@ func (c *GatewayCache) Delete(obj interface{}) bool {
 func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 	switch obj.(type) {
 	//case *corev1.Endpoints:
-	//	return c.processors[EndpointsProcessorType]
+	//	return c.processors[EndpointsTriggerType]
 	case *corev1.Service:
-		return c.processors[ServicesProcessorType]
+		return c.processors[ServicesTriggerType]
 	case *mcsv1alpha1.ServiceImport:
-		return c.processors[ServiceImportsProcessorType]
+		return c.processors[ServiceImportsTriggerType]
 	case *discoveryv1.EndpointSlice:
-		return c.processors[EndpointSlicesProcessorType]
+		return c.processors[EndpointSlicesTriggerType]
 	case *corev1.Secret:
-		return c.processors[SecretsProcessorType]
+		return c.processors[SecretsTriggerType]
 	case *gwv1beta1.GatewayClass:
-		return c.processors[GatewayClassesProcessorType]
+		return c.processors[GatewayClassesTriggerType]
 	case *gwv1beta1.Gateway:
-		return c.processors[GatewaysProcessorType]
+		return c.processors[GatewaysTriggerType]
 	case *gwv1beta1.HTTPRoute:
-		return c.processors[HTTPRoutesProcessorType]
+		return c.processors[HTTPRoutesTriggerType]
 	case *gwv1alpha2.GRPCRoute:
-		return c.processors[GRPCRoutesProcessorType]
+		return c.processors[GRPCRoutesTriggerType]
 	case *gwv1alpha2.TCPRoute:
-		return c.processors[TCPRoutesProcessorType]
+		return c.processors[TCPRoutesTriggerType]
 	case *gwv1alpha2.TLSRoute:
-		return c.processors[TLSRoutesProcessorType]
+		return c.processors[TLSRoutesTriggerType]
 	case *gwpav1alpha1.RateLimitPolicy:
-		return c.processors[RateLimitPoliciesProcessorType]
+		return c.processors[RateLimitPoliciesTriggerType]
 	case *gwpav1alpha1.SessionStickyPolicy:
-		return c.processors[SessionStickyPoliciesProcessorType]
+		return c.processors[SessionStickyPoliciesTriggerType]
 	case *gwpav1alpha1.LoadBalancerPolicy:
-		return c.processors[LoadBalancerPoliciesProcessorType]
+		return c.processors[LoadBalancerPoliciesTriggerType]
 	case *gwpav1alpha1.CircuitBreakingPolicy:
-		return c.processors[CircuitBreakingPoliciesProcessorType]
+		return c.processors[CircuitBreakingPoliciesTriggerType]
 	case *gwpav1alpha1.AccessControlPolicy:
-		return c.processors[AccessControlPoliciesProcessorType]
+		return c.processors[AccessControlPoliciesTriggerType]
 	case *gwpav1alpha1.HealthCheckPolicy:
-		return c.processors[HealthCheckPoliciesProcessorType]
+		return c.processors[HealthCheckPoliciesTriggerType]
 	case *gwpav1alpha1.FaultInjectionPolicy:
-		return c.processors[FaultInjectionPoliciesProcessorType]
+		return c.processors[FaultInjectionPoliciesTriggerType]
 	}
 
 	return nil

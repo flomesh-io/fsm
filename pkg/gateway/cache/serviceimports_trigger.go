@@ -5,12 +5,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// ServiceImportsProcessor is responsible for processing ServiceImport objects
-type ServiceImportsProcessor struct {
+// ServiceImportsTrigger is responsible for processing ServiceImport objects
+type ServiceImportsTrigger struct {
 }
 
 // Insert adds a ServiceImport to the cache and returns true if the route is effective
-func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *ServiceImportsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *ServiceImportsProcessor) Insert(obj interface{}, cache *GatewayCache) b
 }
 
 // Delete removes a ServiceImport from the cache and returns true if the route was found
-func (p *ServiceImportsProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *ServiceImportsTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	svcimp, ok := obj.(*mcsv1alpha1.ServiceImport)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

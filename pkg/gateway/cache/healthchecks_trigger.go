@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// HealthCheckPoliciesProcessor is responsible for processing HealthCheckPolicy objects
-type HealthCheckPoliciesProcessor struct {
+// HealthCheckPoliciesTrigger is responsible for processing HealthCheckPolicy objects
+type HealthCheckPoliciesTrigger struct {
 }
 
 // Insert adds a HealthCheckPolicy to the cache and returns true if the target service is routable
-func (p *HealthCheckPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *HealthCheckPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.HealthCheckPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *HealthCheckPoliciesProcessor) Insert(obj interface{}, cache *GatewayCac
 }
 
 // Delete removes a HealthCheckPolicy from the cache and returns true if the policy was found
-func (p *HealthCheckPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *HealthCheckPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.HealthCheckPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
