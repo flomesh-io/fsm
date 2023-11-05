@@ -18,7 +18,9 @@ type RateLimitHostnameEnricher struct {
 }
 
 func (e *RateLimitHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	log.Debug().Msgf("RateLimitHostnameEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, rateLimit := range e.Data {
 		if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.GetRateLimit() == nil {
@@ -36,7 +38,9 @@ type AccessControlHostnameEnricher struct {
 }
 
 func (e *AccessControlHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	log.Debug().Msgf("AccessControlHostnameEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, ac := range e.Data {
 		if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.GetAccessControlLists() == nil {
@@ -54,7 +58,9 @@ type FaultInjectionHostnameEnricher struct {
 }
 
 func (e *FaultInjectionHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	log.Debug().Msgf("FaultInjectionHostnameEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, fj := range e.Data {
 		if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.GetFaultInjection() == nil {

@@ -20,7 +20,9 @@ type RateLimitGRPCRouteEnricher struct {
 }
 
 func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
-	log.Debug().Msgf("RateLimitGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, rateLimit := range e.Data {
 		if len(rateLimit.Spec.GRPCRateLimits) == 0 {
@@ -42,7 +44,9 @@ type AccessControlGRPCRouteEnricher struct {
 }
 
 func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
-	log.Debug().Msgf("AccessControlGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, accessControl := range e.Data {
 		if len(accessControl.Spec.GRPCAccessControls) == 0 {
@@ -64,7 +68,9 @@ type FaultInjectionGRPCRouteEnricher struct {
 }
 
 func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
-	log.Debug().Msgf("FaultInjectionGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, faultInjection := range e.Data {
 		if len(faultInjection.Spec.GRPCFaultInjections) == 0 {

@@ -20,22 +20,22 @@ type RateLimitPortEnricher struct {
 }
 
 func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
-	log.Debug().Msgf("RateLimitPortEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
-	if len(e.Data) > 0 {
-		for _, rateLimit := range e.Data {
-			if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
-				continue
-			}
+	for _, rateLimit := range e.Data {
+		if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
+			continue
+		}
 
-			if len(rateLimit.Spec.Ports) == 0 {
-				continue
-			}
+		if len(rateLimit.Spec.Ports) == 0 {
+			continue
+		}
 
-			if r := gwutils.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
-				listenerCfg.BpsLimit = r
-				break
-			}
+		if r := gwutils.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
+			listenerCfg.BpsLimit = r
+			break
 		}
 	}
 }
@@ -48,22 +48,22 @@ type AccessControlPortEnricher struct {
 }
 
 func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
-	log.Debug().Msgf("AccessControlPortEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
-	if len(e.Data) > 0 {
-		for _, accessControl := range e.Data {
-			if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
-				continue
-			}
+	for _, accessControl := range e.Data {
+		if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
+			continue
+		}
 
-			if len(accessControl.Spec.Ports) == 0 {
-				continue
-			}
+		if len(accessControl.Spec.Ports) == 0 {
+			continue
+		}
 
-			if c := gwutils.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
-				listenerCfg.AccessControlLists = newAccessControlLists(c)
-				break
-			}
+		if c := gwutils.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
+			listenerCfg.AccessControlLists = newAccessControlLists(c)
+			break
 		}
 	}
 }

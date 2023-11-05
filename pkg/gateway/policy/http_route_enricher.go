@@ -20,7 +20,9 @@ type RateLimitHTTPRouteEnricher struct {
 }
 
 func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
-	log.Debug().Msgf("RateLimitHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, rateLimit := range e.Data {
 		if len(rateLimit.Spec.HTTPRateLimits) == 0 {
@@ -42,7 +44,9 @@ type AccessControlHTTPRouteEnricher struct {
 }
 
 func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
-	log.Debug().Msgf("AccessControlHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, accessControl := range e.Data {
 		if len(accessControl.Spec.HTTPAccessControls) == 0 {
@@ -64,7 +68,9 @@ type FaultInjectionHTTPRouteEnricher struct {
 }
 
 func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
-	log.Debug().Msgf("FaultInjectionHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	for _, faultInjection := range e.Data {
 		if len(faultInjection.Spec.HTTPFaultInjections) == 0 {

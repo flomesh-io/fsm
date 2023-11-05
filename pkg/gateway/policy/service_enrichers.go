@@ -19,7 +19,9 @@ type SessionStickyPolicyEnricher struct {
 }
 
 func (e *SessionStickyPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
-	log.Debug().Msgf("SessionStickyPolicyEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	if ssCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.StickyCookieName = ssCfg.CookieName
@@ -35,7 +37,9 @@ type LoadBalancerPolicyEnricher struct {
 }
 
 func (e *LoadBalancerPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
-	log.Debug().Msgf("LoadBalancerPolicyEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	if lbType, exists := e.Data[svcPortName]; exists {
 		svcCfg.LoadBalancer = lbType
@@ -50,7 +54,9 @@ type CircuitBreakingPolicyEnricher struct {
 }
 
 func (e *CircuitBreakingPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
-	log.Debug().Msgf("CircuitBreakingPolicyEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	if cbCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.CircuitBreaking = newCircuitBreaking(cbCfg)
@@ -65,7 +71,9 @@ type HealthCheckPolicyEnricher struct {
 }
 
 func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
-	log.Debug().Msgf("HealthCheckPolicyEnricher.Enrich: Data=%v", e.Data)
+	if len(e.Data) == 0 {
+		return
+	}
 
 	if hcCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.HealthCheck = newHealthCheck(hcCfg)
