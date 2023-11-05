@@ -30,12 +30,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// SecretProcessor is a processor for Secret objects
-type SecretProcessor struct {
+// SecretTrigger is a processor for Secret objects
+type SecretTrigger struct {
 }
 
 // Insert adds a Secret object to the cache and returns true if the cache is changed
-func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *SecretTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -49,7 +49,7 @@ func (p *SecretProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 }
 
 // Delete removes a Secret object from the cache and returns true if the cache is changed
-func (p *SecretProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *SecretTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

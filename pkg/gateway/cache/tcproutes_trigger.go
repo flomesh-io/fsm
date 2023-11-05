@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// TCPRoutesProcessor is responsible for processing TCPRoute objects
-type TCPRoutesProcessor struct {
+// TCPRoutesTrigger is responsible for processing TCPRoute objects
+type TCPRoutesTrigger struct {
 }
 
 // Insert adds a TCPRoute to the cache and returns true if the route is effective
-func (p *TCPRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *TCPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.TCPRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *TCPRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 }
 
 // Delete removes a TCPRoute from the cache and returns true if the route was found
-func (p *TCPRoutesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *TCPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.TCPRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

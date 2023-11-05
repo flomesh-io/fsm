@@ -133,7 +133,14 @@ type Certificate struct {
 type RouteRule interface{}
 
 // L7RouteRuleSpec is the L7 route rule configuration
-type L7RouteRuleSpec interface{}
+type L7RouteRuleSpec interface {
+	GetRateLimit() *RateLimit
+	SetRateLimit(rateLimit *RateLimit)
+	GetAccessControlLists() *AccessControlLists
+	SetAccessControlLists(accessControlLists *AccessControlLists)
+	GetFaultInjection() *FaultInjection
+	SetFaultInjection(faultInjection *FaultInjection)
+}
 
 // L7RouteRule is the L7 route rule configuration
 type L7RouteRule map[string]L7RouteRuleSpec
@@ -149,6 +156,30 @@ type HTTPRouteRuleSpec struct {
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
 }
 
+func (r *HTTPRouteRuleSpec) GetRateLimit() *RateLimit {
+	return r.RateLimit
+}
+
+func (r *HTTPRouteRuleSpec) GetAccessControlLists() *AccessControlLists {
+	return r.AccessControlLists
+}
+
+func (r *HTTPRouteRuleSpec) GetFaultInjection() *FaultInjection {
+	return r.FaultInjection
+}
+
+func (r *HTTPRouteRuleSpec) SetRateLimit(rateLimit *RateLimit) {
+	r.RateLimit = rateLimit
+}
+
+func (r *HTTPRouteRuleSpec) SetAccessControlLists(accessControlLists *AccessControlLists) {
+	r.AccessControlLists = accessControlLists
+}
+
+func (r *HTTPRouteRuleSpec) SetFaultInjection(faultInjection *FaultInjection) {
+	r.FaultInjection = faultInjection
+}
+
 var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 
 // GRPCRouteRuleSpec is the GRPC route rule configuration
@@ -158,6 +189,30 @@ type GRPCRouteRuleSpec struct {
 	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
+}
+
+func (r *GRPCRouteRuleSpec) GetRateLimit() *RateLimit {
+	return r.RateLimit
+}
+
+func (r *GRPCRouteRuleSpec) GetAccessControlLists() *AccessControlLists {
+	return r.AccessControlLists
+}
+
+func (r *GRPCRouteRuleSpec) GetFaultInjection() *FaultInjection {
+	return r.FaultInjection
+}
+
+func (r *GRPCRouteRuleSpec) SetRateLimit(rateLimit *RateLimit) {
+	r.RateLimit = rateLimit
+}
+
+func (r *GRPCRouteRuleSpec) SetAccessControlLists(accessControlLists *AccessControlLists) {
+	r.AccessControlLists = accessControlLists
+}
+
+func (r *GRPCRouteRuleSpec) SetFaultInjection(faultInjection *FaultInjection) {
+	r.FaultInjection = faultInjection
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}

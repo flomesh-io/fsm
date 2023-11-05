@@ -336,6 +336,32 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 		}
 	}
 
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
+		policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind {
+		if len(policy.Spec.HTTPRateLimits) == 0 && len(policy.Spec.Hostnames) == 0 {
+			path := field.NewPath("spec")
+			errs = append(errs, field.Invalid(path, nil, "either hostnames or http must be set for HTTPRoute target"))
+		}
+
+		if len(policy.Spec.GRPCRateLimits) > 0 {
+			path := field.NewPath("spec").Child("grpc")
+			errs = append(errs, field.Invalid(path, policy.Spec.GRPCRateLimits, "must be empty for HTTPRoute target"))
+		}
+	}
+
+	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
+		policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
+		if len(policy.Spec.GRPCRateLimits) == 0 && len(policy.Spec.Hostnames) == 0 {
+			path := field.NewPath("spec")
+			errs = append(errs, field.Invalid(path, nil, "either hostnames or grpc must be set for GRPCRoute target"))
+		}
+
+		if len(policy.Spec.HTTPRateLimits) > 0 {
+			path := field.NewPath("spec").Child("http")
+			errs = append(errs, field.Invalid(path, policy.Spec.HTTPRateLimits, "must be empty for GRPCRoute target"))
+		}
+	}
+
 	return errs
 }
 

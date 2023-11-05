@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// GatewayClassesProcessor is responsible for processing GatewayClass objects
-type GatewayClassesProcessor struct {
+// GatewayClassesTrigger is responsible for processing GatewayClass objects
+type GatewayClassesTrigger struct {
 }
 
 // Insert adds the GatewayClass object to the cache and returns true if the cache was modified
-func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *GatewayClassesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	class, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -44,7 +44,7 @@ func (p *GatewayClassesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 }
 
 // Delete removes the GatewayClass object from the cache and returns true if the cache was modified
-func (p *GatewayClassesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *GatewayClassesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	class, ok := obj.(*gwv1beta1.GatewayClass)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

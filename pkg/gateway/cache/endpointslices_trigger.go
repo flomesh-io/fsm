@@ -9,12 +9,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// EndpointSlicesProcessor is responsible for processing EndpointSlices
-type EndpointSlicesProcessor struct {
+// EndpointSlicesTrigger is responsible for processing EndpointSlices
+type EndpointSlicesTrigger struct {
 }
 
 // Insert adds the EndpointSlice object to the cache and returns true if the cache was modified
-func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -41,7 +41,7 @@ func (p *EndpointSlicesProcessor) Insert(obj interface{}, cache *GatewayCache) b
 }
 
 // Delete removes the EndpointSlice object from the cache and returns true if the cache was modified
-func (p *EndpointSlicesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *EndpointSlicesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
