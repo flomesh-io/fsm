@@ -365,6 +365,9 @@ spec:
                   type: object
                 maxItems: 16
                 type: array
+                x-kubernetes-list-map-keys:
+                - hostname
+                x-kubernetes-list-type: map
               http:
                 description: HTTPFaultInjections is the access control configuration
                   for HTTP routes

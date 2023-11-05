@@ -12,11 +12,15 @@ type AccessControlPolicySpec struct {
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=port
 	// +kubebuilder:validation:MaxItems=16
 	// Ports is the access control configuration for ports
 	Ports []PortAccessControl `json:"ports,omitempty"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=hostname
 	// +kubebuilder:validation:MaxItems=16
 	// Hostnames is the access control configuration for hostnames
 	Hostnames []HostnameAccessControl `json:"hostnames,omitempty"`
@@ -79,12 +83,14 @@ type GRPCAccessControl struct {
 // AccessControlConfig defines the access control configuration for a route
 type AccessControlConfig struct {
 	// +optional
-	// +kubebuilder:validation:MaxItems=256
+	// +listType=set
+	// +kubebuilder:validation:MaxItems=32
 	// Blacklist is the list of IP addresses to be blacklisted
 	Blacklist []string `json:"blacklist,omitempty"`
 
 	// +optional
-	// +kubebuilder:validation:MaxItems=256
+	// +listType=set
+	// +kubebuilder:validation:MaxItems=32
 	// Whitelist is the list of IP addresses to be whitelisted
 	Whitelist []string `json:"whitelist,omitempty"`
 

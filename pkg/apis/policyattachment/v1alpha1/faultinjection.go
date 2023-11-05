@@ -12,6 +12,8 @@ type FaultInjectionPolicySpec struct {
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=hostname
 	// +kubebuilder:validation:MaxItems=16
 	// Hostnames is the access control configuration for hostnames
 	Hostnames []HostnameFaultInjection `json:"hostnames,omitempty"`

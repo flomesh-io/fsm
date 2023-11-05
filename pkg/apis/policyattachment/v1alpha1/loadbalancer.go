@@ -19,6 +19,8 @@ type LoadBalancerPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
+	// +listType=map
+	// +listMapKey=port
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// Ports is the load balancer configuration for ports
