@@ -3,10 +3,11 @@ package policy
 import (
 	"fmt"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	"k8s.io/utils/pointer"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 )
 
 func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit {

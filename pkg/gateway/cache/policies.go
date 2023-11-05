@@ -252,7 +252,7 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 	}
 
 	if len(policies.accessControls[AccessControlPolicyMatchTypeHTTPRoute]) > 0 {
-		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeGRPCRoute] {
+		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeHTTPRoute] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
 				result.httpRouteAccessControls = append(result.httpRouteAccessControls, ac)
 			}

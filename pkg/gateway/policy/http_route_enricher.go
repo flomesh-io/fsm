@@ -1,14 +1,15 @@
 package policy
 
 import (
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type HTTPRoutePolicyEnricher interface {
-	Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg routecfg.HTTPTrafficMatch)
+	Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch)
 }
 
 // ---
@@ -18,7 +19,9 @@ type RateLimitHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg routecfg.HTTPTrafficMatch) {
+func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
+	log.Debug().Msgf("RateLimitHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, rateLimit := range e.Data {
 		if len(rateLimit.Spec.HTTPRateLimits) == 0 {
 			continue
@@ -38,7 +41,9 @@ type AccessControlHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg routecfg.HTTPTrafficMatch) {
+func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
+	log.Debug().Msgf("AccessControlHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, accessControl := range e.Data {
 		if len(accessControl.Spec.HTTPAccessControls) == 0 {
 			continue
@@ -58,7 +63,9 @@ type FaultInjectionHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.FaultInjectionPolicy
 }
 
-func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg routecfg.HTTPTrafficMatch) {
+func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *routecfg.HTTPTrafficMatch) {
+	log.Debug().Msgf("FaultInjectionHTTPRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, faultInjection := range e.Data {
 		if len(faultInjection.Spec.HTTPFaultInjections) == 0 {
 			continue

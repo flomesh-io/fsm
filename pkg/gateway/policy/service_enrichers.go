@@ -8,7 +8,7 @@ import (
 // ServicePolicyEnricher is an interface for enriching service level policies
 type ServicePolicyEnricher interface {
 	// Enrich enriches the service config with the service level policy based on the service port name
-	Enrich(svcPortName string, svcCfg routecfg.ServiceConfig)
+	Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig)
 }
 
 // ---
@@ -18,7 +18,9 @@ type SessionStickyPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.SessionStickyConfig
 }
 
-func (e *SessionStickyPolicyEnricher) Enrich(svcPortName string, svcCfg routecfg.ServiceConfig) {
+func (e *SessionStickyPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	log.Debug().Msgf("SessionStickyPolicyEnricher.Enrich: Data=%v", e.Data)
+
 	if ssCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.StickyCookieName = ssCfg.CookieName
 		svcCfg.StickyCookieExpires = ssCfg.Expires
@@ -32,7 +34,9 @@ type LoadBalancerPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.LoadBalancerType
 }
 
-func (e *LoadBalancerPolicyEnricher) Enrich(svcPortName string, svcCfg routecfg.ServiceConfig) {
+func (e *LoadBalancerPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	log.Debug().Msgf("LoadBalancerPolicyEnricher.Enrich: Data=%v", e.Data)
+
 	if lbType, exists := e.Data[svcPortName]; exists {
 		svcCfg.LoadBalancer = lbType
 	}
@@ -45,7 +49,9 @@ type CircuitBreakingPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.CircuitBreakingConfig
 }
 
-func (e *CircuitBreakingPolicyEnricher) Enrich(svcPortName string, svcCfg routecfg.ServiceConfig) {
+func (e *CircuitBreakingPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	log.Debug().Msgf("CircuitBreakingPolicyEnricher.Enrich: Data=%v", e.Data)
+
 	if cbCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.CircuitBreaking = newCircuitBreaking(cbCfg)
 	}
@@ -58,7 +64,9 @@ type HealthCheckPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.HealthCheckConfig
 }
 
-func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg routecfg.ServiceConfig) {
+func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	log.Debug().Msgf("HealthCheckPolicyEnricher.Enrich: Data=%v", e.Data)
+
 	if hcCfg, exists := e.Data[svcPortName]; exists {
 		svcCfg.HealthCheck = newHealthCheck(hcCfg)
 	}

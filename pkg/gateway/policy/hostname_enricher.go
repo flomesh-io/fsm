@@ -18,20 +18,12 @@ type RateLimitHostnameEnricher struct {
 }
 
 func (e *RateLimitHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	switch r := r.(type) {
-	case *routecfg.HTTPRouteRuleSpec:
-		for _, rateLimit := range e.Data {
-			if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
-				r.RateLimit = newRateLimitConfig(rl)
-				break
-			}
-		}
-	case *routecfg.GRPCRouteRuleSpec:
-		for _, rateLimit := range e.Data {
-			if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.RateLimit == nil {
-				r.RateLimit = newRateLimitConfig(rl)
-				break
-			}
+	log.Debug().Msgf("RateLimitHostnameEnricher.Enrich: Data=%v", e.Data)
+
+	for _, rateLimit := range e.Data {
+		if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.GetRateLimit() == nil {
+			r.SetRateLimit(newRateLimitConfig(rl))
+			break
 		}
 	}
 }
@@ -44,20 +36,12 @@ type AccessControlHostnameEnricher struct {
 }
 
 func (e *AccessControlHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	switch r := r.(type) {
-	case *routecfg.HTTPRouteRuleSpec:
-		for _, ac := range e.Data {
-			if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.AccessControlLists == nil {
-				r.AccessControlLists = newAccessControlLists(cfg)
-				break
-			}
-		}
-	case *routecfg.GRPCRouteRuleSpec:
-		for _, ac := range e.Data {
-			if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.AccessControlLists == nil {
-				r.AccessControlLists = newAccessControlLists(cfg)
-				break
-			}
+	log.Debug().Msgf("AccessControlHostnameEnricher.Enrich: Data=%v", e.Data)
+
+	for _, ac := range e.Data {
+		if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.GetAccessControlLists() == nil {
+			r.SetAccessControlLists(newAccessControlLists(cfg))
+			break
 		}
 	}
 }
@@ -70,20 +54,12 @@ type FaultInjectionHostnameEnricher struct {
 }
 
 func (e *FaultInjectionHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRuleSpec) {
-	switch r := r.(type) {
-	case *routecfg.HTTPRouteRuleSpec:
-		for _, fj := range e.Data {
-			if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.FaultInjection == nil {
-				r.FaultInjection = newFaultInjection(cfg)
-				break
-			}
-		}
-	case *routecfg.GRPCRouteRuleSpec:
-		for _, fj := range e.Data {
-			if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.FaultInjection == nil {
-				r.FaultInjection = newFaultInjection(cfg)
-				break
-			}
+	log.Debug().Msgf("FaultInjectionHostnameEnricher.Enrich: Data=%v", e.Data)
+
+	for _, fj := range e.Data {
+		if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.GetFaultInjection() == nil {
+			r.SetFaultInjection(newFaultInjection(cfg))
+			break
 		}
 	}
 }

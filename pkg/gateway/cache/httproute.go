@@ -1,10 +1,11 @@
 package cache
 
 import (
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
@@ -55,8 +56,8 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.HTTPRouteRuleSpec {
-	httpSpec := routecfg.HTTPRouteRuleSpec{
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *routecfg.HTTPRouteRuleSpec {
+	httpSpec := &routecfg.HTTPRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeHTTP,
 		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
 	}
@@ -89,7 +90,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies route
 		}
 
 		for _, m := range rule.Matches {
-			match := routecfg.HTTPTrafficMatch{
+			match := &routecfg.HTTPTrafficMatch{
 				BackendService: backends,
 				Filters:        ruleLevelFilters,
 			}
@@ -117,7 +118,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies route
 				enricher.Enrich(m, match)
 			}
 
-			httpSpec.Matches = append(httpSpec.Matches, match)
+			httpSpec.Matches = append(httpSpec.Matches, *match)
 		}
 	}
 	return httpSpec

@@ -1,14 +1,15 @@
 package policy
 
 import (
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type PortPolicyEnricher interface {
-	Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg routecfg.Listener)
+	Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener)
 }
 
 // ---
@@ -18,7 +19,9 @@ type RateLimitPortEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg routecfg.Listener) {
+func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
+	log.Debug().Msgf("RateLimitPortEnricher.Enrich: Data=%v", e.Data)
+
 	if len(e.Data) > 0 {
 		for _, rateLimit := range e.Data {
 			if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
@@ -44,7 +47,9 @@ type AccessControlPortEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg routecfg.Listener) {
+func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
+	log.Debug().Msgf("AccessControlPortEnricher.Enrich: Data=%v", e.Data)
+
 	if len(e.Data) > 0 {
 		for _, accessControl := range e.Data {
 			if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {

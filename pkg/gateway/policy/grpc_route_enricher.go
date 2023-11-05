@@ -1,14 +1,15 @@
 package policy
 
 import (
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 type GRPCRoutePolicyEnricher interface {
-	Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg routecfg.GRPCTrafficMatch)
+	Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch)
 }
 
 // ---
@@ -18,7 +19,9 @@ type RateLimitGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg routecfg.GRPCTrafficMatch) {
+func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+	log.Debug().Msgf("RateLimitGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, rateLimit := range e.Data {
 		if len(rateLimit.Spec.GRPCRateLimits) == 0 {
 			continue
@@ -38,7 +41,9 @@ type AccessControlGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg routecfg.GRPCTrafficMatch) {
+func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+	log.Debug().Msgf("AccessControlGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, accessControl := range e.Data {
 		if len(accessControl.Spec.GRPCAccessControls) == 0 {
 			continue
@@ -58,7 +63,9 @@ type FaultInjectionGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.FaultInjectionPolicy
 }
 
-func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg routecfg.GRPCTrafficMatch) {
+func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+	log.Debug().Msgf("FaultInjectionGRPCRouteEnricher.Enrich: Data=%v", e.Data)
+
 	for _, faultInjection := range e.Data {
 		if len(faultInjection.Spec.GRPCFaultInjections) == 0 {
 			continue

@@ -133,7 +133,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 	enrichers := c.getPortPolicyEnrichers(policies)
 
 	for _, l := range validListeners {
-		listener := routecfg.Listener{
+		listener := &routecfg.Listener{
 			Protocol: l.Protocol,
 			Listen:   c.listenPort(l),
 			Port:     l.Port,
@@ -147,7 +147,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 			enricher.Enrich(gw, l.Port, listener)
 		}
 
-		listeners = append(listeners, listener)
+		listeners = append(listeners, *listener)
 	}
 
 	return listeners
@@ -346,7 +346,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			}
 		}
 
-		svcCfg := routecfg.ServiceConfig{
+		svcCfg := &routecfg.ServiceConfig{
 			//Filters:   svcInfo.filters,
 			Endpoints: make(map[string]routecfg.Endpoint),
 		}
@@ -362,7 +362,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			enricher.Enrich(svcPortName, svcCfg)
 		}
 
-		configs[svcPortName] = svcCfg
+		configs[svcPortName] = *svcCfg
 	}
 
 	return configs

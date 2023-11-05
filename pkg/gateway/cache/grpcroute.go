@@ -1,11 +1,12 @@
 package cache
 
 import (
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
@@ -53,8 +54,8 @@ func processGRPCRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) routecfg.GRPCRouteRuleSpec {
-	grpcSpec := routecfg.GRPCRouteRuleSpec{
+func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) *routecfg.GRPCRouteRuleSpec {
+	grpcSpec := &routecfg.GRPCRouteRuleSpec{
 		RouteType: routecfg.L7RouteTypeGRPC,
 		Matches:   make([]routecfg.GRPCTrafficMatch, 0),
 	}
@@ -87,7 +88,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 		}
 
 		for _, m := range rule.Matches {
-			match := routecfg.GRPCTrafficMatch{
+			match := &routecfg.GRPCTrafficMatch{
 				BackendService: backends,
 				Filters:        ruleLevelFilters,
 			}
@@ -108,7 +109,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 				enricher.Enrich(m, match)
 			}
 
-			grpcSpec.Matches = append(grpcSpec.Matches, match)
+			grpcSpec.Matches = append(grpcSpec.Matches, *match)
 		}
 	}
 

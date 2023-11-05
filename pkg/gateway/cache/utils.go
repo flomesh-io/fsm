@@ -326,17 +326,17 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 		if r1, exists := mergedRule[hostname]; exists {
 			// can only merge same type of route into one hostname
 			switch r1 := r1.(type) {
-			case routecfg.GRPCRouteRuleSpec:
+			case *routecfg.GRPCRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case routecfg.GRPCRouteRuleSpec:
+				case *routecfg.GRPCRouteRuleSpec:
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
 				}
-			case routecfg.HTTPRouteRuleSpec:
+			case *routecfg.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case routecfg.HTTPRouteRuleSpec:
+				case *routecfg.HTTPRouteRuleSpec:
 					r1.Matches = append(r1.Matches, r2.Matches...)
 					mergedRule[hostname] = r1
 				default:
