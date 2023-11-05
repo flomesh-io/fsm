@@ -190,6 +190,9 @@ spec:
                             type: object
                           maxItems: 16
                           type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         responseStatusCode:
                           default: 429
                           description: ResponseStatusCode is the response status code
@@ -289,6 +292,9 @@ spec:
                             type: object
                           maxItems: 16
                           type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         responseStatusCode:
                           default: 429
                           description: ResponseStatusCode is the response status code
@@ -311,6 +317,9 @@ spec:
                   type: object
                 maxItems: 16
                 type: array
+                x-kubernetes-list-map-keys:
+                - hostname
+                x-kubernetes-list-type: map
               http:
                 description: HTTPRateLimits is the rate limit configuration for HTTP
                   routes
@@ -542,6 +551,9 @@ spec:
                             type: object
                           maxItems: 16
                           type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         responseStatusCode:
                           default: 429
                           description: ResponseStatusCode is the response status code
@@ -587,6 +599,9 @@ spec:
                   type: object
                 maxItems: 16
                 type: array
+                x-kubernetes-list-map-keys:
+                - port
+                x-kubernetes-list-type: map
               rateLimit:
                 description: DefaultL7RateLimit is the default rate limit for all
                   routes and hostnames
@@ -648,6 +663,9 @@ spec:
                       type: object
                     maxItems: 16
                     type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                   responseStatusCode:
                     default: 429
                     description: ResponseStatusCode is the response status code to

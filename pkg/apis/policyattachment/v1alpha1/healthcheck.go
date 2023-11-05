@@ -11,6 +11,8 @@ type HealthCheckPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
+	// +listType=map
+	// +listMapKey=port
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// Ports is the health check configuration for ports
@@ -56,6 +58,7 @@ type HealthCheckConfig struct {
 
 type HealthCheckMatch struct {
 	// +optional
+	// +listType=set
 	// +kubebuilder:validation:MaxItems=16
 	// StatusCodes is the list of status codes to match
 	StatusCodes []int32 `json:"statusCodes,omitempty"`
@@ -65,6 +68,8 @@ type HealthCheckMatch struct {
 	Body *string `json:"body,omitempty"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=name
 	// +kubebuilder:validation:MaxItems=16
 	// Headers is the list of response headers to match
 	Headers []gwv1beta1.HTTPHeader `json:"headers,omitempty"`

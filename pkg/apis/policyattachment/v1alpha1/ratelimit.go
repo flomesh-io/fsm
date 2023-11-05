@@ -22,6 +22,8 @@ type RateLimitPolicySpec struct {
 	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=port
 	// +kubebuilder:validation:MaxItems=16
 	// Ports is the rate limit configuration for ports
 	Ports []PortRateLimit `json:"ports,omitempty"`
@@ -32,6 +34,8 @@ type RateLimitPolicySpec struct {
 	DefaultBPS *int64 `json:"bps,omitempty"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=hostname
 	// +kubebuilder:validation:MaxItems=16
 	// Hostnames is the rate limit configuration for hostnames
 	Hostnames []HostnameRateLimit `json:"hostnames,omitempty"`
@@ -127,6 +131,8 @@ type L7RateLimit struct {
 	ResponseStatusCode *int32 `json:"responseStatusCode"`
 
 	// +optional
+	// +listType=map
+	// +listMapKey=name
 	// +kubebuilder:validation:MaxItems=16
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
 	ResponseHeadersToAdd []gwv1beta1.HTTPHeader `json:"responseHeadersToAdd,omitempty"`

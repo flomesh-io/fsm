@@ -193,6 +193,9 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
+                x-kubernetes-list-map-keys:
+                - port
+                x-kubernetes-list-type: map
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied

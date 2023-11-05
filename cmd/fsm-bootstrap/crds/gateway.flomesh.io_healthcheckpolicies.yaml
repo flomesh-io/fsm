@@ -94,6 +94,9 @@ spec:
                             type: object
                           maxItems: 16
                           type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
                         statusCodes:
                           description: StatusCodes is the list of status codes to
                             match
@@ -102,6 +105,7 @@ spec:
                             type: integer
                           maxItems: 16
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     maxItems: 16
                     type: array
@@ -183,6 +187,9 @@ spec:
                                   type: object
                                 maxItems: 16
                                 type: array
+                                x-kubernetes-list-map-keys:
+                                - name
+                                x-kubernetes-list-type: map
                               statusCodes:
                                 description: StatusCodes is the list of status codes
                                   to match
@@ -191,6 +198,7 @@ spec:
                                   type: integer
                                 maxItems: 16
                                 type: array
+                                x-kubernetes-list-type: set
                             type: object
                           maxItems: 16
                           type: array
@@ -222,6 +230,9 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
+                x-kubernetes-list-map-keys:
+                - port
+                x-kubernetes-list-type: map
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied

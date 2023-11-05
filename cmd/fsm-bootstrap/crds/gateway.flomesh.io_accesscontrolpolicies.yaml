@@ -45,8 +45,9 @@ spec:
                     description: Blacklist is the list of IP addresses to be blacklisted
                     items:
                       type: string
-                    maxItems: 256
+                    maxItems: 32
                     type: array
+                    x-kubernetes-list-type: set
                   enableXFF:
                     default: false
                     description: EnableXFF is the flag to enable X-Forwarded-For header
@@ -68,8 +69,9 @@ spec:
                     description: Whitelist is the list of IP addresses to be whitelisted
                     items:
                       type: string
-                    maxItems: 256
+                    maxItems: 32
                     type: array
+                    x-kubernetes-list-type: set
                 type: object
               grpc:
                 description: GRPCAccessControls is the access control configuration
@@ -87,8 +89,9 @@ spec:
                             blacklisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                         enableXFF:
                           default: false
                           description: EnableXFF is the flag to enable X-Forwarded-For
@@ -112,8 +115,9 @@ spec:
                             whitelisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     match:
                       description: Match is the match condition for the GRPC route
@@ -213,8 +217,9 @@ spec:
                             blacklisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                         enableXFF:
                           default: false
                           description: EnableXFF is the flag to enable X-Forwarded-For
@@ -238,8 +243,9 @@ spec:
                             whitelisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     hostname:
                       description: Hostname is the hostname for matching the access
@@ -253,6 +259,9 @@ spec:
                   type: object
                 maxItems: 16
                 type: array
+                x-kubernetes-list-map-keys:
+                - hostname
+                x-kubernetes-list-type: map
               http:
                 description: HTTPAccessControls is the access control configuration
                   for HTTP routes
@@ -269,8 +278,9 @@ spec:
                             blacklisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                         enableXFF:
                           default: false
                           description: EnableXFF is the flag to enable X-Forwarded-For
@@ -294,8 +304,9 @@ spec:
                             whitelisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     match:
                       description: Match is the match condition for the HTTP route
@@ -477,8 +488,9 @@ spec:
                             blacklisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                         enableXFF:
                           default: false
                           description: EnableXFF is the flag to enable X-Forwarded-For
@@ -502,8 +514,9 @@ spec:
                             whitelisted
                           items:
                             type: string
-                          maxItems: 256
+                          maxItems: 32
                           type: array
+                          x-kubernetes-list-type: set
                       type: object
                     port:
                       description: Port is the port number for matching the access
@@ -517,6 +530,9 @@ spec:
                   type: object
                 maxItems: 16
                 type: array
+                x-kubernetes-list-map-keys:
+                - port
+                x-kubernetes-list-type: map
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied
