@@ -37,63 +37,63 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
-// ProcessorType is the type used to represent the type of processor
-type ProcessorType string
+// TriggerType is the type used to represent the type of processor
+type TriggerType string
 
 const (
-	// ServicesProcessorType is the type used to represent the services processor
-	ServicesProcessorType ProcessorType = "services"
+	// ServicesTriggerType is the type used to represent the services processor
+	ServicesTriggerType TriggerType = "services"
 
-	// EndpointSlicesProcessorType is the type used to represent the endpoint slices processor
-	EndpointSlicesProcessorType ProcessorType = "endpointslices"
+	// EndpointSlicesTriggerType is the type used to represent the endpoint slices processor
+	EndpointSlicesTriggerType TriggerType = "endpointslices"
 
-	// EndpointsProcessorType is the type used to represent the endpoints processor
-	EndpointsProcessorType ProcessorType = "endpoints"
+	// EndpointsTriggerType is the type used to represent the endpoints processor
+	EndpointsTriggerType TriggerType = "endpoints"
 
-	// ServiceImportsProcessorType is the type used to represent the service imports processor
-	ServiceImportsProcessorType ProcessorType = "serviceimports"
+	// ServiceImportsTriggerType is the type used to represent the service imports processor
+	ServiceImportsTriggerType TriggerType = "serviceimports"
 
-	// SecretsProcessorType is the type used to represent the secrets processor
-	SecretsProcessorType ProcessorType = "secrets"
+	// SecretsTriggerType is the type used to represent the secrets processor
+	SecretsTriggerType TriggerType = "secrets"
 
-	// GatewayClassesProcessorType is the type used to represent the gateway classes processor
-	GatewayClassesProcessorType ProcessorType = "gatewayclasses"
+	// GatewayClassesTriggerType is the type used to represent the gateway classes processor
+	GatewayClassesTriggerType TriggerType = "gatewayclasses"
 
-	// GatewaysProcessorType is the type used to represent the gateways processor
-	GatewaysProcessorType ProcessorType = "gateways"
+	// GatewaysTriggerType is the type used to represent the gateways processor
+	GatewaysTriggerType TriggerType = "gateways"
 
-	// HTTPRoutesProcessorType is the type used to represent the HTTP routes processor
-	HTTPRoutesProcessorType ProcessorType = "httproutes"
+	// HTTPRoutesTriggerType is the type used to represent the HTTP routes processor
+	HTTPRoutesTriggerType TriggerType = "httproutes"
 
-	// GRPCRoutesProcessorType is the type used to represent the gRPC routes processor
-	GRPCRoutesProcessorType ProcessorType = "grpcroutes"
+	// GRPCRoutesTriggerType is the type used to represent the gRPC routes processor
+	GRPCRoutesTriggerType TriggerType = "grpcroutes"
 
-	// TCPRoutesProcessorType is the type used to represent the TCP routes processor
-	TCPRoutesProcessorType ProcessorType = "tcproutes"
+	// TCPRoutesTriggerType is the type used to represent the TCP routes processor
+	TCPRoutesTriggerType TriggerType = "tcproutes"
 
-	// TLSRoutesProcessorType is the type used to represent the TLS routes processor
-	TLSRoutesProcessorType ProcessorType = "tlsroutes"
+	// TLSRoutesTriggerType is the type used to represent the TLS routes processor
+	TLSRoutesTriggerType TriggerType = "tlsroutes"
 
-	// RateLimitPoliciesProcessorType is the type used to represent the rate limit policies processor
-	RateLimitPoliciesProcessorType ProcessorType = "ratelimits"
+	// RateLimitPoliciesTriggerType is the type used to represent the rate limit policies processor
+	RateLimitPoliciesTriggerType TriggerType = "ratelimits"
 
-	// SessionStickyPoliciesProcessorType is the type used to represent the session sticky policies processor
-	SessionStickyPoliciesProcessorType ProcessorType = "sessionstickies"
+	// SessionStickyPoliciesTriggerType is the type used to represent the session sticky policies processor
+	SessionStickyPoliciesTriggerType TriggerType = "sessionstickies"
 
-	// LoadBalancerPoliciesProcessorType is the type used to represent the load balancer policies processor
-	LoadBalancerPoliciesProcessorType ProcessorType = "loadbalancers"
+	// LoadBalancerPoliciesTriggerType is the type used to represent the load balancer policies processor
+	LoadBalancerPoliciesTriggerType TriggerType = "loadbalancers"
 
-	// CircuitBreakingPoliciesProcessorType is the type used to represent the circuit breaking policies processor
-	CircuitBreakingPoliciesProcessorType ProcessorType = "circuitbreakings"
+	// CircuitBreakingPoliciesTriggerType is the type used to represent the circuit breaking policies processor
+	CircuitBreakingPoliciesTriggerType TriggerType = "circuitbreakings"
 
-	// AccessControlPoliciesProcessorType is the type used to represent the access control policies processor
-	AccessControlPoliciesProcessorType ProcessorType = "accesscontrols"
+	// AccessControlPoliciesTriggerType is the type used to represent the access control policies processor
+	AccessControlPoliciesTriggerType TriggerType = "accesscontrols"
 
-	// HealthCheckPoliciesProcessorType is the type used to represent the health check policies processor
-	HealthCheckPoliciesProcessorType ProcessorType = "healthchecks"
+	// HealthCheckPoliciesTriggerType is the type used to represent the health check policies processor
+	HealthCheckPoliciesTriggerType TriggerType = "healthchecks"
 
-	// FaultInjectionPoliciesProcessorType is the type used to represent the fault injection policies processor
-	FaultInjectionPoliciesProcessorType ProcessorType = "faultinjections"
+	// FaultInjectionPoliciesTriggerType is the type used to represent the fault injection policies processor
+	FaultInjectionPoliciesTriggerType TriggerType = "faultinjections"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -129,8 +129,11 @@ const (
 	// RateLimitPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
 	RateLimitPolicyMatchTypeHostnames RateLimitPolicyMatchType = "hostnames"
 
-	// RateLimitPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
-	RateLimitPolicyMatchTypeRoute RateLimitPolicyMatchType = "route"
+	// RateLimitPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
+	RateLimitPolicyMatchTypeHTTPRoute RateLimitPolicyMatchType = "httproute"
+
+	// RateLimitPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
+	RateLimitPolicyMatchTypeGRPCRoute RateLimitPolicyMatchType = "grpcroute"
 )
 
 // AccessControlPolicyMatchType is the type used to represent the rate limit policy match type
@@ -143,8 +146,11 @@ const (
 	// AccessControlPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
 	AccessControlPolicyMatchTypeHostnames AccessControlPolicyMatchType = "hostnames"
 
-	// AccessControlPolicyMatchTypeRoute is the type used to represent the rate limit policy match type route
-	AccessControlPolicyMatchTypeRoute AccessControlPolicyMatchType = "route"
+	// AccessControlPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
+	AccessControlPolicyMatchTypeHTTPRoute AccessControlPolicyMatchType = "httproute"
+
+	// AccessControlPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
+	AccessControlPolicyMatchTypeGRPCRoute AccessControlPolicyMatchType = "grpcroute"
 )
 
 // FaultInjectionPolicyMatchType is the type used to represent the fault injection policy match type
@@ -157,8 +163,11 @@ const (
 	// FaultInjectionPolicyMatchTypeHostnames is the type used to represent the fault injection policy match type hostnames
 	FaultInjectionPolicyMatchTypeHostnames FaultInjectionPolicyMatchType = "hostnames"
 
-	// FaultInjectionPolicyMatchTypeRoute is the type used to represent the fault injection policy match type route
-	FaultInjectionPolicyMatchTypeRoute FaultInjectionPolicyMatchType = "route"
+	// FaultInjectionPolicyMatchTypeHTTPRoute is the type used to represent the fault injection policy match type httproute
+	FaultInjectionPolicyMatchTypeHTTPRoute FaultInjectionPolicyMatchType = "httproute"
+
+	// FaultInjectionPolicyMatchTypeGRPCRoute is the type used to represent the fault injection policy match type grpcroute
+	FaultInjectionPolicyMatchTypeGRPCRoute FaultInjectionPolicyMatchType = "grpcroute"
 )
 
 type globalPolicyAttachments struct {
@@ -169,11 +178,14 @@ type globalPolicyAttachments struct {
 
 type routePolicies struct {
 	hostnamesRateLimits      []gwpav1alpha1.RateLimitPolicy
-	routeRateLimits          []gwpav1alpha1.RateLimitPolicy
+	httpRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
+	grpcRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
 	hostnamesAccessControls  []gwpav1alpha1.AccessControlPolicy
-	routeAccessControls      []gwpav1alpha1.AccessControlPolicy
+	httpRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
+	grpcRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
 	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
-	routeFaultInjections     []gwpav1alpha1.FaultInjectionPolicy
+	httpRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+	grpcRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
 }
 
 var (

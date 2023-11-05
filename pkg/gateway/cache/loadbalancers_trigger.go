@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// LoadBalancerPoliciesProcessor is responsible for processing LoadBalancerPolicy objects
-type LoadBalancerPoliciesProcessor struct {
+// LoadBalancerPoliciesTrigger is responsible for processing LoadBalancerPolicy objects
+type LoadBalancerPoliciesTrigger struct {
 }
 
 // Insert adds a LoadBalancerPolicy to the cache and returns true if the target service is routable
-func (p *LoadBalancerPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *LoadBalancerPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.LoadBalancerPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *LoadBalancerPoliciesProcessor) Insert(obj interface{}, cache *GatewayCa
 }
 
 // Delete removes a LoadBalancerPolicy from the cache and returns true if the policy was found
-func (p *LoadBalancerPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *LoadBalancerPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.LoadBalancerPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

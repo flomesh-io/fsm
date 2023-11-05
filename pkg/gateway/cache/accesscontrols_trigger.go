@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// AccessControlPoliciesProcessor is responsible for processing AccessControlPolicy objects
-type AccessControlPoliciesProcessor struct {
+// AccessControlPoliciesTrigger is responsible for processing AccessControlPolicy objects
+type AccessControlPoliciesTrigger struct {
 }
 
 // Insert adds a AccessControlPolicy to the cache and returns true if the target service is routable
-func (p *AccessControlPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *AccessControlPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.AccessControlPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *AccessControlPoliciesProcessor) Insert(obj interface{}, cache *GatewayC
 }
 
 // Delete removes a AccessControlPolicy from the cache and returns true if the policy was found
-func (p *AccessControlPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *AccessControlPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.AccessControlPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// SessionStickyPoliciesProcessor is responsible for processing TLSRoute objects
-type SessionStickyPoliciesProcessor struct {
+// SessionStickyPoliciesTrigger is responsible for processing TLSRoute objects
+type SessionStickyPoliciesTrigger struct {
 }
 
 // Insert adds a TLSRoute to the cache and returns true if the route is effective
-func (p *SessionStickyPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *SessionStickyPoliciesProcessor) Insert(obj interface{}, cache *GatewayC
 }
 
 // Delete removes a TLSRoute from the cache and returns true if the route was found
-func (p *SessionStickyPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *SessionStickyPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

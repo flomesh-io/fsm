@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// GRPCRoutesProcessor is responsible for processing GRPCRoute objects
-type GRPCRoutesProcessor struct {
+// GRPCRoutesTrigger is responsible for processing GRPCRoute objects
+type GRPCRoutesTrigger struct {
 }
 
 // Insert adds a GRPCRoute to the cache and returns true if the route is effective
-func (p *GRPCRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *GRPCRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.GRPCRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *GRPCRoutesProcessor) Insert(obj interface{}, cache *GatewayCache) bool 
 }
 
 // Delete removes a GRPCRoute from the cache and returns true if the route was found
-func (p *GRPCRoutesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *GRPCRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	route, ok := obj.(*gwv1alpha2.GRPCRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

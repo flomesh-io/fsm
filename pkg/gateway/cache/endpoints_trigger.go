@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// EndpointsProcessor is responsible for processing Endpoints objects
-type EndpointsProcessor struct {
+// EndpointsTrigger is responsible for processing Endpoints objects
+type EndpointsTrigger struct {
 }
 
 // Insert adds the Endpoints object to the cache and returns true if the cache was modified
-func (p *EndpointsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *EndpointsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -25,7 +25,7 @@ func (p *EndpointsProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
 }
 
 // Delete removes the Endpoints object from the cache and returns true if the cache was modified
-func (p *EndpointsProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *EndpointsTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)

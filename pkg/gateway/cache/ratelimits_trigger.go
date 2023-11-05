@@ -6,12 +6,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-// RateLimitPoliciesProcessor is responsible for processing RateLimitPolicy objects
-type RateLimitPoliciesProcessor struct {
+// RateLimitPoliciesTrigger is responsible for processing RateLimitPolicy objects
+type RateLimitPoliciesTrigger struct {
 }
 
 // Insert adds a RateLimitPolicy to the cache and returns true if the target service is routable
-func (p *RateLimitPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache) bool {
+func (p *RateLimitPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.RateLimitPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -24,7 +24,7 @@ func (p *RateLimitPoliciesProcessor) Insert(obj interface{}, cache *GatewayCache
 }
 
 // Delete removes a RateLimitPolicy from the cache and returns true if the policy was found
-func (p *RateLimitPoliciesProcessor) Delete(obj interface{}, cache *GatewayCache) bool {
+func (p *RateLimitPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.RateLimitPolicy)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
