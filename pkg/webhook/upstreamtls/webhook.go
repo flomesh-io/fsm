@@ -342,10 +342,10 @@ func (w *validator) validateSecret(path *field.Path, certificateRef gwv1beta1.Se
 		v, ok = secret.Data[corev1.ServiceAccountRootCAKey]
 		if ok {
 			if string(v) == "" {
-				errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s is empty", ns, name, corev1.ServiceAccountRootCAKey)))
+				errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s cannot be empty if mTLS is enabled.", ns, name, corev1.ServiceAccountRootCAKey)))
 			}
 		} else {
-			errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s doesn't have required data by key %s", ns, name, corev1.ServiceAccountRootCAKey)))
+			errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s must have required data by key %s if mTLS is enabled.", ns, name, corev1.ServiceAccountRootCAKey)))
 		}
 	}
 
