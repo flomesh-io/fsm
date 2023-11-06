@@ -643,3 +643,22 @@ func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCR
 
 	return nil
 }
+
+// GetUpstreamTLSConfigIfPortMatchesPolicy returns the upstream TLS config if the port matches the policy
+func GetUpstreamTLSConfigIfPortMatchesPolicy(port int32, upstreamTLSPolicy gwpav1alpha1.UpstreamTLSPolicy) *gwpav1alpha1.UpstreamTLSConfig {
+	if len(upstreamTLSPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	for _, policyPort := range upstreamTLSPolicy.Spec.Ports {
+		if port == int32(policyPort.Port) {
+			if policyPort.Config != nil {
+				return policyPort.Config
+			}
+
+			return upstreamTLSPolicy.Spec.DefaultConfig
+		}
+	}
+
+	return nil
+}

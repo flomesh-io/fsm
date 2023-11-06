@@ -94,6 +94,9 @@ const (
 
 	// FaultInjectionPoliciesTriggerType is the type used to represent the fault injection policies processor
 	FaultInjectionPoliciesTriggerType TriggerType = "faultinjections"
+
+	// UpstreamTLSPoliciesTriggerType is the type used to represent the upstream tls policies processor
+	UpstreamTLSPoliciesTriggerType TriggerType = "upstreamtls"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -288,4 +291,5 @@ var (
 	accessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.AccessControlPolicyKind)
 	healthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.HealthCheckPolicyKind)
 	faultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.FaultInjectionPolicyKind)
+	upstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.UpstreamTLSPolicyKind)
 )

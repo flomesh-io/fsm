@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/webhook/upstreamtls"
+
 	"github.com/flomesh-io/fsm/pkg/webhook/faultinjection"
 
 	"github.com/flomesh-io/fsm/pkg/webhook/healthcheck"
@@ -267,6 +269,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, accesscontrol.NewRegister(regCfg))
 		result = append(result, healthcheck.NewRegister(regCfg))
 		result = append(result, faultinjection.NewRegister(regCfg))
+		result = append(result, upstreamtls.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {

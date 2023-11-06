@@ -35,6 +35,8 @@ type Interface interface {
 	RateLimitPolicies() RateLimitPolicyInformer
 	// SessionStickyPolicies returns a SessionStickyPolicyInformer.
 	SessionStickyPolicies() SessionStickyPolicyInformer
+	// UpstreamTLSPolicies returns a UpstreamTLSPolicyInformer.
+	UpstreamTLSPolicies() UpstreamTLSPolicyInformer
 }
 
 type version struct {
@@ -81,4 +83,9 @@ func (v *version) RateLimitPolicies() RateLimitPolicyInformer {
 // SessionStickyPolicies returns a SessionStickyPolicyInformer.
 func (v *version) SessionStickyPolicies() SessionStickyPolicyInformer {
 	return &sessionStickyPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// UpstreamTLSPolicies returns a UpstreamTLSPolicyInformer.
+func (v *version) UpstreamTLSPolicies() UpstreamTLSPolicyInformer {
+	return &upstreamTLSPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

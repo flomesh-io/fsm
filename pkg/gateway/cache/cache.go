@@ -48,6 +48,7 @@ type GatewayCache struct {
 	accesscontrols   map[client.ObjectKey]struct{}
 	healthchecks     map[client.ObjectKey]struct{}
 	faultinjections  map[client.ObjectKey]struct{}
+	upstreamstls     map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -99,6 +100,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		accesscontrols:   make(map[client.ObjectKey]struct{}),
 		healthchecks:     make(map[client.ObjectKey]struct{}),
 		faultinjections:  make(map[client.ObjectKey]struct{}),
+		upstreamstls:     make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}

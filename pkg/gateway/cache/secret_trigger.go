@@ -45,7 +45,7 @@ func (p *SecretTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	key := utils.ObjectKey(secret)
 	cache.secrets[key] = struct{}{}
 
-	return cache.isSecretReferredByAnyGateway(key)
+	return cache.isSecretReferred(key)
 }
 
 // Delete removes a Secret object from the cache and returns true if the cache is changed

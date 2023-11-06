@@ -301,7 +301,7 @@ type ServiceConfig struct {
 	Endpoints           map[string]Endpoint            `json:"Endpoints"`
 	ConnectionSettings  *ConnectionSettings            `json:"ConnectionSettings,omitempty"`
 	RetryPolicy         *RetryPolicy                   `json:"RetryPolicy,omitempty"`
-	MTLS                bool                           `json:"MTLS,omitempty"`
+	MTLS                *bool                          `json:"MTLS,omitempty"`
 	UpstreamCert        *UpstreamCert                  `json:"UpstreamCert,omitempty"`
 	StickyCookieName    *string                        `json:"StickyCookieName,omitempty"`
 	StickyCookieExpires *int32                         `json:"StickyCookieExpires,omitempty"`

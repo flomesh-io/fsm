@@ -3,6 +3,8 @@ package cache
 import (
 	"sort"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,6 +58,7 @@ func (c *GatewayCache) getServicePolicyEnrichers() []policy.ServicePolicyEnriche
 		&policy.LoadBalancerPolicyEnricher{Data: c.loadBalancers()},
 		&policy.CircuitBreakingPolicyEnricher{Data: c.circuitBreakings()},
 		&policy.HealthCheckPolicyEnricher{Data: c.healthChecks()},
+		&policy.UpstreamTLSPolicyEnricher{Data: c.upstreamTLS()},
 	}
 }
 
@@ -308,16 +311,16 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 		if gwutils.IsAcceptedPolicyAttachment(sessionSticky.Status.Conditions) {
 			for _, p := range sessionSticky.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(p.Port)); svcPortName != nil {
-					c := p.Config
-					if c == nil {
-						c = sessionSticky.Spec.DefaultConfig
+					cfg := p.Config
+					if cfg == nil {
+						cfg = sessionSticky.Spec.DefaultConfig
 					}
 
-					if c == nil {
+					if cfg == nil {
 						continue
 					}
 
-					sessionStickies[svcPortName.String()] = c
+					sessionStickies[svcPortName.String()] = cfg
 				}
 			}
 		}
@@ -372,16 +375,16 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 		if gwutils.IsAcceptedPolicyAttachment(circuitBreaking.Status.Conditions) {
 			for _, p := range circuitBreaking.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(circuitBreaking.Spec.TargetRef, circuitBreaking.Namespace, int32(p.Port)); svcPortName != nil {
-					c := p.Config
-					if c == nil {
-						c = circuitBreaking.Spec.DefaultConfig
+					cfg := p.Config
+					if cfg == nil {
+						cfg = circuitBreaking.Spec.DefaultConfig
 					}
 
-					if c == nil {
+					if cfg == nil {
 						continue
 					}
 
-					configs[svcPortName.String()] = c
+					configs[svcPortName.String()] = cfg
 				}
 			}
 		}
@@ -404,16 +407,70 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 		if gwutils.IsAcceptedPolicyAttachment(healthCheck.Status.Conditions) {
 			for _, p := range healthCheck.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(healthCheck.Spec.TargetRef, healthCheck.Namespace, int32(p.Port)); svcPortName != nil {
-					c := p.Config
-					if c == nil {
-						c = healthCheck.Spec.DefaultConfig
+					cfg := p.Config
+					if cfg == nil {
+						cfg = healthCheck.Spec.DefaultConfig
 					}
 
-					if c == nil {
+					if cfg == nil {
 						continue
 					}
 
-					configs[svcPortName.String()] = c
+					configs[svcPortName.String()] = cfg
+				}
+			}
+		}
+	}
+
+	return configs
+}
+
+func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
+	configs := make(map[string]*policy.UpstreamTLSConfig)
+
+	for key := range c.upstreamstls {
+		upstreamTLS, err := c.getUpstreamTLSPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get UpstreamTLSPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedPolicyAttachment(upstreamTLS.Status.Conditions) {
+			for _, p := range upstreamTLS.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(upstreamTLS.Spec.TargetRef, upstreamTLS.Namespace, int32(p.Port)); svcPortName != nil {
+					cfg := p.Config
+					if cfg == nil {
+						cfg = upstreamTLS.Spec.DefaultConfig
+					}
+
+					if cfg == nil {
+						continue
+					}
+
+					if string(*cfg.CertificateRef.Group) != constants.KubernetesCoreGroup {
+						continue
+					}
+
+					if string(*cfg.CertificateRef.Kind) != constants.KubernetesSecretKind {
+						continue
+					}
+
+					secretKey := client.ObjectKey{
+						Namespace: getSecretRefNamespace(upstreamTLS, cfg.CertificateRef),
+						Name:      string(cfg.CertificateRef.Name),
+					}
+
+					secret, err := c.getSecretFromCache(secretKey)
+					if err != nil {
+						log.Error().Msgf("Failed to get Secret %s: %s", secretKey, err)
+						continue
+					}
+
+					configs[svcPortName.String()] = &policy.UpstreamTLSConfig{
+						MTLS:   cfg.MTLS,
+						Secret: secret,
+					}
 				}
 			}
 		}

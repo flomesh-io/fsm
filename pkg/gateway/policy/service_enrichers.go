@@ -79,3 +79,21 @@ func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.
 		svcCfg.HealthCheck = newHealthCheck(hcCfg)
 	}
 }
+
+// ---
+
+// UpstreamTLSPolicyEnricher is an enricher for upstream TLS policies
+type UpstreamTLSPolicyEnricher struct {
+	Data map[string]*UpstreamTLSConfig
+}
+
+func (e *UpstreamTLSPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	if len(e.Data) == 0 {
+		return
+	}
+
+	if tlsCfg, exists := e.Data[svcPortName]; exists {
+		svcCfg.UpstreamCert = newUpstreamCert(tlsCfg)
+		svcCfg.MTLS = tlsCfg.MTLS
+	}
+}

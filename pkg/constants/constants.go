@@ -442,6 +442,9 @@ const (
 
 	// FaultInjectionPolicyKind is the kind name of FaultInjectionPolicy used in Flomesh API
 	FaultInjectionPolicyKind = "FaultInjectionPolicy"
+
+	// UpstreamTLSPolicyKind is the kind name of UpstreamTLSPolicy used in Flomesh API
+	UpstreamTLSPolicyKind = "UpstreamTLSPolicy"
 )
 
 // Gateway API constants
@@ -538,6 +541,12 @@ const (
 
 	// FaultInjectionPolicyValidatingWebhookPath is the path at which the FaultInjectionPolicy validating webhook is served
 	FaultInjectionPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-faultinjectionpolicy"
+
+	// UpstreamTLSPolicyMutatingWebhookPath is the path at which the UpstreamTLSPolicy mutating webhook is served
+	UpstreamTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-upstreamtlspolicy"
+
+	// UpstreamTLSPolicyValidatingWebhookPath is the path at which the UpstreamTLSPolicy validating webhook is served
+	UpstreamTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-upstreamtlspolicy"
 )
 
 // PIPY Repo constants
