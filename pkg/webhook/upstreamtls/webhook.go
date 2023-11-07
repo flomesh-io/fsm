@@ -113,10 +113,6 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	targetRef := policy.Spec.TargetRef
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
 		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		//if policy.Spec.DefaultConfig != nil {
-		//	policy.Spec.DefaultConfig = setDefaults(policy.Spec.DefaultConfig)
-		//}
-
 		if len(policy.Spec.Ports) > 0 {
 			for i, p := range policy.Spec.Ports {
 				if p.Config != nil {
@@ -124,33 +120,47 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 				}
 			}
 		}
+
+		if policy.Spec.DefaultConfig != nil {
+			policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
+		}
 	}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
 func setDefaults(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
-	if defaultConfig != nil {
-		cfgCopy := defaultConfig.DeepCopy()
-
-		if cfgCopy.MTLS == nil {
-			if config.MTLS != nil {
-				// use port config
-				cfgCopy.MTLS = config.MTLS
-			} else {
-				// all nil, set to false
-				cfgCopy.MTLS = pointer.Bool(false)
-			}
-		} else {
-			if config.MTLS != nil && cfgCopy.MTLS != config.MTLS {
-				// port config overrides default config
-				cfgCopy.MTLS = config.MTLS
-			}
-		}
-
-		return cfgCopy
+	switch {
+	case config == nil && defaultConfig == nil:
+		return nil
+	case config == nil && defaultConfig != nil:
+		return setDefaultValues(defaultConfig.DeepCopy())
+	case config != nil && defaultConfig == nil:
+		return setDefaultValues(config.DeepCopy())
+	case config != nil && defaultConfig != nil:
+		return mergeConfig(config, defaultConfig)
 	}
 
+	return nil
+}
+
+func mergeConfig(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
+	cfgCopy := config.DeepCopy()
+
+	if cfgCopy.MTLS == nil {
+		if defaultConfig.MTLS != nil {
+			// use port config
+			cfgCopy.MTLS = defaultConfig.MTLS
+		} else {
+			// all nil, set to false
+			cfgCopy.MTLS = pointer.Bool(false)
+		}
+	}
+
+	return cfgCopy
+}
+
+func setDefaultValues(config *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
 	cfg := config.DeepCopy()
 
 	if cfg.MTLS == nil {

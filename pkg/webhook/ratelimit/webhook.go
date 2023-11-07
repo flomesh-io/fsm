@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -117,14 +119,10 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 }
 
 func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
-	if policy.Spec.DefaultL7RateLimit != nil {
-		policy.Spec.DefaultL7RateLimit = l7RateLimitDefaults(policy.Spec.DefaultL7RateLimit)
-	}
-
 	if len(policy.Spec.Hostnames) > 0 {
 		for i, hostname := range policy.Spec.Hostnames {
 			if hostname.RateLimit != nil {
-				policy.Spec.Hostnames[i].RateLimit = l7RateLimitDefaults(hostname.RateLimit)
+				policy.Spec.Hostnames[i].RateLimit = l7RateLimitDefaults(hostname.RateLimit, policy.Spec.DefaultL7RateLimit)
 			}
 		}
 	}
@@ -132,7 +130,7 @@ func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 	if len(policy.Spec.HTTPRateLimits) > 0 {
 		for i, hr := range policy.Spec.HTTPRateLimits {
 			if hr.RateLimit != nil {
-				policy.Spec.HTTPRateLimits[i].RateLimit = l7RateLimitDefaults(hr.RateLimit)
+				policy.Spec.HTTPRateLimits[i].RateLimit = l7RateLimitDefaults(hr.RateLimit, policy.Spec.DefaultL7RateLimit)
 			}
 		}
 	}
@@ -140,13 +138,75 @@ func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 	if len(policy.Spec.GRPCRateLimits) > 0 {
 		for i, gr := range policy.Spec.GRPCRateLimits {
 			if gr.RateLimit != nil {
-				policy.Spec.GRPCRateLimits[i].RateLimit = l7RateLimitDefaults(gr.RateLimit)
+				policy.Spec.GRPCRateLimits[i].RateLimit = l7RateLimitDefaults(gr.RateLimit, policy.Spec.DefaultL7RateLimit)
 			}
 		}
 	}
+
+	if policy.Spec.DefaultL7RateLimit != nil {
+		policy.Spec.DefaultL7RateLimit = setDefaultValues(policy.Spec.DefaultL7RateLimit)
+	}
 }
 
-func l7RateLimitDefaults(rateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
+func l7RateLimitDefaults(rateLimit *gwpav1alpha1.L7RateLimit, defaultRateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
+	switch {
+	case rateLimit == nil && defaultRateLimit == nil:
+		return nil
+	case rateLimit == nil && defaultRateLimit != nil:
+		return setDefaultValues(defaultRateLimit.DeepCopy())
+	case rateLimit != nil && defaultRateLimit == nil:
+		return setDefaultValues(rateLimit.DeepCopy())
+	case rateLimit != nil && defaultRateLimit != nil:
+		return mergeConfig(rateLimit, defaultRateLimit)
+	}
+
+	return nil
+}
+
+func mergeConfig(config *gwpav1alpha1.L7RateLimit, defaultConfig *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
+	cfgCopy := config.DeepCopy()
+
+	if cfgCopy.Mode == nil {
+		if defaultConfig.Mode != nil {
+			cfgCopy.Mode = defaultConfig.Mode
+		} else {
+			cfgCopy.Mode = rateLimitPolicyModePointer(gwpav1alpha1.RateLimitPolicyModeLocal)
+		}
+	}
+
+	if cfgCopy.Backlog == nil {
+		if defaultConfig.Backlog != nil {
+			cfgCopy.Backlog = defaultConfig.Backlog
+		} else {
+			cfgCopy.Backlog = pointer.Int32(10)
+		}
+	}
+
+	if cfgCopy.Burst == nil {
+		if defaultConfig.Burst != nil {
+			cfgCopy.Burst = defaultConfig.Burst
+		} else {
+			cfgCopy.Burst = &cfgCopy.Requests
+		}
+	}
+
+	if cfgCopy.ResponseStatusCode == nil {
+		if defaultConfig.ResponseStatusCode != nil {
+			cfgCopy.ResponseStatusCode = defaultConfig.ResponseStatusCode
+		} else {
+			cfgCopy.ResponseStatusCode = pointer.Int32(429)
+		}
+	}
+
+	if len(config.ResponseHeadersToAdd) == 0 && len(defaultConfig.ResponseHeadersToAdd) > 0 {
+		cfgCopy.ResponseHeadersToAdd = make([]gwv1beta1.HTTPHeader, 0)
+		cfgCopy.ResponseHeadersToAdd = append(cfgCopy.ResponseHeadersToAdd, defaultConfig.ResponseHeadersToAdd...)
+	}
+
+	return cfgCopy
+}
+
+func setDefaultValues(rateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
 	result := rateLimit.DeepCopy()
 
 	if result.Mode == nil {
@@ -159,6 +219,10 @@ func l7RateLimitDefaults(rateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7Ra
 
 	if result.Burst == nil {
 		result.Burst = &result.Requests
+	}
+
+	if result.ResponseStatusCode == nil {
+		result.ResponseStatusCode = pointer.Int32(429)
 	}
 
 	return result

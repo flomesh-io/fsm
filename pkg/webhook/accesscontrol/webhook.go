@@ -121,14 +121,10 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 }
 
 func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
-	if policy.Spec.DefaultConfig != nil {
-		policy.Spec.DefaultConfig = configDefaults(policy.Spec.DefaultConfig)
-	}
-
 	if len(policy.Spec.Ports) > 0 {
 		for i, port := range policy.Spec.Ports {
 			if port.Config != nil {
-				policy.Spec.Ports[i].Config = configDefaults(port.Config)
+				policy.Spec.Ports[i].Config = configDefaults(port.Config, policy.Spec.DefaultConfig)
 			}
 		}
 	}
@@ -136,7 +132,7 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 	if len(policy.Spec.Hostnames) > 0 {
 		for i, hostname := range policy.Spec.Hostnames {
 			if hostname.Config != nil {
-				policy.Spec.Hostnames[i].Config = configDefaults(hostname.Config)
+				policy.Spec.Hostnames[i].Config = configDefaults(hostname.Config, policy.Spec.DefaultConfig)
 			}
 		}
 	}
@@ -144,7 +140,7 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 	if len(policy.Spec.HTTPAccessControls) > 0 {
 		for i, hr := range policy.Spec.HTTPAccessControls {
 			if hr.Config != nil {
-				policy.Spec.HTTPAccessControls[i].Config = configDefaults(hr.Config)
+				policy.Spec.HTTPAccessControls[i].Config = configDefaults(hr.Config, policy.Spec.DefaultConfig)
 			}
 		}
 	}
@@ -152,28 +148,83 @@ func setDefaults(policy *gwpav1alpha1.AccessControlPolicy) {
 	if len(policy.Spec.GRPCAccessControls) > 0 {
 		for i, gr := range policy.Spec.GRPCAccessControls {
 			if gr.Config != nil {
-				policy.Spec.GRPCAccessControls[i].Config = configDefaults(gr.Config)
+				policy.Spec.GRPCAccessControls[i].Config = configDefaults(gr.Config, policy.Spec.DefaultConfig)
 			}
 		}
 	}
+
+	if policy.Spec.DefaultConfig != nil {
+		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
+	}
 }
 
-func configDefaults(config *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
-	result := config.DeepCopy()
-
-	if result.EnableXFF == nil {
-		result.EnableXFF = pointer.Bool(false)
+func configDefaults(config *gwpav1alpha1.AccessControlConfig, defaultConfig *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
+	switch {
+	case config == nil && defaultConfig == nil:
+		return nil
+	case config == nil && defaultConfig != nil:
+		return setDefaultValues(defaultConfig.DeepCopy())
+	case config != nil && defaultConfig == nil:
+		return setDefaultValues(config.DeepCopy())
+	case config != nil && defaultConfig != nil:
+		return mergeConfig(config, defaultConfig)
 	}
 
-	if result.StatusCode == nil {
-		result.StatusCode = pointer.Int32(403)
+	return nil
+}
+
+func mergeConfig(config *gwpav1alpha1.AccessControlConfig, defaultConfig *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
+	cfgCopy := config.DeepCopy()
+
+	if cfgCopy.EnableXFF == nil {
+		if defaultConfig.EnableXFF != nil {
+			// use port config
+			cfgCopy.EnableXFF = defaultConfig.EnableXFF
+		} else {
+			// all nil, set to false
+			cfgCopy.EnableXFF = pointer.Bool(false)
+		}
 	}
 
-	if result.Message == nil {
-		result.Message = pointer.String("")
+	if cfgCopy.Message == nil {
+		if defaultConfig.Message != nil {
+			// use port config
+			cfgCopy.Message = defaultConfig.Message
+		} else {
+			// all nil, set to false
+			cfgCopy.Message = pointer.String("")
+		}
 	}
 
-	return result
+	if cfgCopy.StatusCode == nil {
+		if defaultConfig.StatusCode != nil {
+			// use port config
+			cfgCopy.StatusCode = defaultConfig.StatusCode
+		} else {
+			// all nil, set to false
+			cfgCopy.StatusCode = pointer.Int32(403)
+		}
+	}
+
+	return cfgCopy
+}
+
+func setDefaultValues(config *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
+	cfg := config.DeepCopy()
+
+	if cfg.EnableXFF == nil {
+		cfg.EnableXFF = pointer.Bool(false)
+	}
+
+	if cfg.StatusCode == nil {
+		cfg.StatusCode = pointer.Int32(403)
+	}
+
+	if cfg.Message == nil {
+		cfg.Message = pointer.String("")
+	}
+
+	return cfg
 }
 
 type validator struct {
