@@ -1061,3 +1061,27 @@ spec:
         unit: ms
 EOF
 ```
+
+### Test UpstreamTLSPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  name: upstream-tls-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+    namespace: httpbin
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        namespace: httpbin
+        name: https-cert
+      mTLS: false
+EOF
+```
