@@ -10,16 +10,22 @@ func GetLoadBalancerTypeIfPortMatchesPolicy(port int32, loadBalancerPolicy gwpav
 
 	for _, p := range loadBalancerPolicy.Spec.Ports {
 		if port == int32(p.Port) {
-			if p.Type == nil {
-				if loadBalancerPolicy.Spec.DefaultType == nil {
-					return loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
-				} else {
-					return loadBalancerPolicy.Spec.DefaultType
-				}
-			}
-
-			return p.Type
+			return ComputeLoadBalancerType(p.Type, loadBalancerPolicy.Spec.DefaultType)
 		}
+	}
+
+	return nil
+}
+
+// ComputeLoadBalancerType computes the load balancer type based on the port type and default type
+func ComputeLoadBalancerType(t *gwpav1alpha1.LoadBalancerType, defaultType *gwpav1alpha1.LoadBalancerType) *gwpav1alpha1.LoadBalancerType {
+	switch {
+	case t == nil && defaultType == nil:
+		return loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+	case t == nil && defaultType != nil:
+		return defaultType
+	case t != nil:
+		return t
 	}
 
 	return nil

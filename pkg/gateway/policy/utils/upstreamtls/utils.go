@@ -14,14 +14,15 @@ func GetUpstreamTLSConfigIfPortMatchesPolicy(port int32, upstreamTLSPolicy gwpav
 
 	for _, policyPort := range upstreamTLSPolicy.Spec.Ports {
 		if port == int32(policyPort.Port) {
-			return getUpstreamTLSConfig(policyPort.Config, upstreamTLSPolicy.Spec.DefaultConfig)
+			return ComputeUpstreamTLSConfig(policyPort.Config, upstreamTLSPolicy.Spec.DefaultConfig)
 		}
 	}
 
 	return nil
 }
 
-func getUpstreamTLSConfig(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
+// ComputeUpstreamTLSConfig computes the upstream TLS config based on the port config and default config
+func ComputeUpstreamTLSConfig(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil

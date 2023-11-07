@@ -10,14 +10,15 @@ func GetHealthCheckConfigIfPortMatchesPolicy(port int32, healthCheckPolicy gwpav
 
 	for _, policyPort := range healthCheckPolicy.Spec.Ports {
 		if port == int32(policyPort.Port) {
-			return getHealthCheckConfig(policyPort.Config, healthCheckPolicy.Spec.DefaultConfig)
+			return ComputeHealthCheckConfig(policyPort.Config, healthCheckPolicy.Spec.DefaultConfig)
 		}
 	}
 
 	return nil
 }
 
-func getHealthCheckConfig(config *gwpav1alpha1.HealthCheckConfig, defaultConfig *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
+// ComputeHealthCheckConfig computes the circuit breaking config based on the port config and default config
+func ComputeHealthCheckConfig(config *gwpav1alpha1.HealthCheckConfig, defaultConfig *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil

@@ -25,16 +25,16 @@ func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, f
 
 		switch {
 		case routeHostname == hostname:
-			return getFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
+			return ComputeFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
 
 		case strings.HasPrefix(routeHostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(hostname, routeHostname) {
-				return getFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
+				return ComputeFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
 			}
 
 		case strings.HasPrefix(hostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(routeHostname, hostname) {
-				return getFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
+				return ComputeFaultInjectionConfig(faultInjectionPolicy.Spec.Hostnames[i].Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRo
 
 	for _, hr := range faultInjectionPolicy.Spec.HTTPFaultInjections {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
-			return getFaultInjectionConfig(hr.Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
+			return ComputeFaultInjectionConfig(hr.Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
 		}
 	}
 
@@ -65,14 +65,15 @@ func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCR
 
 	for _, gr := range faultInjectionPolicy.Spec.GRPCFaultInjections {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
-			return getFaultInjectionConfig(gr.Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
+			return ComputeFaultInjectionConfig(gr.Config, faultInjectionPolicy.Spec.DefaultConfig, faultInjectionPolicy.Spec.Unit)
 		}
 	}
 
 	return nil
 }
 
-func getFaultInjectionConfig(config *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
+// ComputeFaultInjectionConfig computes the fault injection config based on the port config and default config
+func ComputeFaultInjectionConfig(config *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil

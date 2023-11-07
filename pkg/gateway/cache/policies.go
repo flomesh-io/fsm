@@ -3,6 +3,15 @@ package cache
 import (
 	"sort"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/circuitbreaking"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/healthcheck"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/upstreamtls"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy"
@@ -311,10 +320,7 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 		if gwutils.IsAcceptedPolicyAttachment(sessionSticky.Status.Conditions) {
 			for _, p := range sessionSticky.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(p.Port)); svcPortName != nil {
-					cfg := p.Config
-					if cfg == nil {
-						cfg = sessionSticky.Spec.DefaultConfig
-					}
+					cfg := sessionsticky.ComputeSessionStickyConfig(p.Config, sessionSticky.Spec.DefaultConfig)
 
 					if cfg == nil {
 						continue
@@ -343,10 +349,7 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 		if gwutils.IsAcceptedPolicyAttachment(lb.Status.Conditions) {
 			for _, p := range lb.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(lb.Spec.TargetRef, lb.Namespace, int32(p.Port)); svcPortName != nil {
-					t := p.Type
-					if t == nil {
-						t = lb.Spec.DefaultType
-					}
+					t := loadbalancer.ComputeLoadBalancerType(p.Type, lb.Spec.DefaultType)
 
 					if t == nil {
 						continue
@@ -375,10 +378,7 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 		if gwutils.IsAcceptedPolicyAttachment(circuitBreaking.Status.Conditions) {
 			for _, p := range circuitBreaking.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(circuitBreaking.Spec.TargetRef, circuitBreaking.Namespace, int32(p.Port)); svcPortName != nil {
-					cfg := p.Config
-					if cfg == nil {
-						cfg = circuitBreaking.Spec.DefaultConfig
-					}
+					cfg := circuitbreaking.ComputeCircuitBreakingConfig(p.Config, circuitBreaking.Spec.DefaultConfig)
 
 					if cfg == nil {
 						continue
@@ -407,10 +407,7 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 		if gwutils.IsAcceptedPolicyAttachment(healthCheck.Status.Conditions) {
 			for _, p := range healthCheck.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(healthCheck.Spec.TargetRef, healthCheck.Namespace, int32(p.Port)); svcPortName != nil {
-					cfg := p.Config
-					if cfg == nil {
-						cfg = healthCheck.Spec.DefaultConfig
-					}
+					cfg := healthcheck.ComputeHealthCheckConfig(p.Config, healthCheck.Spec.DefaultConfig)
 
 					if cfg == nil {
 						continue
@@ -439,10 +436,7 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 		if gwutils.IsAcceptedPolicyAttachment(upstreamTLS.Status.Conditions) {
 			for _, p := range upstreamTLS.Spec.Ports {
 				if svcPortName := targetRefToServicePortName(upstreamTLS.Spec.TargetRef, upstreamTLS.Namespace, int32(p.Port)); svcPortName != nil {
-					cfg := p.Config
-					if cfg == nil {
-						cfg = upstreamTLS.Spec.DefaultConfig
-					}
+					cfg := upstreamtls.ComputeUpstreamTLSConfig(p.Config, upstreamTLS.Spec.DefaultConfig)
 
 					if cfg == nil {
 						continue

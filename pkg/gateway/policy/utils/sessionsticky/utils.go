@@ -14,14 +14,15 @@ func GetSessionStickyConfigIfPortMatchesPolicy(port int32, sessionStickyPolicy g
 
 	for _, policyPort := range sessionStickyPolicy.Spec.Ports {
 		if port == int32(policyPort.Port) {
-			return getSessionStickyConfig(policyPort.Config, sessionStickyPolicy.Spec.DefaultConfig)
+			return ComputeSessionStickyConfig(policyPort.Config, sessionStickyPolicy.Spec.DefaultConfig)
 		}
 	}
 
 	return nil
 }
 
-func getSessionStickyConfig(config *gwpav1alpha1.SessionStickyConfig, defaultConfig *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+// ComputeSessionStickyConfig computes the session sticky config based on the port config and default config
+func ComputeSessionStickyConfig(config *gwpav1alpha1.SessionStickyConfig, defaultConfig *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil

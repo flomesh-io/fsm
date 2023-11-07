@@ -10,14 +10,15 @@ func GetCircuitBreakingConfigIfPortMatchesPolicy(port int32, circuitBreakingPoli
 
 	for _, policyPort := range circuitBreakingPolicy.Spec.Ports {
 		if port == int32(policyPort.Port) {
-			return getCircuitBreakingConfig(policyPort.Config, circuitBreakingPolicy.Spec.DefaultConfig)
+			return ComputeCircuitBreakingConfig(policyPort.Config, circuitBreakingPolicy.Spec.DefaultConfig)
 		}
 	}
 
 	return nil
 }
 
-func getCircuitBreakingConfig(config *gwpav1alpha1.CircuitBreakingConfig, defaultConfig *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
+// ComputeCircuitBreakingConfig computes the circuit breaking config based on the config and default config
+func ComputeCircuitBreakingConfig(config *gwpav1alpha1.CircuitBreakingConfig, defaultConfig *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil

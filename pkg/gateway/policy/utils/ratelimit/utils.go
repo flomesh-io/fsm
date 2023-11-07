@@ -25,16 +25,16 @@ func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPol
 
 		switch {
 		case routeHostname == hostname:
-			return getL7RateLimit(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
 
 		case strings.HasPrefix(routeHostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(hostname, routeHostname) {
-				return getL7RateLimit(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
 			}
 
 		case strings.HasPrefix(hostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(routeHostname, hostname) {
-				return getL7RateLimit(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, r
 
 	for _, hr := range rateLimitPolicy.Spec.HTTPRateLimits {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
-			return getL7RateLimit(hr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(hr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
 		}
 	}
 
@@ -65,7 +65,7 @@ func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, 
 
 	for _, gr := range rateLimitPolicy.Spec.GRPCRateLimits {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
-			return getL7RateLimit(gr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(gr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
 		}
 	}
 
@@ -91,7 +91,8 @@ func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy 
 	return nil
 }
 
-func getL7RateLimit(rateLimit *gwpav1alpha1.L7RateLimit, defaultRateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
+// ComputeRateLimitConfig computes the rate limit config based on the config and default config
+func ComputeRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit, defaultRateLimit *gwpav1alpha1.L7RateLimit) *gwpav1alpha1.L7RateLimit {
 	switch {
 	case rateLimit == nil && defaultRateLimit == nil:
 		return nil

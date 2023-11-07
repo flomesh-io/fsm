@@ -22,7 +22,7 @@ func GetAccessControlConfigIfPortMatchesPolicy(port gwv1beta1.PortNumber, access
 
 	for _, policyPort := range accessControlPolicy.Spec.Ports {
 		if port == policyPort.Port {
-			return getGetAccessControlConfig(policyPort.Config, accessControlPolicy.Spec.DefaultConfig)
+			return ComputeAccessControlConfig(policyPort.Config, accessControlPolicy.Spec.DefaultConfig)
 		}
 	}
 
@@ -40,16 +40,16 @@ func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, ac
 
 		switch {
 		case routeHostname == hostname:
-			return getGetAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
+			return ComputeAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
 
 		case strings.HasPrefix(routeHostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(hostname, routeHostname) {
-				return getGetAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
+				return ComputeAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
 			}
 
 		case strings.HasPrefix(hostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(routeHostname, hostname) {
-				return getGetAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
+				return ComputeAccessControlConfig(accessControlPolicy.Spec.Hostnames[i].Config, accessControlPolicy.Spec.DefaultConfig)
 			}
 		}
 	}
@@ -65,7 +65,7 @@ func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRou
 
 	for _, hr := range accessControlPolicy.Spec.HTTPAccessControls {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
-			return getGetAccessControlConfig(hr.Config, accessControlPolicy.Spec.DefaultConfig)
+			return ComputeAccessControlConfig(hr.Config, accessControlPolicy.Spec.DefaultConfig)
 		}
 	}
 
@@ -80,14 +80,15 @@ func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRo
 
 	for _, gr := range accessControlPolicy.Spec.GRPCAccessControls {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
-			return getGetAccessControlConfig(gr.Config, accessControlPolicy.Spec.DefaultConfig)
+			return ComputeAccessControlConfig(gr.Config, accessControlPolicy.Spec.DefaultConfig)
 		}
 	}
 
 	return nil
 }
 
-func getGetAccessControlConfig(config *gwpav1alpha1.AccessControlConfig, defaultConfig *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
+// ComputeAccessControlConfig computes the access control config based on the config and default config
+func ComputeAccessControlConfig(config *gwpav1alpha1.AccessControlConfig, defaultConfig *gwpav1alpha1.AccessControlConfig) *gwpav1alpha1.AccessControlConfig {
 	switch {
 	case config == nil && defaultConfig == nil:
 		return nil
