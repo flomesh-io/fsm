@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -288,12 +290,12 @@ func (r *loadBalancerPolicyReconciler) findConflict(loadBalancerPolicy *gwpav1al
 			continue
 		}
 
-		t1 := gwutils.GetLoadBalancerTypeIfPortMatchesPolicy(port, policy)
+		t1 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, policy)
 		if t1 == nil {
 			continue
 		}
 
-		t2 := gwutils.GetLoadBalancerTypeIfPortMatchesPolicy(port, *loadBalancerPolicy)
+		t2 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, *loadBalancerPolicy)
 		if t2 == nil {
 			continue
 		}

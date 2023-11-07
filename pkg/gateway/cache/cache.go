@@ -48,6 +48,7 @@ type GatewayCache struct {
 	accesscontrols   map[client.ObjectKey]struct{}
 	healthchecks     map[client.ObjectKey]struct{}
 	faultinjections  map[client.ObjectKey]struct{}
+	upstreamstls     map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -80,6 +81,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			AccessControlPoliciesTriggerType:   &AccessControlPoliciesTrigger{},
 			HealthCheckPoliciesTriggerType:     &HealthCheckPoliciesTrigger{},
 			FaultInjectionPoliciesTriggerType:  &FaultInjectionPoliciesTrigger{},
+			UpstreamTLSPoliciesTriggerType:     &UpstreamTLSPoliciesTrigger{},
 		},
 
 		//endpoints:      make(map[client.ObjectKey]struct{}),
@@ -99,6 +101,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		accesscontrols:   make(map[client.ObjectKey]struct{}),
 		healthchecks:     make(map[client.ObjectKey]struct{}),
 		faultinjections:  make(map[client.ObjectKey]struct{}),
+		upstreamstls:     make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}
@@ -166,6 +169,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[HealthCheckPoliciesTriggerType]
 	case *gwpav1alpha1.FaultInjectionPolicy:
 		return c.processors[FaultInjectionPoliciesTriggerType]
+	case *gwpav1alpha1.UpstreamTLSPolicy:
+		return c.processors[UpstreamTLSPoliciesTriggerType]
 	}
 
 	return nil

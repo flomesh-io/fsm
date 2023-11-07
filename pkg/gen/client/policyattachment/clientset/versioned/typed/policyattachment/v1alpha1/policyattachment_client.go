@@ -32,6 +32,7 @@ type GatewayV1alpha1Interface interface {
 	LoadBalancerPoliciesGetter
 	RateLimitPoliciesGetter
 	SessionStickyPoliciesGetter
+	UpstreamTLSPoliciesGetter
 }
 
 // GatewayV1alpha1Client is used to interact with features provided by the gateway.flomesh.io group.
@@ -65,6 +66,10 @@ func (c *GatewayV1alpha1Client) RateLimitPolicies(namespace string) RateLimitPol
 
 func (c *GatewayV1alpha1Client) SessionStickyPolicies(namespace string) SessionStickyPolicyInterface {
 	return newSessionStickyPolicies(c, namespace)
+}
+
+func (c *GatewayV1alpha1Client) UpstreamTLSPolicies(namespace string) UpstreamTLSPolicyInterface {
+	return newUpstreamTLSPolicies(c, namespace)
 }
 
 // NewForConfig creates a new GatewayV1alpha1Client for the given config.

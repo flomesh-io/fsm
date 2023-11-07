@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"k8s.io/utils/pointer"
-
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -105,64 +103,18 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
-		if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
-			policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
-			if len(policy.Spec.Hostnames) > 0 ||
-				len(policy.Spec.HTTPFaultInjections) > 0 ||
-				len(policy.Spec.GRPCFaultInjections) > 0 {
-				setDefaults(policy)
-			}
-		}
-	}
+	//if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
+	//	if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
+	//		policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
+	//		if len(policy.Spec.Hostnames) > 0 ||
+	//			len(policy.Spec.HTTPFaultInjections) > 0 ||
+	//			len(policy.Spec.GRPCFaultInjections) > 0 {
+	//			setDefaults(policy)
+	//		}
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
-}
-
-func setDefaults(policy *gwpav1alpha1.FaultInjectionPolicy) {
-	if policy.Spec.DefaultConfig != nil {
-		policy.Spec.DefaultConfig = configDefaults(policy.Spec.DefaultConfig, policy.Spec.Unit)
-	}
-
-	if len(policy.Spec.Hostnames) > 0 {
-		for i, hostname := range policy.Spec.Hostnames {
-			if hostname.Config != nil {
-				policy.Spec.Hostnames[i].Config = configDefaults(hostname.Config, policy.Spec.Unit)
-			}
-		}
-	}
-
-	if len(policy.Spec.HTTPFaultInjections) > 0 {
-		for i, hr := range policy.Spec.HTTPFaultInjections {
-			if hr.Config != nil {
-				policy.Spec.HTTPFaultInjections[i].Config = configDefaults(hr.Config, policy.Spec.Unit)
-			}
-		}
-	}
-
-	if len(policy.Spec.GRPCFaultInjections) > 0 {
-		for i, gr := range policy.Spec.GRPCFaultInjections {
-			if gr.Config != nil {
-				policy.Spec.GRPCFaultInjections[i].Config = configDefaults(gr.Config, policy.Spec.Unit)
-			}
-		}
-	}
-}
-
-func configDefaults(config *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
-	result := config.DeepCopy()
-
-	if config.Delay != nil {
-		if config.Delay.Unit == nil {
-			if unit == nil {
-				config.Delay.Unit = pointer.String("ms")
-			} else {
-				config.Delay.Unit = unit
-			}
-		}
-	}
-
-	return result
 }
 
 type validator struct {

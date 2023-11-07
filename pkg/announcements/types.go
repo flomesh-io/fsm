@@ -463,6 +463,17 @@ const (
 
 	// FaultInjectionPolicyUpdated is the type of announcement emitted when we observe an update to faultinjectionpolicies.gateway.flomesh.io
 	FaultInjectionPolicyUpdated Kind = "faultinjectionpolicy-updated"
+
+	// ---
+
+	// UpstreamTLSPolicyAdded is the type of announcement emitted when we observe an addition of upstreamtlspolicies.gateway.flomesh.io
+	UpstreamTLSPolicyAdded Kind = "upstreamtlspolicy-added"
+
+	// UpstreamTLSPolicyDeleted the type of announcement emitted when we observe a deletion of upstreamtlspolicies.gateway.flomesh.io
+	UpstreamTLSPolicyDeleted Kind = "upstreamtlspolicy-deleted"
+
+	// UpstreamTLSPolicyUpdated is the type of announcement emitted when we observe an update to upstreamtlspolicies.gateway.flomesh.io
+	UpstreamTLSPolicyUpdated Kind = "upstreamtlspolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

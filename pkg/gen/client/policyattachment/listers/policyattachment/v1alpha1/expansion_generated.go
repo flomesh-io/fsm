@@ -70,3 +70,11 @@ type SessionStickyPolicyListerExpansion interface{}
 // SessionStickyPolicyNamespaceListerExpansion allows custom methods to be added to
 // SessionStickyPolicyNamespaceLister.
 type SessionStickyPolicyNamespaceListerExpansion interface{}
+
+// UpstreamTLSPolicyListerExpansion allows custom methods to be added to
+// UpstreamTLSPolicyLister.
+type UpstreamTLSPolicyListerExpansion interface{}
+
+// UpstreamTLSPolicyNamespaceListerExpansion allows custom methods to be added to
+// UpstreamTLSPolicyNamespaceLister.
+type UpstreamTLSPolicyNamespaceListerExpansion interface{}

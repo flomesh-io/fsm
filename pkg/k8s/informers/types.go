@@ -115,6 +115,8 @@ const (
 	InformerKeyHealthCheckPolicy InformerKey = "HealthCheckPolicy"
 	// InformerKeyFaultInjectionPolicy is the InformerKey for a FaultInjectionPolicy informer
 	InformerKeyFaultInjectionPolicy InformerKey = "FaultInjectionPolicy"
+	// InformerKeyUpstreamTLSPolicy is the InformerKey for a UpstreamTLSPolicy informer
+	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
 )
 
 const (
@@ -161,4 +163,5 @@ type Lister struct {
 	AccessControlPolicy   gwpav1alpha1.AccessControlPolicyLister
 	HealthCheckPolicy     gwpav1alpha1.HealthCheckPolicyLister
 	FaultInjectionPolicy  gwpav1alpha1.FaultInjectionPolicyLister
+	UpstreamTLSPolicy     gwpav1alpha1.UpstreamTLSPolicyLister
 }

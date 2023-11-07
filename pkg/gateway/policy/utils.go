@@ -3,6 +3,8 @@ package policy
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/utils/pointer"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -113,4 +115,18 @@ func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.Fault
 	}
 
 	return result
+}
+
+func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
+	cert := &routecfg.UpstreamCert{
+		CertChain:  string(cfg.Secret.Data[corev1.TLSCertKey]),
+		PrivateKey: string(cfg.Secret.Data[corev1.TLSPrivateKeyKey]),
+	}
+
+	ca := string(cfg.Secret.Data[corev1.ServiceAccountRootCAKey])
+	if len(ca) > 0 {
+		cert.IssuingCA = ca
+	}
+
+	return cert
 }

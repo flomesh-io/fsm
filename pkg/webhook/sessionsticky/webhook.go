@@ -7,7 +7,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -104,38 +103,75 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	targetRef := policy.Spec.TargetRef
-	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if policy.Spec.DefaultConfig != nil {
-			policy.Spec.DefaultConfig = setDefaults(policy.Spec.DefaultConfig)
-		}
-
-		if len(policy.Spec.Ports) > 0 {
-			for i, p := range policy.Spec.Ports {
-				if p.Config != nil {
-					policy.Spec.Ports[i].Config = setDefaults(p.Config)
-				}
-			}
-		}
-	}
+	//targetRef := policy.Spec.TargetRef
+	//if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+	//	if len(policy.Spec.Ports) > 0 {
+	//		for i, p := range policy.Spec.Ports {
+	//			if p.Config != nil {
+	//				policy.Spec.Ports[i].Config = setDefaults(p.Config, policy.Spec.DefaultConfig)
+	//			}
+	//		}
+	//	}
+	//
+	//	if policy.Spec.DefaultConfig != nil {
+	//		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
-func setDefaults(config *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
-	config = config.DeepCopy()
-
-	if config.CookieName == nil {
-		config.CookieName = pointer.String("_srv_id")
-	}
-
-	if config.Expires == nil {
-		config.Expires = pointer.Int32(3600)
-	}
-
-	return config
-}
+//func setDefaults(config *gwpav1alpha1.SessionStickyConfig, defaultConfig *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+//	switch {
+//	case config == nil && defaultConfig == nil:
+//		return nil
+//	case config == nil && defaultConfig != nil:
+//		return setDefaultValues(defaultConfig.DeepCopy())
+//	case config != nil && defaultConfig == nil:
+//		return setDefaultValues(config.DeepCopy())
+//	case config != nil && defaultConfig != nil:
+//		return mergeConfig(config, defaultConfig)
+//	}
+//
+//	return nil
+//}
+//
+//func mergeConfig(config *gwpav1alpha1.SessionStickyConfig, defaultConfig *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+//	cfgCopy := config.DeepCopy()
+//
+//	if cfgCopy.CookieName == nil {
+//		if defaultConfig.CookieName != nil {
+//			cfgCopy.CookieName = defaultConfig.CookieName
+//		} else {
+//			cfgCopy.CookieName = pointer.String("_srv_id")
+//		}
+//	}
+//
+//	if cfgCopy.Expires == nil {
+//		if defaultConfig.Expires != nil {
+//			cfgCopy.Expires = defaultConfig.Expires
+//		} else {
+//			cfgCopy.Expires = pointer.Int32(3600)
+//		}
+//	}
+//
+//	return cfgCopy
+//}
+//
+//func setDefaultValues(config *gwpav1alpha1.SessionStickyConfig) *gwpav1alpha1.SessionStickyConfig {
+//	cfg := config.DeepCopy()
+//
+//	if cfg.CookieName == nil {
+//		cfg.CookieName = pointer.String("_srv_id")
+//	}
+//
+//	if cfg.Expires == nil {
+//		cfg.Expires = pointer.Int32(3600)
+//	}
+//
+//	return cfg
+//}
 
 type validator struct {
 	kubeClient kubernetes.Interface

@@ -3,6 +3,9 @@ package policy
 import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -33,7 +36,7 @@ func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.Por
 			continue
 		}
 
-		if r := gwutils.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
+		if r := ratelimit.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
 			listenerCfg.BpsLimit = r
 			break
 		}
@@ -61,7 +64,7 @@ func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1
 			continue
 		}
 
-		if c := gwutils.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
+		if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
 			listenerCfg.AccessControlLists = newAccessControlLists(c)
 			break
 		}

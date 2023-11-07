@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/circuitbreaking"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -289,12 +291,12 @@ func (r *circuitBreakingPolicyReconciler) findConflict(circuitBreakingPolicy *gw
 			continue
 		}
 
-		c1 := gwutils.GetCircuitBreakingConfigIfPortMatchesPolicy(port, policy)
+		c1 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := gwutils.GetCircuitBreakingConfigIfPortMatchesPolicy(port, *circuitBreakingPolicy)
+		c2 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, *circuitBreakingPolicy)
 		if c2 == nil {
 			continue
 		}

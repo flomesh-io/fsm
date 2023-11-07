@@ -234,6 +234,7 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyAccessControlPolicy] = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Informer()
 		ic.informers[InformerKeyHealthCheckPolicy] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
 		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
+		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
@@ -242,6 +243,7 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.listers.AccessControlPolicy = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Lister()
 		ic.listers.HealthCheckPolicy = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Lister()
 		ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
+		ic.listers.UpstreamTLSPolicy = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Lister()
 	}
 }
 

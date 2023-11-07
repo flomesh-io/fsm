@@ -103,38 +103,72 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	targetRef := policy.Spec.TargetRef
-	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if policy.Spec.DefaultConfig != nil {
-			policy.Spec.DefaultConfig = setDefaults(policy.Spec.DefaultConfig)
-		}
-
-		if len(policy.Spec.Ports) > 0 {
-			for i, p := range policy.Spec.Ports {
-				if p.Config != nil {
-					policy.Spec.Ports[i].Config = setDefaults(p.Config)
-				}
-			}
-		}
-	}
+	//targetRef := policy.Spec.TargetRef
+	//if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+	//	if len(policy.Spec.Ports) > 0 {
+	//		for i, p := range policy.Spec.Ports {
+	//			if p.Config != nil {
+	//				policy.Spec.Ports[i].Config = setDefaults(p.Config, policy.Spec.DefaultConfig)
+	//			}
+	//		}
+	//	}
+	//
+	//	if policy.Spec.DefaultConfig != nil {
+	//		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
-func setDefaults(config *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
-	config = config.DeepCopy()
-
-	if config.Path != nil && len(config.Matches) == 0 {
-		config.Matches = []gwpav1alpha1.HealthCheckMatch{
-			{
-				StatusCodes: []int32{200},
-			},
-		}
-	}
-
-	return config
-}
+//func setDefaults(config *gwpav1alpha1.HealthCheckConfig, defaultConfig *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
+//	switch {
+//	case config == nil && defaultConfig == nil:
+//		return nil
+//	case config == nil && defaultConfig != nil:
+//		return setDefaultValues(defaultConfig.DeepCopy())
+//	case config != nil && defaultConfig == nil:
+//		return setDefaultValues(config.DeepCopy())
+//	case config != nil && defaultConfig != nil:
+//		return mergeConfig(config, defaultConfig)
+//	}
+//
+//	return nil
+//}
+//
+//func mergeConfig(config *gwpav1alpha1.HealthCheckConfig, defaultConfig *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
+//	cfgCopy := config.DeepCopy()
+//
+//	if cfgCopy.Path == nil && defaultConfig.Path != nil {
+//		cfgCopy.Path = defaultConfig.Path
+//	}
+//
+//	if len(cfgCopy.Matches) == 0 && len(defaultConfig.Matches) > 0 {
+//		cfgCopy.Matches = make([]gwpav1alpha1.HealthCheckMatch, 0)
+//		cfgCopy.Matches = append(cfgCopy.Matches, defaultConfig.Matches...)
+//	}
+//
+//	if cfgCopy.FailTimeout == nil && defaultConfig.FailTimeout != nil {
+//		cfgCopy.FailTimeout = defaultConfig.FailTimeout
+//	}
+//
+//	return cfgCopy
+//}
+//
+//func setDefaultValues(config *gwpav1alpha1.HealthCheckConfig) *gwpav1alpha1.HealthCheckConfig {
+//	cfg := config.DeepCopy()
+//
+//	if cfg.Path != nil && len(cfg.Matches) == 0 {
+//		cfg.Matches = []gwpav1alpha1.HealthCheckMatch{
+//			{
+//				StatusCodes: []int32{200},
+//			},
+//		}
+//	}
+//
+//	return cfg
+//}
 
 type validator struct {
 	kubeClient kubernetes.Interface

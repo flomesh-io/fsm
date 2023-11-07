@@ -109,7 +109,11 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	if len(policy.Spec.Ports) > 0 {
 	//		for i, p := range policy.Spec.Ports {
 	//			if p.Type == nil {
-	//				policy.Spec.Ports[i].Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+	//				if policy.Spec.DefaultType == nil {
+	//					policy.Spec.Ports[i].Type = loadBalancerType(gwpav1alpha1.RoundRobinLoadBalancer)
+	//				} else {
+	//					policy.Spec.Ports[i].Type = policy.Spec.DefaultType
+	//				}
 	//			}
 	//		}
 	//	}
@@ -117,6 +121,10 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
+
+//func loadBalancerType(t gwpav1alpha1.LoadBalancerType) *gwpav1alpha1.LoadBalancerType {
+//	return &t
+//}
 
 type validator struct {
 	kubeClient kubernetes.Interface
