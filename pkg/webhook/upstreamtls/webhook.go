@@ -8,7 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/utils/pointer"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -110,65 +109,65 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	targetRef := policy.Spec.TargetRef
-	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		if len(policy.Spec.Ports) > 0 {
-			for i, p := range policy.Spec.Ports {
-				if p.Config != nil {
-					policy.Spec.Ports[i].Config = setDefaults(p.Config, policy.Spec.DefaultConfig)
-				}
-			}
-		}
-
-		if policy.Spec.DefaultConfig != nil {
-			policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
-		}
-	}
+	//targetRef := policy.Spec.TargetRef
+	//if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+	//	if len(policy.Spec.Ports) > 0 {
+	//		for i, p := range policy.Spec.Ports {
+	//			if p.Config != nil {
+	//				policy.Spec.Ports[i].Config = setDefaults(p.Config, policy.Spec.DefaultConfig)
+	//			}
+	//		}
+	//	}
+	//
+	//	if policy.Spec.DefaultConfig != nil {
+	//		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
-func setDefaults(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
-	switch {
-	case config == nil && defaultConfig == nil:
-		return nil
-	case config == nil && defaultConfig != nil:
-		return setDefaultValues(defaultConfig.DeepCopy())
-	case config != nil && defaultConfig == nil:
-		return setDefaultValues(config.DeepCopy())
-	case config != nil && defaultConfig != nil:
-		return mergeConfig(config, defaultConfig)
-	}
-
-	return nil
-}
-
-func mergeConfig(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
-	cfgCopy := config.DeepCopy()
-
-	if cfgCopy.MTLS == nil {
-		if defaultConfig.MTLS != nil {
-			// use port config
-			cfgCopy.MTLS = defaultConfig.MTLS
-		} else {
-			// all nil, set to false
-			cfgCopy.MTLS = pointer.Bool(false)
-		}
-	}
-
-	return cfgCopy
-}
-
-func setDefaultValues(config *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
-	cfg := config.DeepCopy()
-
-	if cfg.MTLS == nil {
-		cfg.MTLS = pointer.Bool(false)
-	}
-
-	return cfg
-}
+//func setDefaults(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
+//	switch {
+//	case config == nil && defaultConfig == nil:
+//		return nil
+//	case config == nil && defaultConfig != nil:
+//		return setDefaultValues(defaultConfig.DeepCopy())
+//	case config != nil && defaultConfig == nil:
+//		return setDefaultValues(config.DeepCopy())
+//	case config != nil && defaultConfig != nil:
+//		return mergeConfig(config, defaultConfig)
+//	}
+//
+//	return nil
+//}
+//
+//func mergeConfig(config *gwpav1alpha1.UpstreamTLSConfig, defaultConfig *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
+//	cfgCopy := config.DeepCopy()
+//
+//	if cfgCopy.MTLS == nil {
+//		if defaultConfig.MTLS != nil {
+//			// use port config
+//			cfgCopy.MTLS = defaultConfig.MTLS
+//		} else {
+//			// all nil, set to false
+//			cfgCopy.MTLS = pointer.Bool(false)
+//		}
+//	}
+//
+//	return cfgCopy
+//}
+//
+//func setDefaultValues(config *gwpav1alpha1.UpstreamTLSConfig) *gwpav1alpha1.UpstreamTLSConfig {
+//	cfg := config.DeepCopy()
+//
+//	if cfg.MTLS == nil {
+//		cfg.MTLS = pointer.Bool(false)
+//	}
+//
+//	return cfg
+//}
 
 type validator struct {
 	kubeClient kubernetes.Interface

@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/healthcheck"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -289,12 +291,12 @@ func (r *healthCheckPolicyReconciler) findConflict(healthCheckPolicy *gwpav1alph
 			continue
 		}
 
-		c1 := gwutils.GetHealthCheckConfigIfPortMatchesPolicy(port, policy)
+		c1 := healthcheck.GetHealthCheckConfigIfPortMatchesPolicy(port, policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := gwutils.GetHealthCheckConfigIfPortMatchesPolicy(port, *healthCheckPolicy)
+		c2 := healthcheck.GetHealthCheckConfigIfPortMatchesPolicy(port, *healthCheckPolicy)
 		if c2 == nil {
 			continue
 		}

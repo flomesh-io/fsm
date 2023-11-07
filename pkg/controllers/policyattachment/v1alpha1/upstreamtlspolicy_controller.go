@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/upstreamtls"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -289,12 +291,12 @@ func (r *upstreamTLSPolicyReconciler) findConflict(upstreamTLSPolicy *gwpav1alph
 			continue
 		}
 
-		c1 := gwutils.GetUpstreamTLSConfigIfPortMatchesPolicy(port, policy)
+		c1 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := gwutils.GetUpstreamTLSConfigIfPortMatchesPolicy(port, *upstreamTLSPolicy)
+		c2 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, *upstreamTLSPolicy)
 		if c2 == nil {
 			continue
 		}

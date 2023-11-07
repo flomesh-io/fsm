@@ -31,6 +31,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -362,12 +364,12 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesAccessControls {
-						r1 := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, hr)
+						r1 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *accessControlPolicy)
+						r2 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *accessControlPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -404,12 +406,12 @@ func (r *accessControlPolicyReconciler) getConflictedRouteBasedAccessControlPoli
 						continue
 					}
 
-					r1 := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, accessControl)
+					r1 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, accessControl)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *accessControlPolicy)
+					r2 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *accessControlPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -433,12 +435,12 @@ func (r *accessControlPolicyReconciler) getConflictedRouteBasedAccessControlPoli
 						continue
 					}
 
-					r1 := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, rr)
+					r1 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, rr)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *accessControlPolicy)
+					r2 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *accessControlPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -470,12 +472,12 @@ func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gat
 			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
 			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := gwutils.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, pr)
+				r1 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := gwutils.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *accessControlPolicy)
+				r2 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *accessControlPolicy)
 				if r2 == nil {
 					continue
 				}

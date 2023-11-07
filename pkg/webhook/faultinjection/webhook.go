@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"k8s.io/utils/pointer"
-
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -105,163 +103,18 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Default Webhook, name=%s", policy.Name)
 	log.Debug().Msgf("Before setting default values, spec=%v", policy.Spec)
 
-	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
-		if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
-			policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
-			if len(policy.Spec.Hostnames) > 0 ||
-				len(policy.Spec.HTTPFaultInjections) > 0 ||
-				len(policy.Spec.GRPCFaultInjections) > 0 {
-				setDefaults(policy)
-			}
-		}
-	}
+	//if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup {
+	//	if policy.Spec.TargetRef.Kind == constants.GatewayAPIHTTPRouteKind ||
+	//		policy.Spec.TargetRef.Kind == constants.GatewayAPIGRPCRouteKind {
+	//		if len(policy.Spec.Hostnames) > 0 ||
+	//			len(policy.Spec.HTTPFaultInjections) > 0 ||
+	//			len(policy.Spec.GRPCFaultInjections) > 0 {
+	//			setDefaults(policy)
+	//		}
+	//	}
+	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
-}
-
-func setDefaults(policy *gwpav1alpha1.FaultInjectionPolicy) {
-	if len(policy.Spec.Hostnames) > 0 {
-		for i, hostname := range policy.Spec.Hostnames {
-			if hostname.Config != nil {
-				policy.Spec.Hostnames[i].Config = configDefaults(hostname.Config, policy.Spec.DefaultConfig, policy.Spec.Unit)
-			}
-		}
-	}
-
-	if len(policy.Spec.HTTPFaultInjections) > 0 {
-		for i, hr := range policy.Spec.HTTPFaultInjections {
-			if hr.Config != nil {
-				policy.Spec.HTTPFaultInjections[i].Config = configDefaults(hr.Config, policy.Spec.DefaultConfig, policy.Spec.Unit)
-			}
-		}
-	}
-
-	if len(policy.Spec.GRPCFaultInjections) > 0 {
-		for i, gr := range policy.Spec.GRPCFaultInjections {
-			if gr.Config != nil {
-				policy.Spec.GRPCFaultInjections[i].Config = configDefaults(gr.Config, policy.Spec.DefaultConfig, policy.Spec.Unit)
-			}
-		}
-	}
-
-	if policy.Spec.DefaultConfig != nil {
-		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig, policy.Spec.Unit)
-	}
-}
-
-func configDefaults(config *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
-	switch {
-	case config == nil && defaultConfig == nil:
-		return nil
-	case config == nil && defaultConfig != nil:
-		return setDefaultValues(defaultConfig.DeepCopy(), unit)
-	case config != nil && defaultConfig == nil:
-		return setDefaultValues(config.DeepCopy(), unit)
-	case config != nil && defaultConfig != nil:
-		return mergeConfig(config, defaultConfig, unit)
-	}
-
-	return nil
-}
-
-func mergeConfig(config *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
-	cfgCopy := config.DeepCopy()
-
-	if hasValidDefaultDelay(cfgCopy, defaultConfig) {
-		cfgCopy.Delay = defaultConfig.Delay
-	}
-
-	if hasValidDefaultAbort(cfgCopy, defaultConfig) {
-		cfgCopy.Abort = defaultConfig.Abort
-	}
-
-	if cfgCopy.Delay != nil {
-		if cfgCopy.Delay.Unit == nil {
-			if defaultConfig.Delay != nil && defaultConfig.Delay.Unit != nil {
-				cfgCopy.Delay.Unit = defaultConfig.Delay.Unit
-			} else {
-				if unit == nil {
-					cfgCopy.Delay.Unit = pointer.String("ms")
-				} else {
-					cfgCopy.Delay.Unit = unit
-				}
-			}
-		}
-
-		if hasValidDefaultFixedDelay(cfgCopy, defaultConfig) {
-			cfgCopy.Delay.Fixed = defaultConfig.Delay.Fixed
-		}
-
-		if hasValidDefaultRangeDelay(cfgCopy, defaultConfig) {
-			cfgCopy.Delay.Range = defaultConfig.Delay.Range
-		}
-	}
-
-	if cfgCopy.Abort != nil {
-		if hasValidDefaultAbortStatusCode(cfgCopy, defaultConfig) {
-			cfgCopy.Abort.StatusCode = defaultConfig.Abort.StatusCode
-		}
-
-		if hasValidDefaultAbortMessage(cfgCopy, defaultConfig) {
-			cfgCopy.Abort.Message = defaultConfig.Abort.Message
-		}
-	}
-
-	return cfgCopy
-}
-
-func hasValidDefaultDelay(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Delay == nil && cfgCopy.Abort == nil && defaultConfig.Delay != nil && defaultConfig.Abort == nil
-}
-
-func hasValidDefaultAbort(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Abort == nil && cfgCopy.Delay == nil && defaultConfig.Abort != nil && defaultConfig.Delay == nil
-}
-
-func hasValidDefaultAbortMessage(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Abort.Message == nil &&
-		defaultConfig.Delay == nil &&
-		defaultConfig.Abort != nil &&
-		defaultConfig.Abort.Message != nil
-}
-
-func hasValidDefaultAbortStatusCode(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Abort.StatusCode == nil &&
-		defaultConfig.Delay == nil &&
-		defaultConfig.Abort != nil &&
-		defaultConfig.Abort.StatusCode != nil
-}
-
-func hasValidDefaultRangeDelay(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Delay.Range == nil &&
-		cfgCopy.Delay.Fixed == nil &&
-		defaultConfig.Abort == nil &&
-		defaultConfig.Delay != nil &&
-		defaultConfig.Delay.Range != nil &&
-		defaultConfig.Delay.Fixed == nil
-}
-
-func hasValidDefaultFixedDelay(cfgCopy *gwpav1alpha1.FaultInjectionConfig, defaultConfig *gwpav1alpha1.FaultInjectionConfig) bool {
-	return cfgCopy.Delay.Fixed == nil &&
-		cfgCopy.Delay.Range == nil &&
-		defaultConfig.Abort == nil &&
-		defaultConfig.Delay != nil &&
-		defaultConfig.Delay.Fixed != nil &&
-		defaultConfig.Delay.Range == nil
-}
-
-func setDefaultValues(config *gwpav1alpha1.FaultInjectionConfig, unit *string) *gwpav1alpha1.FaultInjectionConfig {
-	cfg := config.DeepCopy()
-
-	if cfg.Delay != nil && cfg.Delay.Unit == nil {
-		if unit == nil {
-			cfg.Delay.Unit = pointer.String("ms")
-		} else {
-			cfg.Delay.Unit = unit
-		}
-	}
-
-	return cfg
 }
 
 type validator struct {

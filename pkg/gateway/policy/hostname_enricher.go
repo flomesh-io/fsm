@@ -2,8 +2,10 @@ package policy
 
 import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 type HostnamePolicyEnricher interface {
@@ -23,7 +25,7 @@ func (e *RateLimitHostnameEnricher) Enrich(hostname string, r routecfg.L7RouteRu
 	}
 
 	for _, rateLimit := range e.Data {
-		if rl := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.GetRateLimit() == nil {
+		if rl := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, rateLimit); rl != nil && r.GetRateLimit() == nil {
 			r.SetRateLimit(newRateLimitConfig(rl))
 			break
 		}
@@ -43,7 +45,7 @@ func (e *AccessControlHostnameEnricher) Enrich(hostname string, r routecfg.L7Rou
 	}
 
 	for _, ac := range e.Data {
-		if cfg := gwutils.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.GetAccessControlLists() == nil {
+		if cfg := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, ac); cfg != nil && r.GetAccessControlLists() == nil {
 			r.SetAccessControlLists(newAccessControlLists(cfg))
 			break
 		}
@@ -63,7 +65,7 @@ func (e *FaultInjectionHostnameEnricher) Enrich(hostname string, r routecfg.L7Ro
 	}
 
 	for _, fj := range e.Data {
-		if cfg := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.GetFaultInjection() == nil {
+		if cfg := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, fj); cfg != nil && r.GetFaultInjection() == nil {
 			r.SetFaultInjection(newFaultInjection(cfg))
 			break
 		}

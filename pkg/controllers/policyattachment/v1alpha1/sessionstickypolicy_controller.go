@@ -7,6 +7,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -289,12 +291,12 @@ func (r *sessionStickyPolicyReconciler) findConflict(sessionStickyPolicy *gwpav1
 			continue
 		}
 
-		c1 := gwutils.GetSessionStickyConfigIfPortMatchesPolicy(port, policy)
+		c1 := sessionsticky.GetSessionStickyConfigIfPortMatchesPolicy(port, policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := gwutils.GetSessionStickyConfigIfPortMatchesPolicy(port, *sessionStickyPolicy)
+		c2 := sessionsticky.GetSessionStickyConfigIfPortMatchesPolicy(port, *sessionStickyPolicy)
 		if c2 == nil {
 			continue
 		}
