@@ -226,7 +226,7 @@ func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gw
 	return false
 }
 
-func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) bool {
+func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 	//ctx := context.TODO()
 	for _, key := range c.gateways {
 		gw, err := c.getGatewayFromCache(key)
@@ -252,6 +252,32 @@ func (c *GatewayCache) isSecretReferredByAnyGateway(secret client.ObjectKey) boo
 							return true
 						}
 					}
+				}
+			}
+		}
+	}
+
+	for key := range c.upstreamstls {
+		ut, err := c.getUpstreamTLSPolicyFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get UpstreamTLSPolicy %s: %s", key, err)
+			continue
+		}
+
+		if ut.Spec.DefaultConfig != nil {
+			if isRefToSecret(ut.Spec.DefaultConfig.CertificateRef, secret, ut.Namespace) {
+				return true
+			}
+		}
+
+		if len(ut.Spec.Ports) > 0 {
+			for _, port := range ut.Spec.Ports {
+				if port.Config == nil {
+					continue
+				}
+
+				if isRefToSecret(port.Config.CertificateRef, secret, ut.Namespace) {
+					return true
 				}
 			}
 		}
@@ -410,6 +436,17 @@ func (c *GatewayCache) getFaultInjectionPolicyFromCache(key client.ObjectKey) (*
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(faultInjectionPolicyGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getUpstreamTLSPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.UpstreamTLSPolicy, error) {
+	obj, err := c.informers.GetListers().UpstreamTLSPolicy.UpstreamTLSPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(upstreamTLSPolicyGVK)
 
 	return obj, nil
 }

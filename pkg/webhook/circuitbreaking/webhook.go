@@ -108,32 +108,71 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 	//	if len(policy.Spec.Ports) > 0 {
 	//		for i, p := range policy.Spec.Ports {
-	//			if p.Config == nil && policy.Spec.DefaultConfig != nil {
-	//				policy.Spec.Ports[i].Config = policy.Spec.DefaultConfig
-	//			}
-	//
 	//			if p.Config != nil {
-	//				policy.Spec.Ports[i].Config = setDefaults(p.Config)
+	//				policy.Spec.Ports[i].Config = setDefaults(p.Config, policy.Spec.DefaultConfig)
 	//			}
 	//		}
+	//	}
+	//
+	//	if policy.Spec.DefaultConfig != nil {
+	//		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
 	//	}
 	//}
 
 	log.Debug().Msgf("After setting default values, spec=%v", policy.Spec)
 }
 
-//func setDefaults(config *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
-//	config = config.DeepCopy()
-//
-//	if config.CookieName == nil {
-//		config.CookieName = pointer.String("_srv_id")
+//func setDefaults(config *gwpav1alpha1.CircuitBreakingConfig, defaultConfig *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
+//	switch {
+//	case config == nil && defaultConfig == nil:
+//		return nil
+//	case config == nil && defaultConfig != nil:
+//		return setDefaultValues(defaultConfig.DeepCopy())
+//	case config != nil && defaultConfig == nil:
+//		return setDefaultValues(config.DeepCopy())
+//	case config != nil && defaultConfig != nil:
+//		return mergeConfig(config, defaultConfig)
 //	}
 //
-//	if config.Expires == nil {
-//		config.Expires = pointer.Int32(3600)
+//	return nil
+//}
+//
+//func mergeConfig(config *gwpav1alpha1.CircuitBreakingConfig, defaultConfig *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
+//	cfgCopy := config.DeepCopy()
+//
+//	if config.DegradedResponseContent == nil && defaultConfig.DegradedResponseContent != nil {
+//		cfgCopy.DegradedResponseContent = defaultConfig.DegradedResponseContent
 //	}
 //
-//	return config
+//	if config.ErrorAmountThreshold == nil && defaultConfig.ErrorAmountThreshold != nil {
+//		cfgCopy.ErrorAmountThreshold = defaultConfig.ErrorAmountThreshold
+//	}
+//
+//	if config.ErrorRatioThreshold == nil && defaultConfig.ErrorRatioThreshold != nil {
+//		cfgCopy.ErrorRatioThreshold = defaultConfig.ErrorRatioThreshold
+//	}
+//
+//	if config.SlowAmountThreshold == nil && defaultConfig.SlowAmountThreshold != nil {
+//		cfgCopy.SlowAmountThreshold = defaultConfig.SlowAmountThreshold
+//	}
+//
+//	if config.SlowRatioThreshold == nil && defaultConfig.SlowRatioThreshold != nil {
+//		cfgCopy.SlowRatioThreshold = defaultConfig.SlowRatioThreshold
+//	}
+//
+//	if config.SlowTimeThreshold == nil && defaultConfig.SlowTimeThreshold != nil {
+//		cfgCopy.SlowTimeThreshold = defaultConfig.SlowTimeThreshold
+//	}
+//
+//	return cfgCopy
+//}
+//
+//func setDefaultValues(cfg *gwpav1alpha1.CircuitBreakingConfig) *gwpav1alpha1.CircuitBreakingConfig {
+//	cfg = cfg.DeepCopy()
+//
+//	// do nothing for now
+//
+//	return cfg
 //}
 
 type validator struct {

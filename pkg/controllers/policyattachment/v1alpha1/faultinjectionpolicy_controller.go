@@ -31,6 +31,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -317,12 +319,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesFaultInjections {
-						r1 := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, hr)
+						r1 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := gwutils.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *faultInjectionPolicy)
+						r2 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *faultInjectionPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -359,12 +361,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedRouteBasedFaultInjectionPo
 						continue
 					}
 
-					r1 := gwutils.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, faultInjection)
+					r1 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, faultInjection)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *faultInjectionPolicy)
+					r2 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *faultInjectionPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -388,12 +390,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedRouteBasedFaultInjectionPo
 						continue
 					}
 
-					r1 := gwutils.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, rr)
+					r1 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, rr)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *faultInjectionPolicy)
+					r2 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *faultInjectionPolicy)
 					if r2 == nil {
 						continue
 					}

@@ -53,6 +53,10 @@ func (c *FakeGatewayV1alpha1) SessionStickyPolicies(namespace string) v1alpha1.S
 	return &FakeSessionStickyPolicies{c, namespace}
 }
 
+func (c *FakeGatewayV1alpha1) UpstreamTLSPolicies(namespace string) v1alpha1.UpstreamTLSPolicyInterface {
+	return &FakeUpstreamTLSPolicies{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeGatewayV1alpha1) RESTClient() rest.Interface {

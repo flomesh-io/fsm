@@ -3,9 +3,12 @@ package policy
 import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 type HTTPRoutePolicyEnricher interface {
@@ -29,7 +32,7 @@ func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matc
 			continue
 		}
 
-		if r := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(match, rateLimit); r != nil && matchCfg.RateLimit == nil {
+		if r := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(match, rateLimit); r != nil && matchCfg.RateLimit == nil {
 			matchCfg.RateLimit = newRateLimitConfig(r)
 			break
 		}
@@ -53,7 +56,7 @@ func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, 
 			continue
 		}
 
-		if c := gwutils.GetAccessControlConfigIfHTTPRouteMatchesPolicy(match, accessControl); c != nil && matchCfg.AccessControlLists == nil {
+		if c := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(match, accessControl); c != nil && matchCfg.AccessControlLists == nil {
 			matchCfg.AccessControlLists = newAccessControlLists(c)
 			break
 		}
@@ -77,7 +80,7 @@ func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch,
 			continue
 		}
 
-		if f := gwutils.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(match, faultInjection); f != nil && matchCfg.FaultInjection == nil {
+		if f := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(match, faultInjection); f != nil && matchCfg.FaultInjection == nil {
 			matchCfg.FaultInjection = newFaultInjection(f)
 			break
 		}

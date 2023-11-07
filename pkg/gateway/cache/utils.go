@@ -75,9 +75,9 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	return false
 }
 
-func getSecretRefNamespace(gw *gwv1beta1.Gateway, secretRef gwv1beta1.SecretObjectReference) string {
+func getSecretRefNamespace(owner client.Object, secretRef gwv1beta1.SecretObjectReference) string {
 	if secretRef.Namespace == nil {
-		return gw.Namespace
+		return owner.GetNamespace()
 	}
 
 	return string(*secretRef.Namespace)

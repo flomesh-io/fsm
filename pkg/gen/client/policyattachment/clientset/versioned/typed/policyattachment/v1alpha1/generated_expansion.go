@@ -28,3 +28,5 @@ type LoadBalancerPolicyExpansion interface{}
 type RateLimitPolicyExpansion interface{}
 
 type SessionStickyPolicyExpansion interface{}
+
+type UpstreamTLSPolicyExpansion interface{}

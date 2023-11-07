@@ -64,6 +64,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RateLimitPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("sessionstickypolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().SessionStickyPolicies().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("upstreamtlspolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()}, nil
 
 	}
 

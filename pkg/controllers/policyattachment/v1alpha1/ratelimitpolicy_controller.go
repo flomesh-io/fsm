@@ -31,6 +31,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
@@ -362,12 +364,12 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesRateLimits {
-						r1 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
+						r1 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := gwutils.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *rateLimitPolicy)
+						r2 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *rateLimitPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -404,12 +406,12 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 						continue
 					}
 
-					r1 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit)
+					r1 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetRateLimitIfHTTPRouteMatchesPolicy(m, *rateLimitPolicy)
+					r2 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *rateLimitPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -433,12 +435,12 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 						continue
 					}
 
-					r1 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, rr)
+					r1 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, rr)
 					if r1 == nil {
 						continue
 					}
 
-					r2 := gwutils.GetRateLimitIfGRPCRouteMatchesPolicy(m, *rateLimitPolicy)
+					r2 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *rateLimitPolicy)
 					if r2 == nil {
 						continue
 					}
@@ -470,12 +472,12 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway
 			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
 			len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
+				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := gwutils.GetRateLimitIfPortMatchesPolicy(listener.Port, *rateLimitPolicy)
+				r2 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *rateLimitPolicy)
 				if r2 == nil {
 					continue
 				}
