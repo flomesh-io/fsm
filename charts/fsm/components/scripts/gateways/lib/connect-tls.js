@@ -81,6 +81,7 @@
   ),
   () => __useSSL, (
     $=>$.connectTLS({
+      trusted: unionCA,
       sni: () => __host || '',
     }).to($ => $.use('lib/connect-tcp.js'))
   ),
