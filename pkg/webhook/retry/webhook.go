@@ -3,6 +3,7 @@ package retry
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
 
@@ -216,6 +217,45 @@ func validateConfig(policy *gwpav1alpha1.RetryPolicy) field.ErrorList {
 				errs = append(errs, field.Required(path.Index(i).Child("config"), fmt.Sprintf("config must be set for port %d, as there's no default config", port.Port)))
 			}
 		}
+	}
+
+	if policy.Spec.DefaultConfig != nil {
+		path := field.NewPath("spec").Child("config")
+		errs = append(errs, validateRetryConfig(path, policy.Spec.DefaultConfig)...)
+	}
+
+	if len(policy.Spec.Ports) > 0 {
+		path := field.NewPath("spec").Child("ports")
+		for i, port := range policy.Spec.Ports {
+			errs = append(errs, validateRetryConfig(path.Index(i).Child("config"), port.Config)...)
+		}
+	}
+
+	return errs
+}
+
+// retryOnMaxLength is the maximum length each of the retryOn item
+const retryOnMaxLength int = 3
+
+const retryOnStatusCodeFmt = "[0-9][0-9x][0-9x]"
+const retryOnStatusCodeErrorMsg = "length of status code must be 3, with leading digit and last 2 digits being 0-9 or x, i.e. 5xx, 500, 502, 503, 504"
+
+var retryOnStatusCodeFmtRegexp = regexp.MustCompile("^" + retryOnStatusCodeFmt + "$")
+
+func validateRetryConfig(path *field.Path, config *gwpav1alpha1.RetryConfig) field.ErrorList {
+	var errs field.ErrorList
+
+	if len(config.RetryOn) > 0 {
+		for _, code := range config.RetryOn {
+			if len(code) > retryOnMaxLength {
+				errs = append(errs, field.TooLongMaxLength(path.Child("retryOn"), code, retryOnMaxLength))
+			}
+			if !retryOnStatusCodeFmtRegexp.MatchString(code) {
+				errs = append(errs, field.Invalid(path.Child("retryOn"), code, retryOnStatusCodeErrorMsg))
+			}
+		}
+	} else {
+		errs = append(errs, field.Required(path.Child("retryOn"), "retryOn cannot be empty"))
 	}
 
 	return errs
