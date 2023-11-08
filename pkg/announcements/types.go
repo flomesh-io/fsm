@@ -474,6 +474,17 @@ const (
 
 	// UpstreamTLSPolicyUpdated is the type of announcement emitted when we observe an update to upstreamtlspolicies.gateway.flomesh.io
 	UpstreamTLSPolicyUpdated Kind = "upstreamtlspolicy-updated"
+
+	// ---
+
+	// RetryPolicyAttachmentAdded is the type of announcement emitted when we observe an addition of retries.gateway.flomesh.io
+	RetryPolicyAttachmentAdded Kind = "retrypolicy-added"
+
+	// RetryPolicyAttachmentDeleted the type of announcement emitted when we observe a deletion of retries.gateway.flomesh.io
+	RetryPolicyAttachmentDeleted Kind = "retrypolicy-deleted"
+
+	// RetryPolicyAttachmentUpdated is the type of announcement emitted when we observe an update to retries.gateway.flomesh.io
+	RetryPolicyAttachmentUpdated Kind = "retrypolicy-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

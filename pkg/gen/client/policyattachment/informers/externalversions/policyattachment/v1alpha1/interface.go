@@ -33,6 +33,8 @@ type Interface interface {
 	LoadBalancerPolicies() LoadBalancerPolicyInformer
 	// RateLimitPolicies returns a RateLimitPolicyInformer.
 	RateLimitPolicies() RateLimitPolicyInformer
+	// RetryPolicies returns a RetryPolicyInformer.
+	RetryPolicies() RetryPolicyInformer
 	// SessionStickyPolicies returns a SessionStickyPolicyInformer.
 	SessionStickyPolicies() SessionStickyPolicyInformer
 	// UpstreamTLSPolicies returns a UpstreamTLSPolicyInformer.
@@ -78,6 +80,11 @@ func (v *version) LoadBalancerPolicies() LoadBalancerPolicyInformer {
 // RateLimitPolicies returns a RateLimitPolicyInformer.
 func (v *version) RateLimitPolicies() RateLimitPolicyInformer {
 	return &rateLimitPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RetryPolicies returns a RetryPolicyInformer.
+func (v *version) RetryPolicies() RetryPolicyInformer {
+	return &retryPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SessionStickyPolicies returns a SessionStickyPolicyInformer.

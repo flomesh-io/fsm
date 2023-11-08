@@ -97,3 +97,20 @@ func (e *UpstreamTLSPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.
 		svcCfg.MTLS = tlsCfg.MTLS
 	}
 }
+
+// ---
+
+// RetryPolicyEnricher is an enricher for retry policies
+type RetryPolicyEnricher struct {
+	Data map[string]*gwpav1alpha1.RetryConfig
+}
+
+func (e *RetryPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+	if len(e.Data) == 0 {
+		return
+	}
+
+	if hcCfg, exists := e.Data[svcPortName]; exists {
+		svcCfg.RetryPolicy = newRetry(hcCfg)
+	}
+}

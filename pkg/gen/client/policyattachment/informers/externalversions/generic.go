@@ -62,6 +62,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().LoadBalancerPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("ratelimitpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RateLimitPolicies().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("retrypolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RetryPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("sessionstickypolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().SessionStickyPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("upstreamtlspolicies"):

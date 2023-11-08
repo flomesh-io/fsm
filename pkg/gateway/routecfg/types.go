@@ -485,10 +485,9 @@ type UpstreamCert Certificate
 
 // RetryPolicy is the retry policy configuration
 type RetryPolicy struct {
-	RetryOn                  string `json:"RetryOn"`
-	PerTryTimeout            int    `json:"PerTryTimeout"`
-	NumRetries               int    `json:"NumRetries"`
-	RetryBackoffBaseInterval int    `json:"RetryBackoffBaseInterval"`
+	RetryOn             string `json:"RetryOn"`
+	NumRetries          *int32 `json:"NumRetries,omitempty"`
+	BackoffBaseInterval *int32 `json:"RetryBackoffBaseInterval,omitempty"`
 }
 
 // Chains is the chains configuration

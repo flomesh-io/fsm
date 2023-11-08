@@ -811,6 +811,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
 		// UpstreamTLSPolicy event
 		announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
+		// RetryPolicy event
+		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
 
 		//
 		// MultiCluster events

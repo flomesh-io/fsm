@@ -2,6 +2,7 @@ package policy
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -133,4 +134,12 @@ func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
 	}
 
 	return cert
+}
+
+func newRetry(cfg *gwpav1alpha1.RetryConfig) *routecfg.RetryPolicy {
+	return &routecfg.RetryPolicy{
+		RetryOn:             strings.Join(cfg.RetryOn, ","),
+		NumRetries:          cfg.NumRetries,
+		BackoffBaseInterval: cfg.BackoffBaseInterval,
+	}
 }

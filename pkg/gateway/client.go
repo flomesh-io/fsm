@@ -91,6 +91,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyHealthCheckPolicy,
 		fsminformers.InformerKeyFaultInjectionPolicy,
 		fsminformers.InformerKeyUpstreamTLSPolicy,
+		fsminformers.InformerKeyRetryPolicy,
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
@@ -229,6 +230,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyFaultInjectionPolicy)
 	case *gwpav1alpha1.UpstreamTLSPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyUpstreamTLSPolicy)
+	case *gwpav1alpha1.RetryPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyRetryPolicy)
 	}
 
 	return nil
@@ -343,6 +346,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.UpstreamTLSPolicyAdded,
 			Update: announcements.UpstreamTLSPolicyUpdated,
 			Delete: announcements.UpstreamTLSPolicyDeleted,
+		}
+	case fsminformers.InformerKeyRetryPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.RetryPolicyAttachmentAdded,
+			Update: announcements.RetryPolicyAttachmentUpdated,
+			Delete: announcements.RetryPolicyAttachmentDeleted,
 		}
 	}
 
