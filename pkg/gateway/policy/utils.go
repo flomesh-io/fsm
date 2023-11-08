@@ -119,13 +119,17 @@ func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.Fault
 
 func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
 	cert := &routecfg.UpstreamCert{
-		CertChain:  string(cfg.Secret.Data[corev1.TLSCertKey]),
-		PrivateKey: string(cfg.Secret.Data[corev1.TLSPrivateKeyKey]),
+		IssuingCA: string(cfg.Secret.Data[corev1.ServiceAccountRootCAKey]),
 	}
 
-	ca := string(cfg.Secret.Data[corev1.ServiceAccountRootCAKey])
-	if len(ca) > 0 {
-		cert.IssuingCA = ca
+	certChain := string(cfg.Secret.Data[corev1.TLSCertKey])
+	if len(certChain) > 0 {
+		cert.CertChain = certChain
+	}
+
+	privateKey := string(cfg.Secret.Data[corev1.TLSPrivateKeyKey])
+	if len(privateKey) > 0 {
+		cert.PrivateKey = privateKey
 	}
 
 	return cert

@@ -124,8 +124,8 @@ type TLS struct {
 
 // Certificate is the certificate configuration
 type Certificate struct {
-	CertChain  string `json:"CertChain"`
-	PrivateKey string `json:"PrivateKey"`
+	CertChain  string `json:"CertChain,omitempty"`
+	PrivateKey string `json:"PrivateKey,omitempty"`
 	IssuingCA  string `json:"IssuingCA,omitempty"`
 }
 

@@ -329,33 +329,33 @@ func (w *validator) validateSecret(path *field.Path, certificateRef gwv1beta1.Se
 		errs = append(errs, field.NotFound(path, fmt.Sprintf("Failed to get Secret %s/%s: %s", ns, name, err)))
 	}
 
-	v, ok := secret.Data[corev1.TLSCertKey]
-	if ok {
-		if string(v) == "" {
-			errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s is empty", ns, name, corev1.TLSCertKey)))
-		}
-	} else {
-		errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s doesn't have required data by key %s", ns, name, corev1.TLSCertKey)))
-	}
-
-	v, ok = secret.Data[corev1.TLSPrivateKeyKey]
-	if ok {
-		if string(v) == "" {
-			errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s is empty", ns, name, corev1.TLSPrivateKeyKey)))
-		}
-	} else {
-		errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s doesn't have required data by key %s", ns, name, corev1.TLSPrivateKeyKey)))
-	}
-
 	if mTLS != nil && *mTLS {
-		v, ok = secret.Data[corev1.ServiceAccountRootCAKey]
+		v, ok := secret.Data[corev1.TLSCertKey]
 		if ok {
 			if string(v) == "" {
-				errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s cannot be empty if mTLS is enabled.", ns, name, corev1.ServiceAccountRootCAKey)))
+				errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s cannot be empty if mTLS is enabled", ns, name, corev1.TLSCertKey)))
 			}
 		} else {
-			errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s must have required data by key %s if mTLS is enabled.", ns, name, corev1.ServiceAccountRootCAKey)))
+			errs = append(errs, field.NotFound(path, fmt.Sprintf("mTLS is enabled, but Secret %s/%s doesn't have required data by key %s", ns, name, corev1.TLSCertKey)))
 		}
+
+		v, ok = secret.Data[corev1.TLSPrivateKeyKey]
+		if ok {
+			if string(v) == "" {
+				errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s cannot be empty if mTLS is enabled.", ns, name, corev1.TLSPrivateKeyKey)))
+			}
+		} else {
+			errs = append(errs, field.NotFound(path, fmt.Sprintf("mTLS is enabled, but Secret %s/%s doesn't have required data by key %s", ns, name, corev1.TLSPrivateKeyKey)))
+		}
+	}
+
+	v, ok := secret.Data[corev1.ServiceAccountRootCAKey]
+	if ok {
+		if string(v) == "" {
+			errs = append(errs, field.Invalid(path, string(v), fmt.Sprintf("The content of Secret %s/%s by key %s cannot be empty.", ns, name, corev1.ServiceAccountRootCAKey)))
+		}
+	} else {
+		errs = append(errs, field.NotFound(path, fmt.Sprintf("Secret %s/%s must have required data by key %s.", ns, name, corev1.ServiceAccountRootCAKey)))
 	}
 
 	return errs
