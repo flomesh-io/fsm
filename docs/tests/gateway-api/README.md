@@ -1085,3 +1085,27 @@ spec:
       mTLS: false
 EOF
 ```
+
+### Test RetryPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RetryPolicy
+metadata:
+  name: retry-policy
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+    namespace: httpbin
+  ports:
+  - port: 8080
+    config:
+      retryOn:
+        - 5xx
+      numRetries: 5
+      backoffBaseInterval: 2
+EOF
+```

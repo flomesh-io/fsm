@@ -49,6 +49,10 @@ func (c *FakeGatewayV1alpha1) RateLimitPolicies(namespace string) v1alpha1.RateL
 	return &FakeRateLimitPolicies{c, namespace}
 }
 
+func (c *FakeGatewayV1alpha1) RetryPolicies(namespace string) v1alpha1.RetryPolicyInterface {
+	return &FakeRetryPolicies{c, namespace}
+}
+
 func (c *FakeGatewayV1alpha1) SessionStickyPolicies(namespace string) v1alpha1.SessionStickyPolicyInterface {
 	return &FakeSessionStickyPolicies{c, namespace}
 }

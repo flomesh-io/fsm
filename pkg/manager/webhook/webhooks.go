@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/webhook/retry"
+
 	"github.com/flomesh-io/fsm/pkg/webhook/upstreamtls"
 
 	"github.com/flomesh-io/fsm/pkg/webhook/faultinjection"
@@ -270,6 +272,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, healthcheck.NewRegister(regCfg))
 		result = append(result, faultinjection.NewRegister(regCfg))
 		result = append(result, upstreamtls.NewRegister(regCfg))
+		result = append(result, retry.NewRegister(regCfg))
 	}
 
 	if mc.IsFLBEnabled() {

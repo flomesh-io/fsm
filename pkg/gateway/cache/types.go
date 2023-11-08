@@ -97,6 +97,9 @@ const (
 
 	// UpstreamTLSPoliciesTriggerType is the type used to represent the upstream tls policies processor
 	UpstreamTLSPoliciesTriggerType TriggerType = "upstreamtls"
+
+	// RetryPoliciesTriggerType is the type used to represent the retry policies processor
+	RetryPoliciesTriggerType TriggerType = "retries"
 )
 
 // Processor is the interface for the functionality provided by the processors
@@ -292,4 +295,5 @@ var (
 	healthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.HealthCheckPolicyKind)
 	faultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.FaultInjectionPolicyKind)
 	upstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.UpstreamTLSPolicyKind)
+	retryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RetryPolicyKind)
 )

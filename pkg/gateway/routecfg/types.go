@@ -124,8 +124,8 @@ type TLS struct {
 
 // Certificate is the certificate configuration
 type Certificate struct {
-	CertChain  string `json:"CertChain"`
-	PrivateKey string `json:"PrivateKey"`
+	CertChain  string `json:"CertChain,omitempty"`
+	PrivateKey string `json:"PrivateKey,omitempty"`
 	IssuingCA  string `json:"IssuingCA,omitempty"`
 }
 
@@ -485,10 +485,9 @@ type UpstreamCert Certificate
 
 // RetryPolicy is the retry policy configuration
 type RetryPolicy struct {
-	RetryOn                  string `json:"RetryOn"`
-	PerTryTimeout            int    `json:"PerTryTimeout"`
-	NumRetries               int    `json:"NumRetries"`
-	RetryBackoffBaseInterval int    `json:"RetryBackoffBaseInterval"`
+	RetryOn             string `json:"RetryOn"`
+	NumRetries          *int32 `json:"NumRetries,omitempty"`
+	BackoffBaseInterval *int32 `json:"RetryBackoffBaseInterval,omitempty"`
 }
 
 // Chains is the chains configuration
