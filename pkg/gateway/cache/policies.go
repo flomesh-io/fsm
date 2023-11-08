@@ -3,6 +3,8 @@ package cache
 import (
 	"sort"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
@@ -68,6 +70,7 @@ func (c *GatewayCache) getServicePolicyEnrichers() []policy.ServicePolicyEnriche
 		&policy.CircuitBreakingPolicyEnricher{Data: c.circuitBreakings()},
 		&policy.HealthCheckPolicyEnricher{Data: c.healthChecks()},
 		&policy.UpstreamTLSPolicyEnricher{Data: c.upstreamTLS()},
+		&policy.RetryPolicyEnricher{Data: c.retryConfigs()},
 	}
 }
 
@@ -465,6 +468,35 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 						MTLS:   cfg.MTLS,
 						Secret: secret,
 					}
+				}
+			}
+		}
+	}
+
+	return configs
+}
+
+func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
+	configs := make(map[string]*gwpav1alpha1.RetryConfig)
+
+	for key := range c.retries {
+		retryPolicy, err := c.getRetryPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get RetryPolicy %s: %s", key, err)
+			continue
+		}
+
+		if gwutils.IsAcceptedPolicyAttachment(retryPolicy.Status.Conditions) {
+			for _, p := range retryPolicy.Spec.Ports {
+				if svcPortName := targetRefToServicePortName(retryPolicy.Spec.TargetRef, retryPolicy.Namespace, int32(p.Port)); svcPortName != nil {
+					cfg := retry.ComputeRetryConfig(p.Config, retryPolicy.Spec.DefaultConfig)
+
+					if cfg == nil {
+						continue
+					}
+
+					configs[svcPortName.String()] = cfg
 				}
 			}
 		}

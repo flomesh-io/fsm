@@ -256,11 +256,18 @@
         ) : !proxyPreserveHostCache.get(__route) && (
           msg.head.headers.host = __target
         ),
-        __useSSL = Boolean(attrs?.UseSSL),
         attrs?.UpstreamCert ? (
           __cert = attrs?.UpstreamCert
         ) : (
           __cert = __service?.UpstreamCert
+        ),
+        __cert ? (
+          !__service?.MTLS && (
+            __useSSL = true,
+            __cert = null
+          )
+        ) : (
+          __useSSL = Boolean(attrs?.UseSSL)
         ),
         _cookieId ? (
           _cookieId = null

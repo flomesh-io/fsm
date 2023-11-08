@@ -445,6 +445,9 @@ const (
 
 	// UpstreamTLSPolicyKind is the kind name of UpstreamTLSPolicy used in Flomesh API
 	UpstreamTLSPolicyKind = "UpstreamTLSPolicy"
+
+	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
+	RetryPolicyKind = "RetryPolicy"
 )
 
 // Gateway API constants
@@ -547,6 +550,12 @@ const (
 
 	// UpstreamTLSPolicyValidatingWebhookPath is the path at which the UpstreamTLSPolicy validating webhook is served
 	UpstreamTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-upstreamtlspolicy"
+
+	// RetryPolicyMutatingWebhookPath is the path at which the RetryPolicy mutating webhook is served
+	RetryPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-retrypolicy"
+
+	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
+	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
 )
 
 // PIPY Repo constants

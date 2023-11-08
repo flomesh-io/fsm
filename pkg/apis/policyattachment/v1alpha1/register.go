@@ -53,6 +53,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&FaultInjectionPolicyList{},
 		&UpstreamTLSPolicy{},
 		&UpstreamTLSPolicyList{},
+		&RetryPolicy{},
+		&RetryPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

@@ -10,7 +10,7 @@ import (
 type SessionStickyPoliciesTrigger struct {
 }
 
-// Insert adds a TLSRoute to the cache and returns true if the route is effective
+// Insert adds a SessionStickyPolicy to the cache and returns true if the target service is routable
 func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
 	if !ok {
@@ -23,7 +23,7 @@ func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCac
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
-// Delete removes a TLSRoute from the cache and returns true if the route was found
+// Delete removes a SessionStickyPolicy from the cache and returns true if the policy was found
 func (p *SessionStickyPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	policy, ok := obj.(*gwpav1alpha1.SessionStickyPolicy)
 	if !ok {

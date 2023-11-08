@@ -31,6 +31,7 @@ type GatewayV1alpha1Interface interface {
 	HealthCheckPoliciesGetter
 	LoadBalancerPoliciesGetter
 	RateLimitPoliciesGetter
+	RetryPoliciesGetter
 	SessionStickyPoliciesGetter
 	UpstreamTLSPoliciesGetter
 }
@@ -62,6 +63,10 @@ func (c *GatewayV1alpha1Client) LoadBalancerPolicies(namespace string) LoadBalan
 
 func (c *GatewayV1alpha1Client) RateLimitPolicies(namespace string) RateLimitPolicyInterface {
 	return newRateLimitPolicies(c, namespace)
+}
+
+func (c *GatewayV1alpha1Client) RetryPolicies(namespace string) RetryPolicyInterface {
+	return newRetryPolicies(c, namespace)
 }
 
 func (c *GatewayV1alpha1Client) SessionStickyPolicies(namespace string) SessionStickyPolicyInterface {
