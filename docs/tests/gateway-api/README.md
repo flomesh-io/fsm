@@ -788,7 +788,7 @@ spec:
     namespace: httpbin
   hostnames:
     - hostname: httptest.localhost
-      rateLimit: 
+      config: 
         mode: Local
         backlog: 15
         requests: 100
@@ -814,7 +814,7 @@ spec:
       path:
         type: PathPrefix
         value: /bar
-    rateLimit: 
+    config: 
       mode: Local
       backlog: 15
       requests: 100

@@ -51,8 +51,8 @@ type RateLimitPolicySpec struct {
 	GRPCRateLimits []GRPCRateLimit `json:"grpc,omitempty"`
 
 	// +optional
-	// DefaultL7RateLimit is the default rate limit for all routes and hostnames
-	DefaultL7RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
+	// DefaultConfig is the default rate limit for all routes and hostnames
+	DefaultConfig *L7RateLimit `json:"config,omitempty"`
 }
 
 // PortRateLimit defines the rate limit configuration for a port
@@ -72,8 +72,8 @@ type HostnameRateLimit struct {
 	Hostname gwv1beta1.Hostname `json:"hostname"`
 
 	// +optional
-	// RateLimit is the rate limit configuration for the hostname
-	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
+	// Config is the rate limit configuration for the hostname
+	Config *L7RateLimit `json:"config,omitempty"`
 }
 
 // HTTPRateLimit defines the rate limit configuration for a HTTP route
@@ -82,8 +82,8 @@ type HTTPRateLimit struct {
 	Match gwv1beta1.HTTPRouteMatch `json:"match"`
 
 	// +optional
-	// RateLimit is the rate limit configuration for the HTTP route
-	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
+	// Config is the rate limit configuration for the HTTP route
+	Config *L7RateLimit `json:"config,omitempty"`
 }
 
 // GRPCRateLimit defines the rate limit configuration for a GRPC route
@@ -92,8 +92,8 @@ type GRPCRateLimit struct {
 	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
 
 	// +optional
-	// RateLimit is the rate limit configuration for the GRPC route
-	RateLimit *L7RateLimit `json:"rateLimit,omitempty"`
+	// Config is the rate limit configuration for the GRPC route
+	Config *L7RateLimit `json:"config,omitempty"`
 }
 
 // L7RateLimit defines the rate limit configuration for a route

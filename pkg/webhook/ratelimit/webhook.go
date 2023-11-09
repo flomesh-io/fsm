@@ -40,7 +40,7 @@ func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-		[]string{"gateway.flomesh.io"},
+		[]string{constants.FlomeshGatewayAPIGroup},
 		[]string{"v1alpha1"},
 		[]string{"ratelimitpolicies"},
 	)
@@ -118,30 +118,30 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 //func setDefaults(policy *gwpav1alpha1.RateLimitPolicy) {
 //	if len(policy.Spec.Hostnames) > 0 {
 //		for i, hostname := range policy.Spec.Hostnames {
-//			if hostname.RateLimit != nil {
-//				policy.Spec.Hostnames[i].RateLimit = l7RateLimitDefaults(hostname.RateLimit, policy.Spec.DefaultL7RateLimit)
+//			if hostname.Config != nil {
+//				policy.Spec.Hostnames[i].Config = l7RateLimitDefaults(hostname.Config, policy.Spec.DefaultConfig)
 //			}
 //		}
 //	}
 //
 //	if len(policy.Spec.HTTPRateLimits) > 0 {
 //		for i, hr := range policy.Spec.HTTPRateLimits {
-//			if hr.RateLimit != nil {
-//				policy.Spec.HTTPRateLimits[i].RateLimit = l7RateLimitDefaults(hr.RateLimit, policy.Spec.DefaultL7RateLimit)
+//			if hr.Config != nil {
+//				policy.Spec.HTTPRateLimits[i].Config = l7RateLimitDefaults(hr.Config, policy.Spec.DefaultConfig)
 //			}
 //		}
 //	}
 //
 //	if len(policy.Spec.GRPCRateLimits) > 0 {
 //		for i, gr := range policy.Spec.GRPCRateLimits {
-//			if gr.RateLimit != nil {
-//				policy.Spec.GRPCRateLimits[i].RateLimit = l7RateLimitDefaults(gr.RateLimit, policy.Spec.DefaultL7RateLimit)
+//			if gr.Config != nil {
+//				policy.Spec.GRPCRateLimits[i].Config = l7RateLimitDefaults(gr.Config, policy.Spec.DefaultConfig)
 //			}
 //		}
 //	}
 //
-//	if policy.Spec.DefaultL7RateLimit != nil {
-//		policy.Spec.DefaultL7RateLimit = setDefaultValues(policy.Spec.DefaultL7RateLimit)
+//	if policy.Spec.DefaultConfig != nil {
+//		policy.Spec.DefaultConfig = setDefaultValues(policy.Spec.DefaultConfig)
 //	}
 //}
 
@@ -326,9 +326,9 @@ func validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 			errs = append(errs, field.Invalid(path, policy.Spec.GRPCRateLimits, "must be empty for Gateway target"))
 		}
 
-		if policy.Spec.DefaultL7RateLimit != nil {
+		if policy.Spec.DefaultConfig != nil {
 			path := field.NewPath("spec").Child("rateLimit")
-			errs = append(errs, field.Invalid(path, policy.Spec.DefaultL7RateLimit, "must not be set for Gateway target"))
+			errs = append(errs, field.Invalid(path, policy.Spec.DefaultConfig, "must not be set for Gateway target"))
 		}
 
 		if policy.Spec.DefaultBPS == nil {
@@ -367,11 +367,11 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 			errs = append(errs, validateHostnames(policy)...)
 		}
 
-		if policy.Spec.DefaultL7RateLimit == nil {
+		if policy.Spec.DefaultConfig == nil {
 			if len(policy.Spec.Hostnames) > 0 {
 				path := field.NewPath("spec").Child("hostnames")
 				for i, h := range policy.Spec.Hostnames {
-					if h.RateLimit == nil {
+					if h.Config == nil {
 						errs = append(errs, field.Required(path.Index(i).Child("rateLimit"), fmt.Sprintf("rateLimit must be set for hostname %q, as there's no default rate limit", h.Hostname)))
 					}
 				}
@@ -380,7 +380,7 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 			if len(policy.Spec.HTTPRateLimits) > 0 {
 				path := field.NewPath("spec").Child("http")
 				for i, h := range policy.Spec.HTTPRateLimits {
-					if h.RateLimit == nil {
+					if h.Config == nil {
 						errs = append(errs, field.Required(path.Index(i).Child("rateLimit"), "rateLimit must be set, as there's no default rate limit"))
 					}
 				}
@@ -389,7 +389,7 @@ func validateL7RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 			if len(policy.Spec.GRPCRateLimits) > 0 {
 				path := field.NewPath("spec").Child("grpc")
 				for i, g := range policy.Spec.GRPCRateLimits {
-					if g.RateLimit == nil {
+					if g.Config == nil {
 						errs = append(errs, field.Required(path.Index(i).Child("rateLimit"), "rateLimit must be set, as there's no default rate limit"))
 					}
 				}

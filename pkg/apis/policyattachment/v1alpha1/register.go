@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	"github.com/flomesh-io/fsm/pkg/constants"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +14,7 @@ import (
 var (
 	// SchemeGroupVersion is group version used to register MeshConfig
 	SchemeGroupVersion = schema.GroupVersion{
-		Group:   "gateway.flomesh.io",
+		Group:   constants.FlomeshGatewayAPIGroup,
 		Version: "v1alpha1",
 	}
 
@@ -55,6 +56,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&UpstreamTLSPolicyList{},
 		&RetryPolicy{},
 		&RetryPolicyList{},
+		&GatewayTLSPolicy{},
+		&GatewayTLSPolicyList{},
 	)
 
 	metav1.AddToGroupVersion(

@@ -36,6 +36,7 @@ func (c *GatewayCache) getPortPolicyEnrichers(policies globalPolicyAttachments) 
 	return []policy.PortPolicyEnricher{
 		&policy.RateLimitPortEnricher{Data: policies.rateLimits[RateLimitPolicyMatchTypePort]},
 		&policy.AccessControlPortEnricher{Data: policies.accessControls[AccessControlPolicyMatchTypePort]},
+		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS()},
 	}
 }
 
@@ -503,4 +504,33 @@ func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	}
 
 	return configs
+}
+
+func (c *GatewayCache) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
+	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
+
+	for key := range c.gatewaytls {
+		gatewayTLSPolicy, err := c.getGatewayTLSPolicyFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get GatewayTLSPolicy %s: %s", key, err)
+			continue
+		}
+
+		if !gwutils.IsAcceptedPolicyAttachment(gatewayTLSPolicy.Status.Conditions) {
+			continue
+		}
+
+		if !gwutils.IsTargetRefToGVK(gatewayTLSPolicy.Spec.TargetRef, gatewayGVK) {
+			continue
+		}
+
+		if len(gatewayTLSPolicy.Spec.Ports) == 0 {
+			continue
+		}
+
+		policies = append(policies, *gatewayTLSPolicy)
+	}
+
+	return policies
 }

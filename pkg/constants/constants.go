@@ -392,6 +392,9 @@ const (
 	// FlomeshAPIGroup is the group name used in Flomesh API
 	FlomeshAPIGroup = "flomesh.io"
 
+	// FlomeshGatewayAPIGroup is the group name used in Flomesh Gateway API
+	FlomeshGatewayAPIGroup = "gateway.flomesh.io"
+
 	// KubernetesCoreGroup is the group name used in Kubernetes Core API
 	KubernetesCoreGroup = ""
 
@@ -448,6 +451,9 @@ const (
 
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
+
+	// GatewayTLSPolicyKind is the kind name of GatewayTLSPolicy used in Flomesh API
+	GatewayTLSPolicyKind = "GatewayTLSPolicy"
 )
 
 // Gateway API constants
@@ -457,12 +463,6 @@ const (
 
 	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"
-
-	// GatewayPrefix is the prefix for all gateway annotations
-	GatewayPrefix = "gateway.flomesh.io"
-
-	// GatewayMTLSAnnotation is the annotation used to indicate whether the gateway should be configured for mTLS
-	GatewayMTLSAnnotation = GatewayPrefix + "/mtls"
 
 	// GatewayMutatingWebhookPath is the path at which the gateway mutating webhook is served
 	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
@@ -556,6 +556,12 @@ const (
 
 	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
 	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
+
+	// GatewayTLSPolicyMutatingWebhookPath is the path at which the GatewayTLSPolicy mutating webhook is served
+	GatewayTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
+
+	// GatewayTLSPolicyValidatingWebhookPath is the path at which the GatewayTLSPolicy validating webhook is served
+	GatewayTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
 )
 
 // PIPY Repo constants

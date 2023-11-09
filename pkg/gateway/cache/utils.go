@@ -19,7 +19,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
-	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectKey, ns string) bool {
@@ -429,14 +428,6 @@ func getDefaultPort(svcPort corev1.ServicePort) int32 {
 	}
 
 	return svcPort.Port
-}
-
-func isMTLSEnabled(gw *gwv1beta1.Gateway) bool {
-	if len(gw.Annotations) == 0 {
-		return false
-	}
-
-	return utils.ParseEnabled(gw.Annotations[constants.GatewayMTLSAnnotation])
 }
 
 func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) routecfg.Filter {

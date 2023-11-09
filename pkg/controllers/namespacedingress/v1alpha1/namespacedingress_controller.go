@@ -166,6 +166,7 @@ func (r *reconciler) resolveValues(object metav1.Object, mc configurator.Configu
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
 		fmt.Sprintf("fsm.fsmIngress.logLevel=%s", mc.GetFSMIngressLogLevel()),
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
+		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 	}
 
 	for _, ov := range overrides {

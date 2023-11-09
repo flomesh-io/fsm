@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	"k8s.io/utils/pointer"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -192,7 +194,6 @@ func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *routecfg.
 func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener) *routecfg.TLS {
 	return &routecfg.TLS{
 		TLSModeType:  gwv1beta1.TLSModeTerminate,
-		MTLS:         isMTLSEnabled(gw),
 		Certificates: c.certificates(gw, l),
 	}
 }
@@ -200,7 +201,8 @@ func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener
 func (c *GatewayCache) tlsPassthroughCfg() *routecfg.TLS {
 	return &routecfg.TLS{
 		TLSModeType: gwv1beta1.TLSModePassthrough,
-		MTLS:        false,
+		// set to false and protect it from being overwritten by the user
+		MTLS: pointer.Bool(false),
 	}
 }
 
