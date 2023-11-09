@@ -80,6 +80,20 @@ func (mr *MockConfiguratorMockRecorder) GetConfigResyncInterval() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigResyncInterval", reflect.TypeOf((*MockConfigurator)(nil).GetConfigResyncInterval))
 }
 
+// GetCurlImage mocks base method.
+func (m *MockConfigurator) GetCurlImage() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurlImage")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetCurlImage indicates an expected call of GetCurlImage.
+func (mr *MockConfiguratorMockRecorder) GetCurlImage() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurlImage", reflect.TypeOf((*MockConfigurator)(nil).GetCurlImage))
+}
+
 // GetFGWLogLevel mocks base method.
 func (m *MockConfigurator) GetFGWLogLevel() string {
 	m.ctrl.T.Helper()
