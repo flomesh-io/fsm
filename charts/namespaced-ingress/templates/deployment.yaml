@@ -38,7 +38,7 @@ spec:
       initContainers:
       - name: wait-controller
         image: {{ .Values.fsm.curlImage }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command:
           - curl
           - {{ printf "http://fsm-controller.%s.svc.cluster.local:9091/health/ready" .Values.fsm.fsmNamespace }}

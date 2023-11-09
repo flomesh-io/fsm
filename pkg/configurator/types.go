@@ -247,4 +247,7 @@ type Configurator interface {
 
 	// ServiceLBImage string returns the service-lb image
 	ServiceLBImage() string
+
+	// GetCurlImage returns the curl image
+	GetCurlImage() string
 }
