@@ -98,7 +98,7 @@ func (cmd *flbDisableCmd) run() error {
 		return err
 	}
 
-	fmt.Fprintf(cmd.out, "service-lb is disabled successfully\n")
+	fmt.Fprintf(cmd.out, "FLB is disabled successfully\n")
 
 	return nil
 }
