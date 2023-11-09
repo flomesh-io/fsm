@@ -15,6 +15,11 @@ type client struct {
 	mc *configv1alpha3.MeshConfig
 }
 
+func (c *client) GetCurlImage() string {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetFGWLogLevel() string {
 	//TODO implement me
 	panic("implement me")
