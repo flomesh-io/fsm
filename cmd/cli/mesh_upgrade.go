@@ -6,6 +6,9 @@ import (
 	"io"
 	"time"
 
+	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
+
 	"github.com/spf13/cobra"
 	helm "helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -52,7 +55,8 @@ type meshUpgradeCmd struct {
 	meshName string
 	chart    *chart.Chart
 
-	setOptions []string
+	setOptions []string // --set
+	valueFiles []string // -f/--values
 }
 
 func newMeshUpgradeCmd(config *helm.Configuration, out io.Writer) *cobra.Command {
@@ -84,6 +88,7 @@ func newMeshUpgradeCmd(config *helm.Configuration, out io.Writer) *cobra.Command
 	f.StringVar(&upg.meshName, "mesh-name", defaultMeshName, "Name of the mesh to upgrade")
 	f.StringVar(&chartPath, "fsm-chart-path", "", "path to fsm chart to override default chart")
 	f.StringArrayVar(&upg.setOptions, "set", nil, "Set arbitrary chart values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	f.StringSliceVarP(&upg.valueFiles, "values", "f", []string{}, "Specify values in a YAML file (can specify multiple)")
 
 	return cmd
 }
@@ -97,11 +102,28 @@ func (u *meshUpgradeCmd) run(config *helm.Configuration) error {
 		}
 	}
 
-	// Add the overlay values to be updated to the current release's values map
-	values, err := u.resolveValues()
+	// values represents the overrides for the FSM chart's values.yaml file
+	setValues, err := u.resolveValues()
 	if err != nil {
 		return err
 	}
+	debug("setValues: %s", setValues)
+
+	fileValues, err := u.resoleValuesFromFiles()
+	if err != nil {
+		return err
+	}
+	debug("fileValues: %s", fileValues)
+
+	// --set takes precedence over --values/-f
+	values := mergeMaps(fileValues, setValues)
+	debug("values: %s", values)
+
+	// Add the overlay values to be updated to the current release's values map
+	//values, err := u.resolveValues()
+	//if err != nil {
+	//	return err
+	//}
 
 	upgradeClient := helm.NewUpgrade(config)
 	upgradeClient.Wait = true
@@ -123,4 +145,26 @@ func (u *meshUpgradeCmd) resolveValues() (map[string]interface{}, error) {
 		}
 	}
 	return vals, nil
+}
+
+func (u *meshUpgradeCmd) resoleValuesFromFiles() (map[string]interface{}, error) {
+	base := map[string]interface{}{}
+
+	// User specified a values files via -f/--values
+	for _, filePath := range u.valueFiles {
+		currentMap := map[string]interface{}{}
+
+		valueBytes, err := readFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := yaml.Unmarshal(valueBytes, &currentMap); err != nil {
+			return nil, errors.Wrapf(err, "failed to parse %s", filePath)
+		}
+		// Merge with the previous map
+		base = mergeMaps(base, currentMap)
+	}
+
+	return base, nil
 }
