@@ -50,6 +50,7 @@ type GatewayCache struct {
 	faultinjections  map[client.ObjectKey]struct{}
 	upstreamstls     map[client.ObjectKey]struct{}
 	retries          map[client.ObjectKey]struct{}
+	gatewaytls       map[client.ObjectKey]struct{}
 
 	mutex *sync.RWMutex
 }
@@ -84,6 +85,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			FaultInjectionPoliciesTriggerType:  &FaultInjectionPoliciesTrigger{},
 			UpstreamTLSPoliciesTriggerType:     &UpstreamTLSPoliciesTrigger{},
 			RetryPoliciesTriggerType:           &RetryPoliciesTrigger{},
+			GatewayTLSPoliciesTriggerType:      &GatewayTLSPoliciesTrigger{},
 		},
 
 		//endpoints:      make(map[client.ObjectKey]struct{}),
@@ -105,6 +107,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		faultinjections:  make(map[client.ObjectKey]struct{}),
 		upstreamstls:     make(map[client.ObjectKey]struct{}),
 		retries:          make(map[client.ObjectKey]struct{}),
+		gatewaytls:       make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}
@@ -176,6 +179,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[UpstreamTLSPoliciesTriggerType]
 	case *gwpav1alpha1.RetryPolicy:
 		return c.processors[RetryPoliciesTriggerType]
+	case *gwpav1alpha1.GatewayTLSPolicy:
+		return c.processors[GatewayTLSPoliciesTriggerType]
 	}
 
 	return nil

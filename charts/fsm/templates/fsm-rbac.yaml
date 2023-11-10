@@ -132,13 +132,13 @@ rules:
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies" ]
+    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies", "gatewaytlspolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers", "circuitbreakingpolicies/finalizers", "accesscontrolpolicies/finalizers", "healthcheckpolicies/finalizers", "faultinjectionpolicies/finalizers", "upstreamtlspolicies/finalizers", "retrypolicies/finalizers" ]
+    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers", "circuitbreakingpolicies/finalizers", "accesscontrolpolicies/finalizers", "healthcheckpolicies/finalizers", "faultinjectionpolicies/finalizers", "upstreamtlspolicies/finalizers", "retrypolicies/finalizers", "gatewaytlspolicies/finalizers"]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status", "circuitbreakingpolicies/status", "accesscontrolpolicies/status", "healthcheckpolicies/status", "faultinjectionpolicies/status", "upstreamtlspolicies/status", "retrypolicies/status" ]
+    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status", "circuitbreakingpolicies/status", "accesscontrolpolicies/status", "healthcheckpolicies/status", "faultinjectionpolicies/status", "upstreamtlspolicies/status", "retrypolicies/status", "gatewaytlspolicies/status"]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

@@ -119,6 +119,8 @@ const (
 	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
 	// InformerKeyRetryPolicy is the InformerKey for a RetryPolicy informer
 	InformerKeyRetryPolicy InformerKey = "RetryPolicy"
+	// InformerKeyGatewayTLSPolicy is the InformerKey for a GatewayTLSPolicy informer
+	InformerKeyGatewayTLSPolicy InformerKey = "GatewayTLSPolicy"
 )
 
 const (
@@ -167,4 +169,5 @@ type Lister struct {
 	FaultInjectionPolicy  gwpav1alpha1.FaultInjectionPolicyLister
 	UpstreamTLSPolicy     gwpav1alpha1.UpstreamTLSPolicyLister
 	RetryPolicy           gwpav1alpha1.RetryPolicyLister
+	GatewayTLSPolicy      gwpav1alpha1.GatewayTLSPolicyLister
 }

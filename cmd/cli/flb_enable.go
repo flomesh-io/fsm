@@ -139,7 +139,7 @@ func (cmd *flbEnableCmd) run() error {
 	}
 
 	if mc.Spec.ServiceLB.Enabled {
-		fmt.Fprintf(cmd.out, "service-lb is enabled already, no action needed\n")
+		fmt.Fprintf(cmd.out, "FLB is enabled already, no action needed\n")
 		return nil
 	}
 
