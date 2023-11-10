@@ -68,11 +68,26 @@ type ConfigSpec struct {
 
 // Defaults is the default configuration
 type Defaults struct {
-	EnableDebug                    bool  `json:"EnableDebug"`
-	DefaultPassthroughUpstreamPort int32 `json:"DefaultPassthroughUpstreamPort"`
-	StripAnyHostPort               bool  `json:"StripAnyHostPort"`
-	HTTP1PerRequestLoadBalancing   bool  `json:"HTTP1PerRequestLoadBalancing"`
-	HTTP2PerRequestLoadBalancing   bool  `json:"HTTP2PerRequestLoadBalancing"`
+	EnableDebug                    bool            `json:"EnableDebug"`
+	DefaultPassthroughUpstreamPort int32           `json:"DefaultPassthroughUpstreamPort"`
+	StripAnyHostPort               bool            `json:"StripAnyHostPort"`
+	HTTP1PerRequestLoadBalancing   bool            `json:"HTTP1PerRequestLoadBalancing"`
+	HTTP2PerRequestLoadBalancing   bool            `json:"HTTP2PerRequestLoadBalancing"`
+	SocketTimeout                  *int32          `json:"SocketTimeout,omitempty"`
+	PidFile                        *string         `json:"PidFile,omitempty"`
+	ResourceUsage                  *ResourceUsage  `json:"ResourceUsage,omitempty"`
+	HealthCheckLog                 *HealthCheckLog `json:"HealthCheckLog,omitempty"`
+}
+
+type ResourceUsage struct {
+	ScrapeInterval int32   `json:"ScrapeInterval"`
+	StorageAddress *string `json:"StorageAddress,omitempty"`
+	Authorization  *string `json:"Authorization,omitempty"`
+}
+
+type HealthCheckLog struct {
+	StorageAddress *string `json:"StorageAddress,omitempty"`
+	Authorization  *string `json:"Authorization,omitempty"`
 }
 
 // Listener is the listener configuration
@@ -119,7 +134,7 @@ type FaultInjectionAbort struct {
 type TLS struct {
 	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
 	MTLS         *bool                 `json:"MTLS,omitempty"`
-	Certificates []Certificate         `json:"Certificates,omitempty"`
+	Certificates []Certificate         `json:"Certificates,omitempty" hash:"set"`
 }
 
 // Certificate is the certificate configuration
@@ -299,8 +314,7 @@ type PassthroughRouteMapping map[string]string
 // ServiceConfig is the service configuration
 type ServiceConfig struct {
 	Endpoints           map[string]Endpoint            `json:"Endpoints"`
-	ConnectionSettings  *ConnectionSettings            `json:"ConnectionSettings,omitempty"`
-	RetryPolicy         *RetryPolicy                   `json:"RetryPolicy,omitempty"`
+	Retry               *Retry                         `json:"Retry,omitempty"`
 	MTLS                *bool                          `json:"MTLS,omitempty"`
 	UpstreamCert        *UpstreamCert                  `json:"UpstreamCert,omitempty"`
 	StickyCookieName    *string                        `json:"StickyCookieName,omitempty"`
@@ -433,23 +447,6 @@ type GRPCRouteFilter struct {
 
 var _ Filter = &GRPCRouteFilter{}
 
-// ConnectionSettings is the connection settings configuration
-type ConnectionSettings struct {
-	TCP  *TCPConnectionSettings  `json:"TCP,omitempty"`
-	HTTP *HTTPConnectionSettings `json:"HTTP,omitempty"`
-}
-
-// TCPConnectionSettings is the TCP connection settings configuration
-type TCPConnectionSettings struct {
-	MaxConnections int `json:"MaxConnections"`
-}
-
-// HTTPConnectionSettings is the HTTP connection settings configuration
-type HTTPConnectionSettings struct {
-	MaxRequestsPerConnection int `json:"MaxRequestsPerConnection"`
-	MaxPendingRequests       int `json:"MaxPendingRequests"`
-}
-
 // CircuitBreaking is the circuit breaker configuration
 type CircuitBreaking struct {
 	MinRequestAmount        int32    `json:"MinRequestAmount"`
@@ -475,19 +472,19 @@ type HealthCheck struct {
 
 // HealthCheckMatch is the health check match configuration
 type HealthCheckMatch struct {
-	StatusCodes []int32                             `json:"StatusCodes,omitempty"`
+	StatusCodes []int32                             `json:"StatusCodes,omitempty" hash:"set"`
 	Body        *string                             `json:"Body,omitempty"`
-	Headers     map[gwv1beta1.HTTPHeaderName]string `json:"Headers,omitempty" hash:"set"`
+	Headers     map[gwv1beta1.HTTPHeaderName]string `json:"Headers,omitempty"`
 }
 
 // UpstreamCert is the upstream certificate configuration
 type UpstreamCert Certificate
 
-// RetryPolicy is the retry policy configuration
-type RetryPolicy struct {
-	RetryOn             string `json:"RetryOn"`
-	NumRetries          *int32 `json:"NumRetries,omitempty"`
-	BackoffBaseInterval *int32 `json:"RetryBackoffBaseInterval,omitempty"`
+// Retry is the retry policy configuration
+type Retry struct {
+	RetryOn             string   `json:"RetryOn"`
+	NumRetries          *int32   `json:"NumRetries,omitempty"`
+	BackoffBaseInterval *float32 `json:"BackoffBaseInterval,omitempty"`
 }
 
 // Chains is the chains configuration

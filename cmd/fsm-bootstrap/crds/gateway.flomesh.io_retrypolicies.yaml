@@ -44,9 +44,8 @@ spec:
                     default: 1
                     description: BackoffBaseInterval is the base interval for computing
                       backoff in seconds
-                    format: int32
-                    minimum: 1
-                    type: integer
+                    minimum: 0.001
+                    type: number
                   numRetries:
                     default: 3
                     description: NumRetries is the number of retries
@@ -75,9 +74,8 @@ spec:
                           default: 1
                           description: BackoffBaseInterval is the base interval for
                             computing backoff in seconds
-                          format: int32
-                          minimum: 1
-                          type: integer
+                          minimum: 0.001
+                          type: number
                         numRetries:
                           default: 3
                           description: NumRetries is the number of retries

@@ -8,7 +8,7 @@
           serviceConfig = Object.assign({}, config.Services[serviceName]),
         ) => (
           serviceConfig.name = serviceName,
-          serviceConfig.RetryPolicy = { NumRetries: 0 },
+          serviceConfig.Retry = { NumRetries: 0 },
           serviceConfig
         )
       )() : null

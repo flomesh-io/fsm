@@ -111,6 +111,6 @@ func (e *RetryPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.Servic
 	}
 
 	if hcCfg, exists := e.Data[svcPortName]; exists {
-		svcCfg.RetryPolicy = newRetry(hcCfg)
+		svcCfg.Retry = newRetry(hcCfg)
 	}
 }

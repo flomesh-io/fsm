@@ -52,7 +52,7 @@ func mergeConfig(config *gwpav1alpha1.RetryConfig, defaultConfig *gwpav1alpha1.R
 		if defaultConfig.BackoffBaseInterval != nil {
 			cfgCopy.BackoffBaseInterval = defaultConfig.BackoffBaseInterval
 		} else {
-			cfgCopy.BackoffBaseInterval = pointer.Int32(1)
+			cfgCopy.BackoffBaseInterval = pointer.Float32(1.0)
 		}
 	}
 
@@ -67,7 +67,7 @@ func setDefaultValues(config *gwpav1alpha1.RetryConfig) *gwpav1alpha1.RetryConfi
 	}
 
 	if cfg.BackoffBaseInterval == nil {
-		cfg.BackoffBaseInterval = pointer.Int32(1)
+		cfg.BackoffBaseInterval = pointer.Float32(1.0)
 	}
 
 	return cfg
