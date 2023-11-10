@@ -25,16 +25,16 @@ func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPol
 
 		switch {
 		case routeHostname == hostname:
-			return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].Config, rateLimitPolicy.Spec.DefaultConfig)
 
 		case strings.HasPrefix(routeHostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(hostname, routeHostname) {
-				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].Config, rateLimitPolicy.Spec.DefaultConfig)
 			}
 
 		case strings.HasPrefix(hostname, "*"):
 			if gwutils.HostnameMatchesWildcardHostname(routeHostname, hostname) {
-				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+				return ComputeRateLimitConfig(rateLimitPolicy.Spec.Hostnames[i].Config, rateLimitPolicy.Spec.DefaultConfig)
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, r
 
 	for _, hr := range rateLimitPolicy.Spec.HTTPRateLimits {
 		if reflect.DeepEqual(routeMatch, hr.Match) {
-			return ComputeRateLimitConfig(hr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(hr.Config, rateLimitPolicy.Spec.DefaultConfig)
 		}
 	}
 
@@ -65,7 +65,7 @@ func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, 
 
 	for _, gr := range rateLimitPolicy.Spec.GRPCRateLimits {
 		if reflect.DeepEqual(routeMatch, gr.Match) {
-			return ComputeRateLimitConfig(gr.RateLimit, rateLimitPolicy.Spec.DefaultL7RateLimit)
+			return ComputeRateLimitConfig(gr.Config, rateLimitPolicy.Spec.DefaultConfig)
 		}
 	}
 

@@ -118,7 +118,7 @@ type FaultInjectionAbort struct {
 // TLS is the TLS configuration
 type TLS struct {
 	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
-	MTLS         bool                  `json:"MTLS,omitempty"`
+	MTLS         *bool                 `json:"MTLS,omitempty"`
 	Certificates []Certificate         `json:"Certificates,omitempty"`
 }
 

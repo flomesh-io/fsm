@@ -41,6 +41,87 @@ spec:
                 format: int64
                 minimum: 1
                 type: integer
+              config:
+                description: DefaultConfig is the default rate limit for all routes
+                  and hostnames
+                properties:
+                  backlog:
+                    default: 10
+                    description: Backlog is the number of requests allowed to wait
+                      in the queue
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  burst:
+                    description: Burst is the number of requests allowed to be bursted,
+                      if not specified, it will be the same as Requests
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  mode:
+                    default: Local
+                    description: Mode is the mode of the rate limit policy, Local
+                      or Global, default is Local
+                    enum:
+                    - Local
+                    - Global
+                    type: string
+                  requests:
+                    description: Requests is the number of requests allowed per statTimeWindow
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  responseHeadersToAdd:
+                    description: ResponseHeadersToAdd is the response headers to be
+                      added when the rate limit is exceeded
+                    items:
+                      description: HTTPHeader represents an HTTP Header name and value
+                        as defined by RFC 7230.
+                      properties:
+                        name:
+                          description: "Name is the name of the HTTP Header to be
+                            matched. Name matching MUST be case insensitive. (See
+                            https://tools.ietf.org/html/rfc7230#section-3.2). \n If
+                            multiple entries specify equivalent header names, the
+                            first entry with an equivalent name MUST be considered
+                            for a match. Subsequent entries with an equivalent header
+                            name MUST be ignored. Due to the case-insensitivity of
+                            header names, \"foo\" and \"Foo\" are considered equivalent."
+                          maxLength: 256
+                          minLength: 1
+                          pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                          type: string
+                        value:
+                          description: Value is the value of HTTP Header to be matched.
+                          maxLength: 4096
+                          minLength: 1
+                          type: string
+                      required:
+                      - name
+                      - value
+                      type: object
+                    maxItems: 16
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  responseStatusCode:
+                    default: 429
+                    description: ResponseStatusCode is the response status code to
+                      be returned when the rate limit is exceeded
+                    format: int32
+                    maximum: 10000
+                    minimum: 1
+                    type: integer
+                  statTimeWindow:
+                    description: StatTimeWindow is the time window in seconds
+                    format: int32
+                    minimum: 1
+                    type: integer
+                required:
+                - requests
+                - statTimeWindow
+                type: object
               grpc:
                 description: GRPCRateLimits is the rate limit configuration for GRPC
                   routes
@@ -48,86 +129,8 @@ spec:
                   description: GRPCRateLimit defines the rate limit configuration
                     for a GRPC route
                   properties:
-                    match:
-                      description: Match is the match condition for the GRPC route
-                      properties:
-                        headers:
-                          description: Headers specifies gRPC request header matchers.
-                            Multiple match values are ANDed together, meaning, a request
-                            MUST match all the specified headers to select the route.
-                          items:
-                            description: GRPCHeaderMatch describes how to select a
-                              gRPC route by matching gRPC request headers.
-                            properties:
-                              name:
-                                description: "Name is the name of the gRPC Header
-                                  to be matched. \n If multiple entries specify equivalent
-                                  header names, only the first entry with an equivalent
-                                  name MUST be considered for a match. Subsequent
-                                  entries with an equivalent header name MUST be ignored.
-                                  Due to the case-insensitivity of header names, \"foo\"
-                                  and \"Foo\" are considered equivalent."
-                                maxLength: 256
-                                minLength: 1
-                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                                type: string
-                              type:
-                                default: Exact
-                                description: Type specifies how to match against the
-                                  value of the header.
-                                enum:
-                                - Exact
-                                - RegularExpression
-                                type: string
-                              value:
-                                description: Value is the value of the gRPC Header
-                                  to be matched.
-                                maxLength: 4096
-                                minLength: 1
-                                type: string
-                            required:
-                            - name
-                            - value
-                            type: object
-                          maxItems: 16
-                          type: array
-                          x-kubernetes-list-map-keys:
-                          - name
-                          x-kubernetes-list-type: map
-                        method:
-                          description: Method specifies a gRPC request service/method
-                            matcher. If this field is not specified, all services
-                            and methods will match.
-                          properties:
-                            method:
-                              description: "Value of the method to match against.
-                                If left empty or omitted, will match all services.
-                                \n At least one of Service and Method MUST be a non-empty
-                                string."
-                              maxLength: 1024
-                              type: string
-                            service:
-                              description: "Value of the service to match against.
-                                If left empty or omitted, will match any service.
-                                \n At least one of Service and Method MUST be a non-empty
-                                string."
-                              maxLength: 1024
-                              type: string
-                            type:
-                              default: Exact
-                              description: "Type specifies how to match against the
-                                service and/or method. Support: Core (Exact with service
-                                and method specified) \n Support: Implementation-specific
-                                (Exact with method specified but no service specified)
-                                \n Support: Implementation-specific (RegularExpression)"
-                              enum:
-                              - Exact
-                              - RegularExpression
-                              type: string
-                          type: object
-                      type: object
-                    rateLimit:
-                      description: RateLimit is the rate limit configuration for the
+                    config:
+                      description: Config is the rate limit configuration for the
                         GRPC route
                       properties:
                         backlog:
@@ -210,6 +213,84 @@ spec:
                       - requests
                       - statTimeWindow
                       type: object
+                    match:
+                      description: Match is the match condition for the GRPC route
+                      properties:
+                        headers:
+                          description: Headers specifies gRPC request header matchers.
+                            Multiple match values are ANDed together, meaning, a request
+                            MUST match all the specified headers to select the route.
+                          items:
+                            description: GRPCHeaderMatch describes how to select a
+                              gRPC route by matching gRPC request headers.
+                            properties:
+                              name:
+                                description: "Name is the name of the gRPC Header
+                                  to be matched. \n If multiple entries specify equivalent
+                                  header names, only the first entry with an equivalent
+                                  name MUST be considered for a match. Subsequent
+                                  entries with an equivalent header name MUST be ignored.
+                                  Due to the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              type:
+                                default: Exact
+                                description: Type specifies how to match against the
+                                  value of the header.
+                                enum:
+                                - Exact
+                                - RegularExpression
+                                type: string
+                              value:
+                                description: Value is the value of the gRPC Header
+                                  to be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        method:
+                          description: Method specifies a gRPC request service/method
+                            matcher. If this field is not specified, all services
+                            and methods will match.
+                          properties:
+                            method:
+                              description: "Value of the method to match against.
+                                If left empty or omitted, will match all services.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            service:
+                              description: "Value of the service to match against.
+                                If left empty or omitted, will match any service.
+                                \n At least one of Service and Method MUST be a non-empty
+                                string."
+                              maxLength: 1024
+                              type: string
+                            type:
+                              default: Exact
+                              description: "Type specifies how to match against the
+                                service and/or method. Support: Core (Exact with service
+                                and method specified) \n Support: Implementation-specific
+                                (Exact with method specified but no service specified)
+                                \n Support: Implementation-specific (RegularExpression)"
+                              enum:
+                              - Exact
+                              - RegularExpression
+                              type: string
+                          type: object
+                      type: object
                   required:
                   - match
                   type: object
@@ -221,15 +302,8 @@ spec:
                   description: HostnameRateLimit defines the rate limit configuration
                     for a hostname
                   properties:
-                    hostname:
-                      description: Hostname is the hostname for matching the rate
-                        limit
-                      maxLength: 253
-                      minLength: 1
-                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                      type: string
-                    rateLimit:
-                      description: RateLimit is the rate limit configuration for the
+                    config:
+                      description: Config is the rate limit configuration for the
                         hostname
                       properties:
                         backlog:
@@ -312,6 +386,13 @@ spec:
                       - requests
                       - statTimeWindow
                       type: object
+                    hostname:
+                      description: Hostname is the hostname for matching the rate
+                        limit
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
                   required:
                   - hostname
                   type: object
@@ -327,6 +408,90 @@ spec:
                   description: HTTPRateLimit defines the rate limit configuration
                     for a HTTP route
                   properties:
+                    config:
+                      description: Config is the rate limit configuration for the
+                        HTTP route
+                      properties:
+                        backlog:
+                          default: 10
+                          description: Backlog is the number of requests allowed to
+                            wait in the queue
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        burst:
+                          description: Burst is the number of requests allowed to
+                            be bursted, if not specified, it will be the same as Requests
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        mode:
+                          default: Local
+                          description: Mode is the mode of the rate limit policy,
+                            Local or Global, default is Local
+                          enum:
+                          - Local
+                          - Global
+                          type: string
+                        requests:
+                          description: Requests is the number of requests allowed
+                            per statTimeWindow
+                          format: int32
+                          minimum: 1
+                          type: integer
+                        responseHeadersToAdd:
+                          description: ResponseHeadersToAdd is the response headers
+                            to be added when the rate limit is exceeded
+                          items:
+                            description: HTTPHeader represents an HTTP Header name
+                              and value as defined by RFC 7230.
+                            properties:
+                              name:
+                                description: "Name is the name of the HTTP Header
+                                  to be matched. Name matching MUST be case insensitive.
+                                  (See https://tools.ietf.org/html/rfc7230#section-3.2).
+                                  \n If multiple entries specify equivalent header
+                                  names, the first entry with an equivalent name MUST
+                                  be considered for a match. Subsequent entries with
+                                  an equivalent header name MUST be ignored. Due to
+                                  the case-insensitivity of header names, \"foo\"
+                                  and \"Foo\" are considered equivalent."
+                                maxLength: 256
+                                minLength: 1
+                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                                type: string
+                              value:
+                                description: Value is the value of HTTP Header to
+                                  be matched.
+                                maxLength: 4096
+                                minLength: 1
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          maxItems: 16
+                          type: array
+                          x-kubernetes-list-map-keys:
+                          - name
+                          x-kubernetes-list-type: map
+                        responseStatusCode:
+                          default: 429
+                          description: ResponseStatusCode is the response status code
+                            to be returned when the rate limit is exceeded
+                          format: int32
+                          maximum: 10000
+                          minimum: 1
+                          type: integer
+                        statTimeWindow:
+                          description: StatTimeWindow is the time window in seconds
+                          format: int32
+                          minimum: 1
+                          type: integer
+                      required:
+                      - requests
+                      - statTimeWindow
+                      type: object
                     match:
                       description: Match is the match condition for the HTTP route
                       properties:
@@ -487,90 +652,6 @@ spec:
                           - name
                           x-kubernetes-list-type: map
                       type: object
-                    rateLimit:
-                      description: RateLimit is the rate limit configuration for the
-                        HTTP route
-                      properties:
-                        backlog:
-                          default: 10
-                          description: Backlog is the number of requests allowed to
-                            wait in the queue
-                          format: int32
-                          minimum: 1
-                          type: integer
-                        burst:
-                          description: Burst is the number of requests allowed to
-                            be bursted, if not specified, it will be the same as Requests
-                          format: int32
-                          minimum: 1
-                          type: integer
-                        mode:
-                          default: Local
-                          description: Mode is the mode of the rate limit policy,
-                            Local or Global, default is Local
-                          enum:
-                          - Local
-                          - Global
-                          type: string
-                        requests:
-                          description: Requests is the number of requests allowed
-                            per statTimeWindow
-                          format: int32
-                          minimum: 1
-                          type: integer
-                        responseHeadersToAdd:
-                          description: ResponseHeadersToAdd is the response headers
-                            to be added when the rate limit is exceeded
-                          items:
-                            description: HTTPHeader represents an HTTP Header name
-                              and value as defined by RFC 7230.
-                            properties:
-                              name:
-                                description: "Name is the name of the HTTP Header
-                                  to be matched. Name matching MUST be case insensitive.
-                                  (See https://tools.ietf.org/html/rfc7230#section-3.2).
-                                  \n If multiple entries specify equivalent header
-                                  names, the first entry with an equivalent name MUST
-                                  be considered for a match. Subsequent entries with
-                                  an equivalent header name MUST be ignored. Due to
-                                  the case-insensitivity of header names, \"foo\"
-                                  and \"Foo\" are considered equivalent."
-                                maxLength: 256
-                                minLength: 1
-                                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                                type: string
-                              value:
-                                description: Value is the value of HTTP Header to
-                                  be matched.
-                                maxLength: 4096
-                                minLength: 1
-                                type: string
-                            required:
-                            - name
-                            - value
-                            type: object
-                          maxItems: 16
-                          type: array
-                          x-kubernetes-list-map-keys:
-                          - name
-                          x-kubernetes-list-type: map
-                        responseStatusCode:
-                          default: 429
-                          description: ResponseStatusCode is the response status code
-                            to be returned when the rate limit is exceeded
-                          format: int32
-                          maximum: 10000
-                          minimum: 1
-                          type: integer
-                        statTimeWindow:
-                          description: StatTimeWindow is the time window in seconds
-                          format: int32
-                          minimum: 1
-                          type: integer
-                      required:
-                      - requests
-                      - statTimeWindow
-                      type: object
                   required:
                   - match
                   type: object
@@ -602,87 +683,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - port
                 x-kubernetes-list-type: map
-              rateLimit:
-                description: DefaultL7RateLimit is the default rate limit for all
-                  routes and hostnames
-                properties:
-                  backlog:
-                    default: 10
-                    description: Backlog is the number of requests allowed to wait
-                      in the queue
-                    format: int32
-                    minimum: 1
-                    type: integer
-                  burst:
-                    description: Burst is the number of requests allowed to be bursted,
-                      if not specified, it will be the same as Requests
-                    format: int32
-                    minimum: 1
-                    type: integer
-                  mode:
-                    default: Local
-                    description: Mode is the mode of the rate limit policy, Local
-                      or Global, default is Local
-                    enum:
-                    - Local
-                    - Global
-                    type: string
-                  requests:
-                    description: Requests is the number of requests allowed per statTimeWindow
-                    format: int32
-                    minimum: 1
-                    type: integer
-                  responseHeadersToAdd:
-                    description: ResponseHeadersToAdd is the response headers to be
-                      added when the rate limit is exceeded
-                    items:
-                      description: HTTPHeader represents an HTTP Header name and value
-                        as defined by RFC 7230.
-                      properties:
-                        name:
-                          description: "Name is the name of the HTTP Header to be
-                            matched. Name matching MUST be case insensitive. (See
-                            https://tools.ietf.org/html/rfc7230#section-3.2). \n If
-                            multiple entries specify equivalent header names, the
-                            first entry with an equivalent name MUST be considered
-                            for a match. Subsequent entries with an equivalent header
-                            name MUST be ignored. Due to the case-insensitivity of
-                            header names, \"foo\" and \"Foo\" are considered equivalent."
-                          maxLength: 256
-                          minLength: 1
-                          pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
-                          type: string
-                        value:
-                          description: Value is the value of HTTP Header to be matched.
-                          maxLength: 4096
-                          minLength: 1
-                          type: string
-                      required:
-                      - name
-                      - value
-                      type: object
-                    maxItems: 16
-                    type: array
-                    x-kubernetes-list-map-keys:
-                    - name
-                    x-kubernetes-list-type: map
-                  responseStatusCode:
-                    default: 429
-                    description: ResponseStatusCode is the response status code to
-                      be returned when the rate limit is exceeded
-                    format: int32
-                    maximum: 10000
-                    minimum: 1
-                    type: integer
-                  statTimeWindow:
-                    description: StatTimeWindow is the time window in seconds
-                    format: int32
-                    minimum: 1
-                    type: integer
-                required:
-                - requests
-                - statTimeWindow
-                type: object
               targetRef:
                 description: TargetRef is the reference to the target resource to
                   which the policy is applied

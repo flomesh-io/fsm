@@ -461,3 +461,14 @@ func (c *GatewayCache) getRetryPolicyFromCache(key client.ObjectKey) (*gwpav1alp
 
 	return obj, nil
 }
+
+func (c *GatewayCache) getGatewayTLSPolicyFromCache(key client.ObjectKey) (*gwpav1alpha1.GatewayTLSPolicy, error) {
+	obj, err := c.informers.GetListers().GatewayTLSPolicy.GatewayTLSPolicies(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(gatewayTLSPolicyGVK)
+
+	return obj, nil
+}

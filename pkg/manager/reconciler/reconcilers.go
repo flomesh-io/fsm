@@ -72,6 +72,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["PolicyAttachment(FaultInjection)"] = pav1alpha1.NewFaultInjectionPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(UpstreamTLS)"] = pav1alpha1.NewUpstreamTLSPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(ctx)
+		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(ctx)
 	}
 
 	if mc.IsNamespacedIngressEnabled() {

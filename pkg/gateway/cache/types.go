@@ -37,72 +37,75 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
-// TriggerType is the type used to represent the type of processor
+// TriggerType is the type used to represent the type of trigger
 type TriggerType string
 
 const (
-	// ServicesTriggerType is the type used to represent the services processor
+	// ServicesTriggerType is the type used to represent the services trigger
 	ServicesTriggerType TriggerType = "services"
 
-	// EndpointSlicesTriggerType is the type used to represent the endpoint slices processor
+	// EndpointSlicesTriggerType is the type used to represent the endpoint slices trigger
 	EndpointSlicesTriggerType TriggerType = "endpointslices"
 
-	// EndpointsTriggerType is the type used to represent the endpoints processor
+	// EndpointsTriggerType is the type used to represent the endpoints trigger
 	EndpointsTriggerType TriggerType = "endpoints"
 
-	// ServiceImportsTriggerType is the type used to represent the service imports processor
+	// ServiceImportsTriggerType is the type used to represent the service imports trigger
 	ServiceImportsTriggerType TriggerType = "serviceimports"
 
-	// SecretsTriggerType is the type used to represent the secrets processor
+	// SecretsTriggerType is the type used to represent the secrets trigger
 	SecretsTriggerType TriggerType = "secrets"
 
-	// GatewayClassesTriggerType is the type used to represent the gateway classes processor
+	// GatewayClassesTriggerType is the type used to represent the gateway classes trigger
 	GatewayClassesTriggerType TriggerType = "gatewayclasses"
 
-	// GatewaysTriggerType is the type used to represent the gateways processor
+	// GatewaysTriggerType is the type used to represent the gateways trigger
 	GatewaysTriggerType TriggerType = "gateways"
 
-	// HTTPRoutesTriggerType is the type used to represent the HTTP routes processor
+	// HTTPRoutesTriggerType is the type used to represent the HTTP routes trigger
 	HTTPRoutesTriggerType TriggerType = "httproutes"
 
-	// GRPCRoutesTriggerType is the type used to represent the gRPC routes processor
+	// GRPCRoutesTriggerType is the type used to represent the gRPC routes trigger
 	GRPCRoutesTriggerType TriggerType = "grpcroutes"
 
-	// TCPRoutesTriggerType is the type used to represent the TCP routes processor
+	// TCPRoutesTriggerType is the type used to represent the TCP routes trigger
 	TCPRoutesTriggerType TriggerType = "tcproutes"
 
-	// TLSRoutesTriggerType is the type used to represent the TLS routes processor
+	// TLSRoutesTriggerType is the type used to represent the TLS routes trigger
 	TLSRoutesTriggerType TriggerType = "tlsroutes"
 
-	// RateLimitPoliciesTriggerType is the type used to represent the rate limit policies processor
+	// RateLimitPoliciesTriggerType is the type used to represent the rate limit policies trigger
 	RateLimitPoliciesTriggerType TriggerType = "ratelimits"
 
-	// SessionStickyPoliciesTriggerType is the type used to represent the session sticky policies processor
+	// SessionStickyPoliciesTriggerType is the type used to represent the session sticky policies trigger
 	SessionStickyPoliciesTriggerType TriggerType = "sessionstickies"
 
-	// LoadBalancerPoliciesTriggerType is the type used to represent the load balancer policies processor
+	// LoadBalancerPoliciesTriggerType is the type used to represent the load balancer policies trigger
 	LoadBalancerPoliciesTriggerType TriggerType = "loadbalancers"
 
-	// CircuitBreakingPoliciesTriggerType is the type used to represent the circuit breaking policies processor
+	// CircuitBreakingPoliciesTriggerType is the type used to represent the circuit breaking policies trigger
 	CircuitBreakingPoliciesTriggerType TriggerType = "circuitbreakings"
 
-	// AccessControlPoliciesTriggerType is the type used to represent the access control policies processor
+	// AccessControlPoliciesTriggerType is the type used to represent the access control policies trigger
 	AccessControlPoliciesTriggerType TriggerType = "accesscontrols"
 
-	// HealthCheckPoliciesTriggerType is the type used to represent the health check policies processor
+	// HealthCheckPoliciesTriggerType is the type used to represent the health check policies trigger
 	HealthCheckPoliciesTriggerType TriggerType = "healthchecks"
 
-	// FaultInjectionPoliciesTriggerType is the type used to represent the fault injection policies processor
+	// FaultInjectionPoliciesTriggerType is the type used to represent the fault injection policies trigger
 	FaultInjectionPoliciesTriggerType TriggerType = "faultinjections"
 
-	// UpstreamTLSPoliciesTriggerType is the type used to represent the upstream tls policies processor
+	// UpstreamTLSPoliciesTriggerType is the type used to represent the upstream tls policies trigger
 	UpstreamTLSPoliciesTriggerType TriggerType = "upstreamtls"
 
-	// RetryPoliciesTriggerType is the type used to represent the retry policies processor
+	// RetryPoliciesTriggerType is the type used to represent the retry policies trigger
 	RetryPoliciesTriggerType TriggerType = "retries"
+
+	// GatewayTLSPoliciesTriggerType is the type used to represent the gateway tls policies trigger
+	GatewayTLSPoliciesTriggerType TriggerType = "gatewaytls"
 )
 
-// Processor is the interface for the functionality provided by the processors
+// Processor is the interface for the functionality provided by the triggers
 type Processor interface {
 	Insert(obj interface{}, cache *GatewayCache) bool
 	Delete(obj interface{}, cache *GatewayCache) bool
@@ -296,4 +299,5 @@ var (
 	faultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.FaultInjectionPolicyKind)
 	upstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.UpstreamTLSPolicyKind)
 	retryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RetryPolicyKind)
+	gatewayTLSPolicyGVK      = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.GatewayTLSPolicyKind)
 )

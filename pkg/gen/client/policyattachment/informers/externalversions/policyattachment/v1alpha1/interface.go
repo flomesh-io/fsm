@@ -27,6 +27,8 @@ type Interface interface {
 	CircuitBreakingPolicies() CircuitBreakingPolicyInformer
 	// FaultInjectionPolicies returns a FaultInjectionPolicyInformer.
 	FaultInjectionPolicies() FaultInjectionPolicyInformer
+	// GatewayTLSPolicies returns a GatewayTLSPolicyInformer.
+	GatewayTLSPolicies() GatewayTLSPolicyInformer
 	// HealthCheckPolicies returns a HealthCheckPolicyInformer.
 	HealthCheckPolicies() HealthCheckPolicyInformer
 	// LoadBalancerPolicies returns a LoadBalancerPolicyInformer.
@@ -65,6 +67,11 @@ func (v *version) CircuitBreakingPolicies() CircuitBreakingPolicyInformer {
 // FaultInjectionPolicies returns a FaultInjectionPolicyInformer.
 func (v *version) FaultInjectionPolicies() FaultInjectionPolicyInformer {
 	return &faultInjectionPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// GatewayTLSPolicies returns a GatewayTLSPolicyInformer.
+func (v *version) GatewayTLSPolicies() GatewayTLSPolicyInformer {
+	return &gatewayTLSPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // HealthCheckPolicies returns a HealthCheckPolicyInformer.
