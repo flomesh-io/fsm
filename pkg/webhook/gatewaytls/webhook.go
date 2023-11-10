@@ -7,8 +7,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/gatewaytls"
-
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -234,12 +232,18 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 					continue
 				}
 
+				if listener.Protocol != gwv1beta1.HTTPSProtocolType && listener.Protocol != gwv1beta1.TLSProtocolType {
+					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
+					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("Protocol of port %d is %s, it must be HTTPS or TLS in Gateway %s/%s", p.Port, listener.Protocol, gwNs, gwName)))
+					continue
+				}
+
 				if p.Config == nil {
 					continue
 				}
 
 				path := field.NewPath("spec").Child("ports").Index(i).Child("config")
-				errs = append(errs, w.validateCert(path, gatewaytls.ComputeGatewayTLSConfig(p.Config, policy.Spec.DefaultConfig), listener, gateway.Namespace)...)
+				errs = append(errs, w.validateCert(path, p.Config, listener, gateway.Namespace)...)
 			}
 		}
 	}
