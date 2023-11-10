@@ -163,11 +163,11 @@ fsm:
     # -- FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details.
     resource:
       limits:
-        cpu: "1.5"
-        memory: "1G"
+        cpu: "2"
+        memory: "2G"
       requests:
         cpu: "0.5"
-        memory: "128M"
+        memory: "256M"
     # -- FSM controller's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget
@@ -591,11 +591,11 @@ fsm:
     # -- Sidecar injector's container resource parameters
     resource:
       limits:
-        cpu: "0.5"
-        memory: "64M"
+        cpu: "1"
+        memory: "512M"
       requests:
-        cpu: "0.3"
-        memory: "64M"
+        cpu: "0.5"
+        memory: "128M"
     # -- Sidecar injector's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget
@@ -680,11 +680,11 @@ fsm:
     # -- Sidecar injector's container resource parameters
     resource:
       limits:
-        cpu: "0.5"
-        memory: "64M"
+        cpu: "1"
+        memory: "512M"
       requests:
-        cpu: "0.3"
-        memory: "64M"
+        cpu: "0.5"
+        memory: "128M"
     # -- Sidecar injector's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget
@@ -792,7 +792,7 @@ fsm:
     resource:
       limits:
         cpu: "0.5"
-        memory: "128M"
+        memory: "512M"
       requests:
         cpu: "0.3"
         memory: "128M"
@@ -970,11 +970,11 @@ fsm:
     # -- FSM Operator Manager's container resource parameters.
     resources:
       limits:
-        cpu: 500m
-        memory: 128M
+        cpu: 1000m
+        memory: 512M
       requests:
-        cpu: 100m
-        memory: 64M
+        cpu: 300m
+        memory: 128M
     podLabels: { }
     podAnnotations: { }
     mode: http2tunnel

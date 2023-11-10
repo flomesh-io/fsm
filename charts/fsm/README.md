@@ -109,7 +109,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"0.5","memory":"64M"},"requests":{"cpu":"0.3","memory":"64M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
@@ -129,7 +129,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.egressGateway.podLabels | object | `{}` |  |
 | fsm.egressGateway.port | int | `1080` |  |
 | fsm.egressGateway.replicaCount | int | `1` | FSM Operator Manager's replica count (ignored when autoscale.enable is true) |
-| fsm.egressGateway.resources | object | `{"limits":{"cpu":"500m","memory":"128M"},"requests":{"cpu":"100m","memory":"64M"}}` | FSM Operator Manager's container resource parameters. |
+| fsm.egressGateway.resources | object | `{"limits":{"cpu":"1000m","memory":"512M"},"requests":{"cpu":"300m","memory":"128M"}}` | FSM Operator Manager's container resource parameters. |
 | fsm.enableDebugServer | bool | `false` | Enable the debug HTTP server on FSM controller |
 | fsm.enableEgress | bool | `true` | Enable egress in the mesh |
 | fsm.enableFluentbit | bool | `false` | Enable Fluent Bit sidecar deployment on FSM controller's pod |
@@ -187,7 +187,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmBootstrap.nodeSelector | object | `{}` |  |
 | fsm.fsmBootstrap.podLabels | object | `{}` | FSM bootstrap's pod labels |
 | fsm.fsmBootstrap.replicaCount | int | `1` | FSM bootstrap's replica count |
-| fsm.fsmBootstrap.resource | object | `{"limits":{"cpu":"0.5","memory":"128M"},"requests":{"cpu":"0.3","memory":"128M"}}` | FSM bootstrap's container resource parameters |
+| fsm.fsmBootstrap.resource | object | `{"limits":{"cpu":"0.5","memory":"512M"},"requests":{"cpu":"0.3","memory":"128M"}}` | FSM bootstrap's container resource parameters |
 | fsm.fsmBootstrap.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmController.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.fsmController.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
@@ -210,7 +210,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.fsmController.podLabels | object | `{}` | FSM controller's pod labels |
 | fsm.fsmController.replicaCount | int | `1` | FSM controller's replica count (ignored when autoscale.enable is true) |
-| fsm.fsmController.resource | object | `{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
+| fsm.fsmController.resource | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmGateway.enabled | bool | `false` |  |
 | fsm.fsmGateway.fgwLogLevel | string | `"info"` |  |
@@ -358,7 +358,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.injector.nodeSelector | object | `{}` |  |
 | fsm.injector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.injector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.injector.resource | object | `{"limits":{"cpu":"0.5","memory":"64M"},"requests":{"cpu":"0.3","memory":"64M"}}` | Sidecar injector's container resource parameters |
+| fsm.injector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
 | fsm.injector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.injector.webhookTimeoutSeconds | int | `20` | Mutating webhook timeout |
 | fsm.localDNSProxy | object | `{"enable":false}` | Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
