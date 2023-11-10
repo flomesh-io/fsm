@@ -118,6 +118,7 @@ func (c *GatewayCache) defaults() routecfg.Defaults {
 		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
 		HTTP1PerRequestLoadBalancing:   c.cfg.IsFGWHTTP1PerRequestLoadBalancingEnabled(),
 		HTTP2PerRequestLoadBalancing:   c.cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
+		SocketTimeout:                  pointer.Int32(60),
 	}
 }
 

@@ -48,10 +48,10 @@ type RetryConfig struct {
 	NumRetries *int32 `json:"numRetries,omitempty"`
 
 	// +optional
-	// +kubebuilder:default=1
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1.0
+	// +kubebuilder:validation:Minimum=0.001
 	// BackoffBaseInterval is the base interval for computing backoff in seconds
-	BackoffBaseInterval *int32 `json:"backoffBaseInterval,omitempty"`
+	BackoffBaseInterval *float32 `json:"backoffBaseInterval,omitempty"`
 }
 
 // RetryPolicyStatus defines the observed state of RetryPolicy
