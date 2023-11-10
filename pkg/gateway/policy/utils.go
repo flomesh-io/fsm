@@ -136,8 +136,8 @@ func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
 	return cert
 }
 
-func newRetry(cfg *gwpav1alpha1.RetryConfig) *routecfg.RetryPolicy {
-	return &routecfg.RetryPolicy{
+func newRetry(cfg *gwpav1alpha1.RetryConfig) *routecfg.Retry {
+	return &routecfg.Retry{
 		RetryOn:             strings.Join(cfg.RetryOn, ","),
 		NumRetries:          cfg.NumRetries,
 		BackoffBaseInterval: cfg.BackoffBaseInterval,

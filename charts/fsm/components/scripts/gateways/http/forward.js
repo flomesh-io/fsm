@@ -54,9 +54,9 @@
             }
           })),
           failoverBalancer: serviceConfig.Endpoints && failover(Object.fromEntries(Object.entries(serviceConfig.Endpoints).map(([k, v]) => [k, v.Weight]))),
-          needRetry: Boolean(serviceConfig.RetryPolicy?.NumRetries),
-          numRetries: serviceConfig.RetryPolicy?.NumRetries,
-          retryStatusCodes: (serviceConfig.RetryPolicy?.RetryOn || '5xx').split(',').reduce(
+          needRetry: Boolean(serviceConfig.Retry?.NumRetries),
+          numRetries: serviceConfig.Retry?.NumRetries,
+          retryStatusCodes: (serviceConfig.Retry?.RetryOn || '5xx').split(',').reduce(
             (lut, code) => (
               code.endsWith('xx') ? (
                 new Array(100).fill(0).forEach((_, i) => lut[(code.charAt(0) | 0) * 100 + i] = true)
@@ -67,7 +67,7 @@
             ),
             []
           ),
-          retryBackoffBaseInterval: serviceConfig.RetryPolicy?.RetryBackoffBaseInterval > 1 ? 1 : serviceConfig.RetryPolicy?.RetryBackoffBaseInterval,
+          retryBackoffBaseInterval: serviceConfig.Retry?.BackoffBaseInterval > 1 ? 1 : serviceConfig.Retry?.BackoffBaseInterval,
           retryCounter: retryCounter.withLabels(serviceConfig.name),
           retrySuccessCounter: retrySuccessCounter.withLabels(serviceConfig.name),
           retryLimitCounter: retryLimitCounter.withLabels(serviceConfig.name),

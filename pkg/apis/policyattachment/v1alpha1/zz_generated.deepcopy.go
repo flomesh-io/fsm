@@ -1592,7 +1592,7 @@ func (in *RetryConfig) DeepCopyInto(out *RetryConfig) {
 	}
 	if in.BackoffBaseInterval != nil {
 		in, out := &in.BackoffBaseInterval, &out.BackoffBaseInterval
-		*out = new(int32)
+		*out = new(float32)
 		**out = **in
 	}
 	return
