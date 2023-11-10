@@ -91,7 +91,10 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for HTTPS Gateway resource
 ```shell
-kubectl -n httpbin create secret tls https-cert --key https.key --cert https.crt
+kubectl -n httpbin create secret generic https-cert \
+  --from-file=ca.crt=./ca.crt \
+  --from-file=tls.crt=./https.crt \
+  --from-file=tls.key=./https.key 
 ```
 
 - Create Cert for gRPC
@@ -1107,5 +1110,26 @@ spec:
         - 5xx
       numRetries: 5
       backoffBaseInterval: 2
+EOF
+```
+
+### Test GatewayTLSPolicy
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: GatewayTLSPolicy
+metadata:
+  name: gateway-tls-policy
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: test-gw-1
+    namespace: default
+  ports:
+  - port: 443
+    config:
+      mTLS: true
 EOF
 ```
