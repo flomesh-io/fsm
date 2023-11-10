@@ -237,7 +237,7 @@ func validateConfig(policy *gwpav1alpha1.RetryPolicy) field.ErrorList {
 // retryOnMaxLength is the maximum length each of the retryOn item
 const retryOnMaxLength int = 3
 
-const retryOnStatusCodeFmt = "[0-9][0-9x][0-9x]"
+const retryOnStatusCodeFmt = "[1-9]?[0-9][0-9]|[1-9][x][x]"
 const retryOnStatusCodeErrorMsg = "length of status code must be 3, with leading digit and last 2 digits being 0-9 or x, i.e. 5xx, 500, 502, 503, 504"
 
 var retryOnStatusCodeFmtRegexp = regexp.MustCompile("^" + retryOnStatusCodeFmt + "$")
