@@ -27,9 +27,11 @@ type EgressGateway struct {
 // EgressGatewaySpec is the type used to represent the Egress Gateway specification.
 type EgressGatewaySpec struct {
 	// GlobalEgressGateways defines the list of Global egress gateway.
+	// +optional
 	GlobalEgressGateways []GatewayBindingSubject `json:"global"`
 
 	// EgressPolicyGatewayRules defines the rules of gateway based egress policies.
+	// +optional
 	EgressPolicyGatewayRules []EgressPolicyGatewayRule `json:"rules"`
 
 	// Matches defines the list of object references the EgressGateway policy should match on.

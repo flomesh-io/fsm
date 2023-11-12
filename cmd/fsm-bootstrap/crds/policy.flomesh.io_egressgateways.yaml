@@ -125,9 +125,6 @@ spec:
                   - egressPolicies
                   type: object
                 type: array
-            required:
-            - global
-            - rules
             type: object
         type: object
     served: true
