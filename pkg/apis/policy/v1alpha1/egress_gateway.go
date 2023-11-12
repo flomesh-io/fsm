@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,13 +29,13 @@ type EgressGatewaySpec struct {
 	// +optional
 	GlobalEgressGateways []GatewayBindingSubject `json:"global"`
 
-	// EgressPolicyGatewayRules defines the rules of gateway based egress policies.
-	// +optional
-	EgressPolicyGatewayRules []EgressPolicyGatewayRule `json:"rules"`
-
-	// Matches defines the list of object references the EgressGateway policy should match on.
-	// +optional
-	Matches []corev1.TypedLocalObjectReference `json:"matches,omitempty"`
+	//// EgressPolicyGatewayRules defines the rules of gateway based egress policies.
+	//// +optional
+	//EgressPolicyGatewayRules []EgressPolicyGatewayRule `json:"rules"`
+	//
+	//// Matches defines the list of object references the EgressGateway policy should match on.
+	//// +optional
+	//Matches []corev1.TypedLocalObjectReference `json:"matches,omitempty"`
 }
 
 // EgressPolicyGatewayRule is the type used to represent the rule of Egress Gateway specification based egress policies.
