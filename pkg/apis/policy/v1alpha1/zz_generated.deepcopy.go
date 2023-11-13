@@ -434,20 +434,6 @@ func (in *EgressGatewaySpec) DeepCopyInto(out *EgressGatewaySpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.EgressPolicyGatewayRules != nil {
-		in, out := &in.EgressPolicyGatewayRules, &out.EgressPolicyGatewayRules
-		*out = make([]EgressPolicyGatewayRule, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.Matches != nil {
-		in, out := &in.Matches, &out.Matches
-		*out = make([]v1.TypedLocalObjectReference, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
 	return
 }
 
