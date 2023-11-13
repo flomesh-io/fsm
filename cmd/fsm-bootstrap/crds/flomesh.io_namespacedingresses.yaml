@@ -871,8 +871,8 @@ spec:
                     type: object
                 type: object
               env:
-                description: List of environment variables to set in the ingress container.
-                  Cannot be updated.
+                description: Env defines the list of environment variables to set
+                  in the ingress container. Cannot be updated.
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -988,7 +988,7 @@ spec:
                     port: 80
                     protocol: TCP
                     targetPort: 8000
-                description: The http configuration of this ingress controller.
+                description: HTTP defines the http configuration of this ingress controller.
                 properties:
                   enabled:
                     default: true
@@ -1490,8 +1490,12 @@ spec:
                   Service
                 type: object
               serviceType:
+                default: LoadBalancer
                 description: ServiceType determines how the Ingress is exposed. For
                   an Ingress the most used types are NodePort, and LoadBalancer
+                enum:
+                - NodePort
+                - LoadBalancer
                 type: string
               tls:
                 default:
@@ -1509,6 +1513,11 @@ spec:
                   enabled:
                     default: false
                     description: Enabled, if TLS is enabled for the Ingress Controller
+                    type: boolean
+                  mTLS:
+                    default: false
+                    description: MTLS defines the mTLS configuration of this ingress
+                      controller.
                     type: boolean
                   port:
                     description: Port, The https port that are exposed by this ingress
@@ -1572,7 +1581,8 @@ spec:
                     default:
                       enabled: false
                       upstreamPort: 443
-                    description: SSLPassthrough configuration
+                    description: SSLPassthrough defines the SSLPassthrough configuration
+                      of this ingress controller.
                     properties:
                       enabled:
                         default: false

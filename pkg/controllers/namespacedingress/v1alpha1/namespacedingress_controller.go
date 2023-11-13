@@ -191,9 +191,13 @@ func (r *reconciler) deriveCodebases(nsig *nsigv1alpha1.NamespacedIngress, _ con
 }
 
 func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc configurator.Configurator) (ctrl.Result, error) {
-	if mc.IsNamespacedIngressEnabled() && nsig.Spec.TLS.Enabled {
+	if mc.IsNamespacedIngressEnabled() {
 		repoClient := r.fctx.RepoClient
 		basepath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
+
+		if nsig.Spec.TLS == nil {
+
+		}
 
 		if nsig.Spec.TLS.SSLPassthrough.Enabled {
 			// SSL passthrough
@@ -208,7 +212,7 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 			}
 		} else {
 			// TLS offload
-			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc)
+			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc, nsig)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}

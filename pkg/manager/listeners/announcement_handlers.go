@@ -56,11 +56,11 @@ func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *me
 
 			if isTLSConfigChanged(oldCfg, newCfg) {
 				if newCfg.Spec.Ingress.TLS.Enabled {
-					if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, repoClient, certMgr, meshConfigToConfigurator(newCfg)); err != nil {
+					if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, repoClient, certMgr, meshConfigToConfigurator(newCfg), nil); err != nil {
 						log.Error().Msgf("Failed to update TLS config and issue default cert: %s", err)
 					}
 				} else {
-					if err := utils.UpdateIngressTLSConfig(constants.DefaultIngressBasePath, repoClient, meshConfigToConfigurator(newCfg)); err != nil {
+					if err := utils.UpdateIngressTLSConfig(constants.DefaultIngressBasePath, repoClient, meshConfigToConfigurator(newCfg), nil); err != nil {
 						log.Error().Msgf("Failed to update TLS config: %s", err)
 					}
 				}
