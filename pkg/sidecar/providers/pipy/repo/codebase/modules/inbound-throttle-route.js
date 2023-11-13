@@ -1,7 +1,7 @@
 ((
   { initRateLimit } = pipy.solve('utils.js'),
   { rateLimitCounter } = pipy.solve('metrics.js'),
-  rateLimitedCounter = rateLimitCounter.withLabels('throttle-route'),
+  rateLimitedCounter = rateLimitCounter.withLabels('throttle_route'),
   rateLimitCache = new algo.Cache(initRateLimit),
 ) => (
 
