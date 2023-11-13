@@ -171,9 +171,12 @@ func (w *validator) doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
+
 	errorList = append(errorList, validateSpec(policy)...)
 	errorList = append(errorList, w.validateConfig(policy)...)
-
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}
