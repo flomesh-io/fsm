@@ -60,7 +60,7 @@ pipy({
               s = s.startsWith('http_local_rate_limiter') ? (
                 (
                   items = s.split('{').join(',').split('"').join(',').split(' ').join(',').split('=').join(',').split(','),
-                ) => items[5] ? items[0] + "." + items[1] + ".rate_limited: " + items[5] : s
+                ) => items[5] ? items[0] + "." + items[1] + ".rate_limited." + items[3] + ": " + items[5] : s
               )() : s
             )
           ),
