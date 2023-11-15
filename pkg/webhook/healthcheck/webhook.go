@@ -207,8 +207,11 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateSpec(policy)...)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
 
+	errorList = append(errorList, validateSpec(policy)...)
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}

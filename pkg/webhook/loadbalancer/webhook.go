@@ -163,6 +163,10 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
+
 	errorList = append(errorList, validateConfig(policy)...)
 	// TODO: validate ports exist in the referenced service
 
