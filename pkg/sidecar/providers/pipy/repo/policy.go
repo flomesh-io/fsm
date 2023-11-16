@@ -75,7 +75,7 @@ func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Confi
 func (p *PipyConf) setObservabilityRemoteLogging(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.Observability.RemoteLogging = &RemoteLoggingSpec{
-			Level:           fmt.Sprintf("%d", (*conf).GetRemoteLoggingLevel()),
+			Level:           (*conf).GetRemoteLoggingLevel(),
 			Address:         fmt.Sprintf("%s:%d", (*conf).GetRemoteLoggingHost(), (*conf).GetRemoteLoggingPort()),
 			Endpoint:        (*conf).GetRemoteLoggingEndpoint(),
 			Authorization:   (*conf).GetRemoteLoggingAuthorization(),
