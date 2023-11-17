@@ -1,53 +1,14 @@
 # syntax = docker/dockerfile:1.4
 ARG DISTROLESS_TAG
-
-# Build the pipy binary
-FROM debian:11 AS builder
-
-ENV  pkg_prefix              /usr/local
-ENV  pkg_confdir             /etc/pipy
-ENV  pkg_bindir              ${pkg_prefix}/bin
-ENV  CXX                     clang++
-ENV  CC                      clang
-
 ARG PIPY_VERSION
 
-ARG VERSION
-ENV VERSION=${VERSION}
-
-ARG REVISION
-ENV REVISION=${REVISION}
-
-ARG COMMIT_ID
-ENV CI_COMMIT_SHA=${COMMIT_ID}
-
-ARG COMMIT_DATE
-ENV CI_COMMIT_DATE=${COMMIT_DATE}
-
-ARG PIPY_GUI
-ENV PIPY_GUI=${PIPY_GUI:-OFF}
-
-ARG PIPY_STATIC
-ENV PIPY_STATIC=${PIPY_STATIC:-OFF}
-
-ARG BUILD_TYPE
-ENV BUILD_TYPE=${BUILD_TYPE:-Release}
-
-RUN apt-get update && \
-    apt-get install --yes \
-      cmake clang pkgconf autoconf automake \
-      nasm git file make \
-      ca-certificates openssl openssh-client \
-      zlib1g zlib1g-dev libtool libtiff-dev libjpeg-dev
-
-WORKDIR /workspace
-RUN git clone -b "$PIPY_VERSION" https://github.com/flomesh-io/pipy.git && \
-    cd /workspace/pipy && sed -i 's/make \-j/make/g' CMakeLists.txt && ./build.sh
+# Build the pipy binary
+FROM flomrsh/pipy:${PIPY_VERSION}-debian AS builder
 
 # Build the final image
 FROM gcr.io/distroless/cc-debian11:$DISTROLESS_TAG
 WORKDIR /
-COPY --from=builder /workspace/pipy/bin/pipy /usr/local/bin/pipy
+COPY --from=builder /usr/local/bin/pipy /usr/local/bin/pipy
 
 USER 65532:65532
 EXPOSE 6060
