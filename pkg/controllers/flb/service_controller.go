@@ -33,7 +33,6 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -480,7 +479,7 @@ func (r *reconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service
 		setting := r.settings[svc.Namespace]
 		result := make(map[string][]string)
 		for _, port := range svc.Spec.Ports {
-			if !isSupportedProtocol(port) {
+			if !isSupportedProtocol(port.Protocol) {
 				continue
 			}
 
@@ -565,7 +564,7 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 	result := make(map[string][]string)
 
 	for _, port := range svc.Spec.Ports {
-		if !isSupportedProtocol(port) {
+		if !isSupportedProtocol(port.Protocol) {
 			continue
 		}
 
@@ -576,11 +575,7 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 			matchedPortNameFound := false
 
 			for i, epPort := range ss.Ports {
-				if epPort.Protocol != corev1.ProtocolTCP {
-					continue
-				}
-
-				var targetPort int32
+				targetPort := int32(0)
 
 				if port.Name == "" {
 					// port.Name is optional if there is only one port
@@ -600,7 +595,7 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 				}
 
 				for _, epAddress := range ss.Addresses {
-					ep := net.JoinHostPort(epAddress.IP, strconv.Itoa(int(targetPort)))
+					ep := net.JoinHostPort(epAddress.IP, fmt.Sprintf("%d", targetPort))
 					result[svcKey] = append(result[svcKey], ep)
 				}
 			}
@@ -616,8 +611,8 @@ func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ co
 	return result, nil
 }
 
-func isSupportedProtocol(port corev1.ServicePort) bool {
-	switch port.Protocol {
+func isSupportedProtocol(protocol corev1.Protocol) bool {
+	switch protocol {
 	case corev1.ProtocolTCP, corev1.ProtocolUDP:
 		return true
 	default:
