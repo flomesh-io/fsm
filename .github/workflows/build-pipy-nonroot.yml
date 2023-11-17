@@ -9,12 +9,9 @@ on:
         type: string
 
 jobs:
-  build-pipy:
-    name: Build pipy image
+  debian:
+    name: Build pipy debian image
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        id: [ "nonroot", "debug-nonroot" ]
     steps:
       - name: Increase swapfile
         run: |
@@ -24,6 +21,52 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
           sudo swapon --show
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.0.0
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v5.0.0
+        with:
+          images: flomesh/pipy
+          tags: |
+            type=raw,${{ inputs.tag }}-debian
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5.0.0
+        with:
+          context: .
+          file: ./dockerfiles/Dockerfile.pipy-debian
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            PIPY_VERSION=${{ inputs.tag }}
+
+  pipy-nonroot:
+    name: Build pipy nonroot image
+    runs-on: ubuntu-22.04
+    needs: debian
+    strategy:
+      matrix:
+        id: [ "nonroot", "debug-nonroot" ]
+    steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
 
