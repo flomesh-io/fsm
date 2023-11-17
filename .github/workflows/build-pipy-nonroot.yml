@@ -16,6 +16,14 @@ jobs:
       matrix:
         id: [ "nonroot", "debug-nonroot" ]
     steps:
+      - name: Increase swapfile
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
 
