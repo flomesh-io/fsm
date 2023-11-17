@@ -367,7 +367,14 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 	return nil
 }
 
-func (c *client) Start() error {
+// NeedLeaderElection implements the LeaderElectionRunnable interface
+// to indicate that this must be started with requiring the leader lock.
+func (c *client) NeedLeaderElection() bool {
+	return true
+}
+
+// Start starts the backend broadcast listener
+func (c *client) Start(_ context.Context) error {
 	// Start broadcast listener thread
 	s := repo.NewServer(c.cfg, c.msgBroker, c.cache)
 	go s.BroadcastListener()

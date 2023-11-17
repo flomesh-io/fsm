@@ -70,6 +70,10 @@ type rateLimitPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *rateLimitPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewRateLimitPolicyReconciler returns a new RateLimitPolicy Reconciler
 func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &rateLimitPolicyReconciler{

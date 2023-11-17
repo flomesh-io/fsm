@@ -48,6 +48,10 @@ type circuitBreakingPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *circuitBreakingPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewCircuitBreakingPolicyReconciler returns a new CircuitBreakingPolicy Reconciler
 func NewCircuitBreakingPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &circuitBreakingPolicyReconciler{

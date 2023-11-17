@@ -55,6 +55,10 @@ type serviceExportReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *serviceExportReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewServiceExportReconciler returns a new ServiceExport.Reconciler
 func NewServiceExportReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceExportReconciler{

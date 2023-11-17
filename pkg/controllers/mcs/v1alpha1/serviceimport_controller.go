@@ -47,6 +47,10 @@ type serviceImportReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *serviceImportReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewServiceImportReconciler returns a new ServiceImport.Reconciler
 func NewServiceImportReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceImportReconciler{

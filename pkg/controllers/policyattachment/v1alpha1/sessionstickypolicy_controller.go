@@ -48,6 +48,10 @@ type sessionStickyPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *sessionStickyPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewSessionStickyPolicyReconciler returns a new SessionStickyPolicy Reconciler
 func NewSessionStickyPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &sessionStickyPolicyReconciler{

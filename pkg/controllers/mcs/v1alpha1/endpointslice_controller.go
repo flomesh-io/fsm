@@ -44,6 +44,10 @@ type endpointSliceReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *endpointSliceReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewEndpointSliceReconciler returns a new EndpointSlice.Reconciler
 func NewEndpointSliceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &endpointSliceReconciler{

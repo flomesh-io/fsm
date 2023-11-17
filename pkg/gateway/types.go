@@ -4,6 +4,8 @@ package gateway
 import (
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
@@ -27,8 +29,11 @@ type client struct {
 type Controller interface {
 	cache.ResourceEventHandler
 
-	// Start runs the backend broadcast listener
-	Start() error
+	// Runnable runs the backend broadcast listener
+	manager.Runnable
+
+	// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
+	manager.LeaderElectionRunnable
 }
 
 const (

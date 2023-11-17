@@ -45,6 +45,10 @@ type serviceReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *serviceReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewServiceReconciler returns a new Service.Reconciler
 func NewServiceReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &serviceReconciler{

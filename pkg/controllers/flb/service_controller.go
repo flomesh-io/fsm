@@ -100,6 +100,10 @@ type reconciler struct {
 	cache    map[types.NamespacedName]*corev1.Service
 }
 
+func (r *reconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // setting is the setting for a FLB instance per namespace
 type setting struct {
 	httpClient            *resty.Client

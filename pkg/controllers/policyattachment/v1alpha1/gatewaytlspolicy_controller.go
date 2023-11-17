@@ -67,6 +67,10 @@ type gatewayTLSPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *gatewayTLSPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewGatewayTLSPolicyReconciler returns a new GatewayTLSPolicy Reconciler
 func NewGatewayTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayTLSPolicyReconciler{

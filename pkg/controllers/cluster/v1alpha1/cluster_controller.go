@@ -63,6 +63,10 @@ type reconciler struct {
 	server   *cp.ControlPlaneServer
 }
 
+func (r *reconciler) NeedLeaderElection() bool {
+	return true
+}
+
 var (
 	log = logger.New("cluster-controller/v1alpha1")
 )

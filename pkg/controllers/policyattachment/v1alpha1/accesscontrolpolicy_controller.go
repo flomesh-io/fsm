@@ -70,6 +70,10 @@ type accessControlPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *accessControlPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewAccessControlPolicyReconciler returns a new AccessControlPolicy Reconciler
 func NewAccessControlPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &accessControlPolicyReconciler{

@@ -453,7 +453,7 @@ func main() {
 	if cfg.IsIngressEnabled() || (cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {
 		mrepo.ChecksAndRebuildRepo(cctx.RepoClient, mgr.GetClient(), cfg)
 	}
-
+	mgr.Add(gatewayController)
 	if err := mgr.Start(ctx); err != nil {
 		log.Fatal().Msgf("problem running manager, %s", err)
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")

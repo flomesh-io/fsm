@@ -42,7 +42,7 @@ RUN apt-get update && \
 
 WORKDIR /workspace
 RUN git clone -b "$PIPY_VERSION" https://github.com/flomesh-io/pipy.git && \
-    cd /workspace/pipy && ./build.sh
+    cd /workspace/pipy && sed -i 's/make \-j/make/g' CMakeLists.txt && ./build.sh
 
 # Build the final image
 FROM gcr.io/distroless/cc-debian11:$DISTROLESS_TAG
