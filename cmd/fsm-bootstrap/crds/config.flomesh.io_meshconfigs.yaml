@@ -1672,7 +1672,7 @@ spec:
                     description: CurlImage defines the image of curl.
                     type: string
                   repoServerImage:
-                    default: flomesh/pipy-repo:0.90.3-38
+                    default: flomesh/pipy-repo:0.99.0-rc1
                     description: RepoServerImage defines the image of repo server.
                     type: string
                 required:

@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o bin/fsm-ingress -ldflags "$LDFLAGS" ./cmd/fsm-ingress
 
 # Build the final image
-FROM flomesh/pipy:0.90.3-38-$DISTROLESS_TAG
+FROM flomesh/pipy:0.99.0-rc1-$DISTROLESS_TAG
 WORKDIR /
 COPY --from=builder /fsm/bin/fsm-ingress .
 
