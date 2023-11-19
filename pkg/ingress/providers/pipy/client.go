@@ -188,9 +188,10 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 }
 
 // NeedLeaderElection implements the LeaderElectionRunnable interface
-// to indicate that this must be started with requiring the leader lock.
+// to indicate that this should be started without requiring the leader lock.
+// The reason is it writes to the local repo which is in the same pod.
 func (c *client) NeedLeaderElection() bool {
-	return true
+	return false
 }
 
 // Start starts the client

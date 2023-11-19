@@ -18,8 +18,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
-	"github.com/flomesh-io/fsm/pkg/gateway"
-	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/manager/basic"
 	"github.com/flomesh-io/fsm/pkg/manager/listeners"
 	"github.com/flomesh-io/fsm/pkg/manager/logging"
@@ -299,21 +297,6 @@ func main() {
 	pluginController := plugin.NewPluginController(informerCollection, kubeClient, k8sClient, msgBroker)
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
 
-	if cfg.IsIngressEnabled() {
-		ingressController := pipy.NewIngressController(informerCollection, kubeClient, msgBroker, cfg, certManager)
-		if err := ingressController.Start(); err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Ingress Controller")
-		}
-	}
-
-	var gatewayController gateway.Controller
-	if cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
-		gatewayController = gateway.NewGatewayAPIController(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
-		if err := gatewayController.Start(); err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting Gateway Controller")
-		}
-	}
-
 	kubeProvider := kube.NewClient(k8sClient, cfg)
 	multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
 
@@ -426,7 +409,6 @@ func main() {
 		CertificateManager: certManager,
 		RepoClient:         repoClient,
 		Broker:             msgBroker,
-		EventHandler:       gatewayController,
 		StopCh:             stop,
 		MeshName:           meshName,
 		FSMVersion:         fsmVersion,
@@ -437,6 +419,7 @@ func main() {
 		basic.SetupTLS,
 		logging.SetupLogging,
 		webhook.RegisterWebHooks,
+		recon.RegisterControllers,
 		recon.RegisterReconcilers,
 	} {
 		if err := f(cctx); err != nil {
@@ -450,10 +433,6 @@ func main() {
 		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, cctx.RepoClient, stop)
 	}
 
-	if cfg.IsIngressEnabled() || (cfg.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {
-		mrepo.ChecksAndRebuildRepo(cctx.RepoClient, mgr.GetClient(), cfg)
-	}
-	mgr.Add(gatewayController)
 	if err := mgr.Start(ctx); err != nil {
 		log.Fatal().Msgf("problem running manager, %s", err)
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")
