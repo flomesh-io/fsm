@@ -23,6 +23,7 @@ data:
         "configResyncInterval": {{.Values.fsm.configResyncInterval | mustToJson}},
         "sidecarClass": {{.Values.fsm.sidecarClass | mustToJson }},
         "sidecarImage": {{.Values.fsm.sidecarImage | mustToJson }},
+        "sidecarDisabledMTLS": {{.Values.fsm.sidecarDisabledMTLS | mustToJson }},
         "sidecarDrivers": {{.Values.fsm.sidecarDrivers | mustToJson }},
         "sidecarTimeout": {{.Values.fsm.sidecarTimeout | mustToJson}},
         "localProxyMode": {{.Values.fsm.localProxyMode | mustToJson}},
