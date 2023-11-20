@@ -48,6 +48,10 @@ type upstreamTLSPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *upstreamTLSPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewUpstreamTLSPolicyReconciler returns a new UpstreamTLSPolicy Reconciler
 func NewUpstreamTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &upstreamTLSPolicyReconciler{

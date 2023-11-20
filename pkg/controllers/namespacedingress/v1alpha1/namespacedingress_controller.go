@@ -67,6 +67,10 @@ type reconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *reconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewReconciler returns a new NamespacedIngress reconciler
 func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &reconciler{

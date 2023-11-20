@@ -70,6 +70,10 @@ type faultInjectionPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *faultInjectionPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewFaultInjectionPolicyReconciler returns a new FaultInjectionPolicy Reconciler
 func NewFaultInjectionPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &faultInjectionPolicyReconciler{

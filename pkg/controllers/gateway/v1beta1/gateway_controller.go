@@ -84,6 +84,10 @@ type gatewayReconciler struct {
 	gatewayAPIClient gwclient.Interface
 }
 
+func (r *gatewayReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 func init() {
 	activeGateways = make(map[string]*gwv1beta1.Gateway)
 }

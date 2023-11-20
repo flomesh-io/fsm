@@ -48,6 +48,10 @@ type retryPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *retryPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewRetryPolicyReconciler returns a new RetryPolicy Reconciler
 func NewRetryPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &retryPolicyReconciler{

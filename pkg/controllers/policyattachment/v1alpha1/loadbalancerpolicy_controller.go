@@ -47,6 +47,10 @@ type loadBalancerPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewLoadBalancerPolicyReconciler returns a new LoadBalancerPolicy Reconciler
 func NewLoadBalancerPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &loadBalancerPolicyReconciler{
