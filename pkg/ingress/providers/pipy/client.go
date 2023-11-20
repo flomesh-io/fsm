@@ -3,6 +3,7 @@ package pipy
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
+	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
@@ -186,8 +187,15 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 	return nil
 }
 
+// NeedLeaderElection implements the LeaderElectionRunnable interface
+// to indicate that this should be started without requiring the leader lock.
+// The reason is it writes to the local repo which is in the same pod.
+func (c *client) NeedLeaderElection() bool {
+	return false
+}
+
 // Start starts the client
-func (c *client) Start() error {
+func (c *client) Start(_ context.Context) error {
 	// Start broadcast listener thread
 	s := repo.NewServer(c.cfg, c.msgBroker, c.cache)
 	go s.BroadcastListener()

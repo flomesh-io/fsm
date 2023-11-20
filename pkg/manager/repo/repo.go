@@ -33,6 +33,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -40,7 +41,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	mutils "github.com/flomesh-io/fsm/pkg/manager/utils"
 
-	"github.com/go-co-op/gocron"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -184,110 +184,119 @@ func visit(files *[]string) filepath.WalkFunc {
 	}
 }
 
-func ChecksAndRebuildRepo(repoClient *repo.PipyRepoClient, client client.Client, mc configurator.Configurator) {
-	s := gocron.NewScheduler(time.Local)
-	s.SingletonModeAll()
-	if _, err := s.Every(60).Seconds().
-		Name("rebuild-repo").
-		Do(rebuildRepoJob, repoClient, client, mc); err != nil {
-		log.Error().Msgf("Error happened while rebuilding repo: %s", err)
-	}
-	s.RegisterEventListeners(
-		gocron.AfterJobRuns(func(jobName string) {
-			log.Debug().Msgf(">>>>>> After ChecksAndRebuildRepo: %s\n", jobName)
-		}),
-		gocron.BeforeJobRuns(func(jobName string) {
-			log.Debug().Msgf(">>>>>> Before ChecksAndRebuildRepo: %s\n", jobName)
-		}),
-		gocron.WhenJobReturnsError(func(jobName string, err error) {
-			log.Error().Msgf(">>>>>> ChecksAndRebuildRepo Returns Error: %s, %v\n", jobName, err)
-		}),
-	)
-	s.StartAsync()
-}
+//// ChecksAndRebuildRepo checks and rebuilds the repo periodically if needed
+//func ChecksAndRebuildRepo(repoClient *repo.PipyRepoClient, client client.Client, mc configurator.Configurator) {
+//	s := gocron.NewScheduler(time.Local)
+//	s.SingletonModeAll()
+//	if _, err := s.Every(60).Seconds().
+//		Name("rebuild-repo").
+//		Do(rebuildRepoJob, repoClient, client, mc); err != nil {
+//		log.Error().Msgf("Error happened while rebuilding repo: %s", err)
+//	}
+//	s.RegisterEventListeners(
+//		gocron.AfterJobRuns(func(jobName string) {
+//			log.Debug().Msgf(">>>>>> After ChecksAndRebuildRepo: %s\n", jobName)
+//		}),
+//		gocron.BeforeJobRuns(func(jobName string) {
+//			log.Debug().Msgf(">>>>>> Before ChecksAndRebuildRepo: %s\n", jobName)
+//		}),
+//		gocron.WhenJobReturnsError(func(jobName string, err error) {
+//			log.Error().Msgf(">>>>>> ChecksAndRebuildRepo Returns Error: %s, %v\n", jobName, err)
+//		}),
+//	)
+//	s.StartAsync()
+//}
 
-func rebuildRepoJob(repoClient *repo.PipyRepoClient, client client.Client, mc configurator.Configurator) error {
+func (r *rebuilder) rebuildRepoJob() error {
 	log.Debug().Msg("<<<<<< rebuilding repo - start >>>>>> ")
 
-	if !repoClient.IsRepoUp() {
+	if !r.repoClient.IsRepoUp() {
 		log.Debug().Msg("Repo is not up, sleeping ...")
 		return nil
 	}
 
 	// initialize the repo
 	batches := make([]repo.Batch, 0)
-	if !repoClient.CodebaseExists(constants.DefaultIngressBasePath) {
+	if !r.repoClient.CodebaseExists(constants.DefaultIngressBasePath) {
 		batches = append(batches, ingressBatch())
 	}
-	if !repoClient.CodebaseExists(constants.DefaultServiceBasePath) {
+	if !r.repoClient.CodebaseExists(constants.DefaultServiceBasePath) {
 		batches = append(batches, servicesBatch())
 	}
-	if !repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
+	if !r.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
 		batches = append(batches, gatewaysBatch())
 	}
 
 	if len(batches) > 0 {
-		if err := repoClient.Batch(batches); err != nil {
+		if err := r.repoClient.Batch(batches); err != nil {
 			log.Error().Msgf("Failed to write config to repo: %s", err)
 			return err
 		}
+	}
 
+	defaultServicesPath := utils.GetDefaultServicesPath()
+	if err := r.repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath); err != nil {
+		log.Error().Msgf("%q failed to derive codebase %q: %s", defaultServicesPath, constants.DefaultServiceBasePath, err)
+		return err
+	}
+
+	if r.mc.IsIngressEnabled() {
 		defaultIngressPath := utils.GetDefaultIngressPath()
-		if err := repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath); err != nil {
+		if err := r.repoClient.DeriveCodebase(defaultIngressPath, constants.DefaultIngressBasePath); err != nil {
 			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultIngressPath, constants.DefaultIngressBasePath, err)
 			return err
 		}
 
-		defaultServicesPath := utils.GetDefaultServicesPath()
-		if err := repoClient.DeriveCodebase(defaultServicesPath, constants.DefaultServiceBasePath); err != nil {
-			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultServicesPath, constants.DefaultServiceBasePath, err)
+		if err := mutils.UpdateMainVersion(constants.DefaultIngressBasePath, r.repoClient, r.mc); err != nil {
+			log.Error().Msgf("Failed to update version of main.json: %s", err)
+			return err
+		}
+	}
+
+	if r.mc.IsNamespacedIngressEnabled() {
+		nsigList := &nsigv1alpha1.NamespacedIngressList{}
+		if err := r.client.List(context.TODO(), nsigList, client.InNamespace(corev1.NamespaceAll)); err != nil {
 			return err
 		}
 
+		for _, nsig := range nsigList.Items {
+			ingressPath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
+			parentPath := utils.IngressCodebasePath()
+			if err := r.repoClient.DeriveCodebase(ingressPath, parentPath); err != nil {
+				log.Error().Msgf("Codebase of NamespaceIngress %q failed to derive codebase %q: %s", ingressPath, parentPath, err)
+				return err
+			}
+		}
+	}
+
+	if r.mc.IsGatewayAPIEnabled() {
 		defaultGatewaysPath := utils.GetDefaultGatewaysPath()
-		if err := repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
+		if err := r.repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
 			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
 			return err
 		}
 
-		if mc.IsNamespacedIngressEnabled() {
-			nsigList := &nsigv1alpha1.NamespacedIngressList{}
-			if err := client.List(context.TODO(), nsigList); err != nil {
-				return err
-			}
+		gatewayList := &gwv1beta1.GatewayList{}
+		if err := r.client.List(
+			context.TODO(),
+			gatewayList,
+			client.InNamespace(corev1.NamespaceAll),
+		); err != nil {
+			log.Error().Msgf("Failed to list all gateways: %s", err)
+			return err
+		}
 
-			for _, nsig := range nsigList.Items {
-				ingressPath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
-				parentPath := utils.IngressCodebasePath()
-				if err := repoClient.DeriveCodebase(ingressPath, parentPath); err != nil {
-					log.Error().Msgf("Codebase of NamespaceIngress %q failed to derive codebase %q: %s", ingressPath, parentPath, err)
+		log.Debug().Msgf("Found %d gateways", len(gatewayList.Items))
+
+		for _, gw := range gatewayList.Items {
+			gw := gw // fix lint GO-LOOP-REF
+			if gwutils.IsActiveGateway(&gw) {
+				gwPath := utils.GatewayCodebasePath(gw.Namespace)
+				parentPath := utils.GetDefaultGatewaysPath()
+				if err := r.repoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 					return err
 				}
 			}
-		}
-
-		if mc.IsGatewayAPIEnabled() {
-			gatewayList := &gwv1beta1.GatewayList{}
-			if err := client.List(context.TODO(), gatewayList); err != nil {
-				log.Error().Msgf("Failed to list all gateways: %s", err)
-				return err
-			}
-
-			for _, gw := range gatewayList.Items {
-				gw := gw // fix lint GO-LOOP-REF
-				if gwutils.IsActiveGateway(&gw) {
-					gwPath := utils.GatewayCodebasePath(gw.Namespace)
-					parentPath := utils.GetDefaultGatewaysPath()
-					if err := repoClient.DeriveCodebase(gwPath, parentPath); err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		if err := mutils.UpdateMainVersion(constants.DefaultIngressBasePath, repoClient, mc); err != nil {
-			log.Error().Msgf("Failed to update version of main.json: %s", err)
-			return err
 		}
 	}
 

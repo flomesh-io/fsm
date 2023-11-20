@@ -58,6 +58,10 @@ type gatewayClassReconciler struct {
 	gatewayAPIClient gwclient.Interface
 }
 
+func (r *gatewayClassReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewGatewayClassReconciler returns a new reconciler for GatewayClass
 func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{

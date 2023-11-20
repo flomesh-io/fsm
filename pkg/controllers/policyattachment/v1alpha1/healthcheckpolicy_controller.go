@@ -48,6 +48,10 @@ type healthCheckPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewHealthCheckPolicyReconciler returns a new HealthCheckPolicy Reconciler
 func NewHealthCheckPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &healthCheckPolicyReconciler{

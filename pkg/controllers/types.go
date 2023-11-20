@@ -27,9 +27,27 @@ package controllers
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // Reconciler is the interface that all reconcilers must implement
 type Reconciler interface {
+	manager.LeaderElectionRunnable
 	SetupWithManager(mgr ctrl.Manager) error
+}
+
+type NoLeaderElectionReconciler struct {
+	Reconciler
+}
+
+func (r *NoLeaderElectionReconciler) NeedLeaderElection() bool {
+	return false
+}
+
+type LeaderElectionReconciler struct {
+	Reconciler
+}
+
+func (r *LeaderElectionReconciler) NeedLeaderElection() bool {
+	return true
 }
