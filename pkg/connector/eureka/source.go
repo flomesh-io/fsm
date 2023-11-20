@@ -103,6 +103,36 @@ func (s *Source) Aggregate(svcName connector.MicroSvcName, svcDomainName connect
 	for _, svc := range serviceEntries {
 		httpPort := svc.Port
 		svcNames := []connector.MicroSvcName{connector.MicroSvcName(svc.VipAddress), connector.MicroSvcName(svc.InstanceId)}
+		if len(svc.Metadata.GetMap()) > 0 {
+			svcPrefix := ""
+			svcSuffix := ""
+			for tag, v := range svc.Metadata.GetMap() {
+				if len(s.PrefixTag) > 0 {
+					if strings.EqualFold(tag, s.PrefixTag) {
+						if tagval, ok := v.(string); ok {
+							svcPrefix = tagval
+						}
+					}
+				}
+				if len(s.SuffixTag) > 0 {
+					if strings.EqualFold(tag, s.SuffixTag) {
+						if tagval, ok := v.(string); ok {
+							svcSuffix = tagval
+						}
+					}
+				}
+			}
+			if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
+				extSvcName := string(svcName)
+				if len(svcPrefix) > 0 {
+					extSvcName = fmt.Sprintf("%s-%s", svcPrefix, extSvcName)
+				}
+				if len(svcSuffix) > 0 {
+					extSvcName = fmt.Sprintf("%s-%s", extSvcName, svcSuffix)
+				}
+				svcNames = append(svcNames, connector.MicroSvcName(extSvcName))
+			}
+		}
 		for _, serviceName := range svcNames {
 			svcMeta, exists := svcMetaMap[serviceName]
 			if !exists {

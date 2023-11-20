@@ -60,9 +60,9 @@ spec:
             "-with-gateway-api={{.Values.fsm.fsmGateway.enabled}}",
             "-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-passing-only={{.Values.fsm.cloudConnector.eureka.passingOnly}}",
-            "-filter-tag={{.Values.fsm.cloudConnector.eureka.filterTag}}",
-            "-prefix-tag={{.Values.fsm.cloudConnector.eureka.prefixTag}}",
-            "-suffix-tag={{.Values.fsm.cloudConnector.eureka.suffixTag}}",
+            "-filter-tag={{.Values.fsm.cloudConnector.eureka.filterMetadata}}",
+            "-prefix-tag={{.Values.fsm.cloudConnector.eureka.prefixMetadata}}",
+            "-suffix-tag={{.Values.fsm.cloudConnector.eureka.suffixMetadata}}",
           ]
           resources:
             limits:

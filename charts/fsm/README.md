@@ -101,11 +101,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.suffixTag | string | `""` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
-| fsm.cloudConnector.eureka.filterTag | string | `""` |  |
-| fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8500"` |  |
+| fsm.cloudConnector.eureka.filterMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
 | fsm.cloudConnector.eureka.passingOnly | bool | `true` |  |
-| fsm.cloudConnector.eureka.prefixTag | string | `""` |  |
-| fsm.cloudConnector.eureka.suffixTag | string | `""` |  |
+| fsm.cloudConnector.eureka.prefixMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.suffixMetadata | string | `""` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
