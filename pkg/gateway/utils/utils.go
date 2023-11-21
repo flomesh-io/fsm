@@ -30,6 +30,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -147,6 +149,7 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 // GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(
 	parentRef gwv1beta1.ParentReference,
+	routeNs string,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
 	validListeners []gwtypes.Listener,
@@ -167,7 +170,7 @@ func GetAllowedListeners(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNoMatchingParent),
-			Message:            fmt.Sprintf("No listeners match parent ref %s/%s", *parentRef.Namespace, parentRef.Name),
+			Message:            fmt.Sprintf("No listeners match parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
 		})
 
 		return nil
@@ -189,13 +192,26 @@ func GetAllowedListeners(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNotAllowedByListeners),
-			Message:            fmt.Sprintf("No matched listeners of parent ref %s/%s", *parentRef.Namespace, parentRef.Name),
+			Message:            fmt.Sprintf("No matched listeners of parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
 		})
 
 		return nil
 	}
 
 	return allowedListeners
+}
+
+func getParentRefNamespacedName(parentRef gwv1beta1.ParentReference, routeNs string) types.NamespacedName {
+	key := types.NamespacedName{
+		Namespace: routeNs,
+		Name:      string(parentRef.Name),
+	}
+
+	if parentRef.Namespace != nil {
+		key.Namespace = string(*parentRef.Namespace)
+	}
+
+	return key
 }
 
 // GetValidHostnames returns the valid hostnames

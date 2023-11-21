@@ -66,6 +66,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route clien
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
+				RouteNs:         route.GetNamespace(),
 			}
 		case *gwv1alpha2.GRPCRoute:
 			params = &computeParams{
@@ -73,6 +74,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route clien
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
+				RouteNs:         route.GetNamespace(),
 			}
 		case *gwv1alpha2.TLSRoute:
 			params = &computeParams{
@@ -80,6 +82,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route clien
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  route.Spec.Hostnames,
+				RouteNs:         route.GetNamespace(),
 			}
 		case *gwv1alpha2.TCPRoute:
 			params = &computeParams{
@@ -87,6 +90,7 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route clien
 				RouteGvk:        route.GroupVersionKind(),
 				RouteGeneration: route.GetGeneration(),
 				RouteHostnames:  nil,
+				RouteNs:         route.GetNamespace(),
 			}
 		default:
 			log.Warn().Msgf("Unsupported route type: %T", route)
@@ -119,7 +123,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 				Conditions:     make([]metav1.Condition, 0),
 			}
 
-			allowedListeners := gwutils.GetAllowedListeners(parentRef, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
+			allowedListeners := gwutils.GetAllowedListeners(parentRef, params.RouteNs, params.RouteGvk, params.RouteGeneration, validListeners, routeParentStatus)
 			//if len(allowedListeners) == 0 {
 			//
 			//}
