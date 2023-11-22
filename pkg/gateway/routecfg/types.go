@@ -3,6 +3,7 @@ package routecfg
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -181,6 +182,14 @@ type HTTPRouteRuleSpec struct {
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
 }
 
+func (r *HTTPRouteRuleSpec) Sort() {
+	if r.Matches != nil {
+		matches := r.Matches
+		sort.Sort(ByHTTPTrafficMatch(matches))
+		r.Matches = matches
+	}
+}
+
 func (r *HTTPRouteRuleSpec) GetRateLimit() *RateLimit {
 	return r.RateLimit
 }
@@ -210,6 +219,7 @@ var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 type ByHTTPTrafficMatch []HTTPTrafficMatch
 
 func (by ByHTTPTrafficMatch) Len() int { return len(by) }
+
 func (by ByHTTPTrafficMatch) Less(i, j int) bool {
 	a, b := by[i], by[j]
 
@@ -222,21 +232,57 @@ func (by ByHTTPTrafficMatch) Less(i, j int) bool {
 	}
 
 	if a.Path == nil && b.Path == nil {
-		if len(a.Methods) == len(b.Methods) {
-			return true
+		if len(a.Methods) != len(b.Methods) {
+			return len(a.Methods) > len(b.Methods)
 		}
 
+		if len(a.Headers) != len(b.Headers) {
+			return len(a.Headers) > len(b.Headers)
+		}
+
+		if len(a.RequestParams) != len(b.RequestParams) {
+			return len(a.RequestParams) > len(b.RequestParams)
+		}
 	}
 
 	if a.Path != nil && b.Path != nil {
 		if a.Path.MatchType != b.Path.MatchType {
 			return a.Path.MatchType.Ordinal() < b.Path.MatchType.Ordinal()
 		}
+
+		if a.Path.Path != b.Path.Path {
+			return pathExp(a.Path.Path) > pathExp(b.Path.Path)
+		}
+
+		if len(a.Methods) != len(b.Methods) {
+			return len(a.Methods) > len(b.Methods)
+		}
+
+		if len(a.Headers) != len(b.Headers) {
+			return len(a.Headers) > len(b.Headers)
+		}
+
+		if len(a.RequestParams) != len(b.RequestParams) {
+			return len(a.RequestParams) > len(b.RequestParams)
+		}
 	}
 
 	return false
 }
+
 func (by ByHTTPTrafficMatch) Swap(i, j int) { by[i], by[j] = by[j], by[i] }
+
+func pathExp(path string) string {
+	if path == "" {
+		return "*"
+	}
+
+	if path == "/" {
+		return "/*"
+	}
+
+	return path
+}
 
 // GRPCRouteRuleSpec is the GRPC route rule configuration
 type GRPCRouteRuleSpec struct {
@@ -245,6 +291,14 @@ type GRPCRouteRuleSpec struct {
 	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
+}
+
+func (r *GRPCRouteRuleSpec) Sort() {
+	if r.Matches != nil {
+		matches := r.Matches
+		sort.Sort(ByGRPCTrafficMatch(matches))
+		r.Matches = matches
+	}
 }
 
 func (r *GRPCRouteRuleSpec) GetRateLimit() *RateLimit {
@@ -276,6 +330,7 @@ var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
 type ByGRPCTrafficMatch []GRPCTrafficMatch
 
 func (by ByGRPCTrafficMatch) Len() int { return len(by) }
+
 func (by ByGRPCTrafficMatch) Less(i, j int) bool {
 	a, b := by[i], by[j]
 
@@ -301,9 +356,9 @@ func (by ByGRPCTrafficMatch) Less(i, j int) bool {
 
 		switch strings.Compare(pathA, pathB) {
 		case -1:
-			return true
-		case 1:
 			return false
+		case 1:
+			return true
 		case 0:
 			return len(a.Headers) > len(b.Headers)
 		}
@@ -311,6 +366,7 @@ func (by ByGRPCTrafficMatch) Less(i, j int) bool {
 
 	return false
 }
+
 func (by ByGRPCTrafficMatch) Swap(i, j int) { by[i], by[j] = by[j], by[i] }
 
 func stringExp(s *string) string {

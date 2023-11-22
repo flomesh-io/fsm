@@ -173,7 +173,7 @@ func (r *circuitBreakingPolicyReconciler) getStatusCondition(ctx context.Context
 
 		sort.Slice(circuitBreakings, func(i, j int) bool {
 			if circuitBreakings[i].CreationTimestamp.Time.Equal(circuitBreakings[j].CreationTimestamp.Time) {
-				return circuitBreakings[i].Name < circuitBreakings[j].Name
+				return client.ObjectKeyFromObject(&circuitBreakings[i]).String() < client.ObjectKeyFromObject(&circuitBreakings[j]).String()
 			}
 
 			return circuitBreakings[i].CreationTimestamp.Time.Before(circuitBreakings[j].CreationTimestamp.Time)
@@ -227,23 +227,23 @@ func (r *circuitBreakingPolicyReconciler) getStatusCondition(ctx context.Context
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
+		circuitBreakings := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
 		for _, p := range circuitBreakingPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				sessionStickies = append(sessionStickies, p)
+				circuitBreakings = append(circuitBreakings, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(circuitBreakings, func(i, j int) bool {
+			if circuitBreakings[i].CreationTimestamp.Time.Equal(circuitBreakings[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&circuitBreakings[i]).String() < client.ObjectKeyFromObject(&circuitBreakings[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return circuitBreakings[i].CreationTimestamp.Time.Before(circuitBreakings[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByServiceImport(policy, sessionStickies, svcimp); conflict != nil {
+		if conflict := r.getConflictedPolicyByServiceImport(policy, circuitBreakings, svcimp); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,

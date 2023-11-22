@@ -155,7 +155,24 @@ func (r *accessControlPolicyReconciler) getStatusCondition(ctx context.Context, 
 				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedPort(gateway, policy, accessControlPolicyList); conflict != nil {
+
+		accessControlPolicies := make([]gwpav1alpha1.AccessControlPolicy, 0)
+		for _, p := range accessControlPolicyList.Items {
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
+				accessControlPolicies = append(accessControlPolicies, p)
+			}
+		}
+
+		sort.Slice(accessControlPolicies, func(i, j int) bool {
+			if accessControlPolicies[i].CreationTimestamp.Time.Equal(accessControlPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&accessControlPolicies[i]).String() < client.ObjectKeyFromObject(&accessControlPolicies[j]).String()
+			}
+
+			return accessControlPolicies[i].CreationTimestamp.Time.Before(accessControlPolicies[j].CreationTimestamp.Time)
+		})
+
+		if conflict := r.getConflictedPort(gateway, policy, accessControlPolicies); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -291,14 +308,14 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesOrRouteBasedAccess
 	}
 	sort.Slice(hostnamesAccessControls, func(i, j int) bool {
 		if hostnamesAccessControls[i].CreationTimestamp.Time.Equal(hostnamesAccessControls[j].CreationTimestamp.Time) {
-			return hostnamesAccessControls[i].Name < hostnamesAccessControls[j].Name
+			return client.ObjectKeyFromObject(&hostnamesAccessControls[i]).String() < client.ObjectKeyFromObject(&hostnamesAccessControls[j]).String()
 		}
 
 		return hostnamesAccessControls[i].CreationTimestamp.Time.Before(hostnamesAccessControls[j].CreationTimestamp.Time)
 	})
 	sort.Slice(routeAccessControls, func(i, j int) bool {
 		if routeAccessControls[i].CreationTimestamp.Time.Equal(routeAccessControls[j].CreationTimestamp.Time) {
-			return routeAccessControls[i].Name < routeAccessControls[j].Name
+			return client.ObjectKeyFromObject(&routeAccessControls[i]).String() < client.ObjectKeyFromObject(&routeAccessControls[j]).String()
 		}
 
 		return routeAccessControls[i].CreationTimestamp.Time.Before(routeAccessControls[j].CreationTimestamp.Time)
@@ -461,16 +478,14 @@ func (r *accessControlPolicyReconciler) getConflictedRouteBasedAccessControlPoli
 	return nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies *gwpav1alpha1.AccessControlPolicyList) *types.NamespacedName {
+func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
 	if len(accessControlPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
-	for _, pr := range allAccessControlPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(pr.Status.Conditions) &&
-			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
-			len(pr.Spec.Ports) > 0 {
+	for _, pr := range allAccessControlPolicies {
+		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
 				r1 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {

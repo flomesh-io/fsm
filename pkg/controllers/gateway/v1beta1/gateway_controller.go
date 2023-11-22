@@ -201,7 +201,7 @@ func (r *gatewayReconciler) updateGatewayStatus(ctx context.Context, gateway *gw
 
 	sort.Slice(validGateways, func(i, j int) bool {
 		if validGateways[i].CreationTimestamp.Time.Equal(validGateways[j].CreationTimestamp.Time) {
-			return validGateways[i].Name < validGateways[j].Name
+			return client.ObjectKeyFromObject(validGateways[i]).String() < client.ObjectKeyFromObject(validGateways[j]).String()
 		}
 
 		return validGateways[i].CreationTimestamp.Time.Before(validGateways[j].CreationTimestamp.Time)

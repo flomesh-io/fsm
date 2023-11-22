@@ -163,23 +163,23 @@ func (r *retryPolicyReconciler) getStatusCondition(ctx context.Context, policy *
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.RetryPolicy, 0)
+		retryPolicies := make([]gwpav1alpha1.RetryPolicy, 0)
 		for _, p := range retryPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				sessionStickies = append(sessionStickies, p)
+				retryPolicies = append(retryPolicies, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(retryPolicies, func(i, j int) bool {
+			if retryPolicies[i].CreationTimestamp.Time.Equal(retryPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&retryPolicies[i]).String() < client.ObjectKeyFromObject(&retryPolicies[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return retryPolicies[i].CreationTimestamp.Time.Before(retryPolicies[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByService(policy, sessionStickies, svc); conflict != nil {
+		if conflict := r.getConflictedPolicyByService(policy, retryPolicies, svc); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -227,23 +227,23 @@ func (r *retryPolicyReconciler) getStatusCondition(ctx context.Context, policy *
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.RetryPolicy, 0)
+		retryPolicies := make([]gwpav1alpha1.RetryPolicy, 0)
 		for _, p := range retryPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				sessionStickies = append(sessionStickies, p)
+				retryPolicies = append(retryPolicies, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(retryPolicies, func(i, j int) bool {
+			if retryPolicies[i].CreationTimestamp.Time.Equal(retryPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&retryPolicies[i]).String() < client.ObjectKeyFromObject(&retryPolicies[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return retryPolicies[i].CreationTimestamp.Time.Before(retryPolicies[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByServiceImport(policy, sessionStickies, svcimp); conflict != nil {
+		if conflict := r.getConflictedPolicyByServiceImport(policy, retryPolicies, svcimp); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,

@@ -163,23 +163,23 @@ func (r *upstreamTLSPolicyReconciler) getStatusCondition(ctx context.Context, po
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
+		upstreamTLSPolicies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
 		for _, p := range upstreamTLSPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				sessionStickies = append(sessionStickies, p)
+				upstreamTLSPolicies = append(upstreamTLSPolicies, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(upstreamTLSPolicies, func(i, j int) bool {
+			if upstreamTLSPolicies[i].CreationTimestamp.Time.Equal(upstreamTLSPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&upstreamTLSPolicies[i]).String() < client.ObjectKeyFromObject(&upstreamTLSPolicies[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return upstreamTLSPolicies[i].CreationTimestamp.Time.Before(upstreamTLSPolicies[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByService(policy, sessionStickies, svc); conflict != nil {
+		if conflict := r.getConflictedPolicyByService(policy, upstreamTLSPolicies, svc); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -227,23 +227,23 @@ func (r *upstreamTLSPolicyReconciler) getStatusCondition(ctx context.Context, po
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
+		upstreamTLSPolicies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
 		for _, p := range upstreamTLSPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				sessionStickies = append(sessionStickies, p)
+				upstreamTLSPolicies = append(upstreamTLSPolicies, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(upstreamTLSPolicies, func(i, j int) bool {
+			if upstreamTLSPolicies[i].CreationTimestamp.Time.Equal(upstreamTLSPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&upstreamTLSPolicies[i]).String() < client.ObjectKeyFromObject(&upstreamTLSPolicies[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return upstreamTLSPolicies[i].CreationTimestamp.Time.Before(upstreamTLSPolicies[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByServiceImport(policy, sessionStickies, svcimp); conflict != nil {
+		if conflict := r.getConflictedPolicyByServiceImport(policy, upstreamTLSPolicies, svcimp); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
