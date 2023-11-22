@@ -177,7 +177,7 @@ func (r *healthCheckPolicyReconciler) getStatusCondition(ctx context.Context, po
 
 		sort.Slice(healthChecks, func(i, j int) bool {
 			if healthChecks[i].CreationTimestamp.Time.Equal(healthChecks[j].CreationTimestamp.Time) {
-				return healthChecks[i].Name < healthChecks[j].Name
+				return client.ObjectKeyFromObject(&healthChecks[i]).String() < client.ObjectKeyFromObject(&healthChecks[j]).String()
 			}
 
 			return healthChecks[i].CreationTimestamp.Time.Before(healthChecks[j].CreationTimestamp.Time)
@@ -231,23 +231,23 @@ func (r *healthCheckPolicyReconciler) getStatusCondition(ctx context.Context, po
 			}
 		}
 
-		sessionStickies := make([]gwpav1alpha1.HealthCheckPolicy, 0)
+		healthCheckPolicies := make([]gwpav1alpha1.HealthCheckPolicy, 0)
 		for _, p := range healthCheckPolicyList.Items {
 			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
 				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				sessionStickies = append(sessionStickies, p)
+				healthCheckPolicies = append(healthCheckPolicies, p)
 			}
 		}
 
-		sort.Slice(sessionStickies, func(i, j int) bool {
-			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+		sort.Slice(healthCheckPolicies, func(i, j int) bool {
+			if healthCheckPolicies[i].CreationTimestamp.Time.Equal(healthCheckPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&healthCheckPolicies[i]).String() < client.ObjectKeyFromObject(&healthCheckPolicies[j]).String()
 			}
 
-			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
+			return healthCheckPolicies[i].CreationTimestamp.Time.Before(healthCheckPolicies[j].CreationTimestamp.Time)
 		})
 
-		if conflict := r.getConflictedPolicyByServiceImport(policy, sessionStickies, svcimp); conflict != nil {
+		if conflict := r.getConflictedPolicyByServiceImport(policy, healthCheckPolicies, svcimp); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,

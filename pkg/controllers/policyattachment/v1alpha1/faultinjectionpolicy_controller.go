@@ -250,14 +250,14 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesOrRouteBasedFault
 	}
 	sort.Slice(hostnamesFaultInjections, func(i, j int) bool {
 		if hostnamesFaultInjections[i].CreationTimestamp.Time.Equal(hostnamesFaultInjections[j].CreationTimestamp.Time) {
-			return hostnamesFaultInjections[i].Name < hostnamesFaultInjections[j].Name
+			return client.ObjectKeyFromObject(&hostnamesFaultInjections[i]).String() < client.ObjectKeyFromObject(&hostnamesFaultInjections[j]).String()
 		}
 
 		return hostnamesFaultInjections[i].CreationTimestamp.Time.Before(hostnamesFaultInjections[j].CreationTimestamp.Time)
 	})
 	sort.Slice(routeFaultInjections, func(i, j int) bool {
 		if routeFaultInjections[i].CreationTimestamp.Time.Equal(routeFaultInjections[j].CreationTimestamp.Time) {
-			return routeFaultInjections[i].Name < routeFaultInjections[j].Name
+			return client.ObjectKeyFromObject(&routeFaultInjections[i]).String() < client.ObjectKeyFromObject(&routeFaultInjections[j]).String()
 		}
 
 		return routeFaultInjections[i].CreationTimestamp.Time.Before(routeFaultInjections[j].CreationTimestamp.Time)

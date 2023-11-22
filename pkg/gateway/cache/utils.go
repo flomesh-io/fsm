@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"reflect"
 
 	"golang.org/x/exp/slices"
 
@@ -328,7 +329,18 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 			case *routecfg.GRPCRouteRuleSpec:
 				switch r2 := rule.(type) {
 				case *routecfg.GRPCRouteRuleSpec:
+					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.AccessControlLists, r2.AccessControlLists) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.FaultInjection, r2.FaultInjection) {
+						continue
+					}
+
 					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Sort()
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
@@ -336,7 +348,18 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 			case *routecfg.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
 				case *routecfg.HTTPRouteRuleSpec:
+					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.AccessControlLists, r2.AccessControlLists) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.FaultInjection, r2.FaultInjection) {
+						continue
+					}
+
 					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Sort()
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)

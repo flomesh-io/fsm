@@ -28,7 +28,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/gatewaytls"
 
@@ -156,7 +159,24 @@ func (r *gatewayTLSPolicyReconciler) getStatusCondition(ctx context.Context, pol
 				Message:            fmt.Sprintf("Failed to list GatewayTLSPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedPort(gateway, policy, gatewayTLSPolicyList); conflict != nil {
+
+		gatewayTLSPolicies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
+		for _, p := range gatewayTLSPolicyList.Items {
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
+				gatewayTLSPolicies = append(gatewayTLSPolicies, p)
+			}
+		}
+
+		sort.Slice(gatewayTLSPolicies, func(i, j int) bool {
+			if gatewayTLSPolicies[i].CreationTimestamp.Time.Equal(gatewayTLSPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&gatewayTLSPolicies[i]).String() < client.ObjectKeyFromObject(&gatewayTLSPolicies[j]).String()
+			}
+
+			return gatewayTLSPolicies[i].CreationTimestamp.Time.Before(gatewayTLSPolicies[j].CreationTimestamp.Time)
+		})
+
+		if conflict := r.getConflictedPort(gateway, policy, gatewayTLSPolicies); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -187,16 +207,14 @@ func (r *gatewayTLSPolicyReconciler) getStatusCondition(ctx context.Context, pol
 	}
 }
 
-func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, gatewayTLSPolicy *gwpav1alpha1.GatewayTLSPolicy, allGatewayTLSPolicies *gwpav1alpha1.GatewayTLSPolicyList) *types.NamespacedName {
+func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, gatewayTLSPolicy *gwpav1alpha1.GatewayTLSPolicy, allGatewayTLSPolicies []gwpav1alpha1.GatewayTLSPolicy) *types.NamespacedName {
 	if len(gatewayTLSPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
-	for _, pr := range allGatewayTLSPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(pr.Status.Conditions) &&
-			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
-			len(pr.Spec.Ports) > 0 {
+	for _, pr := range allGatewayTLSPolicies {
+		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
 				r1 := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {
