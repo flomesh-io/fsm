@@ -389,6 +389,17 @@ const (
 
 	// ---
 
+	// GatewayAPIUDPRouteAdded is the type of announcement emitted when we observe an addition of udproutes.gateway.networking.k8s.io
+	GatewayAPIUDPRouteAdded Kind = "gwapi-udproute-added"
+
+	// GatewayAPIUDPRouteDeleted the type of announcement emitted when we observe a deletion of udproutes.gateway.networking.k8s.io
+	GatewayAPIUDPRouteDeleted Kind = "gwapi-udproute-deleted"
+
+	// GatewayAPIUDPRouteUpdated is the type of announcement emitted when we observe an update to udproutes.gateway.networking.k8s.io
+	GatewayAPIUDPRouteUpdated Kind = "gwapi-udproute-updated"
+
+	// ---
+
 	// RateLimitPolicyAdded is the type of announcement emitted when we observe an addition of ratelimitpolicies.gateway.flomesh.io
 	RateLimitPolicyAdded Kind = "ratelimitpolicy-added"
 

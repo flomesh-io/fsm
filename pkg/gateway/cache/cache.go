@@ -41,6 +41,7 @@ type GatewayCache struct {
 	grpcroutes       map[client.ObjectKey]struct{}
 	tcproutes        map[client.ObjectKey]struct{}
 	tlsroutes        map[client.ObjectKey]struct{}
+	udproutes        map[client.ObjectKey]struct{}
 	ratelimits       map[client.ObjectKey]struct{}
 	sessionstickies  map[client.ObjectKey]struct{}
 	loadbalancers    map[client.ObjectKey]struct{}
@@ -76,6 +77,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			GRPCRoutesTriggerType:              &GRPCRoutesTrigger{},
 			TCPRoutesTriggerType:               &TCPRoutesTrigger{},
 			TLSRoutesTriggerType:               &TLSRoutesTrigger{},
+			UDPRoutesTriggerType:               &UDPRoutesTrigger{},
 			RateLimitPoliciesTriggerType:       &RateLimitPoliciesTrigger{},
 			SessionStickyPoliciesTriggerType:   &SessionStickyPoliciesTrigger{},
 			LoadBalancerPoliciesTriggerType:    &LoadBalancerPoliciesTrigger{},
@@ -98,6 +100,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		grpcroutes:       make(map[client.ObjectKey]struct{}),
 		tcproutes:        make(map[client.ObjectKey]struct{}),
 		tlsroutes:        make(map[client.ObjectKey]struct{}),
+		udproutes:        make(map[client.ObjectKey]struct{}),
 		ratelimits:       make(map[client.ObjectKey]struct{}),
 		sessionstickies:  make(map[client.ObjectKey]struct{}),
 		loadbalancers:    make(map[client.ObjectKey]struct{}),
@@ -161,6 +164,8 @@ func (c *GatewayCache) getProcessor(obj interface{}) Processor {
 		return c.processors[TCPRoutesTriggerType]
 	case *gwv1alpha2.TLSRoute:
 		return c.processors[TLSRoutesTriggerType]
+	case *gwv1alpha2.UDPRoute:
+		return c.processors[UDPRoutesTriggerType]
 	case *gwpav1alpha1.RateLimitPolicy:
 		return c.processors[RateLimitPoliciesTriggerType]
 	case *gwpav1alpha1.SessionStickyPolicy:
