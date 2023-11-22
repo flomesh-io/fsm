@@ -241,47 +241,23 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	services := make(map[string]serviceInfo)
 
 	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
-	for key := range c.httproutes {
-		httpRoute, err := c.getHTTPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, httpRoute := range c.getSortedHTTPRoutes() {
 		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
-	for key := range c.grpcroutes {
-		grpcRoute, err := c.getGRPCRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, grpcRoute := range c.getSortedGRPCRoutes() {
 		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
-	for key := range c.tlsroutes {
-		tlsRoute, err := c.getTLSRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, tlsRoute := range c.getSortedTLSRoutes() {
 		processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TCPRoutes", len(c.tcproutes))
-	for key := range c.tcproutes {
-		tcpRoute, err := c.getTCPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, tcpRoute := range c.getSortedTCPRoutes() {
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
 	}

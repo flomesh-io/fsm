@@ -113,5 +113,6 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 		}
 	}
 
+	grpcSpec.Sort()
 	return grpcSpec
 }
