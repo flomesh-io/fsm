@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	"golang.org/x/exp/slices"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -73,14 +75,6 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	}
 
 	return false
-}
-
-func getSecretRefNamespace(owner client.Object, secretRef gwv1beta1.SecretObjectReference) string {
-	if secretRef.Namespace == nil {
-		return owner.GetNamespace()
-	}
-
-	return string(*secretRef.Namespace)
 }
 
 func allowedListeners(
@@ -253,14 +247,9 @@ func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs
 	// ONLY supports Service and ServiceImport backend now
 	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
 		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
-		ns := defaultNs
-		if ref.Namespace != nil {
-			ns = string(*ref.Namespace)
-		}
-
 		return &routecfg.ServicePortName{
 			NamespacedName: types.NamespacedName{
-				Namespace: ns,
+				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
 			},
 			Port: pointer.Int32(int32(*ref.Port)),
@@ -274,14 +263,9 @@ func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs 
 	// ONLY supports Service and ServiceImport backend now
 	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
 		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
-		ns := defaultNs
-		if ref.Namespace != nil {
-			ns = string(*ref.Namespace)
-		}
-
 		return &routecfg.ServicePortName{
 			NamespacedName: types.NamespacedName{
-				Namespace: ns,
+				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
 			},
 			Port: pointer.Int32(port),
@@ -383,11 +367,7 @@ func copyMap[K, V comparable](m map[K]V) map[K]V {
 }
 
 func isEndpointReady(ep discoveryv1.Endpoint) bool {
-	if ep.Conditions.Ready != nil && *ep.Conditions.Ready {
-		return true
-	}
-
-	return false
+	return ep.Conditions.Ready != nil && *ep.Conditions.Ready
 }
 
 func getServicePort(svc *corev1.Service, port *int32) (corev1.ServicePort, error) {

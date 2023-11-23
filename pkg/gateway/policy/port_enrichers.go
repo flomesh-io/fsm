@@ -25,23 +25,28 @@ type RateLimitPortEnricher struct {
 }
 
 func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
-	if len(e.Data) == 0 {
-		return
-	}
-
-	for _, rateLimit := range e.Data {
-		if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
-			continue
+	switch listenerCfg.Protocol {
+	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType:
+		if len(e.Data) == 0 {
+			return
 		}
 
-		if len(rateLimit.Spec.Ports) == 0 {
-			continue
-		}
+		for _, rateLimit := range e.Data {
+			if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
+				continue
+			}
 
-		if r := ratelimit.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
-			listenerCfg.BpsLimit = r
-			break
+			if len(rateLimit.Spec.Ports) == 0 {
+				continue
+			}
+
+			if r := ratelimit.GetRateLimitIfPortMatchesPolicy(port, rateLimit); r != nil && listenerCfg.BpsLimit == nil {
+				listenerCfg.BpsLimit = r
+				break
+			}
 		}
+	default:
+		log.Warn().Msgf("RateLimitPortEnricher: unsupported protocol %s", listenerCfg.Protocol)
 	}
 }
 
@@ -53,23 +58,28 @@ type AccessControlPortEnricher struct {
 }
 
 func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
-	if len(e.Data) == 0 {
-		return
-	}
-
-	for _, accessControl := range e.Data {
-		if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
-			continue
+	switch listenerCfg.Protocol {
+	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType, gwv1beta1.UDPProtocolType:
+		if len(e.Data) == 0 {
+			return
 		}
 
-		if len(accessControl.Spec.Ports) == 0 {
-			continue
-		}
+		for _, accessControl := range e.Data {
+			if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
+				continue
+			}
 
-		if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
-			listenerCfg.AccessControlLists = newAccessControlLists(c)
-			break
+			if len(accessControl.Spec.Ports) == 0 {
+				continue
+			}
+
+			if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
+				listenerCfg.AccessControlLists = newAccessControlLists(c)
+				break
+			}
 		}
+	default:
+		log.Warn().Msgf("AccessControlPortEnricher: unsupported protocol %s", listenerCfg.Protocol)
 	}
 }
 
@@ -81,26 +91,31 @@ type GatewayTLSPortEnricher struct {
 }
 
 func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
-	if len(e.Data) == 0 {
-		return
-	}
-
-	for _, policy := range e.Data {
-		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, gw) {
-			continue
+	switch listenerCfg.Protocol {
+	case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+		if len(e.Data) == 0 {
+			return
 		}
 
-		if len(policy.Spec.Ports) == 0 {
-			continue
-		}
+		for _, policy := range e.Data {
+			if !gwutils.IsRefToTarget(policy.Spec.TargetRef, gw) {
+				continue
+			}
 
-		if c := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(port, policy); c != nil &&
-			listenerCfg.TLS != nil &&
-			listenerCfg.TLS.TLSModeType == gwv1beta1.TLSModeTerminate &&
-			listenerCfg.TLS.MTLS == nil {
-			// only set if TLS Mode is set to terminate
-			listenerCfg.TLS.MTLS = c.MTLS
-			break
+			if len(policy.Spec.Ports) == 0 {
+				continue
+			}
+
+			if c := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(port, policy); c != nil &&
+				listenerCfg.TLS != nil &&
+				listenerCfg.TLS.TLSModeType == gwv1beta1.TLSModeTerminate &&
+				listenerCfg.TLS.MTLS == nil {
+				// only set if TLS Mode is set to terminate
+				listenerCfg.TLS.MTLS = c.MTLS
+				break
+			}
 		}
+	default:
+		log.Warn().Msgf("GatewayTLSPortEnricher: unsupported protocol %s", listenerCfg.Protocol)
 	}
 }

@@ -75,6 +75,9 @@
   () => (__port?.Protocol === 'TCP'), (
     $=>$.chain(config?.Chains?.TCPRoute || [])
   ),
+  () => (__port?.Protocol === 'UDP'), (
+    $=>$.chain(config?.Chains?.UDPRoute || [])
+  ),
   (
     $=>$.replaceStreamStart(new StreamEnd)
   )

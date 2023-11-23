@@ -47,6 +47,15 @@ import (
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
+// Namespace returns the namespace if it is not nil, otherwise returns the default namespace
+func Namespace(ns *gwv1beta1.Namespace, defaultNs string) string {
+	if ns == nil {
+		return defaultNs
+	}
+
+	return string(*ns)
+}
+
 // IsAcceptedGatewayClass returns true if the gateway class is accepted
 func IsAcceptedGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
 	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gwv1beta1.GatewayClassConditionStatusAccepted))
@@ -275,16 +284,10 @@ func GetAllowedListeners(
 }
 
 func getParentRefNamespacedName(parentRef gwv1beta1.ParentReference, routeNs string) types.NamespacedName {
-	key := types.NamespacedName{
-		Namespace: routeNs,
+	return types.NamespacedName{
+		Namespace: Namespace(parentRef.Namespace, routeNs),
 		Name:      string(parentRef.Name),
 	}
-
-	if parentRef.Namespace != nil {
-		key.Namespace = string(*parentRef.Namespace)
-	}
-
-	return key
 }
 
 // GetValidHostnames returns the valid hostnames

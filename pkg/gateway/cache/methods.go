@@ -110,12 +110,37 @@ func (c *GatewayCache) getSortedTCPRoutes() []*gwv1alpha2.TCPRoute {
 	return tcpRoutes
 }
 
+func (c *GatewayCache) getSortedUDPRoutes() []*gwv1alpha2.UDPRoute {
+	udpRoutes := make([]*gwv1alpha2.UDPRoute, 0)
+
+	for key := range c.udproutes {
+		udpRoute, err := c.getUDPRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get UDPRoute %s: %s", key, err)
+			continue
+		}
+
+		udpRoutes = append(udpRoutes, udpRoute)
+	}
+
+	sort.Slice(udpRoutes, func(i, j int) bool {
+		if udpRoutes[i].CreationTimestamp.Time.Equal(udpRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(udpRoutes[i]).String() < client.ObjectKeyFromObject(udpRoutes[j]).String()
+		}
+
+		return udpRoutes[i].CreationTimestamp.Time.Before(udpRoutes[j].CreationTimestamp.Time)
+	})
+
+	return udpRoutes
+}
+
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 	for _, checkRoutableFunc := range []func(client.ObjectKey) bool{
 		c.isRoutableHTTPService,
 		c.isRoutableGRPCService,
 		c.isRoutableTLSService,
 		c.isRoutableTCPService,
+		c.isRoutableUDPService,
 	} {
 		if checkRoutableFunc(service) {
 			return true
@@ -229,6 +254,24 @@ func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
 	return false
 }
 
+func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
+	for key := range c.udproutes {
+		// Get UDPRoute from client-go cache
+		if r, err := c.getUDPRouteFromCache(key); err == nil {
+			//r := r.(*gwv1alpha2.UDPRoute)
+			for _, rule := range r.Spec.Rules {
+				for _, backend := range rule.BackendRefs {
+					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) bool {
 	if len(c.gateways) == 0 {
 		return false
@@ -309,11 +352,8 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 
 func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
 	key := client.ObjectKey{
+		Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
 		Name:      string(targetRef.Name),
-		Namespace: owner.GetNamespace(),
-	}
-	if targetRef.Namespace != nil {
-		key.Namespace = string(*targetRef.Namespace)
 	}
 
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
@@ -435,6 +475,17 @@ func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(tcpRouteGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getUDPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.UDPRoute, error) {
+	obj, err := c.informers.GetListers().UDPRoute.UDPRoutes(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(updRouteGVK)
 
 	return obj, nil
 }

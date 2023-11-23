@@ -104,3 +104,17 @@ func IsValidIPOrCIDR(value string) []string {
 
 	return []string{"must be a valid IP address or CIDR, (e.g. 10.9.8.7 or 2001:db8::ffff or 192.0.2.0/24 or 2001:db8::/32)"}
 }
+
+func GetListenerIfHasMatchingPort(port gwv1beta1.PortNumber, listeners []gwv1beta1.Listener) *gwv1beta1.Listener {
+	if len(listeners) == 0 {
+		return nil
+	}
+
+	for i, listener := range listeners {
+		if port == listener.Port {
+			return &listeners[i]
+		}
+	}
+
+	return nil
+}

@@ -101,6 +101,8 @@ const (
 	InformerKeyGatewayAPITLSRoute InformerKey = "TLSRoute-gwapi"
 	// InformerKeyGatewayAPITCPRoute is the InformerKey for a TCPRoute informer
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
+	// InformerKeyGatewayAPIUDPRoute is the InformerKey for a UDPRoute informer
+	InformerKeyGatewayAPIUDPRoute InformerKey = "UDPRoute-gwapi"
 	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
 	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
@@ -157,6 +159,7 @@ type Lister struct {
 	GRPCRoute             gwv1alpha2.GRPCRouteLister
 	TLSRoute              gwv1alpha2.TLSRouteLister
 	TCPRoute              gwv1alpha2.TCPRouteLister
+	UDPRoute              gwv1alpha2.UDPRouteLister
 	K8sIngressClass       networkingv1.IngressClassLister
 	K8sIngress            networkingv1.IngressLister
 	NamespacedIngress     nsigv1alpha1.NamespacedIngressLister

@@ -78,6 +78,10 @@
       "common/access-control.js",
       "common/ratelimit.js",
       "tcp/forward.js"
+    ],
+    "UDPRoute": [
+      "common/access-control.js",
+      "udp/forward.js"
     ]
   },
 

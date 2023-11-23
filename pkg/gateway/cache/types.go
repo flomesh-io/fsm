@@ -74,6 +74,9 @@ const (
 	// TLSRoutesTriggerType is the type used to represent the TLS routes trigger
 	TLSRoutesTriggerType TriggerType = "tlsroutes"
 
+	// UDPRoutesTriggerType is the type used to represent the UDP routes trigger
+	UDPRoutesTriggerType TriggerType = "udproutes"
+
 	// RateLimitPoliciesTriggerType is the type used to represent the rate limit policies trigger
 	RateLimitPoliciesTriggerType TriggerType = "ratelimits"
 
@@ -275,6 +278,11 @@ var (
 		"common/ratelimit.js",
 		"tcp/forward.js",
 	}
+
+	defaultUDPChains = []string{
+		"common/access-control.js",
+		"udp/forward.js",
+	}
 )
 
 const (
@@ -287,6 +295,7 @@ var (
 	httpRouteGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
 	tlsRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
 	tcpRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
+	updRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIUDPRouteKind)
 	grpcRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
 	secretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesSecretKind)
 	serviceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)

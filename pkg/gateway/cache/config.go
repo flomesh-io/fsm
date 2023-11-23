@@ -211,12 +211,14 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	certs := make([]routecfg.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
-			ns := getSecretRefNamespace(gw, ref)
-			name := string(ref.Name)
-			secret, err := c.getSecretFromCache(client.ObjectKey{Namespace: ns, Name: name})
+			key := client.ObjectKey{
+				Namespace: gwutils.Namespace(ref.Namespace, gw.Namespace),
+				Name:      string(ref.Name),
+			}
+			secret, err := c.getSecretFromCache(key)
 
 			if err != nil {
-				log.Error().Msgf("Failed to get Secret %s/%s: %s", ns, name, err)
+				log.Error().Msgf("Failed to get Secret %s: %s", key, err)
 				continue
 			}
 
@@ -260,6 +262,12 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	for _, tcpRoute := range c.getSortedTCPRoutes() {
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
+	}
+
+	log.Debug().Msgf("Processing %d UDPRoutes", len(c.udproutes))
+	for _, udpRoute := range c.getSortedUDPRoutes() {
+		processUDPRoute(gw, validListeners, udpRoute, rules)
+		processUDPBackends(udpRoute, services)
 	}
 
 	return rules, services
@@ -355,6 +363,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 			TLSPassthrough: defaultTLSPassthroughChains,
 			TLSTerminate:   defaultTLSTerminateChains,
 			TCPRoute:       defaultTCPChains,
+			UDPRoute:       defaultUDPChains,
 		}
 	}
 
@@ -364,5 +373,6 @@ func (c *GatewayCache) chains() routecfg.Chains {
 		TLSPassthrough: defaultTLSPassthroughChains,
 		TLSTerminate:   defaultTLSTerminateChains,
 		TCPRoute:       defaultTCPChains,
+		UDPRoute:       defaultUDPChains,
 	}
 }

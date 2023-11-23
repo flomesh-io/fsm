@@ -83,6 +83,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyGatewayAPIGRPCRoute,
 		fsminformers.InformerKeyGatewayAPITLSRoute,
 		fsminformers.InformerKeyGatewayAPITCPRoute,
+		fsminformers.InformerKeyGatewayAPIUDPRoute,
 		fsminformers.InformerKeyRateLimitPolicy,
 		fsminformers.InformerKeySessionStickyPolicy,
 		fsminformers.InformerKeyLoadBalancerPolicy,
@@ -215,6 +216,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITLSRoute)
 	case *gwv1alpha2.TCPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITCPRoute)
+	case *gwv1alpha2.UDPRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIUDPRoute)
 	case *gwpav1alpha1.RateLimitPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRateLimitPolicy)
 	case *gwpav1alpha1.SessionStickyPolicy:
@@ -301,6 +304,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayAPITCPRouteAdded,
 			Update: announcements.GatewayAPITCPRouteUpdated,
 			Delete: announcements.GatewayAPITCPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIUDPRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIUDPRouteAdded,
+			Update: announcements.GatewayAPIUDPRouteUpdated,
+			Delete: announcements.GatewayAPIUDPRouteDeleted,
 		}
 	case fsminformers.InformerKeyRateLimitPolicy:
 		return &k8s.EventTypes{
