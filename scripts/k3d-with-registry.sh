@@ -54,6 +54,7 @@ k3d cluster create "$K3D_CLUSTER_NAME" \
 	--port 8443:8443@loadbalancer \
 	--port 9443:9443@loadbalancer \
 	--port 3000:3000@loadbalancer \
+	--port 4000:4000/udp@loadbalancer \
 	--k3s-arg '--disable=traefik@server:*' \
 	--network "$k3d_network" \
 	--wait \
