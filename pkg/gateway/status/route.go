@@ -92,6 +92,14 @@ func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route clien
 				RouteHostnames:  nil,
 				RouteNs:         route.GetNamespace(),
 			}
+		case *gwv1alpha2.UDPRoute:
+			params = &computeParams{
+				ParentRefs:      route.Spec.ParentRefs,
+				RouteGvk:        route.GroupVersionKind(),
+				RouteGeneration: route.GetGeneration(),
+				RouteHostnames:  nil,
+				RouteNs:         route.GetNamespace(),
+			}
 		default:
 			log.Warn().Msgf("Unsupported route type: %T", route)
 			return nil, fmt.Errorf("unsupported route type: %T", route)

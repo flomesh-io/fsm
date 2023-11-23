@@ -455,7 +455,7 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 					}
 
 					secretKey := client.ObjectKey{
-						Namespace: getSecretRefNamespace(upstreamTLS, cfg.CertificateRef),
+						Namespace: gwutils.Namespace(cfg.CertificateRef.Namespace, upstreamTLS.Namespace),
 						Name:      string(cfg.CertificateRef.Name),
 					}
 

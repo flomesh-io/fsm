@@ -18,6 +18,7 @@
   - `8443`: **TLS Passthrough**
   - `9443`: **TLS Terminate**
   - `3000`: **TCP**
+  - `4000`: **UDP**
   
 - Make docker images available to the cluster
   ```shell
@@ -64,6 +65,7 @@
 kubectl create ns httpbin
 kubectl create ns grpcbin
 kubectl create ns tcproute
+kubectl create ns udproute
 ```
 
 #### Deploy FSM GatewayClass
@@ -459,6 +461,92 @@ connection: keep-alive
 <
 Hi, I am TCPRoute!
 * Connection #0 to host localhost left intact
+```
+
+### Test UDPRoute
+
+#### Deploy UDP Gateway
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: test-gw-2
+spec:
+  gatewayClassName: fsm-gateway-cls
+  listeners:
+    - protocol: UDP
+      port: 4000
+      name: udp
+EOF
+```
+
+#### Deploy the UDPRoute app
+```shell
+kubectl -n udproute apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: udproute
+spec:
+  ports:
+    - name: udp
+      port: 8078
+      targetPort: 8078
+      protocol: UDP
+  selector:
+    app: udproute
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udproute
+  labels:
+    app: pipy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udproute
+  template:
+    metadata:
+      labels:
+        app: udproute
+    spec:
+      containers:
+        - name: pipy
+          image: istio/fortio:latest
+          ports:
+            - name: udp
+              containerPort: 8078
+          command:
+            - fortio
+            - udp-echo
+EOF
+```
+
+#### Create UDPRoute
+```shell
+kubectl -n udproute apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: udp-app-1
+spec:
+  parentRefs:
+    - name: test-gw-2
+      namespace: default
+      port: 4000
+  rules:
+  - backendRefs:
+    - name: udproute
+      port: 8078
+EOF
+```
+
+#### Test it:
+```shell
+echo -n "Text to send to UDP" | nc -4u -w1 localhost 4000
 ```
 
 ### Test HTTPS - HTTPRoute

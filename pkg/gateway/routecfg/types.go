@@ -639,6 +639,7 @@ type Chains struct {
 	TLSPassthrough []string `json:"TLSPassthrough" hash:"set"`
 	TLSTerminate   []string `json:"TLSTerminate" hash:"set"`
 	TCPRoute       []string `json:"TCPRoute" hash:"set"`
+	UDPRoute       []string `json:"UDPRoute" hash:"set"`
 }
 
 // Features is the features configuration
