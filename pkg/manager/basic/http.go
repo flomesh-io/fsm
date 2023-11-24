@@ -34,5 +34,5 @@ import (
 func SetupHTTP(ctx *fctx.ControllerContext) error {
 	log.Info().Msgf("[MGR] Setting up HTTP ...")
 
-	return utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config)
+	return utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config, nil)
 }

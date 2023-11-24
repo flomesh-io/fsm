@@ -89,15 +89,15 @@ rules:
 
   # FSM's MultiCluster resource API
   - apiGroups: ["flomesh.io"]
-    resources: ["clusters", "proxyprofiles", "serviceimports", "serviceexports", "globaltrafficpolicies"]
+    resources: ["clusters", "serviceimports", "serviceexports", "globaltrafficpolicies"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
   - apiGroups: ["flomesh.io"]
-    resources: ["clusters/finalizers", "proxyprofiles/finalizers", "serviceimports/finalizers", "serviceexports/finalizers", "globaltrafficpolicies/finalizers"]
+    resources: ["clusters/finalizers", "serviceimports/finalizers", "serviceexports/finalizers", "globaltrafficpolicies/finalizers"]
     verbs: ["update"]
 
   - apiGroups: ["flomesh.io"]
-    resources: ["clusters/status", "proxyprofiles/status", "serviceimports/status", "serviceexports/status", "globaltrafficpolicies/status"]
+    resources: ["clusters/status", "serviceimports/status", "serviceexports/status", "globaltrafficpolicies/status"]
     verbs: ["get", "patch", "update"]
 
   # FSM's custom plugin API

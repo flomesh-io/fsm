@@ -195,26 +195,38 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 		repoClient := r.fctx.RepoClient
 		basepath := utils.NamespacedIngressCodebasePath(nsig.Namespace)
 
-		if nsig.Spec.TLS == nil {
-
-		}
-
-		if nsig.Spec.TLS.SSLPassthrough.Enabled {
-			// SSL passthrough
-			err := mgrutils.UpdateSSLPassthrough(
-				basepath,
-				repoClient,
-				nsig.Spec.TLS.SSLPassthrough.Enabled,
-				*nsig.Spec.TLS.SSLPassthrough.UpstreamPort,
-			)
+		if nsig.Spec.HTTP != nil {
+			err := mgrutils.UpdateIngressHTTPConfig(basepath, repoClient, mc, nsig)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}
-		} else {
-			// TLS offload
-			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc, nsig)
-			if err != nil {
-				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+		}
+
+		if nsig.Spec.TLS != nil {
+			if nsig.Spec.TLS.Enabled == nil || !*nsig.Spec.TLS.Enabled {
+				err := mgrutils.UpdateIngressTLSConfig(basepath, repoClient, mc, nsig)
+				if err != nil {
+					return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+				}
+			} else {
+				// TLS offload
+				err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc, nsig)
+				if err != nil {
+					return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+				}
+			}
+
+			if nsig.Spec.TLS.SSLPassthrough != nil {
+				// SSL passthrough
+				err := mgrutils.UpdateSSLPassthrough(
+					basepath,
+					repoClient,
+					*nsig.Spec.TLS.SSLPassthrough.Enabled,
+					*nsig.Spec.TLS.SSLPassthrough.UpstreamPort,
+				)
+				if err != nil {
+					return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+				}
 			}
 		}
 	}

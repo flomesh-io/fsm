@@ -49,7 +49,7 @@ func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *me
 			log.Info().Msgf("Updating basic config ...")
 
 			if isHTTPConfigChanged(oldCfg, newCfg) {
-				if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, repoClient, meshConfigToConfigurator(newCfg)); err != nil {
+				if err := utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, repoClient, meshConfigToConfigurator(newCfg), nil); err != nil {
 					log.Error().Msgf("Failed to update HTTP config: %s", err)
 				}
 			}
