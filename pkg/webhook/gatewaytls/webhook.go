@@ -171,9 +171,12 @@ func (w *validator) doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
+
 	errorList = append(errorList, validateSpec(policy)...)
 	errorList = append(errorList, w.validateConfig(policy)...)
-
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}
@@ -225,7 +228,7 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 			}
 
 			for i, p := range policy.Spec.Ports {
-				listener := getListenerIfHasMatchingPort(p.Port, gateway.Spec.Listeners)
+				listener := webhook.GetListenerIfHasMatchingPort(p.Port, gateway.Spec.Listeners)
 				if listener == nil {
 					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
 					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("port %d is not defined in Gateway %s/%s", p.Port, gwNs, gwName)))
@@ -249,20 +252,6 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 	}
 
 	return errs
-}
-
-func getListenerIfHasMatchingPort(port gwv1beta1.PortNumber, listeners []gwv1beta1.Listener) *gwv1beta1.Listener {
-	if len(listeners) == 0 {
-		return nil
-	}
-
-	for i, listener := range listeners {
-		if port == listener.Port {
-			return &listeners[i]
-		}
-	}
-
-	return nil
 }
 
 func (w *validator) validateCert(path *field.Path, config *gwpav1alpha1.GatewayTLSConfig, listener *gwv1beta1.Listener, gwNamespace string) field.ErrorList {

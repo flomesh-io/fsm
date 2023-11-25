@@ -499,6 +499,12 @@ const (
 
 	// TLSRouteValidatingWebhookPath is the path at which the TLS route validating webhook is served
 	TLSRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
+
+	// UDPRouteMutatingWebhookPath is the path at which the UDP route mutating webhook is served
+	UDPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-udproute"
+
+	// UDPRouteValidatingWebhookPath is the path at which the UDP route validating webhook is served
+	UDPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-udproute"
 )
 
 // PolicyAttachment constants

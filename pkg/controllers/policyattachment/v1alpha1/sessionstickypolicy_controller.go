@@ -48,6 +48,10 @@ type sessionStickyPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *sessionStickyPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewSessionStickyPolicyReconciler returns a new SessionStickyPolicy Reconciler
 func NewSessionStickyPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &sessionStickyPolicyReconciler{
@@ -173,7 +177,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 
 		sort.Slice(sessionStickies, func(i, j int) bool {
 			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+				return client.ObjectKeyFromObject(&sessionStickies[i]).String() < client.ObjectKeyFromObject(&sessionStickies[j]).String()
 			}
 
 			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)
@@ -237,7 +241,7 @@ func (r *sessionStickyPolicyReconciler) getStatusCondition(ctx context.Context, 
 
 		sort.Slice(sessionStickies, func(i, j int) bool {
 			if sessionStickies[i].CreationTimestamp.Time.Equal(sessionStickies[j].CreationTimestamp.Time) {
-				return sessionStickies[i].Name < sessionStickies[j].Name
+				return client.ObjectKeyFromObject(&sessionStickies[i]).String() < client.ObjectKeyFromObject(&sessionStickies[j]).String()
 			}
 
 			return sessionStickies[i].CreationTimestamp.Time.Before(sessionStickies[j].CreationTimestamp.Time)

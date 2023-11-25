@@ -154,8 +154,11 @@ func doValidation(obj interface{}) error {
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateSpec(policy)...)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
 
+	errorList = append(errorList, validateSpec(policy)...)
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}
@@ -172,11 +175,11 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	}
 
 	switch ref.Kind {
-	case constants.GatewayAPIGatewayKind, constants.GatewayAPIHTTPRouteKind, constants.GatewayAPIGRPCRouteKind:
+	case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPIGRPCRouteKind:
 		// do nothing
 	default:
 		path := field.NewPath("spec").Child("targetRef").Child("kind")
-		errs = append(errs, field.Invalid(path, ref.Kind, "kind must be set to Gateway, HTTPRoute or GRPCRoute"))
+		errs = append(errs, field.Invalid(path, ref.Kind, "kind must be set to HTTPRoute or GRPCRoute"))
 	}
 
 	return errs

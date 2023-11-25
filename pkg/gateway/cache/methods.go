@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sort"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -12,12 +14,133 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
+func (c *GatewayCache) getSortedHTTPRoutes() []*gwv1beta1.HTTPRoute {
+	httpRoutes := make([]*gwv1beta1.HTTPRoute, 0)
+
+	for key := range c.httproutes {
+		httpRoute, err := c.getHTTPRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
+			continue
+		}
+		httpRoutes = append(httpRoutes, httpRoute)
+		//processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
+	}
+
+	sort.Slice(httpRoutes, func(i, j int) bool {
+		if httpRoutes[i].CreationTimestamp.Time.Equal(httpRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(httpRoutes[i]).String() < client.ObjectKeyFromObject(httpRoutes[j]).String()
+		}
+
+		return httpRoutes[i].CreationTimestamp.Time.Before(httpRoutes[j].CreationTimestamp.Time)
+	})
+
+	return httpRoutes
+}
+
+func (c *GatewayCache) getSortedGRPCRoutes() []*gwv1alpha2.GRPCRoute {
+	grpcRoutes := make([]*gwv1alpha2.GRPCRoute, 0)
+
+	for key := range c.grpcroutes {
+		grpcRoute, err := c.getGRPCRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
+			continue
+		}
+
+		grpcRoutes = append(grpcRoutes, grpcRoute)
+	}
+
+	sort.Slice(grpcRoutes, func(i, j int) bool {
+		if grpcRoutes[i].CreationTimestamp.Time.Equal(grpcRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(grpcRoutes[i]).String() < client.ObjectKeyFromObject(grpcRoutes[j]).String()
+		}
+
+		return grpcRoutes[i].CreationTimestamp.Time.Before(grpcRoutes[j].CreationTimestamp.Time)
+	})
+
+	return grpcRoutes
+}
+
+func (c *GatewayCache) getSortedTLSRoutes() []*gwv1alpha2.TLSRoute {
+	tlsRoutes := make([]*gwv1alpha2.TLSRoute, 0)
+
+	for key := range c.tlsroutes {
+		tlsRoute, err := c.getTLSRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
+			continue
+		}
+
+		tlsRoutes = append(tlsRoutes, tlsRoute)
+	}
+
+	sort.Slice(tlsRoutes, func(i, j int) bool {
+		if tlsRoutes[i].CreationTimestamp.Time.Equal(tlsRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(tlsRoutes[i]).String() < client.ObjectKeyFromObject(tlsRoutes[j]).String()
+		}
+
+		return tlsRoutes[i].CreationTimestamp.Time.Before(tlsRoutes[j].CreationTimestamp.Time)
+	})
+
+	return tlsRoutes
+}
+
+func (c *GatewayCache) getSortedTCPRoutes() []*gwv1alpha2.TCPRoute {
+	tcpRoutes := make([]*gwv1alpha2.TCPRoute, 0)
+
+	for key := range c.tcproutes {
+		tcpRoute, err := c.getTCPRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
+			continue
+		}
+
+		tcpRoutes = append(tcpRoutes, tcpRoute)
+	}
+
+	sort.Slice(tcpRoutes, func(i, j int) bool {
+		if tcpRoutes[i].CreationTimestamp.Time.Equal(tcpRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(tcpRoutes[i]).String() < client.ObjectKeyFromObject(tcpRoutes[j]).String()
+		}
+
+		return tcpRoutes[i].CreationTimestamp.Time.Before(tcpRoutes[j].CreationTimestamp.Time)
+	})
+
+	return tcpRoutes
+}
+
+func (c *GatewayCache) getSortedUDPRoutes() []*gwv1alpha2.UDPRoute {
+	udpRoutes := make([]*gwv1alpha2.UDPRoute, 0)
+
+	for key := range c.udproutes {
+		udpRoute, err := c.getUDPRouteFromCache(key)
+		if err != nil {
+			log.Error().Msgf("Failed to get UDPRoute %s: %s", key, err)
+			continue
+		}
+
+		udpRoutes = append(udpRoutes, udpRoute)
+	}
+
+	sort.Slice(udpRoutes, func(i, j int) bool {
+		if udpRoutes[i].CreationTimestamp.Time.Equal(udpRoutes[j].CreationTimestamp.Time) {
+			return client.ObjectKeyFromObject(udpRoutes[i]).String() < client.ObjectKeyFromObject(udpRoutes[j]).String()
+		}
+
+		return udpRoutes[i].CreationTimestamp.Time.Before(udpRoutes[j].CreationTimestamp.Time)
+	})
+
+	return udpRoutes
+}
+
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 	for _, checkRoutableFunc := range []func(client.ObjectKey) bool{
 		c.isRoutableHTTPService,
 		c.isRoutableGRPCService,
 		c.isRoutableTLSService,
 		c.isRoutableTCPService,
+		c.isRoutableUDPService,
 	} {
 		if checkRoutableFunc(service) {
 			return true
@@ -131,6 +254,24 @@ func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
 	return false
 }
 
+func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
+	for key := range c.udproutes {
+		// Get UDPRoute from client-go cache
+		if r, err := c.getUDPRouteFromCache(key); err == nil {
+			//r := r.(*gwv1alpha2.UDPRoute)
+			for _, rule := range r.Spec.Rules {
+				for _, backend := range rule.BackendRefs {
+					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) bool {
 	if len(c.gateways) == 0 {
 		return false
@@ -211,11 +352,8 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 
 func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
 	key := client.ObjectKey{
+		Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
 		Name:      string(targetRef.Name),
-		Namespace: owner.GetNamespace(),
-	}
-	if targetRef.Namespace != nil {
-		key.Namespace = string(*targetRef.Namespace)
 	}
 
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
@@ -337,6 +475,17 @@ func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(tcpRouteGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getUDPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.UDPRoute, error) {
+	obj, err := c.informers.GetListers().UDPRoute.UDPRoutes(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(updRouteGVK)
 
 	return obj, nil
 }

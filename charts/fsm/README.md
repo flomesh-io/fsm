@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.2.0-alpha.8](https://img.shields.io/badge/Version-1.2.0--alpha.8-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.2.0-alpha.8](https://img.shields.io/badge/AppVersion-v1.2.0--alpha.8-informational?style=flat-square)
+![Version: 1.2.0-alpha.9](https://img.shields.io/badge/Version-1.2.0--alpha.9-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.2.0-alpha.9](https://img.shields.io/badge/AppVersion-v1.2.0--alpha.9-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -333,7 +333,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmSidecarInit | string | `"fsm-sidecar-init"` | Sidecar init container's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.2.0-alpha.8"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.2.0-alpha.9"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
@@ -453,9 +453,9 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
-| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.90.3-38","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.99.0-2","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
-| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.90.3-38"` | Image used for Pipy RepoServer |
+| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.99.0-2"` | Image used for Pipy RepoServer |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
 | fsm.serviceAccessMode | string | `"mixed"` | Service access mode |
@@ -463,9 +463,9 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
 | fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
 | fsm.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
-| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.90.3-38","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
+| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.99.0-2","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
 | fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
-| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.90.3-38"` | Sidecar image for Linux workloads |
+| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.99.0-2"` | Sidecar image for Linux workloads |
 | fsm.sidecarImage | string | `""` | Sidecar image for Linux workloads |
 | fsm.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |

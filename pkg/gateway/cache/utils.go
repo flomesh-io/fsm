@@ -2,6 +2,9 @@ package cache
 
 import (
 	"fmt"
+	"reflect"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"golang.org/x/exp/slices"
 
@@ -72,14 +75,6 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 	}
 
 	return false
-}
-
-func getSecretRefNamespace(owner client.Object, secretRef gwv1beta1.SecretObjectReference) string {
-	if secretRef.Namespace == nil {
-		return owner.GetNamespace()
-	}
-
-	return string(*secretRef.Namespace)
 }
 
 func allowedListeners(
@@ -252,14 +247,9 @@ func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs
 	// ONLY supports Service and ServiceImport backend now
 	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
 		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
-		ns := defaultNs
-		if ref.Namespace != nil {
-			ns = string(*ref.Namespace)
-		}
-
 		return &routecfg.ServicePortName{
 			NamespacedName: types.NamespacedName{
-				Namespace: ns,
+				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
 			},
 			Port: pointer.Int32(int32(*ref.Port)),
@@ -273,14 +263,9 @@ func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs 
 	// ONLY supports Service and ServiceImport backend now
 	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
 		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
-		ns := defaultNs
-		if ref.Namespace != nil {
-			ns = string(*ref.Namespace)
-		}
-
 		return &routecfg.ServicePortName{
 			NamespacedName: types.NamespacedName{
-				Namespace: ns,
+				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
 			},
 			Port: pointer.Int32(port),
@@ -328,7 +313,18 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 			case *routecfg.GRPCRouteRuleSpec:
 				switch r2 := rule.(type) {
 				case *routecfg.GRPCRouteRuleSpec:
+					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.AccessControlLists, r2.AccessControlLists) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.FaultInjection, r2.FaultInjection) {
+						continue
+					}
+
 					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Sort()
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
@@ -336,7 +332,18 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 			case *routecfg.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
 				case *routecfg.HTTPRouteRuleSpec:
+					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.AccessControlLists, r2.AccessControlLists) {
+						continue
+					}
+					if !reflect.DeepEqual(r1.FaultInjection, r2.FaultInjection) {
+						continue
+					}
+
 					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Sort()
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
@@ -360,11 +367,7 @@ func copyMap[K, V comparable](m map[K]V) map[K]V {
 }
 
 func isEndpointReady(ep discoveryv1.Endpoint) bool {
-	if ep.Conditions.Ready != nil && *ep.Conditions.Ready {
-		return true
-	}
-
-	return false
+	return ep.Conditions.Ready != nil && *ep.Conditions.Ready
 }
 
 func getServicePort(svc *corev1.Service, port *int32) (corev1.ServicePort, error) {

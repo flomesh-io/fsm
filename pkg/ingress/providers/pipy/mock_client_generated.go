@@ -5,6 +5,7 @@
 package pipy
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -33,16 +34,30 @@ func (m *MockController) EXPECT() *MockControllerMockRecorder {
 	return m.recorder
 }
 
-// Start mocks base method.
-func (m *MockController) Start() error {
+// NeedLeaderElection mocks base method.
+func (m *MockController) NeedLeaderElection() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start")
+	ret := m.ctrl.Call(m, "NeedLeaderElection")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// NeedLeaderElection indicates an expected call of NeedLeaderElection.
+func (mr *MockControllerMockRecorder) NeedLeaderElection() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedLeaderElection", reflect.TypeOf((*MockController)(nil).NeedLeaderElection))
+}
+
+// Start mocks base method.
+func (m *MockController) Start(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockControllerMockRecorder) Start() *gomock.Call {
+func (mr *MockControllerMockRecorder) Start(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockController)(nil).Start))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockController)(nil).Start), arg0)
 }

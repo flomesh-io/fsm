@@ -75,7 +75,7 @@ func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Confi
 func (p *PipyConf) setObservabilityRemoteLogging(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.Observability.RemoteLogging = &RemoteLoggingSpec{
-			Level:           fmt.Sprintf("%d", (*conf).GetRemoteLoggingLevel()),
+			Level:           (*conf).GetRemoteLoggingLevel(),
 			Address:         fmt.Sprintf("%s:%d", (*conf).GetRemoteLoggingHost(), (*conf).GetRemoteLoggingPort()),
 			Endpoint:        (*conf).GetRemoteLoggingEndpoint(),
 			Authorization:   (*conf).GetRemoteLoggingAuthorization(),
@@ -802,8 +802,21 @@ func (hrrs *OutboundHTTPRouteRuleSlice) Swap(i, j int) {
 
 func (hrrs *OutboundHTTPRouteRuleSlice) Less(i, j int) bool {
 	a, b := (*hrrs)[i], (*hrrs)[j]
+	if strings.EqualFold(string(a.Path), string(b.Path)) {
+		if len(a.Headers) > len(b.Headers) {
+			return true
+		}
+		if len(a.Methods) > len(b.Methods) {
+			return true
+		}
+		return false
+	}
+
 	if a.Path == constants.RegexMatchAll {
 		return false
+	}
+	if b.Path == constants.RegexMatchAll {
+		return true
 	}
 	return strings.Compare(string(a.Path), string(b.Path)) == -1
 }
@@ -824,8 +837,21 @@ func (irrs InboundHTTPRouteRuleSlice) Swap(i, j int) {
 
 func (irrs InboundHTTPRouteRuleSlice) Less(i, j int) bool {
 	a, b := irrs[i], irrs[j]
+	if strings.EqualFold(string(a.Path), string(b.Path)) {
+		if len(a.Headers) > len(b.Headers) {
+			return true
+		}
+		if len(a.Methods) > len(b.Methods) {
+			return true
+		}
+		return false
+	}
+
 	if a.Path == constants.RegexMatchAll {
 		return false
+	}
+	if b.Path == constants.RegexMatchAll {
+		return true
 	}
 	return strings.Compare(string(a.Path), string(b.Path)) == -1
 }

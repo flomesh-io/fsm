@@ -795,6 +795,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayAPITLSRouteAdded, announcements.GatewayAPITLSRouteDeleted, announcements.GatewayAPITLSRouteUpdated,
 		// TCPRoute event
 		announcements.GatewayAPITCPRouteAdded, announcements.GatewayAPITCPRouteDeleted, announcements.GatewayAPITCPRouteUpdated,
+		// UDPRoute event
+		announcements.GatewayAPIUDPRouteAdded, announcements.GatewayAPIUDPRouteDeleted, announcements.GatewayAPIUDPRouteUpdated,
 		// RateLimitPolicy event
 		announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
 		// SessionStickyPolicy event

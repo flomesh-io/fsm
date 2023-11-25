@@ -45,6 +45,10 @@ type grpcRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+func (r *grpcRouteReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewGRPCRouteReconciler returns a new GRPCRoute.Reconciler
 func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &grpcRouteReconciler{

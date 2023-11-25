@@ -121,5 +121,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies route
 			httpSpec.Matches = append(httpSpec.Matches, *match)
 		}
 	}
+
+	httpSpec.Sort()
 	return httpSpec
 }

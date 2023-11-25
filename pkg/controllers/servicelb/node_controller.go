@@ -44,6 +44,10 @@ type nodeReconciler struct {
 	fctx     *fctx.ControllerContext
 }
 
+func (r *nodeReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewNodeReconciler returns a new reconcile.Reconciler
 func NewNodeReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &nodeReconciler{

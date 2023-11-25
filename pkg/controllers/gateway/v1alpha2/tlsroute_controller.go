@@ -45,6 +45,10 @@ type tlsRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+func (r *tlsRouteReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewTLSRouteReconciler returns a new TLSRoute.Reconciler
 func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tlsRouteReconciler{

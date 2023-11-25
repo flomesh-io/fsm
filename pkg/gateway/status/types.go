@@ -13,6 +13,7 @@ type computeParams struct {
 	RouteGvk        schema.GroupVersionKind
 	RouteGeneration int64
 	RouteHostnames  []gwv1beta1.Hostname
+	RouteNs         string
 }
 
 var (

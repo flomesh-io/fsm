@@ -45,6 +45,10 @@ type httpRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+func (r *httpRouteReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewHTTPRouteReconciler returns a new HTTPRoute Reconciler
 func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &httpRouteReconciler{

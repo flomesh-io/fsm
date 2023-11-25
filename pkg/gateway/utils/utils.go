@@ -32,6 +32,8 @@ import (
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,6 +46,15 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
+
+// Namespace returns the namespace if it is not nil, otherwise returns the default namespace
+func Namespace(ns *gwv1beta1.Namespace, defaultNs string) string {
+	if ns == nil {
+		return defaultNs
+	}
+
+	return string(*ns)
+}
 
 // IsAcceptedGatewayClass returns true if the gateway class is accepted
 func IsAcceptedGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
@@ -185,6 +196,7 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 // GetAllowedListenersAndSetStatus returns the allowed listeners and set status
 func GetAllowedListenersAndSetStatus(
 	parentRef gwv1beta1.ParentReference,
+	routeNs string,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
 	validListeners []gwtypes.Listener,
@@ -205,7 +217,7 @@ func GetAllowedListenersAndSetStatus(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNoMatchingParent),
-			Message:            fmt.Sprintf("No listeners match parent ref %s/%s", *parentRef.Namespace, parentRef.Name),
+			Message:            fmt.Sprintf("No listeners match parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
 		})
 
 		return nil
@@ -227,7 +239,7 @@ func GetAllowedListenersAndSetStatus(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNotAllowedByListeners),
-			Message:            fmt.Sprintf("No matched listeners of parent ref %s/%s", *parentRef.Namespace, parentRef.Name),
+			Message:            fmt.Sprintf("No matched listeners of parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
 		})
 
 		return nil
@@ -269,6 +281,13 @@ func GetAllowedListeners(
 	}
 
 	return allowedListeners
+}
+
+func getParentRefNamespacedName(parentRef gwv1beta1.ParentReference, routeNs string) types.NamespacedName {
+	return types.NamespacedName{
+		Namespace: Namespace(parentRef.Namespace, routeNs),
+		Name:      string(parentRef.Name),
+	}
 }
 
 // GetValidHostnames returns the valid hostnames

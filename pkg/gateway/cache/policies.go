@@ -114,7 +114,7 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 	for matchType, policies := range rateLimits {
 		sort.Slice(policies, func(i, j int) bool {
 			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return policies[i].Name < policies[j].Name
+				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
 			}
 
 			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
@@ -164,7 +164,7 @@ func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav
 	for matchType, policies := range accessControls {
 		sort.Slice(policies, func(i, j int) bool {
 			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return policies[i].Name < policies[j].Name
+				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
 			}
 
 			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
@@ -211,7 +211,7 @@ func (c *GatewayCache) faultInjections() map[FaultInjectionPolicyMatchType][]gwp
 	for matchType, policies := range faultInjections {
 		sort.Slice(policies, func(i, j int) bool {
 			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return policies[i].Name < policies[j].Name
+				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
 			}
 
 			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
@@ -455,7 +455,7 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 					}
 
 					secretKey := client.ObjectKey{
-						Namespace: getSecretRefNamespace(upstreamTLS, cfg.CertificateRef),
+						Namespace: gwutils.Namespace(cfg.CertificateRef.Namespace, upstreamTLS.Namespace),
 						Name:      string(cfg.CertificateRef.Name),
 					}
 

@@ -1,8 +1,15 @@
 package ratelimit
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
 
@@ -27,12 +34,14 @@ var (
 
 type register struct {
 	*webhook.RegisterConfig
+	gatewayAPIClient gatewayApiClientset.Interface
 }
 
 // NewRegister creates a new RateLimitPolicy webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
-		RegisterConfig: cfg,
+		RegisterConfig:   cfg,
+		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(cfg.KubeConfig),
 	}
 }
 
@@ -72,7 +81,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.RateLimitPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.RateLimitPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.RateLimitPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.gatewayAPIClient)),
 	}
 }
 
@@ -230,7 +239,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 //}
 
 type validator struct {
-	kubeClient kubernetes.Interface
+	kubeClient       kubernetes.Interface
+	gatewayAPIClient gatewayApiClientset.Interface
 }
 
 // RuntimeObject returns the runtime object for the webhook
@@ -240,12 +250,12 @@ func (w *validator) RuntimeObject() runtime.Object {
 
 // ValidateCreate validates the creation of the RateLimitPolicy
 func (w *validator) ValidateCreate(obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateUpdate validates the update of the RateLimitPolicy
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateDelete validates the deletion of the RateLimitPolicy
@@ -253,21 +263,25 @@ func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
-func newValidator(kubeClient kubernetes.Interface) *validator {
+func newValidator(kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface) *validator {
 	return &validator{
-		kubeClient: kubeClient,
+		kubeClient:       kubeClient,
+		gatewayAPIClient: gatewayAPIClient,
 	}
 }
 
-func doValidation(obj interface{}) error {
+func (w *validator) doValidation(obj interface{}) error {
 	policy, ok := obj.(*gwpav1alpha1.RateLimitPolicy)
 	if !ok {
 		return nil
 	}
 
 	errorList := validateTargetRef(policy.Spec.TargetRef)
-	errorList = append(errorList, validateConfig(policy)...)
+	if len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
 
+	errorList = append(errorList, w.validateConfig(policy)...)
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)
 	}
@@ -294,14 +308,14 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	return errs
 }
 
-func validateConfig(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
-	errs := validateL4RateLimits(policy)
+func (w *validator) validateConfig(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
+	errs := w.validateL4RateLimits(policy)
 	errs = append(errs, validateL7RateLimits(policy)...)
 
 	return errs
 }
 
-func validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
+func (w *validator) validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList {
 	var errs field.ErrorList
 
 	if policy.Spec.TargetRef.Group == constants.GatewayAPIGroup &&
@@ -336,6 +350,44 @@ func validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) field.ErrorList 
 			for i, port := range policy.Spec.Ports {
 				if port.BPS == nil {
 					errs = append(errs, field.Required(path.Index(i).Child("bps"), fmt.Sprintf("bps must be set for port %d, as there's no default BPS", port.Port)))
+				}
+			}
+		}
+
+		if len(policy.Spec.Ports) > 0 {
+			gwName := string(policy.Spec.TargetRef.Name)
+			gwNs := policy.Namespace
+			if policy.Spec.TargetRef.Namespace != nil {
+				gwNs = string(*policy.Spec.TargetRef.Namespace)
+			}
+
+			gateway, err := w.gatewayAPIClient.GatewayV1beta1().Gateways(gwNs).Get(context.TODO(), gwName, metav1.GetOptions{})
+			if err != nil {
+				path := field.NewPath("spec").Child("targetRef")
+				if errors.IsNotFound(err) {
+					errs = append(errs, field.Invalid(path, policy.Spec.TargetRef, fmt.Sprintf("Gateway %s/%s not found", gwNs, gwName)))
+					return errs
+				}
+
+				errs = append(errs, field.Invalid(path, policy.Spec.TargetRef, fmt.Sprintf("Failed to get Gateway %s/%s: %v", gwNs, gwName, err)))
+				return errs
+			}
+
+			for i, p := range policy.Spec.Ports {
+				listener := webhook.GetListenerIfHasMatchingPort(p.Port, gateway.Spec.Listeners)
+				if listener == nil {
+					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
+					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("port %d is not defined in Gateway %s/%s", p.Port, gwNs, gwName)))
+					continue
+				}
+
+				if listener.Protocol != gwv1beta1.HTTPSProtocolType &&
+					listener.Protocol != gwv1beta1.TLSProtocolType &&
+					listener.Protocol != gwv1beta1.TCPProtocolType &&
+					listener.Protocol != gwv1beta1.HTTPProtocolType {
+					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
+					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("Protocol of port %d is %s, it must be HTTP, HTTPS, TLS or TCP in Gateway %s/%s", p.Port, listener.Protocol, gwNs, gwName)))
+					continue
 				}
 			}
 		}

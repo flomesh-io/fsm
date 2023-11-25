@@ -211,12 +211,14 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	certs := make([]routecfg.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
-			ns := getSecretRefNamespace(gw, ref)
-			name := string(ref.Name)
-			secret, err := c.getSecretFromCache(client.ObjectKey{Namespace: ns, Name: name})
+			key := client.ObjectKey{
+				Namespace: gwutils.Namespace(ref.Namespace, gw.Namespace),
+				Name:      string(ref.Name),
+			}
+			secret, err := c.getSecretFromCache(key)
 
 			if err != nil {
-				log.Error().Msgf("Failed to get Secret %s/%s: %s", ns, name, err)
+				log.Error().Msgf("Failed to get Secret %s: %s", key, err)
 				continue
 			}
 
@@ -241,49 +243,31 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	services := make(map[string]serviceInfo)
 
 	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
-	for key := range c.httproutes {
-		httpRoute, err := c.getHTTPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, httpRoute := range c.getSortedHTTPRoutes() {
 		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
-	for key := range c.grpcroutes {
-		grpcRoute, err := c.getGRPCRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, grpcRoute := range c.getSortedGRPCRoutes() {
 		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
-	for key := range c.tlsroutes {
-		tlsRoute, err := c.getTLSRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, tlsRoute := range c.getSortedTLSRoutes() {
 		processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TCPRoutes", len(c.tcproutes))
-	for key := range c.tcproutes {
-		tcpRoute, err := c.getTCPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
-			continue
-		}
-
+	for _, tcpRoute := range c.getSortedTCPRoutes() {
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
+	}
+
+	log.Debug().Msgf("Processing %d UDPRoutes", len(c.udproutes))
+	for _, udpRoute := range c.getSortedUDPRoutes() {
+		processUDPRoute(gw, validListeners, udpRoute, rules)
+		processUDPBackends(udpRoute, services)
 	}
 
 	return rules, services
@@ -379,6 +363,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 			TLSPassthrough: defaultTLSPassthroughChains,
 			TLSTerminate:   defaultTLSTerminateChains,
 			TCPRoute:       defaultTCPChains,
+			UDPRoute:       defaultUDPChains,
 		}
 	}
 
@@ -388,5 +373,6 @@ func (c *GatewayCache) chains() routecfg.Chains {
 		TLSPassthrough: defaultTLSPassthroughChains,
 		TLSTerminate:   defaultTLSTerminateChains,
 		TCPRoute:       defaultTCPChains,
+		UDPRoute:       defaultUDPChains,
 	}
 }

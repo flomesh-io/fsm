@@ -225,7 +225,7 @@ type TracingSpec struct {
 // RemoteLoggingSpec is the type to represent remote logging configuration.
 type RemoteLoggingSpec struct {
 	// Level defines the remote logging's level.
-	Level string `json:"level,omitempty"`
+	Level uint16 `json:"level,omitempty"`
 	// Address defines the remote logging's hostname.
 	Address string `json:"address,omitempty"`
 	// Endpoint defines the API endpoint for remote logging requests sent to the collector.

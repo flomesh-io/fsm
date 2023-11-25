@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/flomesh-io/fsm/pkg/webhook/udproute"
+
 	"github.com/flomesh-io/fsm/pkg/webhook/retry"
 
 	"github.com/flomesh-io/fsm/pkg/webhook/upstreamtls"
@@ -264,6 +266,7 @@ func getRegisters(regCfg *webhook.RegisterConfig, mc configurator.Configurator) 
 		result = append(result, grpcroute.NewRegister(regCfg))
 		result = append(result, tcproute.NewRegister(regCfg))
 		result = append(result, tlsroute.NewRegister(regCfg))
+		result = append(result, udproute.NewRegister(regCfg))
 		result = append(result, ratelimit.NewRegister(regCfg))
 		result = append(result, sessionsticky.NewRegister(regCfg))
 		result = append(result, loadbalancer.NewRegister(regCfg))

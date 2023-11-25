@@ -45,6 +45,10 @@ type tcpRouteReconciler struct {
 	statusProcessor *status.RouteStatusProcessor
 }
 
+func (r *tcpRouteReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewTCPRouteReconciler returns a new TCPRoute Reconciler
 func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tcpRouteReconciler{

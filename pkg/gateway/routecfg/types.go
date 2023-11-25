@@ -3,6 +3,8 @@ package routecfg
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -42,6 +44,15 @@ const (
 	// MatchTypeRegex is the regex match type
 	MatchTypeRegex MatchType = "Regex"
 )
+
+func (m MatchType) Ordinal() int32 {
+	return map[MatchType]int32{
+		MatchTypeExact:  0,
+		MatchTypePrefix: 1,
+		MatchTypeRegex:  2,
+	}[m]
+	//return [...]string{"Exact", "Prefix", "Regex"}[m]
+}
 
 // L7RouteType is the type of route
 type L7RouteType string
@@ -171,6 +182,14 @@ type HTTPRouteRuleSpec struct {
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
 }
 
+func (r *HTTPRouteRuleSpec) Sort() {
+	if r.Matches != nil {
+		matches := r.Matches
+		sort.Sort(ByHTTPTrafficMatch(matches))
+		r.Matches = matches
+	}
+}
+
 func (r *HTTPRouteRuleSpec) GetRateLimit() *RateLimit {
 	return r.RateLimit
 }
@@ -197,6 +216,74 @@ func (r *HTTPRouteRuleSpec) SetFaultInjection(faultInjection *FaultInjection) {
 
 var _ L7RouteRuleSpec = &HTTPRouteRuleSpec{}
 
+type ByHTTPTrafficMatch []HTTPTrafficMatch
+
+func (by ByHTTPTrafficMatch) Len() int { return len(by) }
+
+func (by ByHTTPTrafficMatch) Less(i, j int) bool {
+	a, b := by[i], by[j]
+
+	if a.Path != nil && b.Path == nil {
+		return true
+	}
+
+	if a.Path == nil && b.Path != nil {
+		return false
+	}
+
+	if a.Path == nil && b.Path == nil {
+		if len(a.Methods) != len(b.Methods) {
+			return len(a.Methods) > len(b.Methods)
+		}
+
+		if len(a.Headers) != len(b.Headers) {
+			return len(a.Headers) > len(b.Headers)
+		}
+
+		if len(a.RequestParams) != len(b.RequestParams) {
+			return len(a.RequestParams) > len(b.RequestParams)
+		}
+	}
+
+	if a.Path != nil && b.Path != nil {
+		if a.Path.MatchType != b.Path.MatchType {
+			return a.Path.MatchType.Ordinal() < b.Path.MatchType.Ordinal()
+		}
+
+		if a.Path.Path != b.Path.Path {
+			return pathExp(a.Path.Path) > pathExp(b.Path.Path)
+		}
+
+		if len(a.Methods) != len(b.Methods) {
+			return len(a.Methods) > len(b.Methods)
+		}
+
+		if len(a.Headers) != len(b.Headers) {
+			return len(a.Headers) > len(b.Headers)
+		}
+
+		if len(a.RequestParams) != len(b.RequestParams) {
+			return len(a.RequestParams) > len(b.RequestParams)
+		}
+	}
+
+	return false
+}
+
+func (by ByHTTPTrafficMatch) Swap(i, j int) { by[i], by[j] = by[j], by[i] }
+
+func pathExp(path string) string {
+	if path == "" {
+		return "*"
+	}
+
+	if path == "/" {
+		return "/*"
+	}
+
+	return path
+}
+
 // GRPCRouteRuleSpec is the GRPC route rule configuration
 type GRPCRouteRuleSpec struct {
 	RouteType          L7RouteType         `json:"RouteType"`
@@ -204,6 +291,14 @@ type GRPCRouteRuleSpec struct {
 	RateLimit          *RateLimit          `json:"RateLimit,omitempty"`
 	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
 	FaultInjection     *FaultInjection     `json:"Fault,omitempty"`
+}
+
+func (r *GRPCRouteRuleSpec) Sort() {
+	if r.Matches != nil {
+		matches := r.Matches
+		sort.Sort(ByGRPCTrafficMatch(matches))
+		r.Matches = matches
+	}
 }
 
 func (r *GRPCRouteRuleSpec) GetRateLimit() *RateLimit {
@@ -231,6 +326,56 @@ func (r *GRPCRouteRuleSpec) SetFaultInjection(faultInjection *FaultInjection) {
 }
 
 var _ L7RouteRuleSpec = &GRPCRouteRuleSpec{}
+
+type ByGRPCTrafficMatch []GRPCTrafficMatch
+
+func (by ByGRPCTrafficMatch) Len() int { return len(by) }
+
+func (by ByGRPCTrafficMatch) Less(i, j int) bool {
+	a, b := by[i], by[j]
+
+	if a.Method == nil && b.Method == nil {
+		return len(a.Headers) > len(b.Headers)
+	}
+
+	if a.Method != nil && b.Method == nil {
+		return true
+	}
+
+	if a.Method == nil && b.Method != nil {
+		return false
+	}
+
+	if a.Method != nil && b.Method != nil {
+		if a.Method.MatchType != b.Method.MatchType {
+			return a.Method.MatchType.Ordinal() < b.Method.MatchType.Ordinal()
+		}
+
+		pathA := fmt.Sprintf("%s/%s", stringExp(a.Method.Service), stringExp(a.Method.Method))
+		pathB := fmt.Sprintf("%s/%s", stringExp(b.Method.Service), stringExp(b.Method.Method))
+
+		switch strings.Compare(pathA, pathB) {
+		case -1:
+			return false
+		case 1:
+			return true
+		case 0:
+			return len(a.Headers) > len(b.Headers)
+		}
+	}
+
+	return false
+}
+
+func (by ByGRPCTrafficMatch) Swap(i, j int) { by[i], by[j] = by[j], by[i] }
+
+func stringExp(s *string) string {
+	if s == nil {
+		return "*"
+	}
+
+	return *s
+}
 
 // TLSBackendService is the TLS backend service configuration
 type TLSBackendService map[string]int32
@@ -494,6 +639,7 @@ type Chains struct {
 	TLSPassthrough []string `json:"TLSPassthrough" hash:"set"`
 	TLSTerminate   []string `json:"TLSTerminate" hash:"set"`
 	TCPRoute       []string `json:"TCPRoute" hash:"set"`
+	UDPRoute       []string `json:"UDPRoute" hash:"set"`
 }
 
 // Features is the features configuration

@@ -47,6 +47,10 @@ type loadBalancerPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewLoadBalancerPolicyReconciler returns a new LoadBalancerPolicy Reconciler
 func NewLoadBalancerPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &loadBalancerPolicyReconciler{
@@ -172,7 +176,7 @@ func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, p
 
 		sort.Slice(loadBalancers, func(i, j int) bool {
 			if loadBalancers[i].CreationTimestamp.Time.Equal(loadBalancers[j].CreationTimestamp.Time) {
-				return loadBalancers[i].Name < loadBalancers[j].Name
+				return client.ObjectKeyFromObject(&loadBalancers[i]).String() < client.ObjectKeyFromObject(&loadBalancers[j]).String()
 			}
 
 			return loadBalancers[i].CreationTimestamp.Time.Before(loadBalancers[j].CreationTimestamp.Time)
@@ -236,7 +240,7 @@ func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, p
 
 		sort.Slice(loadBalancers, func(i, j int) bool {
 			if loadBalancers[i].CreationTimestamp.Time.Equal(loadBalancers[j].CreationTimestamp.Time) {
-				return loadBalancers[i].Name < loadBalancers[j].Name
+				return client.ObjectKeyFromObject(&loadBalancers[i]).String() < client.ObjectKeyFromObject(&loadBalancers[j]).String()
 			}
 
 			return loadBalancers[i].CreationTimestamp.Time.Before(loadBalancers[j].CreationTimestamp.Time)

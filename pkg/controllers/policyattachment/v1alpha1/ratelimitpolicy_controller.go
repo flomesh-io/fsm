@@ -70,6 +70,10 @@ type rateLimitPolicyReconciler struct {
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
 }
 
+func (r *rateLimitPolicyReconciler) NeedLeaderElection() bool {
+	return true
+}
+
 // NewRateLimitPolicyReconciler returns a new RateLimitPolicy Reconciler
 func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &rateLimitPolicyReconciler{
@@ -155,7 +159,24 @@ func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, poli
 				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
 			}
 		}
-		if conflict := r.getConflictedPort(gateway, policy, rateLimitPolicyList); conflict != nil {
+
+		rateLimitPolicies := make([]gwpav1alpha1.RateLimitPolicy, 0)
+		for _, p := range rateLimitPolicyList.Items {
+			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
+				rateLimitPolicies = append(rateLimitPolicies, p)
+			}
+		}
+
+		sort.Slice(rateLimitPolicies, func(i, j int) bool {
+			if rateLimitPolicies[i].CreationTimestamp.Time.Equal(rateLimitPolicies[j].CreationTimestamp.Time) {
+				return client.ObjectKeyFromObject(&rateLimitPolicies[i]).String() < client.ObjectKeyFromObject(&rateLimitPolicies[j]).String()
+			}
+
+			return rateLimitPolicies[i].CreationTimestamp.Time.Before(rateLimitPolicies[j].CreationTimestamp.Time)
+		})
+
+		if conflict := r.getConflictedPort(gateway, policy, rateLimitPolicies); conflict != nil {
 			return metav1.Condition{
 				Type:               string(gwv1alpha2.PolicyConditionAccepted),
 				Status:             metav1.ConditionFalse,
@@ -291,14 +312,14 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitP
 	}
 	sort.Slice(hostnamesRateLimits, func(i, j int) bool {
 		if hostnamesRateLimits[i].CreationTimestamp.Time.Equal(hostnamesRateLimits[j].CreationTimestamp.Time) {
-			return hostnamesRateLimits[i].Name < hostnamesRateLimits[j].Name
+			return client.ObjectKeyFromObject(&hostnamesRateLimits[i]).String() < client.ObjectKeyFromObject(&hostnamesRateLimits[j]).String()
 		}
 
 		return hostnamesRateLimits[i].CreationTimestamp.Time.Before(hostnamesRateLimits[j].CreationTimestamp.Time)
 	})
 	sort.Slice(routeRateLimits, func(i, j int) bool {
 		if routeRateLimits[i].CreationTimestamp.Time.Equal(routeRateLimits[j].CreationTimestamp.Time) {
-			return routeRateLimits[i].Name < routeRateLimits[j].Name
+			return client.ObjectKeyFromObject(&routeRateLimits[i]).String() < client.ObjectKeyFromObject(&routeRateLimits[j]).String()
 		}
 
 		return routeRateLimits[i].CreationTimestamp.Time.Before(routeRateLimits[j].CreationTimestamp.Time)
@@ -461,16 +482,14 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies *gwpav1alpha1.RateLimitPolicyList) *types.NamespacedName {
+func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
 	if len(rateLimitPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
-	for _, pr := range allRateLimitPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(pr.Status.Conditions) &&
-			gwutils.IsRefToTarget(pr.Spec.TargetRef, gateway) &&
-			len(pr.Spec.Ports) > 0 {
+	for _, pr := range allRateLimitPolicies {
+		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
 				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {

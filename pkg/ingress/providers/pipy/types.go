@@ -27,6 +27,7 @@ package pipy
 
 import (
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
@@ -45,6 +46,9 @@ type client struct {
 
 // Controller is the interface for the functionality provided by the resources part of the networking.k8s.io API group
 type Controller interface {
-	// Start runs the backend broadcast listener
-	Start() error
+	// Runnable runs the backend broadcast listener
+	manager.Runnable
+
+	// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
+	manager.LeaderElectionRunnable
 }
