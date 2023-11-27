@@ -1,4 +1,4 @@
-package connector
+package c2k
 
 import (
 	"context"

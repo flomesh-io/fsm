@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/connector/c2k"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
@@ -88,7 +89,7 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 
 	for _, svc := range svcList {
 		ns := kubeController.GetNamespace(svc.Namespace)
-		if connector.IsSyncCloudNamespace(ns) {
+		if c2k.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
 				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(net.ParseIP(pod.Status.PodIP).To4()))]; exists {
 					serviceList = append(serviceList, *svc)

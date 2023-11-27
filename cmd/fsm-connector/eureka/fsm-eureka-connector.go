@@ -20,9 +20,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
-	eurekaConnector "github.com/flomesh-io/fsm/pkg/connector/eureka"
-
-	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/connector/c2k"
+	"github.com/flomesh-io/fsm/pkg/connector/client"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/health"
@@ -100,8 +99,8 @@ func main() {
 
 	k8s.SetTrustDomain(trustDomain)
 
-	connector.EnabledGatewayAPI(withGatewayAPI)
-	connector.SetSyncCloudNamespace(deriveNamespace)
+	c2k.EnabledGatewayAPI(withGatewayAPI)
+	c2k.SetSyncCloudNamespace(deriveNamespace)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-eureka-connector pod resource
 	connectorPod, err := getConnectorPod(kubeClient)
@@ -126,22 +125,22 @@ func main() {
 
 	eurekaClient := fargo.NewConn(httpAddr)
 
-	sink := connector.NewSink(ctx, kubeClient, gatewayClient, fsmNamespace)
-	source := &eurekaConnector.Source{
-		EurekaClient: &eurekaClient,
-		Domain:       trustDomain,
-		Sink:         sink,
-		Prefix:       "",
-		FilterTag:    filterTag,
-		PrefixTag:    prefixTag,
-		SuffixTag:    suffixTag,
-		PassingOnly:  passingOnly,
+	sink := c2k.NewSink(ctx, kubeClient, gatewayClient, fsmNamespace)
+	source := &c2k.Source{
+		DiscClient:  client.GetEurekaDiscoveryClient(&eurekaClient),
+		Domain:      trustDomain,
+		Sink:        sink,
+		Prefix:      "",
+		FilterTag:   filterTag,
+		PrefixTag:   prefixTag,
+		SuffixTag:   suffixTag,
+		PassingOnly: passingOnly,
 	}
 	sink.MicroAggregator = source
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
+	ctl := &c2k.Controller{
 		Resource: sink,
 	}
 	go ctl.Run(ctx.Done())
@@ -163,7 +162,7 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go connector.WatchMeshConfigUpdated(msgBroker, stop)
+	go c2k.WatchMeshConfigUpdated(msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-eureka-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)

@@ -1,4 +1,4 @@
-package connector
+package c2k
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -262,8 +263,8 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 					}
 					ported = true
 				}
-				if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
-					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
+				if strings.HasPrefix(k, connector.MeshEndpointAddrAnnotation) {
+					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.MeshEndpointAddrAnnotation))
 					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
 						ip := utils.Int2IP4(uint32(ipInt))
 						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
@@ -435,8 +436,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					MeshServiceSyncAnnotation:           "false",
-					CloudServiceInheritedFromAnnotation: cloudName,
+					connector.MeshServiceSyncAnnotation:           "false",
+					connector.CloudServiceInheritedFromAnnotation: cloudName,
 				}
 				s.fillService(mode, svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
@@ -454,8 +455,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						MeshServiceSyncAnnotation:           "false",
-						CloudServiceInheritedFromAnnotation: cloudName,
+						connector.MeshServiceSyncAnnotation:           "false",
+						connector.CloudServiceInheritedFromAnnotation: cloudName,
 					},
 				},
 
@@ -496,7 +497,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 }
 
 func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
-	if strings.EqualFold(mode, ConsulDiscoveryService) {
+	if strings.EqualFold(mode, connector.ConsulDiscoveryService) {
 		ports := make([]int, 0)
 		for port, appProtocol := range svcMeta.Ports {
 			if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
@@ -518,11 +519,11 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 		}
 		sort.Ints(ports)
 		for addr := range svcMeta.Addresses {
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 		}
 	}
 
-	if strings.EqualFold(mode, EurekaDiscoveryService) {
+	if strings.EqualFold(mode, connector.EurekaDiscoveryService) {
 		for addr, port := range svcMeta.Addresses {
 			appProtocol := svcMeta.Ports[MicroSvcPort(port)]
 			if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
@@ -542,7 +543,7 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 			}
 			ports := make([]int, 0)
 			ports = append(ports, port)
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 		}
 	}
 }
