@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
