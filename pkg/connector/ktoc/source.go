@@ -449,7 +449,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	// address assigned (not hostnames).
 	// If LoadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
 	case corev1.ServiceTypeLoadBalancer:
-		t.generateLoadBalanceEndpointsRegistrations(key, baseNode, baseService, overridePortName, overridePortNumber, svc, ok)
+		t.generateLoadBalanceEndpointsRegistrations(key, baseNode, baseService, overridePortName, overridePortNumber, svc)
 
 	// For NodePort services, we create a service instance for each
 	// endpoint of the service, which corresponds to the nodes the service's
@@ -641,7 +641,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 	return false
 }
 
-func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service, ok bool) {
+func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service) {
 	if t.LoadBalancerEndpointsSync {
 		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, false)
 	} else {
@@ -655,7 +655,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 				continue
 			}
 
-			if _, ok = seen[addr]; ok {
+			if _, ok := seen[addr]; ok {
 				continue
 			}
 			seen[addr] = struct{}{}
