@@ -92,8 +92,8 @@ type Config struct {
 	SdrProvider       string
 	HttpAddr          string
 
-	C2K C2KCfg
-	K2C K2CCfg
+	c2k C2KCfg
+	k2c K2CCfg
 }
 
 func init() {
@@ -108,68 +108,68 @@ func init() {
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, consul)")
 	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
-	flags.StringVar(&Cfg.C2K.FlagFilterTag, "filter-tag", "", "filter tag")
-	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "prefix-tag", "", "prefix tag")
-	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "suffix-tag", "", "suffix tag")
-	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "passing-only", true, "passing only")
-	flags.BoolVar(&Cfg.C2K.FlagWithGatewayAPI, "with-gateway-api", false, "with gateway api")
+	flags.StringVar(&Cfg.c2k.FlagFilterTag, "filter-tag", "", "filter tag")
+	flags.StringVar(&Cfg.c2k.FlagPrefixTag, "prefix-tag", "", "prefix tag")
+	flags.StringVar(&Cfg.c2k.FlagSuffixTag, "suffix-tag", "", "suffix tag")
+	flags.BoolVar(&Cfg.c2k.FlagPassingOnly, "passing-only", true, "passing only")
+	flags.BoolVar(&Cfg.c2k.FlagWithGatewayAPI, "with-gateway-api", false, "with gateway api")
 
-	flags.BoolVar(&Cfg.K2C.FlagK8SDefault, "k8s-default-sync", true,
+	flags.BoolVar(&Cfg.k2c.FlagK8SDefault, "k8s-default-sync", true,
 		"If true, all valid services in K8S are synced by default. If false, "+
 			"the service must be annotated properly to sync. In either case "+
 			"an annotation can override the default")
-	flags.StringVar(&Cfg.K2C.FlagK8SServicePrefix, "k8s-service-prefix", "",
+	flags.StringVar(&Cfg.k2c.FlagK8SServicePrefix, "k8s-service-prefix", "",
 		"A prefix to prepend to all services written to Kubernetes from Consul. "+
 			"If this is not set then services will have no prefix.")
-	flags.StringVar(&Cfg.K2C.FlagConsulServicePrefix, "consul-service-prefix", "",
+	flags.StringVar(&Cfg.k2c.FlagConsulServicePrefix, "consul-service-prefix", "",
 		"A prefix to prepend to all services written to Consul from Kubernetes. "+
 			"If this is not set then services will have no prefix.")
-	flags.StringVar(&Cfg.K2C.FlagK8SWriteNamespace, "k8s-write-namespace", metav1.NamespaceDefault,
+	flags.StringVar(&Cfg.k2c.FlagK8SWriteNamespace, "k8s-write-namespace", metav1.NamespaceDefault,
 		"The Kubernetes namespace to write to for services from Consul. "+
 			"If this is not set then it will default to the default namespace.")
-	flags.StringVar(&Cfg.K2C.FlagConsulK8STag, "consul-k8s-tag", "k8s",
+	flags.StringVar(&Cfg.k2c.FlagConsulK8STag, "consul-k8s-tag", "k8s",
 		"Tag value for K8S services registered in Consul")
-	flags.StringVar(&Cfg.K2C.FlagConsulNodeName, "consul-node-name", "k8s-sync",
+	flags.StringVar(&Cfg.k2c.FlagConsulNodeName, "consul-node-name", "k8s-sync",
 		"The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable "+
 			"via DNS, the name should only contain alpha-numerics and dashes.")
-	flags.DurationVar(&Cfg.K2C.FlagConsulWritePeriod, "consul-write-interval", 30*time.Second,
+	flags.DurationVar(&Cfg.k2c.FlagConsulWritePeriod, "consul-write-interval", 30*time.Second,
 		"The interval to perform syncing operations creating Consul services, formatted "+
 			"as a time.Duration. All changes are merged and write calls are only made "+
 			"on this interval. Defaults to 30 seconds (30s).")
-	flags.BoolVar(&Cfg.K2C.FlagSyncClusterIPServices, "sync-clusterip-services", true,
+	flags.BoolVar(&Cfg.k2c.FlagSyncClusterIPServices, "sync-clusterip-services", true,
 		"If true, all valid ClusterIP services in K8S are synced by default. If false, "+
 			"ClusterIP services are not synced to Consul.")
-	flags.BoolVar(&Cfg.K2C.FlagSyncLBEndpoints, "sync-lb-services-endpoints", false,
+	flags.BoolVar(&Cfg.k2c.FlagSyncLBEndpoints, "sync-lb-services-endpoints", false,
 		"If true, LoadBalancer service endpoints instead of ingress addresses will be synced to Consul. If false, "+
 			"LoadBalancer endpoints are not synced to Consul.")
-	flags.StringVar(&Cfg.K2C.FlagNodePortSyncType, "node-port-sync-type", "ExternalOnly",
+	flags.StringVar(&Cfg.k2c.FlagNodePortSyncType, "node-port-sync-type", "ExternalOnly",
 		"Defines the type of sync for NodePort services. Valid options are ExternalOnly, "+
 			"InternalOnly and ExternalFirst.")
-	flags.BoolVar(&Cfg.K2C.FlagAddK8SNamespaceSuffix, "add-k8s-namespace-suffix", false,
+	flags.BoolVar(&Cfg.k2c.FlagAddK8SNamespaceSuffix, "add-k8s-namespace-suffix", false,
 		"If true, Kubernetes namespace will be appended to service names synced to Consul separated by a dash. "+
 			"If false, no suffix will be appended to the service names in Consul. "+
 			"If the service name annotation is provided, the suffix is not appended.")
 
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAllowK8sNamespacesList), "allow-k8s-namespace",
+	flags.Var((*AppendSliceValue)(&Cfg.k2c.FlagAllowK8sNamespacesList), "allow-k8s-namespace",
 		"K8s namespaces to explicitly allow. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagDenyK8sNamespacesList), "deny-k8s-namespace",
+	flags.Var((*AppendSliceValue)(&Cfg.k2c.FlagDenyK8sNamespacesList), "deny-k8s-namespace",
 		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
-	flags.BoolVar(&Cfg.K2C.FlagEnableNamespaces, "enable-namespaces", false,
+	flags.BoolVar(&Cfg.k2c.FlagEnableNamespaces, "enable-namespaces", false,
 		"[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored.")
-	flags.StringVar(&Cfg.K2C.FlagConsulDestinationNamespace, "consul-destination-namespace", "default",
+	flags.StringVar(&Cfg.k2c.FlagConsulDestinationNamespace, "consul-destination-namespace", "default",
 		"[Enterprise Only] Defines which Consul namespace to register all synced services into. If '-enable-k8s-namespace-mirroring' "+
 			"is true, this is not used.")
-	flags.BoolVar(&Cfg.K2C.FlagEnableK8SNSMirroring, "enable-k8s-namespace-mirroring", false, "[Enterprise Only] Enables "+
+	flags.BoolVar(&Cfg.k2c.FlagEnableK8SNSMirroring, "enable-k8s-namespace-mirroring", false, "[Enterprise Only] Enables "+
 		"namespace mirroring.")
-	flags.StringVar(&Cfg.K2C.FlagK8SNSMirroringPrefix, "k8s-namespace-mirroring-prefix", "",
+	flags.StringVar(&Cfg.k2c.FlagK8SNSMirroringPrefix, "k8s-namespace-mirroring-prefix", "",
 		"[Enterprise Only] Prefix that will be added to all k8s namespaces mirrored into Consul if mirroring is enabled.")
-	flags.StringVar(&Cfg.K2C.FlagCrossNamespaceACLPolicy, "consul-cross-namespace-acl-policy", "",
+	flags.StringVar(&Cfg.k2c.FlagCrossNamespaceACLPolicy, "consul-cross-namespace-acl-policy", "",
 		"[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service "+
 			"discovery across Consul namespaces. Only necessary if ACLs are enabled.")
 
-	flags.BoolVar(&Cfg.K2C.FlagEnableIngress, "enable-ingress", false,
+	flags.BoolVar(&Cfg.k2c.FlagEnableIngress, "enable-ingress", false,
 		"[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored.")
-	flags.BoolVar(&Cfg.K2C.FlagLoadBalancerIPs, "loadBalancer-ips", false,
+	flags.BoolVar(&Cfg.k2c.FlagLoadBalancerIPs, "loadBalancer-ips", false,
 		"[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored.")
 }
 

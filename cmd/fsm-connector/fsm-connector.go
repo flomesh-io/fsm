@@ -87,14 +87,14 @@ func main() {
 	if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
 		discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
 		if err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
-			log.Fatal().Msg("Error creating cloud client")
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+			log.Fatal().Msg("Error creating service discovery and registration client")
 		}
 	} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
 		discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr)
 		if err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
-			log.Fatal().Msg("Error creating cloud client")
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+			log.Fatal().Msg("Error creating service discovery and registration client")
 		}
 	} else {
 		log.Fatal().Msg("Unsupported service discovery and registration provider")
