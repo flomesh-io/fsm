@@ -668,7 +668,6 @@ func (t *ServiceResource) registerServiceInstance(
 	overridePortName string,
 	overridePortNumber int,
 	useHostname bool) {
-
 	if t.endpointsMap == nil {
 		return
 	}
@@ -1037,7 +1036,6 @@ func getServiceWeight(weight string) (int, error) {
 // parseTags parses the tags annotation into a slice of tags.
 // Tags are split on commas (except for escaped commas "\,").
 func parseTags(tagsAnno string) []string {
-
 	// This algorithm parses the tagsAnno string into a slice of strings.
 	// Ideally we'd just split on commas but since Consul tags support commas,
 	// we allow users to escape commas so they're included in the tag, e.g.
