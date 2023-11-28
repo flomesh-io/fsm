@@ -305,12 +305,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.http1PerRequestLoadBalancing | bool | `false` | Specifies a boolean indicating if load balancing based on request is enabled for http1. |
 | fsm.http2PerRequestLoadBalancing | bool | `true` | Specifies a boolean indicating if load balancing based on request is enabled for http2. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmEurekaConnector":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
-| fsm.image.digest.fsmConsulConnector | string | `""` | fsm-consul-connector's image digest |
+| fsm.image.digest.fsmConnector | string | `""` | fsm-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
-| fsm.image.digest.fsmEurekaConnector | string | `""` | fsm-eureka-connector's image digest |
 | fsm.image.digest.fsmGateway | string | `""` | fsm-gateway's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
@@ -318,12 +317,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmEurekaConnector":"fsm-eureka-connector","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
-| fsm.image.name.fsmConsulConnector | string | `"fsm-consul-connector"` | fsm-consul-connector's image name |
+| fsm.image.name.fsmConnector | string | `"fsm-connector"` | fsm-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
-| fsm.image.name.fsmEurekaConnector | string | `"fsm-eureka-connector"` | fsm-eureka-connector's image name |
 | fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |

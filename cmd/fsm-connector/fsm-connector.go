@@ -1,5 +1,5 @@
-// Package main implements the main entrypoint for fsm-eureka-connector and utility routines to
-// bootstrap the various internal components of fsm-eureka-connector.
+// Package main implements the main entrypoint for fsm-connector and utility routines to
+// bootstrap the various internal components of fsm-connector.
 package main
 
 import (
@@ -9,7 +9,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
-	"github.com/hudl/fargo"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -32,7 +31,7 @@ import (
 )
 
 var (
-	log    = logger.New("fsm-eureka-connector")
+	log    = logger.New("fsm-connector")
 	scheme = runtime.NewScheme()
 )
 
@@ -41,11 +40,17 @@ func init() {
 }
 
 func main() {
-	log.Info().Msgf("Starting fsm-eureka-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Starting fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 	if err := cli.ParseFlags(); err != nil {
 		log.Fatal().Err(err).Msg("Error parsing cmd line arguments")
 	}
-	if err := logger.SetLogLevel(cli.Cfg.Verbosity); err != nil {
+
+	// This ensures CLI parameters (and dependent values) are correct.
+	if err := cli.ValidateCLIParams(); err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InvalidCLIParameters, "Error validating CLI parameters")
+	}
+
+	if err := logger.SetLogLevel(cli.Verbosity()); err != nil {
 		log.Fatal().Err(err).Msg("Error setting log level")
 	}
 
@@ -55,20 +60,13 @@ func main() {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
-	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 
-	k8s.SetTrustDomain(cli.Cfg.TrustDomain)
-
-	ctok.EnabledGatewayAPI(cli.Cfg.C2K.FlagWithGatewayAPI)
-	ctok.SetSyncCloudNamespace(cli.Cfg.DeriveNamespace)
-
-	// Initialize the generic Kubernetes event recorder and associate it with the fsm-eureka-connector pod resource
+	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
 	if err != nil {
-		// TODO(#3962): metric might not be scraped before process restart resulting from this error
-		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingEurekaConnectorPod)).
-			Msg("Error retrieving fsm-eureka-connector pod")
-		log.Fatal().Msg("Error fetching fsm-eureka-connector pod")
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingConnectorPod)).
+			Msg("Error retrieving fsm-connector pod")
+		log.Fatal().Msg("Error fetching fsm-connector pod")
 	}
 
 	eventRecorder := events.GenericEventRecorder()
@@ -76,10 +74,7 @@ func main() {
 		log.Fatal().Msg("Error initializing generic event recorder")
 	}
 
-	// This ensures CLI parameters (and dependent values) are correct.
-	if err = cli.ValidateCLIParams(); err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InvalidCLIParameters, "Error validating CLI parameters")
-	}
+	k8s.SetTrustDomain(cli.Cfg.TrustDomain)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -87,31 +82,20 @@ func main() {
 
 	msgBroker := messaging.NewBroker(stop)
 
-	eurekaClient := fargo.NewConn(cli.Cfg.HttpAddr)
-
-	sink := ctok.NewSink(ctx, kubeClient, gatewayClient, cli.Cfg.FsmNamespace)
-	source := &ctok.Source{
-		DiscClient:  provider.GetEurekaDiscoveryClient(&eurekaClient),
-		Domain:      cli.Cfg.TrustDomain,
-		Sink:        sink,
-		Prefix:      "",
-		FilterTag:   cli.Cfg.C2K.FlagFilterTag,
-		PrefixTag:   cli.Cfg.C2K.FlagPrefixTag,
-		SuffixTag:   cli.Cfg.C2K.FlagSuffixTag,
-		PassingOnly: cli.Cfg.C2K.FlagPassingOnly,
+	discClient, err := provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
+	if err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
+		log.Fatal().Msg("Error creating cloud client")
 	}
-	sink.MicroAggregator = source
-	go source.Run(ctx)
 
-	// Build the controller and start it
-	ctl := &ctok.Controller{
-		Resource: sink,
-	}
-	go ctl.Run(ctx.Done())
+	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
+
+	go cli.SyncCtoK(ctx, kubeClient, discClient, gatewayClient)
+	go cli.SyncKtoC(ctx, kubeClient, discClient)
 
 	version.SetMetric()
 	/*
-	 * Initialize fsm-eureka-connector's HTTP server
+	 * Initialize fsm-connector's HTTP server
 	 */
 	httpServer := httpserver.NewHTTPServer(constants.FSMHTTPServerPort)
 	// Version
@@ -129,5 +113,5 @@ func main() {
 	go ctok.WatchMeshConfigUpdated(msgBroker, stop)
 
 	<-stop
-	log.Info().Msgf("Stopping fsm-eureka-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
+	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
 }

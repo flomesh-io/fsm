@@ -31,10 +31,8 @@ fsm:
       fsmHealthcheck: fsm-healthcheck
       # -- fsm-interceptor's image name
       fsmInterceptor: fsm-interceptor
-      # -- fsm-consul-connector's image name
-      fsmConsulConnector: fsm-consul-connector
-      # -- fsm-eureka-connector's image name
-      fsmEurekaConnector: fsm-eureka-connector
+      # -- fsm-connector's image name
+      fsmConnector: fsm-connector
       # -- fsm-ingress's image name
       fsmIngress: fsm-ingress
       # -- fsm-gateway's image name
@@ -57,10 +55,8 @@ fsm:
       fsmHealthcheck: ""
       # -- fsm-interceptor's image digest
       fsmInterceptor: ""
-      # -- fsm-consul-connector's image digest
-      fsmConsulConnector: ""
-      # -- fsm-eureka-connector's image digest
-      fsmEurekaConnector: ""
+      # -- fsm-connector's image digest
+      fsmConnector: ""
       # -- fsm-ingress's image digest
       fsmIngress: ""
       # -- fsm-gateway's image digest

@@ -152,8 +152,14 @@ func (dc *ConsulDiscoveryClient) MicroServiceProvider() string {
 	return connector.ConsulDiscoveryService
 }
 
-func GetConsulDiscoveryClient(consulClient *consul.Client) *ConsulDiscoveryClient {
+func GetConsulDiscoveryClient(address string) (*ConsulDiscoveryClient, error) {
+	cfg := consul.DefaultConfig()
+	cfg.Address = address
+	consulClient, err := consul.NewClient(cfg)
+	if err != nil {
+		return nil, err
+	}
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.consulClient = consulClient
-	return consulDiscoveryClient
+	return consulDiscoveryClient, nil
 }

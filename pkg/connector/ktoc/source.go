@@ -59,7 +59,6 @@ const (
 // ServiceResource implements controller.Resource to sync CatalogService resource
 // types from K8S.
 type ServiceResource struct {
-	Log    zerolog.Logger
 	Client kubernetes.Interface
 	Syncer Syncer
 
@@ -195,7 +194,7 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 	// We expect a CatalogService. If it isn't a service then just ignore it.
 	service, ok := raw.(*corev1.Service)
 	if !ok {
-		t.Log.Warn().Msgf("upsert got invalid type raw:%v", raw)
+		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
 	}
 
@@ -209,17 +208,17 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 	if !t.shouldSync(service) {
 		// Check if its in our map and delete it.
 		if _, ok := t.serviceMap[key]; ok {
-			t.Log.Info().Msgf("service should no longer be synced service:%s", key)
+			log.Info().Msgf("service should no longer be synced service:%s", key)
 			t.doDelete(key)
 		} else {
-			t.Log.Debug().Msgf("[ServiceResource.Upsert] syncing disabled for service, ignoring key:%s", key)
+			log.Debug().Msgf("[ServiceResource.Upsert] syncing disabled for service, ignoring key:%s", key)
 		}
 		return nil
 	}
 
 	// Syncing is enabled, let's keep track of this service.
 	t.serviceMap[key] = service
-	t.Log.Debug().Msgf("[ServiceResource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
+	log.Debug().Msgf("[ServiceResource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
 
 	// If we care about endpoints, we should do the initial endpoints load.
 	if t.shouldTrackEndpoints(key) {
@@ -227,7 +226,7 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 			Endpoints(service.Namespace).
 			Get(t.Ctx, service.Name, metav1.GetOptions{})
 		if err != nil {
-			t.Log.Warn().Msgf("error loading initial endpoints key%s err:%v",
+			log.Warn().Msgf("error loading initial endpoints key%s err:%v",
 				key,
 				err)
 		} else {
@@ -235,14 +234,14 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 				t.endpointsMap = make(map[string]*corev1.Endpoints)
 			}
 			t.endpointsMap[key] = endpoints
-			t.Log.Debug().Msgf("[ServiceResource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
+			log.Debug().Msgf("[ServiceResource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
 		}
 	}
 
 	// Update the registration and trigger a sync
 	t.generateRegistrations(key)
 	t.sync()
-	t.Log.Info().Msgf("upsert key:%s", key)
+	log.Info().Msgf("upsert key:%s", key)
 	return nil
 }
 
@@ -251,7 +250,7 @@ func (t *ServiceResource) Delete(key string, _ interface{}) error {
 	t.serviceLock.Lock()
 	defer t.serviceLock.Unlock()
 	t.doDelete(key)
-	t.Log.Info().Msgf("delete key:%s", key)
+	log.Info().Msgf("delete key:%s", key)
 	return nil
 }
 
@@ -260,9 +259,9 @@ func (t *ServiceResource) Delete(key string, _ interface{}) error {
 // Precondition: assumes t.serviceLock is held.
 func (t *ServiceResource) doDelete(key string) {
 	delete(t.serviceMap, key)
-	t.Log.Debug().Msgf("[doDelete] deleting service from serviceMap key:%s", key)
+	log.Debug().Msgf("[doDelete] deleting service from serviceMap key:%s", key)
 	delete(t.endpointsMap, key)
-	t.Log.Debug().Msgf("[doDelete] deleting endpoints from endpointsMap key:%s", key)
+	log.Debug().Msgf("[doDelete] deleting endpoints from endpointsMap key:%s", key)
 	// If there were registrations related to this service, then
 	// delete them and sync.
 	if _, ok := t.consulMap[key]; ok {
@@ -273,7 +272,7 @@ func (t *ServiceResource) doDelete(key string) {
 
 // Run implements the controller.Backgrounder interface.
 func (t *ServiceResource) Run(ch <-chan struct{}) {
-	t.Log.Info().Msg("starting runner for endpoints")
+	log.Info().Msg("starting runner for endpoints")
 	// Register a controller for Endpoints which subsequently registers a
 	// controller for the Ingress resource.
 	(&Controller{
@@ -296,19 +295,19 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 	// Namespace logic
 	// If in deny list, don't sync
 	if t.DenyK8sNamespacesSet.Contains(svc.Namespace) {
-		t.Log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
+		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// If not in allow list or allow list is not *, don't sync
 	if !t.AllowK8sNamespacesSet.Contains("*") && !t.AllowK8sNamespacesSet.Contains(svc.Namespace) {
-		t.Log.Debug().Msgf("[shouldSync] service not in allow list svc.Namespace:%s service:%v", svc.Namespace, svc)
+		log.Debug().Msgf("[shouldSync] service not in allow list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// Ignore ClusterIP services if ClusterIP sync is disabled
 	if svc.Spec.Type == corev1.ServiceTypeClusterIP && !t.ClusterIPSync {
-		t.Log.Debug().Msgf("[shouldSync] ignoring clusterip service svc.Namespace:%s service:%v", svc.Namespace, svc)
+		log.Debug().Msgf("[shouldSync] ignoring clusterip service svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
@@ -320,7 +319,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 
 	v, err := strconv.ParseBool(raw)
 	if err != nil {
-		t.Log.Warn().Msgf("error parsing service-sync annotation service-name:%s err:%v",
+		log.Warn().Msgf("error parsing service-sync annotation service-name:%s err:%v",
 			t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
 			err)
 
@@ -365,7 +364,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		return
 	}
 
-	t.Log.Debug().Msgf("[generateRegistrations] generating registration key:%s", key)
+	log.Debug().Msgf("[generateRegistrations] generating registration key:%s", key)
 
 	// Initialize our consul service map here if it isn't already.
 	if t.consulMap == nil {
@@ -409,7 +408,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		t.EnableK8SNSMirroring,
 		t.K8SNSMirroringPrefix)
 	if consulNS != "" {
-		t.Log.Debug().Msgf("[generateRegistrations] namespace being used key:%s namespace:%s", key, consulNS)
+		log.Debug().Msgf("[generateRegistrations] namespace being used key:%s namespace:%s", key, consulNS)
 		baseService.Namespace = consulNS
 	}
 
@@ -490,7 +489,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 
 	// Always log what we generated
 	defer func() {
-		t.Log.Debug().Msgf("generated registration key:%s service:%s namespace:%s instances:%d",
+		log.Debug().Msgf("generated registration key:%s service:%s namespace:%s instances:%d",
 			key,
 			baseService.Service,
 			baseService.Namespace,
@@ -515,7 +514,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 						Passing: weightI,
 					}
 				} else {
-					t.Log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
+					log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
 				}
 			}
 
@@ -564,7 +563,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 							Passing: weightI,
 						}
 					} else {
-						t.Log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
+						log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
 					}
 				}
 
@@ -597,7 +596,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 				// Look up the node's ip address by getting node info
 				node, err := t.Client.CoreV1().Nodes().Get(t.Ctx, *subsetAddr.NodeName, metav1.GetOptions{})
 				if err != nil {
-					t.Log.Warn().Msgf("error getting node info error:%v", err)
+					log.Warn().Msgf("error getting node info error:%v", err)
 					continue
 				}
 
@@ -826,7 +825,7 @@ func (t *serviceEndpointsResource) Upsert(key string, raw interface{}) error {
 	svc := t.Service
 	endpoints, ok := raw.(*corev1.Endpoints)
 	if !ok {
-		svc.Log.Warn().Msgf("upsert got invalid type raw:%v", raw)
+		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
 	}
 
@@ -847,7 +846,7 @@ func (t *serviceEndpointsResource) Upsert(key string, raw interface{}) error {
 	// Update the registration and trigger a sync
 	svc.generateRegistrations(key)
 	svc.sync()
-	svc.Log.Info().Msgf("upsert endpoint key:%s", key)
+	log.Info().Msgf("upsert endpoint key:%s", key)
 	return nil
 }
 
@@ -866,7 +865,7 @@ func (t *serviceEndpointsResource) Delete(key string, _ interface{}) error {
 		}
 	}
 
-	t.Service.Log.Info().Msgf("delete endpoint key:%s", key)
+	log.Info().Msgf("delete endpoint key:%s", key)
 	return nil
 }
 
@@ -909,7 +908,7 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 	svc := t.Service
 	ingress, ok := raw.(*networkingv1.Ingress)
 	if !ok {
-		svc.Log.Warn().Msgf("upsert got invalid type raw:%v", raw)
+		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
 	}
 
@@ -967,11 +966,11 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 
 	// Update the registration for each matched service and trigger a sync
 	for svcName := range svc.ingressServiceMap[key] {
-		svc.Log.Info().Msgf("generating registrations for %s", svcName)
+		log.Info().Msgf("generating registrations for %s", svcName)
 		svc.generateRegistrations(svcName)
 	}
 	svc.sync()
-	svc.Log.Info().Msgf("upsert ingress key:%s", key)
+	log.Info().Msgf("upsert ingress key:%s", key)
 
 	return nil
 }
@@ -994,7 +993,7 @@ func (t *serviceIngressResource) Delete(key string, _ interface{}) error {
 		t.Service.sync()
 	}
 
-	t.Service.Log.Info().Msgf("delete ingress key:%s", key)
+	log.Info().Msgf("delete ingress key:%s", key)
 	return nil
 }
 

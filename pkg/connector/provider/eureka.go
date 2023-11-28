@@ -92,9 +92,10 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 	return connector.EurekaDiscoveryService
 }
 
-func GetEurekaDiscoveryClient(eurekaClient *fargo.EurekaConnection) *EurekaDiscoveryClient {
+func GetEurekaDiscoveryClient(address string) (*EurekaDiscoveryClient, error) {
+	eurekaClient := fargo.NewConn(address)
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
-	eurekaDiscoveryClient.eurekaClient = eurekaClient
+	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	logging.SetLevel(logging.WARNING, "fargo")
-	return eurekaDiscoveryClient
+	return eurekaDiscoveryClient, nil
 }

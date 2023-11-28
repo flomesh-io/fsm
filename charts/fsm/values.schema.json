@@ -357,8 +357,7 @@
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
                                 "fsmInterceptor",
-                                "fsmConsulConnector",
-                                "fsmEurekaConnector"
+                                "fsmConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -409,17 +408,11 @@
                                     "title": "fsm-interceptor's image name",
                                     "description": "fsm-interceptor container's image name."
                                 },
-                                "fsmConsulConnector": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConsulConnector",
-                                    "type": "string",
-                                    "title": "fsm-consul-connector's image name",
-                                    "description": "fsm-consul-connector container's image name."
-                                },
-                                "fsmEurekaConnector": {
-                                  "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmEurekaConnector",
+                                "fsmConnector": {
+                                  "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
                                   "type": "string",
-                                  "title": "fsm-eureka-connector's image name",
-                                  "description": "fsm-eureka-connector container's image name."
+                                  "title": "fsm-connector's image name",
+                                  "description": "fsm-connector container's image name."
                                 }
                             }
                         },
@@ -456,8 +449,7 @@
                                 "fsmPreinstall",
                                 "fsmHealthcheck",
                                 "fsmInterceptor",
-                                "fsmConsulConnector",
-                                "fsmEurekaConnector"
+                                "fsmConnector"
                             ],
                             "properties": {
                                 "fsmController": {
@@ -508,17 +500,11 @@
                                     "title": "fsm-interceptor's image digest",
                                     "description": "fsm-interceptor container's image digest."
                                 },
-                                "fsmConsulConnector": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConsulConnector",
-                                    "type": "string",
-                                    "title": "fsm-consul-connector's image digest",
-                                    "description": "fsm-consul-connector container's image digest."
-                                },
-                                "fsmEurekaConnector": {
-                                  "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmEurekaConnector",
+                                "fsmConnector": {
+                                  "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",
                                   "type": "string",
-                                  "title": "fsm-eureka-connector's image digest",
-                                  "description": "fsm-eureka-connector container's image digest."
+                                  "title": "fsm-connector's image digest",
+                                  "description": "fsm-connector container's image digest."
                                 }
                             }
                         }

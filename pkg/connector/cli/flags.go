@@ -56,7 +56,6 @@ type K2CCfg struct {
 	FlagK8SDefault            bool
 	FlagK8SServicePrefix      string
 	FlagConsulServicePrefix   string
-	FlagK8SSourceNamespace    string
 	FlagK8SWriteNamespace     string
 	FlagConsulWritePeriod     time.Duration
 	FlagSyncClusterIPServices bool
@@ -121,9 +120,6 @@ func init() {
 	flags.StringVar(&Cfg.K2C.FlagConsulServicePrefix, "consul-service-prefix", "",
 		"A prefix to prepend to all services written to Consul from Kubernetes. "+
 			"If this is not set then services will have no prefix.")
-	flags.StringVar(&Cfg.K2C.FlagK8SSourceNamespace, "k8s-source-namespace", metav1.NamespaceAll,
-		"The Kubernetes namespace to watch for service changes and sync to Consul. "+
-			"If this is not set then it will default to all namespaces.")
 	flags.StringVar(&Cfg.K2C.FlagK8SWriteNamespace, "k8s-write-namespace", metav1.NamespaceDefault,
 		"The Kubernetes namespace to write to for services from Consul. "+
 			"If this is not set then it will default to the default namespace.")
@@ -196,4 +192,8 @@ func ParseFlags() error {
 	}
 	_ = flag.CommandLine.Parse([]string{})
 	return nil
+}
+
+func Verbosity() string {
+	return Cfg.Verbosity
 }
