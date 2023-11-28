@@ -99,9 +99,6 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 		httpPort := svc.Port
 		grpcPort := 0
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
-		if len(svc.InstanceId) > 0 {
-			svcNames = append(svcNames, MicroSvcName(svc.InstanceId))
-		}
 		if len(svc.Tags) > 0 {
 			grpcPort, svcNames = s.aggregateTag(svcName, svc, grpcPort, svcNames)
 		}
