@@ -52,14 +52,15 @@ func (aw *AgentWeights) fromConsul(w consul.AgentWeights) {
 
 // AgentService represents a service known to the agent
 type AgentService struct {
-	ID        string
-	Service   string
-	Namespace string
-	Address   string
-	Port      int
-	Weights   AgentWeights
-	Tags      []string
-	Meta      map[string]interface{}
+	ID         string
+	Service    string
+	InstanceId string
+	Namespace  string
+	Address    string
+	Port       int
+	Weights    AgentWeights
+	Tags       []string
+	Meta       map[string]interface{}
 }
 
 func (as *AgentService) toConsul() *consul.AgentService {
@@ -105,7 +106,8 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 		return
 	}
 	as.ID = ins.Id()
-	as.Service = ins.App
+	as.Service = ins.VipAddress
+	as.InstanceId = ins.InstanceId
 	as.Address = ins.IPAddr
 	as.Port = ins.Port
 	metadata := ins.Metadata.GetMap()

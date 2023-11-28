@@ -551,9 +551,8 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
-			if specPort.Port == int32(port) &&
-				specPort.Name == fmt.Sprintf("%s%d", appProtocol, port) &&
-				*specPort.AppProtocol == string(appProtocol) {
+			if specPort.Port == int32(port) ||
+				specPort.Name == fmt.Sprintf("%s%d", appProtocol, port) {
 				return true
 			}
 		}

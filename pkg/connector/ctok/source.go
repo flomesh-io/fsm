@@ -86,10 +86,9 @@ func (s *Source) Run(ctx context.Context) {
 func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string) {
 	serviceEntries, err := s.DiscClient.HealthService(string(svcName), s.FilterTag, nil, s.PassingOnly)
 	if err != nil {
-		log.Err(err).Msgf("can't retrieve cloud service, name:%s", string(svcName))
 		return nil, s.DiscClient.MicroServiceProvider()
 	}
-	log.Trace().Msgf("PassingOnly:[%v] FilterTag:[%v] len(serviceEntries):[%d]", s.PassingOnly, s.FilterTag, len(serviceEntries))
+
 	if len(serviceEntries) == 0 {
 		return nil, s.DiscClient.MicroServiceProvider()
 	}
@@ -100,6 +99,9 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 		httpPort := svc.Port
 		grpcPort := 0
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
+		if len(svc.InstanceId) > 0 {
+			svcNames = append(svcNames, MicroSvcName(svc.InstanceId))
+		}
 		if len(svc.Tags) > 0 {
 			grpcPort, svcNames = s.aggregateTag(svcName, svc, grpcPort, svcNames)
 		}
