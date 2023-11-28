@@ -14,6 +14,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/cli"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
@@ -82,10 +83,21 @@ func main() {
 
 	msgBroker := messaging.NewBroker(stop)
 
-	discClient, err := provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
-	if err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
-		log.Fatal().Msg("Error creating cloud client")
+	var discClient provider.ServiceDiscoveryClient = nil
+	if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
+		discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
+			log.Fatal().Msg("Error creating cloud client")
+		}
+	} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
+		discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr)
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating cloud client")
+			log.Fatal().Msg("Error creating cloud client")
+		}
+	} else {
+		log.Fatal().Msg("Unsupported service discovery and registration provider")
 	}
 
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)

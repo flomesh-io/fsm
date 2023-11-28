@@ -9,6 +9,8 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 var (
@@ -87,6 +89,7 @@ type Config struct {
 	FsmVersion        string
 	TrustDomain       string
 	DeriveNamespace   string
+	SdrProvider       string
 	HttpAddr          string
 
 	C2K C2KCfg
@@ -102,7 +105,8 @@ func init() {
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
 	flags.StringVar(&Cfg.DeriveNamespace, "derive-namespace", "", "derive namespace")
-	flags.StringVar(&Cfg.HttpAddr, "http-addr", "", "http addr")
+	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, consul)")
+	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
 	flags.StringVar(&Cfg.C2K.FlagFilterTag, "filter-tag", "", "filter tag")
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "prefix-tag", "", "prefix tag")
@@ -181,6 +185,14 @@ func ValidateCLIParams() error {
 
 	if Cfg.DeriveNamespace == "" {
 		return fmt.Errorf("please specify the cloud derive namespace using -derive-namespace")
+	}
+
+	if Cfg.SdrProvider == "" || (connector.EurekaDiscoveryService != Cfg.SdrProvider && connector.ConsulDiscoveryService != Cfg.SdrProvider) {
+		return fmt.Errorf("please specify service discovery and registration provider using -sdr-provider")
+	}
+
+	if Cfg.HttpAddr == "" {
+		return fmt.Errorf("please specify service discovery and registration server address using -sdr-http-addr")
 	}
 
 	return nil
