@@ -413,6 +413,61 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	}
 
 	// Determine the default port and set port annotations
+	overridePortName, overridePortNumber := t.determinePortAnnotations(svc, baseService)
+
+	// Parse any additional tags
+	if rawTags, ok := svc.Annotations[annotationServiceTags]; ok {
+		baseService.Tags = append(baseService.Tags, parseTags(rawTags)...)
+	}
+
+	// Parse any additional meta
+	for k, v := range svc.Annotations {
+		if strings.HasPrefix(k, annotationServiceMetaPrefix) {
+			k = strings.TrimPrefix(k, annotationServiceMetaPrefix)
+			baseService.Meta[k] = v
+		}
+	}
+
+	// Always log what we generated
+	defer func() {
+		log.Debug().Msgf("generated registration key:%s service:%s namespace:%s instances:%d",
+			key,
+			baseService.Service,
+			baseService.Namespace,
+			len(t.consulMap[key]))
+	}()
+
+	// If there are external IPs then those become the instance registrations
+	// for any type of service.
+	if t.generateExternalIPRegistrations(key, svc, baseNode, baseService) {
+		return
+	}
+
+	switch svc.Spec.Type {
+	// For LoadBalancer type services, we create a service instance for
+	// each LoadBalancer entry. We only support entries that have an IP
+	// address assigned (not hostnames).
+	// If LoadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
+	case corev1.ServiceTypeLoadBalancer:
+		t.generateLoadBalanceEndpointsRegistrations(key, baseNode, baseService, overridePortName, overridePortNumber, svc, ok)
+
+	// For NodePort services, we create a service instance for each
+	// endpoint of the service, which corresponds to the nodes the service's
+	// pods are running on. This way we don't register _every_ K8S
+	// node as part of the service.
+	case corev1.ServiceTypeNodePort:
+		if t.generateNodeportRegistrations(key, baseNode, baseService) {
+			return
+		}
+
+	// For ClusterIP services, we register a service instance
+	// for each endpoint.
+	case corev1.ServiceTypeClusterIP:
+		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, true)
+	}
+}
+
+func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseService provider.AgentService) (string, int) {
 	var overridePortName string
 	var overridePortNumber int
 	if len(svc.Spec.Ports) > 0 {
@@ -473,31 +528,10 @@ func (t *ServiceResource) generateRegistrations(key string) {
 			baseService.Meta["port-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
 		}
 	}
+	return overridePortName, overridePortNumber
+}
 
-	// Parse any additional tags
-	if rawTags, ok := svc.Annotations[annotationServiceTags]; ok {
-		baseService.Tags = append(baseService.Tags, parseTags(rawTags)...)
-	}
-
-	// Parse any additional meta
-	for k, v := range svc.Annotations {
-		if strings.HasPrefix(k, annotationServiceMetaPrefix) {
-			k = strings.TrimPrefix(k, annotationServiceMetaPrefix)
-			baseService.Meta[k] = v
-		}
-	}
-
-	// Always log what we generated
-	defer func() {
-		log.Debug().Msgf("generated registration key:%s service:%s namespace:%s instances:%d",
-			key,
-			baseService.Service,
-			baseService.Namespace,
-			len(t.consulMap[key]))
-	}()
-
-	// If there are external IPs then those become the instance registrations
-	// for any type of service.
+func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev1.Service, baseNode provider.CatalogRegistration, baseService provider.AgentService) bool {
 	if ips := svc.Spec.ExternalIPs; len(ips) > 0 {
 		for _, ip := range ips {
 			r := baseNode
@@ -521,99 +555,71 @@ func (t *ServiceResource) generateRegistrations(key string) {
 			t.consulMap[key] = append(t.consulMap[key], &r)
 		}
 
-		return
+		return true
+	}
+	return false
+}
+
+func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService) bool {
+	if t.endpointsMap == nil {
+		return true
 	}
 
-	switch svc.Spec.Type {
-	// For LoadBalancer type services, we create a service instance for
-	// each LoadBalancer entry. We only support entries that have an IP
-	// address assigned (not hostnames).
-	// If LoadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
-	case corev1.ServiceTypeLoadBalancer:
-		if t.LoadBalancerEndpointsSync {
-			t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, false)
-		} else {
-			seen := map[string]struct{}{}
-			for _, ingress := range svc.Status.LoadBalancer.Ingress {
-				addr := ingress.IP
-				if addr == "" {
-					addr = ingress.Hostname
-				}
-				if addr == "" {
-					continue
-				}
+	endpoints := t.endpointsMap[key]
+	if endpoints == nil {
+		return true
+	}
 
-				if _, ok = seen[addr]; ok {
-					continue
-				}
-				seen[addr] = struct{}{}
-
-				r := baseNode
-				rs := baseService
-				r.Service = &rs
-				r.Service.ID = serviceID(r.Service.Service, addr)
-				r.Service.Address = addr
-
-				// Adding information about service weight.
-				// Overrides the existing weight if present.
-				if weight, ok := svc.Annotations[annotationServiceWeight]; ok && weight != "" {
-					weightI, err := getServiceWeight(weight)
-					if err == nil {
-						r.Service.Weights = provider.AgentWeights{
-							Passing: weightI,
-						}
-					} else {
-						log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
-					}
-				}
-
-				t.consulMap[key] = append(t.consulMap[key], &r)
+	for _, subset := range endpoints.Subsets {
+		for _, subsetAddr := range subset.Addresses {
+			// Check that the node name exists
+			// subsetAddr.NodeName is of type *string
+			if subsetAddr.NodeName == nil {
+				continue
 			}
-		}
 
-	// For NodePort services, we create a service instance for each
-	// endpoint of the service, which corresponds to the nodes the service's
-	// pods are running on. This way we don't register _every_ K8S
-	// node as part of the service.
-	case corev1.ServiceTypeNodePort:
-		if t.endpointsMap == nil {
-			return
-		}
+			// Look up the node's ip address by getting node info
+			node, err := t.Client.CoreV1().Nodes().Get(t.Ctx, *subsetAddr.NodeName, metav1.GetOptions{})
+			if err != nil {
+				log.Warn().Msgf("error getting node info error:%v", err)
+				continue
+			}
 
-		endpoints := t.endpointsMap[key]
-		if endpoints == nil {
-			return
-		}
+			// Set the expected node address type
+			var expectedType corev1.NodeAddressType
+			if t.NodePortSync == InternalOnly {
+				expectedType = corev1.NodeInternalIP
+			} else {
+				expectedType = corev1.NodeExternalIP
+			}
 
-		for _, subset := range endpoints.Subsets {
-			for _, subsetAddr := range subset.Addresses {
-				// Check that the node name exists
-				// subsetAddr.NodeName is of type *string
-				if subsetAddr.NodeName == nil {
-					continue
+			// Find the ip address for the node and
+			// create the Consul service using it
+			var found bool
+			for _, address := range node.Status.Addresses {
+				if address.Type == expectedType {
+					found = true
+					r := baseNode
+					rs := baseService
+					r.Service = &rs
+					r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
+					r.Service.Address = address.Address
+
+					t.consulMap[key] = append(t.consulMap[key], &r)
+					// Only consider the first address that matches. In some cases
+					// there will be multiple addresses like when using AWS CNI.
+					// In those cases, Kubernetes will ensure eth0 is always the first
+					// address in the list.
+					// See https://github.com/kubernetes/kubernetes/blob/b559434c02f903dbcd46ee7d6c78b216d3f0aca0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1462-L1464
+					break
 				}
+			}
 
-				// Look up the node's ip address by getting node info
-				node, err := t.Client.CoreV1().Nodes().Get(t.Ctx, *subsetAddr.NodeName, metav1.GetOptions{})
-				if err != nil {
-					log.Warn().Msgf("error getting node info error:%v", err)
-					continue
-				}
-
-				// Set the expected node address type
-				var expectedType corev1.NodeAddressType
-				if t.NodePortSync == InternalOnly {
-					expectedType = corev1.NodeInternalIP
-				} else {
-					expectedType = corev1.NodeExternalIP
-				}
-
-				// Find the ip address for the node and
-				// create the Consul service using it
-				var found bool
+			// If an ExternalIP wasn't found, and ExternalFirst is set,
+			// use an InternalIP
+			if t.NodePortSync == ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
-					if address.Type == expectedType {
-						found = true
+					if address.Type == corev1.NodeInternalIP {
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
@@ -629,35 +635,52 @@ func (t *ServiceResource) generateRegistrations(key string) {
 						break
 					}
 				}
-
-				// If an ExternalIP wasn't found, and ExternalFirst is set,
-				// use an InternalIP
-				if t.NodePortSync == ExternalFirst && !found {
-					for _, address := range node.Status.Addresses {
-						if address.Type == corev1.NodeInternalIP {
-							r := baseNode
-							rs := baseService
-							r.Service = &rs
-							r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
-							r.Service.Address = address.Address
-
-							t.consulMap[key] = append(t.consulMap[key], &r)
-							// Only consider the first address that matches. In some cases
-							// there will be multiple addresses like when using AWS CNI.
-							// In those cases, Kubernetes will ensure eth0 is always the first
-							// address in the list.
-							// See https://github.com/kubernetes/kubernetes/blob/b559434c02f903dbcd46ee7d6c78b216d3f0aca0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1462-L1464
-							break
-						}
-					}
-				}
 			}
 		}
+	}
+	return false
+}
 
-	// For ClusterIP services, we register a service instance
-	// for each endpoint.
-	case corev1.ServiceTypeClusterIP:
-		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, true)
+func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service, ok bool) {
+	if t.LoadBalancerEndpointsSync {
+		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, false)
+	} else {
+		seen := map[string]struct{}{}
+		for _, ingress := range svc.Status.LoadBalancer.Ingress {
+			addr := ingress.IP
+			if addr == "" {
+				addr = ingress.Hostname
+			}
+			if addr == "" {
+				continue
+			}
+
+			if _, ok = seen[addr]; ok {
+				continue
+			}
+			seen[addr] = struct{}{}
+
+			r := baseNode
+			rs := baseService
+			r.Service = &rs
+			r.Service.ID = serviceID(r.Service.Service, addr)
+			r.Service.Address = addr
+
+			// Adding information about service weight.
+			// Overrides the existing weight if present.
+			if weight, ok := svc.Annotations[annotationServiceWeight]; ok && weight != "" {
+				weightI, err := getServiceWeight(weight)
+				if err == nil {
+					r.Service.Weights = provider.AgentWeights{
+						Passing: weightI,
+					}
+				} else {
+					log.Debug().Msgf("[generateRegistrations] service weight err:%v", err)
+				}
+			}
+
+			t.consulMap[key] = append(t.consulMap[key], &r)
+		}
 	}
 }
 
