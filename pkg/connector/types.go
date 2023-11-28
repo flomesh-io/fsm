@@ -6,7 +6,9 @@ const (
 
 	//EurekaDiscoveryService defines eureka discovery service name
 	EurekaDiscoveryService = "eureka"
+)
 
+const (
 	// MeshServiceSyncAnnotation defines mesh service sync annotation
 	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
 

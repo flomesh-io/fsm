@@ -1,4 +1,4 @@
-package c2k
+package ctok
 
 import (
 	"k8s.io/client-go/tools/cache"

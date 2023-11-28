@@ -1,4 +1,4 @@
-package c2k
+package ctok
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	log               = logger.New("cloud-connector")
+	log               = logger.New("cloud-connector-c2k")
 	gatewayAPIEnabled = false
 )
 

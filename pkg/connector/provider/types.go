@@ -1,4 +1,4 @@
-package client
+package provider
 
 import (
 	"context"
@@ -314,11 +314,11 @@ const (
 	HealthMaint    = "maintenance"
 )
 
-// ConsulNamespace returns the consul namespace that a service should be
+// CloudNamespace returns the cloud namespace that a service should be
 // registered in based on the namespace options. It returns an
 // empty string if namespaces aren't enabled.
-func ConsulNamespace(kubeNS string, enableConsulNamespaces bool, consulDestNS string, enableMirroring bool, mirroringPrefix string) string {
-	if !enableConsulNamespaces {
+func CloudNamespace(kubeNS string, enableCloudNamespaces bool, cloudDestNS string, enableMirroring bool, mirroringPrefix string) string {
+	if !enableCloudNamespaces {
 		return ""
 	}
 
@@ -327,5 +327,5 @@ func ConsulNamespace(kubeNS string, enableConsulNamespaces bool, consulDestNS st
 		return fmt.Sprintf("%s%s", mirroringPrefix, kubeNS)
 	}
 
-	return consulDestNS
+	return cloudDestNS
 }

@@ -1,9 +1,10 @@
-package client
+package provider
 
 import (
 	"fmt"
 
 	"github.com/hudl/fargo"
+	"github.com/op/go-logging"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
@@ -94,5 +95,6 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 func GetEurekaDiscoveryClient(eurekaClient *fargo.EurekaConnection) *EurekaDiscoveryClient {
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = eurekaClient
+	logging.SetLevel(logging.WARNING, "fargo")
 	return eurekaDiscoveryClient
 }

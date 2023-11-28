@@ -1,5 +1,5 @@
 // Package c2k implements a syncer from cloud to k8s.
-package c2k
+package ctok
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 
 	"github.com/cenkalti/backoff"
 
-	"github.com/flomesh-io/fsm/pkg/connector/client"
+	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // Source is the source for the sync that watches cloud services and
 // updates a Sink whenever the set of services to register changes.
 type Source struct {
-	DiscClient  client.ServiceDiscoveryClient
+	DiscClient  provider.ServiceDiscoveryClient
 	Domain      string // DNS domain
 	Sink        *Sink  // Sink is the sink to update with services
 	Prefix      string // Prefix is a prefix to prepend to services
@@ -30,7 +30,7 @@ type Source struct {
 // Run is the long-running loop for watching cloud services and
 // updating the Sink.
 func (s *Source) Run(ctx context.Context) {
-	opts := (&client.QueryOptions{
+	opts := (&provider.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
 		WaitTime:   5 * time.Second,
@@ -76,6 +76,7 @@ func (s *Source) Run(ctx context.Context) {
 		}
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 		s.Sink.SetServices(services)
+		time.Sleep(opts.WaitTime)
 	}
 }
 
@@ -123,7 +124,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 	return svcMetaMap, s.DiscClient.MicroServiceProvider()
 }
 
-func (s *Source) aggregateTag(svcName MicroSvcName, svc *client.AgentService, grpcPort int, svcNames []MicroSvcName) (int, []MicroSvcName) {
+func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, grpcPort int, svcNames []MicroSvcName) (int, []MicroSvcName) {
 	svcPrefix := ""
 	svcSuffix := ""
 	for _, tag := range svc.Tags {
@@ -162,7 +163,7 @@ func (s *Source) aggregateTag(svcName MicroSvcName, svc *client.AgentService, gr
 	return grpcPort, svcNames
 }
 
-func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *client.AgentService, svcNames []MicroSvcName) []MicroSvcName {
+func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) []MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
 	for tag, v := range svc.Meta {

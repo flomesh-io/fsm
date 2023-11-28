@@ -1,4 +1,4 @@
-package c2k
+package ctok
 
 import (
 	"context"

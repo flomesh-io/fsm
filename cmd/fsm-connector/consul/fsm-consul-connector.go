@@ -4,24 +4,20 @@ package main
 
 import (
 	"context"
-	"flag"
-	"fmt"
 	"net/http"
-	"os"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	consul "github.com/hashicorp/consul/api"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
-	"github.com/hashicorp/consul/command/flags"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/flomesh-io/fsm/pkg/connector/c2k"
-	"github.com/flomesh-io/fsm/pkg/connector/client"
+	"github.com/flomesh-io/fsm/pkg/connector/cli"
+	"github.com/flomesh-io/fsm/pkg/connector/ctok"
+	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/health"
@@ -36,84 +32,52 @@ import (
 )
 
 var (
-	verbosity         string
-	meshName          string // An ID that uniquely identifies an FSM instance
-	kubeConfigFile    string
-	fsmNamespace      string
-	fsmMeshConfigName string
-	fsmVersion        string
-	trustDomain       string
-	passingOnly       bool
-	filterTag         string
-	prefixTag         string
-	suffixTag         string
-	deriveNamespace   string
-	withGatewayAPI    bool
-
+	log    = logger.New("fsm-consul-connector")
 	scheme = runtime.NewScheme()
 )
 
-var (
-	cliFlags  = flag.NewFlagSet("", flag.ContinueOnError)
-	httpFlags = flags.HTTPFlags{}
-	log       = logger.New("fsm-consul-connector")
-)
-
 func init() {
-	cliFlags.StringVar(&verbosity, "verbosity", "info", "Set log verbosity level")
-	cliFlags.StringVar(&meshName, "mesh-name", "", "FSM mesh name")
-	cliFlags.StringVar(&kubeConfigFile, "kubeconfig", "", "Path to Kubernetes config file.")
-	cliFlags.StringVar(&fsmNamespace, "fsm-namespace", "", "Namespace to which FSM belongs to.")
-	cliFlags.StringVar(&fsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
-	cliFlags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
-
-	// TODO (#4502): Remove when we add full MRC support
-	cliFlags.StringVar(&trustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
-	cliFlags.StringVar(&filterTag, "filter-tag", "", "filter tag")
-	cliFlags.StringVar(&prefixTag, "prefix-tag", "", "prefix tag")
-	cliFlags.StringVar(&suffixTag, "suffix-tag", "", "suffix tag")
-	cliFlags.BoolVar(&passingOnly, "passing-only", true, "passing only")
-	cliFlags.BoolVar(&withGatewayAPI, "with-gateway-api", false, "with gateway api")
-	cliFlags.StringVar(&deriveNamespace, "derive-namespace", "", "derive namespace")
-	flags.Merge(cliFlags, httpFlags.ClientFlags())
-
 	_ = clientgoscheme.AddToScheme(scheme)
 }
 
 func main() {
 	log.Info().Msgf("Starting fsm-consul-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
-	if err := parseFlags(); err != nil {
+	if err := cli.ParseFlags(); err != nil {
 		log.Fatal().Err(err).Msg("Error parsing cmd line arguments")
 	}
-	if err := logger.SetLogLevel(verbosity); err != nil {
+	if err := logger.SetLogLevel(cli.Cfg.Verbosity); err != nil {
 		log.Fatal().Err(err).Msg("Error setting log level")
 	}
 
 	// Initialize kube config and client
-	kubeConfig, err := clientcmd.BuildConfigFromFlags("", kubeConfigFile)
+	kubeConfig, err := clientcmd.BuildConfigFromFlags("", cli.Cfg.KubeConfigFile)
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", kubeConfigFile)
+		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 
-	k8s.SetTrustDomain(trustDomain)
+	k8s.SetTrustDomain(cli.Cfg.TrustDomain)
 
-	c2k.EnabledGatewayAPI(withGatewayAPI)
-	c2k.SetSyncCloudNamespace(deriveNamespace)
+	ctok.EnabledGatewayAPI(cli.Cfg.C2K.FlagWithGatewayAPI)
+	ctok.SetSyncCloudNamespace(cli.Cfg.DeriveNamespace)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-consul-connector pod resource
-	connectorPod, err := getConnectorPod(kubeClient)
+	connectorPod, err := cli.GetConnectorPod(kubeClient)
 	if err != nil {
+		// TODO(#3962): metric might not be scraped before process restart resulting from this error
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingConsulConnectorPod)).
+			Msg("Error retrieving fsm-consul-connector pod")
 		log.Fatal().Msg("Error fetching fsm-consul-connector pod")
 	}
+
 	eventRecorder := events.GenericEventRecorder()
-	if err = eventRecorder.Initialize(connectorPod, kubeClient, fsmNamespace); err != nil {
+	if err = eventRecorder.Initialize(connectorPod, kubeClient, cli.Cfg.FsmNamespace); err != nil {
 		log.Fatal().Msg("Error initializing generic event recorder")
 	}
 
 	// This ensures CLI parameters (and dependent values) are correct.
-	if err = validateCLIParams(); err != nil {
+	if err = cli.ValidateCLIParams(); err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InvalidCLIParameters, "Error validating CLI parameters")
 	}
 
@@ -123,27 +87,29 @@ func main() {
 
 	msgBroker := messaging.NewBroker(stop)
 
-	consulClient, err := httpFlags.APIClient()
+	cfg := consul.DefaultConfig()
+	cfg.Address = cli.Cfg.HttpAddr
+	consulClient, err := consul.NewClient(cfg)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating consul client")
 	}
 
-	sink := c2k.NewSink(ctx, kubeClient, gatewayClient, fsmNamespace)
-	source := &c2k.Source{
-		DiscClient:  client.GetConsulDiscoveryClient(consulClient),
-		Domain:      trustDomain,
+	sink := ctok.NewSink(ctx, kubeClient, gatewayClient, cli.Cfg.FsmNamespace)
+	source := &ctok.Source{
+		DiscClient:  provider.GetConsulDiscoveryClient(consulClient),
+		Domain:      cli.Cfg.TrustDomain,
 		Sink:        sink,
 		Prefix:      "",
-		FilterTag:   filterTag,
-		PrefixTag:   prefixTag,
-		SuffixTag:   suffixTag,
-		PassingOnly: passingOnly,
+		FilterTag:   cli.Cfg.C2K.FlagFilterTag,
+		PrefixTag:   cli.Cfg.C2K.FlagPrefixTag,
+		SuffixTag:   cli.Cfg.C2K.FlagSuffixTag,
+		PassingOnly: cli.Cfg.C2K.FlagPassingOnly,
 	}
 	sink.MicroAggregator = source
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &c2k.Controller{
+	ctl := &ctok.Controller{
 		Resource: sink,
 	}
 	go ctl.Run(ctx.Done())
@@ -165,52 +131,8 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go c2k.WatchMeshConfigUpdated(msgBroker, stop)
+	go ctok.WatchMeshConfigUpdated(msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-consul-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
-}
-
-func parseFlags() error {
-	if err := cliFlags.Parse(os.Args[1:]); err != nil {
-		return err
-	}
-	_ = flag.CommandLine.Parse([]string{})
-	return nil
-}
-
-// getConnectorPod returns the fsm-consul-connector pod spec.
-// The pod name is inferred from the 'CONNECTOR_POD_NAME' env variable which is set during deployment.
-func getConnectorPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
-	podName := os.Getenv("CONNECTOR_POD_NAME")
-	if podName == "" {
-		return nil, fmt.Errorf("CONNECTOR_POD_NAME env variable cannot be empty")
-	}
-
-	pod, err := kubeClient.CoreV1().Pods(fsmNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
-	if err != nil {
-		// TODO(#3962): metric might not be scraped before process restart resulting from this error
-		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingConsulConnectorPod)).
-			Msgf("Error retrieving fsm-consul-connector pod %s", podName)
-		return nil, err
-	}
-
-	return pod, nil
-}
-
-// validateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
-func validateCLIParams() error {
-	if meshName == "" {
-		return fmt.Errorf("please specify the mesh name using --mesh-name")
-	}
-
-	if fsmNamespace == "" {
-		return fmt.Errorf("please specify the FSM namespace using -fsm-namespace")
-	}
-
-	if deriveNamespace == "" {
-		return fmt.Errorf("please specify the cloud derive namespace using -derive-namespace")
-	}
-
-	return nil
 }

@@ -1,6 +1,6 @@
 // Package c2k contains a reusable abstraction for efficiently
 // watching for changes in resources in a Kubernetes cluster.
-package c2k
+package ctok
 
 const (
 	// CloudSourcedServiceLabel defines cloud-sourced service label
