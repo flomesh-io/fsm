@@ -1,4 +1,4 @@
-{{- if .Values.fsm.deployEurekaConnector }}
+{{- if .Values.fsm.cloudConnector.eureka.enable }}
 apiVersion: v1
 kind: Service
 metadata:

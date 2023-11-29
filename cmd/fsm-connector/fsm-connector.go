@@ -102,8 +102,13 @@ func main() {
 
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 
-	go cli.SyncCtoK(ctx, kubeClient, discClient, gatewayClient)
-	go cli.SyncKtoC(ctx, kubeClient, discClient)
+	if cli.Cfg.SyncCloudToK8s {
+		go cli.SyncCtoK(ctx, kubeClient, discClient, gatewayClient)
+	}
+
+	if cli.Cfg.SyncK8sToCloud {
+		go cli.SyncKtoC(ctx, kubeClient, discClient)
+	}
 
 	version.SetMetric()
 	/*

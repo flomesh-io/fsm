@@ -91,6 +91,8 @@ type Config struct {
 	DeriveNamespace   string
 	SdrProvider       string
 	HttpAddr          string
+	SyncCloudToK8s    bool
+	SyncK8sToCloud    bool
 
 	c2k C2KCfg
 	k2c K2CCfg
@@ -107,6 +109,8 @@ func init() {
 	flags.StringVar(&Cfg.DeriveNamespace, "derive-namespace", "", "derive namespace")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, consul)")
 	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
+	flags.BoolVar(&Cfg.SyncCloudToK8s, "sync-cloud-to-k8s", true, "sync from cloud to k8s")
+	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
 
 	flags.StringVar(&Cfg.c2k.FlagFilterTag, "filter-tag", "", "filter tag")
 	flags.StringVar(&Cfg.c2k.FlagPrefixTag, "prefix-tag", "", "prefix tag")

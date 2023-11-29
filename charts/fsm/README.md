@@ -94,18 +94,24 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.consul.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
 | fsm.cloudConnector.consul.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.consul.prefixTag | string | `""` |  |
 | fsm.cloudConnector.consul.suffixTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8s | bool | `true` |  |
+| fsm.cloudConnector.consul.syncToK8s | bool | `true` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.eureka.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
 | fsm.cloudConnector.eureka.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.eureka.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.suffixMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.syncFromK8s | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncToK8s | bool | `true` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
@@ -115,8 +121,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
-| fsm.deployConsulConnector | bool | `false` | Deploy Consul Connector with FSM installation |
-| fsm.deployEurekaConnector | bool | `false` | Deploy Eureka Connector with FSM installation |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |

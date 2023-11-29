@@ -414,12 +414,6 @@ fsm:
   # -- Enable reconciler for FSM's CRDs and mutating webhook
   enableReconciler: false
 
-  # -- Deploy Consul Connector with FSM installation
-  deployConsulConnector: false
-
-  # -- Deploy Eureka Connector with FSM installation
-  deployEurekaConnector: false
-
   # -- Deploy Prometheus with FSM installation
   deployPrometheus: false
 
@@ -656,16 +650,22 @@ fsm:
   # -- FSM's cloud connector parameters
   cloudConnector:
     consul:
+      enable: false
       deriveNamespace: ""
       httpAddr: 127.0.0.1:8500
+      syncToK8s: true
+      syncFromK8s: true
       passingOnly: true
       filterTag: ""
       prefixTag: ""
       suffixTag: ""
 
     eureka:
+      enable: false
       deriveNamespace: ""
       httpAddr: 127.0.0.1:8761/eureka
+      syncToK8s: true
+      syncFromK8s: true
       passingOnly: true
       filterMetadata: ""
       prefixMetadata: ""
