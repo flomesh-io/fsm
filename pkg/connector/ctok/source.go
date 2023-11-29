@@ -84,6 +84,10 @@ func (s *Source) Run(ctx context.Context) {
 //
 //lint:ignore U1000 ignore unused
 func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string) {
+	if _, exists := s.Sink.rawServices[string(svcName)]; !exists {
+		return nil, s.DiscClient.MicroServiceProvider()
+	}
+
 	serviceEntries, err := s.DiscClient.HealthService(string(svcName), s.FilterTag, nil, s.PassingOnly)
 	if err != nil {
 		return nil, s.DiscClient.MicroServiceProvider()

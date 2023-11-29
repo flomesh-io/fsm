@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,6 +88,7 @@ type Sink struct {
 	// We lowercase the cloud service names and DNS entries
 	// because Kube names must be lowercase.
 	sourceServices map[string]string
+	rawServices    map[string]string
 
 	// serviceKeyToName maps from Kube controller keys to Kube service names.
 	// Controller keys are in the form <kube namespace>/<kube svc name>
@@ -123,6 +125,7 @@ func (s *Sink) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	}
 
 	s.sourceServices = lowercasedSvcs
+	s.rawServices = maps.Clone(lowercasedSvcs)
 	s.trigger() // Any service change probably requires syncing
 }
 
@@ -279,7 +282,7 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
-						log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
+						log.Warn().Err(err).Msgf("error update endpoints, name:%s", service.Name)
 						return err
 					} else {
 						s.updateGatewayEndpointSlice(s.Ctx, updatedEpt)

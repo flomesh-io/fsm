@@ -1,4 +1,4 @@
-// Package k2c contains a reusable abstraction for efficiently
+// Package ktoc contains a reusable abstraction for efficiently
 // watching for changes in resources in a Kubernetes cluster.
 package ktoc
 
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	log = logger.New("cloud-connector-k2c")
+	log = logger.New("connector-k2c")
 )
 
 // Controller is a generic cache.Controller implementation that watches

@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	log               = logger.New("cloud-connector-c2k")
+	log               = logger.New("connector-c2k")
 	gatewayAPIEnabled = false
 )
 
@@ -429,7 +429,7 @@ func (c *Controller) processSingleEndpoints(
 
 	if endpointsErr != nil {
 		if queue.NumRequeues(event) < 5 {
-			log.Err(endpointsErr).Msgf("failed processing endpoints item, retrying key:%s", key)
+			log.Warn().Err(endpointsErr).Msgf("failed processing endpoints item, retrying key:%s", key)
 			queue.AddRateLimited(rawEvent)
 		} else {
 			log.Err(endpointsErr).Msgf("failed processing endpoints item, no more retries, key:%s", key)
