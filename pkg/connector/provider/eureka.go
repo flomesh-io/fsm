@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -94,8 +93,6 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error 
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
-	bytes, _ := json.MarshalIndent(reg.toEureka(), "", " ")
-	fmt.Println(string(bytes))
 	err := dc.eurekaClient.RegisterInstance(reg.toEureka())
 	return err
 }
