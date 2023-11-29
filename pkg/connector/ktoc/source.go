@@ -172,7 +172,25 @@ func (t *ServiceResource) Informer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return t.Client.CoreV1().Services(metav1.NamespaceAll).List(t.Ctx, options)
+				svcList, err := t.Client.CoreV1().Services(metav1.NamespaceAll).List(t.Ctx, options)
+				if err == nil {
+					filterSvcs := make([]corev1.Service, 0)
+					for _, svc := range svcList.Items {
+						if svc.Namespace == syncCloudNamespace {
+							continue
+						}
+						if len(svc.Annotations) > 0 {
+							if v, exists := svc.Annotations[connector.AnnotationMeshServiceSync]; exists {
+								if strings.EqualFold(strings.ToLower(v), "true") {
+									continue
+								}
+							}
+						}
+						filterSvcs = append(filterSvcs, svc)
+					}
+					svcList.Items = filterSvcs
+				}
+				return svcList, err
 			},
 
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
@@ -289,6 +307,11 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 // shouldSync returns true if resyncing should be enabled for the given service.
 func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 	// Namespace logic
+	if svc.Namespace == syncCloudNamespace {
+		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
+		return false
+	}
+
 	// If in deny list, don't sync
 	if t.DenyK8sNamespacesSet.Contains(svc.Namespace) {
 		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)

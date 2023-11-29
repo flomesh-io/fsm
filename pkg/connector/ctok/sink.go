@@ -439,7 +439,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           "false",
+					connector.AnnotationMeshServiceSync:           "true",
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
 				s.fillService(mode, svcMeta, svc)
@@ -458,7 +458,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           "false",
+						connector.AnnotationMeshServiceSync:           "true",
 						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},

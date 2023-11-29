@@ -37,6 +37,8 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
+	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
+
 	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
 	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
 

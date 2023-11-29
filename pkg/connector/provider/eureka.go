@@ -1,7 +1,9 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/hudl/fargo"
 	"github.com/op/go-logging"
@@ -23,6 +25,11 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			for _, svcIns := range svcApp.Instances {
+				if serviceSource, serviceSourceErr := svcIns.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
+					if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+						continue
+					}
+				}
 				svcTagArray, exists := catalogServices[svc]
 				if !exists {
 					svcTagArray = make([]string, 0)
@@ -44,10 +51,15 @@ func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 	if err != nil {
 		return nil, err
 	}
-	catalogServices := make([]*CatalogService, len(services.Instances))
-	for idx, ins := range services.Instances {
-		catalogServices[idx] = new(CatalogService)
-		catalogServices[idx].fromEureka(ins)
+	catalogServices := make([]*CatalogService, 0)
+	for _, ins := range services.Instances {
+		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
+			if !strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+				catalogService := new(CatalogService)
+				catalogService.fromEureka(ins)
+				catalogServices = append(catalogServices, catalogService)
+			}
+		}
 	}
 	return catalogServices, nil
 }
@@ -59,10 +71,15 @@ func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 		return nil, err
 	}
 
-	agentServices := make([]*AgentService, len(services.Instances))
-	for idx, ins := range services.Instances {
-		agentServices[idx] = new(AgentService)
-		agentServices[idx].fromEureka(ins)
+	agentServices := make([]*AgentService, 0)
+	for _, ins := range services.Instances {
+		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
+			if !strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+				agentService := new(AgentService)
+				agentService.fromEureka(ins)
+				agentServices = append(agentServices, agentService)
+			}
+		}
 	}
 	return agentServices, nil
 }
@@ -77,6 +94,8 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error 
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
+	bytes, _ := json.MarshalIndent(reg.toEureka(), "", " ")
+	fmt.Println(string(bytes))
 	err := dc.eurekaClient.RegisterInstance(reg.toEureka())
 	return err
 }
