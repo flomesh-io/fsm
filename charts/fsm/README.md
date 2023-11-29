@@ -59,6 +59,12 @@ The following table lists the configurable parameters of the fsm chart and their
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| clusterSet.controlPlaneUID | string | `""` |  |
+| clusterSet.group | string | `"default"` |  |
+| clusterSet.isManaged | bool | `false` |  |
+| clusterSet.name | string | `"local"` |  |
+| clusterSet.region | string | `"default"` |  |
+| clusterSet.zone | string | `"default"` |  |
 | fsm.caBundleSecretName | string | `"fsm-ca-bundle"` | The Kubernetes secret name to store CA bundle for the root CA used in FSM |
 | fsm.certificateProvider.certKeyBitSize | int | `2048` | Certificate key bit size for data plane certificates issued to workloads to communicate over mTLS |
 | fsm.certificateProvider.kind | string | `"tresor"` | The Certificate manager type: `tresor`, `vault` or `cert-manager` |

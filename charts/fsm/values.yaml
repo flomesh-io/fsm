@@ -1083,3 +1083,12 @@ smi:
   # -- Enables validation of SMI Traffic Target
   validateTrafficTarget: true
 
+#
+# -- ClusterSet configuration
+clusterSet:
+  isManaged: false
+  region: default
+  zone: default
+  group: default
+  name: local
+  controlPlaneUID: ""

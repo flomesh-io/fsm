@@ -190,6 +190,11 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 		r.Port = cr.Service.Port
 		r.Status = eureka.UP
 		r.DataCenterInfo = eureka.DataCenterInfo{Name: eureka.MyOwn}
+		if len(cr.Service.Meta) > 0 {
+			for k, v := range cr.Service.Meta {
+				r.Metadata.GetMap()[k] = v
+			}
+		}
 
 		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.Port)
 		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.Port)

@@ -2931,6 +2931,53 @@
                     "type": "boolean"
                 }
             }
+        },
+        "clusterSet": {
+          "$id": "#/properties/clusterSet",
+          "type": "object",
+          "title": "ClusterSet Configuration",
+          "description": "ClusterSet configuration",
+          "required": [
+            "isManaged"
+          ],
+          "properties": {
+            "isManaged": {
+              "$id": "#/properties/clusterSet/isManaged",
+              "title": "Managed",
+              "description": "Managed",
+              "type": "boolean"
+            },
+            "region": {
+              "$id": "#/properties/clusterSet/region",
+              "title": "Region",
+              "description": "Region",
+              "type": "string"
+            },
+            "zone": {
+              "$id": "#/properties/clusterSet/zone",
+              "title": "Zone",
+              "description": "Zone",
+              "type": "string"
+            },
+            "group": {
+              "$id": "#/properties/clusterSet/group",
+              "title": "Group",
+              "description": "Group",
+              "type": "string"
+            },
+            "name": {
+              "$id": "#/properties/clusterSet/name",
+              "title": "Name",
+              "description": "Name",
+              "type": "string"
+            },
+            "controlPlaneUID": {
+              "$id": "#/properties/clusterSet/controlPlaneUID",
+              "title": "Control Plane UID",
+              "description": "Control Plane UID",
+              "type": "string"
+            }
+          }
         }
     }
 }

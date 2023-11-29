@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -14,16 +15,18 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/cli"
-	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/httpserver"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
@@ -82,6 +85,14 @@ func main() {
 	stop := signals.RegisterExitHandlers(cancel)
 
 	msgBroker := messaging.NewBroker(stop)
+	configClient := configClientset.NewForConfigOrDie(kubeConfig)
+	informerCollection, err := informers.NewInformerCollection(cli.Cfg.MeshName, stop,
+		informers.WithKubeClient(kubeClient),
+		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
+	)
+	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
+	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
+	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
 	var discClient provider.ServiceDiscoveryClient = nil
 	if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
@@ -127,7 +138,7 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go ctok.WatchMeshConfigUpdated(msgBroker, stop)
+	go connector.WatchMeshConfigUpdated(msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)

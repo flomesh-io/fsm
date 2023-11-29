@@ -17,22 +17,18 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 const (
-	// CloudSourceKey is the key used in the meta to track the "k8s" source.
-	// CloudSourceValue is the value of the source.
-	CloudSourceKey   = "external-source"
-	CloudSourceValue = "kubernetes"
-
 	// CloudK8SNS is the key used in the meta to record the namespace
 	// of the service/node registration.
-	CloudK8SNS       = "external-k8s-ns"
-	CloudK8SRefKind  = "external-k8s-ref-kind"
-	CloudK8SRefValue = "external-k8s-ref-name"
-	CloudK8SNodeName = "external-k8s-node-name"
+	CloudK8SNS       = "fsm-connector-external-k8s-ns"
+	CloudK8SRefKind  = "fsm-connector-external-k8s-ref-kind"
+	CloudK8SRefValue = "fsm-connector-external-k8s-ref-name"
+	CloudK8SNodeName = "fsm-connector-external-k8s-node-name"
 
 	// cloudKubernetesCheckType is the type of health check in Consul for Kubernetes readiness status.
 	cloudKubernetesCheckType = "kubernetes-readiness"
@@ -158,10 +154,10 @@ type ServiceResource struct {
 	// is provided by the Ingress resource for the service.
 	serviceHostnameMap map[string]serviceAddress
 
-	// consulMap holds the services in Consul that we've registered from kube.
+	// registeredServiceMap holds the services in Consul that we've registered from kube.
 	// It's populated via Consul's API and lets us diff what is actually in
 	// Consul vs. what we expect to be there.
-	consulMap map[string][]*provider.CatalogRegistration
+	registeredServiceMap map[string][]*provider.CatalogRegistration
 }
 
 type serviceAddress struct {
@@ -264,8 +260,8 @@ func (t *ServiceResource) doDelete(key string) {
 	log.Debug().Msgf("[doDelete] deleting endpoints from endpointsMap key:%s", key)
 	// If there were registrations related to this service, then
 	// delete them and sync.
-	if _, ok := t.consulMap[key]; ok {
-		delete(t.consulMap, key)
+	if _, ok := t.registeredServiceMap[key]; ok {
+		delete(t.registeredServiceMap, key)
 		t.sync()
 	}
 }
@@ -311,7 +307,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	raw, ok := svc.Annotations[annotationServiceSync]
+	raw, ok := svc.Annotations[connector.AnnotationServiceSync]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
 		return !t.ExplicitEnable
@@ -367,13 +363,13 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	log.Debug().Msgf("[generateRegistrations] generating registration key:%s", key)
 
 	// Initialize our consul service map here if it isn't already.
-	if t.consulMap == nil {
-		t.consulMap = make(map[string][]*provider.CatalogRegistration)
+	if t.registeredServiceMap == nil {
+		t.registeredServiceMap = make(map[string][]*provider.CatalogRegistration)
 	}
 
 	// Begin by always clearing the old value out since we'll regenerate
 	// a new one if there is one.
-	delete(t.consulMap, key)
+	delete(t.registeredServiceMap, key)
 
 	// baseNode and baseService are the base that should be modified with
 	// service-type specific changes. These are not pointers, they should be
@@ -383,7 +379,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		Node:           t.ConsulNodeName,
 		Address:        "127.0.0.1",
 		NodeMeta: map[string]string{
-			CloudSourceKey: CloudSourceValue,
+			connector.ServiceSourceKey: connector.ServiceSourceValue,
 		},
 	}
 
@@ -391,13 +387,13 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
 		Tags:    []string{t.ConsulK8STag},
 		Meta: map[string]interface{}{
-			CloudSourceKey: CloudSourceValue,
-			CloudK8SNS:     svc.Namespace,
+			connector.ServiceSourceKey: connector.ServiceSourceValue,
+			CloudK8SNS:                 svc.Namespace,
 		},
 	}
 
 	// If the name is explicitly annotated, adopt that name
-	if v, ok := svc.Annotations[annotationServiceName]; ok {
+	if v, ok := svc.Annotations[connector.AnnotationServiceName]; ok {
 		baseService.Service = strings.TrimSpace(v)
 	}
 
@@ -416,14 +412,14 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	overridePortName, overridePortNumber := t.determinePortAnnotations(svc, baseService)
 
 	// Parse any additional tags
-	if rawTags, ok := svc.Annotations[annotationServiceTags]; ok {
+	if rawTags, ok := svc.Annotations[connector.AnnotationServiceTags]; ok {
 		baseService.Tags = append(baseService.Tags, parseTags(rawTags)...)
 	}
 
 	// Parse any additional meta
 	for k, v := range svc.Annotations {
-		if strings.HasPrefix(k, annotationServiceMetaPrefix) {
-			k = strings.TrimPrefix(k, annotationServiceMetaPrefix)
+		if strings.HasPrefix(k, connector.AnnotationServiceMetaPrefix) {
+			k = strings.TrimPrefix(k, connector.AnnotationServiceMetaPrefix)
 			baseService.Meta[k] = v
 		}
 	}
@@ -434,7 +430,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 			key,
 			baseService.Service,
 			baseService.Namespace,
-			len(t.consulMap[key]))
+			len(t.registeredServiceMap[key]))
 	}()
 
 	// If there are external IPs then those become the instance registrations
@@ -475,7 +471,7 @@ func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseServ
 		isNodePort := svc.Spec.Type == corev1.ServiceTypeNodePort
 
 		// If a specific port is specified, then use that port value
-		portAnnotation, ok := svc.Annotations[annotationServicePort]
+		portAnnotation, ok := svc.Annotations[connector.AnnotationServicePort]
 		if ok {
 			if v, err := strconv.ParseInt(portAnnotation, 0, 0); err == nil {
 				port = int(v)
@@ -541,7 +537,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
-			if weight, ok := svc.Annotations[annotationServiceWeight]; ok && weight != "" {
+			if weight, ok := svc.Annotations[connector.AnnotationServiceWeight]; ok && weight != "" {
 				weightI, err := getServiceWeight(weight)
 				if err == nil {
 					r.Service.Weights = provider.AgentWeights{
@@ -552,7 +548,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 				}
 			}
 
-			t.consulMap[key] = append(t.consulMap[key], &r)
+			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
 		}
 
 		return true
@@ -605,7 +601,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
 					r.Service.Address = address.Address
 
-					t.consulMap[key] = append(t.consulMap[key], &r)
+					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
 					// Only consider the first address that matches. In some cases
 					// there will be multiple addresses like when using AWS CNI.
 					// In those cases, Kubernetes will ensure eth0 is always the first
@@ -626,7 +622,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 						r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
 						r.Service.Address = address.Address
 
-						t.consulMap[key] = append(t.consulMap[key], &r)
+						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
 						// Only consider the first address that matches. In some cases
 						// there will be multiple addresses like when using AWS CNI.
 						// In those cases, Kubernetes will ensure eth0 is always the first
@@ -668,7 +664,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
-			if weight, ok := svc.Annotations[annotationServiceWeight]; ok && weight != "" {
+			if weight, ok := svc.Annotations[connector.AnnotationServiceWeight]; ok && weight != "" {
 				weightI, err := getServiceWeight(weight)
 				if err == nil {
 					r.Service.Weights = provider.AgentWeights{
@@ -679,7 +675,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 				}
 			}
 
-			t.consulMap[key] = append(t.consulMap[key], &r)
+			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
 		}
 	}
 }
@@ -778,7 +774,7 @@ func (t *ServiceResource) registerServiceInstance(
 				Output:    kubernetesSuccessReasonMsg,
 			}
 
-			t.consulMap[key] = append(t.consulMap[key], &r)
+			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
 		}
 	}
 }
@@ -791,8 +787,8 @@ func (t *ServiceResource) sync() {
 	// the times that sync are called are also not the most efficient. All
 	// of these are implementation details so lets improve this later when
 	// it becomes a performance issue and just do the easy thing first.
-	rs := make([]*provider.CatalogRegistration, 0, len(t.consulMap)*4)
-	for _, set := range t.consulMap {
+	rs := make([]*provider.CatalogRegistration, 0, len(t.registeredServiceMap)*4)
+	for _, set := range t.registeredServiceMap {
 		rs = append(rs, set...)
 	}
 
@@ -881,8 +877,8 @@ func (t *serviceEndpointsResource) Delete(key string, _ interface{}) error {
 	// had associated registrations.
 	if _, ok := t.Service.endpointsMap[key]; ok {
 		delete(t.Service.endpointsMap, key)
-		if _, ok := t.Service.consulMap[key]; ok {
-			delete(t.Service.consulMap, key)
+		if _, ok := t.Service.registeredServiceMap[key]; ok {
+			delete(t.Service.registeredServiceMap, key)
 			t.Service.sync()
 		}
 	}
@@ -1050,7 +1046,7 @@ func getServiceWeight(weight string) (int, error) {
 	}
 
 	if weightI <= 1 {
-		return -1, fmt.Errorf("expecting the service annotation %s value to be greater than 1", annotationServiceWeight)
+		return -1, fmt.Errorf("expecting the service annotation %s value to be greater than 1", connector.AnnotationServiceWeight)
 	}
 
 	return weightI, nil

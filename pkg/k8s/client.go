@@ -339,7 +339,7 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 			Port:      uint16(portSpec.Port),
 		}
 		if len(svc.Annotations) > 0 {
-			if inheritedFrom, ok := svc.Annotations[connector.CloudServiceInheritedFromAnnotation]; ok {
+			if inheritedFrom, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
 				meshSvc.CloudInheritedFrom = inheritedFrom
 			}
 		}

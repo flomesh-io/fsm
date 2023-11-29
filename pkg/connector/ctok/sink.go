@@ -266,8 +266,8 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 					}
 					ported = true
 				}
-				if strings.HasPrefix(k, connector.MeshEndpointAddrAnnotation) {
-					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.MeshEndpointAddrAnnotation))
+				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
+					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
 					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
 						ip := utils.Int2IP4(uint32(ipInt))
 						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
@@ -381,7 +381,7 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
 			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err == nil {
-				if gatewayAPIEnabled {
+				if gatewayAPIEnabled && connector.GatewayAPIEnabled {
 					s.deleteGatewayRoute(name)
 				}
 			} else {
@@ -392,7 +392,7 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		for _, svc := range updates {
 			if updatedSvc, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err == nil {
 				if len(updatedSvc.Spec.Ports) > 0 {
-					if gatewayAPIEnabled {
+					if gatewayAPIEnabled && connector.GatewayAPIEnabled {
 						s.updateGatewayRoute(updatedSvc)
 					}
 				}
@@ -403,7 +403,7 @@ func (s *Sink) Run(ch <-chan struct{}) {
 
 		for _, svc := range creates {
 			if createdSvc, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err == nil {
-				if gatewayAPIEnabled {
+				if gatewayAPIEnabled && connector.GatewayAPIEnabled {
 					s.updateGatewayRoute(createdSvc)
 				}
 			} else {
@@ -439,8 +439,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.MeshServiceSyncAnnotation:           "false",
-					connector.CloudServiceInheritedFromAnnotation: cloudName,
+					connector.AnnotationMeshServiceSync:           "false",
+					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
 				s.fillService(mode, svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
@@ -458,8 +458,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.MeshServiceSyncAnnotation:           "false",
-						connector.CloudServiceInheritedFromAnnotation: cloudName,
+						connector.AnnotationMeshServiceSync:           "false",
+						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},
 
@@ -522,7 +522,7 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 		}
 		sort.Ints(ports)
 		for addr := range svcMeta.Addresses {
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 		}
 	}
 
@@ -546,7 +546,7 @@ func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.
 			}
 			ports := make([]int, 0)
 			ports = append(ports, port)
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
+			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 		}
 	}
 }

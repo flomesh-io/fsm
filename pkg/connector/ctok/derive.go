@@ -20,7 +20,7 @@ func SetSyncCloudNamespace(ns string) {
 // IsSyncCloudNamespace if sync namespace
 func IsSyncCloudNamespace(ns *corev1.Namespace) bool {
 	if ns != nil {
-		_, exists := ns.Annotations[connector.MeshServiceSyncAnnotation]
+		_, exists := ns.Annotations[connector.AnnotationMeshServiceSync]
 		return exists
 	}
 	return false
