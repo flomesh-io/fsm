@@ -90,6 +90,9 @@ func main() {
 		informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 	)
+	if err != nil {
+		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
+	}
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
