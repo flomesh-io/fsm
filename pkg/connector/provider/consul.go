@@ -49,10 +49,17 @@ func (dc *ConsulDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 		return nil, err
 	}
 
-	catalogServices := make([]*CatalogService, len(services))
-	for idx, svc := range services {
-		catalogServices[idx] = new(CatalogService)
-		catalogServices[idx].fromConsul(svc)
+	catalogServices := make([]*CatalogService, 0)
+	for _, svc := range services {
+		if len(svc.ServiceMeta) > 0 {
+			if serviceSource, serviceSourceExists := svc.ServiceMeta[connector.ServiceSourceKey]; serviceSourceExists {
+				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+					catalogService := new(CatalogService)
+					catalogService.fromConsul(svc)
+					catalogServices = append(catalogServices, catalogService)
+				}
+			}
+		}
 	}
 	return catalogServices, nil
 }
@@ -68,10 +75,18 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 		return nil, err
 	}
 
-	agentServices := make([]*AgentService, len(services))
-	for idx, svc := range services {
-		agentServices[idx] = new(AgentService)
-		agentServices[idx].fromConsul(svc.Service)
+	agentServices := make([]*AgentService, 0)
+	for _, svc := range services {
+		if len(svc.Service.Meta) > 0 {
+			if serviceSource, serviceSourceExists := svc.Service.Meta[connector.ServiceSourceKey]; serviceSourceExists {
+				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+					continue
+				}
+			}
+		}
+		agentService := new(AgentService)
+		agentService.fromConsul(svc.Service)
+		agentServices = append(agentServices, agentService)
 	}
 	return agentServices, nil
 }

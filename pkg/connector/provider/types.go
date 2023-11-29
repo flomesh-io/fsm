@@ -8,6 +8,8 @@ import (
 
 	consul "github.com/hashicorp/consul/api"
 	eureka "github.com/hudl/fargo"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 // AgentCheck represents a check known to the agent
@@ -236,9 +238,15 @@ func (cnsl *CatalogNodeServiceList) fromConsul(svcList *consul.CatalogNodeServic
 		return
 	}
 	for _, svc := range svcList.Services {
-		agentService := new(AgentService)
-		agentService.fromConsul(svc)
-		cnsl.Services = append(cnsl.Services, agentService)
+		if len(svc.Meta) > 0 {
+			if serviceSource, serviceSourceExists := svc.Meta[connector.ServiceSourceKey]; serviceSourceExists {
+				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+					agentService := new(AgentService)
+					agentService.fromConsul(svc)
+					cnsl.Services = append(cnsl.Services, agentService)
+				}
+			}
+		}
 	}
 }
 
