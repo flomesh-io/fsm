@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// GetConnectorPod returns the fsm-consul-connector pod spec.
+// GetConnectorPod returns the fsm-Consul-connector pod spec.
 // The pod name is inferred from the 'CONNECTOR_POD_NAME' env variable which is set during deployment.
 func GetConnectorPod(kubeClient kubernetes.Interface) (*corev1.Pod, error) {
 	podName := os.Getenv("CONNECTOR_POD_NAME")

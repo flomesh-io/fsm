@@ -100,11 +100,11 @@ type ServiceResource struct {
 	// ip address will be used instead.
 	NodePortSync NodePortSyncType
 
-	// AddK8SNamespaceSuffix set to true appends Kubernetes namespace
+	// AddK8SNamespaceAsServiceSuffix set to true appends Kubernetes namespace
 	// to the service name being synced to Cloud separated by a dash.
 	// For example, service 'foo' in the 'default' namespace will be synced
 	// as 'foo-default'.
-	AddK8SNamespaceSuffix bool
+	AddK8SNamespaceAsServiceSuffix bool
 
 	// EnableNamespaces indicates that a user is running Consul Enterprise
 	// with version 1.7+ which is namespace aware. It enables Consul namespaces,
@@ -142,9 +142,9 @@ type ServiceResource struct {
 	// of each service.
 	endpointsMap map[string]*corev1.Endpoints
 
-	// EnableIngress enables syncing of the hostname from an Ingress resource
+	// SyncIngress enables syncing of the hostname from an Ingress resource
 	// to the service registration if an Ingress rule matches the service.
-	EnableIngress bool
+	SyncIngress bool
 
 	// SyncIngressLoadBalancerIPs enables syncing the IP of the Ingress LoadBalancer
 	// if we do not want to sync the hostname from the Ingress resource.
@@ -284,7 +284,7 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 				Service:                    t,
 				Ctx:                        t.Ctx,
 				SyncIngressLoadBalancerIPs: t.SyncIngressLoadBalancerIPs,
-				EnableIngress:              t.EnableIngress,
+				EnableIngress:              t.SyncIngress,
 			},
 		},
 	}).Run(ch)
@@ -727,7 +727,7 @@ func (t *ServiceResource) registerServiceInstance(
 			// Use the address and port from the Ingress resource if
 			// ingress-sync is enabled and the service has an ingress
 			// resource that references it.
-			if t.EnableIngress && t.isIngressService(key) {
+			if t.SyncIngress && t.isIngressService(key) {
 				addr = t.serviceHostnameMap[key].hostName
 				epPort = int(t.serviceHostnameMap[key].port)
 			} else {
@@ -1024,7 +1024,7 @@ func (t *ServiceResource) addPrefixAndK8SNamespace(name, namespace string) strin
 		name = fmt.Sprintf("%s%s", t.AddServicePrefix, name)
 	}
 
-	if t.AddK8SNamespaceSuffix {
+	if t.AddK8SNamespaceAsServiceSuffix {
 		name = fmt.Sprintf("%s-%s", name, namespace)
 	}
 

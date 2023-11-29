@@ -57,7 +57,6 @@ spec:
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-derive-namespace={{.Values.fsm.cloudConnector.eureka.deriveNamespace}}",
-            "-with-gateway-api={{.Values.fsm.fsmGateway.enabled}}",
             "-sdr-provider=eureka",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8S.enable}}",
@@ -65,7 +64,27 @@ spec:
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.filterMetadata}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.prefixMetadata}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.suffixMetadata}}",
+            "-sync-cloud-to-k8s-with-gateway-api={{.Values.fsm.cloudConnector.eureka.syncToK8S.withGatewayAPI}}",
             "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.eureka.syncFromK8S.enable}}",
+            "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.eureka.syncFromK8S.defaultSync}}",
+            "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncClusterIPServices}}",
+            "-sync-k8s-to-cloud-sync-load-balancer-services-endpoints={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints}}",
+            "-sync-k8s-to-cloud-node-port-sync-type={{.Values.fsm.cloudConnector.eureka.syncFromK8S.nodePortSyncType}}",
+            "-sync-k8s-to-cloud-sync-ingress={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncIngress}}",
+            "-sync-k8s-to-cloud-sync-ingress-load-balancer-ips={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs}}",
+            "-sync-k8s-to-cloud-add-service-prefix={{.Values.fsm.cloudConnector.eureka.syncFromK8S.addServicePrefix}}",
+            "-sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix={{.Values.fsm.cloudConnector.eureka.syncFromK8S.addK8SNamespaceAsServiceSuffix}}",
+            {{- if .Values.fsm.cloudConnector.eureka.syncFromK8S.allowK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.eureka.syncFromK8S.allowK8sNamespaces }}
+            "-sync-k8s-to-cloud-allow-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
+            {{- if .Values.fsm.cloudConnector.eureka.syncFromK8S.denyK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.eureka.syncFromK8S.denyK8sNamespaces }}
+            "-sync-k8s-to-cloud-deny-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
+            "-sync-k8s-to-cloud-with-gateway-api={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI}}",
           ]
           resources:
             limits:

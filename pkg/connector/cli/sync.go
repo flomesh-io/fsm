@@ -37,40 +37,40 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
-	allowSet := ToSet(Cfg.K2C.FlagAllowK8sNamespacesList)
-	denySet := ToSet(Cfg.K2C.FlagDenyK8sNamespacesList)
+	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
+	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
 
 	syncer := &ktoc.ConsulSyncer{
 		DiscClient:              discClient,
-		EnableNamespaces:        Cfg.K2C.consul.FlagConsulEnableNamespaces,
-		CrossNamespaceACLPolicy: Cfg.K2C.consul.FlagConsulCrossNamespaceACLPolicy,
+		EnableNamespaces:        Cfg.K2C.Consul.FlagConsulEnableNamespaces,
+		CrossNamespaceACLPolicy: Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy,
 		SyncPeriod:              Cfg.K2C.FlagSyncPeriod,
 		ServicePollPeriod:       Cfg.K2C.FlagSyncPeriod * 2,
-		ConsulK8STag:            Cfg.K2C.consul.FlagConsulK8STag,
-		ConsulNodeName:          Cfg.K2C.consul.FlagConsulNodeName,
+		ConsulK8STag:            Cfg.K2C.Consul.FlagConsulK8STag,
+		ConsulNodeName:          Cfg.K2C.Consul.FlagConsulNodeName,
 	}
 	go syncer.Run(ctx)
 
 	serviceResource := ktoc.ServiceResource{
-		Client:                     kubeClient,
-		Syncer:                     syncer,
-		Ctx:                        ctx,
-		AllowK8sNamespacesSet:      allowSet,
-		DenyK8sNamespacesSet:       denySet,
-		ExplicitEnable:             !Cfg.K2C.FlagDefaultSync,
-		ClusterIPSync:              Cfg.K2C.FlagSyncClusterIPServices,
-		LoadBalancerEndpointsSync:  Cfg.K2C.FlagSyncLoadBalancerEndpoints,
-		NodePortSync:               ktoc.NodePortSyncType(Cfg.K2C.FlagNodePortSyncType),
-		ConsulK8STag:               Cfg.K2C.consul.FlagConsulK8STag,
-		AddServicePrefix:           Cfg.K2C.FlagAddServicePrefix,
-		AddK8SNamespaceSuffix:      Cfg.K2C.FlagAddK8SNamespaceSuffix,
-		EnableNamespaces:           Cfg.K2C.consul.FlagConsulEnableNamespaces,
-		ConsulDestinationNamespace: Cfg.K2C.consul.FlagConsulDestinationNamespace,
-		EnableK8SNSMirroring:       Cfg.K2C.consul.FlagConsulEnableK8SNSMirroring,
-		K8SNSMirroringPrefix:       Cfg.K2C.consul.FlagConsulK8SNSMirroringPrefix,
-		ConsulNodeName:             Cfg.K2C.consul.FlagConsulNodeName,
-		EnableIngress:              Cfg.K2C.FlagEnableIngress,
-		SyncIngressLoadBalancerIPs: Cfg.K2C.FlagSyncIngressLoadBalancerIPs,
+		Client:                         kubeClient,
+		Syncer:                         syncer,
+		Ctx:                            ctx,
+		AllowK8sNamespacesSet:          allowSet,
+		DenyK8sNamespacesSet:           denySet,
+		ExplicitEnable:                 !Cfg.K2C.FlagDefaultSync,
+		ClusterIPSync:                  Cfg.K2C.FlagSyncClusterIPServices,
+		LoadBalancerEndpointsSync:      Cfg.K2C.FlagSyncLoadBalancerEndpoints,
+		NodePortSync:                   ktoc.NodePortSyncType(Cfg.K2C.FlagNodePortSyncType),
+		ConsulK8STag:                   Cfg.K2C.Consul.FlagConsulK8STag,
+		AddServicePrefix:               Cfg.K2C.FlagAddServicePrefix,
+		AddK8SNamespaceAsServiceSuffix: Cfg.K2C.FlagAddK8SNamespaceAsServiceSuffix,
+		EnableNamespaces:               Cfg.K2C.Consul.FlagConsulEnableNamespaces,
+		ConsulDestinationNamespace:     Cfg.K2C.Consul.FlagConsulDestinationNamespace,
+		EnableK8SNSMirroring:           Cfg.K2C.Consul.FlagConsulEnableK8SNSMirroring,
+		K8SNSMirroringPrefix:           Cfg.K2C.Consul.FlagConsulK8SNSMirroringPrefix,
+		ConsulNodeName:                 Cfg.K2C.Consul.FlagConsulNodeName,
+		SyncIngress:                    Cfg.K2C.FlagSyncIngress,
+		SyncIngressLoadBalancerIPs:     Cfg.K2C.FlagSyncIngressLoadBalancerIPs,
 	}
 
 	// Build the controller and start it
