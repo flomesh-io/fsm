@@ -42,12 +42,12 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 
 	syncer := &ktoc.ConsulSyncer{
 		DiscClient:              discClient,
-		EnableNamespaces:        Cfg.k2c.FlagEnableNamespaces,
-		CrossNamespaceACLPolicy: Cfg.k2c.FlagCrossNamespaceACLPolicy,
-		SyncPeriod:              Cfg.k2c.FlagConsulWritePeriod,
-		ServicePollPeriod:       Cfg.k2c.FlagConsulWritePeriod * 2,
-		ConsulK8STag:            Cfg.k2c.FlagConsulK8STag,
-		ConsulNodeName:          Cfg.k2c.FlagConsulNodeName,
+		EnableNamespaces:        Cfg.k2c.consul.FlagConsulEnableNamespaces,
+		CrossNamespaceACLPolicy: Cfg.k2c.consul.FlagConsulCrossNamespaceACLPolicy,
+		SyncPeriod:              Cfg.k2c.FlagSyncPeriod,
+		ServicePollPeriod:       Cfg.k2c.FlagSyncPeriod * 2,
+		ConsulK8STag:            Cfg.k2c.consul.FlagConsulK8STag,
+		ConsulNodeName:          Cfg.k2c.consul.FlagConsulNodeName,
 	}
 	go syncer.Run(ctx)
 
@@ -57,20 +57,20 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 		Ctx:                        ctx,
 		AllowK8sNamespacesSet:      allowSet,
 		DenyK8sNamespacesSet:       denySet,
-		ExplicitEnable:             !Cfg.k2c.FlagK8SDefault,
+		ExplicitEnable:             !Cfg.k2c.FlagDefaultSync,
 		ClusterIPSync:              Cfg.k2c.FlagSyncClusterIPServices,
-		LoadBalancerEndpointsSync:  Cfg.k2c.FlagSyncLBEndpoints,
+		LoadBalancerEndpointsSync:  Cfg.k2c.FlagSyncLoadBalancerEndpoints,
 		NodePortSync:               ktoc.NodePortSyncType(Cfg.k2c.FlagNodePortSyncType),
-		ConsulK8STag:               Cfg.k2c.FlagConsulK8STag,
-		ConsulServicePrefix:        Cfg.k2c.FlagConsulServicePrefix,
+		ConsulK8STag:               Cfg.k2c.consul.FlagConsulK8STag,
+		AddServicePrefix:           Cfg.k2c.FlagAddServicePrefix,
 		AddK8SNamespaceSuffix:      Cfg.k2c.FlagAddK8SNamespaceSuffix,
-		EnableNamespaces:           Cfg.k2c.FlagEnableNamespaces,
-		ConsulDestinationNamespace: Cfg.k2c.FlagConsulDestinationNamespace,
-		EnableK8SNSMirroring:       Cfg.k2c.FlagEnableK8SNSMirroring,
-		K8SNSMirroringPrefix:       Cfg.k2c.FlagK8SNSMirroringPrefix,
-		ConsulNodeName:             Cfg.k2c.FlagConsulNodeName,
+		EnableNamespaces:           Cfg.k2c.consul.FlagConsulEnableNamespaces,
+		ConsulDestinationNamespace: Cfg.k2c.consul.FlagConsulDestinationNamespace,
+		EnableK8SNSMirroring:       Cfg.k2c.consul.FlagConsulEnableK8SNSMirroring,
+		K8SNSMirroringPrefix:       Cfg.k2c.consul.FlagConsulK8SNSMirroringPrefix,
+		ConsulNodeName:             Cfg.k2c.consul.FlagConsulNodeName,
 		EnableIngress:              Cfg.k2c.FlagEnableIngress,
-		SyncLoadBalancerIPs:        Cfg.k2c.FlagLoadBalancerIPs,
+		SyncIngressLoadBalancerIPs: Cfg.k2c.FlagSyncIngressLoadBalancerIPs,
 	}
 
 	// Build the controller and start it

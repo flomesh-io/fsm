@@ -80,8 +80,8 @@ type ServiceResource struct {
 	// ConsulK8STag is the tag value for services registered.
 	ConsulK8STag string
 
-	//ConsulServicePrefix prepends K8s services in Consul with a prefix
-	ConsulServicePrefix string
+	//AddServicePrefix prepends K8s services in cloud with a prefix
+	AddServicePrefix string
 
 	// ExplictEnable should be set to true to require explicit enabling
 	// using annotations. If this is false, then services are implicitly
@@ -101,7 +101,7 @@ type ServiceResource struct {
 	NodePortSync NodePortSyncType
 
 	// AddK8SNamespaceSuffix set to true appends Kubernetes namespace
-	// to the service name being synced to Consul separated by a dash.
+	// to the service name being synced to Cloud separated by a dash.
 	// For example, service 'foo' in the 'default' namespace will be synced
 	// as 'foo-default'.
 	AddK8SNamespaceSuffix bool
@@ -146,9 +146,9 @@ type ServiceResource struct {
 	// to the service registration if an Ingress rule matches the service.
 	EnableIngress bool
 
-	// SyncLoadBalancerIPs enables syncing the IP of the Ingress LoadBalancer
+	// SyncIngressLoadBalancerIPs enables syncing the IP of the Ingress LoadBalancer
 	// if we do not want to sync the hostname from the Ingress resource.
-	SyncLoadBalancerIPs bool
+	SyncIngressLoadBalancerIPs bool
 
 	// ingressServiceMap uses the same keys as serviceMap but maps to the ingress
 	// of each service if it exists.
@@ -281,10 +281,10 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 			Ctx:     t.Ctx,
 			Log:     logger.New("controller/endpoints"),
 			Resource: &serviceIngressResource{
-				Service:             t,
-				Ctx:                 t.Ctx,
-				SyncLoadBalancerIPs: t.SyncLoadBalancerIPs,
-				EnableIngress:       t.EnableIngress,
+				Service:                    t,
+				Ctx:                        t.Ctx,
+				SyncIngressLoadBalancerIPs: t.SyncIngressLoadBalancerIPs,
+				EnableIngress:              t.EnableIngress,
 			},
 		},
 	}).Run(ch)
@@ -895,11 +895,11 @@ func (t *serviceEndpointsResource) Delete(key string, _ interface{}) error {
 // a background watcher on ingress resources that is used by the ServiceResource
 // to keep track of changing ingress for registered services.
 type serviceIngressResource struct {
-	Service             *ServiceResource
-	Resource            Resource
-	Ctx                 context.Context
-	EnableIngress       bool
-	SyncLoadBalancerIPs bool
+	Service                    *ServiceResource
+	Resource                   Resource
+	Ctx                        context.Context
+	EnableIngress              bool
+	SyncIngressLoadBalancerIPs bool
 }
 
 func (t *serviceIngressResource) Informer() cache.SharedIndexInformer {
@@ -952,7 +952,7 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 		if svcName == "" {
 			continue
 		}
-		if t.SyncLoadBalancerIPs {
+		if t.SyncIngressLoadBalancerIPs {
 			if len(ingress.Status.LoadBalancer.Ingress) > 0 && ingress.Status.LoadBalancer.Ingress[0].IP == "" {
 				continue
 			}
@@ -1020,8 +1020,8 @@ func (t *serviceIngressResource) Delete(key string, _ interface{}) error {
 }
 
 func (t *ServiceResource) addPrefixAndK8SNamespace(name, namespace string) string {
-	if t.ConsulServicePrefix != "" {
-		name = fmt.Sprintf("%s%s", t.ConsulServicePrefix, name)
+	if t.AddServicePrefix != "" {
+		name = fmt.Sprintf("%s%s", t.AddServicePrefix, name)
 	}
 
 	if t.AddK8SNamespaceSuffix {
