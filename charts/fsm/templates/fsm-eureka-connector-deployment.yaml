@@ -60,12 +60,12 @@ spec:
             "-with-gateway-api={{.Values.fsm.fsmGateway.enabled}}",
             "-sdr-provider=eureka",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
-            "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8s}}",
-            "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.eureka.syncFromK8s}}",
-            "-passing-only={{.Values.fsm.cloudConnector.eureka.passingOnly}}",
-            "-filter-tag={{.Values.fsm.cloudConnector.eureka.filterMetadata}}",
-            "-prefix-tag={{.Values.fsm.cloudConnector.eureka.prefixMetadata}}",
-            "-suffix-tag={{.Values.fsm.cloudConnector.eureka.suffixMetadata}}",
+            "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8S.enable}}",
+            "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.eureka.syncToK8S.passingOnly}}",
+            "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.filterMetadata}}",
+            "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.prefixMetadata}}",
+            "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.suffixMetadata}}",
+            "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.eureka.syncFromK8S.enable}}",
           ]
           resources:
             limits:

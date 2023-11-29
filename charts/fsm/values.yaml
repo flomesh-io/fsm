@@ -653,23 +653,27 @@ fsm:
       enable: false
       deriveNamespace: ""
       httpAddr: 127.0.0.1:8500
-      syncToK8s: true
-      syncFromK8s: true
-      passingOnly: true
-      filterTag: ""
-      prefixTag: ""
-      suffixTag: ""
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterTag: ""
+        prefixTag: ""
+        suffixTag: ""
+      syncFromK8S:
+        enable: true
 
     eureka:
       enable: false
       deriveNamespace: ""
       httpAddr: 127.0.0.1:8761/eureka
-      syncToK8s: true
-      syncFromK8s: true
-      passingOnly: true
-      filterMetadata: ""
-      prefixMetadata: ""
-      suffixMetadata: ""
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterMetadata: ""
+        prefixMetadata: ""
+        suffixMetadata: ""
+      syncFromK8S:
+        enable: true
 
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
