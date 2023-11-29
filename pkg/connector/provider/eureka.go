@@ -53,7 +53,7 @@ func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 	catalogServices := make([]*CatalogService, 0)
 	for _, ins := range services.Instances {
 		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-			if !strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+			if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
 				catalogService := new(CatalogService)
 				catalogService.fromEureka(ins)
 				catalogServices = append(catalogServices, catalogService)
@@ -73,12 +73,13 @@ func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 	agentServices := make([]*AgentService, 0)
 	for _, ins := range services.Instances {
 		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-			if !strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-				agentService := new(AgentService)
-				agentService.fromEureka(ins)
-				agentServices = append(agentServices, agentService)
+			if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+				continue
 			}
 		}
+		agentService := new(AgentService)
+		agentService.fromEureka(ins)
+		agentServices = append(agentServices, agentService)
 	}
 	return agentServices, nil
 }

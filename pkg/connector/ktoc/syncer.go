@@ -49,7 +49,7 @@ type ConsulSyncer struct {
 
 	// SyncPeriod is the interval between full catalog syncs. These will
 	// re-register all services to prevent overwrites of data. This should
-	// happen relatively infrequently and default to 30 seconds.
+	// happen relatively infrequently and default to 5 seconds.
 	//
 	// ServicePollPeriod is the interval to look for invalid services to
 	// deregister. One request will be made for each synced service in
