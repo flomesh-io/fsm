@@ -4,24 +4,18 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/upstreamtls"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -46,6 +40,7 @@ type upstreamTLSPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *upstreamTLSPolicyReconciler) NeedLeaderElection() bool {
@@ -54,12 +49,20 @@ func (r *upstreamTLSPolicyReconciler) NeedLeaderElection() bool {
 
 // NewUpstreamTLSPolicyReconciler returns a new UpstreamTLSPolicy Reconciler
 func NewUpstreamTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &upstreamTLSPolicyReconciler{
+	r := &upstreamTLSPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("UpstreamTLSPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+		Client:              r.fctx.Client,
+		GetAttachedPolicies: r.getAttachedUpstreamTLSPolices,
+		FindConflict:        r.findConflict,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a UpstreamTLSPolicy object and makes changes based on the state read
@@ -80,7 +83,10 @@ func (r *upstreamTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -97,210 +103,36 @@ func (r *upstreamTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *upstreamTLSPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.UpstreamTLSPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.KubernetesCoreGroup && policy.Spec.TargetRef.Group != constants.FlomeshAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only kubernetes core or flomesh.io is supported",
+func (r *upstreamTLSPolicyReconciler) getAttachedUpstreamTLSPolices(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	upstreamTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().UpstreamTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list UpstreamTLSPolicies: %s", err)))
+	}
+
+	upstreamTLSPolicies := make([]client.Object, 0)
+	for _, p := range upstreamTLSPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			upstreamTLSPolicies = append(upstreamTLSPolicies, &p)
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind != constants.KubernetesServiceKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Service is supported for kubernetes core group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind != constants.FlomeshAPIServiceImportKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only ServiceImport is supported for flomesh.io group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind == constants.KubernetesServiceKind {
-		svc := &corev1.Service{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Service",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Service: %s", err),
-				}
-			}
-		}
-
-		upstreamTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().UpstreamTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list UpstreamTLSPolicies: %s", err),
-			}
-		}
-
-		upstreamTLSPolicies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
-		for _, p := range upstreamTLSPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				upstreamTLSPolicies = append(upstreamTLSPolicies, p)
-			}
-		}
-
-		sort.Slice(upstreamTLSPolicies, func(i, j int) bool {
-			if upstreamTLSPolicies[i].CreationTimestamp.Time.Equal(upstreamTLSPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&upstreamTLSPolicies[i]).String() < client.ObjectKeyFromObject(&upstreamTLSPolicies[j]).String()
-			}
-
-			return upstreamTLSPolicies[i].CreationTimestamp.Time.Before(upstreamTLSPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByService(policy, upstreamTLSPolicies, svc); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with UpstreamTLSPolicy: %s", conflict),
-			}
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind == constants.FlomeshAPIServiceImportKind {
-		svcimp := &mcsv1alpha1.ServiceImport{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target ServiceImport",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target ServiceImport: %s", err),
-				}
-			}
-		}
-
-		upstreamTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().UpstreamTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list UpstreamTLSPolicies: %s", err),
-			}
-		}
-
-		upstreamTLSPolicies := make([]gwpav1alpha1.UpstreamTLSPolicy, 0)
-		for _, p := range upstreamTLSPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				upstreamTLSPolicies = append(upstreamTLSPolicies, p)
-			}
-		}
-
-		sort.Slice(upstreamTLSPolicies, func(i, j int) bool {
-			if upstreamTLSPolicies[i].CreationTimestamp.Time.Equal(upstreamTLSPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&upstreamTLSPolicies[i]).String() < client.ObjectKeyFromObject(&upstreamTLSPolicies[j]).String()
-			}
-
-			return upstreamTLSPolicies[i].CreationTimestamp.Time.Before(upstreamTLSPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByServiceImport(policy, upstreamTLSPolicies, svcimp); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with UpstreamTLSPolicy: %s", conflict),
-			}
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return upstreamTLSPolicies, nil
 }
 
-func (r *upstreamTLSPolicyReconciler) getConflictedPolicyByService(upstreamTLSPolicy *gwpav1alpha1.UpstreamTLSPolicy, allUpstreamTLSPolicies []gwpav1alpha1.UpstreamTLSPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, port := range svc.Spec.Ports {
-		if conflict := r.findConflict(upstreamTLSPolicy, allUpstreamTLSPolicies, svc, port.Port); conflict != nil {
-			return conflict
-		}
-	}
+func (r *upstreamTLSPolicyReconciler) findConflict(upstreamTLSPolicy client.Object, allUpstreamTLSPolicies []client.Object, port int32) *types.NamespacedName {
+	currentPolicy := upstreamTLSPolicy.(*gwpav1alpha1.UpstreamTLSPolicy)
 
-	return nil
-}
-
-func (r *upstreamTLSPolicyReconciler) getConflictedPolicyByServiceImport(upstreamTLSPolicy *gwpav1alpha1.UpstreamTLSPolicy, allUpstreamTLSPolicies []gwpav1alpha1.UpstreamTLSPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, port := range svcimp.Spec.Ports {
-		if conflict := r.findConflict(upstreamTLSPolicy, allUpstreamTLSPolicies, svcimp, port.Port); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *upstreamTLSPolicyReconciler) findConflict(upstreamTLSPolicy *gwpav1alpha1.UpstreamTLSPolicy, allUpstreamTLSPolicies []gwpav1alpha1.UpstreamTLSPolicy, svc client.Object, port int32) *types.NamespacedName {
 	for _, policy := range allUpstreamTLSPolicies {
-		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
-			continue
-		}
+		policy := policy.(*gwpav1alpha1.UpstreamTLSPolicy)
 
-		c1 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, policy)
+		c1 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, *policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, *upstreamTLSPolicy)
+		c2 := upstreamtls.GetUpstreamTLSConfigIfPortMatchesPolicy(port, *currentPolicy)
 		if c2 == nil {
 			continue
 		}

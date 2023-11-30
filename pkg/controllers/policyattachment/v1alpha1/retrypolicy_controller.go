@@ -4,24 +4,18 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -46,6 +40,7 @@ type retryPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *retryPolicyReconciler) NeedLeaderElection() bool {
@@ -54,12 +49,20 @@ func (r *retryPolicyReconciler) NeedLeaderElection() bool {
 
 // NewRetryPolicyReconciler returns a new RetryPolicy Reconciler
 func NewRetryPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &retryPolicyReconciler{
+	r := &retryPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("RetryPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+		Client:              r.fctx.Client,
+		GetAttachedPolicies: r.getAttachedRetryPolicies,
+		FindConflict:        r.findConflict,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a RetryPolicy object and makes changes based on the state read
@@ -80,7 +83,10 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -97,210 +103,36 @@ func (r *retryPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *retryPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RetryPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.KubernetesCoreGroup && policy.Spec.TargetRef.Group != constants.FlomeshAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only kubernetes core or flomesh.io is supported",
+func (r *retryPolicyReconciler) getAttachedRetryPolicies(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	retryPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RetryPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list RetryPolicies: %s", err)))
+	}
+
+	retryPolicies := make([]client.Object, 0)
+	for _, p := range retryPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			retryPolicies = append(retryPolicies, &p)
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind != constants.KubernetesServiceKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Service is supported for kubernetes core group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind != constants.FlomeshAPIServiceImportKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only ServiceImport is supported for flomesh.io group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind == constants.KubernetesServiceKind {
-		svc := &corev1.Service{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Service",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Service: %s", err),
-				}
-			}
-		}
-
-		retryPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RetryPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RetryPolicies: %s", err),
-			}
-		}
-
-		retryPolicies := make([]gwpav1alpha1.RetryPolicy, 0)
-		for _, p := range retryPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				retryPolicies = append(retryPolicies, p)
-			}
-		}
-
-		sort.Slice(retryPolicies, func(i, j int) bool {
-			if retryPolicies[i].CreationTimestamp.Time.Equal(retryPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&retryPolicies[i]).String() < client.ObjectKeyFromObject(&retryPolicies[j]).String()
-			}
-
-			return retryPolicies[i].CreationTimestamp.Time.Before(retryPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByService(policy, retryPolicies, svc); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RetryPolicy: %s", conflict),
-			}
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind == constants.FlomeshAPIServiceImportKind {
-		svcimp := &mcsv1alpha1.ServiceImport{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target ServiceImport",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target ServiceImport: %s", err),
-				}
-			}
-		}
-
-		retryPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RetryPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RetryPolicies: %s", err),
-			}
-		}
-
-		retryPolicies := make([]gwpav1alpha1.RetryPolicy, 0)
-		for _, p := range retryPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				retryPolicies = append(retryPolicies, p)
-			}
-		}
-
-		sort.Slice(retryPolicies, func(i, j int) bool {
-			if retryPolicies[i].CreationTimestamp.Time.Equal(retryPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&retryPolicies[i]).String() < client.ObjectKeyFromObject(&retryPolicies[j]).String()
-			}
-
-			return retryPolicies[i].CreationTimestamp.Time.Before(retryPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByServiceImport(policy, retryPolicies, svcimp); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RetryPolicy: %s", conflict),
-			}
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return retryPolicies, nil
 }
 
-func (r *retryPolicyReconciler) getConflictedPolicyByService(retryPolicy *gwpav1alpha1.RetryPolicy, allRetryPolicies []gwpav1alpha1.RetryPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, port := range svc.Spec.Ports {
-		if conflict := r.findConflict(retryPolicy, allRetryPolicies, svc, port.Port); conflict != nil {
-			return conflict
-		}
-	}
+func (r *retryPolicyReconciler) findConflict(retryPolicy client.Object, allRetryPolicies []client.Object, port int32) *types.NamespacedName {
+	currentPolicy := retryPolicy.(*gwpav1alpha1.RetryPolicy)
 
-	return nil
-}
-
-func (r *retryPolicyReconciler) getConflictedPolicyByServiceImport(retryPolicy *gwpav1alpha1.RetryPolicy, allRetryPolicies []gwpav1alpha1.RetryPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, port := range svcimp.Spec.Ports {
-		if conflict := r.findConflict(retryPolicy, allRetryPolicies, svcimp, port.Port); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *retryPolicyReconciler) findConflict(retryPolicy *gwpav1alpha1.RetryPolicy, allRetryPolicies []gwpav1alpha1.RetryPolicy, svc client.Object, port int32) *types.NamespacedName {
 	for _, policy := range allRetryPolicies {
-		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
-			continue
-		}
+		policy := policy.(*gwpav1alpha1.RetryPolicy)
 
-		c1 := retry.GetRetryConfigIfPortMatchesPolicy(port, policy)
+		c1 := retry.GetRetryConfigIfPortMatchesPolicy(port, *policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := retry.GetRetryConfigIfPortMatchesPolicy(port, *retryPolicy)
+		c2 := retry.GetRetryConfigIfPortMatchesPolicy(port, *currentPolicy)
 		if c2 == nil {
 			continue
 		}

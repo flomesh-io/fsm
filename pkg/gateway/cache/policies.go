@@ -3,6 +3,8 @@ package cache
 import (
 	"sort"
 
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
@@ -34,8 +36,8 @@ func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
 
 func (c *GatewayCache) getPortPolicyEnrichers(policies globalPolicyAttachments) []policy.PortPolicyEnricher {
 	return []policy.PortPolicyEnricher{
-		&policy.RateLimitPortEnricher{Data: policies.rateLimits[RateLimitPolicyMatchTypePort]},
-		&policy.AccessControlPortEnricher{Data: policies.accessControls[AccessControlPolicyMatchTypePort]},
+		&policy.RateLimitPortEnricher{Data: policies.rateLimits[gwpkg.PolicyMatchTypePort]},
+		&policy.AccessControlPortEnricher{Data: policies.accessControls[gwpkg.PolicyMatchTypePort]},
 		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS()},
 	}
 }
@@ -75,13 +77,13 @@ func (c *GatewayCache) getServicePolicyEnrichers() []policy.ServicePolicyEnriche
 	}
 }
 
-func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy {
-	rateLimits := make(map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy)
-	for _, matchType := range []RateLimitPolicyMatchType{
-		RateLimitPolicyMatchTypePort,
-		RateLimitPolicyMatchTypeHostnames,
-		RateLimitPolicyMatchTypeHTTPRoute,
-		RateLimitPolicyMatchTypeGRPCRoute,
+func (c *GatewayCache) rateLimits() map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy {
+	rateLimits := make(map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy)
+	for _, matchType := range []gwpkg.PolicyMatchType{
+		gwpkg.PolicyMatchTypePort,
+		gwpkg.PolicyMatchTypeHostnames,
+		gwpkg.PolicyMatchTypeHTTPRoute,
+		gwpkg.PolicyMatchTypeGRPCRoute,
 	} {
 		rateLimits[matchType] = make([]gwpav1alpha1.RateLimitPolicy, 0)
 	}
@@ -98,14 +100,14 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 			targetRef := spec.TargetRef
 
 			switch {
-			case gwutils.IsTargetRefToGVK(targetRef, gatewayGVK) && len(spec.Ports) > 0:
-				rateLimits[RateLimitPolicyMatchTypePort] = append(rateLimits[RateLimitPolicyMatchTypePort], *p)
-			case (gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK)) && len(spec.Hostnames) > 0:
-				rateLimits[RateLimitPolicyMatchTypeHostnames] = append(rateLimits[RateLimitPolicyMatchTypeHostnames], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) && len(spec.HTTPRateLimits) > 0:
-				rateLimits[RateLimitPolicyMatchTypeHTTPRoute] = append(rateLimits[RateLimitPolicyMatchTypeHTTPRoute], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK) && len(spec.GRPCRateLimits) > 0:
-				rateLimits[RateLimitPolicyMatchTypeGRPCRoute] = append(rateLimits[RateLimitPolicyMatchTypeGRPCRoute], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) && len(spec.Ports) > 0:
+				rateLimits[gwpkg.PolicyMatchTypePort] = append(rateLimits[gwpkg.PolicyMatchTypePort], *p)
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(spec.Hostnames) > 0:
+				rateLimits[gwpkg.PolicyMatchTypeHostnames] = append(rateLimits[gwpkg.PolicyMatchTypeHostnames], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(spec.HTTPRateLimits) > 0:
+				rateLimits[gwpkg.PolicyMatchTypeHTTPRoute] = append(rateLimits[gwpkg.PolicyMatchTypeHTTPRoute], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(spec.GRPCRateLimits) > 0:
+				rateLimits[gwpkg.PolicyMatchTypeGRPCRoute] = append(rateLimits[gwpkg.PolicyMatchTypeGRPCRoute], *p)
 			}
 		}
 	}
@@ -125,13 +127,13 @@ func (c *GatewayCache) rateLimits() map[RateLimitPolicyMatchType][]gwpav1alpha1.
 	return rateLimits
 }
 
-func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy {
-	accessControls := make(map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy)
-	for _, matchType := range []AccessControlPolicyMatchType{
-		AccessControlPolicyMatchTypePort,
-		AccessControlPolicyMatchTypeHostnames,
-		AccessControlPolicyMatchTypeHTTPRoute,
-		AccessControlPolicyMatchTypeGRPCRoute,
+func (c *GatewayCache) accessControls() map[gwpkg.PolicyMatchType][]gwpav1alpha1.AccessControlPolicy {
+	accessControls := make(map[gwpkg.PolicyMatchType][]gwpav1alpha1.AccessControlPolicy)
+	for _, matchType := range []gwpkg.PolicyMatchType{
+		gwpkg.PolicyMatchTypePort,
+		gwpkg.PolicyMatchTypeHostnames,
+		gwpkg.PolicyMatchTypeHTTPRoute,
+		gwpkg.PolicyMatchTypeGRPCRoute,
 	} {
 		accessControls[matchType] = make([]gwpav1alpha1.AccessControlPolicy, 0)
 	}
@@ -148,14 +150,14 @@ func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav
 			targetRef := spec.TargetRef
 
 			switch {
-			case gwutils.IsTargetRefToGVK(targetRef, gatewayGVK) && len(spec.Ports) > 0:
-				accessControls[AccessControlPolicyMatchTypePort] = append(accessControls[AccessControlPolicyMatchTypePort], *p)
-			case (gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK)) && len(spec.Hostnames) > 0:
-				accessControls[AccessControlPolicyMatchTypeHostnames] = append(accessControls[AccessControlPolicyMatchTypeHostnames], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) && len(spec.HTTPAccessControls) > 0:
-				accessControls[AccessControlPolicyMatchTypeHTTPRoute] = append(accessControls[AccessControlPolicyMatchTypeHTTPRoute], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK) && len(spec.GRPCAccessControls) > 0:
-				accessControls[AccessControlPolicyMatchTypeGRPCRoute] = append(accessControls[AccessControlPolicyMatchTypeGRPCRoute], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) && len(spec.Ports) > 0:
+				accessControls[gwpkg.PolicyMatchTypePort] = append(accessControls[gwpkg.PolicyMatchTypePort], *p)
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(spec.Hostnames) > 0:
+				accessControls[gwpkg.PolicyMatchTypeHostnames] = append(accessControls[gwpkg.PolicyMatchTypeHostnames], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(spec.HTTPAccessControls) > 0:
+				accessControls[gwpkg.PolicyMatchTypeHTTPRoute] = append(accessControls[gwpkg.PolicyMatchTypeHTTPRoute], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(spec.GRPCAccessControls) > 0:
+				accessControls[gwpkg.PolicyMatchTypeGRPCRoute] = append(accessControls[gwpkg.PolicyMatchTypeGRPCRoute], *p)
 			}
 		}
 	}
@@ -175,12 +177,12 @@ func (c *GatewayCache) accessControls() map[AccessControlPolicyMatchType][]gwpav
 	return accessControls
 }
 
-func (c *GatewayCache) faultInjections() map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy {
-	faultInjections := make(map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy)
-	for _, matchType := range []FaultInjectionPolicyMatchType{
-		FaultInjectionPolicyMatchTypeHostnames,
-		FaultInjectionPolicyMatchTypeHTTPRoute,
-		FaultInjectionPolicyMatchTypeGRPCRoute,
+func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy {
+	faultInjections := make(map[gwpkg.PolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy)
+	for _, matchType := range []gwpkg.PolicyMatchType{
+		gwpkg.PolicyMatchTypeHostnames,
+		gwpkg.PolicyMatchTypeHTTPRoute,
+		gwpkg.PolicyMatchTypeGRPCRoute,
 	} {
 		faultInjections[matchType] = make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	}
@@ -197,12 +199,12 @@ func (c *GatewayCache) faultInjections() map[FaultInjectionPolicyMatchType][]gwp
 			targetRef := spec.TargetRef
 
 			switch {
-			case (gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK)) && len(spec.Hostnames) > 0:
-				faultInjections[FaultInjectionPolicyMatchTypeHostnames] = append(faultInjections[FaultInjectionPolicyMatchTypeHostnames], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, httpRouteGVK) && len(spec.HTTPFaultInjections) > 0:
-				faultInjections[FaultInjectionPolicyMatchTypeHTTPRoute] = append(faultInjections[FaultInjectionPolicyMatchTypeHTTPRoute], *p)
-			case gwutils.IsTargetRefToGVK(targetRef, grpcRouteGVK) && len(spec.GRPCFaultInjections) > 0:
-				faultInjections[FaultInjectionPolicyMatchTypeGRPCRoute] = append(faultInjections[FaultInjectionPolicyMatchTypeGRPCRoute], *p)
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(spec.Hostnames) > 0:
+				faultInjections[gwpkg.PolicyMatchTypeHostnames] = append(faultInjections[gwpkg.PolicyMatchTypeHostnames], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(spec.HTTPFaultInjections) > 0:
+				faultInjections[gwpkg.PolicyMatchTypeHTTPRoute] = append(faultInjections[gwpkg.PolicyMatchTypeHTTPRoute], *p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(spec.GRPCFaultInjections) > 0:
+				faultInjections[gwpkg.PolicyMatchTypeGRPCRoute] = append(faultInjections[gwpkg.PolicyMatchTypeGRPCRoute], *p)
 			}
 		}
 	}
@@ -235,72 +237,72 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 		grpcRouteFaultInjections: make([]gwpav1alpha1.FaultInjectionPolicy, 0),
 	}
 
-	if len(policies.rateLimits[RateLimitPolicyMatchTypeHostnames]) > 0 {
-		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeHostnames] {
+	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHostnames]) > 0 {
+		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
 				result.hostnamesRateLimits = append(result.hostnamesRateLimits, rateLimit)
 			}
 		}
 	}
 
-	if len(policies.rateLimits[RateLimitPolicyMatchTypeHTTPRoute]) > 0 {
-		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeHTTPRoute] {
+	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
+		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute] {
 			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
 				result.httpRouteRateLimits = append(result.httpRouteRateLimits, rateLimit)
 			}
 		}
 	}
 
-	if len(policies.rateLimits[RateLimitPolicyMatchTypeGRPCRoute]) > 0 {
-		for _, rateLimit := range policies.rateLimits[RateLimitPolicyMatchTypeGRPCRoute] {
+	if len(policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
+		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute] {
 			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
 				result.grpcRouteRateLimits = append(result.grpcRouteRateLimits, rateLimit)
 			}
 		}
 	}
 
-	if len(policies.accessControls[AccessControlPolicyMatchTypeHostnames]) > 0 {
-		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeHostnames] {
+	if len(policies.accessControls[gwpkg.PolicyMatchTypeHostnames]) > 0 {
+		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
 				result.hostnamesAccessControls = append(result.hostnamesAccessControls, ac)
 			}
 		}
 	}
 
-	if len(policies.accessControls[AccessControlPolicyMatchTypeHTTPRoute]) > 0 {
-		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeHTTPRoute] {
+	if len(policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
+		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
 				result.httpRouteAccessControls = append(result.httpRouteAccessControls, ac)
 			}
 		}
 	}
 
-	if len(policies.accessControls[AccessControlPolicyMatchTypeGRPCRoute]) > 0 {
-		for _, ac := range policies.accessControls[AccessControlPolicyMatchTypeGRPCRoute] {
+	if len(policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
+		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute] {
 			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
 				result.grpcRouteAccessControls = append(result.grpcRouteAccessControls, ac)
 			}
 		}
 	}
 
-	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames]) > 0 {
-		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeHostnames] {
+	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHostnames]) > 0 {
+		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHostnames] {
 			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
 				result.hostnamesFaultInjections = append(result.hostnamesFaultInjections, fj)
 			}
 		}
 	}
 
-	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeHTTPRoute]) > 0 {
-		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeHTTPRoute] {
+	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
+		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute] {
 			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
 				result.httpRouteFaultInjections = append(result.httpRouteFaultInjections, fj)
 			}
 		}
 	}
 
-	if len(policies.faultInjections[FaultInjectionPolicyMatchTypeGRPCRoute]) > 0 {
-		for _, fj := range policies.faultInjections[FaultInjectionPolicyMatchTypeGRPCRoute] {
+	if len(policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
+		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute] {
 			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
 				result.grpcRouteFaultInjections = append(result.grpcRouteFaultInjections, fj)
 			}
@@ -521,7 +523,7 @@ func (c *GatewayCache) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
 			continue
 		}
 
-		if !gwutils.IsTargetRefToGVK(gatewayTLSPolicy.Spec.TargetRef, gatewayGVK) {
+		if !gwutils.IsTargetRefToGVK(gatewayTLSPolicy.Spec.TargetRef, constants.GatewayGVK) {
 			continue
 		}
 

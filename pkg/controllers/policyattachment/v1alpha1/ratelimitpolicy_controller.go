@@ -28,8 +28,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
+
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
@@ -68,6 +70,7 @@ type rateLimitPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.PolicyStatusProcessor
 }
 
 func (r *rateLimitPolicyReconciler) NeedLeaderElection() bool {
@@ -76,12 +79,23 @@ func (r *rateLimitPolicyReconciler) NeedLeaderElection() bool {
 
 // NewRateLimitPolicyReconciler returns a new RateLimitPolicy Reconciler
 func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &rateLimitPolicyReconciler{
+	r := &rateLimitPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("RateLimitPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.PolicyStatusProcessor{
+		Client:                             r.fctx.Client,
+		GetPolicies:                        r.getRateLimitPolices,
+		FindConflictPort:                   r.getConflictedPort,
+		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedRateLimitPolicy,
+		FindConflictedHTTPRouteBasedPolicy: r.getConflictedHTTPRouteBasedRateLimitPolicy,
+		FindConflictedGRPCRouteBasedPolicy: r.getConflictedGRPCRouteBasedRateLimitPolicy,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a RateLimitPolicy object and makes changes based on the state read
@@ -102,7 +116,10 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -112,262 +129,54 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *rateLimitPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.RateLimitPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only gateway.networking.k8s.io is supported",
+func (r *rateLimitPolicyReconciler) getRateLimitPolices(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list rate limit policies: %s", err)))
+	}
+
+	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+
+	for _, p := range rateLimitPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+			spec := p.Spec
+			targetRef := spec.TargetRef
+
+			switch {
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Ports) > 0:
+				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Hostnames) > 0:
+				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.HTTPRateLimits) > 0:
+				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.GRPCRateLimits) > 0:
+				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
+			}
 		}
 	}
 
-	switch policy.Spec.TargetRef.Kind {
-	case constants.GatewayAPIGatewayKind:
-		gateway := &gwv1beta1.Gateway{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Gateway",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Gateway: %s", err),
-				}
-			}
-		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
-
-		rateLimitPolicies := make([]gwpav1alpha1.RateLimitPolicy, 0)
-		for _, p := range rateLimitPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
-				rateLimitPolicies = append(rateLimitPolicies, p)
-			}
-		}
-
-		sort.Slice(rateLimitPolicies, func(i, j int) bool {
-			if rateLimitPolicies[i].CreationTimestamp.Time.Equal(rateLimitPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&rateLimitPolicies[i]).String() < client.ObjectKeyFromObject(&rateLimitPolicies[j]).String()
-			}
-
-			return rateLimitPolicies[i].CreationTimestamp.Time.Before(rateLimitPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPort(gateway, policy, rateLimitPolicies); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
-			}
-		}
-
-	case constants.GatewayAPIHTTPRouteKind:
-		httpRoute := &gwv1beta1.HTTPRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target HTTPRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target HTTPRoute: %s", err),
-				}
-			}
-		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedRateLimitPolicy(httpRoute, policy, rateLimitPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
-			}
-		}
-	case constants.GatewayAPIGRPCRouteKind:
-		grpcRoute := &gwv1alpha2.GRPCRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target GRPCRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target GRPCRoute: %s", err),
-				}
-			}
-		}
-		rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list RateLimitPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedRateLimitPolicy(grpcRoute, policy, rateLimitPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with RateLimitPolicy: %s", conflict),
-			}
-		}
-	default:
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Gateway, HTTPRoute and GRCPRoute are supported",
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return policies, nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedHostnamesOrRouteBasedRateLimitPolicy(route client.Object, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies *gwpav1alpha1.RateLimitPolicyList) *types.NamespacedName {
-	hostnamesRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	routeRateLimits := make([]gwpav1alpha1.RateLimitPolicy, 0)
-	for _, p := range allRateLimitPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, route) {
-			if len(p.Spec.Hostnames) > 0 {
-				hostnamesRateLimits = append(hostnamesRateLimits, p)
-			}
-			if len(p.Spec.HTTPRateLimits) > 0 || len(p.Spec.GRPCRateLimits) > 0 {
-				routeRateLimits = append(routeRateLimits, p)
-			}
-		}
-	}
-	sort.Slice(hostnamesRateLimits, func(i, j int) bool {
-		if hostnamesRateLimits[i].CreationTimestamp.Time.Equal(hostnamesRateLimits[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&hostnamesRateLimits[i]).String() < client.ObjectKeyFromObject(&hostnamesRateLimits[j]).String()
-		}
+func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route status.RouteInfo, rateLimitPolicy client.Object, hostnamesRateLimits []client.Object) *types.NamespacedName {
+	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
 
-		return hostnamesRateLimits[i].CreationTimestamp.Time.Before(hostnamesRateLimits[j].CreationTimestamp.Time)
-	})
-	sort.Slice(routeRateLimits, func(i, j int) bool {
-		if routeRateLimits[i].CreationTimestamp.Time.Equal(routeRateLimits[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&routeRateLimits[i]).String() < client.ObjectKeyFromObject(&routeRateLimits[j]).String()
-		}
-
-		return routeRateLimits[i].CreationTimestamp.Time.Before(routeRateLimits[j].CreationTimestamp.Time)
-	})
-
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedRateLimitPolicy(info, rateLimitPolicy, hostnamesRateLimits); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedRateLimitPolicy(route, rateLimitPolicy, routeRateLimits); conflict != nil {
-			return conflict
-		}
-
-	case *gwv1alpha2.GRPCRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedRateLimitPolicy(info, rateLimitPolicy, hostnamesRateLimits); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedRateLimitPolicy(route, rateLimitPolicy, routeRateLimits); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route routeInfo, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, hostnamesRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
+	if len(currentPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
-	for _, parent := range route.parents {
+	for _, parent := range route.Parents {
 		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
-			key := getRouteParentKey(route.meta, parent)
+			key := getRouteParentKey(route.Meta, parent)
 
 			gateway := &gwv1beta1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
@@ -376,21 +185,23 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 
 			validListeners := gwutils.GetValidListenersFromGateway(gateway)
 
-			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.gvk, route.generation, validListeners)
+			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.GVK, route.Generation, validListeners)
 			for _, listener := range allowedListeners {
-				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.hostnames)
+				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {
 					// no valid hostnames, should ignore it
 					continue
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesRateLimits {
-						r1 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
+						hr := hr.(*gwpav1alpha1.RateLimitPolicy)
+
+						r1 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *rateLimitPolicy)
+						r2 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *currentPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -412,68 +223,39 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route client.Object, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, routeRateLimits []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 &&
-		len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
+func (r *rateLimitPolicyReconciler) getConflictedHTTPRouteBasedRateLimitPolicy(route *gwv1beta1.HTTPRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
+	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
+
+	if len(currentPolicy.Spec.HTTPRateLimits) == 0 {
 		return nil
 	}
 
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, rateLimit := range routeRateLimits {
-					if len(rateLimit.Spec.HTTPRateLimits) == 0 {
-						continue
-					}
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, routePolicy := range routeRateLimits {
+				routePolicy := routePolicy.(*gwpav1alpha1.RateLimitPolicy)
 
-					r1 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, rateLimit)
-					if r1 == nil {
-						continue
-					}
-
-					r2 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *rateLimitPolicy)
-					if r2 == nil {
-						continue
-					}
-
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
-
-					return &types.NamespacedName{
-						Name:      rateLimit.Name,
-						Namespace: rateLimit.Namespace,
-					}
+				if len(routePolicy.Spec.HTTPRateLimits) == 0 {
+					continue
 				}
-			}
-		}
-	case *gwv1alpha2.GRPCRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, rr := range routeRateLimits {
-					if len(rr.Spec.GRPCRateLimits) == 0 {
-						continue
-					}
 
-					r1 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, rr)
-					if r1 == nil {
-						continue
-					}
+				r1 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *routePolicy)
+				if r1 == nil {
+					continue
+				}
 
-					r2 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *rateLimitPolicy)
-					if r2 == nil {
-						continue
-					}
+				r2 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
 
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
 
-					return &types.NamespacedName{
-						Name:      rr.Name,
-						Namespace: rr.Namespace,
-					}
+				return &types.NamespacedName{
+					Name:      routePolicy.Name,
+					Namespace: routePolicy.Namespace,
 				}
 			}
 		}
@@ -482,21 +264,66 @@ func (r *rateLimitPolicyReconciler) getConflictedRouteBasedRateLimitPolicy(route
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy, allRateLimitPolicies []gwpav1alpha1.RateLimitPolicy) *types.NamespacedName {
-	if len(rateLimitPolicy.Spec.Ports) == 0 {
+func (r *rateLimitPolicyReconciler) getConflictedGRPCRouteBasedRateLimitPolicy(route *gwv1alpha2.GRPCRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
+	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
+
+	if len(currentPolicy.Spec.GRPCRateLimits) == 0 {
+		return nil
+	}
+
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, routePolicy := range routeRateLimits {
+				routePolicy := routePolicy.(*gwpav1alpha1.RateLimitPolicy)
+
+				if len(routePolicy.Spec.GRPCRateLimits) == 0 {
+					continue
+				}
+
+				r1 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *routePolicy)
+				if r1 == nil {
+					continue
+				}
+
+				r2 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
+
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      routePolicy.Name,
+					Namespace: routePolicy.Namespace,
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy client.Object, allRateLimitPolicies []client.Object) *types.NamespacedName {
+	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
+
+	if len(currentPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
 	for _, pr := range allRateLimitPolicies {
+		pr := pr.(*gwpav1alpha1.RateLimitPolicy)
+
 		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
+				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *rateLimitPolicy)
+				r2 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *currentPolicy)
 				if r2 == nil {
 					continue
 				}

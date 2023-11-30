@@ -8,14 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 var (
 	// SchemeGroupVersion is group version used to register MeshConfig
 	SchemeGroupVersion = schema.GroupVersion{
-		Group:   constants.FlomeshGatewayAPIGroup,
+		Group:   "gateway.flomesh.io",
 		Version: "v1alpha1",
 	}
 
