@@ -659,7 +659,6 @@ fsm:
         filterTag: ""
         prefixTag: ""
         suffixTag: ""
-        withGatewayAPI: false
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -700,7 +699,6 @@ fsm:
         filterMetadata: ""
         prefixMetadata: ""
         suffixMetadata: ""
-        withGatewayAPI: false
       syncFromK8S:
         enable: false
         defaultSync: true

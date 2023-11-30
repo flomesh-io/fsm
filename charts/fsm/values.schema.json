@@ -1501,6 +1501,50 @@
                           "title": "The http address of Consul Service",
                           "description": "Http address of Consul Service"
                         },
+                        "syncToK8S": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S",
+                          "type": "object",
+                          "title": "The syncToK8s schema",
+                          "required": [
+                            "enable",
+                            "filterTag",
+                            "prefixTag",
+                            "suffixTag",
+                            "passingOnly"
+                          ],
+                          "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
+                            "filterTag": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/filterTag",
+                              "type": "string",
+                              "title": "Filter Tag",
+                              "description": "Filter Tag"
+                            },
+                            "prefixTag": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/prefixTag",
+                              "type": "string",
+                              "title": "Prefix Tag",
+                              "description": "Prefix Tag"
+                            },
+                            "suffixTag": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/suffixTag",
+                              "type": "string",
+                              "title": "Suffix Tag",
+                              "description": "Suffix Tag"
+                            },
+                            "passingOnly": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/passingOnly",
+                              "type": "boolean",
+                              "title": "Passing Only",
+                              "description": "Passing Only"
+                            }
+                          }
+                        },
                         "syncFromK8S": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S",
                           "type": "object",
@@ -1739,8 +1783,7 @@
                             "filterMetadata",
                             "prefixMetadata",
                             "suffixMetadata",
-                            "passingOnly",
-                            "withGatewayAPI"
+                            "passingOnly"
                           ],
                           "properties": {
                             "enable": {
@@ -1772,12 +1815,6 @@
                               "type": "boolean",
                               "title": "Passing Only",
                               "description": "Passing Only"
-                            },
-                            "withGatewayAPI": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGatewayAPI",
-                              "type": "boolean",
-                              "title": "with Gateway API",
-                              "description": "with Gateway API"
                             }
                           }
                         },
