@@ -83,18 +83,18 @@ func (s *Source) Run(ctx context.Context) {
 // Aggregate micro services
 //
 //lint:ignore U1000 ignore unused
-func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string) {
+func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta {
 	if _, exists := s.Sink.rawServices[string(svcName)]; !exists {
-		return nil, s.DiscClient.MicroServiceProvider()
+		return nil
 	}
 
 	serviceEntries, err := s.DiscClient.HealthService(string(svcName), s.FilterTag, nil, s.PassingOnly)
 	if err != nil {
-		return nil, s.DiscClient.MicroServiceProvider()
+		return nil
 	}
 
 	if len(serviceEntries) == 0 {
-		return nil, s.DiscClient.MicroServiceProvider()
+		return nil
 	}
 
 	svcMetaMap := make(map[MicroSvcName]*MicroSvcMeta)
@@ -124,7 +124,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 			svcMeta.Addresses[MicroEndpointAddr(svc.Address)] = 1
 		}
 	}
-	return svcMetaMap, s.DiscClient.MicroServiceProvider()
+	return svcMetaMap
 }
 
 func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, grpcPort int, svcNames []MicroSvcName) (int, []MicroSvcName) {
