@@ -125,6 +125,8 @@ func main() {
 		go cli.SyncKtoC(ctx, kubeClient, discClient)
 	}
 
+	go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
+
 	version.SetMetric()
 	/*
 	 * Initialize fsm-connector's HTTP server

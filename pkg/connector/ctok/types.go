@@ -1,4 +1,4 @@
-// Package c2k contains a reusable abstraction for efficiently
+// Package ctok contains a reusable abstraction for efficiently
 // watching for changes in resources in a Kubernetes cluster.
 package ctok
 

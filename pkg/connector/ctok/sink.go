@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -178,27 +177,6 @@ func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
 		)
 	}
 	return s.endpointsInformer
-}
-
-// GatewayInformer implements the controller.Resource interface.
-// It tells Kubernetes that we want to watch for changes to Gateways.
-func (s *Sink) GatewayInformer() cache.SharedIndexInformer {
-	if s.gatewaysInformer == nil {
-		s.gatewaysInformer = cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).List(s.Ctx, options)
-				},
-				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).Watch(s.Ctx, options)
-				},
-			},
-			&gwv1beta1.Gateway{},
-			0,
-			cache.Indexers{},
-		)
-	}
-	return s.gatewaysInformer
 }
 
 // UpsertService implements the controller.Resource interface.
@@ -380,33 +358,19 @@ func (s *Sink) Run(ch <-chan struct{}) {
 
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
-			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err == nil {
-				if gatewayAPIEnabled && connector.GatewayAPIEnabled {
-					s.deleteGatewayRoute(name)
-				}
-			} else {
+			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
 				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
 			}
 		}
 
 		for _, svc := range updates {
-			if updatedSvc, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err == nil {
-				if len(updatedSvc.Spec.Ports) > 0 {
-					if gatewayAPIEnabled && connector.GatewayAPIEnabled {
-						s.updateGatewayRoute(updatedSvc)
-					}
-				}
-			} else {
+			if _, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err != nil {
 				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 
 		for _, svc := range creates {
-			if createdSvc, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err == nil {
-				if gatewayAPIEnabled && connector.GatewayAPIEnabled {
-					s.updateGatewayRoute(createdSvc)
-				}
-			} else {
+			if _, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err != nil {
 				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
 			}
 		}

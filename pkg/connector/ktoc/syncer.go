@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	// CloudSyncPeriod is how often the syncer will attempt to
+	// SyncPeriod is how often the syncer will attempt to
 	// reconcile the expected service states with the remote cloud server.
-	CloudSyncPeriod = 5 * time.Second
+	SyncPeriod = 5 * time.Second
 
-	// cloudServicePollPeriod is how often a service is checked for
+	// ServicePollPeriod is how often a service is checked for
 	// whether it has instances to reap.
-	cloudServicePollPeriod = 10 * time.Second
+	ServicePollPeriod = 10 * time.Second
 )
 
 // Syncer is responsible for syncing a set of cloud catalog registrations.
@@ -462,10 +462,10 @@ func (s *CloudSyncer) init() {
 		s.watchers = make(map[string]map[string]context.CancelFunc)
 	}
 	if s.SyncPeriod == 0 {
-		s.SyncPeriod = CloudSyncPeriod
+		s.SyncPeriod = SyncPeriod
 	}
 	if s.ServicePollPeriod == 0 {
-		s.ServicePollPeriod = cloudServicePollPeriod
+		s.ServicePollPeriod = ServicePollPeriod
 	}
 	if s.initialSync == nil {
 		s.initialSync = make(chan bool)

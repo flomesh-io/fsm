@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	log               = logger.New("connector-c2k")
-	gatewayAPIEnabled = false
+	log = logger.New("connector-c2k")
 )
 
 // Controller is a generic cache.Controller implementation that watches
@@ -27,7 +26,6 @@ type Controller struct {
 
 	servicesInformer  cache.SharedIndexInformer
 	endpointsInformer cache.SharedIndexInformer
-	gatewaysInformer  cache.SharedIndexInformer
 }
 
 // Event is something that occurred to the resources we're watching.
@@ -58,11 +56,6 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 
 	// Create an informer so we can keep track of all endpoints changes.
 	c.endpointsInformer = c.Resource.EndpointsInformer()
-
-	// Create an informer so we can keep track of all gateway changes.
-	c.gatewaysInformer = c.Resource.GatewayInformer()
-
-	go c.syncGateway(stopCh)
 
 	go c.syncService(stopCh)
 
@@ -245,94 +238,6 @@ func (c *Controller) syncEndpoints(stopCh <-chan struct{}) {
 	}, time.Second, stopCh)
 }
 
-func (c *Controller) syncGateway(stopCh <-chan struct{}) {
-	// Create a queue for storing items to process from the informer.
-	var queueOnce sync.Once
-	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	shutdown := func() { queue.ShutDown() }
-	defer queueOnce.Do(shutdown)
-
-	// Add an event handler when data is received from the informer. The
-	// event handlers here will block the informer so we just offload them
-	// immediately into a workqueue.
-	_, err := c.gatewaysInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			// convert the resource object into a key (in this case
-			// we are just doing it in the format of 'namespace/name')
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			log.Debug().Msgf("queue op add gateway key:%s", key)
-			if err == nil {
-				queue.Add(Event{Key: key, Obj: obj})
-			}
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(newObj)
-			log.Debug().Msgf("queue op update gateway key:%s", key)
-			if err == nil {
-				queue.Add(Event{Key: key, Obj: newObj})
-			}
-		},
-		DeleteFunc: c.informerDeleteHandler(queue),
-	})
-	if err != nil {
-		log.Err(err).Msg("error adding gateway informer event handlers")
-	}
-
-	// If the type is a background syncer, then we startup the background
-	// process.
-	if bg, ok := c.Resource.(Backgrounder); ok {
-		ctx, cancelF := context.WithCancel(context.Background())
-
-		// Run the backgrounder
-		doneCh := make(chan struct{})
-		go func() {
-			defer close(doneCh)
-			bg.Run(ctx.Done())
-		}()
-
-		// Start a goroutine that automatically closes the context when we stop
-		go func() {
-			select {
-			case <-stopCh:
-				cancelF()
-
-			case <-ctx.Done():
-				// Cancelled outside
-			}
-		}()
-
-		// When we exit, close the context so the backgrounder ends
-		defer func() {
-			cancelF()
-			<-doneCh
-		}()
-	}
-
-	// Run the informer to start requesting resources
-	go func() {
-		c.gatewaysInformer.Run(stopCh)
-
-		// We have to shut down the queue here if we stop so that
-		// wait.Until stops below too. We can't wait until the defer at
-		// the top since wait.Until will block.
-		queueOnce.Do(shutdown)
-	}()
-
-	// Initial sync
-	if !cache.WaitForCacheSync(stopCh, c.gatewaysInformer.HasSynced) {
-		utilruntime.HandleError(fmt.Errorf("error syncing gateway cache"))
-		return
-	}
-	log.Debug().Msg("initial gateway cache sync complete")
-
-	// run the runWorker method every second with a stop channel
-	wait.Until(func() {
-		for c.processSingleGateway(queue, c.gatewaysInformer) {
-			// Process
-		}
-	}, time.Second, stopCh)
-}
-
 func (c *Controller) processSingleService(
 	queue workqueue.RateLimitingInterface,
 	serviceInformer cache.SharedIndexInformer) bool {
@@ -437,58 +342,6 @@ func (c *Controller) processSingleEndpoints(
 	return true
 }
 
-func (c *Controller) processSingleGateway(
-	queue workqueue.RateLimitingInterface,
-	gatewayInformer cache.SharedIndexInformer) bool {
-	// Fetch the next item
-	rawEvent, quit := queue.Get()
-	if quit {
-		return false
-	}
-	defer queue.Done(rawEvent)
-
-	event, ok := rawEvent.(Event)
-	if !ok {
-		log.Warn().Msgf("processSingleGateway: dropping event with unexpected type, event:%s", rawEvent)
-		return true
-	}
-
-	// Get the item from the informer to ensure we have the most up-to-date
-	// copy.
-	key := event.Key
-	gatewayItem, gatewayExists, gatewayErr := gatewayInformer.GetIndexer().GetByKey(key)
-
-	// If we got the item successfully, call the proper method
-	if gatewayErr == nil {
-		log.Trace().Msgf("processing gateway object, key:%s exists:%v", key, gatewayExists)
-		log.Trace().Msgf("processing gateway object, object:%v", gatewayItem)
-		if !gatewayExists {
-			// In the case of deletes, the item is no longer in the cache so
-			// we use the copy we got at the time of the event (event.Obj).
-			gatewayErr = c.Resource.DeleteGateway(key, event.Obj)
-		} else {
-			gatewayErr = c.Resource.UpsertGateway(key, gatewayItem)
-		}
-
-		if gatewayErr == nil {
-			queue.Forget(rawEvent)
-		}
-	}
-
-	if gatewayErr != nil {
-		if queue.NumRequeues(event) < 5 {
-			log.Err(gatewayErr).Msgf("failed processing gateway item, retrying key:%s", key)
-			queue.AddRateLimited(rawEvent)
-		} else {
-			log.Err(gatewayErr).Msgf("failed processing gateway item, no more retries, key:%s", key)
-			queue.Forget(rawEvent)
-			utilruntime.HandleError(gatewayErr)
-		}
-	}
-
-	return true
-}
-
 // informerDeleteHandler returns a function that implements
 // `DeleteFunc` from the `ResourceEventHandlerFuncs` interface.
 // It is split out as its own method to aid in testing.
@@ -507,9 +360,4 @@ func (c *Controller) informerDeleteHandler(queue workqueue.RateLimitingInterface
 			}
 		}
 	}
-}
-
-// EnabledGatewayAPI set gatewayAPIEnabled
-func EnabledGatewayAPI(enabled bool) {
-	gatewayAPIEnabled = enabled
 }

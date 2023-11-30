@@ -8,11 +8,11 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
+	"github.com/flomesh-io/fsm/pkg/connector/ktog"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 )
 
 func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, gatewayClient gwapi.Interface) {
-	ctok.EnabledGatewayAPI(Cfg.C2K.FlagWithGatewayAPI)
 	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
 	sink := ctok.NewSink(ctx, kubeClient, gatewayClient, Cfg.FsmNamespace)
@@ -79,5 +79,46 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	ctl := &ktoc.Controller{
 		Resource: &serviceResource,
 	}
+	go ctl.Run(ctx.Done())
+}
+
+func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
+	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
+	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
+
+	gatewayResource := &ktog.GatewayResource{}
+
+	syncer := &ktog.GatewayRouteSyncer{
+		SyncPeriod:        Cfg.K2C.FlagSyncPeriod,
+		ServicePollPeriod: Cfg.K2C.FlagSyncPeriod * 2,
+		GatewayResource:   gatewayResource,
+	}
+
+	serviceResource := &ktog.ServiceResource{
+		FsmNamespace:          Cfg.FsmNamespace,
+		Client:                kubeClient,
+		GatewayClient:         gatewayClient,
+		GatewayResource:       gatewayResource,
+		Ctx:                   ctx,
+		Syncer:                syncer,
+		AllowK8sNamespacesSet: allowSet,
+		DenyK8sNamespacesSet:  denySet,
+		ExplicitEnable:        !Cfg.K2C.FlagDefaultSync,
+	}
+
+	gatewayResource.Service = serviceResource
+
+	// Build the controller and start it
+	gwCtl := &ktog.Controller{
+		Resource: gatewayResource,
+	}
+
+	// Build the controller and start it
+	ctl := &ktog.Controller{
+		Resource: serviceResource,
+	}
+
+	go syncer.Run(ctx, gwCtl, ctl)
+	go gwCtl.Run(ctx.Done())
 	go ctl.Run(ctx.Done())
 }

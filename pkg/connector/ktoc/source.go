@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +18,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
-	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 const (
@@ -40,15 +38,15 @@ const (
 type NodePortSyncType string
 
 const (
-	// Only sync NodePort services with a node's ExternalIP address.
+	// ExternalOnly only sync NodePort services with a node's ExternalIP address.
 	// Doesn't sync if an ExternalIP doesn't exist.
 	ExternalOnly NodePortSyncType = "ExternalOnly"
 
-	// Sync with an ExternalIP first, if it doesn't exist, use the
+	// ExternalFirst sync with an ExternalIP first, if it doesn't exist, use the
 	// node's InternalIP address instead.
 	ExternalFirst NodePortSyncType = "ExternalFirst"
 
-	// Sync NodePort services using.
+	// InternalOnly sync NodePort services using.
 	InternalOnly NodePortSyncType = "InternalOnly"
 )
 
@@ -275,7 +273,6 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 		Resource: &serviceEndpointsResource{
 			Service: t,
 			Ctx:     t.Ctx,
-			Log:     logger.New("controller/endpoints"),
 			Resource: &serviceIngressResource{
 				Service:                    t,
 				Ctx:                        t.Ctx,
@@ -807,13 +804,12 @@ func (t *ServiceResource) sync() {
 type serviceEndpointsResource struct {
 	Service  *ServiceResource
 	Ctx      context.Context
-	Log      zerolog.Logger
 	Resource Resource
 }
 
 // Run implements the controller.Backgrounder interface.
 func (t *serviceEndpointsResource) Run(ch <-chan struct{}) {
-	t.Log.Info().Msg("starting runner for ingress")
+	log.Info().Msg("starting runner for ingress")
 	(&Controller{
 		Resource: t.Resource,
 	}).Run(ch)
