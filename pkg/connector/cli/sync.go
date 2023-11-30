@@ -42,7 +42,7 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
 	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
 
-	syncer := &ktoc.ConsulSyncer{
+	syncer := &ktoc.CloudSyncer{
 		DiscClient:              discClient,
 		EnableNamespaces:        Cfg.K2C.Consul.FlagConsulEnableNamespaces,
 		CrossNamespaceACLPolicy: Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy,

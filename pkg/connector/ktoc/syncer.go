@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	// ConsulSyncPeriod is how often the syncer will attempt to
-	// reconcile the expected service states with the remote Consul server.
-	ConsulSyncPeriod = 30 * time.Second
+	// CloudSyncPeriod is how often the syncer will attempt to
+	// reconcile the expected service states with the remote cloud server.
+	CloudSyncPeriod = 5 * time.Second
 
-	// ConsulServicePollPeriod is how often a service is checked for
+	// cloudServicePollPeriod is how often a service is checked for
 	// whether it has instances to reap.
-	ConsulServicePollPeriod = 60 * time.Second
+	cloudServicePollPeriod = 10 * time.Second
 )
 
-// Syncer is responsible for syncing a set of Consul catalog registrations.
+// Syncer is responsible for syncing a set of cloud catalog registrations.
 // An external system manages the set of registrations and periodically
 // updates the Syncer. The Syncer should keep the remote system in sync with
 // the given set of registrations.
@@ -31,11 +31,11 @@ type Syncer interface {
 	Sync([]*provider.CatalogRegistration)
 }
 
-// ConsulSyncer is a Syncer that takes the set of registrations and
-// registers them with Consul. It also watches Consul for changes to the
+// CloudSyncer is a Syncer that takes the set of registrations and
+// registers them with cloud. It also watches cloud for changes to the
 // services and ensures the local set of registrations represents the
 // source of truth, overwriting any external changes to the services.
-type ConsulSyncer struct {
+type CloudSyncer struct {
 	// EnableNamespaces indicates that a user is running Consul Enterprise
 	// with version 1.7+ which is namespace aware. It enables Consul namespaces,
 	// with syncing into either a single Consul namespace or mirrored from
@@ -78,15 +78,15 @@ type ConsulSyncer struct {
 	initialSyncOnce sync.Once
 
 	// serviceNames is all namespaces mapped to a set of valid
-	// Consul service names
+	// cloud service names
 	serviceNames map[string]mapset.Set
 
-	// namespaces is all namespaces mapped to a map of Consul service
+	// namespaces is all namespaces mapped to a map of cloud service
 	// ids mapped to their CatalogRegistrations
 	namespaces map[string]map[string]*provider.CatalogRegistration
 	deregs     map[string]*provider.CatalogDeregistration
 
-	// watchers is all namespaces mapped to a map of Consul service
+	// watchers is all namespaces mapped to a map of cloud service
 	// names mapped to a cancel function for watcher routines
 	watchers map[string]map[string]context.CancelFunc
 
@@ -94,7 +94,7 @@ type ConsulSyncer struct {
 }
 
 // Sync implements Syncer.
-func (s *ConsulSyncer) Sync(rs []*provider.CatalogRegistration) {
+func (s *CloudSyncer) Sync(rs []*provider.CatalogRegistration) {
 	// Grab the lock so we can replace the sync state
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -130,7 +130,7 @@ func (s *ConsulSyncer) Sync(rs []*provider.CatalogRegistration) {
 
 // Run is the long-running runloop for reconciling the local set of
 // services to register with the remote state.
-func (s *ConsulSyncer) Run(ctx context.Context) {
+func (s *CloudSyncer) Run(ctx context.Context) {
 	s.once.Do(s.init)
 
 	// Start the background watchers
@@ -142,7 +142,7 @@ func (s *ConsulSyncer) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("ConsulSyncer quitting")
+			log.Info().Msg("CloudSyncer quitting")
 			return
 
 		case <-reconcileTimer.C:
@@ -153,11 +153,11 @@ func (s *ConsulSyncer) Run(ctx context.Context) {
 }
 
 // watchReapableServices is a long-running task started by Run that
-// holds blocking queries to the Consul server to watch for any services
+// holds blocking queries to the cloud server to watch for any services
 // tagged with k8s that are no longer valid and need to be deleted.
 // This task only marks them for deletion but doesn't perform the actual
 // deletion.
-func (s *ConsulSyncer) watchReapableServices(ctx context.Context) {
+func (s *CloudSyncer) watchReapableServices(ctx context.Context) {
 	// We must wait for the initial sync to be complete and our maps to be
 	// populated. If we don't wait, we will reap all services tagged with k8s
 	// because we have no tracked services in our maps yet.
@@ -228,10 +228,10 @@ func (s *ConsulSyncer) watchReapableServices(ctx context.Context) {
 				}
 			}
 
-			log.Info().Msgf("invalid service found, scheduling for delete service-name:%s service-id:%s service-consul-namespace:%s",
+			log.Info().Msgf("invalid service found, scheduling for delete service-name:%s service-id:%s service-namespace:%s",
 				service.Service, service.ID, svcNs)
 			if err = s.scheduleReapServiceLocked(service.Service, svcNs); err != nil {
-				log.Info().Msgf("error querying service for delete service-name:%s service-consul-namespace:%s err:%v",
+				log.Info().Msgf("error querying service for delete service-name:%s service-namespace:%s err:%v",
 					service.Service,
 					svcNs,
 					err)
@@ -244,9 +244,9 @@ func (s *ConsulSyncer) watchReapableServices(ctx context.Context) {
 
 // watchService watches all instances of a service by name for changes
 // and schedules re-registration or deletion if necessary.
-func (s *ConsulSyncer) watchService(ctx context.Context, name, namespace string) {
-	log.Info().Msgf("starting service watcher service-name:%s service-consul-namespace:%s", name, namespace)
-	defer log.Info().Msgf("stopping service watcher service-name:%s service-consul-namespace:%s", name, namespace)
+func (s *CloudSyncer) watchService(ctx context.Context, name, namespace string) {
+	log.Info().Msgf("starting service watcher service-name:%s service-namespace:%s", name, namespace)
+	defer log.Info().Msgf("stopping service watcher service-name:%s service-namespace:%s", name, namespace)
 
 	for {
 		select {
@@ -317,7 +317,7 @@ func (s *ConsulSyncer) watchService(ctx context.Context, name, namespace string)
 // name that have the k8s tag and schedules them for removal.
 //
 // Precondition: lock must be held.
-func (s *ConsulSyncer) scheduleReapServiceLocked(name, namespace string) error {
+func (s *CloudSyncer) scheduleReapServiceLocked(name, namespace string) error {
 	// Set up query options
 	opts := provider.QueryOptions{AllowStale: true}
 	if s.EnableNamespaces {
@@ -351,9 +351,9 @@ func (s *ConsulSyncer) scheduleReapServiceLocked(name, namespace string) error {
 }
 
 // syncFull is called periodically to perform all the write-based API
-// calls to sync the data with Consul. This may also start background
+// calls to sync the data with cloud. This may also start background
 // watchers for specific services.
-func (s *ConsulSyncer) syncFull(ctx context.Context) {
+func (s *CloudSyncer) syncFull(ctx context.Context) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -393,13 +393,13 @@ func (s *ConsulSyncer) syncFull(ctx context.Context) {
 
 	// Do all deregistrations first.
 	for _, r := range s.deregs {
-		log.Info().Msgf("deregistering service node-name:%s service-id:%s service-consul-namespace:%s",
+		log.Info().Msgf("deregistering service node-name:%s service-id:%s service-namespace:%s",
 			r.Node,
 			r.ServiceID,
 			r.Namespace)
 		err := s.DiscClient.Deregister(r)
 		if err != nil {
-			log.Warn().Msgf("error deregistering service node-name:%s service-id:%s service-consul-namespace:%s err:%v",
+			log.Warn().Msgf("error deregistering service node-name:%s service-id:%s service-namespace:%s err:%v",
 				r.Node,
 				r.ServiceID,
 				r.Namespace,
@@ -437,7 +437,7 @@ func (s *ConsulSyncer) syncFull(ctx context.Context) {
 				continue
 			}
 
-			log.Debug().Msgf("registered service instance node-name:%s service-name:%s consul-namespace-name:%s service:%v",
+			log.Debug().Msgf("registered service instance node-name:%s service-name:%s namespace-name:%s service:%v",
 				r.Node,
 				r.Service.Service,
 				r.Service.Namespace,
@@ -446,7 +446,7 @@ func (s *ConsulSyncer) syncFull(ctx context.Context) {
 	}
 }
 
-func (s *ConsulSyncer) init() {
+func (s *CloudSyncer) init() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.serviceNames == nil {
@@ -462,10 +462,10 @@ func (s *ConsulSyncer) init() {
 		s.watchers = make(map[string]map[string]context.CancelFunc)
 	}
 	if s.SyncPeriod == 0 {
-		s.SyncPeriod = ConsulSyncPeriod
+		s.SyncPeriod = CloudSyncPeriod
 	}
 	if s.ServicePollPeriod == 0 {
-		s.ServicePollPeriod = ConsulServicePollPeriod
+		s.ServicePollPeriod = cloudServicePollPeriod
 	}
 	if s.initialSync == nil {
 		s.initialSync = make(chan bool)

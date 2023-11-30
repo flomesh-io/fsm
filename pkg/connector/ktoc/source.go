@@ -30,9 +30,9 @@ const (
 	CloudK8SRefValue = "fsm-connector-external-k8s-ref-name"
 	CloudK8SNodeName = "fsm-connector-external-k8s-node-name"
 
-	// cloudKubernetesCheckType is the type of health check in Consul for Kubernetes readiness status.
+	// cloudKubernetesCheckType is the type of health check in cloud for Kubernetes readiness status.
 	cloudKubernetesCheckType = "kubernetes-readiness"
-	// cloudKubernetesCheckName is the name of health check in Consul for Kubernetes readiness status.
+	// cloudKubernetesCheckName is the name of health check in cloud for Kubernetes readiness status.
 	cloudKubernetesCheckName   = "Kubernetes Readiness Check"
 	kubernetesSuccessReasonMsg = "Kubernetes health checks passing"
 )
@@ -130,7 +130,7 @@ type ServiceResource struct {
 	// serviceLock must be held for any read/write to these maps.
 	serviceLock sync.RWMutex
 
-	// serviceMap holds services we should sync to Consul. Keys are the
+	// serviceMap holds services we should sync to cloud. Keys are the
 	// in the form <kube namespace>/<kube svc name>.
 	serviceMap map[string]*corev1.Service
 
@@ -154,9 +154,9 @@ type ServiceResource struct {
 	// is provided by the Ingress resource for the service.
 	serviceHostnameMap map[string]serviceAddress
 
-	// registeredServiceMap holds the services in Consul that we've registered from kube.
-	// It's populated via Consul's API and lets us diff what is actually in
-	// Consul vs. what we expect to be there.
+	// registeredServiceMap holds the services in cloud that we've registered from kube.
+	// It's populated via cloud's API and lets us diff what is actually in
+	// cloud vs. what we expect to be there.
 	registeredServiceMap map[string][]*provider.CatalogRegistration
 }
 
@@ -353,7 +353,7 @@ func (t *ServiceResource) shouldTrackEndpoints(key string) bool {
 		(t.LoadBalancerEndpointsSync && svc.Spec.Type == corev1.ServiceTypeLoadBalancer)
 }
 
-// generateRegistrations generates the necessary Consul registrations for
+// generateRegistrations generates the necessary cloud registrations for
 // the given key. This is best effort: if there isn't enough information
 // yet to register a service, then no registration will be generated.
 //
@@ -367,7 +367,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 
 	log.Debug().Msgf("[generateRegistrations] generating registration key:%s", key)
 
-	// Initialize our consul service map here if it isn't already.
+	// Initialize our cloud service map here if it isn't already.
 	if t.registeredServiceMap == nil {
 		t.registeredServiceMap = make(map[string][]*provider.CatalogRegistration)
 	}
@@ -595,7 +595,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 			}
 
 			// Find the ip address for the node and
-			// create the Consul service using it
+			// create the cloud service using it
 			var found bool
 			for _, address := range node.Status.Addresses {
 				if address.Type == expectedType {
@@ -770,7 +770,7 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			r.Check = &provider.AgentCheck{
-				CheckID:   consulHealthCheckID(endpoints.Namespace, serviceID(r.Service.Service, addr)),
+				CheckID:   healthCheckID(endpoints.Namespace, serviceID(r.Service.Service, addr)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
@@ -1037,8 +1037,8 @@ func (t *ServiceResource) isIngressService(key string) bool {
 	return t.serviceHostnameMap != nil && t.serviceHostnameMap[key].hostName != ""
 }
 
-// consulHealthCheckID deterministically generates a health check ID based on service ID and Kubernetes namespace.
-func consulHealthCheckID(k8sNS string, serviceID string) string {
+// healthCheckID deterministically generates a health check ID based on service ID and Kubernetes namespace.
+func healthCheckID(k8sNS string, serviceID string) string {
 	return fmt.Sprintf("%s/%s", k8sNS, serviceID)
 }
 
