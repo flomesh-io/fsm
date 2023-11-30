@@ -94,6 +94,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
+	connector.GatewayAPIEnabled = cfg.GetMeshConfig().Spec.GatewayAPI.Enabled
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 

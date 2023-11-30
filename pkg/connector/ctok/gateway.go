@@ -59,9 +59,9 @@ func (s *Sink) updateGatewayRoute(createdSvc *apiv1.Service) {
 			return nil
 		}
 		for _, portSpec := range createdSvc.Spec.Ports {
-			protocol := *portSpec.AppProtocol
-			if len(protocol) == 0 {
-				protocol = string(portSpec.Protocol)
+			protocol := string(portSpec.Protocol)
+			if portSpec.AppProtocol != nil && len(*portSpec.AppProtocol) > 0 {
+				protocol = *portSpec.AppProtocol
 			}
 			protocol = strings.ToUpper(protocol)
 
