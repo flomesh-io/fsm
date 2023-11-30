@@ -125,7 +125,9 @@ func main() {
 		go cli.SyncKtoC(ctx, kubeClient, discClient)
 	}
 
-	go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
+	if cli.Cfg.SyncK8sToFgw {
+		go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
+	}
 
 	version.SetMetric()
 	/*

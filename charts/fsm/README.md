@@ -120,7 +120,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncIngress | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
-| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
 | fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
 | fsm.cloudConnector.consul.syncToFgw.defaultSync | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
@@ -130,7 +131,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.prefixTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.suffixTag | string | `""` |  |
-| fsm.cloudConnector.consul.syncToK8S.withGatewayAPI | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.eureka.enable | bool | `false` |  |
@@ -146,7 +146,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngress | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
-| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
 | fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
 | fsm.cloudConnector.eureka.syncToFgw.defaultSync | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
@@ -156,7 +157,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
-| fsm.cloudConnector.eureka.syncToK8S.withGatewayAPI | bool | `false` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |

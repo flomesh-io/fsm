@@ -535,7 +535,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = serviceID(r.Service.Service, ip)
+			r.Service.ID = connector.ServiceID(r.Service.Service, ip)
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
@@ -600,7 +600,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
+					r.Service.ID = connector.ServiceID(r.Service.Service, subsetAddr.IP)
 					r.Service.Address = address.Address
 
 					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -621,7 +621,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = serviceID(r.Service.Service, subsetAddr.IP)
+						r.Service.ID = connector.ServiceID(r.Service.Service, subsetAddr.IP)
 						r.Service.Address = address.Address
 
 						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -661,7 +661,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = serviceID(r.Service.Service, addr)
+			r.Service.ID = connector.ServiceID(r.Service.Service, addr)
 			r.Service.Address = addr
 
 			// Adding information about service weight.
@@ -738,6 +738,11 @@ func (t *ServiceResource) registerServiceInstance(
 				}
 			}
 
+			if withGatewayAPI {
+				addr = withGatewayViaAddr
+				epPort = int(withGatewayViaPort)
+			}
+
 			// Its not clear whether K8S guarantees ready addresses to
 			// be unique so we maintain a set to prevent duplicates just
 			// in case.
@@ -749,7 +754,7 @@ func (t *ServiceResource) registerServiceInstance(
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = serviceID(r.Service.Service, addr)
+			r.Service.ID = connector.ServiceID(r.Service.Service, addr)
 			r.Service.Address = addr
 			r.Service.Port = epPort
 			r.Service.Meta = make(map[string]interface{})
@@ -767,12 +772,12 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			r.Check = &provider.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, serviceID(r.Service.Service, addr)),
+				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceID(r.Service.Service, addr)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
 				Status:    provider.HealthPassing,
-				ServiceID: serviceID(r.Service.Service, addr),
+				ServiceID: connector.ServiceID(r.Service.Service, addr),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 

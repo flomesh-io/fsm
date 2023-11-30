@@ -1603,7 +1603,7 @@
                               "enum": [
                                 "ExternalOnly",
                                 "InternalOnly",
-                                "ExternalFirst."
+                                "ExternalFirst"
                               ]
                             },
                             "syncIngress": {
@@ -1650,9 +1650,30 @@
                             },
                             "withGatewayAPI": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI",
-                              "type": "boolean",
+                              "type": "object",
                               "title": "with Gateway API",
-                              "description": "with Gateway API"
+                              "required": [
+                                "enable",
+                                "via"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                },
+                                "via": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI/properties/via",
+                                  "type": "string",
+                                  "title": "via",
+                                  "description": "via",
+                                  "enum": [
+                                    "ExternalIP",
+                                    "ClusterIP"
+                                  ]
+                                }
+                              }
                             },
                             "consulNodeName": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulNodeName",
@@ -1869,7 +1890,7 @@
                               "enum": [
                                 "ExternalOnly",
                                 "InternalOnly",
-                                "ExternalFirst."
+                                "ExternalFirst"
                               ]
                             },
                             "syncIngress": {
@@ -1916,9 +1937,30 @@
                             },
                             "withGatewayAPI": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI",
-                              "type": "boolean",
+                              "type": "object",
                               "title": "with Gateway API",
-                              "description": "with Gateway API"
+                              "required": [
+                                "enable",
+                                "via"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                },
+                                "via": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI/properties/via",
+                                  "type": "string",
+                                  "title": "via",
+                                  "description": "via",
+                                  "enum": [
+                                    "ExternalIP",
+                                    "ClusterIP"
+                                  ]
+                                }
+                              }
                             }
                           }
                         },

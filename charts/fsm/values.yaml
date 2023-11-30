@@ -673,7 +673,9 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI: false
+        withGatewayAPI:
+          enable: false
+          via: ClusterIP
         consulNodeName: k8s-sync
         consulK8STag: k8s
         consulEnableNamespaces: false
@@ -713,7 +715,9 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI: false
+        withGatewayAPI:
+          enable: false
+          via: ClusterIP
       syncToFgw:
         enable: false
         defaultSync: true

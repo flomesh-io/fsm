@@ -2,7 +2,11 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -37,6 +41,36 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
+	ktoc.WithGatewayAPI(Cfg.K2C.FlagWithGatewayAPI.Enable)
+
+	if Cfg.K2C.FlagWithGatewayAPI.Enable {
+		for {
+			if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, fmt.Sprintf("fsm-gateway-%s", Cfg.FsmNamespace), metav1.GetOptions{}); err == nil {
+				if fgwSvc != nil {
+					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
+						len(fgwSvc.Spec.ExternalIPs) > 0 &&
+						len(fgwSvc.Spec.ExternalIPs[0]) > 0 &&
+						len(fgwSvc.Spec.Ports) > 0 &&
+						fgwSvc.Spec.Ports[0].Port > 0 {
+						ktoc.WithGatewayViaAddr(fgwSvc.Spec.ExternalIPs[0])
+						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
+						break
+					}
+					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ClusterIP") &&
+						len(fgwSvc.Spec.ClusterIPs) > 0 &&
+						len(fgwSvc.Spec.ClusterIPs[0]) > 0 &&
+						len(fgwSvc.Spec.Ports) > 0 &&
+						fgwSvc.Spec.Ports[0].Port > 0 {
+						ktoc.WithGatewayViaAddr(fgwSvc.Spec.ClusterIPs[0])
+						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
+						break
+					}
+				}
+			}
+			time.Sleep(time.Second * 5)
+		}
+	}
+
 	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
 	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)

@@ -1,5 +1,11 @@
 package connector
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+)
+
 const (
 	//ConsulDiscoveryService defines consul discovery service name
 	ConsulDiscoveryService = "consul"
@@ -59,3 +65,13 @@ const (
 	// compared to same `backend` service in k8s cluster `B`.
 	AnnotationServiceWeight = "flomesh.io/service-weight"
 )
+
+// ServiceID generates a unique ID for a service. This ID is not meant
+// to be particularly human-friendly.
+func ServiceID(name, addr string) string {
+	// sha1 is fine because we're doing this for uniqueness, not any
+	// cryptographic strength. We then take only the first 12 because its
+	// _probably_ unique and makes it easier to read.
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s", name, addr)))
+	return fmt.Sprintf("%s-%s", name, hex.EncodeToString(sum[:])[:12])
+}
