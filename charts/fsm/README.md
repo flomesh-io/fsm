@@ -105,11 +105,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.addK8SNamespaceAsServiceSuffix | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.addServicePrefix | string | `""` |  |
 | fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces[0] | string | `"*"` |  |
-| fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy | string | `nil` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy | string | `""` |  |
 | fsm.cloudConnector.consul.syncFromK8S.consulDestinationNamespace | string | `"default"` |  |
 | fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces | bool | `false` |  |
-| fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix | string | `nil` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix | string | `""` |  |
 | fsm.cloudConnector.consul.syncFromK8S.consulK8STag | string | `"k8s"` |  |
 | fsm.cloudConnector.consul.syncFromK8S.consulNodeName | string | `"k8s-sync"` |  |
 | fsm.cloudConnector.consul.syncFromK8S.defaultSync | bool | `true` |  |
@@ -121,6 +121,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI | bool | `false` |  |
+| fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.consul.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.consul.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
@@ -143,6 +147,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.eureka.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |

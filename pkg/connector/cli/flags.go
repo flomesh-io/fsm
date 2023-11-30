@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -91,6 +90,14 @@ type K2CCfg struct {
 	FlagWithGatewayAPI bool
 }
 
+type K2GCfg struct {
+	FlagDefaultSync bool
+	FlagSyncPeriod  time.Duration
+
+	FlagAllowK8SNamespaces []string // K8s namespaces to explicitly inject
+	FlagDenyK8SNamespaces  []string // K8s namespaces to deny injection (has precedence)
+}
+
 // Config is used to configure the creation of a client
 type Config struct {
 	Verbosity         string
@@ -105,9 +112,11 @@ type Config struct {
 	HttpAddr          string
 	SyncCloudToK8s    bool
 	SyncK8sToCloud    bool
+	SyncK8sToFgw      bool
 
 	C2K C2KCfg
 	K2C K2CCfg
+	K2G K2GCfg
 }
 
 func init() {
@@ -184,6 +193,20 @@ func init() {
 	flags.StringVar(&Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy, "sync-k8s-to-cloud-Consul-cross-namespace-acl-policy", "",
 		"[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service "+
 			"discovery across Consul namespaces. Only necessary if ACLs are enabled.")
+
+	flags.BoolVar(&Cfg.SyncK8sToFgw, "sync-k8s-to-fgw", true, "sync from k8s to fgw")
+	flags.BoolVar(&Cfg.K2G.FlagDefaultSync, "sync-k8s-to-fgw-default-sync", true,
+		"If true, all valid services in K8S are synced by default. If false, "+
+			"the service must be annotated properly to sync. In either case "+
+			"an annotation can override the default")
+	flags.DurationVar(&Cfg.K2G.FlagSyncPeriod, "sync-k8s-to-fgw-sync-interval", 5*time.Second,
+		"The interval to perform syncing operations creating cloud services, formatted "+
+			"as a time.Duration. All changes are merged and write calls are only made "+
+			"on this interval. Defaults to 5 seconds (5s).")
+	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagAllowK8SNamespaces), "sync-k8s-to-fgw-allow-k8s-namespaces",
+		"K8s namespaces to explicitly allow. May be specified multiple times.")
+	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",
+		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
 }
 
 // ValidateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
@@ -216,8 +239,6 @@ func ParseFlags() error {
 		return err
 	}
 	_ = flag.CommandLine.Parse([]string{})
-	bytes, _ := json.MarshalIndent(Cfg, "", " ")
-	fmt.Println(string(bytes))
 	return nil
 }
 

@@ -680,8 +680,15 @@ fsm:
         consulEnableNamespaces: false
         consulDestinationNamespace: default
         consulEnableK8SNSMirroring: false
-        consulK8SNSMirroringPrefix:
-        consulCrossNamespaceACLPolicy:
+        consulK8SNSMirroringPrefix: ""
+        consulCrossNamespaceACLPolicy: ""
+      syncToFgw:
+        enable: false
+        defaultSync: true
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
 
     eureka:
       enable: false
@@ -709,6 +716,13 @@ fsm:
         denyK8sNamespaces:
           - ""
         withGatewayAPI: false
+      syncToFgw:
+        enable: false
+        defaultSync: true
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
 
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1

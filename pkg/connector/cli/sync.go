@@ -83,14 +83,14 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
-	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
-	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
+	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
+	denySet := ToSet(Cfg.K2G.FlagDenyK8SNamespaces)
 
 	gatewayResource := &ktog.GatewayResource{}
 
 	syncer := &ktog.GatewayRouteSyncer{
-		SyncPeriod:        Cfg.K2C.FlagSyncPeriod,
-		ServicePollPeriod: Cfg.K2C.FlagSyncPeriod * 2,
+		SyncPeriod:        Cfg.K2G.FlagSyncPeriod,
+		ServicePollPeriod: Cfg.K2G.FlagSyncPeriod * 2,
 		GatewayResource:   gatewayResource,
 	}
 
@@ -103,7 +103,7 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClien
 		Syncer:                syncer,
 		AllowK8sNamespacesSet: allowSet,
 		DenyK8sNamespacesSet:  denySet,
-		ExplicitEnable:        !Cfg.K2C.FlagDefaultSync,
+		ExplicitEnable:        !Cfg.K2G.FlagDefaultSync,
 	}
 
 	gatewayResource.Service = serviceResource

@@ -1479,7 +1479,8 @@
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
-                        "syncFromK8S"
+                        "syncFromK8S",
+                        "syncToFgw"
                       ],
                       "properties": {
                         "enable": {
@@ -1503,7 +1504,7 @@
                         "syncFromK8S": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S",
                           "type": "object",
-                          "title": "The syncToK8s schema",
+                          "title": "The syncFromK8S schema",
                           "required": [
                             "enable",
                             "defaultSync",
@@ -1595,7 +1596,7 @@
                               }
                             },
                             "denyK8sNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/denyK8sNamespaces",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/denyK8sNamespaces",
                               "type": "array",
                               "title": "Deny K8s Namespaces",
                               "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",
@@ -1604,85 +1605,95 @@
                               }
                             },
                             "withGatewayAPI": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI",
                               "type": "boolean",
                               "title": "with Gateway API",
                               "description": "with Gateway API"
                             },
                             "consulNodeName": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulNodeName",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulNodeName",
                               "type": "string",
                               "title": "Consul Node Name",
                               "description": "The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable via DNS, the name should only contain alpha-numerics and dashes. (default \"k8s-sync\")"
                             },
                             "consulK8STag": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulK8STag",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulK8STag",
                               "type": "string",
                               "title": "Consul K8S Tag",
                               "description": "Tag value for K8S services registered in cloud (default \"k8s\")"
                             },
                             "consulEnableNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulEnableNamespaces",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulEnableNamespaces",
                               "type": "boolean",
                               "title": "Consul Enable Namespaces",
                               "description": "[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored."
                             },
                             "consulDestinationNamespace": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulDestinationNamespace",
-                              "type": "String",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulDestinationNamespace",
+                              "type": "string",
                               "title": "Consul Destination Namespace",
                               "description": "[Enterprise Only] Defines which Consul namespace to register all synced services into. If '-sync-k8s-to-cloud-Consul-enable-k8s-namespace-mirroring' is true, this is not used. (default \"default\")"
                             },
                             "consulEnableK8SNSMirroring": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulEnableK8SNSMirroring",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulEnableK8SNSMirroring",
                               "type": "boolean",
                               "title": "Consul Enable K8S NS Mirroring",
                               "description": "[Enterprise Only] Enables namespace mirroring."
                             },
                             "consulK8SNSMirroringPrefix": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulK8SNSMirroringPrefix",
-                              "type": "String",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulK8SNSMirroringPrefix",
+                              "type": "string",
                               "title": "Consul K8S NS Mirroring Prefix",
                               "description": "[Enterprise Only] Prefix that will be added to all k8s namespaces mirrored into Consul if mirroring is enabled."
                             },
                             "consulCrossNamespaceACLPolicy": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/consulCrossNamespaceACLPolicy",
-                              "type": "String",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/consulCrossNamespaceACLPolicy",
+                              "type": "string",
                               "title": "Consul Cross Namespace ACL Policy",
                               "description": "[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service discovery across Consul namespaces. Only necessary if ACLs are enabled."
                             }
                           }
                         },
-                        "syncFromK8S": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S",
+                        "syncToFgw": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw",
                           "type": "object",
-                          "title": "The syncToK8s schema",
+                          "title": "The syncToFgw schema",
                           "required": [
                             "enable",
                             "defaultSync",
-                            "syncClusterIPServices",
-                            "syncLoadBalancerEndpoints",
-                            "nodePortSyncType",
-                            "syncIngress",
-                            "syncIngressLoadBalancerIPs",
-                            "addServicePrefix",
-                            "addK8SNamespaceAsServiceSuffix",
                             "allowK8sNamespaces",
-                            "denyK8sNamespaces",
-                            "withGatewayAPI"
+                            "denyK8sNamespaces"
                           ],
                           "properties": {
                             "enable": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/enable",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/enable",
                               "type": "boolean",
                               "title": "enable",
                               "description": "enable"
                             },
-                            "withGatewayAPI": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI",
+                            "defaultSync": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/defaultSync",
                               "type": "boolean",
-                              "title": "with Gateway API",
-                              "description": "with Gateway API"
+                              "title": "Default Sync",
+                              "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
+                            },
+                            "allowK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/allowK8sNamespaces",
+                              "type": "array",
+                              "title": "Allow K8s Namespaces",
+                              "description": "K8s namespaces to explicitly allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "denyK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/denyK8sNamespaces",
+                              "type": "array",
+                              "title": "Deny K8s Namespaces",
+                              "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
                             }
                           }
                         }
@@ -1697,7 +1708,8 @@
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
-                        "syncFromK8S"
+                        "syncFromK8S",
+                        "syncToFgw"
                       ],
                       "properties": {
                         "enable": {
@@ -1772,7 +1784,7 @@
                         "syncFromK8S": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S",
                           "type": "object",
-                          "title": "The syncToK8s schema",
+                          "title": "The syncFromK8S schema",
                           "required": [
                             "enable",
                             "defaultSync",
@@ -1870,6 +1882,49 @@
                               "type": "boolean",
                               "title": "with Gateway API",
                               "description": "with Gateway API"
+                            }
+                          }
+                        },
+                        "syncToFgw": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw",
+                          "type": "object",
+                          "title": "The syncToFgw schema",
+                          "required": [
+                            "enable",
+                            "defaultSync",
+                            "allowK8sNamespaces",
+                            "denyK8sNamespaces"
+                          ],
+                          "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
+                            "defaultSync": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/defaultSync",
+                              "type": "boolean",
+                              "title": "Default Sync",
+                              "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
+                            },
+                            "allowK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/allowK8sNamespaces",
+                              "type": "array",
+                              "title": "Allow K8s Namespaces",
+                              "description": "K8s namespaces to explicitly allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "denyK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/denyK8sNamespaces",
+                              "type": "array",
+                              "title": "Deny K8s Namespaces",
+                              "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
                             }
                           }
                         }

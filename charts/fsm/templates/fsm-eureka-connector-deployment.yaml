@@ -85,6 +85,18 @@ spec:
             {{- end }}
             {{- end }}
             "-sync-k8s-to-cloud-with-gateway-api={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI}}",
+            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.eureka.syncToFgw.enable}}",
+            "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.eureka.syncToFgw.defaultSync}}",
+            {{- if .Values.fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces }}
+            "-sync-k8s-to-fgw-allow-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
+            {{- if .Values.fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces }}
+            "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
           ]
           resources:
             limits:

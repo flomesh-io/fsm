@@ -92,6 +92,18 @@ spec:
             "-sync-k8s-to-cloud-Consul-enable-k8s-namespace-mirroring={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring}}",
             "-sync-k8s-to-cloud-Consul-k8s-namespace-mirroring-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix}}",
             "-sync-k8s-to-cloud-Consul-cross-namespace-acl-policy={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy}}",
+            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.consul.syncToFgw.enable}}",
+            "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.consul.syncToFgw.defaultSync}}",
+            {{- if .Values.fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces }}
+            "-sync-k8s-to-fgw-allow-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
+            {{- if .Values.fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces }}
+            "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
+            {{- end }}
+            {{- end }}
           ]
           resources:
             limits:
