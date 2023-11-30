@@ -87,14 +87,15 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 	defer t.serviceLock.Unlock()
 	if svcList, err := t.Client.CoreV1().Services(metav1.NamespaceAll).List(t.Ctx, metav1.ListOptions{}); err == nil {
 		for _, svc := range svcList.Items {
+			shaddowSvc := svc
 			if key, err := cache.MetaNamespaceKeyFunc(svc); err == nil {
 				if t.serviceMap == nil {
 					t.serviceMap = make(map[string]*corev1.Service)
 				}
-				if !t.shouldSync(&svc) {
+				if !t.shouldSync(&shaddowSvc) {
 					continue
 				}
-				t.serviceMap[key] = &svc
+				t.serviceMap[key] = &shaddowSvc
 			}
 		}
 	}

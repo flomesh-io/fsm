@@ -69,7 +69,6 @@ type Sink struct {
 
 	servicesInformer  cache.SharedIndexInformer
 	endpointsInformer cache.SharedIndexInformer
-	gatewaysInformer  cache.SharedIndexInformer
 
 	// SyncPeriod is the duration to wait between registering or deregistering
 	// services in Kubernetes. This can be fairly short since no work will be
