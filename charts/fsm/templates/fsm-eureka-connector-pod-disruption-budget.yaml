@@ -1,4 +1,4 @@
-{{- if .Values.fsm.deployEurekaConnector }}
+{{- if .Values.fsm.cloudConnector.eureka.enable }}
 {{- if .Values.fsm.injector.enablePodDisruptionBudget }}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget

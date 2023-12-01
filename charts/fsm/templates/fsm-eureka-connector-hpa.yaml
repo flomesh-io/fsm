@@ -1,4 +1,4 @@
-{{- if .Values.fsm.deployEurekaConnector }}
+{{- if .Values.fsm.cloudConnector.eureka.enable }}
 {{- if .Values.fsm.injector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler

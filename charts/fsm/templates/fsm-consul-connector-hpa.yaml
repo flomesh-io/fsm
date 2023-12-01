@@ -1,4 +1,4 @@
-{{- if .Values.fsm.deployConsulConnector }}
+{{- if .Values.fsm.cloudConnector.consul.enable }}
 {{- if .Values.fsm.injector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler

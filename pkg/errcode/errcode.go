@@ -35,14 +35,11 @@ const (
 	// ErrFetchingInjectorPod indicates the fsm-injector pod resource could not be fetched
 	ErrFetchingInjectorPod
 
-	// ErrFetchingConsulConnectorPod indicates the fsm-consul-connector pod resource could not be fetched
-	ErrFetchingConsulConnectorPod
-
 	// ErrFetchingConsulService indicates the fsm-consul-connector consul service resource could not be fetched
 	ErrFetchingConsulService
 
-	// ErrFetchingEurekaConnectorPod indicates the fsm-eureka-connector pod resource could not be fetched
-	ErrFetchingEurekaConnectorPod
+	// ErrFetchingConnectorPod indicates the fsm-connector pod resource could not be fetched
+	ErrFetchingConnectorPod
 
 	// ErrFetchingEurekaService indicates the fsm-eureka-connector eureka service resource could not be fetched
 	ErrFetchingEurekaService
@@ -403,16 +400,12 @@ The fsm-controller k8s pod resource was not able to be retrieved by the system.
 The fsm-injector k8s pod resource was not able to be retrieved by the system.
 `,
 
-	ErrFetchingConsulConnectorPod: `
-The fsm-consul-connector k8s pod resource was not able to be retrieved by the system.
-`,
-
 	ErrFetchingConsulService: `
 The fsm-consul-connector consul service resource was not able to be retrieved by the system.
 `,
 
-	ErrFetchingEurekaConnectorPod: `
-The fsm-eureka-connector k8s pod resource was not able to be retrieved by the system.
+	ErrFetchingConnectorPod: `
+The fsm-connector k8s pod resource was not able to be retrieved by the system.
 `,
 
 	ErrFetchingEurekaService: `

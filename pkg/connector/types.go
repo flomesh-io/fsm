@@ -1,20 +1,12 @@
-// Package connector contains a reusable abstraction for efficiently
-// watching for changes in resources in a Kubernetes cluster.
 package connector
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+)
+
 const (
-	// CloudSourcedServiceLabel defines cloud-sourced service label
-	CloudSourcedServiceLabel = "cloud-sourced-service"
-	// CloudServiceLabel defines cloud service label
-	CloudServiceLabel = "cloud-service"
-	// CloudServiceInheritedFromAnnotation defines cloud service inherited annotation
-	CloudServiceInheritedFromAnnotation = "flomesh.io/cloud-service-inherited-from"
-
-	// MeshServiceSyncAnnotation defines mesh service sync annotation
-	MeshServiceSyncAnnotation = "flomesh.io/mesh-service-sync"
-	// MeshEndpointAddrAnnotation defines mesh endpoint addr annotation
-	MeshEndpointAddrAnnotation = "flomesh.io/cloud-endpoint-addr"
-
 	//ConsulDiscoveryService defines consul discovery service name
 	ConsulDiscoveryService = "consul"
 
@@ -22,29 +14,64 @@ const (
 	EurekaDiscoveryService = "eureka"
 )
 
-// MicroSvcName defines string as microservice name
-type MicroSvcName string
+const (
+	// ServiceSourceKey is the key used in the meta to track the "k8s" source.
+	ServiceSourceKey = "fsm-connector-external-source"
+)
 
-// MicroSvcDomainName defines string as microservice domain name
-type MicroSvcDomainName string
+var (
+	// ServiceSourceValue is the value of the source.
+	ServiceSourceValue = "kubernetes"
+)
 
-// MicroEndpointAddr defines string as micro endpoint addr
-type MicroEndpointAddr string
+const (
+	// AnnotationMeshServiceSync defines mesh service sync annotation
+	AnnotationMeshServiceSync = "flomesh.io/mesh-service-sync"
 
-// MicroSvcPort defines int as micro service port
-type MicroSvcPort int
+	// AnnotationCloudServiceInheritedFrom defines cloud service inherited annotation
+	AnnotationCloudServiceInheritedFrom = "flomesh.io/cloud-service-inherited-from"
 
-// MicroSvcAppProtocol defines app protocol
-type MicroSvcAppProtocol string
+	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
+	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
+)
 
-// MicroSvcMeta defines micro service meta
-type MicroSvcMeta struct {
-	Ports     map[MicroSvcPort]MicroSvcAppProtocol
-	Addresses map[MicroEndpointAddr]int
-}
+const (
+	// AnnotationServiceSync is the key of the annotation that determines
+	// whether to sync the CatalogService resource or not. If this isn't set then
+	// the default based on the syncer configuration is chosen.
+	AnnotationServiceSync = "flomesh.io/service-sync"
 
-// Aggregator aggregates micro services
-type Aggregator interface {
-	// Aggregate micro services
-	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) (map[MicroSvcName]*MicroSvcMeta, string)
+	// AnnotationServiceName is set to override the name of the service
+	// registered. By default this will be the name of the CatalogService resource.
+	AnnotationServiceName = "flomesh.io/service-name"
+
+	// AnnotationServicePort specifies the port to use as the service instance
+	// port when registering a service. This can be a named port in the
+	// service or an integer value.
+	AnnotationServicePort = "flomesh.io/service-port"
+
+	// AnnotationServiceTags specifies the tags for the registered service
+	// instance. Multiple tags should be comma separated. Whitespace around
+	// the tags is automatically trimmed.
+	AnnotationServiceTags = "flomesh.io/service-tags"
+
+	// AnnotationServiceMetaPrefix is the prefix for setting meta key/value
+	// for a service. The remainder of the key is the meta key.
+	AnnotationServiceMetaPrefix = "flomesh.io/service-meta-"
+
+	// AnnotationServiceWeight is the key of the annotation that determines
+	// the traffic weight of the service which is spanned over multiple k8s cluster.
+	// e.g. CatalogService `backend` in k8s cluster `A` receives 25% of the traffic
+	// compared to same `backend` service in k8s cluster `B`.
+	AnnotationServiceWeight = "flomesh.io/service-weight"
+)
+
+// ServiceID generates a unique ID for a service. This ID is not meant
+// to be particularly human-friendly.
+func ServiceID(name, addr string) string {
+	// sha1 is fine because we're doing this for uniqueness, not any
+	// cryptographic strength. We then take only the first 12 because its
+	// _probably_ unique and makes it easier to read.
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s", name, addr)))
+	return fmt.Sprintf("%s-%s", name, hex.EncodeToString(sum[:])[:12])
 }
