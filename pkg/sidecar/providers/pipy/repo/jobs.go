@@ -380,6 +380,7 @@ func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
 				}
 				pipyConf.DNSResolveDB[svc.Name] = addrItems
 				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
 			}
 		}
 	}
