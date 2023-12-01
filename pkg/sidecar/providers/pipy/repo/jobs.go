@@ -356,7 +356,7 @@ func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
 		}
 		if len(svc.Annotations) > 0 {
 			resolvableIPSet := mapset.NewSet()
-			for anno, _ := range svc.Annotations {
+			for anno := range svc.Annotations {
 				if !strings.HasPrefix(anno, connector.AnnotationMeshEndpointAddr) {
 					continue
 				}
