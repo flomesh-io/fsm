@@ -23,6 +23,11 @@ func SetTrustDomain(domain string) {
 	}
 }
 
+// GetTrustDomain returns the trust domain
+func GetTrustDomain() string {
+	return trustDomain
+}
+
 // GetHostnamesForService returns the hostnames over which the service is accessible
 func GetHostnamesForService(svc service.MeshService, localNamespace bool) []string {
 	var hostnames []string
