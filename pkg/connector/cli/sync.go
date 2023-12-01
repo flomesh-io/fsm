@@ -56,6 +56,15 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
 						break
 					}
+					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
+						len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
+						len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 &&
+						len(fgwSvc.Spec.Ports) > 0 &&
+						fgwSvc.Spec.Ports[0].Port > 0 {
+						ktoc.WithGatewayViaAddr(fgwSvc.Status.LoadBalancer.Ingress[0].IP)
+						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
+						break
+					}
 					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ClusterIP") &&
 						len(fgwSvc.Spec.ClusterIPs) > 0 &&
 						len(fgwSvc.Spec.ClusterIPs[0]) > 0 &&
@@ -66,6 +75,8 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 						break
 					}
 				}
+			} else {
+				fmt.Println(err.Error())
 			}
 			time.Sleep(time.Second * 5)
 		}
