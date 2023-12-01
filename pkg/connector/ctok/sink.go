@@ -1,4 +1,4 @@
-package connector
+package ctok
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,9 +19,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -68,7 +69,6 @@ type Sink struct {
 
 	servicesInformer  cache.SharedIndexInformer
 	endpointsInformer cache.SharedIndexInformer
-	gatewaysInformer  cache.SharedIndexInformer
 
 	// SyncPeriod is the duration to wait between registering or deregistering
 	// services in Kubernetes. This can be fairly short since no work will be
@@ -86,6 +86,7 @@ type Sink struct {
 	// We lowercase the cloud service names and DNS entries
 	// because Kube names must be lowercase.
 	sourceServices map[string]string
+	rawServices    map[string]string
 
 	// serviceKeyToName maps from Kube controller keys to Kube service names.
 	// Controller keys are in the form <kube namespace>/<kube svc name>
@@ -122,6 +123,7 @@ func (s *Sink) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	}
 
 	s.sourceServices = lowercasedSvcs
+	s.rawServices = maps.Clone(lowercasedSvcs)
 	s.trigger() // Any service change probably requires syncing
 }
 
@@ -174,27 +176,6 @@ func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
 		)
 	}
 	return s.endpointsInformer
-}
-
-// GatewayInformer implements the controller.Resource interface.
-// It tells Kubernetes that we want to watch for changes to Gateways.
-func (s *Sink) GatewayInformer() cache.SharedIndexInformer {
-	if s.gatewaysInformer == nil {
-		s.gatewaysInformer = cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).List(s.Ctx, options)
-				},
-				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					return s.gatewayClient.GatewayV1beta1().Gateways(s.fsmNamespace).Watch(s.Ctx, options)
-				},
-			},
-			&gwv1beta1.Gateway{},
-			0,
-			cache.Indexers{},
-		)
-	}
-	return s.gatewaysInformer
 }
 
 // UpsertService implements the controller.Resource interface.
@@ -262,8 +243,8 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 					}
 					ported = true
 				}
-				if strings.HasPrefix(k, MeshEndpointAddrAnnotation) {
-					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", MeshEndpointAddrAnnotation))
+				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
+					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
 					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
 						ip := utils.Int2IP4(uint32(ipInt))
 						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
@@ -278,7 +259,7 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
-						log.Err(err).Msgf("error update endpoints, name:%s", service.Name)
+						log.Warn().Err(err).Msgf("error update endpoints, name:%s", service.Name)
 						return err
 					} else {
 						s.updateGatewayEndpointSlice(s.Ctx, updatedEpt)
@@ -376,33 +357,19 @@ func (s *Sink) Run(ch <-chan struct{}) {
 
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
-			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err == nil {
-				if gatewayAPIEnabled {
-					s.deleteGatewayRoute(name)
-				}
-			} else {
+			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
 				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
 			}
 		}
 
 		for _, svc := range updates {
-			if updatedSvc, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err == nil {
-				if len(updatedSvc.Spec.Ports) > 0 {
-					if gatewayAPIEnabled {
-						s.updateGatewayRoute(updatedSvc)
-					}
-				}
-			} else {
+			if _, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err != nil {
 				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 
 		for _, svc := range creates {
-			if createdSvc, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err == nil {
-				if gatewayAPIEnabled {
-					s.updateGatewayRoute(createdSvc)
-				}
-			} else {
+			if _, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err != nil {
 				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
@@ -417,7 +384,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for cloudName, cloudDNS := range s.sourceServices {
-		svcMetaMap, mode := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
+		svcMetaMap := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
@@ -435,10 +402,10 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					MeshServiceSyncAnnotation:           "false",
-					CloudServiceInheritedFromAnnotation: cloudName,
+					connector.AnnotationMeshServiceSync:           "true",
+					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
-				s.fillService(mode, svcMeta, svc)
+				s.fillService(svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
@@ -454,8 +421,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						MeshServiceSyncAnnotation:           "false",
-						CloudServiceInheritedFromAnnotation: cloudName,
+						connector.AnnotationMeshServiceSync:           "true",
+						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},
 
@@ -469,7 +436,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
 			}
-			s.fillService(mode, svcMeta, createSvc)
+			s.fillService(svcMeta, createSvc)
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 				continue
@@ -495,64 +462,37 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 	return createSvcs, updateSvcs, deleteSvcs
 }
 
-func (s *Sink) fillService(mode string, svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
-	if strings.EqualFold(mode, ConsulDiscoveryService) {
-		ports := make([]int, 0)
-		for port, appProtocol := range svcMeta.Ports {
-			if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
-				specPort := apiv1.ServicePort{
-					Name:       fmt.Sprintf("%s%d", appProtocol, port),
-					Protocol:   apiv1.ProtocolTCP,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt(int(port)),
-				}
-				if appProtocol == constants.ProtocolHTTP {
-					specPort.AppProtocol = &protocolHTTP
-				}
-				if appProtocol == constants.ProtocolGRPC {
-					specPort.AppProtocol = &protocolGRPC
-				}
-				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
+func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
+	ports := make([]int, 0)
+	for port, appProtocol := range svcMeta.Ports {
+		if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
+			specPort := apiv1.ServicePort{
+				Name:       fmt.Sprintf("%s%d", appProtocol, port),
+				Protocol:   apiv1.ProtocolTCP,
+				Port:       int32(port),
+				TargetPort: intstr.FromInt(int(port)),
 			}
-			ports = append(ports, int(port))
+			if appProtocol == constants.ProtocolHTTP {
+				specPort.AppProtocol = &protocolHTTP
+			}
+			if appProtocol == constants.ProtocolGRPC {
+				specPort.AppProtocol = &protocolGRPC
+			}
+			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
-		sort.Ints(ports)
-		for addr := range svcMeta.Addresses {
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
-		}
+		ports = append(ports, int(port))
 	}
-
-	if strings.EqualFold(mode, EurekaDiscoveryService) {
-		for addr, port := range svcMeta.Addresses {
-			appProtocol := svcMeta.Ports[MicroSvcPort(port)]
-			if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
-				specPort := apiv1.ServicePort{
-					Name:       fmt.Sprintf("%s%d", appProtocol, port),
-					Protocol:   apiv1.ProtocolTCP,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt(int(port)),
-				}
-				if appProtocol == constants.ProtocolHTTP {
-					specPort.AppProtocol = &protocolHTTP
-				}
-				if appProtocol == constants.ProtocolGRPC {
-					specPort.AppProtocol = &protocolGRPC
-				}
-				createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
-			}
-			ports := make([]int, 0)
-			ports = append(ports, port)
-			createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", MeshEndpointAddrAnnotation, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
-		}
+	sort.Ints(ports)
+	for addr := range svcMeta.Addresses {
+		createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 	}
 }
 
 func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
-			if specPort.Port == int32(port) &&
-				specPort.Name == fmt.Sprintf("%s%d", appProtocol, port) &&
-				*specPort.AppProtocol == string(appProtocol) {
+			if specPort.Port == int32(port) ||
+				specPort.Name == fmt.Sprintf("%s%d", appProtocol, port) {
 				return true
 			}
 		}

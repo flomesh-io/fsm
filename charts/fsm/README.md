@@ -59,6 +59,12 @@ The following table lists the configurable parameters of the fsm chart and their
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| clusterSet.controlPlaneUID | string | `""` |  |
+| clusterSet.group | string | `"default"` |  |
+| clusterSet.isManaged | bool | `false` |  |
+| clusterSet.name | string | `"local"` |  |
+| clusterSet.region | string | `"default"` |  |
+| clusterSet.zone | string | `"default"` |  |
 | fsm.caBundleSecretName | string | `"fsm-ca-bundle"` | The Kubernetes secret name to store CA bundle for the root CA used in FSM |
 | fsm.certificateProvider.certKeyBitSize | int | `2048` | Certificate key bit size for data plane certificates issued to workloads to communicate over mTLS |
 | fsm.certificateProvider.kind | string | `"tresor"` | The Certificate manager type: `tresor`, `vault` or `cert-manager` |
@@ -94,18 +100,63 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
-| fsm.cloudConnector.consul.filterTag | string | `""` |  |
+| fsm.cloudConnector.consul.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
-| fsm.cloudConnector.consul.passingOnly | bool | `true` |  |
-| fsm.cloudConnector.consul.prefixTag | string | `""` |  |
-| fsm.cloudConnector.consul.suffixTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8S.addK8SNamespaceAsServiceSuffix | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.addServicePrefix | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulDestinationNamespace | string | `"default"` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulK8STag | string | `"k8s"` |  |
+| fsm.cloudConnector.consul.syncFromK8S.consulNodeName | string | `"k8s-sync"` |  |
+| fsm.cloudConnector.consul.syncFromK8S.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.consul.syncFromK8S.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.consul.syncFromK8S.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.nodePortSyncType | string | `"ExternalOnly"` |  |
+| fsm.cloudConnector.consul.syncFromK8S.syncClusterIPServices | bool | `true` |  |
+| fsm.cloudConnector.consul.syncFromK8S.syncIngress | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
+| fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.consul.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.consul.syncToFgw.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.consul.syncToK8S.prefixTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncToK8S.suffixTag | string | `""` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
-| fsm.cloudConnector.eureka.filterTag | string | `""` |  |
-| fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8500"` |  |
-| fsm.cloudConnector.eureka.passingOnly | bool | `true` |  |
-| fsm.cloudConnector.eureka.prefixTag | string | `""` |  |
-| fsm.cloudConnector.eureka.suffixTag | string | `""` |  |
+| fsm.cloudConnector.eureka.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.addK8SNamespaceAsServiceSuffix | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.addServicePrefix | string | `""` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.nodePortSyncType | string | `"ExternalOnly"` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.syncClusterIPServices | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.syncIngress | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
+| fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.eureka.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToFgw.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
@@ -115,8 +166,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
-| fsm.deployConsulConnector | bool | `false` | Deploy Consul Connector with FSM installation |
-| fsm.deployEurekaConnector | bool | `false` | Deploy Eureka Connector with FSM installation |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |
@@ -305,12 +354,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.http1PerRequestLoadBalancing | bool | `false` | Specifies a boolean indicating if load balancing based on request is enabled for http1. |
 | fsm.http2PerRequestLoadBalancing | bool | `true` | Specifies a boolean indicating if load balancing based on request is enabled for http2. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConsulConnector":"","fsmController":"","fsmEurekaConnector":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
-| fsm.image.digest.fsmConsulConnector | string | `""` | fsm-consul-connector's image digest |
+| fsm.image.digest.fsmConnector | string | `""` | fsm-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
-| fsm.image.digest.fsmEurekaConnector | string | `""` | fsm-eureka-connector's image digest |
 | fsm.image.digest.fsmGateway | string | `""` | fsm-gateway's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
@@ -318,12 +366,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConsulConnector":"fsm-consul-connector","fsmController":"fsm-controller","fsmEurekaConnector":"fsm-eureka-connector","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
-| fsm.image.name.fsmConsulConnector | string | `"fsm-consul-connector"` | fsm-consul-connector's image name |
+| fsm.image.name.fsmConnector | string | `"fsm-connector"` | fsm-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
-| fsm.image.name.fsmEurekaConnector | string | `"fsm-eureka-connector"` | fsm-eureka-connector's image name |
 | fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |

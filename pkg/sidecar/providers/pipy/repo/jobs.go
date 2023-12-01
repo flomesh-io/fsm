@@ -4,10 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
+
+	mapset "github.com/deckarep/golang-set"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
+	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/injector"
@@ -15,6 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // PipyConfGeneratorJob is the job to generate pipy policy json
@@ -75,6 +82,7 @@ func (job *PipyConfGeneratorJob) Run() {
 	outbound(cataloger, proxy.Identity, s, pipyConf, proxy)
 	egress(cataloger, proxy.Identity, s, pipyConf, proxy)
 	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
+	connetor(cataloger, pipyConf)
 	balance(pipyConf)
 	reorder(pipyConf)
 	endpoints(pipyConf, s)
@@ -336,6 +344,47 @@ func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
 			}
 		}
 	}
+}
+
+func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
+	kubeController := cataloger.GetKubeController()
+	svcList := kubeController.ListServices()
+	for _, svc := range svcList {
+		ns := kubeController.GetNamespace(svc.Namespace)
+		if !ctok.IsSyncCloudNamespace(ns) {
+			continue
+		}
+		if len(svc.Annotations) > 0 {
+			resolvableIPSet := mapset.NewSet()
+			for anno := range svc.Annotations {
+				if !strings.HasPrefix(anno, connector.AnnotationMeshEndpointAddr) {
+					continue
+				}
+				ipStr := strings.TrimPrefix(anno, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
+				ipNum, err := strconv.Atoi(ipStr)
+				if err != nil {
+					continue
+				}
+				ip := utils.Int2IP4(uint32(ipNum))
+				resolvableIPSet.Add(ip.To4().String())
+			}
+			if resolvableIPSet.Cardinality() > 0 {
+				addrItems := resolvableIPSet.ToSlice()
+				sort.SliceStable(addrItems, func(i, j int) bool {
+					addr1 := addrItems[i].(string)
+					addr2 := addrItems[j].(string)
+					return addr1 < addr2
+				})
+				if pipyConf.DNSResolveDB == nil {
+					pipyConf.DNSResolveDB = make(map[string][]interface{})
+				}
+				pipyConf.DNSResolveDB[svc.Name] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
+			}
+		}
+	}
+	return true
 }
 
 func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf, pluginSetV string) {
