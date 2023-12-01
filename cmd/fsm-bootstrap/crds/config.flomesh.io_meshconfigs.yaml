@@ -1365,6 +1365,10 @@ spec:
                     description: EnableGatewayAgentService defines if agent service
                       is enabled.
                     type: boolean
+                  enableGatewayProxyTag:
+                    description: EnableGatewayProxyTag defines if gateway proxy-tag
+                      header is enabled.
+                    type: boolean
                   enableIngressBackendPolicy:
                     description: EnableIngressBackendPolicy defines if FSM will use
                       the IngressBackend API to allow ingress traffic to service mesh
@@ -1407,6 +1411,7 @@ spec:
                 - enableAutoDefaultRoute
                 - enableEgressPolicy
                 - enableGatewayAgentService
+                - enableGatewayProxyTag
                 - enableIngressBackendPolicy
                 - enablePluginPolicy
                 - enableRetryPolicy
