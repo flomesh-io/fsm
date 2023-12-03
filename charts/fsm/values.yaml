@@ -829,6 +829,8 @@ fsm:
     enableValidateTLSRouteHostnames: true
     # -- Enable Gateway Agent Service
     enableGatewayAgentService: false
+    # -- Enable Gateway proxy-tag header for remote host
+    enableGatewayProxyTag: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.

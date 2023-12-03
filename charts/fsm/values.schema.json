@@ -2467,7 +2467,8 @@
                         "enableValidateHTTPRouteHostnames",
                         "enableValidateGRPCRouteHostnames",
                         "enableValidateTLSRouteHostnames",
-                        "enableGatewayAgentService"
+                        "enableGatewayAgentService",
+                        "enableGatewayProxyTag"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2610,6 +2611,15 @@
                           "type": "boolean",
                           "title": "Enable Agent Service",
                           "description": "Enable Agent Service",
+                          "examples": [
+                            false
+                          ]
+                        },
+                        "enableGatewayProxyTag": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableGatewayProxyTag",
+                          "type": "boolean",
+                          "title": "Enable Proxy Tag",
+                          "description": "Enable proxy-tag header for gateway",
                           "examples": [
                             false
                           ]

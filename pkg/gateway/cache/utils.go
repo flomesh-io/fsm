@@ -580,3 +580,12 @@ func insertAgentServiceScript(chains []string) []string {
 
 	return chains
 }
+
+func insertProxyTagScript(chains []string) []string {
+	httpCodecIndex := slices.Index(chains, httpCodecScript)
+	if httpCodecIndex != -1 {
+		return slices.Insert(chains, httpCodecIndex+1, proxyTagScript)
+	}
+
+	return chains
+}
