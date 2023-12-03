@@ -288,6 +288,7 @@ var (
 const (
 	httpCodecScript    = "http/codec.js"
 	agentServiceScript = "extension/agent-service.js"
+	proxyTagScript     = "extension/proxy-tag.js"
 )
 
 var (

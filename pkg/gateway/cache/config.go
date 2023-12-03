@@ -367,6 +367,17 @@ func (c *GatewayCache) chains() routecfg.Chains {
 		}
 	}
 
+	if c.cfg.GetFeatureFlags().EnableGatewayProxyTag {
+		return routecfg.Chains{
+			HTTPRoute:      insertProxyTagScript(defaultHTTPChains),
+			HTTPSRoute:     insertProxyTagScript(defaultHTTPSChains),
+			TLSPassthrough: defaultTLSPassthroughChains,
+			TLSTerminate:   defaultTLSTerminateChains,
+			TCPRoute:       defaultTCPChains,
+			UDPRoute:       defaultUDPChains,
+		}
+	}
+
 	return routecfg.Chains{
 		HTTPRoute:      defaultHTTPChains,
 		HTTPSRoute:     defaultHTTPSChains,

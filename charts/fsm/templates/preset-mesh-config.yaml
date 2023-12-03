@@ -90,7 +90,8 @@ data:
         "enableValidateHTTPRouteHostnames": {{.Values.fsm.featureFlags.enableValidateHTTPRouteHostnames | mustToJson}},
         "enableValidateGRPCRouteHostnames": {{.Values.fsm.featureFlags.enableValidateGRPCRouteHostnames | mustToJson}},
         "enableValidateTLSRouteHostnames": {{.Values.fsm.featureFlags.enableValidateTLSRouteHostnames | mustToJson}},
-        "enableGatewayAgentService": {{.Values.fsm.featureFlags.enableGatewayAgentService | mustToJson}}
+        "enableGatewayAgentService": {{.Values.fsm.featureFlags.enableGatewayAgentService | mustToJson}},
+        "enableGatewayProxyTag": {{.Values.fsm.featureFlags.enableGatewayProxyTag | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
       "ingress": {
