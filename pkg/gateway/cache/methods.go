@@ -430,7 +430,7 @@ func (c *GatewayCache) getGatewayFromCache(key client.ObjectKey) (*gwv1beta1.Gat
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(gatewayGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.GatewayGVK)
 
 	return obj, nil
 }
@@ -441,7 +441,7 @@ func (c *GatewayCache) getHTTPRouteFromCache(key client.ObjectKey) (*gwv1beta1.H
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(httpRouteGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.HTTPRouteGVK)
 
 	return obj, nil
 }
@@ -452,7 +452,7 @@ func (c *GatewayCache) getGRPCRouteFromCache(key client.ObjectKey) (*gwv1alpha2.
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(grpcRouteGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.GRPCRouteGVK)
 
 	return obj, nil
 }
@@ -463,7 +463,7 @@ func (c *GatewayCache) getTLSRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(tlsRouteGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.TLSRouteGVK)
 
 	return obj, nil
 }
@@ -474,7 +474,7 @@ func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(tcpRouteGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.TCPRouteGVK)
 
 	return obj, nil
 }
@@ -485,7 +485,7 @@ func (c *GatewayCache) getUDPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.U
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(updRouteGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.UDPRouteGVK)
 
 	return obj, nil
 }
@@ -496,7 +496,7 @@ func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret,
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(secretGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.SecretGVK)
 
 	return obj, nil
 }
@@ -507,7 +507,7 @@ func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Servic
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(serviceGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.ServiceGVK)
 
 	return obj, nil
 }
@@ -518,7 +518,7 @@ func (c *GatewayCache) getRateLimitPolicyFromCache(key client.ObjectKey) (*gwpav
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(rateLimitPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.RateLimitPolicyGVK)
 
 	return obj, nil
 }
@@ -529,7 +529,7 @@ func (c *GatewayCache) getSessionStickyPolicyFromCache(key client.ObjectKey) (*g
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(sessionStickyPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.SessionStickyPolicyGVK)
 
 	return obj, nil
 }
@@ -540,7 +540,7 @@ func (c *GatewayCache) getLoadBalancerPolicyFromCache(key client.ObjectKey) (*gw
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(loadBalancerPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.LoadBalancerPolicyGVK)
 
 	return obj, nil
 }
@@ -551,7 +551,7 @@ func (c *GatewayCache) getCircuitBreakingPolicyFromCache(key client.ObjectKey) (
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(circuitBreakingPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.CircuitBreakingPolicyGVK)
 
 	return obj, nil
 }
@@ -562,7 +562,7 @@ func (c *GatewayCache) getAccessControlPolicyFromCache(key client.ObjectKey) (*g
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(accessControlPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.AccessControlPolicyGVK)
 
 	return obj, nil
 }
@@ -573,7 +573,7 @@ func (c *GatewayCache) getHealthCheckPolicyFromCache(key client.ObjectKey) (*gwp
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(healthCheckPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.HealthCheckPolicyGVK)
 
 	return obj, nil
 }
@@ -584,7 +584,7 @@ func (c *GatewayCache) getFaultInjectionPolicyFromCache(key client.ObjectKey) (*
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(faultInjectionPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.FaultInjectionPolicyGVK)
 
 	return obj, nil
 }
@@ -595,7 +595,7 @@ func (c *GatewayCache) getUpstreamTLSPolicyFromCache(key client.ObjectKey) (*gwp
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(upstreamTLSPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.UpstreamTLSPolicyGVK)
 
 	return obj, nil
 }
@@ -606,7 +606,7 @@ func (c *GatewayCache) getRetryPolicyFromCache(key client.ObjectKey) (*gwpav1alp
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(retryPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.RetryPolicyGVK)
 
 	return obj, nil
 }
@@ -617,7 +617,7 @@ func (c *GatewayCache) getGatewayTLSPolicyFromCache(key client.ObjectKey) (*gwpa
 		return nil, err
 	}
 
-	obj.GetObjectKind().SetGroupVersionKind(gatewayTLSPolicyGVK)
+	obj.GetObjectKind().SetGroupVersionKind(constants.GatewayTLSPolicyGVK)
 
 	return obj, nil
 }

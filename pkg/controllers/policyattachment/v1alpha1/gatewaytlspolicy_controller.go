@@ -28,8 +28,9 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -43,8 +44,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -68,6 +67,7 @@ type gatewayTLSPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.PolicyStatusProcessor
 }
 
 func (r *gatewayTLSPolicyReconciler) NeedLeaderElection() bool {
@@ -76,12 +76,25 @@ func (r *gatewayTLSPolicyReconciler) NeedLeaderElection() bool {
 
 // NewGatewayTLSPolicyReconciler returns a new GatewayTLSPolicy Reconciler
 func NewGatewayTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &gatewayTLSPolicyReconciler{
+	r := &gatewayTLSPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("GatewayTLSPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.PolicyStatusProcessor{
+		Client:           r.fctx.Client,
+		GetPolicies:      r.getGatewayTLSPolices,
+		FindConflictPort: r.getConflictedPort,
+		GroupKindObjectMapping: map[string]map[string]client.Object{
+			constants.GatewayAPIGroup: {
+				constants.GatewayAPIGatewayKind: &gwv1beta1.Gateway{},
+			},
+		},
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a GatewayTLSPolicy object and makes changes based on the state read
@@ -102,7 +115,10 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -112,116 +128,51 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayTLSPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.GatewayTLSPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only gateway.networking.k8s.io is supported",
+func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	gatewayTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().GatewayTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list GatewayTLSPolicies: %s", err)))
+	}
+
+	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+
+	for _, p := range gatewayTLSPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+			spec := p.Spec
+			targetRef := spec.TargetRef
+
+			switch {
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Ports) > 0:
+				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
+			}
 		}
 	}
 
-	switch policy.Spec.TargetRef.Kind {
-	case constants.GatewayAPIGatewayKind:
-		gateway := &gwv1beta1.Gateway{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Gateway",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Gateway: %s", err),
-				}
-			}
-		}
-		gatewayTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().GatewayTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list GatewayTLSPolicies: %s", err),
-			}
-		}
-
-		gatewayTLSPolicies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
-		for _, p := range gatewayTLSPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
-				gatewayTLSPolicies = append(gatewayTLSPolicies, p)
-			}
-		}
-
-		sort.Slice(gatewayTLSPolicies, func(i, j int) bool {
-			if gatewayTLSPolicies[i].CreationTimestamp.Time.Equal(gatewayTLSPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&gatewayTLSPolicies[i]).String() < client.ObjectKeyFromObject(&gatewayTLSPolicies[j]).String()
-			}
-
-			return gatewayTLSPolicies[i].CreationTimestamp.Time.Before(gatewayTLSPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPort(gateway, policy, gatewayTLSPolicies); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with GatewayTLSPolicy: %s", conflict),
-			}
-		}
-	default:
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Gateway, HTTPRoute and GRCPRoute are supported",
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return policies, nil
 }
 
-func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, gatewayTLSPolicy *gwpav1alpha1.GatewayTLSPolicy, allGatewayTLSPolicies []gwpav1alpha1.GatewayTLSPolicy) *types.NamespacedName {
-	if len(gatewayTLSPolicy.Spec.Ports) == 0 {
+func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, gatewayTLSPolicy client.Object, allGatewayTLSPolicies []client.Object) *types.NamespacedName {
+	currentGatewayTLSPolicy := gatewayTLSPolicy.(*gwpav1alpha1.GatewayTLSPolicy)
+
+	if len(currentGatewayTLSPolicy.Spec.Ports) == 0 {
 		return nil
 	}
 
 	validListeners := gwutils.GetValidListenersFromGateway(gateway)
 	for _, pr := range allGatewayTLSPolicies {
+		pr := pr.(*gwpav1alpha1.GatewayTLSPolicy)
+
 		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(listener.Port, pr)
+				r1 := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(listener.Port, *pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(listener.Port, *gatewayTLSPolicy)
+				r2 := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(listener.Port, *currentGatewayTLSPolicy)
 				if r2 == nil {
 					continue
 				}

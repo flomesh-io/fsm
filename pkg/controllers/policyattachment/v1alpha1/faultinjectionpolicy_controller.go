@@ -28,8 +28,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
 
@@ -68,6 +70,7 @@ type faultInjectionPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.PolicyStatusProcessor
 }
 
 func (r *faultInjectionPolicyReconciler) NeedLeaderElection() bool {
@@ -76,12 +79,28 @@ func (r *faultInjectionPolicyReconciler) NeedLeaderElection() bool {
 
 // NewFaultInjectionPolicyReconciler returns a new FaultInjectionPolicy Reconciler
 func NewFaultInjectionPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &faultInjectionPolicyReconciler{
+	r := &faultInjectionPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("FaultInjectionPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.PolicyStatusProcessor{
+		Client:                             r.fctx.Client,
+		GetPolicies:                        r.getFaultInjections,
+		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedFaultInjectionPolicy,
+		FindConflictedHTTPRouteBasedPolicy: r.getConflictedHTTPRouteBasedFaultInjectionPolicy,
+		FindConflictedGRPCRouteBasedPolicy: r.getConflictedGRPCRouteBasedRFaultInjectionPolicy,
+		GroupKindObjectMapping: map[string]map[string]client.Object{
+			constants.GatewayAPIGroup: {
+				constants.GatewayAPIHTTPRouteKind: &gwv1beta1.HTTPRoute{},
+				constants.GatewayAPIGRPCRouteKind: &gwv1alpha2.GRPCRoute{},
+			},
+		},
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a FaultInjectionPolicy object and makes changes based on the state read
@@ -102,7 +121,10 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -112,200 +134,50 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *faultInjectionPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.FaultInjectionPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only gateway.networking.k8s.io is supported",
+func (r *faultInjectionPolicyReconciler) getFaultInjections(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
+	}
+
+	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+
+	for _, p := range faultInjectionPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+			spec := p.Spec
+			targetRef := spec.TargetRef
+
+			switch {
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Hostnames) > 0:
+				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.HTTPFaultInjections) > 0:
+				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.GRPCFaultInjections) > 0:
+				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
+			}
 		}
 	}
 
-	switch policy.Spec.TargetRef.Kind {
-	case constants.GatewayAPIHTTPRouteKind:
-		httpRoute := &gwv1beta1.HTTPRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target HTTPRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target HTTPRoute: %s", err),
-				}
-			}
-		}
-		faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedFaultInjectionPolicy(httpRoute, policy, faultInjectionPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with FaultInjectionPolicy: %s", conflict),
-			}
-		}
-	case constants.GatewayAPIGRPCRouteKind:
-		grpcRoute := &gwv1alpha2.GRPCRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target GRPCRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target GRPCRoute: %s", err),
-				}
-			}
-		}
-		faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedFaultInjectionPolicy(grpcRoute, policy, faultInjectionPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with FaultInjectionPolicy: %s", conflict),
-			}
-		}
-	default:
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Gateway, HTTPRoute and GRCPRoute are supported",
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return policies, nil
 }
 
-func (r *faultInjectionPolicyReconciler) getConflictedHostnamesOrRouteBasedFaultInjectionPolicy(route client.Object, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy, allFaultInjectionPolicies *gwpav1alpha1.FaultInjectionPolicyList) *types.NamespacedName {
-	hostnamesFaultInjections := make([]gwpav1alpha1.FaultInjectionPolicy, 0)
-	routeFaultInjections := make([]gwpav1alpha1.FaultInjectionPolicy, 0)
-	for _, p := range allFaultInjectionPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, route) {
-			if len(p.Spec.Hostnames) > 0 {
-				hostnamesFaultInjections = append(hostnamesFaultInjections, p)
-			}
-			if len(p.Spec.HTTPFaultInjections) > 0 || len(p.Spec.GRPCFaultInjections) > 0 {
-				routeFaultInjections = append(routeFaultInjections, p)
-			}
-		}
-	}
-	sort.Slice(hostnamesFaultInjections, func(i, j int) bool {
-		if hostnamesFaultInjections[i].CreationTimestamp.Time.Equal(hostnamesFaultInjections[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&hostnamesFaultInjections[i]).String() < client.ObjectKeyFromObject(&hostnamesFaultInjections[j]).String()
-		}
+func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route status.RouteInfo, faultInjectionPolicy client.Object, hostnamesFaultInjections []client.Object) *types.NamespacedName {
+	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
 
-		return hostnamesFaultInjections[i].CreationTimestamp.Time.Before(hostnamesFaultInjections[j].CreationTimestamp.Time)
-	})
-	sort.Slice(routeFaultInjections, func(i, j int) bool {
-		if routeFaultInjections[i].CreationTimestamp.Time.Equal(routeFaultInjections[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&routeFaultInjections[i]).String() < client.ObjectKeyFromObject(&routeFaultInjections[j]).String()
-		}
-
-		return routeFaultInjections[i].CreationTimestamp.Time.Before(routeFaultInjections[j].CreationTimestamp.Time)
-	})
-
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedFaultInjectionPolicy(info, faultInjectionPolicy, hostnamesFaultInjections); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedFaultInjectionPolicy(route, faultInjectionPolicy, routeFaultInjections); conflict != nil {
-			return conflict
-		}
-
-	case *gwv1alpha2.GRPCRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedFaultInjectionPolicy(info, faultInjectionPolicy, hostnamesFaultInjections); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedFaultInjectionPolicy(route, faultInjectionPolicy, routeFaultInjections); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route routeInfo, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy, hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy) *types.NamespacedName {
-	if len(faultInjectionPolicy.Spec.Hostnames) == 0 {
+	if len(currentPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
-	for _, parent := range route.parents {
+	for _, parent := range route.Parents {
 		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
-			key := getRouteParentKey(route.meta, parent)
+			key := getRouteParentKey(route.Meta, parent)
 
 			gateway := &gwv1beta1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
@@ -314,21 +186,23 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 
 			validListeners := gwutils.GetValidListenersFromGateway(gateway)
 
-			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.gvk, route.generation, validListeners)
+			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.GVK, route.Generation, validListeners)
 			for _, listener := range allowedListeners {
-				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.hostnames)
+				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {
 					// no valid hostnames, should ignore it
 					continue
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesFaultInjections {
-						r1 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, hr)
+						hr := hr.(*gwpav1alpha1.FaultInjectionPolicy)
+
+						r1 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *faultInjectionPolicy)
+						r2 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *currentPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -350,68 +224,80 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 	return nil
 }
 
-func (r *faultInjectionPolicyReconciler) getConflictedRouteBasedFaultInjectionPolicy(route client.Object, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy, routeFaultInjections []gwpav1alpha1.FaultInjectionPolicy) *types.NamespacedName {
-	if len(faultInjectionPolicy.Spec.HTTPFaultInjections) == 0 &&
-		len(faultInjectionPolicy.Spec.GRPCFaultInjections) == 0 {
+func (r *faultInjectionPolicyReconciler) getConflictedHTTPRouteBasedFaultInjectionPolicy(route *gwv1beta1.HTTPRoute, faultInjectionPolicy client.Object, routeFaultInjections []client.Object) *types.NamespacedName {
+	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
+
+	if len(currentPolicy.Spec.HTTPFaultInjections) == 0 {
 		return nil
 	}
 
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, faultInjection := range routeFaultInjections {
-					if len(faultInjection.Spec.HTTPFaultInjections) == 0 {
-						continue
-					}
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, faultInjection := range routeFaultInjections {
+				faultInjection := faultInjection.(*gwpav1alpha1.FaultInjectionPolicy)
 
-					r1 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, faultInjection)
-					if r1 == nil {
-						continue
-					}
+				if len(faultInjection.Spec.HTTPFaultInjections) == 0 {
+					continue
+				}
 
-					r2 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *faultInjectionPolicy)
-					if r2 == nil {
-						continue
-					}
+				r1 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *faultInjection)
+				if r1 == nil {
+					continue
+				}
 
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
+				r2 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
 
-					return &types.NamespacedName{
-						Name:      faultInjection.Name,
-						Namespace: faultInjection.Namespace,
-					}
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      faultInjection.Name,
+					Namespace: faultInjection.Namespace,
 				}
 			}
 		}
-	case *gwv1alpha2.GRPCRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, rr := range routeFaultInjections {
-					if len(rr.Spec.GRPCFaultInjections) == 0 {
-						continue
-					}
+	}
 
-					r1 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, rr)
-					if r1 == nil {
-						continue
-					}
+	return nil
+}
 
-					r2 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *faultInjectionPolicy)
-					if r2 == nil {
-						continue
-					}
+func (r *faultInjectionPolicyReconciler) getConflictedGRPCRouteBasedRFaultInjectionPolicy(route *gwv1alpha2.GRPCRoute, faultInjectionPolicy client.Object, routeFaultInjections []client.Object) *types.NamespacedName {
+	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
 
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
+	if len(currentPolicy.Spec.GRPCFaultInjections) == 0 {
+		return nil
+	}
 
-					return &types.NamespacedName{
-						Name:      rr.Name,
-						Namespace: rr.Namespace,
-					}
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, rr := range routeFaultInjections {
+				rr := rr.(*gwpav1alpha1.FaultInjectionPolicy)
+
+				if len(rr.Spec.GRPCFaultInjections) == 0 {
+					continue
+				}
+
+				r1 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *rr)
+				if r1 == nil {
+					continue
+				}
+
+				r2 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
+
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      rr.Name,
+					Namespace: rr.Namespace,
 				}
 			}
 		}

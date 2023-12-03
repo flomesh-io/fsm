@@ -12,6 +12,23 @@ var (
 	log = logger.New("fsm-gateway/types")
 )
 
+// PolicyMatchType is the type used to represent the rate limit policy match type
+type PolicyMatchType string
+
+const (
+	// PolicyMatchTypePort is the type used to represent the rate limit policy match type port
+	PolicyMatchTypePort PolicyMatchType = "port"
+
+	// PolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
+	PolicyMatchTypeHostnames PolicyMatchType = "hostnames"
+
+	// PolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
+	PolicyMatchTypeHTTPRoute PolicyMatchType = "httproute"
+
+	// PolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
+	PolicyMatchTypeGRPCRoute PolicyMatchType = "grpcroute"
+)
+
 // Listener is a wrapper around the Gateway API Listener object
 type Listener struct {
 	gwv1beta1.Listener
