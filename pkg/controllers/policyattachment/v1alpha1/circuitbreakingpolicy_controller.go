@@ -4,24 +4,18 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/circuitbreaking"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -46,6 +40,7 @@ type circuitBreakingPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *circuitBreakingPolicyReconciler) NeedLeaderElection() bool {
@@ -54,12 +49,20 @@ func (r *circuitBreakingPolicyReconciler) NeedLeaderElection() bool {
 
 // NewCircuitBreakingPolicyReconciler returns a new CircuitBreakingPolicy Reconciler
 func NewCircuitBreakingPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &circuitBreakingPolicyReconciler{
+	r := &circuitBreakingPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("CircuitBreakingPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+		Client:              r.fctx.Client,
+		GetAttachedPolicies: r.getAttachedCircuitBreakings,
+		FindConflict:        r.findConflict,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a CircuitBreakingPolicy object and makes changes based on the state read
@@ -80,7 +83,10 @@ func (r *circuitBreakingPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -97,210 +103,36 @@ func (r *circuitBreakingPolicyReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Complete(r)
 }
 
-func (r *circuitBreakingPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.CircuitBreakingPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.KubernetesCoreGroup && policy.Spec.TargetRef.Group != constants.FlomeshAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only kubernetes core or flomesh.io is supported",
+func (r *circuitBreakingPolicyReconciler) getAttachedCircuitBreakings(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	circuitBreakingPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().CircuitBreakingPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list CircuitBreakingPolicies: %s", err)))
+	}
+
+	circuitBreakings := make([]client.Object, 0)
+	for _, p := range circuitBreakingPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			circuitBreakings = append(circuitBreakings, &p)
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind != constants.KubernetesServiceKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Service is supported for kubernetes core group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind != constants.FlomeshAPIServiceImportKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only ServiceImport is supported for flomesh.io group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind == constants.KubernetesServiceKind {
-		svc := &corev1.Service{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Service",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Service: %s", err),
-				}
-			}
-		}
-
-		circuitBreakingPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().CircuitBreakingPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list CircuitBreakingPolicies: %s", err),
-			}
-		}
-
-		circuitBreakings := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
-		for _, p := range circuitBreakingPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				circuitBreakings = append(circuitBreakings, p)
-			}
-		}
-
-		sort.Slice(circuitBreakings, func(i, j int) bool {
-			if circuitBreakings[i].CreationTimestamp.Time.Equal(circuitBreakings[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&circuitBreakings[i]).String() < client.ObjectKeyFromObject(&circuitBreakings[j]).String()
-			}
-
-			return circuitBreakings[i].CreationTimestamp.Time.Before(circuitBreakings[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByService(policy, circuitBreakings, svc); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with CircuitBreakingPolicy: %s", conflict),
-			}
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind == constants.FlomeshAPIServiceImportKind {
-		svcimp := &mcsv1alpha1.ServiceImport{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target ServiceImport",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target ServiceImport: %s", err),
-				}
-			}
-		}
-
-		circuitBreakingPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().CircuitBreakingPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list CircuitBreakingPolicies: %s", err),
-			}
-		}
-
-		circuitBreakings := make([]gwpav1alpha1.CircuitBreakingPolicy, 0)
-		for _, p := range circuitBreakingPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				circuitBreakings = append(circuitBreakings, p)
-			}
-		}
-
-		sort.Slice(circuitBreakings, func(i, j int) bool {
-			if circuitBreakings[i].CreationTimestamp.Time.Equal(circuitBreakings[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&circuitBreakings[i]).String() < client.ObjectKeyFromObject(&circuitBreakings[j]).String()
-			}
-
-			return circuitBreakings[i].CreationTimestamp.Time.Before(circuitBreakings[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByServiceImport(policy, circuitBreakings, svcimp); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with CircuitBreakingPolicy: %s", conflict),
-			}
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return circuitBreakings, nil
 }
 
-func (r *circuitBreakingPolicyReconciler) getConflictedPolicyByService(circuitBreakingPolicy *gwpav1alpha1.CircuitBreakingPolicy, allCircuitBreakingPolicies []gwpav1alpha1.CircuitBreakingPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, port := range svc.Spec.Ports {
-		if conflict := r.findConflict(circuitBreakingPolicy, allCircuitBreakingPolicies, svc, port.Port); conflict != nil {
-			return conflict
-		}
-	}
+func (r *circuitBreakingPolicyReconciler) findConflict(circuitBreakingPolicy client.Object, allCircuitBreakingPolicies []client.Object, port int32) *types.NamespacedName {
+	currentPolicy := circuitBreakingPolicy.(*gwpav1alpha1.CircuitBreakingPolicy)
 
-	return nil
-}
-
-func (r *circuitBreakingPolicyReconciler) getConflictedPolicyByServiceImport(circuitBreakingPolicy *gwpav1alpha1.CircuitBreakingPolicy, allCircuitBreakingPolicies []gwpav1alpha1.CircuitBreakingPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, port := range svcimp.Spec.Ports {
-		if conflict := r.findConflict(circuitBreakingPolicy, allCircuitBreakingPolicies, svcimp, port.Port); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *circuitBreakingPolicyReconciler) findConflict(circuitBreakingPolicy *gwpav1alpha1.CircuitBreakingPolicy, allCircuitBreakingPolicies []gwpav1alpha1.CircuitBreakingPolicy, svc client.Object, port int32) *types.NamespacedName {
 	for _, policy := range allCircuitBreakingPolicies {
-		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
-			continue
-		}
+		policy := policy.(*gwpav1alpha1.CircuitBreakingPolicy)
 
-		c1 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, policy)
+		c1 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, *policy)
 		if c1 == nil {
 			continue
 		}
 
-		c2 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, *circuitBreakingPolicy)
+		c2 := circuitbreaking.GetCircuitBreakingConfigIfPortMatchesPolicy(port, *currentPolicy)
 		if c2 == nil {
 			continue
 		}

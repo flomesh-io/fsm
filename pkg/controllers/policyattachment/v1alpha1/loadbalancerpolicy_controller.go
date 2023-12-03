@@ -3,24 +3,18 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"sort"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
@@ -45,6 +39,7 @@ type loadBalancerPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
@@ -53,12 +48,20 @@ func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
 
 // NewLoadBalancerPolicyReconciler returns a new LoadBalancerPolicy Reconciler
 func NewLoadBalancerPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &loadBalancerPolicyReconciler{
+	r := &loadBalancerPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("LoadBalancerPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+		Client:              r.fctx.Client,
+		GetAttachedPolicies: r.getAttachedLoadBalancers,
+		FindConflict:        r.findConflict,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a LoadBalancerPolicy object and makes changes based on the state read
@@ -79,7 +82,10 @@ func (r *loadBalancerPolicyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -96,210 +102,36 @@ func (r *loadBalancerPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error 
 		Complete(r)
 }
 
-func (r *loadBalancerPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.LoadBalancerPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.KubernetesCoreGroup && policy.Spec.TargetRef.Group != constants.FlomeshAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only kubernetes core or flomesh.io is supported",
+func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	loadBalancerPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().LoadBalancerPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err)))
+	}
+
+	loadBalancers := make([]client.Object, 0)
+	for _, p := range loadBalancerPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			loadBalancers = append(loadBalancers, &p)
 		}
 	}
 
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind != constants.KubernetesServiceKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Service is supported for kubernetes core group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind != constants.FlomeshAPIServiceImportKind {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only ServiceImport is supported for flomesh.io group",
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.KubernetesCoreGroup && policy.Spec.TargetRef.Kind == constants.KubernetesServiceKind {
-		svc := &corev1.Service{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svc); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Service",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Service: %s", err),
-				}
-			}
-		}
-
-		loadBalancerPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().LoadBalancerPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err),
-			}
-		}
-
-		loadBalancers := make([]gwpav1alpha1.LoadBalancerPolicy, 0)
-		for _, p := range loadBalancerPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
-				loadBalancers = append(loadBalancers, p)
-			}
-		}
-
-		sort.Slice(loadBalancers, func(i, j int) bool {
-			if loadBalancers[i].CreationTimestamp.Time.Equal(loadBalancers[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&loadBalancers[i]).String() < client.ObjectKeyFromObject(&loadBalancers[j]).String()
-			}
-
-			return loadBalancers[i].CreationTimestamp.Time.Before(loadBalancers[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByService(policy, loadBalancers, svc); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with LoadBalancerPolicy: %s", conflict),
-			}
-		}
-	}
-
-	if policy.Spec.TargetRef.Group == constants.FlomeshAPIGroup && policy.Spec.TargetRef.Kind == constants.FlomeshAPIServiceImportKind {
-		svcimp := &mcsv1alpha1.ServiceImport{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, svcimp); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target ServiceImport",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target ServiceImport: %s", err),
-				}
-			}
-		}
-
-		loadBalancerPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().LoadBalancerPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err),
-			}
-		}
-
-		loadBalancers := make([]gwpav1alpha1.LoadBalancerPolicy, 0)
-		for _, p := range loadBalancerPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, svcimp) {
-				loadBalancers = append(loadBalancers, p)
-			}
-		}
-
-		sort.Slice(loadBalancers, func(i, j int) bool {
-			if loadBalancers[i].CreationTimestamp.Time.Equal(loadBalancers[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&loadBalancers[i]).String() < client.ObjectKeyFromObject(&loadBalancers[j]).String()
-			}
-
-			return loadBalancers[i].CreationTimestamp.Time.Before(loadBalancers[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPolicyByServiceImport(policy, loadBalancers, svcimp); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with LoadBalancerPolicy: %s", conflict),
-			}
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return loadBalancers, nil
 }
 
-func (r *loadBalancerPolicyReconciler) getConflictedPolicyByService(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allLoadBalancerPolicies []gwpav1alpha1.LoadBalancerPolicy, svc *corev1.Service) *types.NamespacedName {
-	for _, port := range svc.Spec.Ports {
-		if conflict := r.findConflict(loadBalancerPolicy, allLoadBalancerPolicies, svc, port.Port); conflict != nil {
-			return conflict
-		}
-	}
+func (r *loadBalancerPolicyReconciler) findConflict(loadBalancerPolicy client.Object, allSessionStickyPolicies []client.Object, port int32) *types.NamespacedName {
+	currentPolicy := loadBalancerPolicy.(*gwpav1alpha1.LoadBalancerPolicy)
 
-	return nil
-}
-
-func (r *loadBalancerPolicyReconciler) getConflictedPolicyByServiceImport(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allLoadBalancerPolicies []gwpav1alpha1.LoadBalancerPolicy, svcimp *mcsv1alpha1.ServiceImport) *types.NamespacedName {
-	for _, port := range svcimp.Spec.Ports {
-		if conflict := r.findConflict(loadBalancerPolicy, allLoadBalancerPolicies, svcimp, port.Port); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *loadBalancerPolicyReconciler) findConflict(loadBalancerPolicy *gwpav1alpha1.LoadBalancerPolicy, allSessionStickyPolicies []gwpav1alpha1.LoadBalancerPolicy, svc client.Object, port int32) *types.NamespacedName {
 	for _, policy := range allSessionStickyPolicies {
-		if !gwutils.IsRefToTarget(policy.Spec.TargetRef, svc) {
-			continue
-		}
+		policy := policy.(*gwpav1alpha1.LoadBalancerPolicy)
 
-		t1 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, policy)
+		t1 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, *policy)
 		if t1 == nil {
 			continue
 		}
 
-		t2 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, *loadBalancerPolicy)
+		t2 := loadbalancer.GetLoadBalancerTypeIfPortMatchesPolicy(port, *currentPolicy)
 		if t2 == nil {
 			continue
 		}

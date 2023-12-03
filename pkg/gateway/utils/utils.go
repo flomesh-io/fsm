@@ -141,15 +141,7 @@ func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Obj
 }
 
 func IsTargetRefToGVK(targetRef gwv1alpha2.PolicyTargetReference, gvk schema.GroupVersionKind) bool {
-	if string(targetRef.Group) != gvk.Group {
-		return false
-	}
-
-	if string(targetRef.Kind) != gvk.Kind {
-		return false
-	}
-
-	return true
+	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
 }
 
 // ObjectKey returns the object key for the given object

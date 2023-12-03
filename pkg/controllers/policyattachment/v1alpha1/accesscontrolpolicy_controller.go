@@ -28,8 +28,10 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
-	"time"
+
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 
@@ -68,6 +70,7 @@ type accessControlPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.PolicyStatusProcessor
 }
 
 func (r *accessControlPolicyReconciler) NeedLeaderElection() bool {
@@ -76,12 +79,23 @@ func (r *accessControlPolicyReconciler) NeedLeaderElection() bool {
 
 // NewAccessControlPolicyReconciler returns a new AccessControlPolicy Reconciler
 func NewAccessControlPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &accessControlPolicyReconciler{
+	r := &accessControlPolicyReconciler{
 		recorder:                  ctx.Manager.GetEventRecorderFor("AccessControlPolicy"),
 		fctx:                      ctx,
 		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
+
+	r.statusProcessor = &status.PolicyStatusProcessor{
+		Client:                             r.fctx.Client,
+		GetPolicies:                        r.getAccessControls,
+		FindConflictPort:                   r.getConflictedPort,
+		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedAccessControlPolicy,
+		FindConflictedHTTPRouteBasedPolicy: r.getConflictedHTTPRouteBasedAccessControlPolicy,
+		FindConflictedGRPCRouteBasedPolicy: r.getConflictedGRPCRouteBasedAccessControlPolicy,
+	}
+
+	return r
 }
 
 // Reconcile reads that state of the cluster for a AccessControlPolicy object and makes changes based on the state read
@@ -102,7 +116,10 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(&policy.Status.Conditions, r.getStatusCondition(ctx, policy))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
 	if err := r.fctx.Status().Update(ctx, policy); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -112,262 +129,54 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 	return ctrl.Result{}, nil
 }
 
-func (r *accessControlPolicyReconciler) getStatusCondition(ctx context.Context, policy *gwpav1alpha1.AccessControlPolicy) metav1.Condition {
-	if policy.Spec.TargetRef.Group != constants.GatewayAPIGroup {
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference group, only gateway.networking.k8s.io is supported",
+func (r *accessControlPolicyReconciler) getAccessControls(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list AccessControlPolicies: %s", err)))
+	}
+
+	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+
+	for _, p := range accessControlPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+			spec := p.Spec
+			targetRef := spec.TargetRef
+
+			switch {
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Ports) > 0:
+				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
+			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.Hostnames) > 0:
+				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.HTTPAccessControls) > 0:
+				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
+			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
+				gwutils.IsRefToTarget(targetRef, target) &&
+				len(spec.GRPCAccessControls) > 0:
+				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
+			}
 		}
 	}
 
-	switch policy.Spec.TargetRef.Kind {
-	case constants.GatewayAPIGatewayKind:
-		gateway := &gwv1beta1.Gateway{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, gateway); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target Gateway",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target Gateway: %s", err),
-				}
-			}
-		}
-		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
-			}
-		}
-
-		accessControlPolicies := make([]gwpav1alpha1.AccessControlPolicy, 0)
-		for _, p := range accessControlPolicyList.Items {
-			if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-				gwutils.IsRefToTarget(p.Spec.TargetRef, gateway) {
-				accessControlPolicies = append(accessControlPolicies, p)
-			}
-		}
-
-		sort.Slice(accessControlPolicies, func(i, j int) bool {
-			if accessControlPolicies[i].CreationTimestamp.Time.Equal(accessControlPolicies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&accessControlPolicies[i]).String() < client.ObjectKeyFromObject(&accessControlPolicies[j]).String()
-			}
-
-			return accessControlPolicies[i].CreationTimestamp.Time.Before(accessControlPolicies[j].CreationTimestamp.Time)
-		})
-
-		if conflict := r.getConflictedPort(gateway, policy, accessControlPolicies); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
-			}
-		}
-
-	case constants.GatewayAPIHTTPRouteKind:
-		httpRoute := &gwv1beta1.HTTPRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, httpRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target HTTPRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target HTTPRoute: %s", err),
-				}
-			}
-		}
-		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedAccessControlPolicy(httpRoute, policy, accessControlPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
-			}
-		}
-	case constants.GatewayAPIGRPCRouteKind:
-		grpcRoute := &gwv1alpha2.GRPCRoute{}
-		if err := r.fctx.Get(ctx, types.NamespacedName{Namespace: getTargetNamespace(policy, policy.Spec.TargetRef), Name: string(policy.Spec.TargetRef.Name)}, grpcRoute); err != nil {
-			if errors.IsNotFound(err) {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonTargetNotFound),
-					Message:            "Invalid target reference, cannot find target GRPCRoute",
-				}
-			} else {
-				return metav1.Condition{
-					Type:               string(gwv1alpha2.PolicyConditionAccepted),
-					Status:             metav1.ConditionFalse,
-					ObservedGeneration: policy.Generation,
-					LastTransitionTime: metav1.Time{Time: time.Now()},
-					Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-					Message:            fmt.Sprintf("Failed to get target GRPCRoute: %s", err),
-				}
-			}
-		}
-		accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-				Message:            fmt.Sprintf("Failed to list AccessControlPolicies: %s", err),
-			}
-		}
-		if conflict := r.getConflictedHostnamesOrRouteBasedAccessControlPolicy(grpcRoute, policy, accessControlPolicyList); conflict != nil {
-			return metav1.Condition{
-				Type:               string(gwv1alpha2.PolicyConditionAccepted),
-				Status:             metav1.ConditionFalse,
-				ObservedGeneration: policy.Generation,
-				LastTransitionTime: metav1.Time{Time: time.Now()},
-				Reason:             string(gwv1alpha2.PolicyReasonConflicted),
-				Message:            fmt.Sprintf("Conflict with AccessControlPolicy: %s", conflict),
-			}
-		}
-	default:
-		return metav1.Condition{
-			Type:               string(gwv1alpha2.PolicyConditionAccepted),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: policy.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1alpha2.PolicyReasonInvalid),
-			Message:            "Invalid target reference kind, only Gateway, HTTPRoute and GRCPRoute are supported",
-		}
-	}
-
-	return metav1.Condition{
-		Type:               string(gwv1alpha2.PolicyConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: policy.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1alpha2.PolicyReasonAccepted),
-		Message:            string(gwv1alpha2.PolicyReasonAccepted),
-	}
+	return policies, nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedHostnamesOrRouteBasedAccessControlPolicy(route client.Object, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies *gwpav1alpha1.AccessControlPolicyList) *types.NamespacedName {
-	hostnamesAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	routeAccessControls := make([]gwpav1alpha1.AccessControlPolicy, 0)
-	for _, p := range allAccessControlPolicies.Items {
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, route) {
-			if len(p.Spec.Hostnames) > 0 {
-				hostnamesAccessControls = append(hostnamesAccessControls, p)
-			}
-			if len(p.Spec.HTTPAccessControls) > 0 || len(p.Spec.GRPCAccessControls) > 0 {
-				routeAccessControls = append(routeAccessControls, p)
-			}
-		}
-	}
-	sort.Slice(hostnamesAccessControls, func(i, j int) bool {
-		if hostnamesAccessControls[i].CreationTimestamp.Time.Equal(hostnamesAccessControls[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&hostnamesAccessControls[i]).String() < client.ObjectKeyFromObject(&hostnamesAccessControls[j]).String()
-		}
+func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControlPolicy(route status.RouteInfo, accessControlPolicy client.Object, hostnamesAccessControls []client.Object) *types.NamespacedName {
+	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
 
-		return hostnamesAccessControls[i].CreationTimestamp.Time.Before(hostnamesAccessControls[j].CreationTimestamp.Time)
-	})
-	sort.Slice(routeAccessControls, func(i, j int) bool {
-		if routeAccessControls[i].CreationTimestamp.Time.Equal(routeAccessControls[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(&routeAccessControls[i]).String() < client.ObjectKeyFromObject(&routeAccessControls[j]).String()
-		}
-
-		return routeAccessControls[i].CreationTimestamp.Time.Before(routeAccessControls[j].CreationTimestamp.Time)
-	})
-
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedAccessControlPolicy(info, accessControlPolicy, hostnamesAccessControls); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedAccessControlPolicy(route, accessControlPolicy, routeAccessControls); conflict != nil {
-			return conflict
-		}
-
-	case *gwv1alpha2.GRPCRoute:
-		info := routeInfo{
-			meta:       route,
-			parents:    route.Status.Parents,
-			gvk:        route.GroupVersionKind(),
-			generation: route.Generation,
-			hostnames:  route.Spec.Hostnames,
-		}
-		if conflict := r.getConflictedHostnamesBasedAccessControlPolicy(info, accessControlPolicy, hostnamesAccessControls); conflict != nil {
-			return conflict
-		}
-		if conflict := r.getConflictedRouteBasedAccessControlPolicy(route, accessControlPolicy, routeAccessControls); conflict != nil {
-			return conflict
-		}
-	}
-
-	return nil
-}
-
-func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControlPolicy(route routeInfo, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, hostnamesAccessControls []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
-	if len(accessControlPolicy.Spec.Hostnames) == 0 {
+	if len(currentPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
-	for _, parent := range route.parents {
+	for _, parent := range route.Parents {
 		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
-			key := getRouteParentKey(route.meta, parent)
+			key := getRouteParentKey(route.Meta, parent)
 
 			gateway := &gwv1beta1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
@@ -376,21 +185,23 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 
 			validListeners := gwutils.GetValidListenersFromGateway(gateway)
 
-			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.gvk, route.generation, validListeners)
+			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.GVK, route.Generation, validListeners)
 			for _, listener := range allowedListeners {
-				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.hostnames)
+				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {
 					// no valid hostnames, should ignore it
 					continue
 				}
 				for _, hostname := range hostnames {
 					for _, hr := range hostnamesAccessControls {
-						r1 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, hr)
+						hr := hr.(*gwpav1alpha1.AccessControlPolicy)
+
+						r1 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *accessControlPolicy)
+						r2 := accesscontrol.GetAccessControlConfigIfRouteHostnameMatchesPolicy(hostname, *currentPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -412,91 +223,28 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 	return nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedRouteBasedAccessControlPolicy(route client.Object, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, routeAccessControls []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
-	if len(accessControlPolicy.Spec.HTTPAccessControls) == 0 &&
-		len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
+func (r *accessControlPolicyReconciler) getConflictedHTTPRouteBasedAccessControlPolicy(route *gwv1beta1.HTTPRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
+	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
+
+	if len(currentPolicy.Spec.HTTPAccessControls) == 0 {
 		return nil
 	}
 
-	switch route := route.(type) {
-	case *gwv1beta1.HTTPRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, accessControl := range routeAccessControls {
-					if len(accessControl.Spec.HTTPAccessControls) == 0 {
-						continue
-					}
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, routePolicy := range routeAccessControls {
+				routePolicy := routePolicy.(*gwpav1alpha1.AccessControlPolicy)
 
-					r1 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, accessControl)
-					if r1 == nil {
-						continue
-					}
-
-					r2 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *accessControlPolicy)
-					if r2 == nil {
-						continue
-					}
-
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
-
-					return &types.NamespacedName{
-						Name:      accessControl.Name,
-						Namespace: accessControl.Namespace,
-					}
+				if len(routePolicy.Spec.HTTPAccessControls) == 0 {
+					continue
 				}
-			}
-		}
-	case *gwv1alpha2.GRPCRoute:
-		for _, rule := range route.Spec.Rules {
-			for _, m := range rule.Matches {
-				for _, rr := range routeAccessControls {
-					if len(rr.Spec.GRPCAccessControls) == 0 {
-						continue
-					}
 
-					r1 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, rr)
-					if r1 == nil {
-						continue
-					}
-
-					r2 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *accessControlPolicy)
-					if r2 == nil {
-						continue
-					}
-
-					if reflect.DeepEqual(r1, r2) {
-						continue
-					}
-
-					return &types.NamespacedName{
-						Name:      rr.Name,
-						Namespace: rr.Namespace,
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy *gwpav1alpha1.AccessControlPolicy, allAccessControlPolicies []gwpav1alpha1.AccessControlPolicy) *types.NamespacedName {
-	if len(accessControlPolicy.Spec.Ports) == 0 {
-		return nil
-	}
-
-	validListeners := gwutils.GetValidListenersFromGateway(gateway)
-	for _, pr := range allAccessControlPolicies {
-		if len(pr.Spec.Ports) > 0 {
-			for _, listener := range validListeners {
-				r1 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, pr)
+				r1 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *routePolicy)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *accessControlPolicy)
+				r2 := accesscontrol.GetAccessControlConfigIfHTTPRouteMatchesPolicy(m, *currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -506,8 +254,87 @@ func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gat
 				}
 
 				return &types.NamespacedName{
-					Name:      pr.Name,
-					Namespace: pr.Namespace,
+					Name:      routePolicy.Name,
+					Namespace: routePolicy.Namespace,
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *accessControlPolicyReconciler) getConflictedGRPCRouteBasedAccessControlPolicy(route *gwv1alpha2.GRPCRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
+	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
+
+	if len(currentPolicy.Spec.GRPCAccessControls) == 0 {
+		return nil
+	}
+
+	for _, rule := range route.Spec.Rules {
+		for _, m := range rule.Matches {
+			for _, routePolicy := range routeAccessControls {
+				routePolicy := routePolicy.(*gwpav1alpha1.AccessControlPolicy)
+
+				if len(routePolicy.Spec.GRPCAccessControls) == 0 {
+					continue
+				}
+
+				r1 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *routePolicy)
+				if r1 == nil {
+					continue
+				}
+
+				r2 := accesscontrol.GetAccessControlConfigIfGRPCRouteMatchesPolicy(m, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
+
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      routePolicy.Name,
+					Namespace: routePolicy.Namespace,
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy client.Object, allAccessControls []client.Object) *types.NamespacedName {
+	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
+
+	if len(currentPolicy.Spec.Ports) == 0 {
+		return nil
+	}
+
+	validListeners := gwutils.GetValidListenersFromGateway(gateway)
+	for _, accessControl := range allAccessControls {
+		accessControl := accessControl.(*gwpav1alpha1.AccessControlPolicy)
+
+		if len(accessControl.Spec.Ports) > 0 {
+			for _, listener := range validListeners {
+				r1 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *accessControl)
+				if r1 == nil {
+					continue
+				}
+
+				r2 := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(listener.Port, *currentPolicy)
+				if r2 == nil {
+					continue
+				}
+
+				if reflect.DeepEqual(r1, r2) {
+					continue
+				}
+
+				return &types.NamespacedName{
+					Name:      accessControl.Name,
+					Namespace: accessControl.Namespace,
 				}
 			}
 		}
