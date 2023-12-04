@@ -86,10 +86,10 @@ require (
 	github.com/go-co-op/gocron v1.31.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gobwas/glob v0.2.3
-	github.com/hashicorp/consul v1.15.3
 	github.com/hashicorp/consul/api v1.21.0
 	github.com/hudl/fargo v1.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
@@ -286,7 +286,6 @@ require (
 	github.com/keybase/go-crypto v0.0.0-20190403132359-d65b6b94177f // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/kyoh86/exportloopref v0.1.7 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
@@ -313,6 +312,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/iochan v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/pointerstructure v1.2.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -332,7 +332,6 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/okta/okta-sdk-golang/v2 v2.12.1 // indirect
-	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/oracle/oci-go-sdk/v60 v60.0.0 // indirect

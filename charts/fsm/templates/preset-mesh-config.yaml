@@ -8,13 +8,13 @@ data:
     {
       "clusterSet": {
         "properties": [],
-        "isManaged": false,
+        "isManaged": {{.Values.clusterSet.isManaged | mustToJson}},
         "uid": "{{ uuidv4 }}",
-        "region": "default",
-        "zone": "default",
-        "group": "default",
-        "name": "local",
-        "controlPlaneUID": ""
+        "region": {{.Values.clusterSet.region | mustToJson}},
+        "zone": {{.Values.clusterSet.zone | mustToJson}},
+        "group": {{.Values.clusterSet.group | mustToJson}},
+        "name": {{.Values.clusterSet.name | mustToJson}},
+        "controlPlaneUID": {{.Values.clusterSet.controlPlaneUID | mustToJson}}
       },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
@@ -90,7 +90,8 @@ data:
         "enableValidateHTTPRouteHostnames": {{.Values.fsm.featureFlags.enableValidateHTTPRouteHostnames | mustToJson}},
         "enableValidateGRPCRouteHostnames": {{.Values.fsm.featureFlags.enableValidateGRPCRouteHostnames | mustToJson}},
         "enableValidateTLSRouteHostnames": {{.Values.fsm.featureFlags.enableValidateTLSRouteHostnames | mustToJson}},
-        "enableGatewayAgentService": {{.Values.fsm.featureFlags.enableGatewayAgentService | mustToJson}}
+        "enableGatewayAgentService": {{.Values.fsm.featureFlags.enableGatewayAgentService | mustToJson}},
+        "enableGatewayProxyTag": {{.Values.fsm.featureFlags.enableGatewayProxyTag | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
       "ingress": {

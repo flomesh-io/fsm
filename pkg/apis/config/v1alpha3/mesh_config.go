@@ -360,6 +360,9 @@ type FeatureFlags struct {
 
 	// EnableGatewayAgentService defines if agent service is enabled.
 	EnableGatewayAgentService bool `json:"enableGatewayAgentService"`
+
+	// EnableGatewayProxyTag defines if gateway proxy-tag header is enabled.
+	EnableGatewayProxyTag bool `json:"enableGatewayProxyTag"`
 }
 
 // SidecarDriverSpec is the type to represent FSM's sidecar driver define.

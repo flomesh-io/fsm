@@ -58,21 +58,12 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
-{{/* fsm-consul-conector image */}}
-{{- define "fsmConsulConnector.image" -}}
+{{/* fsm-conector image */}}
+{{- define "fsmConnector.image" -}}
 {{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConsulConnector .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.tag -}}
 {{- else -}}
-{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConsulConnector .Values.fsm.image.digest.fsmInjector -}}
-{{- end -}}
-{{- end -}}
-
-{{/* fsm-eureka-conector image */}}
-{{- define "fsmEurekaConnector.image" -}}
-{{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmEurekaConnector .Values.fsm.image.tag -}}
-{{- else -}}
-{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmEurekaConnector .Values.fsm.image.digest.fsmInjector -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmConnector .Values.fsm.image.digest.fsmInjector -}}
 {{- end -}}
 {{- end -}}
 

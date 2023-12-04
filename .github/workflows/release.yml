@@ -120,7 +120,7 @@ jobs:
       BUILD_GITCOMMIT_VAR: 'github.com/flomesh-io/fsm/pkg/version.GitCommit'
     strategy:
       matrix:
-        id: [ "sidecar-init", "controller", "injector", "consul-connector", "eureka-connector","crds", "bootstrap", "preinstall", "healthcheck", "interceptor", "ingress", "gateway" ]
+        id: [ "sidecar-init", "controller", "injector", "connector", "crds", "bootstrap", "preinstall", "healthcheck", "interceptor", "ingress", "gateway" ]
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.0.0
@@ -144,7 +144,7 @@ jobs:
 
       - name: Docker meta - ${{ matrix.id }}
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v5.0.0
+        uses: crazy-max/ghaction-docker-meta@v5.2.0
         with:
           images: ${{ secrets.RELEASE_REGISTRY }}/fsm-${{ matrix.id }}
           tags: |
@@ -200,7 +200,7 @@ jobs:
 
       - name: Docker meta - ${{ matrix.id }}
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v5.0.0
+        uses: crazy-max/ghaction-docker-meta@v5.2.0
         with:
           images: ${{ secrets.RELEASE_REGISTRY }}/fsm-demo-${{ matrix.id }}
           tags: |

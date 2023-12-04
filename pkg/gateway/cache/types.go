@@ -26,14 +26,9 @@
 package cache
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
@@ -131,61 +126,10 @@ type endpointInfo struct {
 	port    int32
 }
 
-// RateLimitPolicyMatchType is the type used to represent the rate limit policy match type
-type RateLimitPolicyMatchType string
-
-const (
-	// RateLimitPolicyMatchTypePort is the type used to represent the rate limit policy match type port
-	RateLimitPolicyMatchTypePort RateLimitPolicyMatchType = "port"
-
-	// RateLimitPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
-	RateLimitPolicyMatchTypeHostnames RateLimitPolicyMatchType = "hostnames"
-
-	// RateLimitPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
-	RateLimitPolicyMatchTypeHTTPRoute RateLimitPolicyMatchType = "httproute"
-
-	// RateLimitPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
-	RateLimitPolicyMatchTypeGRPCRoute RateLimitPolicyMatchType = "grpcroute"
-)
-
-// AccessControlPolicyMatchType is the type used to represent the rate limit policy match type
-type AccessControlPolicyMatchType string
-
-const (
-	// AccessControlPolicyMatchTypePort is the type used to represent the rate limit policy match type port
-	AccessControlPolicyMatchTypePort AccessControlPolicyMatchType = "port"
-
-	// AccessControlPolicyMatchTypeHostnames is the type used to represent the rate limit policy match type hostnames
-	AccessControlPolicyMatchTypeHostnames AccessControlPolicyMatchType = "hostnames"
-
-	// AccessControlPolicyMatchTypeHTTPRoute is the type used to represent the rate limit policy match type httproute
-	AccessControlPolicyMatchTypeHTTPRoute AccessControlPolicyMatchType = "httproute"
-
-	// AccessControlPolicyMatchTypeGRPCRoute is the type used to represent the rate limit policy match type grpcroute
-	AccessControlPolicyMatchTypeGRPCRoute AccessControlPolicyMatchType = "grpcroute"
-)
-
-// FaultInjectionPolicyMatchType is the type used to represent the fault injection policy match type
-type FaultInjectionPolicyMatchType string
-
-const (
-	// FaultInjectionPolicyMatchTypePort is the type used to represent the fault injection policy match type port
-	//FaultInjectionPolicyMatchTypePort FaultInjectionPolicyMatchType = "port"
-
-	// FaultInjectionPolicyMatchTypeHostnames is the type used to represent the fault injection policy match type hostnames
-	FaultInjectionPolicyMatchTypeHostnames FaultInjectionPolicyMatchType = "hostnames"
-
-	// FaultInjectionPolicyMatchTypeHTTPRoute is the type used to represent the fault injection policy match type httproute
-	FaultInjectionPolicyMatchTypeHTTPRoute FaultInjectionPolicyMatchType = "httproute"
-
-	// FaultInjectionPolicyMatchTypeGRPCRoute is the type used to represent the fault injection policy match type grpcroute
-	FaultInjectionPolicyMatchTypeGRPCRoute FaultInjectionPolicyMatchType = "grpcroute"
-)
-
 type globalPolicyAttachments struct {
-	rateLimits      map[RateLimitPolicyMatchType][]gwpav1alpha1.RateLimitPolicy
-	accessControls  map[AccessControlPolicyMatchType][]gwpav1alpha1.AccessControlPolicy
-	faultInjections map[FaultInjectionPolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy
+	rateLimits      map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy
+	accessControls  map[gwpkg.PolicyMatchType][]gwpav1alpha1.AccessControlPolicy
+	faultInjections map[gwpkg.PolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy
 }
 
 type routePolicies struct {
@@ -288,25 +232,5 @@ var (
 const (
 	httpCodecScript    = "http/codec.js"
 	agentServiceScript = "extension/agent-service.js"
-)
-
-var (
-	gatewayGVK               = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIGatewayKind)
-	httpRouteGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), constants.GatewayAPIHTTPRouteKind)
-	tlsRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITLSRouteKind)
-	tcpRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPITCPRouteKind)
-	updRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIUDPRouteKind)
-	grpcRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), constants.GatewayAPIGRPCRouteKind)
-	secretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesSecretKind)
-	serviceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), constants.KubernetesServiceKind)
-	rateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RateLimitPolicyKind)
-	sessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.SessionStickyPolicyKind)
-	loadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.LoadBalancerPolicyKind)
-	circuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.CircuitBreakingPolicyKind)
-	accessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.AccessControlPolicyKind)
-	healthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.HealthCheckPolicyKind)
-	faultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.FaultInjectionPolicyKind)
-	upstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.UpstreamTLSPolicyKind)
-	retryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.RetryPolicyKind)
-	gatewayTLSPolicyGVK      = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), constants.GatewayTLSPolicyKind)
+	proxyTagScript     = "extension/proxy-tag.js"
 )

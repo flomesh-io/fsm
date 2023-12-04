@@ -31,10 +31,8 @@ fsm:
       fsmHealthcheck: fsm-healthcheck
       # -- fsm-interceptor's image name
       fsmInterceptor: fsm-interceptor
-      # -- fsm-consul-connector's image name
-      fsmConsulConnector: fsm-consul-connector
-      # -- fsm-eureka-connector's image name
-      fsmEurekaConnector: fsm-eureka-connector
+      # -- fsm-connector's image name
+      fsmConnector: fsm-connector
       # -- fsm-ingress's image name
       fsmIngress: fsm-ingress
       # -- fsm-gateway's image name
@@ -57,10 +55,8 @@ fsm:
       fsmHealthcheck: ""
       # -- fsm-interceptor's image digest
       fsmInterceptor: ""
-      # -- fsm-consul-connector's image digest
-      fsmConsulConnector: ""
-      # -- fsm-eureka-connector's image digest
-      fsmEurekaConnector: ""
+      # -- fsm-connector's image digest
+      fsmConnector: ""
       # -- fsm-ingress's image digest
       fsmIngress: ""
       # -- fsm-gateway's image digest
@@ -418,12 +414,6 @@ fsm:
   # -- Enable reconciler for FSM's CRDs and mutating webhook
   enableReconciler: false
 
-  # -- Deploy Consul Connector with FSM installation
-  deployConsulConnector: false
-
-  # -- Deploy Eureka Connector with FSM installation
-  deployEurekaConnector: false
-
   # -- Deploy Prometheus with FSM installation
   deployPrometheus: false
 
@@ -660,20 +650,81 @@ fsm:
   # -- FSM's cloud connector parameters
   cloudConnector:
     consul:
+      enable: false
       deriveNamespace: ""
       httpAddr: 127.0.0.1:8500
-      passingOnly: true
-      filterTag: ""
-      prefixTag: ""
-      suffixTag: ""
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterTag: ""
+        prefixTag: ""
+        suffixTag: ""
+      syncFromK8S:
+        enable: false
+        defaultSync: true
+        syncClusterIPServices: true
+        syncLoadBalancerEndpoints: false
+        nodePortSyncType: ExternalOnly
+        syncIngress: false
+        syncIngressLoadBalancerIPs: false
+        addServicePrefix: ""
+        addK8SNamespaceAsServiceSuffix: false
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
+        withGatewayAPI:
+          enable: false
+          via: ClusterIP
+        consulNodeName: k8s-sync
+        consulK8STag: k8s
+        consulEnableNamespaces: false
+        consulDestinationNamespace: default
+        consulEnableK8SNSMirroring: false
+        consulK8SNSMirroringPrefix: ""
+        consulCrossNamespaceACLPolicy: ""
+      syncToFgw:
+        enable: false
+        defaultSync: true
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
 
     eureka:
+      enable: false
       deriveNamespace: ""
-      httpAddr: 127.0.0.1:8500
-      passingOnly: true
-      filterTag: ""
-      prefixTag: ""
-      suffixTag: ""
+      httpAddr: 127.0.0.1:8761/eureka
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterMetadata: ""
+        prefixMetadata: ""
+        suffixMetadata: ""
+      syncFromK8S:
+        enable: false
+        defaultSync: true
+        syncClusterIPServices: true
+        syncLoadBalancerEndpoints: false
+        nodePortSyncType: ExternalOnly
+        syncIngress: false
+        syncIngressLoadBalancerIPs: false
+        addServicePrefix: ""
+        addK8SNamespaceAsServiceSuffix: false
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
+        withGatewayAPI:
+          enable: false
+          via: ClusterIP
+      syncToFgw:
+        enable: false
+        defaultSync: true
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
 
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
@@ -778,6 +829,8 @@ fsm:
     enableValidateTLSRouteHostnames: true
     # -- Enable Gateway Agent Service
     enableGatewayAgentService: false
+    # -- Enable Gateway proxy-tag header for remote host
+    enableGatewayProxyTag: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.
@@ -1048,3 +1101,12 @@ smi:
   # -- Enables validation of SMI Traffic Target
   validateTrafficTarget: true
 
+#
+# -- ClusterSet configuration
+clusterSet:
+  isManaged: false
+  region: default
+  zone: default
+  group: default
+  name: local
+  controlPlaneUID: ""
