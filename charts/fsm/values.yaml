@@ -659,6 +659,8 @@ fsm:
         filterTag: ""
         prefixTag: ""
         suffixTag: ""
+        withGatewayAPI:
+          enable: false
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -683,14 +685,6 @@ fsm:
         consulEnableK8SNSMirroring: false
         consulK8SNSMirroringPrefix: ""
         consulCrossNamespaceACLPolicy: ""
-      syncToFgw:
-        enable: false
-        defaultSync: true
-        allowK8sNamespaces:
-          - "*"
-        denyK8sNamespaces:
-          - ""
-
     eureka:
       enable: false
       deriveNamespace: ""
@@ -701,6 +695,8 @@ fsm:
         filterMetadata: ""
         prefixMetadata: ""
         suffixMetadata: ""
+        withGatewayAPI:
+          enable: false
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -718,14 +714,25 @@ fsm:
         withGatewayAPI:
           enable: false
           via: ClusterIP
+    machine:
+      enable: false
+      deriveNamespace: ""
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterLabel: ""
+        prefixLabel: ""
+        suffixLabel: ""
+        withGatewayAPI:
+          enable: false
+    gateway:
+      enable: false
       syncToFgw:
-        enable: false
         defaultSync: true
         allowK8sNamespaces:
           - "*"
         denyK8sNamespaces:
           - ""
-
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     # -- Sidecar injector's container resource parameters

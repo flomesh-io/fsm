@@ -46,6 +46,9 @@ type Endpoint struct {
 
 	// Path is a name with which a web service is accessed.
 	Path string `json:"path,omitempty"`
+
+	// ViaGw forward to a gateway's address.
+	ViaGw string `json:"viaGw,omitempty"`
 }
 
 func (ep Endpoint) String() string {

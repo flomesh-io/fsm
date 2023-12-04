@@ -7,6 +7,7 @@ package k8s
 import (
 	reflect "reflect"
 
+	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	identity "github.com/flomesh-io/fsm/pkg/identity"
 	models "github.com/flomesh-io/fsm/pkg/models"
 	service "github.com/flomesh-io/fsm/pkg/service"
@@ -112,6 +113,21 @@ func (mr *MockControllerMockRecorder) GetTargetPortForServicePort(arg0, arg1 int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetPortForServicePort", reflect.TypeOf((*MockController)(nil).GetTargetPortForServicePort), arg0, arg1)
 }
 
+// GetVmForProxy mocks base method.
+func (m *MockController) GetVmForProxy(arg0 models.Proxy) (*v1alpha1.VirtualMachine, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVmForProxy", arg0)
+	ret0, _ := ret[0].(*v1alpha1.VirtualMachine)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetVmForProxy indicates an expected call of GetVmForProxy.
+func (mr *MockControllerMockRecorder) GetVmForProxy(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVmForProxy", reflect.TypeOf((*MockController)(nil).GetVmForProxy), arg0)
+}
+
 // IsMonitoredNamespace mocks base method.
 func (m *MockController) IsMonitoredNamespace(arg0 string) bool {
 	m.ctrl.T.Helper()
@@ -196,6 +212,20 @@ func (m *MockController) ListServices() []*v1.Service {
 func (mr *MockControllerMockRecorder) ListServices() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*MockController)(nil).ListServices))
+}
+
+// ListVms mocks base method.
+func (m *MockController) ListVms() []*v1alpha1.VirtualMachine {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListVms")
+	ret0, _ := ret[0].([]*v1alpha1.VirtualMachine)
+	return ret0
+}
+
+// ListVms indicates an expected call of ListVms.
+func (mr *MockControllerMockRecorder) ListVms() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListVms", reflect.TypeOf((*MockController)(nil).ListVms))
 }
 
 // UpdateStatus mocks base method.

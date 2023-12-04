@@ -12,6 +12,9 @@ const (
 
 	//EurekaDiscoveryService defines eureka discovery service name
 	EurekaDiscoveryService = "eureka"
+
+	//MachineDiscoveryService defines machine discovery service name
+	MachineDiscoveryService = "machine"
 )
 
 const (
@@ -36,10 +39,13 @@ const (
 )
 
 const (
-	// AnnotationServiceSync is the key of the annotation that determines
-	// whether to sync the CatalogService resource or not. If this isn't set then
-	// the default based on the syncer configuration is chosen.
-	AnnotationServiceSync = "flomesh.io/service-sync"
+	// AnnotationServiceSyncK8sToCloud is the key of the annotation that determines
+	// whether to sync the k8s Service to Consul/Eureka.
+	AnnotationServiceSyncK8sToCloud = "flomesh.io/service-sync-k8s-to-cloud"
+
+	// AnnotationServiceSyncK8sToFgw is the key of the annotation that determines
+	// whether to sync the k8s Service to fsm gateway.
+	AnnotationServiceSyncK8sToFgw = "flomesh.io/service-sync-k8s-to-fgw"
 
 	// AnnotationServiceName is set to override the name of the service
 	// registered. By default this will be the name of the CatalogService resource.

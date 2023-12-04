@@ -64,6 +64,7 @@ spec:
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.filterTag}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.prefixTag}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.suffixTag}}",
+            "-sync-cloud-to-k8s-with-gateway-api={{.Values.fsm.cloudConnector.consul.syncToK8S.withGatewayAPI.enable}}",
             "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.consul.syncFromK8S.enable}}",
             "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.consul.syncFromK8S.defaultSync}}",
             "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncClusterIPServices}}",
@@ -85,25 +86,13 @@ spec:
             {{- end }}
             "-sync-k8s-to-cloud-with-gateway-api={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable}}",
             "-sync-k8s-to-cloud-with-gateway-api-via={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via}}",
-            "-sync-k8s-to-cloud-Consul-node-name={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulNodeName}}",
-            "-sync-k8s-to-cloud-Consul-k8s-tag={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8STag}}",
-            "-sync-k8s-to-cloud-Consul-enable-namespaces={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces}}",
-            "-sync-k8s-to-cloud-Consul-destination-namespace={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulDestinationNamespace}}",
-            "-sync-k8s-to-cloud-Consul-enable-k8s-namespace-mirroring={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring}}",
-            "-sync-k8s-to-cloud-Consul-k8s-namespace-mirroring-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix}}",
-            "-sync-k8s-to-cloud-Consul-cross-namespace-acl-policy={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy}}",
-            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.consul.syncToFgw.enable}}",
-            "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.consul.syncToFgw.defaultSync}}",
-            {{- if .Values.fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces }}
-            "-sync-k8s-to-fgw-allow-k8s-namespaces={{ . }}",
-            {{- end }}
-            {{- end }}
-            {{- if .Values.fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces }}
-            "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
-            {{- end }}
-            {{- end }}
+            "-sync-k8s-to-cloud-consul-node-name={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulNodeName}}",
+            "-sync-k8s-to-cloud-consul-k8s-tag={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8STag}}",
+            "-sync-k8s-to-cloud-consul-enable-namespaces={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces}}",
+            "-sync-k8s-to-cloud-consul-destination-namespace={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulDestinationNamespace}}",
+            "-sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring}}",
+            "-sync-k8s-to-cloud-consul-k8s-namespace-mirroring-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix}}",
+            "-sync-k8s-to-cloud-consul-cross-namespace-acl-policy={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy}}",
           ]
           resources:
             limits:
@@ -128,7 +117,7 @@ spec:
               port: 9091
           env:
             - name: CONTROLLER_SVC_NAME
-              value: fsm-controller
+              value: fsm-consul-connector
             # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-consul-connector to register events
             - name: CONNECTOR_POD_NAME
               valueFrom:

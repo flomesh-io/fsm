@@ -17,7 +17,11 @@ type ServiceIdentity string
 
 // New returns a new ServiceIdentity for the given name and namespace.
 func New(name, namespace string) ServiceIdentity {
-	return ServiceIdentity(fmt.Sprintf("%s.%s", name, namespace))
+	if len(name) > 0 {
+		return ServiceIdentity(fmt.Sprintf("%s.%s", name, namespace))
+	} else {
+		return ServiceIdentity(fmt.Sprintf("%s.%s", "default", namespace))
+	}
 }
 
 // FromPrincipal returns a new ServiceIdentity for the given servicePrincipal.

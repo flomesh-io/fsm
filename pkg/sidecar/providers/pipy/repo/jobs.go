@@ -9,6 +9,7 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -69,8 +70,8 @@ func (job *PipyConfGeneratorJob) Run() {
 	cataloger := s.catalog
 	pipyConf := new(PipyConf)
 
-	if proxy.PodMetadata != nil && len(proxy.PodMetadata.Namespace) > 0 {
-		metrics, _ := injector.IsMetricsEnabled(s.kubeController, proxy.PodMetadata.Namespace)
+	if proxy.Metadata != nil && len(proxy.Metadata.Namespace) > 0 {
+		metrics, _ := injector.IsMetricsEnabled(s.kubeController, proxy.Metadata.Namespace)
 		pipyConf.Metrics = metrics
 	}
 
@@ -78,7 +79,7 @@ func (job *PipyConfGeneratorJob) Run() {
 	features(s, proxy, pipyConf)
 	certs(s, proxy, pipyConf, proxyServices)
 	pluginSetV := plugin(cataloger, s, pipyConf, proxy)
-	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices)
+	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices, proxy)
 	outbound(cataloger, proxy.Identity, s, pipyConf, proxy)
 	egress(cataloger, proxy.Identity, s, pipyConf, proxy)
 	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
@@ -188,12 +189,12 @@ func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceI
 	return true
 }
 
-func inbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxyServices []service.MeshService) {
+func inbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxyServices []service.MeshService, proxy *pipy.Proxy) {
 	// Build inbound mesh route configurations. These route configurations allow
 	// the services associated with this proxy to accept traffic from downstream
 	// clients on allowed routes.
 	inboundTrafficPolicy := cataloger.GetInboundMeshTrafficPolicy(serviceIdentity, proxyServices)
-	generatePipyInboundTrafficPolicy(cataloger, serviceIdentity, pipyConf, inboundTrafficPolicy, s.certManager.GetTrustDomain())
+	generatePipyInboundTrafficPolicy(cataloger, serviceIdentity, pipyConf, inboundTrafficPolicy, s.certManager.GetTrustDomain(), proxy)
 	if len(proxyServices) > 0 {
 		for _, svc := range proxyServices {
 			if ingressTrafficPolicy, ingressErr := cataloger.GetIngressTrafficPolicy(svc); ingressErr == nil {
@@ -233,19 +234,39 @@ func plugin(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, prox
 		return
 	}
 
-	pod, err := s.kubeController.GetPodForProxy(proxy)
-	if err != nil {
-		log.Warn().Str("proxy", proxy.String()).Msg("Could not find pod for connecting proxy.")
-		return
-	}
+	var labelMap map[string]string
+	var ns *corev1.Namespace
 
-	ns := s.kubeController.GetNamespace(pod.Namespace)
-	if ns == nil {
-		log.Warn().Str("proxy", proxy.String()).Str("namespace", pod.Namespace).Msg("Could not find namespace for connecting proxy.")
+	if proxy.VM {
+		vm, err := s.kubeController.GetVmForProxy(proxy)
+		if err != nil {
+			log.Warn().Str("proxy", proxy.String()).Msg("Could not find VM for connecting proxy.")
+			return
+		}
+
+		ns = s.kubeController.GetNamespace(vm.Namespace)
+		if ns == nil {
+			log.Warn().Str("proxy", proxy.String()).Str("namespace", vm.Namespace).Msg("Could not find namespace for connecting proxy.")
+		}
+
+		labelMap = vm.Labels
+	} else {
+		pod, err := s.kubeController.GetPodForProxy(proxy)
+		if err != nil {
+			log.Warn().Str("proxy", proxy.String()).Msg("Could not find pod for connecting proxy.")
+			return
+		}
+
+		ns = s.kubeController.GetNamespace(pod.Namespace)
+		if ns == nil {
+			log.Warn().Str("proxy", proxy.String()).Str("namespace", pod.Namespace).Msg("Could not find namespace for connecting proxy.")
+		}
+
+		labelMap = pod.Labels
 	}
 
 	pluginSet, pluginPri := s.updatePlugins()
-	plugin2MountPoint2Config, mountPoint2Plugins := walkPluginChain(pluginChains, ns, pod, pluginSet, s, proxy)
+	plugin2MountPoint2Config, mountPoint2Plugins := walkPluginChain(pluginChains, ns, labelMap, pluginSet, s, proxy)
 	meshSvc2Plugin2MountPoint2Config := walkPluginConfig(cataloger, plugin2MountPoint2Config)
 
 	pipyConf.pluginPolicies = meshSvc2Plugin2MountPoint2Config
@@ -327,20 +348,20 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 }
 
 func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
-	if proxy.PodMetadata != nil {
-		if len(proxy.PodMetadata.StartupProbes) > 0 {
-			for idx := range proxy.PodMetadata.StartupProbes {
-				pipyConf.Spec.Probes.StartupProbes = append(pipyConf.Spec.Probes.StartupProbes, *proxy.PodMetadata.StartupProbes[idx])
+	if proxy.Metadata != nil {
+		if len(proxy.Metadata.StartupProbes) > 0 {
+			for idx := range proxy.Metadata.StartupProbes {
+				pipyConf.Spec.Probes.StartupProbes = append(pipyConf.Spec.Probes.StartupProbes, *proxy.Metadata.StartupProbes[idx])
 			}
 		}
-		if len(proxy.PodMetadata.LivenessProbes) > 0 {
-			for idx := range proxy.PodMetadata.LivenessProbes {
-				pipyConf.Spec.Probes.LivenessProbes = append(pipyConf.Spec.Probes.LivenessProbes, *proxy.PodMetadata.LivenessProbes[idx])
+		if len(proxy.Metadata.LivenessProbes) > 0 {
+			for idx := range proxy.Metadata.LivenessProbes {
+				pipyConf.Spec.Probes.LivenessProbes = append(pipyConf.Spec.Probes.LivenessProbes, *proxy.Metadata.LivenessProbes[idx])
 			}
 		}
-		if len(proxy.PodMetadata.ReadinessProbes) > 0 {
-			for idx := range proxy.PodMetadata.ReadinessProbes {
-				pipyConf.Spec.Probes.ReadinessProbes = append(pipyConf.Spec.Probes.ReadinessProbes, *proxy.PodMetadata.ReadinessProbes[idx])
+		if len(proxy.Metadata.ReadinessProbes) > 0 {
+			for idx := range proxy.Metadata.ReadinessProbes {
+				pipyConf.Spec.Probes.ReadinessProbes = append(pipyConf.Spec.Probes.ReadinessProbes, *proxy.Metadata.ReadinessProbes[idx])
 			}
 		}
 	}

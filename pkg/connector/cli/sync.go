@@ -16,10 +16,18 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 )
 
-func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, gatewayClient gwapi.Interface) {
+func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
 	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
-	sink := ctok.NewSink(ctx, kubeClient, gatewayClient, Cfg.FsmNamespace)
+	ctok.WithGatewayAPI(Cfg.C2K.FlagWithGatewayAPI.Enable)
+
+	if Cfg.C2K.FlagWithGatewayAPI.Enable {
+		viaAddr, viaPort := waitGateway(ctx, kubeClient)
+		ctok.WithGatewayViaAddr(viaAddr)
+		ctok.WithGatewayViaPort(viaPort)
+	}
+
+	sink := ctok.NewSink(ctx, kubeClient, Cfg.FsmNamespace)
 	source := &ctok.Source{
 		DiscClient:  discClient,
 		Domain:      Cfg.TrustDomain,
@@ -44,42 +52,9 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	ktoc.WithGatewayAPI(Cfg.K2C.FlagWithGatewayAPI.Enable)
 
 	if Cfg.K2C.FlagWithGatewayAPI.Enable {
-		for {
-			if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, fmt.Sprintf("fsm-gateway-%s", Cfg.FsmNamespace), metav1.GetOptions{}); err == nil {
-				if fgwSvc != nil {
-					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
-						len(fgwSvc.Spec.ExternalIPs) > 0 &&
-						len(fgwSvc.Spec.ExternalIPs[0]) > 0 &&
-						len(fgwSvc.Spec.Ports) > 0 &&
-						fgwSvc.Spec.Ports[0].Port > 0 {
-						ktoc.WithGatewayViaAddr(fgwSvc.Spec.ExternalIPs[0])
-						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
-						break
-					}
-					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
-						len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
-						len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 &&
-						len(fgwSvc.Spec.Ports) > 0 &&
-						fgwSvc.Spec.Ports[0].Port > 0 {
-						ktoc.WithGatewayViaAddr(fgwSvc.Status.LoadBalancer.Ingress[0].IP)
-						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
-						break
-					}
-					if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ClusterIP") &&
-						len(fgwSvc.Spec.ClusterIPs) > 0 &&
-						len(fgwSvc.Spec.ClusterIPs[0]) > 0 &&
-						len(fgwSvc.Spec.Ports) > 0 &&
-						fgwSvc.Spec.Ports[0].Port > 0 {
-						ktoc.WithGatewayViaAddr(fgwSvc.Spec.ClusterIPs[0])
-						ktoc.WithGatewayViaPort(fgwSvc.Spec.Ports[0].Port)
-						break
-					}
-				}
-			} else {
-				fmt.Println(err.Error())
-			}
-			time.Sleep(time.Second * 5)
-		}
+		viaAddr, viaPort := waitGateway(ctx, kubeClient)
+		ktoc.WithGatewayViaAddr(viaAddr)
+		ktoc.WithGatewayViaPort(viaPort)
 	}
 
 	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
@@ -166,4 +141,53 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClien
 	go syncer.Run(ctx, gwCtl, ctl)
 	go gwCtl.Run(ctx.Done())
 	go ctl.Run(ctx.Done())
+}
+
+func waitGateway(ctx context.Context, kubeClient kubernetes.Interface) (viaAddr string, viaPort int32) {
+	for {
+		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, fmt.Sprintf("fsm-gateway-%s", Cfg.FsmNamespace), metav1.GetOptions{}); err == nil {
+			if fgwSvc != nil {
+				if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
+					len(fgwSvc.Spec.ExternalIPs) > 0 &&
+					len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
+					if len(fgwSvc.Spec.Ports) > 0 {
+						for _, port := range fgwSvc.Spec.Ports {
+							viaAddr = fgwSvc.Spec.ExternalIPs[0]
+							viaPort = port.Port
+							return
+						}
+					}
+					log.Warn().Msgf("not find matched port[HTTP] from fsm gateway: fsm-gateway-%s", Cfg.FsmNamespace)
+				}
+				if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ExternalIP") &&
+					len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
+					len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
+					if len(fgwSvc.Spec.Ports) > 0 {
+						for _, port := range fgwSvc.Spec.Ports {
+							viaAddr = fgwSvc.Status.LoadBalancer.Ingress[0].IP
+							viaPort = port.Port
+							return
+						}
+					}
+					log.Warn().Msgf("not find matched port[HTTP] from fsm gateway: fsm-gateway-%s", Cfg.FsmNamespace)
+				}
+				if strings.EqualFold(Cfg.K2C.FlagWithGatewayAPI.Via, "ClusterIP") &&
+					len(fgwSvc.Spec.ClusterIPs) > 0 &&
+					len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
+					if len(fgwSvc.Spec.Ports) > 0 {
+						for _, port := range fgwSvc.Spec.Ports {
+							viaAddr = fgwSvc.Spec.ClusterIPs[0]
+							viaPort = port.Port
+							return
+						}
+					}
+					log.Warn().Msgf("not find matched port[HTTP] from fsm gateway: fsm-gateway-%s", Cfg.FsmNamespace)
+				}
+			}
+			log.Warn().Msgf("not find via ip from fsm gateway: fsm-gateway-%s", Cfg.FsmNamespace)
+		} else {
+			log.Warn().Err(err)
+		}
+		time.Sleep(time.Second * 5)
+	}
 }

@@ -9,6 +9,7 @@ import (
 	consul "github.com/hashicorp/consul/api"
 	eureka "github.com/hudl/fargo"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
@@ -113,6 +114,21 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 	as.Address = ins.IPAddr
 	as.Port = ins.Port
 	metadata := ins.Metadata.GetMap()
+	if len(metadata) > 0 {
+		as.Meta = make(map[string]interface{})
+		for k, v := range metadata {
+			as.Meta[k] = v
+		}
+	}
+}
+
+func (as *AgentService) fromVM(vm machinev1alpha1.VirtualMachine, svc machinev1alpha1.ServiceSpec) {
+	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
+	as.Service = svc.ServiceName
+	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
+	as.Address = vm.Spec.SidecarIP
+	as.Port = int(svc.Port)
+	metadata := vm.Labels
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {

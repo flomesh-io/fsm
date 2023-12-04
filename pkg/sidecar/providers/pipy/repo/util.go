@@ -21,7 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string) {
+func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string, proxy *pipy.Proxy) {
 	itp := pipyConf.newInboundTrafficPolicy()
 
 	for _, trafficMatch := range inboundPolicy.TrafficMatches {
@@ -113,10 +113,16 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 
 	for _, cluster := range inboundPolicy.ClustersConfigs {
 		clusterConfigs := itp.newClusterConfigs(ClusterName(cluster.Name))
-		address := Address(cluster.Address)
+
 		port := Port(cluster.Port)
 		weight := Weight(constants.ClusterWeightAcceptAll)
-		clusterConfigs.addWeightedEndpoint(address, port, weight)
+		if proxy.VM {
+			address := Address(proxy.MachineIP.String())
+			clusterConfigs.addWeightedEndpoint(address, port, weight)
+		} else {
+			address := Address(cluster.Address)
+			clusterConfigs.addWeightedEndpoint(address, port, weight)
+		}
 	}
 }
 
@@ -401,7 +407,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path)
+			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, upstreamEndpoint.ViaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
 					clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)

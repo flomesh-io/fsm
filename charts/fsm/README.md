@@ -122,15 +122,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
-| fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
-| fsm.cloudConnector.consul.syncToFgw.defaultSync | bool | `true` |  |
-| fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
-| fsm.cloudConnector.consul.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.prefixTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.suffixTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncToK8S.withGatewayAPI.enable | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.eureka.enable | bool | `false` |  |
@@ -148,15 +145,24 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
-| fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
-| fsm.cloudConnector.eureka.syncToFgw.defaultSync | bool | `true` |  |
-| fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
-| fsm.cloudConnector.eureka.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToK8S.withGatewayAPI.enable | bool | `false` |  |
+| fsm.cloudConnector.gateway.enable | bool | `false` |  |
+| fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.gateway.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.machine.enable | bool | `false` |  |
+| fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.machine.syncToK8S.filterLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.machine.syncToK8S.prefixLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.suffixLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.withGatewayAPI.enable | bool | `false` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |

@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
-	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -41,11 +40,10 @@ var (
 )
 
 // NewSink creates a new mesh sink
-func NewSink(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface, fsmNamespace string) *Sink {
+func NewSink(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string) *Sink {
 	sink := Sink{
 		Ctx:                ctx,
 		KubeClient:         kubeClient,
-		gatewayClient:      gatewayClient,
 		fsmNamespace:       fsmNamespace,
 		serviceKeyToName:   make(map[string]string),
 		serviceMapCache:    make(map[string]*apiv1.Service),
@@ -62,8 +60,7 @@ func NewSink(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient
 type Sink struct {
 	fsmNamespace string
 
-	KubeClient    kubernetes.Interface
-	gatewayClient gwapi.Interface
+	KubeClient kubernetes.Interface
 
 	MicroAggregator Aggregator
 
@@ -227,6 +224,15 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 		service := *servicePtr
 		if len(service.Annotations) > 0 {
 			endpoints.Labels[CloudServiceLabel] = service.Name
+
+			if len(endpoints.Annotations) == 0 {
+				endpoints.Annotations = make(map[string]string)
+			}
+
+			if withGatewayAPI {
+				endpoints.Annotations[constants.EndpointsViaGatewayAnnotation] = fmt.Sprintf("%s:%d", withGatewayViaAddr, withGatewayViaPort)
+			}
+
 			endpointSubset := apiv1.EndpointSubset{}
 			ported := false
 			for k := range service.Annotations {
@@ -253,9 +259,6 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 			}
 			if len(endpointSubset.Addresses) > 0 {
 				endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
-				if len(endpoints.Annotations) == 0 {
-					endpoints.Annotations = make(map[string]string)
-				}
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {

@@ -244,6 +244,22 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 			ready = false
 		}
 	}
+	allVms := kubeController.ListVms()
+	for _, vm := range allVms {
+		proxyUUID, err := GetProxyUUIDFromVm(vm)
+		if err != nil {
+			continue
+		}
+		proxy := proxyRegistry.GetConnectedProxy(proxyUUID)
+		if proxy == nil {
+			ready = false
+			continue
+		}
+		p.AllowedEndpoints[proxy.GetAddr()] = fmt.Sprintf("%s.%s", vm.Namespace, vm.Name)
+		if len(proxy.GetAddr()) == 0 {
+			ready = false
+		}
+	}
 	if p.Inbound == nil {
 		return ready
 	}
@@ -584,12 +600,12 @@ func (otp *ClusterConfigs) addWeightedEndpoint(address Address, port Port, weigh
 	otp.Endpoints.addWeightedEndpoint(address, port, weight)
 }
 
-func (otp *ClusterConfigs) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath string) {
+func (otp *ClusterConfigs) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
 	if otp.Endpoints == nil {
 		weightedEndpoints := make(WeightedEndpoints)
 		otp.Endpoints = &weightedEndpoints
 	}
-	otp.Endpoints.addWeightedZoneEndpoint(address, port, weight, cluster, lbType, contextPath)
+	otp.Endpoints.addWeightedZoneEndpoint(address, port, weight, cluster, lbType, contextPath, viaGw)
 }
 
 func (wes *WeightedEndpoints) addWeightedEndpoint(address Address, port Port, weight Weight) {
@@ -606,7 +622,7 @@ func (wes *WeightedEndpoints) addWeightedEndpoint(address Address, port Port, we
 	}
 }
 
-func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath string) {
+func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
 	if addrWithPort.MatchString(string(address)) {
 		httpHostPort := HTTPHostPort(address)
 		(*wes)[httpHostPort] = &WeightedZoneEndpoint{
@@ -614,6 +630,7 @@ func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port
 			Cluster:     cluster,
 			LBType:      lbType,
 			ContextPath: contextPath,
+			ViaGateway:  viaGw,
 		}
 	} else {
 		httpHostPort := HTTPHostPort(fmt.Sprintf("%s:%d", address, port))
@@ -622,6 +639,7 @@ func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port
 			Cluster:     cluster,
 			LBType:      lbType,
 			ContextPath: contextPath,
+			ViaGateway:  viaGw,
 		}
 	}
 }

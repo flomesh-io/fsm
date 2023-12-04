@@ -10,6 +10,9 @@ import (
 
 var (
 	syncCloudNamespace string
+	withGatewayAPI     bool
+	withGatewayViaAddr string
+	withGatewayViaPort int32
 )
 
 // SetSyncCloudNamespace sets sync namespace
@@ -36,4 +39,19 @@ func (addr MicroEndpointAddr) To4() net.IP {
 // If ip is not an IP address (it is the wrong length), To16 returns nil.
 func (addr MicroEndpointAddr) To16() net.IP {
 	return net.ParseIP(string(addr)).To16()
+}
+
+// WithGatewayAPI sets enable or disable
+func WithGatewayAPI(enable bool) {
+	withGatewayAPI = enable
+}
+
+// WithGatewayViaAddr sets via addr
+func WithGatewayViaAddr(addr string) {
+	withGatewayViaAddr = addr
+}
+
+// WithGatewayViaPort sets via port
+func WithGatewayViaPort(port int32) {
+	withGatewayViaPort = port
 }

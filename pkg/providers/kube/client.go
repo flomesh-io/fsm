@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -45,6 +46,10 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 
 	var endpoints []endpoint.Endpoint
 	for _, kubernetesEndpoint := range kubernetesEndpoints.Subsets {
+		viaGateway := ""
+		if len(kubernetesEndpoints.Annotations) > 0 {
+			viaGateway = kubernetesEndpoints.Annotations[constants.EndpointsViaGatewayAnnotation]
+		}
 		for _, port := range kubernetesEndpoint.Ports {
 			// If a TargetPort is specified for the service, filter the endpoint by this port.
 			// This is required to ensure we do not attempt to filter the endpoints when the endpoints
@@ -64,8 +69,9 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					continue
 				}
 				ept := endpoint.Endpoint{
-					IP:   ip,
-					Port: endpoint.Port(port.Port),
+					IP:    ip,
+					Port:  endpoint.Port(port.Port),
+					ViaGw: viaGateway,
 				}
 				endpoints = append(endpoints, ept)
 			}
@@ -84,6 +90,7 @@ func (c *client) ListEndpointsForIdentity(serviceIdentity identity.ServiceIdenti
 	log.Trace().Msgf("[%s] (ListEndpointsForIdentity) Getting Endpoints for service account %s on Kubernetes", c.GetID(), sa)
 
 	var endpoints []endpoint.Endpoint
+
 	for _, pod := range c.kubeController.ListPods() {
 		if pod.Namespace != sa.Namespace {
 			continue
@@ -101,6 +108,23 @@ func (c *client) ListEndpointsForIdentity(serviceIdentity identity.ServiceIdenti
 			ept := endpoint.Endpoint{IP: ip}
 			endpoints = append(endpoints, ept)
 		}
+	}
+
+	for _, vm := range c.kubeController.ListVms() {
+		if vm.Namespace != sa.Namespace {
+			continue
+		}
+		if vm.Spec.ServiceAccountName != sa.Name {
+			continue
+		}
+
+		ip := net.ParseIP(vm.Spec.SidecarIP)
+		if ip == nil {
+			log.Error().Msgf("[%s] Error parsing IP address %s", c.GetID(), vm.Spec.SidecarIP)
+			break
+		}
+		ept := endpoint.Endpoint{IP: ip}
+		endpoints = append(endpoints, ept)
 	}
 
 	log.Trace().Msgf("[%s][ListEndpointsForIdentity] Endpoints for service identity (serviceAccount=%s) %s: %+v", c.GetID(), serviceIdentity, sa, endpoints)
@@ -126,6 +150,24 @@ func (c *client) GetServicesForServiceIdentity(svcIdentity identity.ServiceIdent
 
 		podLabels := pod.ObjectMeta.Labels
 		meshServicesForPod := c.getServicesByLabels(podLabels, pod.Namespace)
+		for _, svc := range meshServicesForPod {
+			if added := svcSet.Add(svc); added {
+				meshServices = append(meshServices, svc)
+			}
+		}
+	}
+
+	for _, vm := range c.kubeController.ListVms() {
+		if vm.Namespace != svcAccount.Namespace {
+			continue
+		}
+
+		if vm.Spec.ServiceAccountName != svcAccount.Name {
+			continue
+		}
+
+		podLabels := vm.ObjectMeta.Labels
+		meshServicesForPod := c.getServicesByLabels(podLabels, vm.Namespace)
 		for _, svc := range meshServicesForPod {
 			if added := svcSet.Add(svc); added {
 				meshServices = append(meshServices, svc)
