@@ -10,6 +10,28 @@
 
   serviceHandlers = new algo.Cache(makeServiceHandler),
 
+  resolvVar = val => (
+    val?.startsWith('$') ? (
+      (
+        pos = val.indexOf('_'),
+        name,
+        member,
+        content = val,
+      ) => (
+        (pos > 0) && (
+          name = val.substring(1, pos),
+          member = val.substring(pos + 1),
+          (name === 'http') && (
+            content = __http?.headers?.[member] || __http?.[member] || val
+          ) || (name === 'consumer') && (
+            content = __consumer?.[member] || val
+          )
+        ),
+        content
+      )
+    )() : val
+  ),
+
 ) => pipy({
   _xff: null,
   _serviceName: null,
@@ -21,6 +43,7 @@
 })
 
 .import({
+  __http: 'http',
   __route: 'route',
   __root: 'web-server',
   __consumer: 'consumer',
@@ -32,6 +55,14 @@
     __route?.config?.EnableHeadersAuthorization && (
       (!__consumer || !__consumer?.['Headers-Authorization']) ? (_unauthorized = true) : (_unauthorized = false)
     ),
+    __route?.virtualService ? (
+      _serviceName = resolvVar(__route.virtualService),
+      !(__service = serviceHandlers.get(_serviceName)) && config?.Services && (
+        config.Services[_serviceName] = { "Endpoints": { [_serviceName]: { "Weight": 1 } } },
+        serviceHandlers.remove(_serviceName),
+        __service = serviceHandlers.get(_serviceName)
+      )
+    ) :
     __route?.serverRoot ? (
       __root = __route.serverRoot
     ) : (
