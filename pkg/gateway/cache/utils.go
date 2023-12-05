@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/utils"
+
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"golang.org/x/exp/slices"
@@ -20,7 +22,7 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
@@ -111,20 +113,20 @@ func allowedListeners(
 	return allowedListeners
 }
 
-func httpPathMatchType(matchType *gwv1beta1.PathMatchType) routecfg.MatchType {
+func httpPathMatchType(matchType *gwv1beta1.PathMatchType) fgw.MatchType {
 	if matchType == nil {
-		return routecfg.MatchTypePrefix
+		return fgw.MatchTypePrefix
 	}
 
 	switch *matchType {
 	case gwv1beta1.PathMatchPathPrefix:
-		return routecfg.MatchTypePrefix
+		return fgw.MatchTypePrefix
 	case gwv1beta1.PathMatchExact:
-		return routecfg.MatchTypeExact
+		return fgw.MatchTypeExact
 	case gwv1beta1.PathMatchRegularExpression:
-		return routecfg.MatchTypeRegex
+		return fgw.MatchTypeRegex
 	default:
-		return routecfg.MatchTypePrefix
+		return fgw.MatchTypePrefix
 	}
 }
 
@@ -136,7 +138,7 @@ func httpPath(value *string) string {
 	return *value
 }
 
-func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map[string]string {
+func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -154,20 +156,20 @@ func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map[str
 		}
 	}
 
-	headers := make(map[routecfg.MatchType]map[string]string)
+	headers := make(map[fgw.MatchType]map[string]string)
 
 	if len(exact) > 0 {
-		headers[routecfg.MatchTypeExact] = exact
+		headers[fgw.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		headers[routecfg.MatchTypeRegex] = regex
+		headers[fgw.MatchTypeRegex] = regex
 	}
 
 	return headers
 }
 
-func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map[string]string {
+func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -185,34 +187,34 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[routecfg.MatchType]map
 		}
 	}
 
-	params := make(map[routecfg.MatchType]map[string]string)
+	params := make(map[fgw.MatchType]map[string]string)
 	if len(exact) > 0 {
-		params[routecfg.MatchTypeExact] = exact
+		params[fgw.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		params[routecfg.MatchTypeRegex] = regex
+		params[fgw.MatchTypeRegex] = regex
 	}
 
 	return params
 }
 
-func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) routecfg.MatchType {
+func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) fgw.MatchType {
 	if matchType == nil {
-		return routecfg.MatchTypeExact
+		return fgw.MatchTypeExact
 	}
 
 	switch *matchType {
 	case gwv1alpha2.GRPCMethodMatchExact:
-		return routecfg.MatchTypeExact
+		return fgw.MatchTypeExact
 	case gwv1alpha2.GRPCMethodMatchRegularExpression:
-		return routecfg.MatchTypeRegex
+		return fgw.MatchTypeRegex
 	default:
-		return routecfg.MatchTypeExact
+		return fgw.MatchTypeExact
 	}
 }
 
-func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[routecfg.MatchType]map[string]string {
+func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -230,24 +232,24 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[routecfg.MatchType]map[st
 		}
 	}
 
-	headers := make(map[routecfg.MatchType]map[string]string)
+	headers := make(map[fgw.MatchType]map[string]string)
 
 	if len(exact) > 0 {
-		headers[routecfg.MatchTypeExact] = exact
+		headers[fgw.MatchTypeExact] = exact
 	}
 
 	if len(regex) > 0 {
-		headers[routecfg.MatchTypeRegex] = regex
+		headers[fgw.MatchTypeRegex] = regex
 	}
 
 	return headers
 }
 
-func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs string) *routecfg.ServicePortName {
+func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs string) *fgw.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
 	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
 		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
-		return &routecfg.ServicePortName{
+		return &fgw.ServicePortName{
 			NamespacedName: types.NamespacedName{
 				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
@@ -259,11 +261,11 @@ func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs
 	return nil
 }
 
-func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs string, port int32) *routecfg.ServicePortName {
+func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs string, port int32) *fgw.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
 	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
 		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
-		return &routecfg.ServicePortName{
+		return &fgw.ServicePortName{
 			NamespacedName: types.NamespacedName{
 				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
 				Name:      string(ref.Name),
@@ -299,8 +301,8 @@ func backendWeight(bk gwv1beta1.BackendRef) int32 {
 	return 1
 }
 
-func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) routecfg.L7RouteRule {
-	mergedRule := routecfg.L7RouteRule{}
+func mergeL7RouteRule(rule1 fgw.L7RouteRule, rule2 fgw.L7RouteRule) fgw.L7RouteRule {
+	mergedRule := fgw.L7RouteRule{}
 
 	for hostname, rule := range rule1 {
 		mergedRule[hostname] = rule
@@ -310,9 +312,9 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 		if r1, exists := mergedRule[hostname]; exists {
 			// can only merge same type of route into one hostname
 			switch r1 := r1.(type) {
-			case *routecfg.GRPCRouteRuleSpec:
+			case *fgw.GRPCRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case *routecfg.GRPCRouteRuleSpec:
+				case *fgw.GRPCRouteRuleSpec:
 					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
 						continue
 					}
@@ -323,15 +325,16 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 						continue
 					}
 
-					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Matches = mergeGRPCTrafficMatches(r1.Matches, r2.Matches)
 					r1.Sort()
+
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
 				}
-			case *routecfg.HTTPRouteRuleSpec:
+			case *fgw.HTTPRouteRuleSpec:
 				switch r2 := rule.(type) {
-				case *routecfg.HTTPRouteRuleSpec:
+				case *fgw.HTTPRouteRuleSpec:
 					if !reflect.DeepEqual(r1.RateLimit, r2.RateLimit) {
 						continue
 					}
@@ -342,8 +345,9 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 						continue
 					}
 
-					r1.Matches = append(r1.Matches, r2.Matches...)
+					r1.Matches = mergeHTTPTrafficMatches(r1.Matches, r2.Matches)
 					r1.Sort()
+
 					mergedRule[hostname] = r1
 				default:
 					log.Error().Msgf("%s has been already mapped to RouteRule[%s] %v, current RouteRule %v will be dropped.", hostname, r1.RouteType, r1, r2)
@@ -355,6 +359,105 @@ func mergeL7RouteRule(rule1 routecfg.L7RouteRule, rule2 routecfg.L7RouteRule) ro
 	}
 
 	return mergedRule
+}
+
+func mergeHTTPTrafficMatches(matches1 []fgw.HTTPTrafficMatch, matches2 []fgw.HTTPTrafficMatch) []fgw.HTTPTrafficMatch {
+	hashmap := make(map[string]fgw.HTTPTrafficMatch)
+
+	for _, m1 := range matches1 {
+		hashmap[httpTrafficMatchHash(m1)] = m1
+	}
+
+	for _, m2 := range matches2 {
+		h := httpTrafficMatchHash(m2)
+
+		if m1, exists := hashmap[h]; exists {
+			m1.BackendService = mergeBackendService(m1.BackendService, m2.BackendService)
+			hashmap[h] = m1
+			continue
+		}
+
+		hashmap[h] = m2
+	}
+
+	mergedMatches := make([]fgw.HTTPTrafficMatch, 0)
+	for _, m := range hashmap {
+		mergedMatches = append(mergedMatches, m)
+	}
+
+	return mergedMatches
+}
+
+func httpTrafficMatchHash(m fgw.HTTPTrafficMatch) string {
+	return utils.SimpleHash(&fgw.HTTPTrafficMatch{
+		Path:               m.Path,
+		Headers:            m.Headers,
+		Methods:            m.Methods,
+		RequestParams:      m.RequestParams,
+		RateLimit:          m.RateLimit,
+		AccessControlLists: m.AccessControlLists,
+		FaultInjection:     m.FaultInjection,
+		Filters:            m.Filters,
+	})
+}
+
+func mergeGRPCTrafficMatches(matches1 []fgw.GRPCTrafficMatch, matches2 []fgw.GRPCTrafficMatch) []fgw.GRPCTrafficMatch {
+	hashmap := make(map[string]fgw.GRPCTrafficMatch)
+
+	for _, m1 := range matches1 {
+		hashmap[grpcTrafficMatchHash(m1)] = m1
+	}
+
+	for _, m2 := range matches2 {
+		h := grpcTrafficMatchHash(m2)
+
+		if m1, exists := hashmap[h]; exists {
+			m1.BackendService = mergeBackendService(m1.BackendService, m2.BackendService)
+			hashmap[h] = m1
+			continue
+		}
+
+		hashmap[h] = m2
+	}
+
+	mergedMatches := make([]fgw.GRPCTrafficMatch, 0)
+	for _, m := range hashmap {
+		mergedMatches = append(mergedMatches, m)
+	}
+
+	return mergedMatches
+}
+
+func grpcTrafficMatchHash(m fgw.GRPCTrafficMatch) string {
+	return utils.SimpleHash(&fgw.GRPCTrafficMatch{
+		Headers:            m.Headers,
+		Method:             m.Method,
+		RateLimit:          m.RateLimit,
+		AccessControlLists: m.AccessControlLists,
+		FaultInjection:     m.FaultInjection,
+		Filters:            m.Filters,
+	})
+}
+
+func mergeBackendService(bs1 map[string]fgw.BackendServiceConfig, bs2 map[string]fgw.BackendServiceConfig) map[string]fgw.BackendServiceConfig {
+	services := make(map[string]fgw.BackendServiceConfig)
+
+	for k, c := range bs1 {
+		services[k] = c
+	}
+
+	for k, c2 := range bs2 {
+		if c1, exists := services[k]; exists {
+			if !reflect.DeepEqual(c1, c2) {
+				log.Error().Msgf("BackendService %s has been already mapped to %v, current %v will be dropped.", k, c1, c2)
+				continue
+			}
+		}
+
+		services[k] = c2
+	}
+
+	return services
 }
 
 //lint:ignore U1000 ignore unused
@@ -433,11 +536,11 @@ func getDefaultPort(svcPort corev1.ServicePort) int32 {
 	return svcPort.Port
 }
 
-func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) routecfg.Filter {
-	result := routecfg.HTTPRouteFilter{Type: filter.Type}
+func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
+	result := fgw.HTTPRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
-		result.RequestHeaderModifier = &routecfg.HTTPHeaderFilter{
+		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
 			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
 			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
 			Remove: filter.RequestHeaderModifier.Remove,
@@ -445,7 +548,7 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, se
 	}
 
 	if filter.ResponseHeaderModifier != nil {
-		result.ResponseHeaderModifier = &routecfg.HTTPHeaderFilter{
+		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
 			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
 			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
 			Remove: filter.ResponseHeaderModifier.Remove,
@@ -453,7 +556,7 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, se
 	}
 
 	if filter.RequestRedirect != nil {
-		result.RequestRedirect = &routecfg.HTTPRequestRedirectFilter{
+		result.RequestRedirect = &fgw.HTTPRequestRedirectFilter{
 			Scheme:     filter.RequestRedirect.Scheme,
 			Hostname:   toFSMHostname(filter.RequestRedirect.Hostname),
 			Path:       toFSMHTTPPathModifier(filter.RequestRedirect.Path),
@@ -463,7 +566,7 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, se
 	}
 
 	if filter.URLRewrite != nil {
-		result.URLRewrite = &routecfg.HTTPURLRewriteFilter{
+		result.URLRewrite = &fgw.HTTPURLRewriteFilter{
 			Hostname: toFSMHostname(filter.URLRewrite.Hostname),
 			Path:     toFSMHTTPPathModifier(filter.URLRewrite.Path),
 		}
@@ -471,7 +574,7 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, se
 
 	if filter.RequestMirror != nil {
 		if svcPort := backendRefToServicePortName(filter.RequestMirror.BackendRef, defaultNs); svcPort != nil {
-			result.RequestMirror = &routecfg.HTTPRequestMirrorFilter{
+			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
 				BackendService: svcPort.String(),
 			}
 
@@ -489,11 +592,11 @@ func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, se
 	return result
 }
 
-func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, services map[string]serviceInfo) routecfg.Filter {
-	result := routecfg.GRPCRouteFilter{Type: filter.Type}
+func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
+	result := fgw.GRPCRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
-		result.RequestHeaderModifier = &routecfg.HTTPHeaderFilter{
+		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
 			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
 			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
 			Remove: filter.RequestHeaderModifier.Remove,
@@ -501,7 +604,7 @@ func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, s
 	}
 
 	if filter.ResponseHeaderModifier != nil {
-		result.ResponseHeaderModifier = &routecfg.HTTPHeaderFilter{
+		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
 			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
 			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
 			Remove: filter.ResponseHeaderModifier.Remove,
@@ -510,7 +613,7 @@ func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, s
 
 	if filter.RequestMirror != nil {
 		if svcPort := backendRefToServicePortName(filter.RequestMirror.BackendRef, defaultNs); svcPort != nil {
-			result.RequestMirror = &routecfg.HTTPRequestMirrorFilter{
+			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
 				BackendService: svcPort.String(),
 			}
 
@@ -528,12 +631,12 @@ func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, s
 	return result
 }
 
-func toFSMHTTPPathModifier(path *gwv1beta1.HTTPPathModifier) *routecfg.HTTPPathModifier {
+func toFSMHTTPPathModifier(path *gwv1beta1.HTTPPathModifier) *fgw.HTTPPathModifier {
 	if path == nil {
 		return nil
 	}
 
-	return &routecfg.HTTPPathModifier{
+	return &fgw.HTTPPathModifier{
 		Type:               path.Type,
 		ReplaceFullPath:    path.ReplaceFullPath,
 		ReplacePrefixMatch: path.ReplacePrefixMatch,
@@ -548,14 +651,14 @@ func toFSMHostname(hostname *gwv1beta1.PreciseHostname) *string {
 	return pointer.String(string(*hostname))
 }
 
-func toFSMHTTPHeaders(headers []gwv1beta1.HTTPHeader) []routecfg.HTTPHeader {
+func toFSMHTTPHeaders(headers []gwv1beta1.HTTPHeader) []fgw.HTTPHeader {
 	if len(headers) == 0 {
 		return nil
 	}
 
-	results := make([]routecfg.HTTPHeader, 0)
+	results := make([]fgw.HTTPHeader, 0)
 	for _, h := range headers {
-		results = append(results, routecfg.HTTPHeader{
+		results = append(results, fgw.HTTPHeader{
 			Name:  string(h.Name),
 			Value: h.Value,
 		})

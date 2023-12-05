@@ -4,12 +4,12 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processUDPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, udpRoute *gwv1alpha2.UDPRoute, rules map[int32]routecfg.RouteRule) {
+func processUDPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, udpRoute *gwv1alpha2.UDPRoute, rules map[int32]fgw.RouteRule) {
 	for _, ref := range udpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -41,8 +41,8 @@ func processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]servi
 	}
 }
 
-func generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) routecfg.RouteRule {
-	backends := routecfg.UDPRouteRule{}
+func generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
+	backends := fgw.UDPRouteRule{}
 
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {

@@ -4,12 +4,12 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]routecfg.RouteRule) {
+func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -44,7 +44,7 @@ func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 				continue
 			}
 
-			tlsRule := routecfg.TLSPassthroughRouteRule{}
+			tlsRule := fgw.TLSPassthroughRouteRule{}
 			for _, hostname := range hostnames {
 				if target := generateTLSPassthroughRouteCfg(tlsRoute); target != nil {
 					tlsRule[hostname] = *target
@@ -60,8 +60,8 @@ func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
 	// DO nothing for now
 }
 
-func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) routecfg.TLSBackendService {
-	backends := routecfg.TLSBackendService{}
+func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
+	backends := fgw.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
