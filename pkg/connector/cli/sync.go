@@ -185,7 +185,7 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, viaA
 							}
 						}
 					}
-					log.Warn().Msgf("not find matched port[HTTP:%s] from fsm gateway: %s", viaPort, gatewaySvcName)
+					log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
 				}
 				if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
 					len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
