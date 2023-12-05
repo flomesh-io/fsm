@@ -108,6 +108,27 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
+	ktog.WithGatewayIngressHTTPPort(int32(Cfg.K2G.FlagIngress.HTTPPort))
+	ktog.WithGatewayIngressGRPCPort(int32(Cfg.K2G.FlagIngress.GRPCPort))
+	ktog.WithGatewayEgressHTTPPort(int32(Cfg.K2G.FlagEgress.HTTPPort))
+	ktog.WithGatewayEgressGRPCPort(int32(Cfg.K2G.FlagEgress.GRPCPort))
+
+	if Cfg.K2G.FlagIngress.HTTPPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagIngress.HTTPPort))
+	}
+
+	if Cfg.K2G.FlagEgress.HTTPPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagEgress.HTTPPort))
+	}
+
+	if Cfg.K2G.FlagIngress.GRPCPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagIngress.GRPCPort))
+	}
+
+	if Cfg.K2G.FlagEgress.GRPCPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagEgress.GRPCPort))
+	}
+
 	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
 	denySet := ToSet(Cfg.K2G.FlagDenyK8SNamespaces)
 

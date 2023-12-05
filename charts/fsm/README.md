@@ -159,6 +159,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
 | fsm.cloudConnector.gateway.syncToFgw.defaultSync | bool | `true` |  |
 | fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.gateway.syncToFgw.egress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.syncToFgw.egress.httpPort | int | `0` |  |
+| fsm.cloudConnector.gateway.syncToFgw.ingress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.syncToFgw.ingress.httpPort | int | `0` |  |
 | fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.machine.enable | bool | `false` |  |
 | fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |

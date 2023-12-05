@@ -105,9 +105,17 @@ type K2CCfg struct {
 	FlagWithGatewayIngress ViaFgwIngressCfg
 }
 
+type ProtocolPortCfg struct {
+	HTTPPort uint
+	GRPCPort uint
+}
+
 type K2GCfg struct {
 	FlagDefaultSync bool
 	FlagSyncPeriod  time.Duration
+
+	FlagIngress ProtocolPortCfg
+	FlagEgress  ProtocolPortCfg
 
 	FlagAllowK8SNamespaces []string // K8s namespaces to explicitly inject
 	FlagDenyK8SNamespaces  []string // K8s namespaces to deny injection (has precedence)
@@ -152,7 +160,7 @@ func init() {
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
 	flags.BoolVar(&Cfg.C2K.FlagWithGatewayEgress.Enable, "sync-cloud-to-k8s-with-gateway-egress", false, "with gateway api")
-	flags.UintVar(&Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort, "sync-cloud-to-k8s-with-gateway-egress-via-egress-port", 10090,
+	flags.UintVar(&Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort, "sync-cloud-to-k8s-with-gateway-egress-via-egress-port", 0,
 		"with gateway api via egress port")
 
 	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
@@ -194,7 +202,7 @@ func init() {
 	flags.BoolVar(&Cfg.K2C.FlagWithGatewayIngress.Enable, "sync-k8s-to-cloud-with-gateway-ingress", false, "with gateway api")
 	flags.StringVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressType, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-type", "ClusterIP",
 		"with gateway api via ingress ClusterIP/ExternalIP")
-	flags.UintVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-port", 10080,
+	flags.UintVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-port", 0,
 		"with gateway api via ingress port")
 
 	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-consul-node-name", "k8s-sync",
@@ -224,6 +232,10 @@ func init() {
 		"The interval to perform syncing operations creating cloud services, formatted "+
 			"as a time.Duration. All changes are merged and write calls are only made "+
 			"on this interval. Defaults to 5 seconds (5s).")
+	flags.UintVar(&Cfg.K2G.FlagIngress.HTTPPort, "sync-k8s-to-fgw-ingress-http-port", 0, "ingress http port")
+	flags.UintVar(&Cfg.K2G.FlagIngress.GRPCPort, "sync-k8s-to-fgw-ingress-grpc-port", 0, "ingress grpc port")
+	flags.UintVar(&Cfg.K2G.FlagEgress.HTTPPort, "sync-k8s-to-fgw-egress-http-port", 0, "egress http port")
+	flags.UintVar(&Cfg.K2G.FlagEgress.GRPCPort, "sync-k8s-to-fgw-egress-grpc-port", 0, "egress grpc port")
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagAllowK8SNamespaces), "sync-k8s-to-fgw-allow-k8s-namespaces",
 		"K8s namespaces to explicitly allow. May be specified multiple times.")
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",

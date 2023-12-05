@@ -734,6 +734,12 @@ fsm:
       enable: false
       syncToFgw:
         defaultSync: true
+        ingress:
+          httpPort: 0
+          grpcPort: 0
+        egress:
+          httpPort: 0
+          grpcPort: 0
         allowK8sNamespaces:
           - "*"
         denyK8sNamespaces:

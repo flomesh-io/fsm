@@ -2121,6 +2121,8 @@
                           "title": "The syncToFgw schema",
                           "required": [
                             "defaultSync",
+                            "ingress",
+                            "egress",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces"
                           ],
@@ -2130,6 +2132,72 @@
                               "type": "boolean",
                               "title": "Default Sync",
                               "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
+                            },
+                            "ingress": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress",
+                              "type": "object",
+                              "title": "Ingress schema",
+                              "required": [
+                                "httpPort",
+                                "grpcPort"
+                              ],
+                              "properties": {
+                                "httpPort": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress/properties/httpPort",
+                                  "type": "integer",
+                                  "title": "HTTP Port",
+                                  "description": "HTTP Port",
+                                  "minimum": 0,
+                                  "maximum": 65535,
+                                  "examples": [
+                                    30514
+                                  ]
+                                },
+                                "grpcPort": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress/properties/grpcPort",
+                                  "type": "integer",
+                                  "title": "GRPC Port",
+                                  "description": "GRPC Port",
+                                  "minimum": 0,
+                                  "maximum": 65535,
+                                  "examples": [
+                                    30514
+                                  ]
+                                }
+                              }
+                            },
+                            "egress": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress",
+                              "type": "object",
+                              "title": "Egress schema",
+                              "required": [
+                                "httpPort",
+                                "grpcPort"
+                              ],
+                              "properties": {
+                                "httpPort": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress/properties/httpPort",
+                                  "type": "integer",
+                                  "title": "HTTP Port",
+                                  "description": "HTTP Port",
+                                  "minimum": 0,
+                                  "maximum": 65535,
+                                  "examples": [
+                                    30514
+                                  ]
+                                },
+                                "grpcPort": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress/properties/grpcPort",
+                                  "type": "integer",
+                                  "title": "GRPC Port",
+                                  "description": "GRPC Port",
+                                  "minimum": 0,
+                                  "maximum": 65535,
+                                  "examples": [
+                                    30514
+                                  ]
+                                }
+                              }
                             },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/allowK8sNamespaces",
