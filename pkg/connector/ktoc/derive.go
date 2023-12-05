@@ -2,9 +2,10 @@ package ktoc
 
 var (
 	syncCloudNamespace string
-	withGatewayAPI     bool
-	withGatewayViaAddr string
-	withGatewayViaPort int32
+
+	withGatewayIngress     bool
+	withGatewayIngressAddr string
+	withGatewayIngressPort int32
 )
 
 // SetSyncCloudNamespace sets sync namespace
@@ -12,17 +13,17 @@ func SetSyncCloudNamespace(ns string) {
 	syncCloudNamespace = ns
 }
 
-// WithGatewayAPI sets enable or disable
-func WithGatewayAPI(enable bool) {
-	withGatewayAPI = enable
+// WithGatewayIngress sets enable or disable
+func WithGatewayIngress(enable bool) {
+	withGatewayIngress = enable
 }
 
-// WithGatewayViaAddr sets via addr
-func WithGatewayViaAddr(addr string) {
-	withGatewayViaAddr = addr
+// WithGatewayIngressAddr sets via addr
+func WithGatewayIngressAddr(addr string) {
+	withGatewayIngressAddr = addr
 }
 
-// WithGatewayViaPort sets via port
-func WithGatewayViaPort(port int32) {
-	withGatewayViaPort = port
+// WithGatewayIngressPort sets via port
+func WithGatewayIngressPort(port int32) {
+	withGatewayIngressPort = port
 }

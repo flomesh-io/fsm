@@ -1,9 +1,8 @@
 package connector
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
+	"strings"
 )
 
 const (
@@ -24,7 +23,7 @@ const (
 
 var (
 	// ServiceSourceValue is the value of the source.
-	ServiceSourceValue = "kubernetes"
+	ServiceSourceValue = "sync-from-k8s"
 )
 
 const (
@@ -72,12 +71,8 @@ const (
 	AnnotationServiceWeight = "flomesh.io/service-weight"
 )
 
-// ServiceID generates a unique ID for a service. This ID is not meant
+// ServiceInstanceID generates a unique ID for a service. This ID is not meant
 // to be particularly human-friendly.
-func ServiceID(name, addr string) string {
-	// sha1 is fine because we're doing this for uniqueness, not any
-	// cryptographic strength. We then take only the first 12 because its
-	// _probably_ unique and makes it easier to read.
-	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s", name, addr)))
-	return fmt.Sprintf("%s-%s", name, hex.EncodeToString(sum[:])[:12])
+func ServiceInstanceID(name, addr string) string {
+	return strings.ToLower(fmt.Sprintf("%s-%s-%s", name, addr, ServiceSourceValue))
 }

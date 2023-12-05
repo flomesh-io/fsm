@@ -63,7 +63,8 @@ spec:
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.filterLabel}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.prefixLabel}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.suffixLabel}}",
-            "-sync-cloud-to-k8s-with-gateway-api={{.Values.fsm.cloudConnector.machine.syncToK8S.withGatewayAPI.enable}}",
+            "-sync-cloud-to-k8s-with-gateway-egress={{.Values.fsm.cloudConnector.machine.syncToK8S.withGatewayEgress.enable}}",
+            "-sync-cloud-to-k8s-with-gateway-egress-via-egress-port={{.Values.fsm.cloudConnector.machine.syncToK8S.withGatewayEgress.viaGwEgressPort}}",
           ]
           resources:
             limits:

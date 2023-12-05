@@ -10,9 +10,10 @@ import (
 
 var (
 	syncCloudNamespace string
-	withGatewayAPI     bool
-	withGatewayViaAddr string
-	withGatewayViaPort int32
+
+	withGatewayEgress     bool
+	withGatewayEgressAddr string
+	withGatewayEgressPort int32
 )
 
 // SetSyncCloudNamespace sets sync namespace
@@ -41,17 +42,17 @@ func (addr MicroEndpointAddr) To16() net.IP {
 	return net.ParseIP(string(addr)).To16()
 }
 
-// WithGatewayAPI sets enable or disable
-func WithGatewayAPI(enable bool) {
-	withGatewayAPI = enable
+// WithGatewayEgress sets enable or disable
+func WithGatewayEgress(enable bool) {
+	withGatewayEgress = enable
 }
 
-// WithGatewayViaAddr sets via addr
-func WithGatewayViaAddr(addr string) {
-	withGatewayViaAddr = addr
+// WithGatewayEgressAddr sets via addr
+func WithGatewayEgressAddr(addr string) {
+	withGatewayEgressAddr = addr
 }
 
-// WithGatewayViaPort sets via port
-func WithGatewayViaPort(port int32) {
-	withGatewayViaPort = port
+// WithGatewayEgressPort sets via port
+func WithGatewayEgressPort(port int32) {
+	withGatewayEgressPort = port
 }

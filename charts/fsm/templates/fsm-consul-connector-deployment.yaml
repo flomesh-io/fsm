@@ -64,7 +64,8 @@ spec:
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.filterTag}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.prefixTag}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.suffixTag}}",
-            "-sync-cloud-to-k8s-with-gateway-api={{.Values.fsm.cloudConnector.consul.syncToK8S.withGatewayAPI.enable}}",
+            "-sync-cloud-to-k8s-with-gateway-egress={{.Values.fsm.cloudConnector.consul.syncToK8S.withGatewayEgress.enable}}",
+            "-sync-cloud-to-k8s-with-gateway-egress-via-egress-port={{.Values.fsm.cloudConnector.consul.syncToK8S.withGatewayEgress.viaGwEgressPort}}",
             "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.consul.syncFromK8S.enable}}",
             "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.consul.syncFromK8S.defaultSync}}",
             "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncClusterIPServices}}",
@@ -84,8 +85,9 @@ spec:
             "-sync-k8s-to-cloud-deny-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
-            "-sync-k8s-to-cloud-with-gateway-api={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable}}",
-            "-sync-k8s-to-cloud-with-gateway-api-via={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via}}",
+            "-sync-k8s-to-cloud-with-gateway-ingress={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayIngress.enable}}",
+            "-sync-k8s-to-cloud-with-gateway-ingress-via-ingress-type={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayIngress.viaGwIngressType}}",
+            "-sync-k8s-to-cloud-with-gateway-ingress-via-ingress-port={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGatewayIngress.viaGwIngressPort}}",
             "-sync-k8s-to-cloud-consul-node-name={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulNodeName}}",
             "-sync-k8s-to-cloud-consul-k8s-tag={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8STag}}",
             "-sync-k8s-to-cloud-consul-enable-namespaces={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces}}",

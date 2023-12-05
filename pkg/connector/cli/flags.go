@@ -57,7 +57,7 @@ type C2KCfg struct {
 	FlagPrefixTag   string
 	FlagSuffixTag   string
 
-	FlagWithGatewayAPI ViaFgwCfg
+	FlagWithGatewayEgress ViaFgwEgressCfg
 }
 
 type K2ConsulCfg struct {
@@ -72,9 +72,15 @@ type K2ConsulCfg struct {
 	FlagConsulCrossNamespaceACLPolicy string // The name of the ACL policy to add to every created namespace if ACLs are enabled
 }
 
-type ViaFgwCfg struct {
-	Enable bool
-	Via    string
+type ViaFgwIngressCfg struct {
+	Enable         bool
+	ViaIngressType string
+	ViaIngressPort uint
+}
+
+type ViaFgwEgressCfg struct {
+	Enable        bool
+	ViaEgressPort uint
 }
 
 type K2CCfg struct {
@@ -96,7 +102,7 @@ type K2CCfg struct {
 
 	Consul K2ConsulCfg
 
-	FlagWithGatewayAPI ViaFgwCfg
+	FlagWithGatewayIngress ViaFgwIngressCfg
 }
 
 type K2GCfg struct {
@@ -145,7 +151,9 @@ func init() {
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
-	flags.BoolVar(&Cfg.C2K.FlagWithGatewayAPI.Enable, "sync-cloud-to-k8s-with-gateway-api", false, "with gateway api")
+	flags.BoolVar(&Cfg.C2K.FlagWithGatewayEgress.Enable, "sync-cloud-to-k8s-with-gateway-egress", false, "with gateway api")
+	flags.UintVar(&Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort, "sync-cloud-to-k8s-with-gateway-egress-via-egress-port", 10090,
+		"with gateway api via egress port")
 
 	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
 	flags.BoolVar(&Cfg.K2C.FlagDefaultSync, "sync-k8s-to-cloud-default-sync", true,
@@ -183,9 +191,11 @@ func init() {
 	flags.BoolVar(&Cfg.K2C.FlagSyncIngressLoadBalancerIPs, "sync-k8s-to-cloud-sync-ingress-load-balancer-ips", false,
 		"enables syncing the IP of the Ingress LoadBalancer if we do not want to sync the hostname from the Ingress resource.")
 
-	flags.BoolVar(&Cfg.K2C.FlagWithGatewayAPI.Enable, "sync-k8s-to-cloud-with-gateway-api", false, "with gateway api")
-	flags.StringVar(&Cfg.K2C.FlagWithGatewayAPI.Via, "sync-k8s-to-cloud-with-gateway-api-via", "ClusterIP",
-		"with gateway api via ClusterIP/ExternalIP")
+	flags.BoolVar(&Cfg.K2C.FlagWithGatewayIngress.Enable, "sync-k8s-to-cloud-with-gateway-ingress", false, "with gateway api")
+	flags.StringVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressType, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-type", "ClusterIP",
+		"with gateway api via ingress ClusterIP/ExternalIP")
+	flags.UintVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-port", 10080,
+		"with gateway api via ingress port")
 
 	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-consul-node-name", "k8s-sync",
 		"The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable "+

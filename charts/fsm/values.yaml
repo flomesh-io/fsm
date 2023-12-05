@@ -659,8 +659,9 @@ fsm:
         filterTag: ""
         prefixTag: ""
         suffixTag: ""
-        withGatewayAPI:
+        withGatewayEgress:
           enable: false
+          viaGwEgressPort: 10090
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -675,9 +676,10 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI:
+        withGatewayIngress:
           enable: false
-          via: ClusterIP
+          viaGwIngressType: ClusterIP
+          viaGwIngressPort: 10080
         consulNodeName: k8s-sync
         consulK8STag: k8s
         consulEnableNamespaces: false
@@ -695,8 +697,9 @@ fsm:
         filterMetadata: ""
         prefixMetadata: ""
         suffixMetadata: ""
-        withGatewayAPI:
+        withGatewayEgress:
           enable: false
+          viaGwEgressPort: 10090
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -711,9 +714,10 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI:
+        withGatewayIngress:
           enable: false
-          via: ClusterIP
+          viaGwIngressType: ClusterIP
+          viaGwIngressPort: 10080
     machine:
       enable: false
       deriveNamespace: ""
@@ -723,8 +727,9 @@ fsm:
         filterLabel: ""
         prefixLabel: ""
         suffixLabel: ""
-        withGatewayAPI:
+        withGatewayEgress:
           enable: false
+          viaGwEgressPort: 10090
     gateway:
       enable: false
       syncToFgw:

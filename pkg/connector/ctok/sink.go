@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -40,10 +41,11 @@ var (
 )
 
 // NewSink creates a new mesh sink
-func NewSink(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace string) *Sink {
+func NewSink(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, fsmNamespace string) *Sink {
 	sink := Sink{
 		Ctx:                ctx,
 		KubeClient:         kubeClient,
+		DiscClient:         discClient,
 		fsmNamespace:       fsmNamespace,
 		serviceKeyToName:   make(map[string]string),
 		serviceMapCache:    make(map[string]*apiv1.Service),
@@ -61,6 +63,8 @@ type Sink struct {
 	fsmNamespace string
 
 	KubeClient kubernetes.Interface
+
+	DiscClient provider.ServiceDiscoveryClient
 
 	MicroAggregator Aggregator
 
@@ -229,8 +233,8 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				endpoints.Annotations = make(map[string]string)
 			}
 
-			if withGatewayAPI {
-				endpoints.Annotations[constants.EndpointsViaGatewayAnnotation] = fmt.Sprintf("%s:%d", withGatewayViaAddr, withGatewayViaPort)
+			if withGatewayEgress {
+				endpoints.Annotations[constants.EndpointsViaGatewayAnnotation] = fmt.Sprintf("%s:%d", withGatewayEgressAddr, withGatewayEgressPort)
 			}
 
 			endpointSubset := apiv1.EndpointSubset{}
@@ -405,7 +409,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           "true",
+					connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
 				s.fillService(svcMeta, svc)
@@ -424,7 +428,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           "true",
+						connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
 						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},

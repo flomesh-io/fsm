@@ -89,13 +89,11 @@ func (dc *EurekaDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (
 }
 
 func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	err := dc.eurekaClient.DeregisterInstance(dereg.toEureka())
-	return err
+	return dc.eurekaClient.DeregisterInstance(dereg.toEureka())
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
-	err := dc.eurekaClient.RegisterInstance(reg.toEureka())
-	return err
+	return dc.eurekaClient.RegisterInstance(reg.toEureka())
 }
 
 // EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
