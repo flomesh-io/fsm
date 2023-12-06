@@ -27,7 +27,7 @@ package cache
 
 import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
@@ -117,7 +117,7 @@ type Cache interface {
 }
 
 type serviceInfo struct {
-	svcPortName routecfg.ServicePortName
+	svcPortName fgw.ServicePortName
 	//filters     []routecfg.Filter
 }
 

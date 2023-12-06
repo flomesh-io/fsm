@@ -9,12 +9,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 type PortPolicyEnricher interface {
-	Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener)
+	Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener)
 }
 
 // ---
@@ -24,7 +24,7 @@ type RateLimitPortEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
+func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
 	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType:
 		if len(e.Data) == 0 {
@@ -57,7 +57,7 @@ type AccessControlPortEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
+func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
 	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType, gwv1beta1.UDPProtocolType:
 		if len(e.Data) == 0 {
@@ -90,7 +90,7 @@ type GatewayTLSPortEnricher struct {
 	Data []gwpav1alpha1.GatewayTLSPolicy
 }
 
-func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *routecfg.Listener) {
+func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
 	case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
 		if len(e.Data) == 0 {

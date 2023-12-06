@@ -3,12 +3,12 @@ package cache
 import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]routecfg.RouteRule, services map[string]serviceInfo) {
+func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
 	routePolicies := filterPoliciesByRoute(policies, httpRoute)
 	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
@@ -33,7 +33,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 				continue
 			}
 
-			httpRule := routecfg.L7RouteRule{}
+			httpRule := fgw.L7RouteRule{}
 			for _, hostname := range hostnames {
 				r := generateHTTPRouteConfig(httpRoute, routePolicies, services)
 
@@ -46,7 +46,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 
 			port := int32(listener.Port)
 			if rule, exists := rules[port]; exists {
-				if l7Rule, ok := rule.(routecfg.L7RouteRule); ok {
+				if l7Rule, ok := rule.(fgw.L7RouteRule); ok {
 					rules[port] = mergeL7RouteRule(l7Rule, httpRule)
 				}
 			} else {
@@ -56,24 +56,24 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *routecfg.HTTPRouteRuleSpec {
-	httpSpec := &routecfg.HTTPRouteRuleSpec{
-		RouteType: routecfg.L7RouteTypeHTTP,
-		Matches:   make([]routecfg.HTTPTrafficMatch, 0),
+func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.HTTPRouteRuleSpec {
+	httpSpec := &fgw.HTTPRouteRuleSpec{
+		RouteType: fgw.L7RouteTypeHTTP,
+		Matches:   make([]fgw.HTTPTrafficMatch, 0),
 	}
 	enrichers := getHTTPRoutePolicyEnrichers(routePolicies)
 
 	for _, rule := range httpRoute.Spec.Rules {
-		backends := map[string]routecfg.BackendServiceConfig{}
+		backends := map[string]fgw.BackendServiceConfig{}
 
 		for _, bk := range rule.BackendRefs {
 			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, httpRoute.Namespace); svcPort != nil {
-				svcLevelFilters := make([]routecfg.Filter, 0)
+				svcLevelFilters := make([]fgw.Filter, 0)
 				for _, filter := range bk.Filters {
 					svcLevelFilters = append(svcLevelFilters, toFSMHTTPRouteFilter(filter, httpRoute.Namespace, services))
 				}
 
-				backends[svcPort.String()] = routecfg.BackendServiceConfig{
+				backends[svcPort.String()] = fgw.BackendServiceConfig{
 					Weight:  backendWeight(bk.BackendRef),
 					Filters: svcLevelFilters,
 				}
@@ -84,19 +84,19 @@ func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies route
 			}
 		}
 
-		ruleLevelFilters := make([]routecfg.Filter, 0)
+		ruleLevelFilters := make([]fgw.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
 			ruleLevelFilters = append(ruleLevelFilters, toFSMHTTPRouteFilter(ruleFilter, httpRoute.Namespace, services))
 		}
 
 		for _, m := range rule.Matches {
-			match := &routecfg.HTTPTrafficMatch{
+			match := &fgw.HTTPTrafficMatch{
 				BackendService: backends,
 				Filters:        ruleLevelFilters,
 			}
 
 			if m.Path != nil {
-				match.Path = &routecfg.Path{
+				match.Path = &fgw.Path{
 					MatchType: httpPathMatchType(m.Path.Type),
 					Path:      httpPath(m.Path.Value),
 				}
