@@ -12,7 +12,12 @@ import (
 )
 
 type MachineDiscoveryClient struct {
-	machineClient machineClientset.Interface
+	machineClient      machineClientset.Interface
+	isInternalServices bool
+}
+
+func (dc *MachineDiscoveryClient) IsInternalServices() bool {
+	return dc.isInternalServices
 }
 
 func (dc *MachineDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
@@ -98,8 +103,9 @@ func (dc *MachineDiscoveryClient) MicroServiceProvider() string {
 	return connector.MachineDiscoveryService
 }
 
-func GetMachineDiscoveryClient(machineClient machineClientset.Interface) (*MachineDiscoveryClient, error) {
+func GetMachineDiscoveryClient(machineClient machineClientset.Interface, isInternalServices bool) (*MachineDiscoveryClient, error) {
 	machineDiscoveryClient := new(MachineDiscoveryClient)
 	machineDiscoveryClient.machineClient = machineClient
+	machineDiscoveryClient.isInternalServices = isInternalServices
 	return machineDiscoveryClient, nil
 }

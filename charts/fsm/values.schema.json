@@ -1476,6 +1476,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
@@ -1487,6 +1488,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
                         },
                         "deriveNamespace": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/deriveNamespace",
@@ -1510,7 +1517,7 @@
                             "prefixTag",
                             "suffixTag",
                             "passingOnly",
-                            "withGatewayEgress"
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1543,31 +1550,19 @@
                               "title": "Passing Only",
                               "description": "Passing Only"
                             },
-                            "withGatewayEgress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGatewayEgress",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "viaGwEgressPort"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGatewayEgress/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "viaGwEgressPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGatewayEgress/properties/viaGwIngressPort",
-                                  "type": "integer",
-                                  "title": "via Gateway Egress Port",
-                                  "description": "via Gateway Egress Port",
-                                  "minimum": 1,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
                                 }
                               }
                             }
@@ -1589,7 +1584,7 @@
                             "addK8SNamespaceAsServiceSuffix",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces",
-                            "withGatewayIngress",
+                            "withGateway",
                             "consulNodeName",
                             "consulK8STag",
                             "consulEnableNamespaces",
@@ -1676,42 +1671,19 @@
                                 "type": "string"
                               }
                             },
-                            "withGatewayIngress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayIngress",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "viaGwIngressType",
-                                "viaGwIngressPort"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayIngress/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "viaGwIngressType": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayIngress/properties/viaGwIngressType",
-                                  "type": "string",
-                                  "title": "via Gateway Ingress Type",
-                                  "description": "via Gateway Ingress Type",
-                                  "enum": [
-                                    "ExternalIP",
-                                    "ClusterIP"
-                                  ]
-                                },
-                                "viaGwIngressPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayIngress/properties/viaGwIngressPort",
-                                  "type": "integer",
-                                  "title": "via Gateway Ingress Port",
-                                  "description": "via Gateway Ingress Port",
-                                  "minimum": 1,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
                                 }
                               }
                             },
@@ -1767,6 +1739,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
@@ -1778,6 +1751,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
                         },
                         "deriveNamespace": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/deriveNamespace",
@@ -1801,7 +1780,7 @@
                             "prefixMetadata",
                             "suffixMetadata",
                             "passingOnly",
-                            "withGatewayEgress"
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1834,31 +1813,19 @@
                               "title": "Passing Only",
                               "description": "Passing Only"
                             },
-                            "withGatewayEgress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGatewayEgress",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "viaGwEgressPort"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGatewayEgress/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "viaGwEgressPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGatewayEgress/properties/viaGwIngressPort",
-                                  "type": "integer",
-                                  "title": "via Gateway Egress Port",
-                                  "description": "via Gateway Egress Port",
-                                  "minimum": 1,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
                                 }
                               }
                             }
@@ -1880,7 +1847,7 @@
                             "addK8SNamespaceAsServiceSuffix",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces",
-                            "withGatewayIngress"
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1960,42 +1927,19 @@
                                 "type": "string"
                               }
                             },
-                            "withGatewayIngress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayIngress",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "viaGwIngressType",
-                                "viaGwIngressPort"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayIngress/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "viaGwIngressType": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayIngress/properties/viaGwIngressType",
-                                  "type": "string",
-                                  "title": "via Gateway Ingress Type",
-                                  "description": "via Gateway Ingress Type",
-                                  "enum": [
-                                    "ExternalIP",
-                                    "ClusterIP"
-                                  ]
-                                },
-                                "viaGwIngressPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayIngress/properties/viaGwIngressPort",
-                                  "type": "integer",
-                                  "title": "via Gateway Ingress Port",
-                                  "description": "via Gateway Ingress Port",
-                                  "minimum": 1,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
                                 }
                               }
                             }
@@ -2009,6 +1953,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "asInternalServices",
                         "deriveNamespace",
                         "syncToK8S"
                       ],
@@ -2018,6 +1963,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
                         },
                         "deriveNamespace": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/deriveNamespace",
@@ -2035,7 +1986,7 @@
                             "prefixLabel",
                             "suffixLabel",
                             "passingOnly",
-                            "withGatewayEgress"
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -2068,31 +2019,19 @@
                               "title": "Passing Only",
                               "description": "Passing Only"
                             },
-                            "withGatewayEgress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGatewayEgress",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "viaGwEgressPort"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGatewayEgress/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "viaGwEgressPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGatewayEgress/properties/viaGwIngressPort",
-                                  "type": "integer",
-                                  "title": "via Gateway Egress Port",
-                                  "description": "via Gateway Egress Port",
-                                  "minimum": 1,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
                                 }
                               }
                             }
@@ -2121,8 +2060,6 @@
                           "title": "The syncToFgw schema",
                           "required": [
                             "defaultSync",
-                            "ingress",
-                            "egress",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces"
                           ],
@@ -2132,72 +2069,6 @@
                               "type": "boolean",
                               "title": "Default Sync",
                               "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
-                            },
-                            "ingress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress",
-                              "type": "object",
-                              "title": "Ingress schema",
-                              "required": [
-                                "httpPort",
-                                "grpcPort"
-                              ],
-                              "properties": {
-                                "httpPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress/properties/httpPort",
-                                  "type": "integer",
-                                  "title": "HTTP Port",
-                                  "description": "HTTP Port",
-                                  "minimum": 0,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
-                                },
-                                "grpcPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/ingress/properties/grpcPort",
-                                  "type": "integer",
-                                  "title": "GRPC Port",
-                                  "description": "GRPC Port",
-                                  "minimum": 0,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
-                                }
-                              }
-                            },
-                            "egress": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress",
-                              "type": "object",
-                              "title": "Egress schema",
-                              "required": [
-                                "httpPort",
-                                "grpcPort"
-                              ],
-                              "properties": {
-                                "httpPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress/properties/httpPort",
-                                  "type": "integer",
-                                  "title": "HTTP Port",
-                                  "description": "HTTP Port",
-                                  "minimum": 0,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
-                                },
-                                "grpcPort": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/egress/properties/grpcPort",
-                                  "type": "integer",
-                                  "title": "GRPC Port",
-                                  "description": "GRPC Port",
-                                  "minimum": 0,
-                                  "maximum": 65535,
-                                  "examples": [
-                                    30514
-                                  ]
-                                }
-                              }
                             },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/allowK8sNamespaces",
@@ -2216,6 +2087,94 @@
                               "items": {
                                 "type": "string"
                               }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "viaGateway": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway",
+                      "type": "object",
+                      "title": "The via gateway schema",
+                      "required": [
+                        "ingress",
+                        "egress"
+                      ],
+                      "properties": {
+                        "ingress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress",
+                          "type": "object",
+                          "title": "Ingress schema",
+                          "required": [
+                            "ipSelector",
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "ipSelector": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/ipSelector",
+                              "type": "string",
+                              "title": "via Gateway Ingress Type",
+                              "description": "via Gateway Ingress Type",
+                              "enum": [
+                                "ExternalIP",
+                                "ClusterIP"
+                              ]
+                            },
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            }
+                          }
+                        },
+                        "egress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress",
+                          "type": "object",
+                          "title": "Egress schema",
+                          "required": [
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
                             }
                           }
                         }

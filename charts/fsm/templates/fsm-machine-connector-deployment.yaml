@@ -57,14 +57,19 @@ spec:
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-derive-namespace={{.Values.fsm.cloudConnector.machine.deriveNamespace}}",
+            "-as-internal-services={{.Values.fsm.cloudConnector.machine.asInternalServices}}",
             "-sdr-provider=machine",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.machine.syncToK8S.enable}}",
             "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.machine.syncToK8S.passingOnly}}",
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.filterLabel}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.prefixLabel}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.suffixLabel}}",
-            "-sync-cloud-to-k8s-with-gateway-egress={{.Values.fsm.cloudConnector.machine.syncToK8S.withGatewayEgress.enable}}",
-            "-sync-cloud-to-k8s-with-gateway-egress-via-egress-port={{.Values.fsm.cloudConnector.machine.syncToK8S.withGatewayEgress.viaGwEgressPort}}",
+            "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.machine.syncToK8S.withGateway.enable}}",
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.viaGateway.ingress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.viaGateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.viaGateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.egress.grpcPort}}",
           ]
           resources:
             limits:

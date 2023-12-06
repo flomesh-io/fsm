@@ -104,19 +104,19 @@ func main() {
 	if len(cli.Cfg.SdrProvider) > 0 {
 		var discClient provider.ServiceDiscoveryClient = nil
 		if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
+			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr)
+			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetMachineDiscoveryClient(machineClient)
+			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.AsInternalServices)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")

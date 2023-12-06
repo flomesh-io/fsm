@@ -333,6 +333,7 @@ type ServiceDiscoveryClient interface {
 	Deregister(dereg *CatalogDeregistration) error
 	EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error)
 	MicroServiceProvider() string
+	IsInternalServices() bool
 }
 
 const (

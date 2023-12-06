@@ -2,6 +2,7 @@
 package kube
 
 import (
+	"fmt"
 	"net"
 
 	mapset "github.com/deckarep/golang-set"
@@ -46,10 +47,6 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 
 	var endpoints []endpoint.Endpoint
 	for _, kubernetesEndpoint := range kubernetesEndpoints.Subsets {
-		viaGateway := ""
-		if len(kubernetesEndpoints.Annotations) > 0 {
-			viaGateway = kubernetesEndpoints.Annotations[constants.EndpointsViaGatewayAnnotation]
-		}
 		for _, port := range kubernetesEndpoint.Ports {
 			// If a TargetPort is specified for the service, filter the endpoint by this port.
 			// This is required to ensure we do not attempt to filter the endpoints when the endpoints
@@ -67,6 +64,14 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 				if ip == nil {
 					log.Error().Msgf("Error parsing endpoint IP address %s for MeshService %s", address.IP, svc)
 					continue
+				}
+				viaGateway := ""
+				if port.AppProtocol != nil && len(kubernetesEndpoints.Annotations) > 0 {
+					if viaAddr, existAddr := kubernetesEndpoints.Annotations[constants.EgressViaGatewayAnnotation]; existAddr {
+						if viaPort, existPort := kubernetesEndpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, *port.AppProtocol)]; existPort {
+							viaGateway = fmt.Sprintf("%s:%s", viaAddr, viaPort)
+						}
+					}
 				}
 				ept := endpoint.Endpoint{
 					IP:    ip,

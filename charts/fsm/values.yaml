@@ -652,6 +652,7 @@ fsm:
     consul:
       enable: false
       deriveNamespace: ""
+      asInternalServices: false
       httpAddr: 127.0.0.1:8500
       syncToK8S:
         enable: true
@@ -659,9 +660,8 @@ fsm:
         filterTag: ""
         prefixTag: ""
         suffixTag: ""
-        withGatewayEgress:
+        withGateway:
           enable: false
-          viaGwEgressPort: 10090
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -676,10 +676,8 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayIngress:
+        withGateway:
           enable: false
-          viaGwIngressType: ClusterIP
-          viaGwIngressPort: 10080
         consulNodeName: k8s-sync
         consulK8STag: k8s
         consulEnableNamespaces: false
@@ -690,6 +688,7 @@ fsm:
     eureka:
       enable: false
       deriveNamespace: ""
+      asInternalServices: false
       httpAddr: 127.0.0.1:8761/eureka
       syncToK8S:
         enable: true
@@ -697,9 +696,8 @@ fsm:
         filterMetadata: ""
         prefixMetadata: ""
         suffixMetadata: ""
-        withGatewayEgress:
+        withGateway:
           enable: false
-          viaGwEgressPort: 10090
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -714,36 +712,36 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayIngress:
+        withGateway:
           enable: false
-          viaGwIngressType: ClusterIP
-          viaGwIngressPort: 10080
     machine:
       enable: false
       deriveNamespace: ""
+      asInternalServices: false
       syncToK8S:
         enable: true
         passingOnly: true
         filterLabel: ""
         prefixLabel: ""
         suffixLabel: ""
-        withGatewayEgress:
+        withGateway:
           enable: false
-          viaGwEgressPort: 10090
     gateway:
       enable: false
       syncToFgw:
         defaultSync: true
-        ingress:
-          httpPort: 0
-          grpcPort: 0
-        egress:
-          httpPort: 0
-          grpcPort: 0
         allowK8sNamespaces:
           - "*"
         denyK8sNamespaces:
           - ""
+    viaGateway:
+      ingress:
+        ipSelector: ClusterIP
+        httpPort: 0
+        grpcPort: 0
+      egress:
+        httpPort: 0
+        grpcPort: 0
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     # -- Sidecar injector's container resource parameters

@@ -233,8 +233,16 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 				endpoints.Annotations = make(map[string]string)
 			}
 
-			if withGatewayEgress {
-				endpoints.Annotations[constants.EndpointsViaGatewayAnnotation] = fmt.Sprintf("%s:%d", withGatewayEgressAddr, withGatewayEgressPort)
+			if withGateway {
+				if !s.DiscClient.IsInternalServices() {
+					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					if connector.ViaGateway.Egress.HTTPPort > 0 {
+						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+					}
+					if connector.ViaGateway.Egress.GRPCPort > 0 {
+						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+					}
+				}
 			}
 
 			endpointSubset := apiv1.EndpointSubset{}
@@ -356,22 +364,16 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		}
 
 		s.lock.Lock()
-		creates, updates, deletes := s.crudList()
+		creates, deletes := s.crudList()
 		s.lock.Unlock()
-		if len(creates) > 0 || len(updates) > 0 || len(deletes) > 0 {
-			log.Info().Msgf("sync triggered, create:%d update:%d delete:%d", len(creates), len(updates), len(deletes))
+		if len(creates) > 0 || len(deletes) > 0 {
+			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
 		}
 
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
 			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
 				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
-			}
-		}
-
-		for _, svc := range updates {
-			if _, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err != nil {
-				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
 			}
 		}
 
@@ -384,8 +386,8 @@ func (s *Sink) Run(ch <-chan struct{}) {
 }
 
 // crudList returns the services to create, update, and delete (respectively).
-func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
-	var createSvcs, updateSvcs []*apiv1.Service
+func (s *Sink) crudList() ([]*apiv1.Service, []string) {
+	var createSvcs []*apiv1.Service
 	var deleteSvcs []string
 	extendServices := make(map[string]string, 0)
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
@@ -412,12 +414,25 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
+				if withGateway {
+					if !s.DiscClient.IsInternalServices() {
+						svc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+						if connector.ViaGateway.Egress.HTTPPort > 0 {
+							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+						}
+						if connector.ViaGateway.Egress.GRPCPort > 0 {
+							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+						}
+					} else {
+						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
+					}
+				}
 				s.fillService(svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
 				}
-				updateSvcs = append(updateSvcs, svc)
+				deleteSvcs = append(deleteSvcs, string(microSvcName))
 				continue
 			}
 
@@ -443,6 +458,19 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
 			}
+			if withGateway {
+				if !s.DiscClient.IsInternalServices() {
+					createSvc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					if connector.ViaGateway.Egress.HTTPPort > 0 {
+						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+					}
+					if connector.ViaGateway.Egress.GRPCPort > 0 {
+						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+					}
+				} else {
+					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
+				}
+			}
 			s.fillService(svcMeta, createSvc)
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
@@ -466,7 +494,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 		}
 	}
 
-	return createSvcs, updateSvcs, deleteSvcs
+	return createSvcs, deleteSvcs
 }
 
 func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {

@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
 	"github.com/flomesh-io/fsm/pkg/connector/ktog"
@@ -24,12 +25,12 @@ const (
 func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
 	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
-	ctok.WithGatewayEgress(Cfg.C2K.FlagWithGatewayEgress.Enable)
+	ctok.WithGateway(Cfg.C2K.FlagWithGateway.Enable)
 
-	if Cfg.C2K.FlagWithGatewayEgress.Enable {
-		viaAddr := waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort))
-		ctok.WithGatewayEgressAddr(viaAddr)
-		ctok.WithGatewayEgressPort(int32(Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort))
+	if Cfg.C2K.FlagWithGateway.Enable {
+		externalAddr, internalAddr := waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(connector.ViaGateway.Egress.HTTPPort))
+		connector.ViaGateway.ExternalAddr = externalAddr
+		connector.ViaGateway.InternalAddr = internalAddr
 	}
 
 	sink := ctok.NewSink(ctx, kubeClient, discClient, Cfg.FsmNamespace)
@@ -54,12 +55,12 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
-	ktoc.WithGatewayIngress(Cfg.K2C.FlagWithGatewayIngress.Enable)
+	ktoc.WithGateway(Cfg.K2C.FlagWithGateway.Enable)
 
-	if Cfg.K2C.FlagWithGatewayIngress.Enable {
-		viaAddr := waitGatewayReady(ctx, kubeClient, Cfg.K2C.FlagWithGatewayIngress.ViaIngressType, int32(Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort))
-		ktoc.WithGatewayIngressAddr(viaAddr)
-		ktoc.WithGatewayIngressPort(int32(Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort))
+	if Cfg.K2C.FlagWithGateway.Enable {
+		externalAddr, internalAddr := waitGatewayReady(ctx, kubeClient, connector.ViaGateway.IPSelector, int32(connector.ViaGateway.Ingress.HTTPPort))
+		connector.ViaGateway.ExternalAddr = externalAddr
+		connector.ViaGateway.InternalAddr = internalAddr
 	}
 
 	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
@@ -108,25 +109,20 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 }
 
 func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
-	ktog.WithGatewayIngressHTTPPort(int32(Cfg.K2G.FlagIngress.HTTPPort))
-	ktog.WithGatewayIngressGRPCPort(int32(Cfg.K2G.FlagIngress.GRPCPort))
-	ktog.WithGatewayEgressHTTPPort(int32(Cfg.K2G.FlagEgress.HTTPPort))
-	ktog.WithGatewayEgressGRPCPort(int32(Cfg.K2G.FlagEgress.GRPCPort))
-
-	if Cfg.K2G.FlagIngress.HTTPPort > 0 {
-		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagIngress.HTTPPort))
+	if connector.ViaGateway.Ingress.HTTPPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(connector.ViaGateway.Ingress.HTTPPort))
 	}
 
-	if Cfg.K2G.FlagEgress.HTTPPort > 0 {
-		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagEgress.HTTPPort))
+	if connector.ViaGateway.Egress.HTTPPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(connector.ViaGateway.Egress.HTTPPort))
 	}
 
-	if Cfg.K2G.FlagIngress.GRPCPort > 0 {
-		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagIngress.GRPCPort))
+	if connector.ViaGateway.Ingress.GRPCPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(connector.ViaGateway.Ingress.GRPCPort))
 	}
 
-	if Cfg.K2G.FlagEgress.GRPCPort > 0 {
-		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(Cfg.K2G.FlagEgress.GRPCPort))
+	if connector.ViaGateway.Egress.GRPCPort > 0 {
+		waitGatewayReady(ctx, kubeClient, VIA_CLUSTER_IP, int32(connector.ViaGateway.Egress.GRPCPort))
 	}
 
 	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
@@ -169,52 +165,61 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClien
 	go ctl.Run(ctx.Done())
 }
 
-func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, viaAddrType string, viaPort int32) (viaAddr string) {
+func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, viaAddrType string, viaPort int32) (externalAddr, internalAddr string) {
 	gatewaySvcName := fmt.Sprintf("fsm-gateway-%s", Cfg.FsmNamespace)
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
 			if fgwSvc != nil {
-				if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
-					len(fgwSvc.Spec.ExternalIPs) > 0 &&
-					len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
-					if len(fgwSvc.Spec.Ports) > 0 {
-						for _, port := range fgwSvc.Spec.Ports {
-							if port.Port == viaPort {
-								viaAddr = fgwSvc.Spec.ExternalIPs[0]
-								return
-							}
-						}
-					}
-					log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
-				}
-				if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
-					len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
-					len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
-					if len(fgwSvc.Spec.Ports) > 0 {
-						for _, port := range fgwSvc.Spec.Ports {
-							if port.Port == viaPort {
-								viaAddr = fgwSvc.Status.LoadBalancer.Ingress[0].IP
-								return
-							}
-						}
-					}
-					log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
-				}
-				if strings.EqualFold(viaAddrType, VIA_CLUSTER_IP) &&
-					len(fgwSvc.Spec.ClusterIPs) > 0 &&
+				if len(fgwSvc.Spec.ClusterIPs) > 0 &&
 					len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
-					if len(fgwSvc.Spec.Ports) > 0 {
-						for _, port := range fgwSvc.Spec.Ports {
-							if port.Port == viaPort {
-								viaAddr = fgwSvc.Spec.ClusterIPs[0]
-								return
+
+					internalAddr = fgwSvc.Spec.ClusterIPs[0]
+
+					if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
+						len(fgwSvc.Spec.ExternalIPs) > 0 &&
+						len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
+						if len(fgwSvc.Spec.Ports) > 0 {
+							for _, port := range fgwSvc.Spec.Ports {
+								if port.Port == viaPort {
+									externalAddr = fgwSvc.Spec.ExternalIPs[0]
+									return
+								}
 							}
 						}
+						log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
 					}
-					log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
+					if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
+						len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
+						len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
+						if len(fgwSvc.Spec.Ports) > 0 {
+							for _, port := range fgwSvc.Spec.Ports {
+								if port.Port == viaPort {
+									externalAddr = fgwSvc.Status.LoadBalancer.Ingress[0].IP
+									return
+								}
+							}
+						}
+						log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
+					}
+					if strings.EqualFold(viaAddrType, VIA_CLUSTER_IP) &&
+						len(fgwSvc.Spec.ClusterIPs) > 0 &&
+						len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
+						if len(fgwSvc.Spec.Ports) > 0 {
+							for _, port := range fgwSvc.Spec.Ports {
+								if port.Port == viaPort {
+									externalAddr = fgwSvc.Spec.ClusterIPs[0]
+									return
+								}
+							}
+						}
+						log.Warn().Msgf("not find matched port[HTTP:%d] from fsm gateway: %s", viaPort, gatewaySvcName)
+					}
 				}
+				log.Warn().Msgf("not find %s from fsm gateway: %s", viaAddrType, gatewaySvcName)
+			} else {
+				log.Warn().Msgf("not find %s from fsm gateway: %s", VIA_CLUSTER_IP, gatewaySvcName)
+				continue
 			}
-			log.Warn().Msgf("not find %s from fsm gateway: %s", viaAddrType, gatewaySvcName)
 		} else {
 			log.Warn().Err(err)
 		}

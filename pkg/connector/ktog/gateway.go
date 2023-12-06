@@ -98,14 +98,11 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			}
 			protocol = strings.ToUpper(protocol)
 
-			serviceSync := ""
+			internalSource := true
 			if len(k8sSvc.Annotations) > 0 {
-				serviceSync = k8sSvc.Annotations[connector.AnnotationMeshServiceSync]
-			}
-
-			externalSource := false
-			if connector.EurekaDiscoveryService == serviceSync || connector.ConsulDiscoveryService == serviceSync {
-				externalSource = true
+				if _, externalSource := k8sSvc.Annotations[connector.AnnotationMeshServiceSync]; externalSource {
+					_, internalSource = k8sSvc.Annotations[connector.AnnotationMeshServiceInternalSync]
+				}
 			}
 
 			var parentRefs []gwv1beta1.ParentReference
@@ -114,8 +111,8 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				for _, gatewayListener := range gateway.Spec.Listeners {
 					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
 					//glName := strings.ToUpper(string(gatewayListener.Name))
-					if externalSource {
-						if withGatewayEgressHTTPPort > 0 && int32(gatewayListener.Port) == withGatewayEgressHTTPPort {
+					if internalSource {
+						if connector.ViaGateway.Ingress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.HTTPPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -123,7 +120,7 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1beta1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-						if withGatewayEgressGRPCPort > 0 && int32(gatewayListener.Port) == withGatewayEgressGRPCPort {
+						if connector.ViaGateway.Ingress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.GRPCPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -132,7 +129,7 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Port:      &gatewayPort})
 						}
 					} else {
-						if withGatewayIngressHTTPPort > 0 && int32(gatewayListener.Port) == withGatewayIngressHTTPPort {
+						if connector.ViaGateway.Egress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.HTTPPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -140,7 +137,7 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1beta1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-						if withGatewayIngressGRPCPort > 0 && int32(gatewayListener.Port) == withGatewayIngressGRPCPort {
+						if connector.ViaGateway.Egress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.GRPCPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{

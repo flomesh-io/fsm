@@ -11,7 +11,12 @@ import (
 )
 
 type EurekaDiscoveryClient struct {
-	eurekaClient *fargo.EurekaConnection
+	eurekaClient       *fargo.EurekaConnection
+	isInternalServices bool
+}
+
+func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
+	return dc.isInternalServices
 }
 
 func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
@@ -107,10 +112,11 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 	return connector.EurekaDiscoveryService
 }
 
-func GetEurekaDiscoveryClient(address string) (*EurekaDiscoveryClient, error) {
+func GetEurekaDiscoveryClient(address string, isInternalServices bool) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
+	eurekaDiscoveryClient.isInternalServices = isInternalServices
 	logging.SetLevel(logging.WARNING, "fargo")
 	return eurekaDiscoveryClient, nil
 }

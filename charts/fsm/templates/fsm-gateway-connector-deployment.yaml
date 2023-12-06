@@ -58,10 +58,6 @@ spec:
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.gateway.enable}}",
             "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.gateway.syncToFgw.defaultSync}}",
-            "-sync-k8s-to-fgw-ingress-http-port={{.Values.fsm.cloudConnector.gateway.syncToFgw.ingress.httpPort}}",
-            "-sync-k8s-to-fgw-egress-http-port={{.Values.fsm.cloudConnector.gateway.syncToFgw.egress.httpPort}}",
-            "-sync-k8s-to-fgw-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.syncToFgw.ingress.grpcPort}}",
-            "-sync-k8s-to-fgw-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.syncToFgw.egress.grpcPort}}",
             {{- if .Values.fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces }}
             {{- range .Values.fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces }}
             "-sync-k8s-to-fgw-allow-k8s-namespaces={{ . }}",
@@ -72,6 +68,11 @@ spec:
             "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.viaGateway.ingress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.viaGateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.viaGateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.egress.grpcPort}}",
           ]
           resources:
             limits:

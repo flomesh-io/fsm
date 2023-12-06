@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	Cfg   Config
+	Cfg   = Config{Via: connector.ViaGateway}
 	flags = flag.NewFlagSet("", flag.ContinueOnError)
 	log   = logger.New("connector-cli")
 )
@@ -57,7 +57,9 @@ type C2KCfg struct {
 	FlagPrefixTag   string
 	FlagSuffixTag   string
 
-	FlagWithGatewayEgress ViaFgwEgressCfg
+	FlagWithGateway struct {
+		Enable bool
+	}
 }
 
 type K2ConsulCfg struct {
@@ -70,17 +72,6 @@ type K2ConsulCfg struct {
 	FlagConsulEnableK8SNSMirroring    bool   // Enables mirroring of k8s namespaces into Consul
 	FlagConsulK8SNSMirroringPrefix    string // Prefix added to Consul namespaces created when mirroring
 	FlagConsulCrossNamespaceACLPolicy string // The name of the ACL policy to add to every created namespace if ACLs are enabled
-}
-
-type ViaFgwIngressCfg struct {
-	Enable         bool
-	ViaIngressType string
-	ViaIngressPort uint
-}
-
-type ViaFgwEgressCfg struct {
-	Enable        bool
-	ViaEgressPort uint
 }
 
 type K2CCfg struct {
@@ -102,44 +93,40 @@ type K2CCfg struct {
 
 	Consul K2ConsulCfg
 
-	FlagWithGatewayIngress ViaFgwIngressCfg
-}
-
-type ProtocolPortCfg struct {
-	HTTPPort uint
-	GRPCPort uint
+	FlagWithGateway struct {
+		Enable bool
+	}
 }
 
 type K2GCfg struct {
-	FlagDefaultSync bool
-	FlagSyncPeriod  time.Duration
-
-	FlagIngress ProtocolPortCfg
-	FlagEgress  ProtocolPortCfg
-
+	FlagDefaultSync        bool
+	FlagSyncPeriod         time.Duration
 	FlagAllowK8SNamespaces []string // K8s namespaces to explicitly inject
 	FlagDenyK8SNamespaces  []string // K8s namespaces to deny injection (has precedence)
 }
 
 // Config is used to configure the creation of a client
 type Config struct {
-	Verbosity         string
-	MeshName          string // An ID that uniquely identifies an FSM instance
-	KubeConfigFile    string
-	FsmNamespace      string
-	FsmMeshConfigName string
-	FsmVersion        string
-	TrustDomain       string
-	DeriveNamespace   string
-	SdrProvider       string
-	HttpAddr          string
-	SyncCloudToK8s    bool
-	SyncK8sToCloud    bool
-	SyncK8sToGateway  bool
+	Verbosity          string
+	MeshName           string // An ID that uniquely identifies an FSM instance
+	KubeConfigFile     string
+	FsmNamespace       string
+	FsmMeshConfigName  string
+	FsmVersion         string
+	TrustDomain        string
+	DeriveNamespace    string
+	AsInternalServices bool
+	SdrProvider        string
+	HttpAddr           string
+	SyncCloudToK8s     bool
+	SyncK8sToCloud     bool
+	SyncK8sToGateway   bool
 
 	C2K C2KCfg
 	K2C K2CCfg
 	K2G K2GCfg
+
+	Via *connector.Gateway
 }
 
 func init() {
@@ -151,6 +138,7 @@ func init() {
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
 	flags.StringVar(&Cfg.DeriveNamespace, "derive-namespace", "", "derive namespace")
+	flags.BoolVar(&Cfg.AsInternalServices, "as-internal-services", false, "as internal services synced from cloud")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, Consul)")
 	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
@@ -159,9 +147,7 @@ func init() {
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
-	flags.BoolVar(&Cfg.C2K.FlagWithGatewayEgress.Enable, "sync-cloud-to-k8s-with-gateway-egress", false, "with gateway api")
-	flags.UintVar(&Cfg.C2K.FlagWithGatewayEgress.ViaEgressPort, "sync-cloud-to-k8s-with-gateway-egress-via-egress-port", 0,
-		"with gateway api via egress port")
+	flags.BoolVar(&Cfg.C2K.FlagWithGateway.Enable, "sync-cloud-to-k8s-with-gateway", false, "with gateway api")
 
 	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
 	flags.BoolVar(&Cfg.K2C.FlagDefaultSync, "sync-k8s-to-cloud-default-sync", true,
@@ -199,11 +185,7 @@ func init() {
 	flags.BoolVar(&Cfg.K2C.FlagSyncIngressLoadBalancerIPs, "sync-k8s-to-cloud-sync-ingress-load-balancer-ips", false,
 		"enables syncing the IP of the Ingress LoadBalancer if we do not want to sync the hostname from the Ingress resource.")
 
-	flags.BoolVar(&Cfg.K2C.FlagWithGatewayIngress.Enable, "sync-k8s-to-cloud-with-gateway-ingress", false, "with gateway api")
-	flags.StringVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressType, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-type", "ClusterIP",
-		"with gateway api via ingress ClusterIP/ExternalIP")
-	flags.UintVar(&Cfg.K2C.FlagWithGatewayIngress.ViaIngressPort, "sync-k8s-to-cloud-with-gateway-ingress-via-ingress-port", 0,
-		"with gateway api via ingress port")
+	flags.BoolVar(&Cfg.K2C.FlagWithGateway.Enable, "sync-k8s-to-cloud-with-gateway", false, "with gateway api")
 
 	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-consul-node-name", "k8s-sync",
 		"The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable "+
@@ -232,14 +214,16 @@ func init() {
 		"The interval to perform syncing operations creating cloud services, formatted "+
 			"as a time.Duration. All changes are merged and write calls are only made "+
 			"on this interval. Defaults to 5 seconds (5s).")
-	flags.UintVar(&Cfg.K2G.FlagIngress.HTTPPort, "sync-k8s-to-fgw-ingress-http-port", 0, "ingress http port")
-	flags.UintVar(&Cfg.K2G.FlagIngress.GRPCPort, "sync-k8s-to-fgw-ingress-grpc-port", 0, "ingress grpc port")
-	flags.UintVar(&Cfg.K2G.FlagEgress.HTTPPort, "sync-k8s-to-fgw-egress-http-port", 0, "egress http port")
-	flags.UintVar(&Cfg.K2G.FlagEgress.GRPCPort, "sync-k8s-to-fgw-egress-grpc-port", 0, "egress grpc port")
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagAllowK8SNamespaces), "sync-k8s-to-fgw-allow-k8s-namespaces",
 		"K8s namespaces to explicitly allow. May be specified multiple times.")
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",
 		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
+
+	flags.StringVar(&Cfg.Via.IPSelector, "via-gateway-ingress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
+	flags.UintVar(&Cfg.Via.Ingress.HTTPPort, "via-gateway-ingress-http-port", 0, "ingress http port")
+	flags.UintVar(&Cfg.Via.Ingress.GRPCPort, "via-gateway-ingress-grpc-port", 0, "ingress grpc port")
+	flags.UintVar(&Cfg.Via.Egress.HTTPPort, "via-gateway-egress-http-port", 0, "egress http port")
+	flags.UintVar(&Cfg.Via.Egress.GRPCPort, "via-gateway-egress-grpc-port", 0, "egress grpc port")
 }
 
 // ValidateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
