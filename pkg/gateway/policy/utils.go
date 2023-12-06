@@ -10,11 +10,11 @@ import (
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 )
 
-func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit {
-	r := &routecfg.RateLimit{
+func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *fgw.RateLimit {
+	r := &fgw.RateLimit{
 		Mode:               *rateLimit.Mode,
 		Backlog:            *rateLimit.Backlog,
 		Requests:           rateLimit.Requests,
@@ -33,8 +33,8 @@ func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *routecfg.RateLimit
 	return r
 }
 
-func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.AccessControlLists {
-	return &routecfg.AccessControlLists{
+func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *fgw.AccessControlLists {
+	return &fgw.AccessControlLists{
 		Blacklist:  c.Blacklist,
 		Whitelist:  c.Whitelist,
 		EnableXFF:  c.EnableXFF,
@@ -43,8 +43,8 @@ func newAccessControlLists(c *gwpav1alpha1.AccessControlConfig) *routecfg.Access
 	}
 }
 
-func newCircuitBreaking(cbCfg *gwpav1alpha1.CircuitBreakingConfig) *routecfg.CircuitBreaking {
-	return &routecfg.CircuitBreaking{
+func newCircuitBreaking(cbCfg *gwpav1alpha1.CircuitBreakingConfig) *fgw.CircuitBreaking {
+	return &fgw.CircuitBreaking{
 		MinRequestAmount:        cbCfg.MinRequestAmount,
 		StatTimeWindow:          cbCfg.StatTimeWindow,
 		SlowAmountThreshold:     cbCfg.SlowAmountThreshold,
@@ -58,8 +58,8 @@ func newCircuitBreaking(cbCfg *gwpav1alpha1.CircuitBreakingConfig) *routecfg.Cir
 	}
 }
 
-func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
-	h := &routecfg.HealthCheck{
+func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *fgw.HealthCheck {
+	h := &fgw.HealthCheck{
 		Interval:    hc.Interval,
 		MaxFails:    hc.MaxFails,
 		FailTimeout: hc.FailTimeout,
@@ -67,9 +67,9 @@ func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
 	}
 
 	if len(hc.Matches) > 0 {
-		h.Matches = make([]routecfg.HealthCheckMatch, 0)
+		h.Matches = make([]fgw.HealthCheckMatch, 0)
 		for _, m := range hc.Matches {
-			match := routecfg.HealthCheckMatch{
+			match := fgw.HealthCheckMatch{
 				StatusCodes: m.StatusCodes,
 				Body:        m.Body,
 			}
@@ -88,12 +88,12 @@ func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *routecfg.HealthCheck {
 	return h
 }
 
-func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.FaultInjection {
-	result := &routecfg.FaultInjection{}
+func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *fgw.FaultInjection {
+	result := &fgw.FaultInjection{}
 
 	if fault.Delay != nil {
 		fd := fault.Delay
-		delay := &routecfg.FaultInjectionDelay{
+		delay := &fgw.FaultInjectionDelay{
 			Percent: fd.Percent,
 			Fixed:   fd.Fixed,
 			Unit:    fd.Unit,
@@ -108,7 +108,7 @@ func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.Fault
 
 	if fault.Abort != nil {
 		fa := fault.Abort
-		result.Abort = &routecfg.FaultInjectionAbort{
+		result.Abort = &fgw.FaultInjectionAbort{
 			Percent: fa.Percent,
 			Status:  fa.StatusCode,
 			Message: fa.Message,
@@ -118,8 +118,8 @@ func newFaultInjection(fault *gwpav1alpha1.FaultInjectionConfig) *routecfg.Fault
 	return result
 }
 
-func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
-	cert := &routecfg.UpstreamCert{
+func newUpstreamCert(cfg *UpstreamTLSConfig) *fgw.UpstreamCert {
+	cert := &fgw.UpstreamCert{
 		IssuingCA: string(cfg.Secret.Data[corev1.ServiceAccountRootCAKey]),
 	}
 
@@ -136,8 +136,8 @@ func newUpstreamCert(cfg *UpstreamTLSConfig) *routecfg.UpstreamCert {
 	return cert
 }
 
-func newRetry(cfg *gwpav1alpha1.RetryConfig) *routecfg.Retry {
-	return &routecfg.Retry{
+func newRetry(cfg *gwpav1alpha1.RetryConfig) *fgw.Retry {
+	return &fgw.Retry{
 		RetryOn:             strings.Join(cfg.RetryOn, ","),
 		NumRetries:          cfg.NumRetries,
 		BackoffBaseInterval: cfg.BackoffBaseInterval,
