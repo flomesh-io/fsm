@@ -126,7 +126,7 @@ func (as *AgentService) fromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
 	as.Service = svc.ServiceName
 	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
-	as.Address = vm.Spec.SidecarIP
+	as.Address = vm.Spec.MachineIP
 	as.Port = int(svc.Port)
 	metadata := vm.Labels
 	if len(metadata) > 0 {

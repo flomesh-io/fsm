@@ -123,9 +123,9 @@ func (c *client) ListEndpointsForIdentity(serviceIdentity identity.ServiceIdenti
 			continue
 		}
 
-		ip := net.ParseIP(vm.Spec.SidecarIP)
+		ip := net.ParseIP(vm.Spec.MachineIP)
 		if ip == nil {
-			log.Error().Msgf("[%s] Error parsing IP address %s", c.GetID(), vm.Spec.SidecarIP)
+			log.Error().Msgf("[%s] Error parsing IP address %s", c.GetID(), vm.Spec.MachineIP)
 			break
 		}
 		ept := endpoint.Endpoint{IP: ip}

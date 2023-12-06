@@ -378,9 +378,6 @@ spec:
                   - serviceName
                   type: object
                 type: array
-              sidecarIP:
-                description: SidecarIP is the IP address of the vm
-                type: string
               startupProbe:
                 description: 'StartupProbe indicates that the Pod has successfully
                   initialized. If specified, no other probes are executed until this
@@ -535,7 +532,6 @@ spec:
             required:
             - machineIP
             - services
-            - sidecarIP
             type: object
           status:
             description: Status is the status of the VirtualMachine configuration.

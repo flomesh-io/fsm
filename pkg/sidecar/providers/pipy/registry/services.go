@@ -130,7 +130,7 @@ func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Co
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if ctok.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
-				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(net.ParseIP(vm.Spec.SidecarIP).To4()))]; exists {
+				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(net.ParseIP(vm.Spec.MachineIP).To4()))]; exists {
 					serviceList = append(serviceList, *svc)
 				}
 			}

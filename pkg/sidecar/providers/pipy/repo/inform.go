@@ -207,8 +207,8 @@ func (s *Server) recordVmMetadata(p *pipy.Proxy) error {
 			p.Metadata.StartupProbes = append(p.Metadata.StartupProbes, vm.Spec.StartupProbe)
 		}
 
-		if len(vm.Spec.SidecarIP) > 0 {
-			p.Addr = pipy.NewNetAddress(vm.Spec.SidecarIP)
+		if len(vm.Spec.MachineIP) > 0 {
+			p.Addr = pipy.NewNetAddress(vm.Spec.MachineIP)
 		}
 	}
 

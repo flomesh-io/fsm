@@ -29,9 +29,6 @@ type VirtualMachine struct {
 
 // VMSpec is the type used to represent the VirtualMachine specification.
 type VMSpec struct {
-	// SidecarIP is the IP address of the vm
-	SidecarIP string `json:"sidecarIP"`
-
 	// MachineIP is the IP address of the vm
 	MachineIP string `json:"machineIP"`
 
