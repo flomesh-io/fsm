@@ -1,5 +1,5 @@
 // Package routecfg contains types for the gateway route
-package routecfg
+package fgw
 
 import (
 	"fmt"

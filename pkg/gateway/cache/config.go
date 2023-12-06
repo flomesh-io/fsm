@@ -15,7 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/repo"
@@ -27,7 +27,7 @@ func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	configs := make(map[string]*routecfg.ConfigSpec)
+	configs := make(map[string]*fgw.ConfigSpec)
 	policies := c.policyAttachments()
 
 	for ns, key := range c.gateways {
@@ -42,7 +42,7 @@ func (c *GatewayCache) BuildConfigs() {
 		rules, referredServices := c.routeRules(gw, validListeners, policies)
 		svcConfigs := c.serviceConfigs(referredServices)
 
-		configSpec := &routecfg.ConfigSpec{
+		configSpec := &fgw.ConfigSpec{
 			Defaults:   c.defaults(),
 			Listeners:  listenerCfg,
 			RouteRules: rules,
@@ -70,7 +70,7 @@ func (c *GatewayCache) BuildConfigs() {
 			continue
 		}
 
-		go func(cfg *routecfg.ConfigSpec) {
+		go func(cfg *fgw.ConfigSpec) {
 			//if err := c.repoClient.DeriveCodebase(gatewayPath, parentPath); err != nil {
 			//	log.Error().Msgf("Gateway codebase %q failed to derive codebase %q: %s", gatewayPath, parentPath, err)
 			//	return
@@ -111,8 +111,8 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 	return version, nil
 }
 
-func (c *GatewayCache) defaults() routecfg.Defaults {
-	return routecfg.Defaults{
+func (c *GatewayCache) defaults() fgw.Defaults {
+	return fgw.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
 		DefaultPassthroughUpstreamPort: c.cfg.GetFGWSSLPassthroughUpstreamPort(),
 		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
@@ -131,12 +131,12 @@ func (c *GatewayCache) isDebugEnabled() bool {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []routecfg.Listener {
-	listeners := make([]routecfg.Listener, 0)
+func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []fgw.Listener {
+	listeners := make([]fgw.Listener, 0)
 	enrichers := c.getPortPolicyEnrichers(policies)
 
 	for _, l := range validListeners {
-		listener := &routecfg.Listener{
+		listener := &fgw.Listener{
 			Protocol: l.Protocol,
 			Listen:   c.listenPort(l),
 			Port:     l.Port,
@@ -164,7 +164,7 @@ func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
 	return l.Port
 }
 
-func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *routecfg.TLS {
+func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
 	switch l.Protocol {
 	case gwv1beta1.HTTPSProtocolType:
 		// Terminate
@@ -192,23 +192,23 @@ func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *routecfg.
 	return nil
 }
 
-func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener) *routecfg.TLS {
-	return &routecfg.TLS{
+func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
+	return &fgw.TLS{
 		TLSModeType:  gwv1beta1.TLSModeTerminate,
 		Certificates: c.certificates(gw, l),
 	}
 }
 
-func (c *GatewayCache) tlsPassthroughCfg() *routecfg.TLS {
-	return &routecfg.TLS{
+func (c *GatewayCache) tlsPassthroughCfg() *fgw.TLS {
+	return &fgw.TLS{
 		TLSModeType: gwv1beta1.TLSModePassthrough,
 		// set to false and protect it from being overwritten by the user
 		MTLS: pointer.Bool(false),
 	}
 }
 
-func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) []routecfg.Certificate {
-	certs := make([]routecfg.Certificate, 0)
+func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) []fgw.Certificate {
+	certs := make([]fgw.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
 			key := client.ObjectKey{
@@ -222,7 +222,7 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 				continue
 			}
 
-			cert := routecfg.Certificate{
+			cert := fgw.Certificate{
 				CertChain:  string(secret.Data[corev1.TLSCertKey]),
 				PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
 			}
@@ -238,8 +238,8 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]routecfg.RouteRule, map[string]serviceInfo) {
-	rules := make(map[int32]routecfg.RouteRule)
+func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]fgw.RouteRule, map[string]serviceInfo) {
+	rules := make(map[int32]fgw.RouteRule)
 	services := make(map[string]serviceInfo)
 
 	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
@@ -273,8 +273,8 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	return rules, services
 }
 
-func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]routecfg.ServiceConfig {
-	configs := make(map[string]routecfg.ServiceConfig)
+func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]fgw.ServiceConfig {
+	configs := make(map[string]fgw.ServiceConfig)
 	enrichers := c.getServicePolicyEnrichers()
 
 	for svcPortName, svcInfo := range services {
@@ -333,14 +333,14 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			}
 		}
 
-		svcCfg := &routecfg.ServiceConfig{
+		svcCfg := &fgw.ServiceConfig{
 			//Filters:   svcInfo.filters,
-			Endpoints: make(map[string]routecfg.Endpoint),
+			Endpoints: make(map[string]fgw.Endpoint),
 		}
 
 		for ep := range endpointSet {
 			hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
-			svcCfg.Endpoints[hostport] = routecfg.Endpoint{
+			svcCfg.Endpoints[hostport] = fgw.Endpoint{
 				Weight: 1,
 			}
 		}
@@ -355,9 +355,9 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 	return configs
 }
 
-func (c *GatewayCache) chains() routecfg.Chains {
+func (c *GatewayCache) chains() fgw.Chains {
 	if c.cfg.GetFeatureFlags().EnableGatewayAgentService {
-		return routecfg.Chains{
+		return fgw.Chains{
 			HTTPRoute:      insertAgentServiceScript(defaultHTTPChains),
 			HTTPSRoute:     insertAgentServiceScript(defaultHTTPSChains),
 			TLSPassthrough: defaultTLSPassthroughChains,
@@ -368,7 +368,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 	}
 
 	if c.cfg.GetFeatureFlags().EnableGatewayProxyTag {
-		return routecfg.Chains{
+		return fgw.Chains{
 			HTTPRoute:      insertProxyTagScript(defaultHTTPChains),
 			HTTPSRoute:     insertProxyTagScript(defaultHTTPSChains),
 			TLSPassthrough: defaultTLSPassthroughChains,
@@ -378,7 +378,7 @@ func (c *GatewayCache) chains() routecfg.Chains {
 		}
 	}
 
-	return routecfg.Chains{
+	return fgw.Chains{
 		HTTPRoute:      defaultHTTPChains,
 		HTTPSRoute:     defaultHTTPSChains,
 		TLSPassthrough: defaultTLSPassthroughChains,

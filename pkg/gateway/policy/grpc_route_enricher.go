@@ -8,11 +8,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 )
 
 type GRPCRoutePolicyEnricher interface {
-	Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch)
+	Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch)
 }
 
 // ---
@@ -22,7 +22,7 @@ type RateLimitGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -46,7 +46,7 @@ type AccessControlGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -70,7 +70,7 @@ type FaultInjectionGRPCRouteEnricher struct {
 	Data []gwpav1alpha1.FaultInjectionPolicy
 }
 
-func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *routecfg.GRPCTrafficMatch) {
+func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1alpha2.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}

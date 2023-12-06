@@ -2,13 +2,13 @@ package policy
 
 import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/gateway/routecfg"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 )
 
 // ServicePolicyEnricher is an interface for enriching service level policies
 type ServicePolicyEnricher interface {
 	// Enrich enriches the service config with the service level policy based on the service port name
-	Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig)
+	Enrich(svcPortName string, svcCfg *fgw.ServiceConfig)
 }
 
 // ---
@@ -18,7 +18,7 @@ type SessionStickyPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.SessionStickyConfig
 }
 
-func (e *SessionStickyPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *SessionStickyPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -36,7 +36,7 @@ type LoadBalancerPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.LoadBalancerType
 }
 
-func (e *LoadBalancerPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *LoadBalancerPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -53,7 +53,7 @@ type CircuitBreakingPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.CircuitBreakingConfig
 }
 
-func (e *CircuitBreakingPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *CircuitBreakingPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -70,7 +70,7 @@ type HealthCheckPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.HealthCheckConfig
 }
 
-func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *HealthCheckPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -87,7 +87,7 @@ type UpstreamTLSPolicyEnricher struct {
 	Data map[string]*UpstreamTLSConfig
 }
 
-func (e *UpstreamTLSPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *UpstreamTLSPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -105,7 +105,7 @@ type RetryPolicyEnricher struct {
 	Data map[string]*gwpav1alpha1.RetryConfig
 }
 
-func (e *RetryPolicyEnricher) Enrich(svcPortName string, svcCfg *routecfg.ServiceConfig) {
+func (e *RetryPolicyEnricher) Enrich(svcPortName string, svcCfg *fgw.ServiceConfig) {
 	if len(e.Data) == 0 {
 		return
 	}
