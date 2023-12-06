@@ -70,7 +70,9 @@ func (job *PipyConfGeneratorJob) Run() {
 	cataloger := s.catalog
 	pipyConf := new(PipyConf)
 
+	desiredSuffix := ""
 	if proxy.Metadata != nil && len(proxy.Metadata.Namespace) > 0 {
+		desiredSuffix = fmt.Sprintf("%s.svc.%s", proxy.Metadata.Namespace, k8s.GetTrustDomain())
 		metrics, _ := injector.IsMetricsEnabled(s.kubeController, proxy.Metadata.Namespace)
 		pipyConf.Metrics = metrics
 	}
@@ -80,8 +82,8 @@ func (job *PipyConfGeneratorJob) Run() {
 	certs(s, proxy, pipyConf, proxyServices)
 	pluginSetV := plugin(cataloger, s, pipyConf, proxy)
 	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices, proxy)
-	outbound(cataloger, proxy.Identity, s, pipyConf, proxy)
-	egress(cataloger, proxy.Identity, s, pipyConf, proxy)
+	outbound(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
+	egress(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
 	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
 	connetor(cataloger, pipyConf)
 	balance(pipyConf)
@@ -125,7 +127,7 @@ func reorder(pipyConf *PipyConf) {
 	}
 }
 
-func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy) bool {
+func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, desiredSuffix string) bool {
 	egressTrafficPolicy, egressErr := cataloger.GetEgressTrafficPolicy(serviceIdentity)
 	if egressErr != nil {
 		if s.retryProxiesJob != nil {
@@ -136,7 +138,7 @@ func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIde
 
 	if egressTrafficPolicy != nil {
 		egressDependClusters := generatePipyEgressTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
-			egressTrafficPolicy)
+			egressTrafficPolicy, desiredSuffix)
 		if len(egressDependClusters) > 0 {
 			if ready := generatePipyEgressTrafficBalancePolicy(cataloger, proxy, serviceIdentity, pipyConf,
 				egressTrafficPolicy, egressDependClusters); !ready {
@@ -170,13 +172,13 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 	return true
 }
 
-func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy) bool {
+func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, desiredSuffix string) bool {
 	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(serviceIdentity)
 	if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
 		pipyConf.DNSResolveDB = outboundTrafficPolicy.ServicesResolvableSet
 	}
 	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
-		outboundTrafficPolicy)
+		outboundTrafficPolicy, desiredSuffix)
 	if len(outboundDependClusters) > 0 {
 		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, proxy, serviceIdentity, pipyConf,
 			outboundTrafficPolicy, outboundDependClusters); !ready {
@@ -371,6 +373,11 @@ func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
 	kubeController := cataloger.GetKubeController()
 	svcList := kubeController.ListServices()
 	for _, svc := range svcList {
+		if pipyConf.DNSResolveDB == nil {
+			pipyConf.DNSResolveDB = make(map[string][]interface{})
+		} else if _, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
+			continue
+		}
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if !ctok.IsSyncCloudNamespace(ns) {
 			continue
@@ -396,9 +403,6 @@ func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
 					addr2 := addrItems[j].(string)
 					return addr1 < addr2
 				})
-				if pipyConf.DNSResolveDB == nil {
-					pipyConf.DNSResolveDB = make(map[string][]interface{})
-				}
 				pipyConf.DNSResolveDB[svc.Name] = addrItems
 				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
 				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, k8s.GetTrustDomain())] = addrItems

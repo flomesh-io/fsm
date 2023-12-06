@@ -379,12 +379,14 @@ func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, r
 	}
 }
 
-func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName) {
+func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName, desiredSuffix string) {
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
 	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
-		if len(ruleName) < len(preRuleName) {
+		if len(desiredSuffix) > 0 && strings.HasSuffix(string(ruleName), desiredSuffix) {
+			otm.HTTPHostPort2Service[hostPort] = ruleName
+		} else if len(ruleName) < len(preRuleName) {
 			otm.HTTPHostPort2Service[hostPort] = ruleName
 		}
 	} else {

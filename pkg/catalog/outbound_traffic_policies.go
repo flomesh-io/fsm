@@ -3,6 +3,7 @@ package catalog
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	mapset "github.com/deckarep/golang-set"
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
@@ -258,16 +259,22 @@ func (mc *MeshCatalog) mergeUpstreamClusters(meshSvc service.MeshService, upstre
 }
 
 func (mc *MeshCatalog) mergeSplitUpstreamClusters(meshSvc service.MeshService, backend split.TrafficSplitBackend, upstreamClusters []service.WeightedCluster) []service.WeightedCluster {
+	backendNamespace := meshSvc.Namespace
+	backendService := backend.Service
+	if segs := strings.Split(backend.Service, "/"); len(segs) == 2 {
+		backendNamespace = segs[0]
+		backendService = segs[1]
+	}
 	cnsLocal := make(map[service.ClusterName]bool)
 	var aas []service.ClusterName
 	var fos []service.ClusterName
 	{
 		backendMeshSvc := service.MeshService{
-			Namespace: meshSvc.Namespace, // Backends belong to the same namespace as the apex service
-			Name:      backend.Service,
+			Namespace: backendNamespace, // Backends belong to the same namespace as the apex service
+			Name:      backendService,
 		}
 		targetPort, err := mc.kubeController.GetTargetPortForServicePort(
-			types.NamespacedName{Namespace: backendMeshSvc.Namespace, Name: backendMeshSvc.Name}, meshSvc.Port)
+			types.NamespacedName{Namespace: backendNamespace, Name: backendMeshSvc.Name}, meshSvc.Port)
 		if err == nil {
 			backendMeshSvc.TargetPort = targetPort
 			aas = append(aas, service.ClusterName(backendMeshSvc.SidecarClusterName()))
@@ -276,8 +283,8 @@ func (mc *MeshCatalog) mergeSplitUpstreamClusters(meshSvc service.MeshService, b
 	}
 	{
 		backendMeshSvc := service.MeshService{
-			Namespace: meshSvc.Namespace, // Backends belong to the same namespace as the apex service
-			Name:      backend.Service,
+			Namespace: backendNamespace, // Backends belong to the same namespace as the apex service
+			Name:      backendService,
 			Port:      meshSvc.Port,
 		}
 		targetPorts := mc.multiclusterController.GetTargetPortForServicePort(

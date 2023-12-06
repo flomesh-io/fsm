@@ -126,7 +126,7 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 	}
 }
 
-func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy) map[service.ClusterName]*WeightedCluster {
+func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(outboundPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -167,7 +167,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 				hsrrs.setServiceIdentity(proxyIdentity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
 				}
 
 				for _, route := range httpRouteConfig.Routes {
@@ -248,7 +248,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 	return dependClusters
 }
 
-func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy) map[service.ClusterName]*WeightedCluster {
+func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(egressPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -280,7 +280,7 @@ func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ i
 				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
 				hsrrs.setEgressForwardGateway(trafficMatch.EgressGateWay)
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
 				}
 				for _, rule := range httpRouteConfig.RoutingRules {
 					route := rule.Route
