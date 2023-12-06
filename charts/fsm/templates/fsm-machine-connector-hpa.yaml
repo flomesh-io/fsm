@@ -1,0 +1,29 @@
+{{- if .Values.fsm.cloudConnector.machine.enable }}
+{{- if .Values.fsm.injector.autoScale.enable }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fsm-machine-connector-hpa
+  namespace: {{ include "fsm.namespace" . }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: fsm-machine-connector
+  minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.cloudConnector.autoScale.cpu.targetAverageUtilization}}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.cloudConnector.autoScale.memory.targetAverageUtilization}}
+{{- end }}
+{{- end }}

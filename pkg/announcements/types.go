@@ -301,6 +301,17 @@ const (
 
 	// ---
 
+	// VirtualMachineAdded is the type of announcement emitted when we observe an addition of vms.machine.flomesh.io
+	VirtualMachineAdded Kind = "virtualmachine-added"
+
+	// VirtualMachineDeleted the type of announcement emitted when we observe a deletion of vms.machine.flomesh.io
+	VirtualMachineDeleted Kind = "virtualmachine-deleted"
+
+	// VirtualMachineUpdated is the type of announcement emitted when we observe an update to vms.machine.flomesh.io
+	VirtualMachineUpdated Kind = "virtualmachine-updated"
+
+	// ---
+
 	// EndpointSlicesAdded is the type of announcement emitted when we observe an addition of a Kubernetes EndpointSlices
 	EndpointSlicesAdded Kind = "endpointslices-added"
 

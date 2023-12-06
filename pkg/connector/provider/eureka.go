@@ -11,7 +11,12 @@ import (
 )
 
 type EurekaDiscoveryClient struct {
-	eurekaClient *fargo.EurekaConnection
+	eurekaClient       *fargo.EurekaConnection
+	isInternalServices bool
+}
+
+func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
+	return dc.isInternalServices
 }
 
 func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
@@ -89,13 +94,11 @@ func (dc *EurekaDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (
 }
 
 func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	err := dc.eurekaClient.DeregisterInstance(dereg.toEureka())
-	return err
+	return dc.eurekaClient.DeregisterInstance(dereg.toEureka())
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
-	err := dc.eurekaClient.RegisterInstance(reg.toEureka())
-	return err
+	return dc.eurekaClient.RegisterInstance(reg.toEureka())
 }
 
 // EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
@@ -109,10 +112,11 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 	return connector.EurekaDiscoveryService
 }
 
-func GetEurekaDiscoveryClient(address string) (*EurekaDiscoveryClient, error) {
+func GetEurekaDiscoveryClient(address string, isInternalServices bool) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
+	eurekaDiscoveryClient.isInternalServices = isInternalServices
 	logging.SetLevel(logging.WARNING, "fargo")
 	return eurekaDiscoveryClient, nil
 }

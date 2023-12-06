@@ -10,20 +10,20 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: fsm-eureka-connector
-  minReplicas: {{.Values.fsm.eurekaConnector.autoScale.minReplicas}}
-  maxReplicas: {{.Values.fsm.eurekaConnector.autoScale.maxReplicas}}
+  minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: {{.Values.fsm.eurekaConnector.autoScale.cpu.targetAverageUtilization}}
+        averageUtilization: {{.Values.fsm.cloudConnector.autoScale.cpu.targetAverageUtilization}}
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: {{.Values.fsm.eurekaConnector.autoScale.memory.targetAverageUtilization}}
+        averageUtilization: {{.Values.fsm.cloudConnector.autoScale.memory.targetAverageUtilization}}
 {{- end }}
 {{- end }}

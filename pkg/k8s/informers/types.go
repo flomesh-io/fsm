@@ -81,6 +81,9 @@ const (
 	// InformerKeyPluginConfig is the InformerKey for a PluginConfig informer
 	InformerKeyPluginConfig InformerKey = "PluginConfig"
 
+	// InformerKeyVirtualMachine is the InformerKey for a VirtualMachine informer
+	InformerKeyVirtualMachine InformerKey = "VirtualMachine"
+
 	// InformerKeyK8sIngressClass is the InformerKey for a k8s IngressClass informer
 	InformerKeyK8sIngressClass InformerKey = "IngressClass-k8s"
 	// InformerKeyK8sIngress is the InformerKey for a k8s Ingress informer

@@ -8,9 +8,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
@@ -20,7 +20,6 @@ import (
 // ProxyServiceMapper knows how to map Sidecar instances to services.
 type ProxyServiceMapper interface {
 	ListProxyServices(*pipy.Proxy) ([]service.MeshService, error)
-	ListProxyPods() []v1.Pod
 }
 
 // ExplicitProxyServiceMapper is a custom ProxyServiceMapper implementation.
@@ -36,30 +35,32 @@ type KubeProxyServiceMapper struct {
 	KubeController k8s.Controller
 }
 
-// ListProxyPods maps an Sidecar instance to a number of Kubernetes services.
-func (k *KubeProxyServiceMapper) ListProxyPods() []v1.Pod {
-	allPods := k.KubeController.ListPods()
-	var matchedPods []v1.Pod
-	for _, pod := range allPods {
-		if _, exists := pod.Labels[constants.SidecarUniqueIDLabelName]; exists {
-			matchedPods = append(matchedPods, *pod)
-		}
-	}
-	return matchedPods
-}
-
 // ListProxyServices maps an Pipy instance to a number of Kubernetes services.
 func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.MeshService, error) {
-	pod, err := k.KubeController.GetPodForProxy(p)
-	if err != nil {
-		return nil, err
+	var meshServices []service.MeshService
+	if p.VM {
+		vm, err := k.KubeController.GetVmForProxy(p)
+		if err != nil {
+			return nil, err
+		}
+
+		meshServices = listServicesForVm(vm, k.KubeController)
+
+		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
+		log.Trace().Msgf("Services associated with VM with UID=%s Name=%s/%s: %+v",
+			vm.ObjectMeta.UID, vm.Namespace, vm.Name, servicesForPod)
+	} else {
+		pod, err := k.KubeController.GetPodForProxy(p)
+		if err != nil {
+			return nil, err
+		}
+
+		meshServices = listServicesForPod(pod, k.KubeController)
+
+		servicesForPod := strings.Join(listServiceNames(meshServices), ",")
+		log.Trace().Msgf("Services associated with Pod with UID=%s Name=%s/%s: %+v",
+			pod.ObjectMeta.UID, pod.Namespace, pod.Name, servicesForPod)
 	}
-
-	meshServices := listServicesForPod(pod, k.KubeController)
-
-	servicesForPod := strings.Join(listServiceNames(meshServices), ",")
-	log.Trace().Msgf("Services associated with Pod with UID=%s Name=%s/%s: %+v",
-		pod.ObjectMeta.UID, pod.Namespace, pod.Name, servicesForPod)
 
 	return meshServices, nil
 }
@@ -116,6 +117,44 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 	}
 
 	meshServices := kubernetesServicesToMeshServices(kubeController, serviceList, pod.GetName())
+
+	return meshServices
+}
+
+// listServicesForVm lists Kubernetes services whose selectors match vm labels
+func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Controller) []service.MeshService {
+	var serviceList []v1.Service
+	svcList := kubeController.ListServices()
+
+	for _, svc := range svcList {
+		ns := kubeController.GetNamespace(svc.Namespace)
+		if ctok.IsSyncCloudNamespace(ns) {
+			if len(svc.Annotations) > 0 {
+				if _, exists := svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(net.ParseIP(vm.Spec.SidecarIP).To4()))]; exists {
+					serviceList = append(serviceList, *svc)
+				}
+			}
+		} else {
+			if svc.Namespace != vm.Namespace {
+				continue
+			}
+			svcRawSelector := svc.Spec.Selector
+			// service has no selectors, we do not need to match against the vm label
+			if len(svcRawSelector) == 0 {
+				continue
+			}
+			selector := labels.Set(svcRawSelector).AsSelector()
+			if selector.Matches(labels.Set(vm.Labels)) {
+				serviceList = append(serviceList, *svc)
+			}
+		}
+	}
+
+	if len(serviceList) == 0 {
+		return nil
+	}
+
+	meshServices := kubernetesServicesToMeshServices(kubeController, serviceList, vm.GetName())
 
 	return meshServices
 }

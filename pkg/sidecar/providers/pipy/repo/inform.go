@@ -21,10 +21,18 @@ func (s *Server) informTrafficPolicies(proxyPtr **pipy.Proxy, wg *sync.WaitGroup
 	}
 
 	proxy := *proxyPtr
-	if initError := s.recordPodMetadata(proxy); initError == errServiceAccountMismatch {
-		// Service Account mismatch
-		log.Error().Err(initError).Str("proxy", proxy.String()).Msg("Mismatched service account for proxy")
-		return initError
+	if proxy.VM {
+		if initError := s.recordVmMetadata(proxy); initError == errServiceAccountMismatch {
+			// Service Account mismatch
+			log.Error().Err(initError).Str("proxy", proxy.String()).Msg("Mismatched service account for proxy")
+			return initError
+		}
+	} else {
+		if initError := s.recordPodMetadata(proxy); initError == errServiceAccountMismatch {
+			// Service Account mismatch
+			log.Error().Err(initError).Str("proxy", proxy.String()).Msg("Mismatched service account for proxy")
+			return initError
+		}
 	}
 
 	proxy = s.proxyRegistry.RegisterProxy(proxy)
@@ -99,7 +107,7 @@ func isCNforProxy(proxy *pipy.Proxy, cn certificate.CommonName) bool {
 // recordPodMetadata records pod metadata and verifies the certificate issued for this pod
 // is for the same service account as seen on the pod's service account
 func (s *Server) recordPodMetadata(p *pipy.Proxy) error {
-	if p.PodMetadata == nil {
+	if p.Metadata == nil {
 		pod, err := s.kubeController.GetPodForProxy(p)
 		if err != nil {
 			log.Warn().Str("proxy", p.String()).Msg("Could not find pod for connecting proxy. No metadata was recorded.")
@@ -116,7 +124,7 @@ func (s *Server) recordPodMetadata(p *pipy.Proxy) error {
 			}
 		}
 
-		p.PodMetadata = &pipy.PodMetadata{
+		p.Metadata = &pipy.ProxyMetadata{
 			UID:       string(pod.UID),
 			Name:      pod.Name,
 			Namespace: pod.Namespace,
@@ -131,13 +139,13 @@ func (s *Server) recordPodMetadata(p *pipy.Proxy) error {
 
 		for idx := range pod.Spec.Containers {
 			if pod.Spec.Containers[idx].ReadinessProbe != nil {
-				p.PodMetadata.ReadinessProbes = append(p.PodMetadata.ReadinessProbes, pod.Spec.Containers[idx].ReadinessProbe)
+				p.Metadata.ReadinessProbes = append(p.Metadata.ReadinessProbes, pod.Spec.Containers[idx].ReadinessProbe)
 			}
 			if pod.Spec.Containers[idx].LivenessProbe != nil {
-				p.PodMetadata.LivenessProbes = append(p.PodMetadata.LivenessProbes, pod.Spec.Containers[idx].LivenessProbe)
+				p.Metadata.LivenessProbes = append(p.Metadata.LivenessProbes, pod.Spec.Containers[idx].LivenessProbe)
 			}
 			if pod.Spec.Containers[idx].StartupProbe != nil {
-				p.PodMetadata.StartupProbes = append(p.PodMetadata.StartupProbes, pod.Spec.Containers[idx].StartupProbe)
+				p.Metadata.StartupProbes = append(p.Metadata.StartupProbes, pod.Spec.Containers[idx].StartupProbe)
 			}
 		}
 
@@ -147,9 +155,67 @@ func (s *Server) recordPodMetadata(p *pipy.Proxy) error {
 	}
 
 	// Verify Service account matches (cert to pod Service Account)
-	if p.Identity.ToK8sServiceAccount() != p.PodMetadata.ServiceAccount {
+	if p.Identity.ToK8sServiceAccount() != p.Metadata.ServiceAccount {
 		log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrMismatchedServiceAccount)).Str("proxy", p.String()).
-			Msgf("Service Account referenced in NodeID (%s) does not match Service Account in Certificate (%s). This proxy is not allowed to join the mesh.", p.PodMetadata.ServiceAccount, p.Identity.ToK8sServiceAccount())
+			Msgf("Service Account referenced in NodeID (%s) does not match Service Account in Certificate (%s). This proxy is not allowed to join the mesh.", p.Metadata.ServiceAccount, p.Identity.ToK8sServiceAccount())
+		return errServiceAccountMismatch
+	}
+
+	return nil
+}
+
+// recordVmMetadata records vm metadata and verifies the certificate issued for this vm
+// is for the same service account as seen on the vm's service account
+func (s *Server) recordVmMetadata(p *pipy.Proxy) error {
+	if p.Metadata == nil {
+		vm, err := s.kubeController.GetVmForProxy(p)
+		if err != nil {
+			log.Warn().Str("proxy", p.String()).Msg("Could not find vm for connecting proxy. No metadata was recorded.")
+			return nil
+		}
+
+		workloadKind := ""
+		workloadName := ""
+		for _, ref := range vm.GetOwnerReferences() {
+			if ref.Controller != nil && *ref.Controller {
+				workloadKind = ref.Kind
+				workloadName = ref.Name
+				break
+			}
+		}
+
+		p.Metadata = &pipy.ProxyMetadata{
+			UID:       string(vm.UID),
+			Name:      vm.Name,
+			Namespace: vm.Namespace,
+			ServiceAccount: identity.K8sServiceAccount{
+				Namespace: vm.Namespace,
+				Name:      vm.Spec.ServiceAccountName,
+			},
+			CreationTime: vm.GetCreationTimestamp().Time,
+			WorkloadKind: workloadKind,
+			WorkloadName: workloadName,
+		}
+
+		if vm.Spec.ReadinessProbe != nil {
+			p.Metadata.ReadinessProbes = append(p.Metadata.ReadinessProbes, vm.Spec.ReadinessProbe)
+		}
+		if vm.Spec.LivenessProbe != nil {
+			p.Metadata.LivenessProbes = append(p.Metadata.LivenessProbes, vm.Spec.LivenessProbe)
+		}
+		if vm.Spec.StartupProbe != nil {
+			p.Metadata.StartupProbes = append(p.Metadata.StartupProbes, vm.Spec.StartupProbe)
+		}
+
+		if len(vm.Spec.SidecarIP) > 0 {
+			p.Addr = pipy.NewNetAddress(vm.Spec.SidecarIP)
+		}
+	}
+
+	// Verify Service account matches (cert to pod Service Account)
+	if p.Identity.ToK8sServiceAccount() != p.Metadata.ServiceAccount {
+		log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrMismatchedServiceAccount)).Str("proxy", p.String()).
+			Msgf("Service Account referenced in NodeID (%s) does not match Service Account in Certificate (%s). This proxy is not allowed to join the mesh.", p.Metadata.ServiceAccount, p.Identity.ToK8sServiceAccount())
 		return errServiceAccountMismatch
 	}
 

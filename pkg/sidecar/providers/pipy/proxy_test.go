@@ -19,7 +19,7 @@ import (
 var _ = Describe("Test proxy methods", func() {
 	proxyUUID := uuid.New()
 	podUID := uuid.New().String()
-	proxy := NewProxy(models.KindSidecar, proxyUUID, identity.New("svc-acc", "namespace"), tests.NewMockAddress("1.2.3.4"))
+	proxy := NewProxy(models.KindSidecar, proxyUUID, identity.New("svc-acc", "namespace"), false, tests.NewMockAddress("1.2.3.4"))
 
 	It("creates a valid proxy", func() {
 		Expect(proxy).ToNot((BeNil()))
@@ -40,9 +40,9 @@ var _ = Describe("Test proxy methods", func() {
 		})
 	})
 
-	Context("test HasPodMetadata()", func() {
+	Context("test HasMetadata()", func() {
 		It("returns correct values", func() {
-			actual := proxy.HasPodMetadata()
+			actual := proxy.HasMetadata()
 			Expect(actual).To(BeFalse())
 		})
 	})
@@ -68,14 +68,14 @@ var _ = Describe("Test proxy methods", func() {
 
 	Context("test correctness proxy object creation", func() {
 		It("returns correct values", func() {
-			Expect(proxy.HasPodMetadata()).To(BeFalse())
+			Expect(proxy.HasMetadata()).To(BeFalse())
 
-			proxy.PodMetadata = &PodMetadata{
+			proxy.Metadata = &ProxyMetadata{
 				UID: podUID,
 			}
 
-			Expect(proxy.HasPodMetadata()).To(BeTrue())
-			Expect(proxy.PodMetadata.UID).To(Equal(podUID))
+			Expect(proxy.HasMetadata()).To(BeTrue())
+			Expect(proxy.Metadata.UID).To(Equal(podUID))
 			Expect(strings.Contains(proxy.String(), fmt.Sprintf("[ProxyUUID=%s]", proxyUUID))).To(BeTrue())
 		})
 	})
@@ -91,7 +91,7 @@ func TestStatsHeaders(t *testing.T) {
 		{
 			name: "nil metadata",
 			proxy: Proxy{
-				PodMetadata: nil,
+				Metadata: nil,
 			},
 			expected: map[string]string{
 				"fsm-stats-kind":      unknown,
@@ -103,7 +103,7 @@ func TestStatsHeaders(t *testing.T) {
 		{
 			name: "empty metadata",
 			proxy: Proxy{
-				PodMetadata: &PodMetadata{},
+				Metadata: &ProxyMetadata{},
 			},
 			expected: map[string]string{
 				"fsm-stats-kind":      unknown,
@@ -115,7 +115,7 @@ func TestStatsHeaders(t *testing.T) {
 		{
 			name: "full metadata",
 			proxy: Proxy{
-				PodMetadata: &PodMetadata{
+				Metadata: &ProxyMetadata{
 					Name:         "pod",
 					Namespace:    "ns",
 					WorkloadKind: "kind",
@@ -132,7 +132,7 @@ func TestStatsHeaders(t *testing.T) {
 		{
 			name: "replicaset with expected name format",
 			proxy: Proxy{
-				PodMetadata: &PodMetadata{
+				Metadata: &ProxyMetadata{
 					WorkloadKind: "ReplicaSet",
 					WorkloadName: "some-name-randomchars",
 				},
@@ -147,7 +147,7 @@ func TestStatsHeaders(t *testing.T) {
 		{
 			name: "replicaset without expected name format",
 			proxy: Proxy{
-				PodMetadata: &PodMetadata{
+				Metadata: &ProxyMetadata{
 					WorkloadKind: "ReplicaSet",
 					WorkloadName: "name",
 				},
@@ -178,7 +178,7 @@ func TestPodMetadataString(t *testing.T) {
 		{
 			name: "with valid pod metadata",
 			proxy: &Proxy{
-				PodMetadata: &PodMetadata{
+				Metadata: &ProxyMetadata{
 					UID:            "some-UID",
 					Namespace:      "some-ns",
 					Name:           "some-pod",
@@ -190,7 +190,7 @@ func TestPodMetadataString(t *testing.T) {
 		{
 			name: "no pod metadata",
 			proxy: &Proxy{
-				PodMetadata: nil,
+				Metadata: nil,
 			},
 			expected: "",
 		},
@@ -200,7 +200,7 @@ func TestPodMetadataString(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
 
-			actual := tc.proxy.PodMetadataString()
+			actual := tc.proxy.MetadataString()
 			assert.Equal(tc.expected, actual)
 		})
 	}

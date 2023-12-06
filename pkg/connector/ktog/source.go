@@ -170,7 +170,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	raw, ok := svc.Annotations[connector.AnnotationServiceSync]
+	raw, ok := svc.Annotations[connector.AnnotationServiceSyncK8sToFgw]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
 		return !t.ExplicitEnable

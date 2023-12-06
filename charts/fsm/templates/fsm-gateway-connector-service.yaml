@@ -1,0 +1,16 @@
+{{- if .Values.fsm.cloudConnector.gateway.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: fsm-gateway-connector
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-gateway-connector
+spec:
+  ports:
+    - name: gateway-connector
+      port: 9090
+  selector:
+    app: fsm-gateway-connector
+{{- end }}
