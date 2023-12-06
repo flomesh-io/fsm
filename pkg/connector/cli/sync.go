@@ -172,9 +172,7 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, viaA
 			if fgwSvc != nil {
 				if len(fgwSvc.Spec.ClusterIPs) > 0 &&
 					len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
-
 					internalAddr = fgwSvc.Spec.ClusterIPs[0]
-
 					if strings.EqualFold(viaAddrType, VIA_EXTERNAL_IP) &&
 						len(fgwSvc.Spec.ExternalIPs) > 0 &&
 						len(fgwSvc.Spec.ExternalIPs[0]) > 0 {

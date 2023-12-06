@@ -33,6 +33,8 @@ const (
 	// K8SMaxPeriod is the maximum time to wait before forcing a sync, even
 	// if there are active changes going on.
 	K8SMaxPeriod = 5 * time.Second
+
+	True = "true"
 )
 
 var (
@@ -198,7 +200,7 @@ func (s *Sink) UpsertService(key string, raw interface{}) error {
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == "true" {
+	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
 		s.serviceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
@@ -424,7 +426,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
 						}
 					} else {
-						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
+						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 					}
 				}
 				s.fillService(svcMeta, svc)
@@ -440,7 +442,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(microSvcName),
-					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
+					Labels: map[string]string{CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
@@ -468,7 +470,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
 					}
 				} else {
-					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
+					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
 			}
 			s.fillService(svcMeta, createSvc)
