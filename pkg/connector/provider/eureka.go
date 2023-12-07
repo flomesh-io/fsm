@@ -24,16 +24,22 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 	if err != nil {
 		return nil, err
 	}
-
 	catalogServices := make(map[string][]string)
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
+			svc := strings.ToLower(svc)
+			if strings.Contains(svc, "_") {
+				log.Info().Msgf("invalid format, ignore service: %s", svc)
+				continue
+			}
 			for _, svcIns := range svcApp.Instances {
 				if serviceSource, serviceSourceErr := svcIns.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
 					if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
 						continue
 					}
 				}
+				svcIns.App = strings.ToLower(svcIns.App)
+				svcIns.VipAddress = strings.ToLower(svcIns.VipAddress)
 				svcTagArray, exists := catalogServices[svc]
 				if !exists {
 					svcTagArray = make([]string, 0)
@@ -51,10 +57,15 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 
 // CatalogService is used to query catalog entries for a given service
 func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	services, err := dc.eurekaClient.GetApp(service)
+	//services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
+	//if err != nil {
+	//	return nil, err
+	//}
+	servicesMap, err := dc.eurekaClient.GetApps()
 	if err != nil {
 		return nil, err
 	}
+	services := servicesMap[strings.ToUpper(service)]
 	catalogServices := make([]*CatalogService, 0)
 	for _, ins := range services.Instances {
 		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
@@ -70,11 +81,15 @@ func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 
 // HealthService is used to query catalog entries for a given service
 func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOptions, passingOnly bool) ([]*AgentService, error) {
-	services, err := dc.eurekaClient.GetApp(service)
+	//services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
+	//if err != nil {
+	//	return nil, err
+	//}
+	servicesMap, err := dc.eurekaClient.GetApps()
 	if err != nil {
 		return nil, err
 	}
-
+	services := servicesMap[strings.ToUpper(service)]
 	agentServices := make([]*AgentService, 0)
 	for _, ins := range services.Instances {
 		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {

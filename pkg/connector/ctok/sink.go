@@ -381,7 +381,7 @@ func (s *Sink) Run(ch <-chan struct{}) {
 
 		for _, svc := range creates {
 			if _, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err != nil {
-				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
+				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
 			}
 		}
 	}
