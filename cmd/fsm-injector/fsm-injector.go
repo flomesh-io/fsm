@@ -25,8 +25,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 
-	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
+
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -154,6 +156,7 @@ func main() {
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	policyClient := policyClientset.NewForConfigOrDie(kubeConfig)
 	pluginClient := pluginClientset.NewForConfigOrDie(kubeConfig)
+	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 
 	k8s.SetTrustDomain(trustDomain)
@@ -199,6 +202,7 @@ func main() {
 		informers.WithSMIClients(smiTrafficSplitClientSet, smiTrafficSpecClientSet, smiTrafficTargetClientSet),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 		informers.WithPolicyClient(policyClient),
+		informers.WithMachineClient(machineClient),
 	)
 
 	if err != nil {

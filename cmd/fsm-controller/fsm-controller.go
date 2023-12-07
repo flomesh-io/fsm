@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -200,6 +201,7 @@ func main() {
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	policyClient := policyClientset.NewForConfigOrDie(kubeConfig)
 	pluginClient := pluginClientset.NewForConfigOrDie(kubeConfig)
+	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 	multiclusterClient := multiclusterClientset.NewForConfigOrDie(kubeConfig)
 	networkingClient := networkingClientset.NewForConfigOrDie(kubeConfig)
@@ -249,6 +251,7 @@ func main() {
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 		informers.WithPolicyClient(policyClient),
 		informers.WithPluginClient(pluginClient),
+		informers.WithMachineClient(machineClient),
 		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),

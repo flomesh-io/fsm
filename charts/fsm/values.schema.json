@@ -1476,11 +1476,11 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
-                        "syncFromK8S",
-                        "syncToFgw"
+                        "syncFromK8S"
                       ],
                       "properties": {
                         "enable": {
@@ -1488,6 +1488,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
                         },
                         "deriveNamespace": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/deriveNamespace",
@@ -1510,7 +1516,8 @@
                             "filterTag",
                             "prefixTag",
                             "suffixTag",
-                            "passingOnly"
+                            "passingOnly",
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1542,6 +1549,22 @@
                               "type": "boolean",
                               "title": "Passing Only",
                               "description": "Passing Only"
+                            },
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGateway",
+                              "type": "object",
+                              "title": "with Gateway API",
+                              "required": [
+                                "enable"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/withGateway/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                }
+                              }
                             }
                           }
                         },
@@ -1561,7 +1584,7 @@
                             "addK8SNamespaceAsServiceSuffix",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces",
-                            "withGatewayAPI",
+                            "withGateway",
                             "consulNodeName",
                             "consulK8STag",
                             "consulEnableNamespaces",
@@ -1648,30 +1671,19 @@
                                 "type": "string"
                               }
                             },
-                            "withGatewayAPI": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "via"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "via": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/withGatewayAPI/properties/via",
-                                  "type": "string",
-                                  "title": "via",
-                                  "description": "via",
-                                  "enum": [
-                                    "ExternalIP",
-                                    "ClusterIP"
-                                  ]
                                 }
                               }
                             },
@@ -1718,49 +1730,6 @@
                               "description": "[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service discovery across Consul namespaces. Only necessary if ACLs are enabled."
                             }
                           }
-                        },
-                        "syncToFgw": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw",
-                          "type": "object",
-                          "title": "The syncToFgw schema",
-                          "required": [
-                            "enable",
-                            "defaultSync",
-                            "allowK8sNamespaces",
-                            "denyK8sNamespaces"
-                          ],
-                          "properties": {
-                            "enable": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/enable",
-                              "type": "boolean",
-                              "title": "enable",
-                              "description": "enable"
-                            },
-                            "defaultSync": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/defaultSync",
-                              "type": "boolean",
-                              "title": "Default Sync",
-                              "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
-                            },
-                            "allowK8sNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/allowK8sNamespaces",
-                              "type": "array",
-                              "title": "Allow K8s Namespaces",
-                              "description": "K8s namespaces to explicitly allow. May be specified multiple times.",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            "denyK8sNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToFgw/properties/denyK8sNamespaces",
-                              "type": "array",
-                              "title": "Deny K8s Namespaces",
-                              "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          }
                         }
                       }
                     },
@@ -1770,11 +1739,11 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
                         "syncToK8S",
-                        "syncFromK8S",
-                        "syncToFgw"
+                        "syncFromK8S"
                       ],
                       "properties": {
                         "enable": {
@@ -1782,6 +1751,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
                         },
                         "deriveNamespace": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/deriveNamespace",
@@ -1804,7 +1779,8 @@
                             "filterMetadata",
                             "prefixMetadata",
                             "suffixMetadata",
-                            "passingOnly"
+                            "passingOnly",
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1836,6 +1812,22 @@
                               "type": "boolean",
                               "title": "Passing Only",
                               "description": "Passing Only"
+                            },
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGateway",
+                              "type": "object",
+                              "title": "with Gateway API",
+                              "required": [
+                                "enable"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/withGateway/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                }
+                              }
                             }
                           }
                         },
@@ -1855,7 +1847,7 @@
                             "addK8SNamespaceAsServiceSuffix",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces",
-                            "withGatewayAPI"
+                            "withGateway"
                           ],
                           "properties": {
                             "enable": {
@@ -1935,37 +1927,207 @@
                                 "type": "string"
                               }
                             },
-                            "withGatewayAPI": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI",
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGateway",
                               "type": "object",
                               "title": "with Gateway API",
                               "required": [
-                                "enable",
-                                "via"
+                                "enable"
                               ],
                               "properties": {
                                 "enable": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI/properties/enable",
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGateway/properties/enable",
                                   "type": "boolean",
                                   "title": "enable",
                                   "description": "enable"
-                                },
-                                "via": {
-                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/withGatewayAPI/properties/via",
-                                  "type": "string",
-                                  "title": "via",
-                                  "description": "via",
-                                  "enum": [
-                                    "ExternalIP",
-                                    "ClusterIP"
-                                  ]
                                 }
                               }
                             }
                           }
+                        }
+                      }
+                    },
+                    "machine": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/machine",
+                      "type": "object",
+                      "title": "The config schema",
+                      "required": [
+                        "enable",
+                        "asInternalServices",
+                        "deriveNamespace",
+                        "syncToK8S"
+                      ],
+                      "properties": {
+                        "enable": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/enable",
+                          "type": "boolean",
+                          "title": "enable",
+                          "description": "enable"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
+                        },
+                        "deriveNamespace": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/deriveNamespace",
+                          "type": "string",
+                          "title": "The derive namespace",
+                          "description": "The derive Namespace"
+                        },
+                        "syncToK8S": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S",
+                          "type": "object",
+                          "title": "The syncToK8s schema",
+                          "required": [
+                            "enable",
+                            "filterLabel",
+                            "prefixLabel",
+                            "suffixLabel",
+                            "passingOnly",
+                            "withGateway"
+                          ],
+                          "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
+                            "filterLabel": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/filterLabel",
+                              "type": "string",
+                              "title": "Filter Label",
+                              "description": "Filter Label"
+                            },
+                            "prefixLabel": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/prefixLabel",
+                              "type": "string",
+                              "title": "Prefix Label",
+                              "description": "Prefix Label"
+                            },
+                            "suffixLabel": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/suffixLabel",
+                              "type": "string",
+                              "title": "Suffix Label",
+                              "description": "Suffix Label"
+                            },
+                            "passingOnly": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/passingOnly",
+                              "type": "boolean",
+                              "title": "Passing Only",
+                              "description": "Passing Only"
+                            },
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGateway",
+                              "type": "object",
+                              "title": "with Gateway API",
+                              "required": [
+                                "enable"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/withGateway/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "gateway": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway",
+                      "type": "object",
+                      "title": "The config schema",
+                      "required": [
+                        "ingress",
+                        "egress",
+                        "syncToFgw"
+                      ],
+                      "properties": {
+                        "ingress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress",
+                          "type": "object",
+                          "title": "Ingress schema",
+                          "required": [
+                            "ipSelector",
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "ipSelector": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/ipSelector",
+                              "type": "string",
+                              "title": "via Gateway Ingress Type",
+                              "description": "via Gateway Ingress Type",
+                              "enum": [
+                                "ExternalIP",
+                                "ClusterIP"
+                              ]
+                            },
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            }
+                          }
+                        },
+                        "egress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress",
+                          "type": "object",
+                          "title": "Egress schema",
+                          "required": [
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            }
+                          }
                         },
                         "syncToFgw": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw",
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw",
                           "type": "object",
                           "title": "The syncToFgw schema",
                           "required": [
@@ -1976,19 +2138,19 @@
                           ],
                           "properties": {
                             "enable": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/enable",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/enable",
                               "type": "boolean",
                               "title": "enable",
                               "description": "enable"
                             },
                             "defaultSync": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/defaultSync",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/defaultSync",
                               "type": "boolean",
                               "title": "Default Sync",
                               "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
                             },
                             "allowK8sNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/allowK8sNamespaces",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/allowK8sNamespaces",
                               "type": "array",
                               "title": "Allow K8s Namespaces",
                               "description": "K8s namespaces to explicitly allow. May be specified multiple times.",
@@ -1997,7 +2159,7 @@
                               }
                             },
                             "denyK8sNamespaces": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToFgw/properties/denyK8sNamespaces",
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/denyK8sNamespaces",
                               "type": "array",
                               "title": "Deny K8s Namespaces",
                               "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",

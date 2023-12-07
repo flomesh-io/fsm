@@ -629,6 +629,11 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		// PluginService event
 		announcements.PluginConfigAdded, announcements.PluginConfigDeleted, announcements.PluginConfigUpdated,
 		//
+		// Machine events
+		//
+		// VM event
+		announcements.VirtualMachineAdded, announcements.VirtualMachineDeleted, announcements.VirtualMachineUpdated,
+		//
 		// Proxy events
 		//
 		announcements.ProxyUpdate:

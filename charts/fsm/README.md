@@ -99,6 +99,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.maxReplicas | int | `5` | Maximum replicas for autoscale |
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
+| fsm.cloudConnector.consul.asInternalServices | bool | `false` |  |
 | fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.consul.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
@@ -120,18 +121,15 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncIngress | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
-| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
-| fsm.cloudConnector.consul.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
-| fsm.cloudConnector.consul.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
-| fsm.cloudConnector.consul.syncToFgw.defaultSync | bool | `true` |  |
-| fsm.cloudConnector.consul.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
-| fsm.cloudConnector.consul.syncToFgw.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncFromK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.prefixTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.suffixTag | string | `""` |  |
+| fsm.cloudConnector.consul.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
+| fsm.cloudConnector.eureka.asInternalServices | bool | `false` |  |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.eureka.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
@@ -146,21 +144,35 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngress | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
-| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.enable | bool | `false` |  |
-| fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.via | string | `"ClusterIP"` |  |
-| fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
-| fsm.cloudConnector.eureka.syncToFgw.defaultSync | bool | `true` |  |
-| fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
-| fsm.cloudConnector.eureka.syncToFgw.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncFromK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
+| fsm.cloudConnector.eureka.syncToK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.gateway.egress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.egress.httpPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.httpPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.ipSelector | string | `"ClusterIP"` |  |
+| fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.gateway.syncToFgw.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.gateway.syncToFgw.enable | bool | `false` |  |
+| fsm.cloudConnector.machine.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.machine.enable | bool | `false` |  |
+| fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.machine.syncToK8S.filterLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.machine.syncToK8S.prefixLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.suffixLabel | string | `""` |  |
+| fsm.cloudConnector.machine.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}` | Sidecar injector's container resource parameters |
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |

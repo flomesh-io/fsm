@@ -19,9 +19,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
-	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -33,6 +33,8 @@ const (
 	// K8SMaxPeriod is the maximum time to wait before forcing a sync, even
 	// if there are active changes going on.
 	K8SMaxPeriod = 5 * time.Second
+
+	True = "true"
 )
 
 var (
@@ -41,11 +43,11 @@ var (
 )
 
 // NewSink creates a new mesh sink
-func NewSink(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface, fsmNamespace string) *Sink {
+func NewSink(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, fsmNamespace string) *Sink {
 	sink := Sink{
 		Ctx:                ctx,
 		KubeClient:         kubeClient,
-		gatewayClient:      gatewayClient,
+		DiscClient:         discClient,
 		fsmNamespace:       fsmNamespace,
 		serviceKeyToName:   make(map[string]string),
 		serviceMapCache:    make(map[string]*apiv1.Service),
@@ -62,8 +64,9 @@ func NewSink(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient
 type Sink struct {
 	fsmNamespace string
 
-	KubeClient    kubernetes.Interface
-	gatewayClient gwapi.Interface
+	KubeClient kubernetes.Interface
+
+	DiscClient provider.ServiceDiscoveryClient
 
 	MicroAggregator Aggregator
 
@@ -197,7 +200,7 @@ func (s *Sink) UpsertService(key string, raw interface{}) error {
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == "true" {
+	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
 		s.serviceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
@@ -227,6 +230,23 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 		service := *servicePtr
 		if len(service.Annotations) > 0 {
 			endpoints.Labels[CloudServiceLabel] = service.Name
+
+			if len(endpoints.Annotations) == 0 {
+				endpoints.Annotations = make(map[string]string)
+			}
+
+			if withGateway {
+				if !s.DiscClient.IsInternalServices() {
+					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					if connector.ViaGateway.Egress.HTTPPort > 0 {
+						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+					}
+					if connector.ViaGateway.Egress.GRPCPort > 0 {
+						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+					}
+				}
+			}
+
 			endpointSubset := apiv1.EndpointSubset{}
 			ported := false
 			for k := range service.Annotations {
@@ -253,9 +273,6 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 			}
 			if len(endpointSubset.Addresses) > 0 {
 				endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
-				if len(endpoints.Annotations) == 0 {
-					endpoints.Annotations = make(map[string]string)
-				}
 				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
@@ -349,10 +366,10 @@ func (s *Sink) Run(ch <-chan struct{}) {
 		}
 
 		s.lock.Lock()
-		creates, updates, deletes := s.crudList()
+		creates, deletes := s.crudList()
 		s.lock.Unlock()
-		if len(creates) > 0 || len(updates) > 0 || len(deletes) > 0 {
-			log.Info().Msgf("sync triggered, create:%d update:%d delete:%d", len(creates), len(updates), len(deletes))
+		if len(creates) > 0 || len(deletes) > 0 {
+			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
 		}
 
 		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
@@ -362,23 +379,17 @@ func (s *Sink) Run(ch <-chan struct{}) {
 			}
 		}
 
-		for _, svc := range updates {
-			if _, err := svcClient.Update(s.Ctx, svc, metav1.UpdateOptions{}); err != nil {
-				log.Warn().Msgf("warn updating service, name:%s warn:%v", svc.Name, err)
-			}
-		}
-
 		for _, svc := range creates {
 			if _, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err != nil {
-				log.Warn().Msgf("warn creating service, name:%s warn:%v", svc.Name, err)
+				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
 			}
 		}
 	}
 }
 
 // crudList returns the services to create, update, and delete (respectively).
-func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
-	var createSvcs, updateSvcs []*apiv1.Service
+func (s *Sink) crudList() ([]*apiv1.Service, []string) {
+	var createSvcs []*apiv1.Service
 	var deleteSvcs []string
 	extendServices := make(map[string]string, 0)
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
@@ -402,15 +413,28 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           "true",
+					connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
+				}
+				if withGateway {
+					if !s.DiscClient.IsInternalServices() {
+						svc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+						if connector.ViaGateway.Egress.HTTPPort > 0 {
+							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+						}
+						if connector.ViaGateway.Egress.GRPCPort > 0 {
+							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+						}
+					} else {
+						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
+					}
 				}
 				s.fillService(svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
 				}
-				updateSvcs = append(updateSvcs, svc)
+				deleteSvcs = append(deleteSvcs, string(microSvcName))
 				continue
 			}
 
@@ -418,10 +442,10 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(microSvcName),
-					Labels: map[string]string{CloudSourcedServiceLabel: "true"},
+					Labels: map[string]string{CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           "true",
+						connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
 						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},
@@ -435,6 +459,19 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 					IPFamilies:     []apiv1.IPFamily{apiv1.IPv4Protocol},
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
+			}
+			if withGateway {
+				if !s.DiscClient.IsInternalServices() {
+					createSvc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					if connector.ViaGateway.Egress.HTTPPort > 0 {
+						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
+					}
+					if connector.ViaGateway.Egress.GRPCPort > 0 {
+						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
+					}
+				} else {
+					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
+				}
 			}
 			s.fillService(svcMeta, createSvc)
 			if preHv == s.serviceHash(createSvc) {
@@ -459,7 +496,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []*apiv1.Service, []string) {
 		}
 	}
 
-	return createSvcs, updateSvcs, deleteSvcs
+	return createSvcs, deleteSvcs
 }
 
 func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {

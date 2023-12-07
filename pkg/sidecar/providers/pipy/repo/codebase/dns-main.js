@@ -1,7 +1,7 @@
 ((
   config = pipy.solve('config.js'),
   dnsServers = { primary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Primary, secondary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Secondary },
-  dnsSvcAddress = (dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
+  dnsSvcAddress = (os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
   dnsRecordSets = {},
 ) => (
   config?.DNSResolveDB && (
@@ -26,7 +26,8 @@
   ),
 
   pipy({
-    _response: null
+    _response: null,
+    _alternative: null,
   })
 
   .pipeline()
@@ -53,7 +54,8 @@
           )
         )
       ))(),
-      _response ? _response : dat
+      // _response ? _response : dat
+      _response && (_alternative = _response, _response = null), dat
     )
   )
   .branch(
@@ -63,7 +65,7 @@
         dat => ((dns, name, type, nsname, fake = false) => (
           dns = DNS.decode(dat),
 
-          (dns?.rcode === 3 || (!Boolean(dns?.answer) && !Boolean(dns?.authority))) && (
+          (dns?.rcode === 3 || (!Boolean(dns?.answer) && !Boolean(dns?.authority))) ? (
             name = dns?.question?.[0]?.name,
             type = dns?.question?.[0]?.type,
             name && type && (
@@ -72,7 +74,11 @@
             (dns?.authority?.length > 0 && (nsname = dns?.authority?.[0]?.name)) && (
               // exclude domain suffix : search svc.cluster.local cluster.local
               name.endsWith('.cluster.local') && nsname && (fake = false)
-            )
+            ),
+            fake = false, // disable fake response
+            _alternative && (fake = false)
+          ) : (
+            _alternative = null
           ),
 
           fake && (
@@ -128,10 +134,11 @@
             )
           ),
 
-          fake ? new Data(DNS.encode(dns)) : dat
+          _alternative ? _alternative : (fake ? new Data(DNS.encode(dns)) : dat)
         ))()
       ),
     $ => $
   )
 
 ))()
+

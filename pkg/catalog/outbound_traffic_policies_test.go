@@ -601,6 +601,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode).AnyTimes()
 			mockCfg.EXPECT().GetServiceAccessMode().Return(constants.ServiceAccessModeDomain).AnyTimes()
 			mockCfg.EXPECT().IsEgressEnabled().Return(false).AnyTimes()
+			mockCfg.EXPECT().IsLocalDNSProxyEnabled().Return(false).AnyTimes()
 			mockCfg.EXPECT().GetFeatureFlags().Return(configv1alpha3.FeatureFlags{}).AnyTimes()
 			mockServiceProvider.EXPECT().ListServices().Return(allMeshServices).AnyTimes()
 			mockMeshSpec.EXPECT().ListTrafficTargets().Return(trafficTargets).AnyTimes()

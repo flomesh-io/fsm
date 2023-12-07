@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -156,8 +157,36 @@ func (wh *mutatingWebhook) mutate(req *admissionv1.AdmissionRequest, proxyUUID u
 		UID:     req.UID,
 	}
 
+	if pod.Kind == "VirtualMachine" && pod.APIVersion == "machine.flomesh.io/v1alpha1" {
+		var vm machinev1alpha1.VirtualMachine
+		if err := json.Unmarshal(req.Object.Raw, &vm); err != nil {
+			log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrUnmarshallingKubernetesResource)).
+				Msgf("Error unmarshaling request to VM with UUID %s in namespace %s", proxyUUID, req.Namespace)
+			return webhook.AdmissionError(err)
+		}
+
+		// Check if we must inject the sidecar
+		if inject, err := wh.mustVmInject(&vm, req.Namespace); err != nil {
+			log.Error().Err(err).Msgf("Error checking if sidecar must be injected for VM with UUID %s in namespace %s", proxyUUID, req.Namespace)
+			return webhook.AdmissionError(err)
+		} else if !inject {
+			log.Trace().Msgf("Skipping sidecar injection for VM with UUID %s in namespace %s", proxyUUID, req.Namespace)
+			return resp
+		}
+
+		patchBytes, err := wh.createVmPatch(&vm, req, proxyUUID)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to create patch for VM with UUID %s in namespace %s", proxyUUID, req.Namespace)
+			return webhook.AdmissionError(err)
+		}
+
+		patchAdmissionResponse(resp, patchBytes)
+		log.Trace().Msgf("Done creating patch admission response for VM with UUID %s in namespace %s", proxyUUID, req.Namespace)
+		return resp
+	}
+
 	// Check if we must inject the sidecar
-	if inject, err := wh.mustInject(&pod, req.Namespace); err != nil {
+	if inject, err := wh.mustPodInject(&pod, req.Namespace); err != nil {
 		log.Error().Err(err).Msgf("Error checking if sidecar must be injected for pod with UUID %s in namespace %s", proxyUUID, req.Namespace)
 		return webhook.AdmissionError(err)
 	} else if !inject {
@@ -165,7 +194,7 @@ func (wh *mutatingWebhook) mutate(req *admissionv1.AdmissionRequest, proxyUUID u
 		return resp
 	}
 
-	patchBytes, err := wh.createPatch(&pod, req, proxyUUID)
+	patchBytes, err := wh.createPodPatch(&pod, req, proxyUUID)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create patch for pod with UUID %s in namespace %s", proxyUUID, req.Namespace)
 		return webhook.AdmissionError(err)
@@ -184,14 +213,14 @@ func (wh *mutatingWebhook) isNamespaceInjectable(namespace string) bool {
 	return isInjectableNS && wh.kubeController.IsMonitoredNamespace(namespace)
 }
 
-// mustInject determines whether the sidecar must be injected.
+// mustPodInject determines whether the sidecar must be injected.
 //
 // The sidecar injection is performed when the namespace is labeled for monitoring and either of the following is true:
 // 1. The pod is explicitly annotated with enabled/yes/true for sidecar injection, or
 // 2. The namespace is annotated for sidecar injection and the pod is not explicitly annotated with disabled/no/false
 //
 // The function returns an error when it is unable to determine whether to perform sidecar injection.
-func (wh *mutatingWebhook) mustInject(pod *corev1.Pod, namespace string) (bool, error) {
+func (wh *mutatingWebhook) mustPodInject(pod *corev1.Pod, namespace string) (bool, error) {
 	// Sidecar injection is not permitted for pods on the host network.
 	// Since iptables rules are created to intercept and redirect traffic via the proxy sidecar,
 	// pods on the host network cannot be injected with the sidecar as the required iptables rules
@@ -207,7 +236,7 @@ func (wh *mutatingWebhook) mustInject(pod *corev1.Pod, namespace string) (bool, 
 	}
 
 	// Check if the pod is annotated for injection
-	podInjectAnnotationExists, podInject, err := isAnnotatedForInjection(pod.Annotations, "Pod", fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
+	injectAnnotationExists, podInject, err := isAnnotatedForInjection(pod.Annotations, "Pod", fmt.Sprintf("%s/%s", pod.Namespace, pod.Name))
 	if err != nil {
 		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrDeterminingPodInjectionEnablement)).
 			Msg("Error determining if the pod is enabled for sidecar injection")
@@ -227,13 +256,55 @@ func (wh *mutatingWebhook) mustInject(pod *corev1.Pod, namespace string) (bool, 
 		return false, err
 	}
 
-	if podInjectAnnotationExists && podInject {
+	if injectAnnotationExists && podInject {
 		// Pod is explicitly annotated to enable sidecar injection
 		return true, nil
 	} else if nsInjectAnnotationExists && nsInject {
 		// Namespace is annotated to enable sidecar injection
-		if !podInjectAnnotationExists || podInject {
+		if !injectAnnotationExists || podInject {
 			// If pod annotation doesn't exist or if an annotation exists to enable injection, enable it
+			return true, nil
+		}
+	}
+
+	// Conditions to inject the sidecar are not met
+	return false, nil
+}
+
+func (wh *mutatingWebhook) mustVmInject(vm *machinev1alpha1.VirtualMachine, namespace string) (bool, error) {
+	if !wh.isNamespaceInjectable(namespace) {
+		log.Warn().Msgf("Mutation request is for VM with UID %s; Injection in Namespace %s is not permitted", vm.ObjectMeta.UID, namespace)
+		return false, nil
+	}
+
+	// Check if the VM is annotated for injection
+	injectAnnotationExists, vmInject, err := isAnnotatedForInjection(vm.Annotations, "VirtualMachine", fmt.Sprintf("%s/%s", vm.Namespace, vm.Name))
+	if err != nil {
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrDeterminingPodInjectionEnablement)).
+			Msg("Error determining if the VM is enabled for sidecar injection")
+		return false, err
+	}
+
+	// Check if the namespace is annotated for injection
+	ns := wh.kubeController.GetNamespace(namespace)
+	if ns == nil {
+		log.Error().Err(errNamespaceNotFound).Msgf("Error retrieving namespace %s", namespace)
+		return false, errNamespaceNotFound
+	}
+	nsInjectAnnotationExists, nsInject, err := isAnnotatedForInjection(ns.Annotations, "Namespace", ns.Name)
+	if err != nil {
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrDeterminingNamespaceInjectionEnablement)).
+			Msgf("Error determining if namespace %s is enabled for sidecar injection", namespace)
+		return false, err
+	}
+
+	if injectAnnotationExists && vmInject {
+		// VM is explicitly annotated to enable sidecar injection
+		return true, nil
+	} else if nsInjectAnnotationExists && nsInject {
+		// Namespace is annotated to enable sidecar injection
+		if !injectAnnotationExists || vmInject {
+			// If vm annotation doesn't exist or if an annotation exists to enable injection, enable it
 			return true, nil
 		}
 	}
@@ -329,6 +400,14 @@ func createOrUpdateMutatingWebhook(clientSet kubernetes.Interface, cert *certifi
 							APIGroups:   []string{"*"},
 							APIVersions: []string{"v1"},
 							Resources:   []string{"pods"},
+						},
+					},
+					{
+						Operations: []admissionregv1.OperationType{admissionregv1.Create},
+						Rule: admissionregv1.Rule{
+							APIGroups:   []string{"machine.flomesh.io"},
+							APIVersions: []string{"v1alpha1"},
+							Resources:   []string{"virtualmachines"},
 						},
 					},
 				},
