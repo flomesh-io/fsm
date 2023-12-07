@@ -151,10 +151,15 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.withGateway.enable | bool | `false` |  |
-| fsm.cloudConnector.gateway.enable | bool | `false` |  |
+| fsm.cloudConnector.gateway.egress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.egress.httpPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.grpcPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.httpPort | int | `0` |  |
+| fsm.cloudConnector.gateway.ingress.ipSelector | string | `"ClusterIP"` |  |
 | fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
 | fsm.cloudConnector.gateway.syncToFgw.defaultSync | bool | `true` |  |
 | fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.gateway.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.machine.asInternalServices | bool | `false` |  |
 | fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.machine.enable | bool | `false` |  |
@@ -167,13 +172,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}` | Sidecar injector's container resource parameters |
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.cloudConnector.viaGateway.egress.grpcPort | int | `0` |  |
-| fsm.cloudConnector.viaGateway.egress.httpPort | int | `0` |  |
-| fsm.cloudConnector.viaGateway.ingress.grpcPort | int | `0` |  |
-| fsm.cloudConnector.viaGateway.ingress.httpPort | int | `0` |  |
-| fsm.cloudConnector.viaGateway.ingress.ipSelector | string | `"ClusterIP"` |  |
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
