@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -8,6 +10,7 @@ import (
 
 // GatewaysTrigger is responsible for processing Gateway objects
 type GatewaysTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds the Gateway object to the cache and returns true if the cache was modified
@@ -36,6 +39,9 @@ func (p *GatewaysTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	//
 	//gw = obj.(*gwv1beta1.Gateway)
 	if utils.IsActiveGateway(gw) {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+
 		cache.gateways[gw.Namespace] = utils.ObjectKey(gw)
 		return true
 	}
@@ -50,6 +56,9 @@ func (p *GatewaysTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := gw.Namespace
 	_, found := cache.gateways[key]

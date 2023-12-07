@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -8,6 +10,7 @@ import (
 
 // CircuitBreakingPoliciesTrigger is responsible for processing CircuitBreakingPolicy objects
 type CircuitBreakingPoliciesTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds a CircuitBreakingPolicy to the cache and returns true if the target service is routable
@@ -17,6 +20,9 @@ func (p *CircuitBreakingPoliciesTrigger) Insert(obj interface{}, cache *GatewayC
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	cache.circuitbreakings[utils.ObjectKey(policy)] = struct{}{}
 
@@ -30,6 +36,9 @@ func (p *CircuitBreakingPoliciesTrigger) Delete(obj interface{}, cache *GatewayC
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(policy)
 	_, found := cache.circuitbreakings[key]

@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,6 +13,7 @@ import (
 
 // EndpointSlicesTrigger is responsible for processing EndpointSlices
 type EndpointSlicesTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds the EndpointSlice object to the cache and returns true if the cache was modified
@@ -29,6 +32,9 @@ func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 	if len(svcName) == 0 {
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: svcName}
 	_, found := cache.endpointslices[svcKey]
@@ -52,6 +58,9 @@ func (p *EndpointSlicesTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 	if owner == nil {
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
 	slices, found := cache.endpointslices[svcKey]

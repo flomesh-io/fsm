@@ -14,124 +14,28 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) getSortedHTTPRoutes() []*gwv1beta1.HTTPRoute {
-	httpRoutes := make([]*gwv1beta1.HTTPRoute, 0)
+func getSortedRoutes(routeKeys map[client.ObjectKey]struct{}, getRouteFromCache func(client.ObjectKey) (client.Object, error)) []client.Object {
+	routes := make([]client.Object, 0)
 
-	for key := range c.httproutes {
-		httpRoute, err := c.getHTTPRouteFromCache(key)
+	for key := range routeKeys {
+		route, err := getRouteFromCache(key)
 		if err != nil {
-			log.Error().Msgf("Failed to get HTTPRoute %s: %s", key, err)
-			continue
-		}
-		httpRoutes = append(httpRoutes, httpRoute)
-		//processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
-	}
-
-	sort.Slice(httpRoutes, func(i, j int) bool {
-		if httpRoutes[i].CreationTimestamp.Time.Equal(httpRoutes[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(httpRoutes[i]).String() < client.ObjectKeyFromObject(httpRoutes[j]).String()
-		}
-
-		return httpRoutes[i].CreationTimestamp.Time.Before(httpRoutes[j].CreationTimestamp.Time)
-	})
-
-	return httpRoutes
-}
-
-func (c *GatewayCache) getSortedGRPCRoutes() []*gwv1alpha2.GRPCRoute {
-	grpcRoutes := make([]*gwv1alpha2.GRPCRoute, 0)
-
-	for key := range c.grpcroutes {
-		grpcRoute, err := c.getGRPCRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get GRPCRoute %s: %s", key, err)
+			log.Error().Msgf("Failed to get Route %s: %s", key, err)
 			continue
 		}
 
-		grpcRoutes = append(grpcRoutes, grpcRoute)
+		routes = append(routes, route)
 	}
 
-	sort.Slice(grpcRoutes, func(i, j int) bool {
-		if grpcRoutes[i].CreationTimestamp.Time.Equal(grpcRoutes[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(grpcRoutes[i]).String() < client.ObjectKeyFromObject(grpcRoutes[j]).String()
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].GetCreationTimestamp().Time.Equal(routes[j].GetCreationTimestamp().Time) {
+			return client.ObjectKeyFromObject(routes[i]).String() < client.ObjectKeyFromObject(routes[j]).String()
 		}
 
-		return grpcRoutes[i].CreationTimestamp.Time.Before(grpcRoutes[j].CreationTimestamp.Time)
+		return routes[i].GetCreationTimestamp().Time.Before(routes[j].GetCreationTimestamp().Time)
 	})
 
-	return grpcRoutes
-}
-
-func (c *GatewayCache) getSortedTLSRoutes() []*gwv1alpha2.TLSRoute {
-	tlsRoutes := make([]*gwv1alpha2.TLSRoute, 0)
-
-	for key := range c.tlsroutes {
-		tlsRoute, err := c.getTLSRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TLSRoute %s: %s", key, err)
-			continue
-		}
-
-		tlsRoutes = append(tlsRoutes, tlsRoute)
-	}
-
-	sort.Slice(tlsRoutes, func(i, j int) bool {
-		if tlsRoutes[i].CreationTimestamp.Time.Equal(tlsRoutes[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(tlsRoutes[i]).String() < client.ObjectKeyFromObject(tlsRoutes[j]).String()
-		}
-
-		return tlsRoutes[i].CreationTimestamp.Time.Before(tlsRoutes[j].CreationTimestamp.Time)
-	})
-
-	return tlsRoutes
-}
-
-func (c *GatewayCache) getSortedTCPRoutes() []*gwv1alpha2.TCPRoute {
-	tcpRoutes := make([]*gwv1alpha2.TCPRoute, 0)
-
-	for key := range c.tcproutes {
-		tcpRoute, err := c.getTCPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get TCPRoute %s: %s", key, err)
-			continue
-		}
-
-		tcpRoutes = append(tcpRoutes, tcpRoute)
-	}
-
-	sort.Slice(tcpRoutes, func(i, j int) bool {
-		if tcpRoutes[i].CreationTimestamp.Time.Equal(tcpRoutes[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(tcpRoutes[i]).String() < client.ObjectKeyFromObject(tcpRoutes[j]).String()
-		}
-
-		return tcpRoutes[i].CreationTimestamp.Time.Before(tcpRoutes[j].CreationTimestamp.Time)
-	})
-
-	return tcpRoutes
-}
-
-func (c *GatewayCache) getSortedUDPRoutes() []*gwv1alpha2.UDPRoute {
-	udpRoutes := make([]*gwv1alpha2.UDPRoute, 0)
-
-	for key := range c.udproutes {
-		udpRoute, err := c.getUDPRouteFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get UDPRoute %s: %s", key, err)
-			continue
-		}
-
-		udpRoutes = append(udpRoutes, udpRoute)
-	}
-
-	sort.Slice(udpRoutes, func(i, j int) bool {
-		if udpRoutes[i].CreationTimestamp.Time.Equal(udpRoutes[j].CreationTimestamp.Time) {
-			return client.ObjectKeyFromObject(udpRoutes[i]).String() < client.ObjectKeyFromObject(udpRoutes[j]).String()
-		}
-
-		return udpRoutes[i].CreationTimestamp.Time.Before(udpRoutes[j].CreationTimestamp.Time)
-	})
-
-	return udpRoutes
+	return routes
 }
 
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
@@ -154,7 +58,7 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 	for key := range c.httproutes {
 		// Get HTTPRoute from client-go cache
 		if r, err := c.getHTTPRouteFromCache(key); err == nil {
-			//r := r.(*gwv1beta1.HTTPRoute)
+			r := r.(*gwv1beta1.HTTPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -188,7 +92,7 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 	for key := range c.grpcroutes {
 		// Get GRPCRoute from client-go cache
 		if r, err := c.getGRPCRouteFromCache(key); err == nil {
-			//r := r.(*gwv1alpha2.GRPCRoute)
+			r := r.(*gwv1alpha2.GRPCRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -222,7 +126,7 @@ func (c *GatewayCache) isRoutableTLSService(service client.ObjectKey) bool {
 	for key := range c.tlsroutes {
 		// Get TLSRoute from client-go cache
 		if r, err := c.getTLSRouteFromCache(key); err == nil {
-			//r := r.(*gwv1alpha2.TLSRoute)
+			r := r.(*gwv1alpha2.TLSRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -240,7 +144,7 @@ func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
 	for key := range c.tcproutes {
 		// Get TCPRoute from client-go cache
 		if r, err := c.getTCPRouteFromCache(key); err == nil {
-			//r := r.(*gwv1alpha2.TCPRoute)
+			r := r.(*gwv1alpha2.TCPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -258,7 +162,7 @@ func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
 	for key := range c.udproutes {
 		// Get UDPRoute from client-go cache
 		if r, err := c.getUDPRouteFromCache(key); err == nil {
-			//r := r.(*gwv1alpha2.UDPRoute)
+			r := r.(*gwv1alpha2.UDPRoute)
 			for _, rule := range r.Spec.Rules {
 				for _, backend := range rule.BackendRefs {
 					if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -435,7 +339,7 @@ func (c *GatewayCache) getGatewayFromCache(key client.ObjectKey) (*gwv1beta1.Gat
 	return obj, nil
 }
 
-func (c *GatewayCache) getHTTPRouteFromCache(key client.ObjectKey) (*gwv1beta1.HTTPRoute, error) {
+func (c *GatewayCache) getHTTPRouteFromCache(key client.ObjectKey) (client.Object, error) {
 	obj, err := c.informers.GetListers().HTTPRoute.HTTPRoutes(key.Namespace).Get(key.Name)
 	if err != nil {
 		return nil, err
@@ -446,7 +350,7 @@ func (c *GatewayCache) getHTTPRouteFromCache(key client.ObjectKey) (*gwv1beta1.H
 	return obj, nil
 }
 
-func (c *GatewayCache) getGRPCRouteFromCache(key client.ObjectKey) (*gwv1alpha2.GRPCRoute, error) {
+func (c *GatewayCache) getGRPCRouteFromCache(key client.ObjectKey) (client.Object, error) {
 	obj, err := c.informers.GetListers().GRPCRoute.GRPCRoutes(key.Namespace).Get(key.Name)
 	if err != nil {
 		return nil, err
@@ -457,7 +361,7 @@ func (c *GatewayCache) getGRPCRouteFromCache(key client.ObjectKey) (*gwv1alpha2.
 	return obj, nil
 }
 
-func (c *GatewayCache) getTLSRouteFromCache(key client.ObjectKey) (*gwv1alpha2.TLSRoute, error) {
+func (c *GatewayCache) getTLSRouteFromCache(key client.ObjectKey) (client.Object, error) {
 	obj, err := c.informers.GetListers().TLSRoute.TLSRoutes(key.Namespace).Get(key.Name)
 	if err != nil {
 		return nil, err
@@ -468,7 +372,7 @@ func (c *GatewayCache) getTLSRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 	return obj, nil
 }
 
-func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.TCPRoute, error) {
+func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (client.Object, error) {
 	obj, err := c.informers.GetListers().TCPRoute.TCPRoutes(key.Namespace).Get(key.Name)
 	if err != nil {
 		return nil, err
@@ -479,7 +383,7 @@ func (c *GatewayCache) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.T
 	return obj, nil
 }
 
-func (c *GatewayCache) getUDPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.UDPRoute, error) {
+func (c *GatewayCache) getUDPRouteFromCache(key client.ObjectKey) (client.Object, error) {
 	obj, err := c.informers.GetListers().UDPRoute.UDPRoutes(key.Namespace).Get(key.Name)
 	if err != nil {
 		return nil, err

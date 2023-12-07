@@ -1,12 +1,15 @@
 package cache
 
 import (
+	"sync"
+
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // ServiceImportsTrigger is responsible for processing ServiceImport objects
 type ServiceImportsTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds a ServiceImport to the cache and returns true if the route is effective
@@ -16,6 +19,9 @@ func (p *ServiceImportsTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(svcimp)
 	cache.serviceimports[key] = struct{}{}
@@ -30,6 +36,9 @@ func (p *ServiceImportsTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(svcimp)
 	_, found := cache.serviceimports[key]

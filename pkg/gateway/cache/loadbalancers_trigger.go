@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -8,6 +10,7 @@ import (
 
 // LoadBalancerPoliciesTrigger is responsible for processing LoadBalancerPolicy objects
 type LoadBalancerPoliciesTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds a LoadBalancerPolicy to the cache and returns true if the target service is routable
@@ -17,6 +20,9 @@ func (p *LoadBalancerPoliciesTrigger) Insert(obj interface{}, cache *GatewayCach
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	cache.loadbalancers[utils.ObjectKey(policy)] = struct{}{}
 
@@ -30,6 +36,9 @@ func (p *LoadBalancerPoliciesTrigger) Delete(obj interface{}, cache *GatewayCach
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(policy)
 	_, found := cache.loadbalancers[key]
