@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -8,6 +10,7 @@ import (
 
 // TLSRoutesTrigger is responsible for processing TLSRoute objects
 type TLSRoutesTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds a TLSRoute to the cache and returns true if the route is effective
@@ -17,6 +20,9 @@ func (p *TLSRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	cache.tlsroutes[utils.ObjectKey(route)] = struct{}{}
 
@@ -30,6 +36,9 @@ func (p *TLSRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(route)
 	_, found := cache.tlsroutes[key]

@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
 	"k8s.io/utils/pointer"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -243,29 +245,34 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	services := make(map[string]serviceInfo)
 
 	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
-	for _, httpRoute := range c.getSortedHTTPRoutes() {
+	for _, httpRoute := range getSortedRoutes(c.httproutes, c.getHTTPRouteFromCache) {
+		httpRoute := httpRoute.(*gwv1beta1.HTTPRoute)
 		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
-	for _, grpcRoute := range c.getSortedGRPCRoutes() {
+	for _, grpcRoute := range getSortedRoutes(c.grpcroutes, c.getGRPCRouteFromCache) {
+		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
 		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
 	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
-	for _, tlsRoute := range c.getSortedTLSRoutes() {
+	for _, tlsRoute := range getSortedRoutes(c.tlsroutes, c.getTLSRouteFromCache) {
+		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
 		processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d TCPRoutes", len(c.tcproutes))
-	for _, tcpRoute := range c.getSortedTCPRoutes() {
+	for _, tcpRoute := range getSortedRoutes(c.tcproutes, c.getTCPRouteFromCache) {
+		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
 	}
 
 	log.Debug().Msgf("Processing %d UDPRoutes", len(c.udproutes))
-	for _, udpRoute := range c.getSortedUDPRoutes() {
+	for _, udpRoute := range getSortedRoutes(c.udproutes, c.getUDPRouteFromCache) {
+		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
 		processUDPRoute(gw, validListeners, udpRoute, rules)
 		processUDPBackends(udpRoute, services)
 	}

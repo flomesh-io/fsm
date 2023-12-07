@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -8,6 +10,7 @@ import (
 
 // UpstreamTLSPoliciesTrigger is responsible for processing TLSRoute objects
 type UpstreamTLSPoliciesTrigger struct {
+	mu sync.Mutex
 }
 
 // Insert adds a TLSRoute to the cache and returns true if the route is effective
@@ -17,6 +20,9 @@ func (p *UpstreamTLSPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	cache.upstreamstls[utils.ObjectKey(policy)] = struct{}{}
 
@@ -30,6 +36,9 @@ func (p *UpstreamTLSPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	key := utils.ObjectKey(policy)
 	_, found := cache.upstreamstls[key]
