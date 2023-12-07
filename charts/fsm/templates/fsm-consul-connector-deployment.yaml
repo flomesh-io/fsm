@@ -93,11 +93,11 @@ spec:
             "-sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring}}",
             "-sync-k8s-to-cloud-consul-k8s-namespace-mirroring-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix}}",
             "-sync-k8s-to-cloud-consul-cross-namespace-acl-policy={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy}}",
-            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.viaGateway.ingress.ipSelector}}",
-            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.viaGateway.ingress.httpPort}}",
-            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.viaGateway.egress.httpPort}}",
-            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.ingress.grpcPort}}",
-            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.egress.grpcPort}}",
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.egress.grpcPort}}",
           ]
           resources:
             limits:

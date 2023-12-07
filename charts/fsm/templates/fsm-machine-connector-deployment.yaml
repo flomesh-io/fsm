@@ -65,11 +65,11 @@ spec:
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.prefixLabel}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.suffixLabel}}",
             "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.machine.syncToK8S.withGateway.enable}}",
-            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.viaGateway.ingress.ipSelector}}",
-            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.viaGateway.ingress.httpPort}}",
-            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.viaGateway.egress.httpPort}}",
-            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.ingress.grpcPort}}",
-            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.egress.grpcPort}}",
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.egress.grpcPort}}",
           ]
           resources:
             limits:

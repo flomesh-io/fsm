@@ -2044,26 +2044,105 @@
                       "type": "object",
                       "title": "The config schema",
                       "required": [
-                        "enable",
+                        "ingress",
+                        "egress",
                         "syncToFgw"
                       ],
                       "properties": {
-                        "enable": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/enable",
-                          "type": "boolean",
-                          "title": "enable",
-                          "description": "enable"
+                        "ingress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress",
+                          "type": "object",
+                          "title": "Ingress schema",
+                          "required": [
+                            "ipSelector",
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "ipSelector": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/ipSelector",
+                              "type": "string",
+                              "title": "via Gateway Ingress Type",
+                              "description": "via Gateway Ingress Type",
+                              "enum": [
+                                "ExternalIP",
+                                "ClusterIP"
+                              ]
+                            },
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            }
+                          }
+                        },
+                        "egress": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress",
+                          "type": "object",
+                          "title": "Egress schema",
+                          "required": [
+                            "httpPort",
+                            "grpcPort"
+                          ],
+                          "properties": {
+                            "httpPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/httpPort",
+                              "type": "integer",
+                              "title": "HTTP Port",
+                              "description": "HTTP Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            },
+                            "grpcPort": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/grpcPort",
+                              "type": "integer",
+                              "title": "GRPC Port",
+                              "description": "GRPC Port",
+                              "minimum": 0,
+                              "maximum": 65535,
+                              "examples": [
+                                30514
+                              ]
+                            }
+                          }
                         },
                         "syncToFgw": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw",
                           "type": "object",
                           "title": "The syncToFgw schema",
                           "required": [
+                            "enable",
                             "defaultSync",
                             "allowK8sNamespaces",
                             "denyK8sNamespaces"
                           ],
                           "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
                             "defaultSync": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw/properties/defaultSync",
                               "type": "boolean",
@@ -2087,94 +2166,6 @@
                               "items": {
                                 "type": "string"
                               }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "viaGateway": {
-                      "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway",
-                      "type": "object",
-                      "title": "The via gateway schema",
-                      "required": [
-                        "ingress",
-                        "egress"
-                      ],
-                      "properties": {
-                        "ingress": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress",
-                          "type": "object",
-                          "title": "Ingress schema",
-                          "required": [
-                            "ipSelector",
-                            "httpPort",
-                            "grpcPort"
-                          ],
-                          "properties": {
-                            "ipSelector": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/ipSelector",
-                              "type": "string",
-                              "title": "via Gateway Ingress Type",
-                              "description": "via Gateway Ingress Type",
-                              "enum": [
-                                "ExternalIP",
-                                "ClusterIP"
-                              ]
-                            },
-                            "httpPort": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/httpPort",
-                              "type": "integer",
-                              "title": "HTTP Port",
-                              "description": "HTTP Port",
-                              "minimum": 0,
-                              "maximum": 65535,
-                              "examples": [
-                                30514
-                              ]
-                            },
-                            "grpcPort": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/ingress/properties/grpcPort",
-                              "type": "integer",
-                              "title": "GRPC Port",
-                              "description": "GRPC Port",
-                              "minimum": 0,
-                              "maximum": 65535,
-                              "examples": [
-                                30514
-                              ]
-                            }
-                          }
-                        },
-                        "egress": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress",
-                          "type": "object",
-                          "title": "Egress schema",
-                          "required": [
-                            "httpPort",
-                            "grpcPort"
-                          ],
-                          "properties": {
-                            "httpPort": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress/properties/httpPort",
-                              "type": "integer",
-                              "title": "HTTP Port",
-                              "description": "HTTP Port",
-                              "minimum": 0,
-                              "maximum": 65535,
-                              "examples": [
-                                30514
-                              ]
-                            },
-                            "grpcPort": {
-                              "$id": "#/properties/fsm/properties/cloudConnector/properties/viaGateway/properties/egress/properties/grpcPort",
-                              "type": "integer",
-                              "title": "GRPC Port",
-                              "description": "GRPC Port",
-                              "minimum": 0,
-                              "maximum": 65535,
-                              "examples": [
-                                30514
-                              ]
                             }
                           }
                         }

@@ -727,14 +727,6 @@ fsm:
         withGateway:
           enable: false
     gateway:
-      enable: false
-      syncToFgw:
-        defaultSync: true
-        allowK8sNamespaces:
-          - "*"
-        denyK8sNamespaces:
-          - ""
-    viaGateway:
       ingress:
         ipSelector: ClusterIP
         httpPort: 0
@@ -742,16 +734,23 @@ fsm:
       egress:
         httpPort: 0
         grpcPort: 0
+      syncToFgw:
+        enable: false
+        defaultSync: true
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     # -- Sidecar injector's container resource parameters
     resource:
       limits:
         cpu: "1"
-        memory: "512M"
+        memory: "1G"
       requests:
         cpu: "0.5"
-        memory: "128M"
+        memory: "256M"
     # -- Sidecar injector's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget

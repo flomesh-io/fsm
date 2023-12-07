@@ -1,4 +1,4 @@
-{{- if .Values.fsm.cloudConnector.gateway.enable }}
+{{- if .Values.fsm.cloudConnector.gateway.syncToFgw.enable }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -56,7 +56,7 @@ spec:
             "-fsm-version", "{{ .Chart.AppVersion }}",
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
-            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.gateway.enable}}",
+            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.gateway.syncToFgw.enable}}",
             "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.gateway.syncToFgw.defaultSync}}",
             {{- if .Values.fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces }}
             {{- range .Values.fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces }}
@@ -68,11 +68,11 @@ spec:
             "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
-            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.viaGateway.ingress.ipSelector}}",
-            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.viaGateway.ingress.httpPort}}",
-            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.viaGateway.egress.httpPort}}",
-            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.ingress.grpcPort}}",
-            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.viaGateway.egress.grpcPort}}",
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.egress.grpcPort}}",
           ]
           resources:
             limits:
