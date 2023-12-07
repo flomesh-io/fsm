@@ -13,6 +13,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/errcode"
@@ -82,10 +83,10 @@ func (job *PipyConfGeneratorJob) Run() {
 	certs(s, proxy, pipyConf, proxyServices)
 	pluginSetV := plugin(cataloger, s, pipyConf, proxy)
 	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices, proxy)
-	outbound(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
+	outbound(cataloger, proxy.Identity, s, pipyConf, proxy, s.cfg, desiredSuffix)
 	egress(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
 	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
-	connetor(cataloger, pipyConf)
+	cloudConnector(cataloger, pipyConf, s.cfg)
 	balance(pipyConf)
 	reorder(pipyConf)
 	endpoints(pipyConf, s)
@@ -172,10 +173,17 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 	return true
 }
 
-func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, desiredSuffix string) bool {
+func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
 	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(serviceIdentity)
-	if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
-		pipyConf.DNSResolveDB = outboundTrafficPolicy.ServicesResolvableSet
+	if cfg.IsLocalDNSProxyEnabled() {
+		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
+			if pipyConf.DNSResolveDB == nil {
+				pipyConf.DNSResolveDB = make(map[string][]interface{})
+			}
+			for k, v := range outboundTrafficPolicy.ServicesResolvableSet {
+				pipyConf.DNSResolveDB[k] = v
+			}
+		}
 	}
 	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
 		outboundTrafficPolicy, desiredSuffix)
@@ -369,13 +377,17 @@ func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
 	}
 }
 
-func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
+func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator) {
+	if !cfg.IsLocalDNSProxyEnabled() {
+		return
+	}
 	kubeController := cataloger.GetKubeController()
 	svcList := kubeController.ListServices()
 	for _, svc := range svcList {
 		if pipyConf.DNSResolveDB == nil {
 			pipyConf.DNSResolveDB = make(map[string][]interface{})
-		} else if _, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
+		}
+		if _, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
 			continue
 		}
 		ns := kubeController.GetNamespace(svc.Namespace)
@@ -409,7 +421,6 @@ func connetor(cataloger catalog.MeshCataloger, pipyConf *PipyConf) bool {
 			}
 		}
 	}
-	return true
 }
 
 func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf, pluginSetV string) {

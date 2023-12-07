@@ -47,9 +47,6 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 	// For each service, build the traffic policies required to access it.
 	// It is important to aggregate HTTP route configs by the service's port.
 	for _, meshSvc := range mc.ListOutboundServicesForIdentity(downstreamIdentity) {
-		//if len(meshSvc.CloudInheritedFrom) > 0 && !strings.EqualFold(meshSvc.Name, meshSvc.CloudInheritedFrom) {
-		//	continue
-		//}
 		meshSvc := meshSvc // To prevent loop variable memory aliasing in for loop
 
 		egressEnabled, egressPolicyGetted, egressPolicy = mc.enableEgressSrviceForIdentity(downstreamIdentity, egressPolicyGetted, egressPolicy, meshSvc)
@@ -73,19 +70,21 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 			}
 		}
 
-		if !existIntraEndpoints || len(meshSvc.CloudInheritedFrom) > 0 {
-			resolvableIPSet := mapset.NewSet()
-			for _, endp := range endpoints {
-				resolvableIPSet.Add(endp.IP.String())
-			}
-			if resolvableIPSet.Cardinality() > 0 {
-				addrItems := resolvableIPSet.ToSlice()
-				sort.SliceStable(addrItems, func(i, j int) bool {
-					addr1 := addrItems[i].(string)
-					addr2 := addrItems[j].(string)
-					return addr1 < addr2
-				})
-				servicesResolvableSet[meshSvc.FQDN()] = addrItems
+		if mc.configurator.IsLocalDNSProxyEnabled() {
+			if !existIntraEndpoints || len(meshSvc.CloudInheritedFrom) > 0 {
+				resolvableIPSet := mapset.NewSet()
+				for _, endp := range endpoints {
+					resolvableIPSet.Add(endp.IP.String())
+				}
+				if resolvableIPSet.Cardinality() > 0 {
+					addrItems := resolvableIPSet.ToSlice()
+					sort.SliceStable(addrItems, func(i, j int) bool {
+						addr1 := addrItems[i].(string)
+						addr2 := addrItems[j].(string)
+						return addr1 < addr2
+					})
+					servicesResolvableSet[meshSvc.FQDN()] = addrItems
+				}
 			}
 		}
 
