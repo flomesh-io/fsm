@@ -32,6 +32,9 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 				log.Info().Msgf("invalid format, ignore service: %s", svc)
 				continue
 			}
+			if len(svcApp.Instances) == 0 {
+				continue
+			}
 			for _, svcIns := range svcApp.Instances {
 				if serviceSource, serviceSourceErr := svcIns.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
 					if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
@@ -67,12 +70,14 @@ func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 	}
 	services := servicesMap[strings.ToUpper(service)]
 	catalogServices := make([]*CatalogService, 0)
-	for _, ins := range services.Instances {
-		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-			if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-				catalogService := new(CatalogService)
-				catalogService.fromEureka(ins)
-				catalogServices = append(catalogServices, catalogService)
+	if len(services.Instances) > 0 {
+		for _, ins := range services.Instances {
+			if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
+				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+					catalogService := new(CatalogService)
+					catalogService.fromEureka(ins)
+					catalogServices = append(catalogServices, catalogService)
+				}
 			}
 		}
 	}
@@ -91,15 +96,17 @@ func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 	}
 	services := servicesMap[strings.ToUpper(service)]
 	agentServices := make([]*AgentService, 0)
-	for _, ins := range services.Instances {
-		if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-			if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-				continue
+	if len(services.Instances) > 0 {
+		for _, ins := range services.Instances {
+			if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
+				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+					continue
+				}
 			}
+			agentService := new(AgentService)
+			agentService.fromEureka(ins)
+			agentServices = append(agentServices, agentService)
 		}
-		agentService := new(AgentService)
-		agentService.fromEureka(ins)
-		agentServices = append(agentServices, agentService)
 	}
 	return agentServices, nil
 }

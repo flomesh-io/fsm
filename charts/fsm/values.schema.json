@@ -1081,42 +1081,96 @@
                     ]
                 },
                 "localDNSProxy": {
-                    "$id": "#/properties/fsm/properties/localDNSProxy",
-                    "type": "object",
-                    "title": "The local DNS Proxy schema",
-                    "description": "Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers.",
-                    "examples": [
-                        {
-                            "enable": true
-                        }
-                    ],
-                    "required": [
-                        "enable"
-                    ],
-                    "properties": {
-                        "enable": {
-                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/enable",
-                            "type": "boolean",
-                            "title": "The enable schema for local DNS Proxy",
-                            "description": "Indicates whether local DNS Proxy is enabled or not",
-                            "examples": [
-                                true
-                            ]
-                        },
-                        "primaryUpstreamDNSServerIPAddr": {
-                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/primaryUpstreamDNSServerIPAddr",
-                            "type": "string",
-                            "title": "Primary upstream DNS server for local DNS Proxy",
-                            "description": "Primary upstream DNS server for local DNS Proxy"
-                        },
-                        "secondaryUpstreamDNSServerIPAddr": {
-                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/secondaryUpstreamDNSServerIPAddr",
-                            "type": "string",
-                            "title": "Secondary upstream DNS server for local DNS Proxy",
-                            "description": "Secondary upstream DNS server for local DNS Proxy"
-                        }
+                  "$id": "#/properties/fsm/properties/localDNSProxy",
+                  "type": "object",
+                  "title": "The local DNS Proxy schema",
+                  "description": "Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers.",
+                  "required": [
+                    "enable",
+                    "wildcard"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/enable",
+                      "type": "boolean",
+                      "title": "The enable schema for local DNS Proxy",
+                      "description": "Indicates whether local DNS Proxy is enabled or not",
+                      "examples": [
+                        true
+                      ]
                     },
-                    "additionalProperties": false
+                    "primaryUpstreamDNSServerIPAddr": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/primaryUpstreamDNSServerIPAddr",
+                      "type": "string",
+                      "title": "Primary upstream DNS server for local DNS Proxy",
+                      "description": "Primary upstream DNS server for local DNS Proxy"
+                    },
+                    "secondaryUpstreamDNSServerIPAddr": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/secondaryUpstreamDNSServerIPAddr",
+                      "type": "string",
+                      "title": "Secondary upstream DNS server for local DNS Proxy",
+                      "description": "Secondary upstream DNS server for local DNS Proxy"
+                    },
+                    "wildcard": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard",
+                      "type": "object",
+                      "title": "The wildcard schema for local DNS Proxy",
+                      "description": "The wildcard schema for local DNS Proxy",
+                      "required": [
+                        "enable",
+                        "ipv4"
+                      ],
+                      "properties": {
+                        "enable": {
+                          "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/enable",
+                          "type": "boolean",
+                          "title": "The enable schema for wildcard",
+                          "description": "Indicates whether wildcard is enabled or not"
+                        },
+                        "ipv4": {
+                          "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ipv4",
+                          "type": "array",
+                          "title": "The ipv4 schema for wildcard",
+                          "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$",
+                          "items": {
+                            "type": "string",
+                            "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                          }
+                        }
+                      }
+                    },
+                    "db": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/db",
+                      "type": "array",
+                      "title": "The resolve db schema for local DNS Proxy",
+                      "description": "The resolve db schema for local DNS Proxy",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "dn",
+                          "ipv4"
+                        ],
+                        "properties": {
+                          "dn": {
+                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/db/properties/dn",
+                            "type": "string",
+                            "title": "The dn schema for wildcard",
+                            "description": "FQDN"
+                          },
+                          "ipv4": {
+                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/db/properties/ipv4",
+                            "type": "array",
+                            "title": "ipv4",
+                            "items": {
+                              "type": "string",
+                              "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "controllerLogLevel": {
                     "$id": "#/properties/fsm/properties/controllerLogLevel",

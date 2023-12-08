@@ -57,6 +57,9 @@ type Configurator interface {
 	// IsLocalDNSProxyEnabled returns whether local DNS proxy is enabled
 	IsLocalDNSProxyEnabled() bool
 
+	// IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled
+	IsWildcardDNSProxyEnabled() bool
+
 	// GetLocalDNSProxyPrimaryUpstream returns the primary upstream DNS server for local DNS Proxy
 	GetLocalDNSProxyPrimaryUpstream() string
 

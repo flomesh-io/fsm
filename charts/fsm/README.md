@@ -421,7 +421,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.injector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
 | fsm.injector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.injector.webhookTimeoutSeconds | int | `20` | Mutating webhook timeout |
-| fsm.localDNSProxy | object | `{"enable":false}` | Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
+| fsm.localDNSProxy | object | `{"enable":false,"wildcard":{"enable":false,"ipv4":["127.0.0.2"]}}` | Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
 | fsm.localProxyMode | string | `"Localhost"` | Proxy mode for the proxy sidecar. Acceptable values are ['Localhost', 'PodIP'] |
 | fsm.maxDataPlaneConnections | int | `0` | Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |

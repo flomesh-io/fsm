@@ -462,7 +462,10 @@ fsm:
   # -- Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers
   localDNSProxy:
     enable: false
-
+    wildcard:
+      enable: false
+      ipv4:
+        - 127.0.0.2
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits
   maxDataPlaneConnections: 0
 

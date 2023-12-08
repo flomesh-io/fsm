@@ -90,6 +90,7 @@ func (job *PipyConfGeneratorJob) Run() {
 	balance(pipyConf)
 	reorder(pipyConf)
 	endpoints(pipyConf, s)
+	localDNSProxy(cataloger, pipyConf, s.cfg)
 	job.publishSidecarConf(s.repoClient, proxy, pipyConf, pluginSetV)
 }
 
@@ -175,7 +176,7 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 
 func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
 	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(serviceIdentity)
-	if cfg.IsLocalDNSProxyEnabled() {
+	if cfg.IsLocalDNSProxyEnabled() && !cfg.IsWildcardDNSProxyEnabled() {
 		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
 			if pipyConf.DNSResolveDB == nil {
 				pipyConf.DNSResolveDB = make(map[string][]interface{})
@@ -378,7 +379,7 @@ func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
 }
 
 func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator) {
-	if !cfg.IsLocalDNSProxyEnabled() {
+	if !cfg.IsLocalDNSProxyEnabled() || cfg.IsWildcardDNSProxyEnabled() {
 		return
 	}
 	kubeController := cataloger.GetKubeController()
@@ -418,6 +419,35 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 				pipyConf.DNSResolveDB[svc.Name] = addrItems
 				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
 				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
+			}
+		}
+	}
+}
+
+func localDNSProxy(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator) {
+	if !cfg.IsLocalDNSProxyEnabled() {
+		return
+	}
+	if pipyConf.DNSResolveDB == nil {
+		pipyConf.DNSResolveDB = make(map[string][]interface{})
+	}
+	dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
+	if cfg.IsWildcardDNSProxyEnabled() {
+		ipv4s := make([]interface{}, 0)
+		for _, ipv4 := range dnsProxy.Wildcard.IPv4 {
+			ipv4s = append(ipv4s, ipv4)
+		}
+		pipyConf.DNSResolveDB["*"] = ipv4s
+	} else {
+		if len(dnsProxy.DB) > 0 {
+			for _, db := range dnsProxy.DB {
+				if len(db.IPv4) > 0 {
+					ipv4s := make([]interface{}, 0)
+					for _, ipv4 := range db.IPv4 {
+						ipv4s = append(ipv4s, ipv4)
+					}
+					pipyConf.DNSResolveDB[db.DN] = ipv4s
+				}
 			}
 		}
 	}

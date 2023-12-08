@@ -1923,6 +1923,26 @@ spec:
                     description: LocalDNSProxy improves the performance of your computer
                       by caching the responses coming from your DNS servers
                     properties:
+                      db:
+                        description: DB defines Resolve DB.
+                        items:
+                          description: ResolveDN is the type to represent FSM's Resolve
+                            DN configuration.
+                          properties:
+                            dn:
+                              description: DN defines resolve DN.
+                              type: string
+                            ipv4:
+                              description: IPv4 defines a ipv4 address for resolve
+                                DN.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - dn
+                          - ipv4
+                          type: object
+                        type: array
                       enable:
                         description: Enable defines a boolean indicating if the sidecars
                           are enabled for local DNS Proxy.
@@ -1935,8 +1955,25 @@ spec:
                         description: SecondaryUpstreamDNSServerIPAddr defines a secondary
                           upstream DNS server for local DNS Proxy.
                         type: string
+                      wildcard:
+                        description: Wildcard defines Wildcard DN.
+                        properties:
+                          enable:
+                            description: Enable defines a boolean indicating if wildcard
+                              are enabled for local DNS Proxy.
+                            type: boolean
+                          ipv4:
+                            description: IPv4 defines a ipv4 address for wildcard
+                              DN.
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - enable
+                        type: object
                     required:
                     - enable
+                    - wildcard
                     type: object
                   localProxyMode:
                     description: LocalProxyMode defines the network interface the
