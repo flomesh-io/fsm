@@ -34,10 +34,10 @@
   .replaceData(
     dat => (
       _response = null,
-      ((dns, answer) => (
+      ((dns, answer, asterisk) => (
         dns = DNS.decode(dat),
         (dns?.question?.[0]?.type === 'A') && (
-          (answer = dnsRecordSets[dns?.question?.[0]?.name]) && (
+          (answer = dnsRecordSets[dns?.question?.[0]?.name] || (asterisk = true) && dnsRecordSets['*']) && (
             dns.qr = 1,
             dns.rd = 1,
             dns.ra = 1,
@@ -47,7 +47,11 @@
               'name': dns.question[0].name,
               'type': dns.question[0].type
             }],
-            dns.answer = answer,
+            asterisk ? (
+              dns.answer = answer.map(a => (a.name = dns.question[0].name, a))
+            ) : (
+              dns.answer = answer
+            ),
             dns.authority = [],
             dns.additional = [],
             _response = new Data(DNS.encode(dns))
@@ -141,4 +145,3 @@
   )
 
 ))()
-
