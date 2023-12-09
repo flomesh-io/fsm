@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -174,32 +175,7 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingr
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
 			if fgwSvc != nil {
-				foundPorts := false
-				uncheckPorts := make(map[int32]bool)
-				if len(viaPorts) > 0 {
-					for _, viaPort := range viaPorts {
-						if viaPort > 0 {
-							uncheckPorts[viaPort] = true
-						}
-					}
-				}
-				if len(fgwSvc.Spec.Ports) > 0 && len(uncheckPorts) > 0 {
-					for _, port := range fgwSvc.Spec.Ports {
-						for _, viaPort := range viaPorts {
-							if viaPort > 0 && port.Port == viaPort {
-								delete(uncheckPorts, viaPort)
-								break
-							}
-						}
-						if len(uncheckPorts) == 0 {
-							break
-						}
-					}
-					if len(uncheckPorts) == 0 {
-						foundPorts = true
-					}
-				}
-				if foundPorts {
+				if foundPorts, uncheckPorts := checkGatewayPorts(viaPorts, fgwSvc); foundPorts {
 					if len(ingressAddr) == 0 && strings.EqualFold(ingressIPSelector, VIA_EXTERNAL_IP) &&
 						len(fgwSvc.Spec.ExternalIPs) > 0 &&
 						len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
@@ -230,7 +206,6 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingr
 						len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
 						egressAddr = fgwSvc.Spec.ClusterIPs[0]
 					}
-
 					if len(ingressAddr) == 0 {
 						log.Warn().Msgf("not find %s from fsm gateway: %s", ingressIPSelector, gatewaySvcName)
 					} else if len(egressAddr) == 0 {
@@ -249,4 +224,33 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingr
 		}
 		time.Sleep(time.Second * 5)
 	}
+}
+
+func checkGatewayPorts(viaPorts []int32, fgwSvc *corev1.Service) (bool, map[int32]bool) {
+	foundPorts := false
+	uncheckPorts := make(map[int32]bool)
+	if len(viaPorts) > 0 {
+		for _, viaPort := range viaPorts {
+			if viaPort > 0 {
+				uncheckPorts[viaPort] = true
+			}
+		}
+	}
+	if len(fgwSvc.Spec.Ports) > 0 && len(uncheckPorts) > 0 {
+		for _, port := range fgwSvc.Spec.Ports {
+			for _, viaPort := range viaPorts {
+				if viaPort > 0 && port.Port == viaPort {
+					delete(uncheckPorts, viaPort)
+					break
+				}
+			}
+			if len(uncheckPorts) == 0 {
+				break
+			}
+		}
+		if len(uncheckPorts) == 0 {
+			foundPorts = true
+		}
+	}
+	return foundPorts, uncheckPorts
 }
