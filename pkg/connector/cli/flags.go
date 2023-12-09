@@ -219,7 +219,8 @@ func init() {
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",
 		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
 
-	flags.StringVar(&Cfg.Via.IPSelector, "via-gateway-ingress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
+	flags.StringVar(&Cfg.Via.IngressIPSelector, "via-gateway-ingress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
+	flags.StringVar(&Cfg.Via.EgressIPSelector, "via-gateway-egress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
 	flags.UintVar(&Cfg.Via.Ingress.HTTPPort, "via-gateway-ingress-http-port", 0, "ingress http port")
 	flags.UintVar(&Cfg.Via.Ingress.GRPCPort, "via-gateway-ingress-grpc-port", 0, "ingress grpc port")
 	flags.UintVar(&Cfg.Via.Egress.HTTPPort, "via-gateway-egress-http-port", 0, "egress http port")

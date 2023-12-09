@@ -2152,10 +2152,20 @@
                           "type": "object",
                           "title": "Egress schema",
                           "required": [
+                            "ipSelector",
                             "httpPort",
                             "grpcPort"
                           ],
                           "properties": {
+                            "ipSelector": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/ipSelector",
+                              "type": "string",
+                              "title": "via Gateway Egress Type",
+                              "description": "via Gateway Egress Type",
+                              "enum": [
+                                "ExternalIP",
+                                "ClusterIP"
+                              ]
                             "httpPort": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/httpPort",
                               "type": "integer",

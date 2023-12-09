@@ -66,6 +66,7 @@ spec:
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.machine.syncToK8S.suffixLabel}}",
             "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.machine.syncToK8S.withGateway.enable}}",
             "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
+            "-via-gateway-egress-ip-selector={{.Values.fsm.cloudConnector.gateway.egress.ipSelector}}",
             "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
             "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
             "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",

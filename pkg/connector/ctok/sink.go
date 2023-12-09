@@ -237,7 +237,7 @@ func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
 
 			if withGateway {
 				if !s.DiscClient.IsInternalServices() {
-					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
 					if connector.ViaGateway.Egress.HTTPPort > 0 {
 						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
 					}
@@ -418,7 +418,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 				}
 				if withGateway {
 					if !s.DiscClient.IsInternalServices() {
-						svc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+						svc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
 						if connector.ViaGateway.Egress.HTTPPort > 0 {
 							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
 						}
@@ -462,7 +462,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 			}
 			if withGateway {
 				if !s.DiscClient.IsInternalServices() {
-					createSvc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.InternalAddr
+					createSvc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
 					if connector.ViaGateway.Egress.HTTPPort > 0 {
 						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
 					}

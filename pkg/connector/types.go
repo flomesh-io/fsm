@@ -19,9 +19,11 @@ type ProtocolPort struct {
 }
 
 type Gateway struct {
-	IPSelector   string
-	ExternalAddr string
-	InternalAddr string
+	IngressIPSelector string
+	EgressIPSelector  string
+
+	IngressAddr string
+	EgressAddr  string
 
 	Ingress ProtocolPort
 	Egress  ProtocolPort

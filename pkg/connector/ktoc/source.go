@@ -386,8 +386,8 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	}
 
 	if withGateway {
-		if len(connector.ViaGateway.ExternalAddr) > 0 {
-			baseNode.Address = connector.ViaGateway.ExternalAddr
+		if len(connector.ViaGateway.IngressAddr) > 0 {
+			baseNode.Address = connector.ViaGateway.IngressAddr
 		}
 	}
 
@@ -745,7 +745,7 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			if withGateway {
-				addr = connector.ViaGateway.ExternalAddr
+				addr = connector.ViaGateway.IngressAddr
 				epPort = int(connector.ViaGateway.Ingress.HTTPPort)
 			}
 
