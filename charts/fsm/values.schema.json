@@ -2166,6 +2166,7 @@
                                 "ExternalIP",
                                 "ClusterIP"
                               ]
+                            },
                             "httpPort": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress/properties/httpPort",
                               "type": "integer",
