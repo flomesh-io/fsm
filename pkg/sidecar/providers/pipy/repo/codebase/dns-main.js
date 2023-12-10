@@ -3,12 +3,14 @@
   dnsServers = { primary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Primary, secondary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Secondary },
   dnsSvcAddress = (os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
   dnsRecordSets = {},
+  dnsIPv6RecordSets = {},
 ) => (
   config?.DNSResolveDB && (
     Object.entries(config.DNSResolveDB).map(
       ([k, v]) => (
-        ((rr) => (
+        (rr, rrv6) => (
           rr = [],
+          rrv6 = [],
           v.map(
             ip => (
               rr.push({
@@ -16,12 +18,19 @@
                 'type': 'A',
                 'ttl': 600, // TTL : 10 minutes
                 'rdata': ip
+              }),
+              rrv6.push({
+                'name': k,
+                'type': 'AAAA',
+                'ttl': 600, // TTL : 10 minutes
+                'rdata': '00000000000000000000ffff' + ip.split('.').reduce((result, item) => (result += (n => '0123456789abcdef'.charAt(n / 16) + '0123456789abcdef'.charAt(n % 16))(Number.parseInt(item))), '')
               })
             )
           ),
-          dnsRecordSets[k] = rr
-        ))()
-      )
+          dnsRecordSets[k] = rr,
+          dnsIPv6RecordSets[k] = rrv6
+        )
+      )()
     )
   ),
 
@@ -34,28 +43,31 @@
   .replaceData(
     dat => (
       _response = null,
-      ((dns, answer, asterisk) => (
+      ((dns, answer, asterisk, record) => (
         dns = DNS.decode(dat),
-        (dns?.question?.[0]?.type === 'A') && (
-          (answer = dnsRecordSets[dns?.question?.[0]?.name] || (asterisk = true) && dnsRecordSets['*']) && (
-            dns.qr = 1,
-            dns.rd = 1,
-            dns.ra = 1,
-            dns.aa = 1,
-            dns.rcode = 0,
-            dns.question = [{
-              'name': dns.question[0].name,
-              'type': dns.question[0].type
-            }],
-            asterisk ? (
-              dns.answer = answer.map(a => (a.name = dns.question[0].name, a))
-            ) : (
-              dns.answer = answer
-            ),
-            dns.authority = [],
-            dns.additional = [],
-            _response = new Data(DNS.encode(dns))
-          )
+        (dns?.question?.[0]?.type === 'A') ? (
+          (answer = dnsRecordSets[dns?.question?.[0]?.name] || (asterisk = true) && dnsRecordSets['*'])
+        ) : (dns?.question?.[0]?.type === 'AAAA') && (
+          (answer = dnsIPv6RecordSets[dns?.question?.[0]?.name] || (asterisk = true) && dnsIPv6RecordSets['*'])
+        ),
+        answer && (
+          dns.qr = 1,
+          dns.rd = 1,
+          dns.ra = 1,
+          dns.aa = 1,
+          dns.rcode = 0,
+          dns.question = [{
+            'name': dns.question[0].name,
+            'type': dns.question[0].type
+          }],
+          asterisk ? (
+            dns.answer = answer.map(a => (record = { ...a }, record.name = dns.question[0].name, record))
+          ) : (
+            dns.answer = answer
+          ),
+          dns.authority = [],
+          dns.additional = [],
+          _response = new Data(DNS.encode(dns))
         )
       ))(),
       // _response ? _response : dat
