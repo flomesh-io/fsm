@@ -48,10 +48,12 @@ type ChainPluginSpec struct {
 // ChainSelectorSpec is the type used to represent plugins for plugin chain.
 type ChainSelectorSpec struct {
 	// PodSelector for pods. Existing pods are selected by this will be the ones affected by this plugin chain.
-	PodSelector *metav1.LabelSelector `json:"podSelector"`
+	// +optional
+	PodSelector *metav1.LabelSelector `json:"podSelector,omitempty"`
 
 	// NamespaceSelector for namespaces. Existing pods are selected by this will be the ones affected by this plugin chain.
-	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
+	// +optional
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 // PluginChainList defines the list of PluginChain objects.
