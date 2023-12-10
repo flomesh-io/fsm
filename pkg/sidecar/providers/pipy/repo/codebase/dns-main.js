@@ -4,6 +4,7 @@
   dnsSvcAddress = (os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
   dnsRecordSets = {},
   dnsIPv6RecordSets = {},
+  dnsCache = new algo.Cache(null, null, { ttl: 10 }),
 ) => (
   config?.DNSResolveDB && (
     Object.entries(config.DNSResolveDB).map(
@@ -23,7 +24,7 @@
                 'name': k,
                 'type': 'AAAA',
                 'ttl': 600, // TTL : 10 minutes
-                'rdata': '00000000000000000000ffff' + ip.split('.').reduce((result, item) => (result += (n => '0123456789abcdef'.charAt(n / 16) + '0123456789abcdef'.charAt(n % 16))(Number.parseInt(item))), '')
+                'rdata': '00000000000000000000ffff' + ip.split('.').reduce((result, item) => (result += (n => '0123456789abcdef'.charAt(n / 16) + '0123456789abcdef'.charAt(n % 16))(Number.parseInt(item) % 256)), '')
               })
             )
           ),
@@ -37,9 +38,13 @@
   pipy({
     _response: null,
     _alternative: null,
+    _remoteAddressPort: null,
   })
 
   .pipeline()
+  .handleStreamStart(
+    () => _remoteAddressPort = __inbound.remoteAddress + ':' + __inbound.remotePort
+  )
   .replaceData(
     dat => (
       _response = null,
@@ -67,11 +72,13 @@
           ),
           dns.authority = [],
           dns.additional = [],
-          _response = new Data(DNS.encode(dns))
+          _response = new Data(DNS.encode(dns)),
+          dnsCache.set(_remoteAddressPort + '@' + dns.id, _response)
         )
       ))(),
       // _response ? _response : dat
-      _response && (_alternative = _response, _response = null), dat
+      // _response && (_alternative = _response, _response = null), dat
+      _response = null, dat
     )
   )
   .branch(
@@ -80,8 +87,7 @@
       .replaceData(
         dat => ((dns, name, type, nsname, fake = false) => (
           dns = DNS.decode(dat),
-
-          (dns?.rcode === 3 || (!Boolean(dns?.answer) && !Boolean(dns?.authority))) ? (
+          (dns?.rcode === 3 || (!Boolean(dns?.answer) && !Boolean(dns?.authority))) && (
             name = dns?.question?.[0]?.name,
             type = dns?.question?.[0]?.type,
             name && type && (
@@ -92,9 +98,7 @@
               name.endsWith('.cluster.local') && nsname && (fake = false)
             ),
             fake = false, // disable fake response
-            _alternative && (fake = false)
-          ) : (
-            _alternative = null
+            (_alternative = dnsCache.get(_remoteAddressPort + '@' + dns.id)) && (fake = false)
           ),
 
           fake && (
@@ -149,7 +153,6 @@
               }]
             )
           ),
-
           _alternative ? _alternative : (fake ? new Data(DNS.encode(dns)) : dat)
         ))()
       ),
