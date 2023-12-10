@@ -148,9 +148,6 @@ const (
 	// SidecarUniqueIDLabelName is the label applied to pods with the unique ID of the sidecar.
 	SidecarUniqueIDLabelName = "fsm-proxy-uuid"
 
-	// SidecarCnPrefixLabelName is the label applied to pods with the cn prefix of the sidecar.
-	SidecarCnPrefixLabelName = "fsm-proxy-cn-prefix"
-
 	// ----- Environment Variables
 
 	// EnvVarLogKubernetesEvents is the name of the env var instructing the event handlers whether to log at all (true/false)

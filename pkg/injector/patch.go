@@ -185,13 +185,6 @@ func (wh *mutatingWebhook) createVmPatch(vm *machinev1alpha1.VirtualMachine, req
 	}
 	vm.Labels[constants.SidecarUniqueIDLabelName] = proxyUUID.String()
 
-	accountName := vm.Spec.ServiceAccountName
-	if len(accountName) == 0 {
-		accountName = "default"
-	}
-	cnPrefix := fmt.Sprintf("%s.sidecar.%s.%s", proxyUUID.String(), accountName, vm.Namespace)
-	vm.Labels[constants.SidecarCnPrefixLabelName] = cnPrefix
-
 	return json.Marshal(makeVmPatches(req, vm))
 }
 
