@@ -1,7 +1,7 @@
 ((
   config = pipy.solve('config.js'),
   dnsServers = { primary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Primary, secondary: config?.Spec?.LocalDNSProxy?.UpstreamDNSServers?.Secondary },
-  dnsSvcAddress = (os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary || '10.96.0.10') + ":53",
+  dnsSvcAddress = (os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary) && ((os.env.PIPY_NAMESERVER || dnsServers?.primary || dnsServers?.secondary) + ":53"),
   dnsRecordSets = {},
   dnsIPv6RecordSets = {},
   dnsCache = new algo.Cache(null, null, { ttl: 10 }),
@@ -55,7 +55,7 @@
         ) : (dns?.question?.[0]?.type === 'AAAA') && (
           (answer = dnsIPv6RecordSets[dns?.question?.[0]?.name] || (asterisk = true) && dnsIPv6RecordSets['*'])
         ),
-        answer && (
+        answer ? (
           dns.qr = 1,
           dns.rd = 1,
           dns.ra = 1,
@@ -74,11 +74,28 @@
           dns.additional = [],
           _response = new Data(DNS.encode(dns)),
           dnsCache.set(_remoteAddressPort + '@' + dns.id, _response)
+        ) : !dnsSvcAddress && (
+          dns.qr = 1,
+          dns.rd = 1,
+          dns.ra = 1,
+          dns.rcode = 3,
+          dns.question = [{
+            'name': dns.question[0].name,
+            'type': dns.question[0].type
+          }],
+          dns.answer = [],
+          dns.authority = [],
+          dns.additional = [],
+          _response = new Data(DNS.encode(dns))
         )
       ))(),
       // _response ? _response : dat
       // _response && (_alternative = _response, _response = null), dat
-      _response = null, dat
+      !dnsSvcAddress ? (
+        _response
+      ) : (
+        _response = null, dat
+      )
     )
   )
   .branch(
