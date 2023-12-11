@@ -1,17 +1,11 @@
 package cache
 
 import (
-	"sync"
-
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // TCPRoutesTrigger is responsible for processing TCPRoute objects
-type TCPRoutesTrigger struct {
-	mu sync.Mutex
-}
+type TCPRoutesTrigger struct{}
 
 // Insert adds a TCPRoute to the cache and returns true if the route is effective
 func (p *TCPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -21,10 +15,10 @@ func (p *TCPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	cache.tcproutes[utils.ObjectKey(route)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.tcproutes[utils.ObjectKey(route)] = struct{}{}
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
@@ -36,13 +30,15 @@ func (p *TCPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(route)
+	//_, found := cache.tcproutes[key]
+	//delete(cache.tcproutes, key)
+	//
+	//return found
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	key := utils.ObjectKey(route)
-	_, found := cache.tcproutes[key]
-	delete(cache.tcproutes, key)
-
-	return found
+	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

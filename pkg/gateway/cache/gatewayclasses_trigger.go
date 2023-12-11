@@ -1,17 +1,13 @@
 package cache
 
 import (
-	"sync"
-
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // GatewayClassesTrigger is responsible for processing GatewayClass objects
-type GatewayClassesTrigger struct {
-	mu sync.Mutex
-}
+type GatewayClassesTrigger struct{}
 
 // Insert adds the GatewayClass object to the cache and returns true if the cache was modified
 func (p *GatewayClassesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -39,8 +35,8 @@ func (p *GatewayClassesTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 
 	//class = obj.(*gwv1beta1.GatewayClass)
 	if utils.IsEffectiveGatewayClass(class) {
-		p.mu.Lock()
-		defer p.mu.Unlock()
+		cache.mutex.Lock()
+		defer cache.mutex.Unlock()
 
 		cache.gatewayclass = class
 		return true
@@ -57,8 +53,8 @@ func (p *GatewayClassesTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
 
 	if cache.gatewayclass == nil {
 		return false

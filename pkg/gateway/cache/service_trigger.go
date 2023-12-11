@@ -1,17 +1,13 @@
 package cache
 
 import (
-	"sync"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // ServicesTrigger is responsible for processing Service objects
-type ServicesTrigger struct {
-	mu sync.Mutex
-}
+type ServicesTrigger struct{}
 
 // Insert adds the Service object to the cache and returns true if the cache was modified
 func (p *ServicesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -21,11 +17,11 @@ func (p *ServicesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
 
 	key := utils.ObjectKey(svc)
-	cache.services[key] = struct{}{}
+	//cache.services[key] = struct{}{}
 
 	return cache.isRoutableService(key)
 }
@@ -37,13 +33,15 @@ func (p *ServicesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
 	key := utils.ObjectKey(svc)
-	_, found := cache.services[key]
-	delete(cache.services, key)
+	//_, found := cache.services[key]
+	//delete(cache.services, key)
+	//
+	//return found
 
-	return found
+	return cache.isRoutableService(key)
 }

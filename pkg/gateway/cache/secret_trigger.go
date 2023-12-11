@@ -25,17 +25,13 @@
 package cache
 
 import (
-	"sync"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // SecretTrigger is a processor for Secret objects
-type SecretTrigger struct {
-	mu sync.Mutex
-}
+type SecretTrigger struct{}
 
 // Insert adds a Secret object to the cache and returns true if the cache is changed
 func (p *SecretTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -45,11 +41,11 @@ func (p *SecretTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
 
 	key := utils.ObjectKey(secret)
-	cache.secrets[key] = struct{}{}
+	//cache.secrets[key] = struct{}{}
 
 	return cache.isSecretReferred(key)
 }
@@ -61,13 +57,15 @@ func (p *SecretTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
 	key := utils.ObjectKey(secret)
-	_, found := cache.secrets[key]
-	delete(cache.secrets, key)
+	//_, found := cache.secrets[key]
+	//delete(cache.secrets, key)
+	//
+	//return found
 
-	return found
+	return cache.isSecretReferred(key)
 }
