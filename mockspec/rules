@@ -42,7 +42,7 @@ gateway; pkg/gateway/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/gat
 cache; pkg/gateway/cache/mock_cache_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Cache
 
 # pkg/gateway/cache
-cache; pkg/gateway/cache/mock_processor_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Processor
+cache; pkg/gateway/cache/mock_trigger_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Trigger
 
 # pkg/ingress/providers/pipy
 pipy; pkg/ingress/providers/pipy/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/ingress/providers/pipy; Controller
