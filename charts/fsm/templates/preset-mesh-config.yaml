@@ -124,7 +124,11 @@ data:
         "stripAnyHostPort": {{ .Values.fsm.fsmGateway.stripAnyHostPort }},
         "sslPassthroughUpstreamPort": {{ .Values.fsm.fsmGateway.sslPassthroughUpstreamPort }},
         "http1PerRequestLoadBalancing": {{ .Values.fsm.fsmGateway.http1PerRequestLoadBalancing }},
-        "http2PerRequestLoadBalancing": {{ .Values.fsm.fsmGateway.http2PerRequestLoadBalancing }}
+        "http2PerRequestLoadBalancing": {{ .Values.fsm.fsmGateway.http2PerRequestLoadBalancing }},
+        "proxyTag": {
+          "srcHostHeader:": "{{ .Values.fsm.fsmGateway.proxyTag.srcHostHeader }}",
+          "dstHostHeader:": "{{ .Values.fsm.fsmGateway.proxyTag.dstHostHeader }}"
+        }
       },
       "serviceLB": {
         "enabled": {{ .Values.fsm.serviceLB.enabled }},

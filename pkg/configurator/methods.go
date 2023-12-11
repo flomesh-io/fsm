@@ -535,6 +535,11 @@ func (c *Client) IsFGWHTTP2PerRequestLoadBalancingEnabled() bool {
 	return mcSpec.GatewayAPI.HTTP2PerRequestLoadBalancing
 }
 
+func (c *Client) GetFGWProxyTag() configv1alpha3.ProxyTag {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.ProxyTag
+}
+
 // IsIngressEnabled returns whether Ingress is enabled
 func (c *Client) IsIngressEnabled() bool {
 	mcSpec := c.getMeshConfig().Spec
