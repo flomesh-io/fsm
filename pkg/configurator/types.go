@@ -185,6 +185,9 @@ type Configurator interface {
 	// IsFGWHTTP2PerRequestLoadBalancingEnabled returns whether per-request load balancing is enabled for HTTP2 protocol
 	IsFGWHTTP2PerRequestLoadBalancingEnabled() bool
 
+	// GetFGWProxyTag returns the proxy tag configuration for FGW
+	GetFGWProxyTag() configv1alpha3.ProxyTag
+
 	// IsIngressEnabled returns whether Ingress is enabled
 	IsIngressEnabled() bool
 

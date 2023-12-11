@@ -108,6 +108,20 @@ func (mr *MockConfiguratorMockRecorder) GetFGWLogLevel() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFGWLogLevel", reflect.TypeOf((*MockConfigurator)(nil).GetFGWLogLevel))
 }
 
+// GetFGWProxyTag mocks base method.
+func (m *MockConfigurator) GetFGWProxyTag() v1alpha3.ProxyTag {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFGWProxyTag")
+	ret0, _ := ret[0].(v1alpha3.ProxyTag)
+	return ret0
+}
+
+// GetFGWProxyTag indicates an expected call of GetFGWProxyTag.
+func (mr *MockConfiguratorMockRecorder) GetFGWProxyTag() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFGWProxyTag", reflect.TypeOf((*MockConfigurator)(nil).GetFGWProxyTag))
+}
+
 // GetFGWSSLPassthroughUpstreamPort mocks base method.
 func (m *MockConfigurator) GetFGWSSLPassthroughUpstreamPort() int32 {
 	m.ctrl.T.Helper()

@@ -1490,6 +1490,25 @@ spec:
                     - panic
                     - disabled
                     type: string
+                  proxyTag:
+                    default:
+                      dstHostHeader: proxy-tag
+                      srcHostHeader: orig-host
+                    description: ProxyTag defines the proxy tag configuration of gateway
+                      api.
+                    properties:
+                      dstHostHeader:
+                        default: proxy-tag
+                        description: DstHostHeader defines the dst host header.
+                        type: string
+                      srcHostHeader:
+                        default: orig-host
+                        description: SrcHostHeader defines the src host header.
+                        type: string
+                    required:
+                    - dstHostHeader
+                    - srcHostHeader
+                    type: object
                   sslPassthroughUpstreamPort:
                     default: 443
                     description: SSLPassthroughUpstreamPort defines the default upstream
@@ -1503,6 +1522,7 @@ spec:
                 - http1PerRequestLoadBalancing
                 - http2PerRequestLoadBalancing
                 - logLevel
+                - proxyTag
                 - sslPassthroughUpstreamPort
                 type: object
               image:

@@ -16,7 +16,7 @@ spec:
     shortNames:
     - pichn
     singular: pluginchain
-  scope: Cluster
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
