@@ -46,6 +46,8 @@ func (p *PipyConf) setLocalDNSProxy(enable bool, conf *configurator.Configurator
 		p.Spec.LocalDNSProxy = new(LocalDNSProxy)
 		primary := (*conf).GetLocalDNSProxyPrimaryUpstream()
 		secondary := (*conf).GetLocalDNSProxySecondaryUpstream()
+		primary = strings.TrimSpace(primary)
+		secondary = strings.TrimSpace(secondary)
 		if len(primary) > 0 || len(secondary) > 0 {
 			p.Spec.LocalDNSProxy.UpstreamDNSServers = new(UpstreamDNSServers)
 			if len(primary) > 0 {
