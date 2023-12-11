@@ -30,6 +30,7 @@ import (
 // FakePluginChains implements PluginChainInterface
 type FakePluginChains struct {
 	Fake *FakePluginV1alpha1
+	ns   string
 }
 
 var pluginchainsResource = schema.GroupVersionResource{Group: "plugin.flomesh.io", Version: "v1alpha1", Resource: "pluginchains"}
@@ -39,7 +40,8 @@ var pluginchainsKind = schema.GroupVersionKind{Group: "plugin.flomesh.io", Versi
 // Get takes name of the pluginChain, and returns the corresponding pluginChain object, and an error if there is any.
 func (c *FakePluginChains) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginChain, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(pluginchainsResource, name), &v1alpha1.PluginChain{})
+		Invokes(testing.NewGetAction(pluginchainsResource, c.ns, name), &v1alpha1.PluginChain{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -49,7 +51,8 @@ func (c *FakePluginChains) Get(ctx context.Context, name string, options v1.GetO
 // List takes label and field selectors, and returns the list of PluginChains that match those selectors.
 func (c *FakePluginChains) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PluginChainList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(pluginchainsResource, pluginchainsKind, opts), &v1alpha1.PluginChainList{})
+		Invokes(testing.NewListAction(pluginchainsResource, pluginchainsKind, c.ns, opts), &v1alpha1.PluginChainList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -70,13 +73,15 @@ func (c *FakePluginChains) List(ctx context.Context, opts v1.ListOptions) (resul
 // Watch returns a watch.Interface that watches the requested pluginChains.
 func (c *FakePluginChains) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(pluginchainsResource, opts))
+		InvokesWatch(testing.NewWatchAction(pluginchainsResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a pluginChain and creates it.  Returns the server's representation of the pluginChain, and an error, if there is any.
 func (c *FakePluginChains) Create(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.CreateOptions) (result *v1alpha1.PluginChain, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(pluginchainsResource, pluginChain), &v1alpha1.PluginChain{})
+		Invokes(testing.NewCreateAction(pluginchainsResource, c.ns, pluginChain), &v1alpha1.PluginChain{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -86,7 +91,8 @@ func (c *FakePluginChains) Create(ctx context.Context, pluginChain *v1alpha1.Plu
 // Update takes the representation of a pluginChain and updates it. Returns the server's representation of the pluginChain, and an error, if there is any.
 func (c *FakePluginChains) Update(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.UpdateOptions) (result *v1alpha1.PluginChain, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(pluginchainsResource, pluginChain), &v1alpha1.PluginChain{})
+		Invokes(testing.NewUpdateAction(pluginchainsResource, c.ns, pluginChain), &v1alpha1.PluginChain{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -97,7 +103,8 @@ func (c *FakePluginChains) Update(ctx context.Context, pluginChain *v1alpha1.Plu
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakePluginChains) UpdateStatus(ctx context.Context, pluginChain *v1alpha1.PluginChain, opts v1.UpdateOptions) (*v1alpha1.PluginChain, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(pluginchainsResource, "status", pluginChain), &v1alpha1.PluginChain{})
+		Invokes(testing.NewUpdateSubresourceAction(pluginchainsResource, "status", c.ns, pluginChain), &v1alpha1.PluginChain{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -107,13 +114,14 @@ func (c *FakePluginChains) UpdateStatus(ctx context.Context, pluginChain *v1alph
 // Delete takes name of the pluginChain and deletes it. Returns an error if one occurs.
 func (c *FakePluginChains) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(pluginchainsResource, name, opts), &v1alpha1.PluginChain{})
+		Invokes(testing.NewDeleteActionWithOptions(pluginchainsResource, c.ns, name, opts), &v1alpha1.PluginChain{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakePluginChains) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(pluginchainsResource, listOpts)
+	action := testing.NewDeleteCollectionAction(pluginchainsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.PluginChainList{})
 	return err
@@ -122,7 +130,8 @@ func (c *FakePluginChains) DeleteCollection(ctx context.Context, opts v1.DeleteO
 // Patch applies the patch and returns the patched pluginChain.
 func (c *FakePluginChains) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginChain, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(pluginchainsResource, name, pt, data, subresources...), &v1alpha1.PluginChain{})
+		Invokes(testing.NewPatchSubresourceAction(pluginchainsResource, c.ns, name, pt, data, subresources...), &v1alpha1.PluginChain{})
+
 	if obj == nil {
 		return nil, err
 	}
