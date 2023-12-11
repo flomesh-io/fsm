@@ -692,3 +692,15 @@ func insertProxyTagScript(chains []string) []string {
 
 	return chains
 }
+
+func setGroupVersionKind[T GatewayAPIResource](objects []T, gvk schema.GroupVersionKind) []client.Object {
+	resources := make([]client.Object, 0)
+
+	for _, obj := range objects {
+		obj := client.Object(obj)
+		obj.GetObjectKind().SetGroupVersionKind(gvk)
+		resources = append(resources, obj)
+	}
+
+	return resources
+}

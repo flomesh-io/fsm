@@ -1,17 +1,11 @@
 package cache
 
 import (
-	"sync"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // SessionStickyPoliciesTrigger is responsible for processing TLSRoute objects
-type SessionStickyPoliciesTrigger struct {
-	mu sync.Mutex
-}
+type SessionStickyPoliciesTrigger struct{}
 
 // Insert adds a SessionStickyPolicy to the cache and returns true if the target service is routable
 func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -21,10 +15,10 @@ func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCac
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	cache.sessionstickies[utils.ObjectKey(policy)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.sessionstickies[utils.ObjectKey(policy)] = struct{}{}
 
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
@@ -36,13 +30,15 @@ func (p *SessionStickyPoliciesTrigger) Delete(obj interface{}, cache *GatewayCac
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(policy)
+	//_, found := cache.sessionstickies[key]
+	//delete(cache.sessionstickies, key)
+	//
+	//return found
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	key := utils.ObjectKey(policy)
-	_, found := cache.sessionstickies[key]
-	delete(cache.sessionstickies, key)
-
-	return found
+	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
