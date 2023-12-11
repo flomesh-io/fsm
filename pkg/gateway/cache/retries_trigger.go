@@ -1,17 +1,11 @@
 package cache
 
 import (
-	"sync"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // RetryPoliciesTrigger is responsible for processing TLSRoute objects
-type RetryPoliciesTrigger struct {
-	mu sync.Mutex
-}
+type RetryPoliciesTrigger struct{}
 
 // Insert adds a RetryPolicy to the cache and returns true if the target service is routable
 func (p *RetryPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -21,10 +15,10 @@ func (p *RetryPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	cache.retries[utils.ObjectKey(policy)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.retries[utils.ObjectKey(policy)] = struct{}{}
 
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
@@ -36,13 +30,14 @@ func (p *RetryPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	key := utils.ObjectKey(policy)
-	_, found := cache.retries[key]
-	delete(cache.retries, key)
-
-	return found
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(policy)
+	//_, found := cache.retries[key]
+	//delete(cache.retries, key)
+	//
+	//return found
+	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }

@@ -1,17 +1,11 @@
 package cache
 
 import (
-	"sync"
-
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // GRPCRoutesTrigger is responsible for processing GRPCRoute objects
-type GRPCRoutesTrigger struct {
-	mu sync.Mutex
-}
+type GRPCRoutesTrigger struct{}
 
 // Insert adds a GRPCRoute to the cache and returns true if the route is effective
 func (p *GRPCRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -21,10 +15,10 @@ func (p *GRPCRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	cache.grpcroutes[utils.ObjectKey(route)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.grpcroutes[utils.ObjectKey(route)] = struct{}{}
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
@@ -36,13 +30,15 @@ func (p *GRPCRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(route)
+	//_, found := cache.grpcroutes[key]
+	//delete(cache.grpcroutes, key)
+	//
+	//return found
 
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	key := utils.ObjectKey(route)
-	_, found := cache.grpcroutes[key]
-	delete(cache.grpcroutes, key)
-
-	return found
+	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

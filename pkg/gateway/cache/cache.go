@@ -13,7 +13,6 @@ import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -23,37 +22,13 @@ import (
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway
 type GatewayCache struct {
-	repoClient *repo.PipyRepoClient
-	informers  *informers.InformerCollection
-	kubeClient kubernetes.Interface
-	cfg        configurator.Configurator
-
-	processors map[TriggerType]Processor
-
-	gatewayclass     *gwv1beta1.GatewayClass
-	gateways         map[string]client.ObjectKey // ns -> gateway
-	services         map[client.ObjectKey]struct{}
-	serviceimports   map[client.ObjectKey]struct{}
-	endpoints        map[client.ObjectKey]struct{}
-	endpointslices   map[client.ObjectKey]map[client.ObjectKey]struct{} // svc -> endpointslices
-	secrets          map[client.ObjectKey]struct{}
-	httproutes       map[client.ObjectKey]struct{}
-	grpcroutes       map[client.ObjectKey]struct{}
-	tcproutes        map[client.ObjectKey]struct{}
-	tlsroutes        map[client.ObjectKey]struct{}
-	udproutes        map[client.ObjectKey]struct{}
-	ratelimits       map[client.ObjectKey]struct{}
-	sessionstickies  map[client.ObjectKey]struct{}
-	loadbalancers    map[client.ObjectKey]struct{}
-	circuitbreakings map[client.ObjectKey]struct{}
-	accesscontrols   map[client.ObjectKey]struct{}
-	healthchecks     map[client.ObjectKey]struct{}
-	faultinjections  map[client.ObjectKey]struct{}
-	upstreamstls     map[client.ObjectKey]struct{}
-	retries          map[client.ObjectKey]struct{}
-	gatewaytls       map[client.ObjectKey]struct{}
-
-	mutex *sync.RWMutex
+	repoClient   *repo.PipyRepoClient
+	informers    *informers.InformerCollection
+	kubeClient   kubernetes.Interface
+	cfg          configurator.Configurator
+	triggers     map[ResourceType]Trigger
+	gatewayclass *gwv1beta1.GatewayClass
+	mutex        *sync.RWMutex
 }
 
 // NewGatewayCache creates a new gateway cache
@@ -65,52 +40,30 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		kubeClient: kubeClient,
 		cfg:        cfg,
 
-		processors: map[TriggerType]Processor{
-			//EndpointsTriggerType:      &EndpointsTrigger{},
-			ServicesTriggerType:                &ServicesTrigger{},
-			ServiceImportsTriggerType:          &ServiceImportsTrigger{},
-			EndpointSlicesTriggerType:          &EndpointSlicesTrigger{},
-			SecretsTriggerType:                 &SecretTrigger{},
-			GatewayClassesTriggerType:          &GatewayClassesTrigger{},
-			GatewaysTriggerType:                &GatewaysTrigger{},
-			HTTPRoutesTriggerType:              &HTTPRoutesTrigger{},
-			GRPCRoutesTriggerType:              &GRPCRoutesTrigger{},
-			TCPRoutesTriggerType:               &TCPRoutesTrigger{},
-			TLSRoutesTriggerType:               &TLSRoutesTrigger{},
-			UDPRoutesTriggerType:               &UDPRoutesTrigger{},
-			RateLimitPoliciesTriggerType:       &RateLimitPoliciesTrigger{},
-			SessionStickyPoliciesTriggerType:   &SessionStickyPoliciesTrigger{},
-			LoadBalancerPoliciesTriggerType:    &LoadBalancerPoliciesTrigger{},
-			CircuitBreakingPoliciesTriggerType: &CircuitBreakingPoliciesTrigger{},
-			AccessControlPoliciesTriggerType:   &AccessControlPoliciesTrigger{},
-			HealthCheckPoliciesTriggerType:     &HealthCheckPoliciesTrigger{},
-			FaultInjectionPoliciesTriggerType:  &FaultInjectionPoliciesTrigger{},
-			UpstreamTLSPoliciesTriggerType:     &UpstreamTLSPoliciesTrigger{},
-			RetryPoliciesTriggerType:           &RetryPoliciesTrigger{},
-			GatewayTLSPoliciesTriggerType:      &GatewayTLSPoliciesTrigger{},
+		triggers: map[ResourceType]Trigger{
+			//EndpointsResourceType:      &EndpointsTrigger{},
+			ServicesResourceType:                &ServicesTrigger{},
+			ServiceImportsResourceType:          &ServiceImportsTrigger{},
+			EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
+			SecretsResourceType:                 &SecretTrigger{},
+			GatewayClassesResourceType:          &GatewayClassesTrigger{},
+			GatewaysResourceType:                &GatewaysTrigger{},
+			HTTPRoutesResourceType:              &HTTPRoutesTrigger{},
+			GRPCRoutesResourceType:              &GRPCRoutesTrigger{},
+			TCPRoutesResourceType:               &TCPRoutesTrigger{},
+			TLSRoutesResourceType:               &TLSRoutesTrigger{},
+			UDPRoutesResourceType:               &UDPRoutesTrigger{},
+			RateLimitPoliciesResourceType:       &RateLimitPoliciesTrigger{},
+			SessionStickyPoliciesResourceType:   &SessionStickyPoliciesTrigger{},
+			LoadBalancerPoliciesResourceType:    &LoadBalancerPoliciesTrigger{},
+			CircuitBreakingPoliciesResourceType: &CircuitBreakingPoliciesTrigger{},
+			AccessControlPoliciesResourceType:   &AccessControlPoliciesTrigger{},
+			HealthCheckPoliciesResourceType:     &HealthCheckPoliciesTrigger{},
+			FaultInjectionPoliciesResourceType:  &FaultInjectionPoliciesTrigger{},
+			UpstreamTLSPoliciesResourceType:     &UpstreamTLSPoliciesTrigger{},
+			RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
+			GatewayTLSPoliciesResourceType:      &GatewayTLSPoliciesTrigger{},
 		},
-
-		//endpoints:      make(map[client.ObjectKey]struct{}),
-		gateways:         make(map[string]client.ObjectKey),
-		services:         make(map[client.ObjectKey]struct{}),
-		serviceimports:   make(map[client.ObjectKey]struct{}),
-		endpointslices:   make(map[client.ObjectKey]map[client.ObjectKey]struct{}),
-		secrets:          make(map[client.ObjectKey]struct{}),
-		httproutes:       make(map[client.ObjectKey]struct{}),
-		grpcroutes:       make(map[client.ObjectKey]struct{}),
-		tcproutes:        make(map[client.ObjectKey]struct{}),
-		tlsroutes:        make(map[client.ObjectKey]struct{}),
-		udproutes:        make(map[client.ObjectKey]struct{}),
-		ratelimits:       make(map[client.ObjectKey]struct{}),
-		sessionstickies:  make(map[client.ObjectKey]struct{}),
-		loadbalancers:    make(map[client.ObjectKey]struct{}),
-		circuitbreakings: make(map[client.ObjectKey]struct{}),
-		accesscontrols:   make(map[client.ObjectKey]struct{}),
-		healthchecks:     make(map[client.ObjectKey]struct{}),
-		faultinjections:  make(map[client.ObjectKey]struct{}),
-		upstreamstls:     make(map[client.ObjectKey]struct{}),
-		retries:          make(map[client.ObjectKey]struct{}),
-		gatewaytls:       make(map[client.ObjectKey]struct{}),
 
 		mutex: new(sync.RWMutex),
 	}
@@ -118,7 +71,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 
 // Insert inserts an object into the cache
 func (c *GatewayCache) Insert(obj interface{}) bool {
-	p := c.getProcessor(obj)
+	p := c.getTrigger(obj)
 	if p != nil {
 		return p.Insert(obj, c)
 	}
@@ -128,7 +81,7 @@ func (c *GatewayCache) Insert(obj interface{}) bool {
 
 // Delete deletes an object from the cache
 func (c *GatewayCache) Delete(obj interface{}) bool {
-	p := c.getProcessor(obj)
+	p := c.getTrigger(obj)
 	if p != nil {
 		return p.Delete(obj, c)
 	}
@@ -136,56 +89,52 @@ func (c *GatewayCache) Delete(obj interface{}) bool {
 	return false
 }
 
-//func (c *GatewayCache) WaitForCacheSync(ctx context.Context) bool {
-//	return c.cache.WaitForCacheSync(ctx)
-//}
-
-func (c *GatewayCache) getProcessor(obj interface{}) Processor {
+func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 	switch obj.(type) {
 	//case *corev1.Endpoints:
-	//	return c.processors[EndpointsTriggerType]
+	//	return c.triggers[EndpointsResourceType]
 	case *corev1.Service:
-		return c.processors[ServicesTriggerType]
+		return c.triggers[ServicesResourceType]
 	case *mcsv1alpha1.ServiceImport:
-		return c.processors[ServiceImportsTriggerType]
+		return c.triggers[ServiceImportsResourceType]
 	case *discoveryv1.EndpointSlice:
-		return c.processors[EndpointSlicesTriggerType]
+		return c.triggers[EndpointSlicesResourceType]
 	case *corev1.Secret:
-		return c.processors[SecretsTriggerType]
+		return c.triggers[SecretsResourceType]
 	case *gwv1beta1.GatewayClass:
-		return c.processors[GatewayClassesTriggerType]
+		return c.triggers[GatewayClassesResourceType]
 	case *gwv1beta1.Gateway:
-		return c.processors[GatewaysTriggerType]
+		return c.triggers[GatewaysResourceType]
 	case *gwv1beta1.HTTPRoute:
-		return c.processors[HTTPRoutesTriggerType]
+		return c.triggers[HTTPRoutesResourceType]
 	case *gwv1alpha2.GRPCRoute:
-		return c.processors[GRPCRoutesTriggerType]
+		return c.triggers[GRPCRoutesResourceType]
 	case *gwv1alpha2.TCPRoute:
-		return c.processors[TCPRoutesTriggerType]
+		return c.triggers[TCPRoutesResourceType]
 	case *gwv1alpha2.TLSRoute:
-		return c.processors[TLSRoutesTriggerType]
+		return c.triggers[TLSRoutesResourceType]
 	case *gwv1alpha2.UDPRoute:
-		return c.processors[UDPRoutesTriggerType]
+		return c.triggers[UDPRoutesResourceType]
 	case *gwpav1alpha1.RateLimitPolicy:
-		return c.processors[RateLimitPoliciesTriggerType]
+		return c.triggers[RateLimitPoliciesResourceType]
 	case *gwpav1alpha1.SessionStickyPolicy:
-		return c.processors[SessionStickyPoliciesTriggerType]
+		return c.triggers[SessionStickyPoliciesResourceType]
 	case *gwpav1alpha1.LoadBalancerPolicy:
-		return c.processors[LoadBalancerPoliciesTriggerType]
+		return c.triggers[LoadBalancerPoliciesResourceType]
 	case *gwpav1alpha1.CircuitBreakingPolicy:
-		return c.processors[CircuitBreakingPoliciesTriggerType]
+		return c.triggers[CircuitBreakingPoliciesResourceType]
 	case *gwpav1alpha1.AccessControlPolicy:
-		return c.processors[AccessControlPoliciesTriggerType]
+		return c.triggers[AccessControlPoliciesResourceType]
 	case *gwpav1alpha1.HealthCheckPolicy:
-		return c.processors[HealthCheckPoliciesTriggerType]
+		return c.triggers[HealthCheckPoliciesResourceType]
 	case *gwpav1alpha1.FaultInjectionPolicy:
-		return c.processors[FaultInjectionPoliciesTriggerType]
+		return c.triggers[FaultInjectionPoliciesResourceType]
 	case *gwpav1alpha1.UpstreamTLSPolicy:
-		return c.processors[UpstreamTLSPoliciesTriggerType]
+		return c.triggers[UpstreamTLSPoliciesResourceType]
 	case *gwpav1alpha1.RetryPolicy:
-		return c.processors[RetryPoliciesTriggerType]
+		return c.triggers[RetryPoliciesResourceType]
 	case *gwpav1alpha1.GatewayTLSPolicy:
-		return c.processors[GatewayTLSPoliciesTriggerType]
+		return c.triggers[GatewayTLSPoliciesResourceType]
 	}
 
 	return nil

@@ -26,85 +26,89 @@
 package cache
 
 import (
+	"k8s.io/apimachinery/pkg/labels"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
-// TriggerType is the type used to represent the type of trigger
-type TriggerType string
+// ResourceType is the type used to represent the type of resource
+type ResourceType string
 
 const (
-	// ServicesTriggerType is the type used to represent the services trigger
-	ServicesTriggerType TriggerType = "services"
+	// ServicesResourceType is the type used to represent the services resource
+	ServicesResourceType ResourceType = "services"
 
-	// EndpointSlicesTriggerType is the type used to represent the endpoint slices trigger
-	EndpointSlicesTriggerType TriggerType = "endpointslices"
+	// EndpointSlicesResourceType is the type used to represent the endpoint slices resource
+	EndpointSlicesResourceType ResourceType = "endpointslices"
 
-	// EndpointsTriggerType is the type used to represent the endpoints trigger
-	EndpointsTriggerType TriggerType = "endpoints"
+	// EndpointsResourceType is the type used to represent the endpoints resource
+	EndpointsResourceType ResourceType = "endpoints"
 
-	// ServiceImportsTriggerType is the type used to represent the service imports trigger
-	ServiceImportsTriggerType TriggerType = "serviceimports"
+	// ServiceImportsResourceType is the type used to represent the service imports resource
+	ServiceImportsResourceType ResourceType = "serviceimports"
 
-	// SecretsTriggerType is the type used to represent the secrets trigger
-	SecretsTriggerType TriggerType = "secrets"
+	// SecretsResourceType is the type used to represent the secrets resource
+	SecretsResourceType ResourceType = "secrets"
 
-	// GatewayClassesTriggerType is the type used to represent the gateway classes trigger
-	GatewayClassesTriggerType TriggerType = "gatewayclasses"
+	// GatewayClassesResourceType is the type used to represent the gateway classes resource
+	GatewayClassesResourceType ResourceType = "gatewayclasses"
 
-	// GatewaysTriggerType is the type used to represent the gateways trigger
-	GatewaysTriggerType TriggerType = "gateways"
+	// GatewaysResourceType is the type used to represent the gateways resource
+	GatewaysResourceType ResourceType = "gateways"
 
-	// HTTPRoutesTriggerType is the type used to represent the HTTP routes trigger
-	HTTPRoutesTriggerType TriggerType = "httproutes"
+	// HTTPRoutesResourceType is the type used to represent the HTTP routes resource
+	HTTPRoutesResourceType ResourceType = "httproutes"
 
-	// GRPCRoutesTriggerType is the type used to represent the gRPC routes trigger
-	GRPCRoutesTriggerType TriggerType = "grpcroutes"
+	// GRPCRoutesResourceType is the type used to represent the gRPC routes resource
+	GRPCRoutesResourceType ResourceType = "grpcroutes"
 
-	// TCPRoutesTriggerType is the type used to represent the TCP routes trigger
-	TCPRoutesTriggerType TriggerType = "tcproutes"
+	// TCPRoutesResourceType is the type used to represent the TCP routes resource
+	TCPRoutesResourceType ResourceType = "tcproutes"
 
-	// TLSRoutesTriggerType is the type used to represent the TLS routes trigger
-	TLSRoutesTriggerType TriggerType = "tlsroutes"
+	// TLSRoutesResourceType is the type used to represent the TLS routes resource
+	TLSRoutesResourceType ResourceType = "tlsroutes"
 
-	// UDPRoutesTriggerType is the type used to represent the UDP routes trigger
-	UDPRoutesTriggerType TriggerType = "udproutes"
+	// UDPRoutesResourceType is the type used to represent the UDP routes resource
+	UDPRoutesResourceType ResourceType = "udproutes"
 
-	// RateLimitPoliciesTriggerType is the type used to represent the rate limit policies trigger
-	RateLimitPoliciesTriggerType TriggerType = "ratelimits"
+	// RateLimitPoliciesResourceType is the type used to represent the rate limit policies resource
+	RateLimitPoliciesResourceType ResourceType = "ratelimits"
 
-	// SessionStickyPoliciesTriggerType is the type used to represent the session sticky policies trigger
-	SessionStickyPoliciesTriggerType TriggerType = "sessionstickies"
+	// SessionStickyPoliciesResourceType is the type used to represent the session sticky policies resource
+	SessionStickyPoliciesResourceType ResourceType = "sessionstickies"
 
-	// LoadBalancerPoliciesTriggerType is the type used to represent the load balancer policies trigger
-	LoadBalancerPoliciesTriggerType TriggerType = "loadbalancers"
+	// LoadBalancerPoliciesResourceType is the type used to represent the load balancer policies resource
+	LoadBalancerPoliciesResourceType ResourceType = "loadbalancers"
 
-	// CircuitBreakingPoliciesTriggerType is the type used to represent the circuit breaking policies trigger
-	CircuitBreakingPoliciesTriggerType TriggerType = "circuitbreakings"
+	// CircuitBreakingPoliciesResourceType is the type used to represent the circuit breaking policies resource
+	CircuitBreakingPoliciesResourceType ResourceType = "circuitbreakings"
 
-	// AccessControlPoliciesTriggerType is the type used to represent the access control policies trigger
-	AccessControlPoliciesTriggerType TriggerType = "accesscontrols"
+	// AccessControlPoliciesResourceType is the type used to represent the access control policies resource
+	AccessControlPoliciesResourceType ResourceType = "accesscontrols"
 
-	// HealthCheckPoliciesTriggerType is the type used to represent the health check policies trigger
-	HealthCheckPoliciesTriggerType TriggerType = "healthchecks"
+	// HealthCheckPoliciesResourceType is the type used to represent the health check policies resource
+	HealthCheckPoliciesResourceType ResourceType = "healthchecks"
 
-	// FaultInjectionPoliciesTriggerType is the type used to represent the fault injection policies trigger
-	FaultInjectionPoliciesTriggerType TriggerType = "faultinjections"
+	// FaultInjectionPoliciesResourceType is the type used to represent the fault injection policies resource
+	FaultInjectionPoliciesResourceType ResourceType = "faultinjections"
 
-	// UpstreamTLSPoliciesTriggerType is the type used to represent the upstream tls policies trigger
-	UpstreamTLSPoliciesTriggerType TriggerType = "upstreamtls"
+	// UpstreamTLSPoliciesResourceType is the type used to represent the upstream tls policies resource
+	UpstreamTLSPoliciesResourceType ResourceType = "upstreamtls"
 
-	// RetryPoliciesTriggerType is the type used to represent the retry policies trigger
-	RetryPoliciesTriggerType TriggerType = "retries"
+	// RetryPoliciesResourceType is the type used to represent the retry policies resource
+	RetryPoliciesResourceType ResourceType = "retries"
 
-	// GatewayTLSPoliciesTriggerType is the type used to represent the gateway tls policies trigger
-	GatewayTLSPoliciesTriggerType TriggerType = "gatewaytls"
+	// GatewayTLSPoliciesResourceType is the type used to represent the gateway tls policies resource
+	GatewayTLSPoliciesResourceType ResourceType = "gatewaytls"
 )
 
-// Processor is the interface for the functionality provided by the triggers
-type Processor interface {
+// Trigger is the interface for the functionality provided by the resources
+type Trigger interface {
 	Insert(obj interface{}, cache *GatewayCache) bool
 	Delete(obj interface{}, cache *GatewayCache) bool
 }
@@ -142,6 +146,13 @@ type routePolicies struct {
 	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
 	httpRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
 	grpcRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+}
+
+type GatewayAPIResource interface {
+	*gwv1beta1.HTTPRoute | *gwv1alpha2.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute |
+		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
+		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
+		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy | *gwpav1alpha1.GatewayTLSPolicy
 }
 
 var (
@@ -233,4 +244,8 @@ const (
 	httpCodecScript    = "http/codec.js"
 	agentServiceScript = "extension/agent-service.js"
 	proxyTagScript     = "extension/proxy-tag.js"
+)
+
+var (
+	selectAll = labels.Set{}.AsSelector()
 )
