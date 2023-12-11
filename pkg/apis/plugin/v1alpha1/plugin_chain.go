@@ -6,10 +6,9 @@ import (
 
 // PluginChain is the type used to represent a PluginChain.
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
-// +kubebuilder:resource:shortName=pichn,scope=Cluster
+// +kubebuilder:resource:shortName=pichn,scope=Namespaced
 type PluginChain struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`
@@ -49,11 +48,11 @@ type ChainPluginSpec struct {
 type ChainSelectorSpec struct {
 	// PodSelector for pods. Existing pods are selected by this will be the ones affected by this plugin chain.
 	// +optional
-	PodSelector *metav1.LabelSelector `json:"podSelector,omitempty"`
+	PodSelector *metav1.LabelSelector `json:"podSelector"`
 
 	// NamespaceSelector for namespaces. Existing pods are selected by this will be the ones affected by this plugin chain.
 	// +optional
-	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector"`
 }
 
 // PluginChainList defines the list of PluginChain objects.
