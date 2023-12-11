@@ -9,7 +9,13 @@ import (
 	consul "github.com/hashicorp/consul/api"
 	eureka "github.com/hudl/fargo"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector-provider")
 )
 
 // AgentCheck represents a check known to the agent
@@ -108,11 +114,26 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 		return
 	}
 	as.ID = ins.Id()
-	as.Service = ins.VipAddress
+	as.Service = strings.ToLower(ins.VipAddress)
 	as.InstanceId = ins.InstanceId
 	as.Address = ins.IPAddr
 	as.Port = ins.Port
 	metadata := ins.Metadata.GetMap()
+	if len(metadata) > 0 {
+		as.Meta = make(map[string]interface{})
+		for k, v := range metadata {
+			as.Meta[k] = v
+		}
+	}
+}
+
+func (as *AgentService) fromVM(vm machinev1alpha1.VirtualMachine, svc machinev1alpha1.ServiceSpec) {
+	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
+	as.Service = svc.ServiceName
+	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
+	as.Address = vm.Spec.MachineIP
+	as.Port = int(svc.Port)
+	metadata := vm.Labels
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
@@ -139,7 +160,7 @@ func (cdr *CatalogDeregistration) toConsul() *consul.CatalogDeregistration {
 func (cdr *CatalogDeregistration) toEureka() *eureka.Instance {
 	r := new(eureka.Instance)
 	r.InstanceId = cdr.ServiceID
-	r.App = cdr.Service
+	r.App = strings.ToUpper(cdr.Service)
 	return r
 }
 
@@ -186,9 +207,9 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 		r.InstanceId = cr.Service.ID
 		r.HostName = cr.Service.Address
 		r.IPAddr = cr.Service.Address
-		r.App = cr.Service.Service
-		r.VipAddress = strings.ToLower(cr.Service.Service)
-		r.SecureVipAddress = strings.ToLower(cr.Service.Service)
+		r.App = strings.ToUpper(cr.Service.Service)
+		r.VipAddress = strings.ToUpper(cr.Service.Service)
+		r.SecureVipAddress = strings.ToUpper(cr.Service.Service)
 		r.Port = cr.Service.Port
 		r.Status = eureka.UP
 		r.DataCenterInfo = eureka.DataCenterInfo{Name: eureka.MyOwn}
@@ -197,6 +218,10 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 				r.Metadata.GetMap()[k] = v
 			}
 		}
+
+		r.Metadata.GetMap()["type"] = "smart-gateway"
+		r.Metadata.GetMap()["version"] = "release"
+		r.Metadata.GetMap()["zone"] = "yinzhou"
 
 		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.Port)
 		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.Port)
@@ -226,7 +251,7 @@ func (cs *CatalogService) fromEureka(svc *eureka.Instance) {
 	}
 	cs.Node = svc.DataCenterInfo.Name
 	cs.ServiceID = svc.Id()
-	cs.ServiceName = svc.App
+	cs.ServiceName = strings.ToLower(svc.App)
 }
 
 type CatalogNodeServiceList struct {
@@ -317,6 +342,7 @@ type ServiceDiscoveryClient interface {
 	Deregister(dereg *CatalogDeregistration) error
 	EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error)
 	MicroServiceProvider() string
+	IsInternalServices() bool
 }
 
 const (

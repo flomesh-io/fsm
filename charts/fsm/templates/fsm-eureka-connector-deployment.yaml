@@ -57,6 +57,7 @@ spec:
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-derive-namespace={{.Values.fsm.cloudConnector.eureka.deriveNamespace}}",
+            "-as-internal-services={{.Values.fsm.cloudConnector.eureka.asInternalServices}}",
             "-sdr-provider=eureka",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8S.enable}}",
@@ -64,6 +65,7 @@ spec:
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.filterMetadata}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.prefixMetadata}}",
             "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.suffixMetadata}}",
+            "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.eureka.syncToK8S.withGateway.enable}}",
             "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.eureka.syncFromK8S.enable}}",
             "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.eureka.syncFromK8S.defaultSync}}",
             "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncClusterIPServices}}",
@@ -83,20 +85,13 @@ spec:
             "-sync-k8s-to-cloud-deny-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
-            "-sync-k8s-to-cloud-with-gateway-api={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.enable}}",
-            "-sync-k8s-to-cloud-with-gateway-api-via={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGatewayAPI.via}}",
-            "-sync-k8s-to-fgw={{.Values.fsm.cloudConnector.eureka.syncToFgw.enable}}",
-            "-sync-k8s-to-fgw-default-sync={{.Values.fsm.cloudConnector.eureka.syncToFgw.defaultSync}}",
-            {{- if .Values.fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.eureka.syncToFgw.allowK8sNamespaces }}
-            "-sync-k8s-to-fgw-allow-k8s-namespaces={{ . }}",
-            {{- end }}
-            {{- end }}
-            {{- if .Values.fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.eureka.syncToFgw.denyK8sNamespaces }}
-            "-sync-k8s-to-fgw-deny-k8s-namespaces={{ . }}",
-            {{- end }}
-            {{- end }}
+            "-sync-k8s-to-cloud-with-gateway={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGateway.enable}}",
+            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
+            "-via-gateway-egress-ip-selector={{.Values.fsm.cloudConnector.gateway.egress.ipSelector}}",
+            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
+            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
+            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",
+            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.egress.grpcPort}}",
           ]
           resources:
             limits:
@@ -121,7 +116,7 @@ spec:
               port: 9091
           env:
             - name: CONTROLLER_SVC_NAME
-              value: fsm-controller
+              value: fsm-eureka-connector
             # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-eureka-connector to register events
             - name: CONNECTOR_POD_NAME
               valueFrom:

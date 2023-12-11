@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,11 +11,13 @@ import (
 	mapset "github.com/deckarep/golang-set"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 var (
-	Cfg   Config
+	Cfg   = Config{Via: connector.ViaGateway}
 	flags = flag.NewFlagSet("", flag.ContinueOnError)
+	log   = logger.New("connector-cli")
 )
 
 // AppendSliceValue implements the flag.Value interface and allows multiple
@@ -53,6 +56,10 @@ type C2KCfg struct {
 	FlagFilterTag   string
 	FlagPrefixTag   string
 	FlagSuffixTag   string
+
+	FlagWithGateway struct {
+		Enable bool
+	}
 }
 
 type K2ConsulCfg struct {
@@ -65,11 +72,6 @@ type K2ConsulCfg struct {
 	FlagConsulEnableK8SNSMirroring    bool   // Enables mirroring of k8s namespaces into Consul
 	FlagConsulK8SNSMirroringPrefix    string // Prefix added to Consul namespaces created when mirroring
 	FlagConsulCrossNamespaceACLPolicy string // The name of the ACL policy to add to every created namespace if ACLs are enabled
-}
-
-type ViaFgwCfg struct {
-	Enable bool
-	Via    string
 }
 
 type K2CCfg struct {
@@ -91,36 +93,40 @@ type K2CCfg struct {
 
 	Consul K2ConsulCfg
 
-	FlagWithGatewayAPI ViaFgwCfg
+	FlagWithGateway struct {
+		Enable bool
+	}
 }
 
 type K2GCfg struct {
-	FlagDefaultSync bool
-	FlagSyncPeriod  time.Duration
-
+	FlagDefaultSync        bool
+	FlagSyncPeriod         time.Duration
 	FlagAllowK8SNamespaces []string // K8s namespaces to explicitly inject
 	FlagDenyK8SNamespaces  []string // K8s namespaces to deny injection (has precedence)
 }
 
 // Config is used to configure the creation of a client
 type Config struct {
-	Verbosity         string
-	MeshName          string // An ID that uniquely identifies an FSM instance
-	KubeConfigFile    string
-	FsmNamespace      string
-	FsmMeshConfigName string
-	FsmVersion        string
-	TrustDomain       string
-	DeriveNamespace   string
-	SdrProvider       string
-	HttpAddr          string
-	SyncCloudToK8s    bool
-	SyncK8sToCloud    bool
-	SyncK8sToFgw      bool
+	Verbosity          string
+	MeshName           string // An ID that uniquely identifies an FSM instance
+	KubeConfigFile     string
+	FsmNamespace       string
+	FsmMeshConfigName  string
+	FsmVersion         string
+	TrustDomain        string
+	DeriveNamespace    string
+	AsInternalServices bool
+	SdrProvider        string
+	HttpAddr           string
+	SyncCloudToK8s     bool
+	SyncK8sToCloud     bool
+	SyncK8sToGateway   bool
 
 	C2K C2KCfg
 	K2C K2CCfg
 	K2G K2GCfg
+
+	Via *connector.Gateway
 }
 
 func init() {
@@ -132,6 +138,7 @@ func init() {
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
 	flags.StringVar(&Cfg.DeriveNamespace, "derive-namespace", "", "derive namespace")
+	flags.BoolVar(&Cfg.AsInternalServices, "as-internal-services", false, "as internal services synced from cloud")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, Consul)")
 	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
@@ -140,6 +147,7 @@ func init() {
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
+	flags.BoolVar(&Cfg.C2K.FlagWithGateway.Enable, "sync-cloud-to-k8s-with-gateway", false, "with gateway api")
 
 	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
 	flags.BoolVar(&Cfg.K2C.FlagDefaultSync, "sync-k8s-to-cloud-default-sync", true,
@@ -177,29 +185,27 @@ func init() {
 	flags.BoolVar(&Cfg.K2C.FlagSyncIngressLoadBalancerIPs, "sync-k8s-to-cloud-sync-ingress-load-balancer-ips", false,
 		"enables syncing the IP of the Ingress LoadBalancer if we do not want to sync the hostname from the Ingress resource.")
 
-	flags.BoolVar(&Cfg.K2C.FlagWithGatewayAPI.Enable, "sync-k8s-to-cloud-with-gateway-api", false, "with gateway api")
-	flags.StringVar(&Cfg.K2C.FlagWithGatewayAPI.Via, "sync-k8s-to-cloud-with-gateway-api-via", "ClusterIP",
-		"with gateway api via ClusterIP/ExternalIP")
+	flags.BoolVar(&Cfg.K2C.FlagWithGateway.Enable, "sync-k8s-to-cloud-with-gateway", false, "with gateway api")
 
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-Consul-node-name", "k8s-sync",
+	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-consul-node-name", "k8s-sync",
 		"The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable "+
 			"via DNS, the name should only contain alpha-numerics and dashes.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8STag, "sync-k8s-to-cloud-Consul-k8s-tag", "k8s",
+	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8STag, "sync-k8s-to-cloud-consul-k8s-tag", "k8s",
 		"Tag value for K8S services registered in cloud")
-	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableNamespaces, "sync-k8s-to-cloud-Consul-enable-namespaces", false,
+	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableNamespaces, "sync-k8s-to-cloud-consul-enable-namespaces", false,
 		"[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulDestinationNamespace, "sync-k8s-to-cloud-Consul-destination-namespace", "default",
-		"[Enterprise Only] Defines which Consul namespace to register all synced services into. If '-sync-k8s-to-cloud-Consul-enable-k8s-namespace-mirroring' "+
+	flags.StringVar(&Cfg.K2C.Consul.FlagConsulDestinationNamespace, "sync-k8s-to-cloud-consul-destination-namespace", "default",
+		"[Enterprise Only] Defines which Consul namespace to register all synced services into. If '-sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring' "+
 			"is true, this is not used.")
-	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableK8SNSMirroring, "sync-k8s-to-cloud-Consul-enable-k8s-namespace-mirroring", false, "[Enterprise Only] Enables "+
+	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableK8SNSMirroring, "sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring", false, "[Enterprise Only] Enables "+
 		"namespace mirroring.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8SNSMirroringPrefix, "sync-k8s-to-cloud-Consul-k8s-namespace-mirroring-prefix", "",
+	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8SNSMirroringPrefix, "sync-k8s-to-cloud-consul-k8s-namespace-mirroring-prefix", "",
 		"[Enterprise Only] Prefix that will be added to all k8s namespaces mirrored into Consul if mirroring is enabled.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy, "sync-k8s-to-cloud-Consul-cross-namespace-acl-policy", "",
+	flags.StringVar(&Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy, "sync-k8s-to-cloud-consul-cross-namespace-acl-policy", "",
 		"[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service "+
 			"discovery across Consul namespaces. Only necessary if ACLs are enabled.")
 
-	flags.BoolVar(&Cfg.SyncK8sToFgw, "sync-k8s-to-fgw", true, "sync from k8s to fgw")
+	flags.BoolVar(&Cfg.SyncK8sToGateway, "sync-k8s-to-fgw", true, "sync from k8s to fgw")
 	flags.BoolVar(&Cfg.K2G.FlagDefaultSync, "sync-k8s-to-fgw-default-sync", true,
 		"If true, all valid services in K8S are synced by default. If false, "+
 			"the service must be annotated properly to sync. In either case "+
@@ -212,28 +218,44 @@ func init() {
 		"K8s namespaces to explicitly allow. May be specified multiple times.")
 	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",
 		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
+
+	flags.StringVar(&Cfg.Via.IngressIPSelector, "via-gateway-ingress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
+	flags.StringVar(&Cfg.Via.EgressIPSelector, "via-gateway-egress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
+	flags.UintVar(&Cfg.Via.Ingress.HTTPPort, "via-gateway-ingress-http-port", 0, "ingress http port")
+	flags.UintVar(&Cfg.Via.Ingress.GRPCPort, "via-gateway-ingress-grpc-port", 0, "ingress grpc port")
+	flags.UintVar(&Cfg.Via.Egress.HTTPPort, "via-gateway-egress-http-port", 0, "egress http port")
+	flags.UintVar(&Cfg.Via.Egress.GRPCPort, "via-gateway-egress-grpc-port", 0, "egress grpc port")
 }
 
 // ValidateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
 func ValidateCLIParams() error {
-	if Cfg.MeshName == "" {
+	bytes, _ := json.MarshalIndent(Cfg, "", " ")
+	fmt.Println(string(bytes))
+	if len(Cfg.MeshName) == 0 {
 		return fmt.Errorf("please specify the mesh name using --mesh-name")
 	}
 
-	if Cfg.FsmNamespace == "" {
+	if len(Cfg.FsmNamespace) == 0 {
 		return fmt.Errorf("please specify the FSM namespace using -fsm-namespace")
 	}
 
-	if Cfg.DeriveNamespace == "" {
-		return fmt.Errorf("please specify the cloud derive namespace using -derive-namespace")
+	if len(Cfg.SdrProvider) > 0 {
+		if connector.EurekaDiscoveryService != Cfg.SdrProvider &&
+			connector.ConsulDiscoveryService != Cfg.SdrProvider &&
+			connector.MachineDiscoveryService != Cfg.SdrProvider {
+			return fmt.Errorf("please specify service discovery and registration provider using -sdr-provider")
+		}
 	}
 
-	if Cfg.SdrProvider == "" || (connector.EurekaDiscoveryService != Cfg.SdrProvider && connector.ConsulDiscoveryService != Cfg.SdrProvider) {
-		return fmt.Errorf("please specify service discovery and registration provider using -sdr-provider")
-	}
-
-	if Cfg.HttpAddr == "" {
-		return fmt.Errorf("please specify service discovery and registration server address using -sdr-http-addr")
+	if connector.EurekaDiscoveryService == Cfg.SdrProvider || connector.ConsulDiscoveryService == Cfg.SdrProvider {
+		if len(Cfg.HttpAddr) == 0 {
+			return fmt.Errorf("please specify service discovery and registration server address using -sdr-http-addr")
+		}
+		if Cfg.SyncCloudToK8s || Cfg.SyncK8sToCloud {
+			if len(Cfg.DeriveNamespace) == 0 {
+				return fmt.Errorf("please specify the cloud derive namespace using -derive-namespace")
+			}
+		}
 	}
 
 	return nil
