@@ -2254,7 +2254,8 @@
                         "stripAnyHostPort",
                         "sslPassthroughUpstreamPort",
                         "http1PerRequestLoadBalancing",
-                        "http2PerRequestLoadBalancing"
+                        "http2PerRequestLoadBalancing",
+                        "proxyTag"
                     ],
                     "properties": {
                         "enabled": {
@@ -2291,6 +2292,33 @@
                           "type": "boolean",
                           "default": true,
                           "title": "The http2PerRequestLoadBalancing Schema"
+                        },
+                        "proxyTag": {
+                          "type": "object",
+                          "title": "Proxy Tag",
+                          "description": "Proxy Tag",
+                          "required": [
+                            "srcHostHeader",
+                            "dstHostHeader"
+                          ],
+                          "properties": {
+                            "srcHostHeader": {
+                              "type": "string",
+                              "title": "Source Host Header",
+                              "description": "The source host header to be used for storing the original host of the request",
+                              "examples": [
+                                "orig-host"
+                              ]
+                            },
+                            "dstHostHeader": {
+                              "type": "string",
+                              "title": "Destination Host Header",
+                              "description": "The destination host header to be used for storing the user defined host of the request",
+                              "examples": [
+                                "proxy-tag"
+                              ]
+                            }
+                          }
                         }
                     }
                 },

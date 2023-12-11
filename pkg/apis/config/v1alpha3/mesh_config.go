@@ -597,6 +597,20 @@ type GatewayAPISpec struct {
 	// +kubebuilder:default=false
 	// HTTP2PerRequestLoadBalancing defines if load balancing based on per-request is enabled for http2.
 	HTTP2PerRequestLoadBalancing bool `json:"http2PerRequestLoadBalancing"`
+
+	// +kubebuilder:default={srcHostHeader: "orig-host", dstHostHeader: "proxy-tag"}
+	// ProxyTag defines the proxy tag configuration of gateway api.
+	ProxyTag ProxyTag `json:"proxyTag"`
+}
+
+type ProxyTag struct {
+	// +kubebuilder:default="orig-host"
+	// SrcHostHeader defines the src host header.
+	SrcHostHeader string `json:"srcHostHeader"`
+
+	// +kubebuilder:default="proxy-tag"
+	// DstHostHeader defines the dst host header.
+	DstHostHeader string `json:"dstHostHeader"`
 }
 
 // ServiceLBSpec is the type to represent service lb.

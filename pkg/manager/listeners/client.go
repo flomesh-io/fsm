@@ -15,6 +15,11 @@ type client struct {
 	mc *configv1alpha3.MeshConfig
 }
 
+func (c *client) GetFGWProxyTag() configv1alpha3.ProxyTag {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetCurlImage() string {
 	//TODO implement me
 	panic("implement me")
