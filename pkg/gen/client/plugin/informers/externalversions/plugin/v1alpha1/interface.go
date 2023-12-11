@@ -47,10 +47,10 @@ func (v *version) Plugins() PluginInformer {
 
 // PluginChains returns a PluginChainInformer.
 func (v *version) PluginChains() PluginChainInformer {
-	return &pluginChainInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &pluginChainInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // PluginConfigs returns a PluginConfigInformer.
 func (v *version) PluginConfigs() PluginConfigInformer {
-	return &pluginConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+	return &pluginConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
