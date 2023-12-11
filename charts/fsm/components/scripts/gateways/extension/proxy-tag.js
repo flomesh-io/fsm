@@ -1,14 +1,17 @@
 ((
+  { config } = pipy.solve('config.js'),
+  proxyTag = (config?.Configs?.ProxyTag?.DstHostHeader || 'proxy-tag').toLowerCase(),
+  origHost = (config?.Configs?.ProxyTag?.SrcHostHeader || 'orig-host').toLowerCase(),
 ) => pipy()
 
 .pipeline()
 .handleMessageStart(
   msg => (
-    msg?.head?.headers?.['proxy-tag'] ? ( // ingress
-      msg.head.headers['orig-host'] = msg.head.headers.host,
-      msg.head.headers.host = msg.head.headers['proxy-tag']
+    msg?.head?.headers?.[proxyTag] ? ( // ingress
+      msg.head.headers[origHost] = msg.head.headers.host,
+      msg.head.headers.host = msg.head.headers[proxyTag]
     ) : msg?.head?.headers?.['fgw-target'] && ( // egress
-      msg.head.headers['proxy-tag'] = msg.head.headers.host
+      msg.head.headers[proxyTag] = msg.head.headers.host
     )
   )
 )
