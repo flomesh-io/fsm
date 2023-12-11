@@ -88,6 +88,7 @@ type Defaults struct {
 	PidFile                        *string         `json:"PidFile,omitempty"`
 	ResourceUsage                  *ResourceUsage  `json:"ResourceUsage,omitempty"`
 	HealthCheckLog                 *HealthCheckLog `json:"HealthCheckLog,omitempty"`
+	ProxyTag                       *ProxyTag       `json:"ProxyTag,omitempty"`
 }
 
 type ResourceUsage struct {
@@ -99,6 +100,11 @@ type ResourceUsage struct {
 type HealthCheckLog struct {
 	StorageAddress *string `json:"StorageAddress,omitempty"`
 	Authorization  *string `json:"Authorization,omitempty"`
+}
+
+type ProxyTag struct {
+	SrcHostHeader string `json:"SrcHostHeader"`
+	DstHostHeader string `json:"DstHostHeader"`
 }
 
 // Listener is the listener configuration

@@ -114,7 +114,7 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 }
 
 func (c *GatewayCache) defaults() fgw.Defaults {
-	return fgw.Defaults{
+	ret := fgw.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
 		DefaultPassthroughUpstreamPort: c.cfg.GetFGWSSLPassthroughUpstreamPort(),
 		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
@@ -122,6 +122,15 @@ func (c *GatewayCache) defaults() fgw.Defaults {
 		HTTP2PerRequestLoadBalancing:   c.cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
 		SocketTimeout:                  pointer.Int32(60),
 	}
+
+	if c.cfg.GetFeatureFlags().EnableGatewayProxyTag {
+		ret.ProxyTag = &fgw.ProxyTag{
+			SrcHostHeader: c.cfg.GetFGWProxyTag().SrcHostHeader,
+			DstHostHeader: c.cfg.GetFGWProxyTag().DstHostHeader,
+		}
+	}
+
+	return ret
 }
 
 func (c *GatewayCache) isDebugEnabled() bool {
