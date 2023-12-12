@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"sort"
-
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
@@ -88,12 +86,8 @@ func (c *GatewayCache) rateLimits() map[gwpkg.PolicyMatchType][]gwpav1alpha1.Rat
 		rateLimits[matchType] = make([]gwpav1alpha1.RateLimitPolicy, 0)
 	}
 
-	for key := range c.ratelimits {
-		p, err := c.getRateLimitPolicyFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get RateLimitPolicy %s: %s", key, err)
-			continue
-		}
+	for _, p := range c.getResourcesFromCache(RateLimitPoliciesResourceType, true) {
+		p := p.(*gwpav1alpha1.RateLimitPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
 			spec := p.Spec
@@ -113,16 +107,16 @@ func (c *GatewayCache) rateLimits() map[gwpkg.PolicyMatchType][]gwpav1alpha1.Rat
 	}
 
 	// sort each type of rate limits by creation timestamp
-	for matchType, policies := range rateLimits {
-		sort.Slice(policies, func(i, j int) bool {
-			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-			}
-
-			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-		})
-		rateLimits[matchType] = policies
-	}
+	//for matchType, policies := range rateLimits {
+	//	sort.Slice(policies, func(i, j int) bool {
+	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
+	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
+	//		}
+	//
+	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
+	//	})
+	//	rateLimits[matchType] = policies
+	//}
 
 	return rateLimits
 }
@@ -138,12 +132,8 @@ func (c *GatewayCache) accessControls() map[gwpkg.PolicyMatchType][]gwpav1alpha1
 		accessControls[matchType] = make([]gwpav1alpha1.AccessControlPolicy, 0)
 	}
 
-	for key := range c.accesscontrols {
-		p, err := c.getAccessControlPolicyFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get AccessControlPolicy %s: %s", key, err)
-			continue
-		}
+	for _, p := range c.getResourcesFromCache(AccessControlPoliciesResourceType, true) {
+		p := p.(*gwpav1alpha1.AccessControlPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
 			spec := p.Spec
@@ -163,16 +153,16 @@ func (c *GatewayCache) accessControls() map[gwpkg.PolicyMatchType][]gwpav1alpha1
 	}
 
 	// sort each type of access controls by creation timestamp
-	for matchType, policies := range accessControls {
-		sort.Slice(policies, func(i, j int) bool {
-			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-			}
-
-			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-		})
-		accessControls[matchType] = policies
-	}
+	//for matchType, policies := range accessControls {
+	//	sort.Slice(policies, func(i, j int) bool {
+	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
+	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
+	//		}
+	//
+	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
+	//	})
+	//	accessControls[matchType] = policies
+	//}
 
 	return accessControls
 }
@@ -187,12 +177,8 @@ func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha
 		faultInjections[matchType] = make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	}
 
-	for key := range c.faultinjections {
-		p, err := c.getFaultInjectionPolicyFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get FaultInjectionPolicy %s: %s", key, err)
-			continue
-		}
+	for _, p := range c.getResourcesFromCache(FaultInjectionPoliciesResourceType, true) {
+		p := p.(*gwpav1alpha1.FaultInjectionPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
 			spec := p.Spec
@@ -210,16 +196,16 @@ func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha
 	}
 
 	// sort each type of fault injections by creation timestamp
-	for matchType, policies := range faultInjections {
-		sort.Slice(policies, func(i, j int) bool {
-			if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-				return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-			}
-
-			return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-		})
-		faultInjections[matchType] = policies
-	}
+	//for matchType, policies := range faultInjections {
+	//	sort.Slice(policies, func(i, j int) bool {
+	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
+	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
+	//		}
+	//
+	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
+	//	})
+	//	faultInjections[matchType] = policies
+	//}
 
 	return faultInjections
 }
@@ -315,13 +301,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
 	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyConfig)
 
-	for key := range c.sessionstickies {
-		sessionSticky, err := c.getSessionStickyPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get SessionStickyPolicy %s: %s", key, err)
-			continue
-		}
+	for _, sessionSticky := range c.getResourcesFromCache(SessionStickyPoliciesResourceType, true) {
+		sessionSticky := sessionSticky.(*gwpav1alpha1.SessionStickyPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(sessionSticky.Status.Conditions) {
 			for _, p := range sessionSticky.Spec.Ports {
@@ -329,6 +310,11 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 					cfg := sessionsticky.ComputeSessionStickyConfig(p.Config, sessionSticky.Spec.DefaultConfig)
 
 					if cfg == nil {
+						continue
+					}
+
+					if _, ok := sessionStickies[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, SessionStickyPolicy %s/%s:%d will be dropped", svcPortName.String(), sessionSticky.Namespace, sessionSticky.Name, p.Port)
 						continue
 					}
 
@@ -344,13 +330,8 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
 	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerType)
 
-	for key := range c.loadbalancers {
-		lb, err := c.getLoadBalancerPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get LoadBalancerPolicy %s: %s", key, err)
-			continue
-		}
+	for _, lb := range c.getResourcesFromCache(LoadBalancerPoliciesResourceType, true) {
+		lb := lb.(*gwpav1alpha1.LoadBalancerPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(lb.Status.Conditions) {
 			for _, p := range lb.Spec.Ports {
@@ -358,6 +339,11 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 					t := loadbalancer.ComputeLoadBalancerType(p.Type, lb.Spec.DefaultType)
 
 					if t == nil {
+						continue
+					}
+
+					if _, ok := loadBalancers[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, LoadBalancerPolicy %s/%s:%d will be dropped", svcPortName.String(), lb.Namespace, lb.Name, p.Port)
 						continue
 					}
 
@@ -373,13 +359,8 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
 	configs := make(map[string]*gwpav1alpha1.CircuitBreakingConfig)
 
-	for key := range c.circuitbreakings {
-		circuitBreaking, err := c.getCircuitBreakingPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get CircuitBreakingPolicy %s: %s", key, err)
-			continue
-		}
+	for _, circuitBreaking := range c.getResourcesFromCache(CircuitBreakingPoliciesResourceType, true) {
+		circuitBreaking := circuitBreaking.(*gwpav1alpha1.CircuitBreakingPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(circuitBreaking.Status.Conditions) {
 			for _, p := range circuitBreaking.Spec.Ports {
@@ -387,6 +368,11 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 					cfg := circuitbreaking.ComputeCircuitBreakingConfig(p.Config, circuitBreaking.Spec.DefaultConfig)
 
 					if cfg == nil {
+						continue
+					}
+
+					if _, ok := configs[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, CircuitBreakingPolicy %s/%s:%d will be dropped", svcPortName.String(), circuitBreaking.Namespace, circuitBreaking.Name, p.Port)
 						continue
 					}
 
@@ -402,13 +388,8 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
 	configs := make(map[string]*gwpav1alpha1.HealthCheckConfig)
 
-	for key := range c.healthchecks {
-		healthCheck, err := c.getHealthCheckPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get HealthCheckPolicy %s: %s", key, err)
-			continue
-		}
+	for _, healthCheck := range c.getResourcesFromCache(HealthCheckPoliciesResourceType, true) {
+		healthCheck := healthCheck.(*gwpav1alpha1.HealthCheckPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(healthCheck.Status.Conditions) {
 			for _, p := range healthCheck.Spec.Ports {
@@ -416,6 +397,11 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 					cfg := healthcheck.ComputeHealthCheckConfig(p.Config, healthCheck.Spec.DefaultConfig)
 
 					if cfg == nil {
+						continue
+					}
+
+					if _, ok := configs[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, HealthCheckPolicy %s/%s:%d will be dropped", svcPortName.String(), healthCheck.Namespace, healthCheck.Name, p.Port)
 						continue
 					}
 
@@ -431,13 +417,8 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	configs := make(map[string]*policy.UpstreamTLSConfig)
 
-	for key := range c.upstreamstls {
-		upstreamTLS, err := c.getUpstreamTLSPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get UpstreamTLSPolicy %s: %s", key, err)
-			continue
-		}
+	for _, upstreamTLS := range c.getResourcesFromCache(UpstreamTLSPoliciesResourceType, true) {
+		upstreamTLS := upstreamTLS.(*gwpav1alpha1.UpstreamTLSPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(upstreamTLS.Status.Conditions) {
 			for _, p := range upstreamTLS.Spec.Ports {
@@ -467,6 +448,11 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 						continue
 					}
 
+					if _, ok := configs[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, UpstreamTLSPolicy %s/%s:%d will be dropped", svcPortName.String(), upstreamTLS.Namespace, upstreamTLS.Name, p.Port)
+						continue
+					}
+
 					configs[svcPortName.String()] = &policy.UpstreamTLSConfig{
 						MTLS:   cfg.MTLS,
 						Secret: secret,
@@ -482,13 +468,8 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	configs := make(map[string]*gwpav1alpha1.RetryConfig)
 
-	for key := range c.retries {
-		retryPolicy, err := c.getRetryPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get RetryPolicy %s: %s", key, err)
-			continue
-		}
+	for _, retryPolicy := range c.getResourcesFromCache(RetryPoliciesResourceType, true) {
+		retryPolicy := retryPolicy.(*gwpav1alpha1.RetryPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(retryPolicy.Status.Conditions) {
 			for _, p := range retryPolicy.Spec.Ports {
@@ -496,6 +477,11 @@ func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 					cfg := retry.ComputeRetryConfig(p.Config, retryPolicy.Spec.DefaultConfig)
 
 					if cfg == nil {
+						continue
+					}
+
+					if _, ok := configs[svcPortName.String()]; ok {
+						log.Warn().Msgf("Policy is already defined for service port %s, RetryPolicy %s/%s:%d will be dropped", svcPortName.String(), retryPolicy.Namespace, retryPolicy.Name, p.Port)
 						continue
 					}
 
@@ -511,13 +497,8 @@ func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 func (c *GatewayCache) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
 	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
 
-	for key := range c.gatewaytls {
-		gatewayTLSPolicy, err := c.getGatewayTLSPolicyFromCache(key)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get GatewayTLSPolicy %s: %s", key, err)
-			continue
-		}
+	for _, gatewayTLSPolicy := range c.getResourcesFromCache(GatewayTLSPoliciesResourceType, true) {
+		gatewayTLSPolicy := gatewayTLSPolicy.(*gwpav1alpha1.GatewayTLSPolicy)
 
 		if !gwutils.IsAcceptedPolicyAttachment(gatewayTLSPolicy.Status.Conditions) {
 			continue

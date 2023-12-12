@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
 	"k8s.io/utils/pointer"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,13 +32,7 @@ func (c *GatewayCache) BuildConfigs() {
 	configs := make(map[string]*fgw.ConfigSpec)
 	policies := c.policyAttachments()
 
-	for ns, key := range c.gateways {
-		gw, err := c.getGatewayFromCache(key)
-		if err != nil {
-			log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
-			continue
-		}
-
+	for _, gw := range c.getActiveGateways() {
 		validListeners := gwutils.GetValidListenersFromGateway(gw)
 		listenerCfg := c.listeners(gw, validListeners, policies)
 		rules, referredServices := c.routeRules(gw, validListeners, policies)
@@ -50,7 +46,8 @@ func (c *GatewayCache) BuildConfigs() {
 			Chains:     c.chains(),
 		}
 		configSpec.Version = utils.SimpleHash(configSpec)
-		configs[ns] = configSpec
+
+		configs[gw.Namespace] = configSpec
 	}
 
 	for ns, cfg := range configs {
@@ -112,7 +109,7 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 }
 
 func (c *GatewayCache) defaults() fgw.Defaults {
-	return fgw.Defaults{
+	ret := fgw.Defaults{
 		EnableDebug:                    c.isDebugEnabled(),
 		DefaultPassthroughUpstreamPort: c.cfg.GetFGWSSLPassthroughUpstreamPort(),
 		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
@@ -120,6 +117,15 @@ func (c *GatewayCache) defaults() fgw.Defaults {
 		HTTP2PerRequestLoadBalancing:   c.cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
 		SocketTimeout:                  pointer.Int32(60),
 	}
+
+	if c.cfg.GetFeatureFlags().EnableGatewayProxyTag {
+		ret.ProxyTag = &fgw.ProxyTag{
+			SrcHostHeader: c.cfg.GetFGWProxyTag().SrcHostHeader,
+			DstHostHeader: c.cfg.GetFGWProxyTag().DstHostHeader,
+		}
+	}
+
+	return ret
 }
 
 func (c *GatewayCache) isDebugEnabled() bool {
@@ -242,30 +248,30 @@ func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtype
 	rules := make(map[int32]fgw.RouteRule)
 	services := make(map[string]serviceInfo)
 
-	log.Debug().Msgf("Processing %d HTTPRoutes", len(c.httproutes))
-	for _, httpRoute := range c.getSortedHTTPRoutes() {
+	for _, httpRoute := range c.getResourcesFromCache(HTTPRoutesResourceType, true) {
+		httpRoute := httpRoute.(*gwv1beta1.HTTPRoute)
 		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
-	log.Debug().Msgf("Processing %d GRPCRoutes", len(c.grpcroutes))
-	for _, grpcRoute := range c.getSortedGRPCRoutes() {
+	for _, grpcRoute := range c.getResourcesFromCache(GRPCRoutesResourceType, true) {
+		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
 		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
-	log.Debug().Msgf("Processing %d TLSRoutes", len(c.tlsroutes))
-	for _, tlsRoute := range c.getSortedTLSRoutes() {
+	for _, tlsRoute := range c.getResourcesFromCache(TLSRoutesResourceType, true) {
+		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
 		processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
-	log.Debug().Msgf("Processing %d TCPRoutes", len(c.tcproutes))
-	for _, tcpRoute := range c.getSortedTCPRoutes() {
+	for _, tcpRoute := range c.getResourcesFromCache(TCPRoutesResourceType, true) {
+		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
 		processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
 	}
 
-	log.Debug().Msgf("Processing %d UDPRoutes", len(c.udproutes))
-	for _, udpRoute := range c.getSortedUDPRoutes() {
+	for _, udpRoute := range c.getResourcesFromCache(UDPRoutesResourceType, true) {
+		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
 		processUDPRoute(gw, validListeners, udpRoute, rules)
 		processUDPBackends(udpRoute, services)
 	}

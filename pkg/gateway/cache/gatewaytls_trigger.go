@@ -2,8 +2,6 @@ package cache
 
 import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // GatewayTLSPoliciesTrigger is responsible for processing GatewayTLSPolicy objects
@@ -17,7 +15,10 @@ func (p *GatewayTLSPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache)
 		return false
 	}
 
-	cache.gatewaytls[utils.ObjectKey(policy)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.gatewaytls[utils.ObjectKey(policy)] = struct{}{}
 
 	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
 }
@@ -29,10 +30,15 @@ func (p *GatewayTLSPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache)
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(policy)
+	//_, found := cache.gatewaytls[key]
+	//delete(cache.gatewaytls, key)
+	//
+	//return found
 
-	key := utils.ObjectKey(policy)
-	_, found := cache.gatewaytls[key]
-	delete(cache.gatewaytls, key)
-
-	return found
+	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
 }

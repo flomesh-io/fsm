@@ -7,8 +7,7 @@ import (
 )
 
 // EndpointsTrigger is responsible for processing Endpoints objects
-type EndpointsTrigger struct {
-}
+type EndpointsTrigger struct{}
 
 // Insert adds the Endpoints object to the cache and returns true if the cache was modified
 func (p *EndpointsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -18,8 +17,11 @@ func (p *EndpointsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+
 	key := utils.ObjectKey(ep)
-	cache.endpoints[key] = struct{}{}
+	//cache.endpoints[key] = struct{}{}
 
 	return cache.isRoutableService(key)
 }
@@ -31,10 +33,15 @@ func (p *EndpointsTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
 	key := utils.ObjectKey(ep)
-	_, found := cache.endpoints[key]
-	delete(cache.endpoints, key)
+	//_, found := cache.endpoints[key]
+	//delete(cache.endpoints, key)
+	//
+	//return found
 
-	return found
+	return cache.isRoutableService(key)
 }

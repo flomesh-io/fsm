@@ -29,12 +29,12 @@ func (c *FakePluginV1alpha1) Plugins() v1alpha1.PluginInterface {
 	return &FakePlugins{c}
 }
 
-func (c *FakePluginV1alpha1) PluginChains() v1alpha1.PluginChainInterface {
-	return &FakePluginChains{c}
+func (c *FakePluginV1alpha1) PluginChains(namespace string) v1alpha1.PluginChainInterface {
+	return &FakePluginChains{c, namespace}
 }
 
-func (c *FakePluginV1alpha1) PluginConfigs() v1alpha1.PluginConfigInterface {
-	return &FakePluginConfigs{c}
+func (c *FakePluginV1alpha1) PluginConfigs(namespace string) v1alpha1.PluginConfigInterface {
+	return &FakePluginConfigs{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

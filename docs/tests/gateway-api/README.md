@@ -471,6 +471,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
 metadata:
+  namespace: udproute
   name: test-gw-2
 spec:
   gatewayClassName: fsm-gateway-cls
@@ -535,7 +536,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-2
-      namespace: default
+      namespace: udproute
       port: 4000
   rules:
   - backendRefs:

@@ -6,8 +6,7 @@ import (
 )
 
 // ServiceImportsTrigger is responsible for processing ServiceImport objects
-type ServiceImportsTrigger struct {
-}
+type ServiceImportsTrigger struct{}
 
 // Insert adds a ServiceImport to the cache and returns true if the route is effective
 func (p *ServiceImportsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -17,8 +16,11 @@ func (p *ServiceImportsTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+
 	key := utils.ObjectKey(svcimp)
-	cache.serviceimports[key] = struct{}{}
+	//cache.serviceimports[key] = struct{}{}
 
 	return cache.isRoutableService(key)
 }
@@ -30,10 +32,15 @@ func (p *ServiceImportsTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
 	key := utils.ObjectKey(svcimp)
-	_, found := cache.serviceimports[key]
-	delete(cache.serviceimports, key)
+	//_, found := cache.serviceimports[key]
+	//delete(cache.serviceimports, key)
+	//
+	//return found
 
-	return found
+	return cache.isRoutableService(key)
 }

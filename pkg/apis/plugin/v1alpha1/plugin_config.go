@@ -8,10 +8,9 @@ import (
 
 // PluginConfig is the type used to represent a plugin config policy.
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
-// +kubebuilder:resource:shortName=picfg,scope=Cluster
+// +kubebuilder:resource:shortName=picfg,scope=Namespaced
 type PluginConfig struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`

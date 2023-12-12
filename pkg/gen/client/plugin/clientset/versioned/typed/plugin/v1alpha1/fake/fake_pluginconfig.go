@@ -30,6 +30,7 @@ import (
 // FakePluginConfigs implements PluginConfigInterface
 type FakePluginConfigs struct {
 	Fake *FakePluginV1alpha1
+	ns   string
 }
 
 var pluginconfigsResource = schema.GroupVersionResource{Group: "plugin.flomesh.io", Version: "v1alpha1", Resource: "pluginconfigs"}
@@ -39,7 +40,8 @@ var pluginconfigsKind = schema.GroupVersionKind{Group: "plugin.flomesh.io", Vers
 // Get takes name of the pluginConfig, and returns the corresponding pluginConfig object, and an error if there is any.
 func (c *FakePluginConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(pluginconfigsResource, name), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewGetAction(pluginconfigsResource, c.ns, name), &v1alpha1.PluginConfig{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -49,7 +51,8 @@ func (c *FakePluginConfigs) Get(ctx context.Context, name string, options v1.Get
 // List takes label and field selectors, and returns the list of PluginConfigs that match those selectors.
 func (c *FakePluginConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PluginConfigList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(pluginconfigsResource, pluginconfigsKind, opts), &v1alpha1.PluginConfigList{})
+		Invokes(testing.NewListAction(pluginconfigsResource, pluginconfigsKind, c.ns, opts), &v1alpha1.PluginConfigList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -70,13 +73,15 @@ func (c *FakePluginConfigs) List(ctx context.Context, opts v1.ListOptions) (resu
 // Watch returns a watch.Interface that watches the requested pluginConfigs.
 func (c *FakePluginConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(pluginconfigsResource, opts))
+		InvokesWatch(testing.NewWatchAction(pluginconfigsResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a pluginConfig and creates it.  Returns the server's representation of the pluginConfig, and an error, if there is any.
 func (c *FakePluginConfigs) Create(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.CreateOptions) (result *v1alpha1.PluginConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(pluginconfigsResource, pluginConfig), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewCreateAction(pluginconfigsResource, c.ns, pluginConfig), &v1alpha1.PluginConfig{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -86,7 +91,8 @@ func (c *FakePluginConfigs) Create(ctx context.Context, pluginConfig *v1alpha1.P
 // Update takes the representation of a pluginConfig and updates it. Returns the server's representation of the pluginConfig, and an error, if there is any.
 func (c *FakePluginConfigs) Update(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (result *v1alpha1.PluginConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(pluginconfigsResource, pluginConfig), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewUpdateAction(pluginconfigsResource, c.ns, pluginConfig), &v1alpha1.PluginConfig{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -97,7 +103,8 @@ func (c *FakePluginConfigs) Update(ctx context.Context, pluginConfig *v1alpha1.P
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakePluginConfigs) UpdateStatus(ctx context.Context, pluginConfig *v1alpha1.PluginConfig, opts v1.UpdateOptions) (*v1alpha1.PluginConfig, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(pluginconfigsResource, "status", pluginConfig), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewUpdateSubresourceAction(pluginconfigsResource, "status", c.ns, pluginConfig), &v1alpha1.PluginConfig{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -107,13 +114,14 @@ func (c *FakePluginConfigs) UpdateStatus(ctx context.Context, pluginConfig *v1al
 // Delete takes name of the pluginConfig and deletes it. Returns an error if one occurs.
 func (c *FakePluginConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(pluginconfigsResource, name, opts), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewDeleteActionWithOptions(pluginconfigsResource, c.ns, name, opts), &v1alpha1.PluginConfig{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakePluginConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(pluginconfigsResource, listOpts)
+	action := testing.NewDeleteCollectionAction(pluginconfigsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.PluginConfigList{})
 	return err
@@ -122,7 +130,8 @@ func (c *FakePluginConfigs) DeleteCollection(ctx context.Context, opts v1.Delete
 // Patch applies the patch and returns the patched pluginConfig.
 func (c *FakePluginConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginConfig, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(pluginconfigsResource, name, pt, data, subresources...), &v1alpha1.PluginConfig{})
+		Invokes(testing.NewPatchSubresourceAction(pluginconfigsResource, c.ns, name, pt, data, subresources...), &v1alpha1.PluginConfig{})
+
 	if obj == nil {
 		return nil, err
 	}

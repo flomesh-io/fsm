@@ -2,13 +2,10 @@ package cache
 
 import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // UDPRoutesTrigger is responsible for processing UDPRoute objects
-type UDPRoutesTrigger struct {
-}
+type UDPRoutesTrigger struct{}
 
 // Insert adds a UDPRoute to the cache and returns true if the route is effective
 func (p *UDPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -18,7 +15,10 @@ func (p *UDPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	cache.udproutes[utils.ObjectKey(route)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.udproutes[utils.ObjectKey(route)] = struct{}{}
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
@@ -30,10 +30,15 @@ func (p *UDPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(route)
+	//_, found := cache.udproutes[key]
+	//delete(cache.udproutes, key)
+	//
+	//return found
 
-	key := utils.ObjectKey(route)
-	_, found := cache.udproutes[key]
-	delete(cache.udproutes, key)
-
-	return found
+	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

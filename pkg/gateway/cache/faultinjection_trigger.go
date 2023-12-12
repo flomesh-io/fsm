@@ -2,13 +2,10 @@ package cache
 
 import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // FaultInjectionPoliciesTrigger is responsible for processing FaultInjectionPolicy objects
-type FaultInjectionPoliciesTrigger struct {
-}
+type FaultInjectionPoliciesTrigger struct{}
 
 // Insert adds a FaultInjectionPolicy to the cache and returns true if the target service is routable
 func (p *FaultInjectionPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
@@ -18,7 +15,10 @@ func (p *FaultInjectionPoliciesTrigger) Insert(obj interface{}, cache *GatewayCa
 		return false
 	}
 
-	cache.faultinjections[utils.ObjectKey(policy)] = struct{}{}
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//cache.faultinjections[utils.ObjectKey(policy)] = struct{}{}
 
 	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
 }
@@ -30,10 +30,14 @@ func (p *FaultInjectionPoliciesTrigger) Delete(obj interface{}, cache *GatewayCa
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-
-	key := utils.ObjectKey(policy)
-	_, found := cache.faultinjections[key]
-	delete(cache.faultinjections, key)
-
-	return found
+	//
+	//cache.mutex.Lock()
+	//defer cache.mutex.Unlock()
+	//
+	//key := utils.ObjectKey(policy)
+	//_, found := cache.faultinjections[key]
+	//delete(cache.faultinjections, key)
+	//
+	//return found
+	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
 }
