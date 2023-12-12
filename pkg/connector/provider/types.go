@@ -219,9 +219,9 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 			}
 		}
 
-		r.Metadata.GetMap()["type"] = "smart-gateway"
-		r.Metadata.GetMap()["version"] = "release"
-		r.Metadata.GetMap()["zone"] = "yinzhou"
+		//r.Metadata.GetMap()["type"] = "smart-gateway"
+		//r.Metadata.GetMap()["version"] = "release"
+		//r.Metadata.GetMap()["zone"] = "yinzhou"
 
 		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.Port)
 		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.Port)
