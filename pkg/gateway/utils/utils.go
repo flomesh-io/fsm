@@ -92,7 +92,7 @@ func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
 
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1beta1.ListenerStatus) bool {
-	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionProgrammed))
 }
 
 // IsListenerAccepted returns true if the listener is accepted
