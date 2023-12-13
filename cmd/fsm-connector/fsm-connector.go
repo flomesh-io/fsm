@@ -22,6 +22,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/httpserver"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -51,7 +52,7 @@ func main() {
 
 	// This ensures CLI parameters (and dependent values) are correct.
 	if err := cli.ValidateCLIParams(); err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InvalidCLIParameters, "Error validating CLI parameters")
+		log.Fatal().Err(err).Msg("Error validating CLI parameters")
 	}
 
 	if err := logger.SetLogLevel(cli.Verbosity()); err != nil {
@@ -64,6 +65,7 @@ func main() {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
+	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
@@ -89,6 +91,7 @@ func main() {
 	informerCollection, err := informers.NewInformerCollection(cli.Cfg.MeshName, stop,
 		informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
+		informers.WithMachineClient(machineClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
@@ -98,34 +101,41 @@ func main() {
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	var discClient provider.ServiceDiscoveryClient = nil
-	if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
-		discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr)
-		if err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-			log.Fatal().Msg("Error creating service discovery and registration client")
+	if len(cli.Cfg.SdrProvider) > 0 {
+		var discClient provider.ServiceDiscoveryClient = nil
+		if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
+			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			if err != nil {
+				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+				log.Fatal().Msg("Error creating service discovery and registration client")
+			}
+		} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
+			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			if err != nil {
+				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+				log.Fatal().Msg("Error creating service discovery and registration client")
+			}
+		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
+			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.AsInternalServices)
+			if err != nil {
+				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+				log.Fatal().Msg("Error creating service discovery and registration client")
+			}
+		} else {
+			log.Fatal().Msg("Unsupported service discovery and registration provider")
 		}
-	} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
-		discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr)
-		if err != nil {
-			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-			log.Fatal().Msg("Error creating service discovery and registration client")
+
+		if cli.Cfg.SyncCloudToK8s {
+			go cli.SyncCtoK(ctx, kubeClient, discClient)
 		}
-	} else {
-		log.Fatal().Msg("Unsupported service discovery and registration provider")
+
+		if cli.Cfg.SyncK8sToCloud {
+			go cli.SyncKtoC(ctx, kubeClient, discClient)
+		}
 	}
 
-	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
-
-	if cli.Cfg.SyncCloudToK8s {
-		go cli.SyncCtoK(ctx, kubeClient, discClient, gatewayClient)
-	}
-
-	if cli.Cfg.SyncK8sToCloud {
-		go cli.SyncKtoC(ctx, kubeClient, discClient)
-	}
-
-	if cli.Cfg.SyncK8sToFgw {
+	if cli.Cfg.SyncK8sToGateway {
+		gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 		go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
 	}
 

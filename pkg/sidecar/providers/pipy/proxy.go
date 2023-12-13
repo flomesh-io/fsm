@@ -38,7 +38,7 @@ type Proxy struct {
 	// This could be nil if the Sidecar is not operating in a Kubernetes cluster (VM for example)
 	// NOTE: This field may be not be set at the time Proxy struct is initialized. This would
 	// eventually be set when the metadata arrives via the xDS protocol.
-	PodMetadata *PodMetadata
+	Metadata *ProxyMetadata
 
 	MeshConf    *configurator.Configurator
 	SidecarCert *certificate.Certificate
@@ -50,15 +50,18 @@ type Proxy struct {
 	Quit  chan bool
 
 	ID uint64
+
+	VM        bool
+	MachineIP net.Addr
 }
 
 func (p *Proxy) String() string {
-	return fmt.Sprintf("[ProxyUUID=%s], [Pod metadata=%s]", p.UUID, p.PodMetadataString())
+	return fmt.Sprintf("[ProxyUUID=%s], [Pod metadata=%s]", p.UUID, p.MetadataString())
 }
 
-// PodMetadata is a struct holding information on the Pod on which a given Sidecar proxy is installed
+// ProxyMetadata is a struct holding information on the Pod/VM on which a given Sidecar proxy is installed
 // This struct is initialized *eventually*, when the metadata arrives via xDS.
-type PodMetadata struct {
+type ProxyMetadata struct {
 	UID             string
 	Name            string
 	Namespace       string
@@ -74,58 +77,58 @@ type PodMetadata struct {
 	StartupProbes   []*v1.Probe
 }
 
-// HasPodMetadata answers the question - has the Pod metadata been recorded for the given Sidecar proxy
-func (p *Proxy) HasPodMetadata() bool {
-	return p.PodMetadata != nil
+// HasMetadata answers the question - has the Pod metadata been recorded for the given Sidecar proxy
+func (p *Proxy) HasMetadata() bool {
+	return p.Metadata != nil
 }
 
 // StatsHeaders returns the headers required for SMI metrics
 func (p *Proxy) StatsHeaders() map[string]string {
 	unknown := "unknown"
-	podName := unknown
-	podNamespace := unknown
-	podControllerKind := unknown
-	podControllerName := unknown
+	resourceName := unknown
+	resourceNamespace := unknown
+	resourceControllerKind := unknown
+	resourceControllerName := unknown
 
-	if p.PodMetadata != nil {
-		if len(p.PodMetadata.Name) > 0 {
-			podName = p.PodMetadata.Name
+	if p.Metadata != nil {
+		if len(p.Metadata.Name) > 0 {
+			resourceName = p.Metadata.Name
 		}
-		if len(p.PodMetadata.Namespace) > 0 {
-			podNamespace = p.PodMetadata.Namespace
+		if len(p.Metadata.Namespace) > 0 {
+			resourceNamespace = p.Metadata.Namespace
 		}
-		if len(p.PodMetadata.WorkloadKind) > 0 {
-			podControllerKind = p.PodMetadata.WorkloadKind
+		if len(p.Metadata.WorkloadKind) > 0 {
+			resourceControllerKind = p.Metadata.WorkloadKind
 		}
-		if len(p.PodMetadata.WorkloadName) > 0 {
-			podControllerName = p.PodMetadata.WorkloadName
+		if len(p.Metadata.WorkloadName) > 0 {
+			resourceControllerName = p.Metadata.WorkloadName
 		}
 	}
 
 	// Assume ReplicaSets are controlled by a Deployment unless their names
 	// do not contain a hyphen. This aligns with the behavior of the
 	// Prometheus config in the FSM Helm chart.
-	if podControllerKind == "ReplicaSet" {
-		if hyp := strings.LastIndex(podControllerName, "-"); hyp >= 0 {
-			podControllerKind = "Deployment"
-			podControllerName = podControllerName[:hyp]
+	if resourceControllerKind == "ReplicaSet" {
+		if hyp := strings.LastIndex(resourceControllerName, "-"); hyp >= 0 {
+			resourceControllerKind = "Deployment"
+			resourceControllerName = resourceControllerName[:hyp]
 		}
 	}
 
 	return map[string]string{
-		"fsm-stats-pod":       podName,
-		"fsm-stats-namespace": podNamespace,
-		"fsm-stats-kind":      podControllerKind,
-		"fsm-stats-name":      podControllerName,
+		"fsm-stats-pod":       resourceName,
+		"fsm-stats-namespace": resourceNamespace,
+		"fsm-stats-kind":      resourceControllerKind,
+		"fsm-stats-name":      resourceControllerName,
 	}
 }
 
-// PodMetadataString returns relevant pod metadata as a string
-func (p *Proxy) PodMetadataString() string {
-	if p.PodMetadata == nil {
+// MetadataString returns relevant pod metadata as a string
+func (p *Proxy) MetadataString() string {
+	if p.Metadata == nil {
 		return ""
 	}
-	return fmt.Sprintf("UID=%s, Namespace=%s, Name=%s, ServiceAccount=%s", p.PodMetadata.UID, p.PodMetadata.Namespace, p.PodMetadata.Name, p.PodMetadata.ServiceAccount.Name)
+	return fmt.Sprintf("UID=%s, Namespace=%s, Name=%s, ServiceAccount=%s", p.Metadata.UID, p.Metadata.Namespace, p.Metadata.Name, p.Metadata.ServiceAccount.Name)
 }
 
 // GetName returns a unique name for this proxy based on the identity and uuid.
@@ -178,7 +181,7 @@ var (
 )
 
 // NewProxy creates a new instance of an Sidecar proxy connected to the servers.
-func NewProxy(kind models.ProxyKind, uuid uuid.UUID, svcIdentity identity.ServiceIdentity, ip net.Addr) *Proxy {
+func NewProxy(kind models.ProxyKind, uuid uuid.UUID, svcIdentity identity.ServiceIdentity, vm bool, ip net.Addr) *Proxy {
 	proxyLock.Lock()
 	proxyID++
 	id := proxyID
@@ -192,5 +195,6 @@ func NewProxy(kind models.ProxyKind, uuid uuid.UUID, svcIdentity identity.Servic
 		kind:        kind,
 		Mutex:       new(sync.RWMutex),
 		ID:          id,
+		VM:          vm,
 	}
 }

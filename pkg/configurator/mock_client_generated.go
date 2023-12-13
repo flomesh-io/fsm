@@ -1075,6 +1075,20 @@ func (mr *MockConfiguratorMockRecorder) IsTracingEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTracingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsTracingEnabled))
 }
 
+// IsWildcardDNSProxyEnabled mocks base method.
+func (m *MockConfigurator) IsWildcardDNSProxyEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsWildcardDNSProxyEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsWildcardDNSProxyEnabled indicates an expected call of IsWildcardDNSProxyEnabled.
+func (mr *MockConfiguratorMockRecorder) IsWildcardDNSProxyEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWildcardDNSProxyEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsWildcardDNSProxyEnabled))
+}
+
 // ServiceLBImage mocks base method.
 func (m *MockConfigurator) ServiceLBImage() string {
 	m.ctrl.T.Helper()

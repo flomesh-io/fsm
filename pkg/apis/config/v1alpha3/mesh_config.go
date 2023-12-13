@@ -83,16 +83,42 @@ const (
 	LocalProxyModePodIP LocalProxyMode = "PodIP"
 )
 
+// WildcardDN is the type to represent FSM's Wildcard DN configuration.
+type WildcardDN struct {
+	// Enable defines a boolean indicating if wildcard are enabled for local DNS Proxy.
+	Enable bool `json:"enable"`
+
+	// IPv4 defines a ipv4 address for wildcard DN.
+	IPv4 []string `json:"ipv4,omitempty"`
+}
+
+// ResolveDN is the type to represent FSM's Resolve DN configuration.
+type ResolveDN struct {
+	// DN defines resolve DN.
+	DN string `json:"dn"`
+
+	// IPv4 defines a ipv4 address for resolve DN.
+	IPv4 []string `json:"ipv4"`
+}
+
 // LocalDNSProxy is the type to represent FSM's local DNS proxy configuration.
 type LocalDNSProxy struct {
 	// Enable defines a boolean indicating if the sidecars are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
 
 	// PrimaryUpstreamDNSServerIPAddr defines a primary upstream DNS server for local DNS Proxy.
+	// +optional
 	PrimaryUpstreamDNSServerIPAddr string `json:"primaryUpstreamDNSServerIPAddr,omitempty"`
 
 	// SecondaryUpstreamDNSServerIPAddr defines a secondary upstream DNS server for local DNS Proxy.
+	// +optional
 	SecondaryUpstreamDNSServerIPAddr string `json:"secondaryUpstreamDNSServerIPAddr,omitempty"`
+
+	// Wildcard defines Wildcard DN.
+	Wildcard WildcardDN `json:"wildcard"`
+
+	// DB defines Resolve DB.
+	DB []ResolveDN `json:"db,omitempty"`
 }
 
 // SidecarSpec is the type used to represent the specifications for the proxy sidecar.

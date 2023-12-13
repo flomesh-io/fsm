@@ -29,6 +29,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	configInformers "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions"
+	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
+	machineInformers "github.com/flomesh-io/fsm/pkg/gen/client/machine/informers/externalversions"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
 	multiclusterInformers "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/informers/externalversions"
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
@@ -179,6 +181,15 @@ func WithPluginClient(pluginClient pluginClientset.Interface) InformerCollection
 		ic.informers[InformerKeyPlugin] = informerFactory.Plugin().V1alpha1().Plugins().Informer()
 		ic.informers[InformerKeyPluginChain] = informerFactory.Plugin().V1alpha1().PluginChains().Informer()
 		ic.informers[InformerKeyPluginConfig] = informerFactory.Plugin().V1alpha1().PluginConfigs().Informer()
+	}
+}
+
+// WithMachineClient sets the machine client for the InformerCollection
+func WithMachineClient(machineClient machineClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := machineInformers.NewSharedInformerFactory(machineClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyVirtualMachine] = informerFactory.Machine().V1alpha1().VirtualMachines().Informer()
 	}
 }
 

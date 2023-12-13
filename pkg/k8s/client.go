@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	pluginv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
@@ -215,8 +216,7 @@ func (c *client) ListServiceAccounts() []*corev1.ServiceAccount {
 func (c *client) GetNamespace(ns string) *corev1.Namespace {
 	nsIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNamespace, ns)
 	if exists && err == nil {
-		ns := nsIf.(*corev1.Namespace)
-		return ns
+		return nsIf.(*corev1.Namespace)
 	}
 	return nil
 }
@@ -235,6 +235,19 @@ func (c *client) ListPods() []*corev1.Pod {
 		pods = append(pods, pod)
 	}
 	return pods
+}
+
+// ListVms returns a list of vms part of the mesh
+// Kubecontroller does not currently segment vm notifications, hence it receives notifications
+// for all k8s vms.
+func (c *client) ListVms() []*machinev1alpha1.VirtualMachine {
+	var vms []*machinev1alpha1.VirtualMachine
+
+	for _, vmInterface := range c.informers.List(fsminformers.InformerKeyVirtualMachine) {
+		vm := vmInterface.(*machinev1alpha1.VirtualMachine)
+		vms = append(vms, vm)
+	}
+	return vms
 }
 
 // GetEndpoints returns the endpoint for a given service, otherwise returns nil if not found
@@ -485,6 +498,60 @@ func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 	}
 
 	return &pod, nil
+}
+
+func (c *client) GetVmForProxy(proxy models.Proxy) (*machinev1alpha1.VirtualMachine, error) {
+	proxyUUID, svcAccount := proxy.GetUUID().String(), proxy.GetIdentity().ToK8sServiceAccount()
+	log.Trace().Msgf("Looking for VM with label %q=%q", constants.SidecarUniqueIDLabelName, proxyUUID)
+	vmList := c.ListVms()
+	var vms []machinev1alpha1.VirtualMachine
+
+	for _, vm := range vmList {
+		if uuid, labelFound := vm.Labels[constants.SidecarUniqueIDLabelName]; labelFound && uuid == proxyUUID {
+			vms = append(vms, *vm)
+		}
+	}
+
+	if len(vms) == 0 {
+		log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+			Msgf("Did not find VM with label %s = %s in namespace %s",
+				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+		return nil, errDidNotFindPodForUUID
+	}
+
+	// Each VM is assigned a unique UUID at the time of sidecar injection.
+	// The certificate's CommonName encodes this UUID, and we lookup the vm
+	// whose label matches this UUID.
+	// Only 1 vm must match the UUID encoded in the given certificate. If multiple
+	// vms match, it is an error.
+	if len(vms) > 1 {
+		log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrPodBelongsToMultipleServices)).
+			Msgf("Found more than one vm with label %s = %s in namespace %s. There can be only one!",
+				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+		return nil, errMoreThanOnePodForUUID
+	}
+
+	vm := vms[0]
+	log.Trace().Msgf("Found VM with UID=%s for proxyID %s", vm.ObjectMeta.UID, proxyUUID)
+
+	if vm.Namespace != svcAccount.Namespace {
+		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+			Msgf("VM with UID=%s belongs to Namespace %s. The vm's xDS certificate was issued for Namespace %s",
+				vm.ObjectMeta.UID, vm.Namespace, svcAccount.Namespace)
+		return nil, errNamespaceDoesNotMatchProxy
+	}
+
+	// Ensure the Name encoded in the certificate matches that of the Pod
+	// TODO(draychev): check that the Kind matches too! [https://github.com/flomesh-io/fsm/issues/3173]
+	if vm.Spec.ServiceAccountName != svcAccount.Name {
+		// Since we search for the vm in the namespace we obtain from the certificate -- these namespaces will always match.
+		log.Warn().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+			Msgf("VM with UID=%s belongs to ServiceAccount=%s. The vm's xDS certificate was issued for ServiceAccount=%s",
+				vm.ObjectMeta.UID, vm.Spec.ServiceAccountName, svcAccount)
+		return nil, errServiceAccountDoesNotMatchProxy
+	}
+
+	return &vm, nil
 }
 
 // GetTargetPortForServicePort returns the TargetPort corresponding to the Port used by clients

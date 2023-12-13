@@ -9,7 +9,12 @@ import (
 )
 
 type ConsulDiscoveryClient struct {
-	consulClient *consul.Client
+	consulClient       *consul.Client
+	isInternalServices bool
+}
+
+func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
+	return dc.isInternalServices
 }
 
 func (dc *ConsulDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
@@ -167,7 +172,7 @@ func (dc *ConsulDiscoveryClient) MicroServiceProvider() string {
 	return connector.ConsulDiscoveryService
 }
 
-func GetConsulDiscoveryClient(address string) (*ConsulDiscoveryClient, error) {
+func GetConsulDiscoveryClient(address string, isInternalServices bool) (*ConsulDiscoveryClient, error) {
 	cfg := consul.DefaultConfig()
 	cfg.Address = address
 	consulClient, err := consul.NewClient(cfg)
@@ -176,5 +181,6 @@ func GetConsulDiscoveryClient(address string) (*ConsulDiscoveryClient, error) {
 	}
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.consulClient = consulClient
+	consulDiscoveryClient.isInternalServices = isInternalServices
 	return consulDiscoveryClient, nil
 }

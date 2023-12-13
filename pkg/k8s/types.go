@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	pluginv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
@@ -101,6 +102,9 @@ type Controller interface {
 	// ListPods returns a list of pods part of the mesh
 	ListPods() []*corev1.Pod
 
+	// ListVms returns a list of vms part of the mesh
+	ListVms() []*machinev1alpha1.VirtualMachine
+
 	// ListServiceIdentitiesForService lists ServiceAccounts associated with the given service
 	ListServiceIdentitiesForService(service.MeshService) ([]identity.K8sServiceAccount, error)
 
@@ -113,6 +117,9 @@ type Controller interface {
 
 	// GetPodForProxy returns the pod for the given proxy
 	GetPodForProxy(models.Proxy) (*v1.Pod, error)
+
+	// GetVmForProxy returns the VM for the given proxy
+	GetVmForProxy(models.Proxy) (*machinev1alpha1.VirtualMachine, error)
 
 	GetTargetPortForServicePort(types.NamespacedName, uint16) (uint16, error)
 }

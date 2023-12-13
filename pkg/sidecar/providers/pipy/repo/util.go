@@ -21,7 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string) {
+func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string, proxy *pipy.Proxy) {
 	itp := pipyConf.newInboundTrafficPolicy()
 
 	for _, trafficMatch := range inboundPolicy.TrafficMatches {
@@ -113,14 +113,20 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 
 	for _, cluster := range inboundPolicy.ClustersConfigs {
 		clusterConfigs := itp.newClusterConfigs(ClusterName(cluster.Name))
-		address := Address(cluster.Address)
+
 		port := Port(cluster.Port)
 		weight := Weight(constants.ClusterWeightAcceptAll)
-		clusterConfigs.addWeightedEndpoint(address, port, weight)
+		if proxy.VM {
+			address := Address(proxy.MachineIP.String())
+			clusterConfigs.addWeightedEndpoint(address, port, weight)
+		} else {
+			address := Address(cluster.Address)
+			clusterConfigs.addWeightedEndpoint(address, port, weight)
+		}
 	}
 }
 
-func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy) map[service.ClusterName]*WeightedCluster {
+func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(outboundPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -161,7 +167,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 				hsrrs.setServiceIdentity(proxyIdentity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
 				}
 
 				for _, route := range httpRouteConfig.Routes {
@@ -242,7 +248,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 	return dependClusters
 }
 
-func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy) map[service.ClusterName]*WeightedCluster {
+func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(egressPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -274,7 +280,7 @@ func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ i
 				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
 				hsrrs.setEgressForwardGateway(trafficMatch.EgressGateWay)
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
 				}
 				for _, rule := range httpRouteConfig.RoutingRules {
 					route := rule.Route
@@ -401,7 +407,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path)
+			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, upstreamEndpoint.ViaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
 					clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)

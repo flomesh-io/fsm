@@ -137,6 +137,11 @@
       (
         attrs = _clusterConfig?.endpointAttributes?.[__target]
       ) => (
+        attrs?.ViaGateway && (
+          __isEgress = true,
+          msg.head.headers['fgw-target'] = __target,
+          __target = attrs.ViaGateway
+        ),
         attrs?.Path && (
           __isEgress = true,
           msg.head.path = attrs.Path + msg.head.path
