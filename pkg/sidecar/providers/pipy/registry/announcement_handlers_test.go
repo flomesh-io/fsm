@@ -115,7 +115,7 @@ func TestReleaseCertificateHandler(t *testing.T) {
 			msgBroker := messaging.NewBroker(stop)
 			proxyRegistry := NewProxyRegistry(nil, msgBroker)
 
-			proxy := pipy.NewProxy(models.KindSidecar, uuid.MustParse(proxyUUID), identity.New("foo", "bar"), nil)
+			proxy := pipy.NewProxy(models.KindSidecar, uuid.MustParse(proxyUUID), identity.New("foo", "bar"), false, nil)
 
 			proxyRegistry.RegisterProxy(proxy)
 

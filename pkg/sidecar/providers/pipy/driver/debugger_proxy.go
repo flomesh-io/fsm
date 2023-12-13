@@ -67,16 +67,18 @@ func (sd PipySidecarDriver) getConfigDump(proxyRegistry *registry.ProxyRegistry,
 		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
-	pod, err := sd.ctx.MeshCatalog.GetKubeController().GetPodForProxy(proxy)
-	if err != nil {
-		msg := fmt.Sprintf("Error getting Pod from proxy %s", proxy.GetName())
-		log.Error().Err(err).Msg(msg)
-		http.Error(w, msg, http.StatusNotFound)
-		return
+	if !proxy.VM {
+		pod, err := sd.ctx.MeshCatalog.GetKubeController().GetPodForProxy(proxy)
+		if err != nil {
+			msg := fmt.Sprintf("Error getting Pod from proxy %s", proxy.GetName())
+			log.Error().Err(err).Msg(msg)
+			http.Error(w, msg, http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		pipyConfig := sd.getSidecarConfig(pod, "config_dump")
+		_, _ = fmt.Fprintf(w, "%s", pipyConfig)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	pipyConfig := sd.getSidecarConfig(pod, "config_dump")
-	_, _ = fmt.Fprintf(w, "%s", pipyConfig)
 }
 
 func (sd PipySidecarDriver) getProxy(proxyRegistry *registry.ProxyRegistry, uuid string, w http.ResponseWriter) {
@@ -87,14 +89,16 @@ func (sd PipySidecarDriver) getProxy(proxyRegistry *registry.ProxyRegistry, uuid
 		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
-	pod, err := sd.ctx.MeshCatalog.GetKubeController().GetPodForProxy(proxy)
-	if err != nil {
-		msg := fmt.Sprintf("Error getting Pod from proxy %s", proxy.GetName())
-		log.Error().Err(err).Msg(msg)
-		http.Error(w, msg, http.StatusNotFound)
-		return
+	if !proxy.VM {
+		pod, err := sd.ctx.MeshCatalog.GetKubeController().GetPodForProxy(proxy)
+		if err != nil {
+			msg := fmt.Sprintf("Error getting Pod from proxy %s", proxy.GetName())
+			log.Error().Err(err).Msg(msg)
+			http.Error(w, msg, http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		pipyConfig := sd.getSidecarConfig(pod, "certs")
+		_, _ = fmt.Fprintf(w, "%s", pipyConfig)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	pipyConfig := sd.getSidecarConfig(pod, "certs")
-	_, _ = fmt.Fprintf(w, "%s", pipyConfig)
 }

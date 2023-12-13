@@ -156,7 +156,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 		ndots := "5"
 		pod.Spec.DNSConfig = &corev1.PodDNSConfig{
 			Nameservers: []string{"127.0.0.153"},
-			Searches:    []string{fmt.Sprintf(trustDomain, "svc.%s", trustDomain)},
+			Searches:    []string{fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain), fmt.Sprintf("svc.%s", trustDomain), trustDomain},
 			Options: []corev1.PodDNSConfigOption{
 				{Name: "ndots", Value: &ndots},
 			},

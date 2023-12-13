@@ -629,6 +629,11 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		// PluginService event
 		announcements.PluginConfigAdded, announcements.PluginConfigDeleted, announcements.PluginConfigUpdated,
 		//
+		// Machine events
+		//
+		// VM event
+		announcements.VirtualMachineAdded, announcements.VirtualMachineDeleted, announcements.VirtualMachineUpdated,
+		//
 		// Proxy events
 		//
 		announcements.ProxyUpdate:
@@ -690,7 +695,7 @@ func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 		prevSpec.Observability.RemoteLogging != newSpec.Observability.RemoteLogging ||
 		prevSpec.Sidecar.LogLevel != newSpec.Sidecar.LogLevel ||
 		prevSpec.Sidecar.SidecarTimeout != newSpec.Sidecar.SidecarTimeout ||
-		prevSpec.Sidecar.LocalDNSProxy != newSpec.Sidecar.LocalDNSProxy ||
+		!reflect.DeepEqual(prevSpec.Sidecar.LocalDNSProxy, newSpec.Sidecar.LocalDNSProxy) ||
 		prevSpec.Traffic.InboundExternalAuthorization.Enable != newSpec.Traffic.InboundExternalAuthorization.Enable ||
 		// Only trigger an update on InboundExternalAuthorization field changes if the new spec has the 'Enable' flag set to true.
 		(newSpec.Traffic.InboundExternalAuthorization.Enable && (prevSpec.Traffic.InboundExternalAuthorization != newSpec.Traffic.InboundExternalAuthorization)) ||

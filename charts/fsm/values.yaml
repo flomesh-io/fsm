@@ -462,7 +462,10 @@ fsm:
   # -- Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers
   localDNSProxy:
     enable: false
-
+    wildcard:
+      enable: false
+      ipv4:
+        - 127.0.0.2
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits
   maxDataPlaneConnections: 0
 
@@ -652,6 +655,7 @@ fsm:
     consul:
       enable: false
       deriveNamespace: ""
+      asInternalServices: false
       httpAddr: 127.0.0.1:8500
       syncToK8S:
         enable: true
@@ -659,6 +663,8 @@ fsm:
         filterTag: ""
         prefixTag: ""
         suffixTag: ""
+        withGateway:
+          enable: false
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -673,9 +679,8 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI:
+        withGateway:
           enable: false
-          via: ClusterIP
         consulNodeName: k8s-sync
         consulK8STag: k8s
         consulEnableNamespaces: false
@@ -683,17 +688,10 @@ fsm:
         consulEnableK8SNSMirroring: false
         consulK8SNSMirroringPrefix: ""
         consulCrossNamespaceACLPolicy: ""
-      syncToFgw:
-        enable: false
-        defaultSync: true
-        allowK8sNamespaces:
-          - "*"
-        denyK8sNamespaces:
-          - ""
-
     eureka:
       enable: false
       deriveNamespace: ""
+      asInternalServices: false
       httpAddr: 127.0.0.1:8761/eureka
       syncToK8S:
         enable: true
@@ -701,6 +699,8 @@ fsm:
         filterMetadata: ""
         prefixMetadata: ""
         suffixMetadata: ""
+        withGateway:
+          enable: false
       syncFromK8S:
         enable: false
         defaultSync: true
@@ -715,9 +715,29 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-        withGatewayAPI:
+        withGateway:
           enable: false
-          via: ClusterIP
+    machine:
+      enable: false
+      deriveNamespace: ""
+      asInternalServices: false
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterLabel: ""
+        prefixLabel: ""
+        suffixLabel: ""
+        withGateway:
+          enable: false
+    gateway:
+      ingress:
+        ipSelector: ClusterIP
+        httpPort: 0
+        grpcPort: 0
+      egress:
+        ipSelector: ClusterIP
+        httpPort: 0
+        grpcPort: 0
       syncToFgw:
         enable: false
         defaultSync: true
@@ -725,17 +745,16 @@ fsm:
           - "*"
         denyK8sNamespaces:
           - ""
-
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
     # -- Sidecar injector's container resource parameters
     resource:
       limits:
         cpu: "1"
-        memory: "512M"
+        memory: "1G"
       requests:
         cpu: "0.5"
-        memory: "128M"
+        memory: "256M"
     # -- Sidecar injector's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget

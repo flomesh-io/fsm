@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -26,7 +27,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/sidecar/driver"
 )
 
-func (wh *mutatingWebhook) createPatch(pod *corev1.Pod, req *admissionv1.AdmissionRequest, proxyUUID uuid.UUID) ([]byte, error) {
+func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.AdmissionRequest, proxyUUID uuid.UUID) ([]byte, error) {
 	namespace := req.Namespace
 
 	podOS := pod.Spec.NodeSelector["kubernetes.io/os"]
@@ -92,7 +93,7 @@ func (wh *mutatingWebhook) createPatch(pod *corev1.Pod, req *admissionv1.Admissi
 		return nil, err
 	}
 
-	return json.Marshal(makePatches(req, pod))
+	return json.Marshal(makePodPatches(req, pod))
 }
 
 // verifyPrerequisites verifies if the prerequisites to patch the request are met by returning an error if unmet
@@ -153,7 +154,7 @@ func ConfigurePodInit(cfg configurator.Configurator, podOS string, pod *corev1.P
 	return nil
 }
 
-func makePatches(req *admissionv1.AdmissionRequest, pod *corev1.Pod) []jsonpatch.JsonPatchOperation {
+func makePodPatches(req *admissionv1.AdmissionRequest, pod *corev1.Pod) []jsonpatch.JsonPatchOperation {
 	original := req.Object.Raw
 	current, err := json.Marshal(pod)
 	if err != nil {
@@ -173,4 +174,27 @@ func GetProxyUUID(pod *corev1.Pod) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (wh *mutatingWebhook) createVmPatch(vm *machinev1alpha1.VirtualMachine, req *admissionv1.AdmissionRequest, proxyUUID uuid.UUID) ([]byte, error) {
+	// This will append a label to the vm, which points to the unique Sidecar ID used in the
+	// xDS certificate for that Sidecar. This label will help xDS match the actual vm to the Sidecar that
+	// connects to xDS (with the certificate's CN matching this label).
+	if vm.Labels == nil {
+		vm.Labels = make(map[string]string)
+	}
+	vm.Labels[constants.SidecarUniqueIDLabelName] = proxyUUID.String()
+
+	return json.Marshal(makeVmPatches(req, vm))
+}
+
+func makeVmPatches(req *admissionv1.AdmissionRequest, vm *machinev1alpha1.VirtualMachine) []jsonpatch.JsonPatchOperation {
+	original := req.Object.Raw
+	current, err := json.Marshal(vm)
+	if err != nil {
+		log.Error().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrMarshallingKubernetesResource)).
+			Msgf("Error marshaling VM with UID=%s", vm.ObjectMeta.UID)
+	}
+	admissionResponse := admission.PatchResponseFromRaw(original, current)
+	return admissionResponse.Patches
 }

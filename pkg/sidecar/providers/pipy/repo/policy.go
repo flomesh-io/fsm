@@ -46,6 +46,8 @@ func (p *PipyConf) setLocalDNSProxy(enable bool, conf *configurator.Configurator
 		p.Spec.LocalDNSProxy = new(LocalDNSProxy)
 		primary := (*conf).GetLocalDNSProxyPrimaryUpstream()
 		secondary := (*conf).GetLocalDNSProxySecondaryUpstream()
+		primary = strings.TrimSpace(primary)
+		secondary = strings.TrimSpace(secondary)
 		if len(primary) > 0 || len(secondary) > 0 {
 			p.Spec.LocalDNSProxy.UpstreamDNSServers = new(UpstreamDNSServers)
 			if len(primary) > 0 {
@@ -244,6 +246,22 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 			ready = false
 		}
 	}
+	allVms := kubeController.ListVms()
+	for _, vm := range allVms {
+		proxyUUID, err := GetProxyUUIDFromVm(vm)
+		if err != nil {
+			continue
+		}
+		proxy := proxyRegistry.GetConnectedProxy(proxyUUID)
+		if proxy == nil {
+			ready = false
+			continue
+		}
+		p.AllowedEndpoints[proxy.GetAddr()] = fmt.Sprintf("%s.%s", vm.Namespace, vm.Name)
+		if len(proxy.GetAddr()) == 0 {
+			ready = false
+		}
+	}
 	if p.Inbound == nil {
 		return ready
 	}
@@ -363,12 +381,14 @@ func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, r
 	}
 }
 
-func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName) {
+func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName, desiredSuffix string) {
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
 	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
-		if len(ruleName) < len(preRuleName) {
+		if len(desiredSuffix) > 0 && strings.HasSuffix(string(ruleName), desiredSuffix) {
+			otm.HTTPHostPort2Service[hostPort] = ruleName
+		} else if len(ruleName) < len(preRuleName) {
 			otm.HTTPHostPort2Service[hostPort] = ruleName
 		}
 	} else {
@@ -584,12 +604,12 @@ func (otp *ClusterConfigs) addWeightedEndpoint(address Address, port Port, weigh
 	otp.Endpoints.addWeightedEndpoint(address, port, weight)
 }
 
-func (otp *ClusterConfigs) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath string) {
+func (otp *ClusterConfigs) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
 	if otp.Endpoints == nil {
 		weightedEndpoints := make(WeightedEndpoints)
 		otp.Endpoints = &weightedEndpoints
 	}
-	otp.Endpoints.addWeightedZoneEndpoint(address, port, weight, cluster, lbType, contextPath)
+	otp.Endpoints.addWeightedZoneEndpoint(address, port, weight, cluster, lbType, contextPath, viaGw)
 }
 
 func (wes *WeightedEndpoints) addWeightedEndpoint(address Address, port Port, weight Weight) {
@@ -606,7 +626,7 @@ func (wes *WeightedEndpoints) addWeightedEndpoint(address Address, port Port, we
 	}
 }
 
-func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath string) {
+func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
 	if addrWithPort.MatchString(string(address)) {
 		httpHostPort := HTTPHostPort(address)
 		(*wes)[httpHostPort] = &WeightedZoneEndpoint{
@@ -614,6 +634,7 @@ func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port
 			Cluster:     cluster,
 			LBType:      lbType,
 			ContextPath: contextPath,
+			ViaGateway:  viaGw,
 		}
 	} else {
 		httpHostPort := HTTPHostPort(fmt.Sprintf("%s:%d", address, port))
@@ -622,6 +643,7 @@ func (wes *WeightedEndpoints) addWeightedZoneEndpoint(address Address, port Port
 			Cluster:     cluster,
 			LBType:      lbType,
 			ContextPath: contextPath,
+			ViaGateway:  viaGw,
 		}
 	}
 }

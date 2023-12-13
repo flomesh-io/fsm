@@ -81,7 +81,7 @@ func getPluginURI(name string) string {
 	return fmt.Sprintf("plugins/%s.js", name)
 }
 
-func matchPluginChain(pluginChain *trafficpolicy.PluginChain, ns *corev1.Namespace, pod *corev1.Pod) bool {
+func matchPluginChain(pluginChain *trafficpolicy.PluginChain, ns *corev1.Namespace, labelMap map[string]string) bool {
 	matchedNamespace := false
 	matchedPod := false
 
@@ -100,7 +100,7 @@ func matchPluginChain(pluginChain *trafficpolicy.PluginChain, ns *corev1.Namespa
 	if pluginChain.Selectors.PodSelector != nil {
 		labelSelector, errSelector := metav1.LabelSelectorAsSelector(pluginChain.Selectors.PodSelector)
 		if errSelector == nil {
-			matchedPod = labelSelector.Matches(labels.Set(pod.GetLabels()))
+			matchedPod = labelSelector.Matches(labels.Set(labelMap))
 		} else {
 			log.Err(errSelector).Str("namespace", pluginChain.Namespace).Str("PluginChan", pluginChain.Name)
 			return false
@@ -112,12 +112,12 @@ func matchPluginChain(pluginChain *trafficpolicy.PluginChain, ns *corev1.Namespa
 	return matchedNamespace && matchedPod
 }
 
-func walkPluginChain(pluginChains []*trafficpolicy.PluginChain, ns *corev1.Namespace, pod *corev1.Pod, pluginSet mapset.Set, s *Server, proxy *pipy.Proxy) (plugin2MountPoints map[string]*map[string]*runtime.RawExtension, mountPoint2Plugins map[string]mapset.Set) {
+func walkPluginChain(pluginChains []*trafficpolicy.PluginChain, ns *corev1.Namespace, labelMap map[string]string, pluginSet mapset.Set, s *Server, proxy *pipy.Proxy) (plugin2MountPoints map[string]*map[string]*runtime.RawExtension, mountPoint2Plugins map[string]mapset.Set) {
 	plugin2MountPoints = make(map[string]*map[string]*runtime.RawExtension)
 	mountPoint2Plugins = make(map[string]mapset.Set)
 
 	for _, pluginChain := range pluginChains {
-		matched := matchPluginChain(pluginChain, ns, pod)
+		matched := matchPluginChain(pluginChain, ns, labelMap)
 		if !matched {
 			continue
 		}

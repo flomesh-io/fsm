@@ -10,6 +10,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
@@ -52,13 +53,20 @@ func (s *Server) broadcastListener() {
 			proxies := s.fireExistProxies()
 			metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
 			for _, proxy := range proxies {
-				if proxy.PodMetadata == nil {
-					if err := s.recordPodMetadata(proxy); err != nil {
-						slidingTimer.Reset(time.Second * 5)
-						continue
+				if proxy.Metadata == nil {
+					if proxy.VM {
+						if err := s.recordVmMetadata(proxy); err != nil {
+							slidingTimer.Reset(time.Second * 5)
+							continue
+						}
+					} else {
+						if err := s.recordPodMetadata(proxy); err != nil {
+							slidingTimer.Reset(time.Second * 5)
+							continue
+						}
 					}
 				}
-				if proxy.PodMetadata == nil || proxy.Addr == nil || len(proxy.GetAddr()) == 0 {
+				if proxy.Metadata == nil || proxy.Addr == nil || len(proxy.GetAddr()) == 0 {
 					slidingTimer.Reset(time.Second * 5)
 					continue
 				}
@@ -113,13 +121,22 @@ func (s *Server) fireExistProxies() []*pipy.Proxy {
 		if err != nil {
 			continue
 		}
-		proxy = s.fireUpdatedPod(s.proxyRegistry, proxy)
+		proxy = s.fireUpdatedProxy(s.proxyRegistry, proxy)
+		allProxies = append(allProxies, proxy)
+	}
+	allVms := s.kubeController.ListVms()
+	for _, vm := range allVms {
+		proxy, err := GetProxyFromVm(vm)
+		if err != nil {
+			continue
+		}
+		proxy = s.fireUpdatedProxy(s.proxyRegistry, proxy)
 		allProxies = append(allProxies, proxy)
 	}
 	return allProxies
 }
 
-func (s *Server) fireUpdatedPod(proxyRegistry *registry.ProxyRegistry, proxy *pipy.Proxy) *pipy.Proxy {
+func (s *Server) fireUpdatedProxy(proxyRegistry *registry.ProxyRegistry, proxy *pipy.Proxy) *pipy.Proxy {
 	connectedProxy := proxyRegistry.GetConnectedProxy(proxy.UUID.String())
 	if connectedProxy == nil {
 		proxyPtr := &proxy
@@ -161,7 +178,29 @@ func GetProxyFromPod(pod *v1.Pod) (*pipy.Proxy, error) {
 	sa := pod.Spec.ServiceAccountName
 	namespace := pod.Namespace
 
-	return pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), nil), nil
+	return pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), false, nil), nil
+}
+
+// GetProxyFromVm infers and creates a Proxy data structure from a VM.
+// This is a temporary workaround as proxy is required and expected in any vertical call,
+// however snapshotcache has no need to provide visibility on proxies whatsoever.
+// All verticals use the proxy structure to infer the VM later, so the actual only mandatory
+// data for the verticals to be functional is the common name, which links proxy <-> VM
+func GetProxyFromVm(vm *machinev1alpha1.VirtualMachine) (*pipy.Proxy, error) {
+	uuidString, uuidFound := vm.Labels[constants.SidecarUniqueIDLabelName]
+	if !uuidFound {
+		return nil, fmt.Errorf("UUID not found for VM %s/%s, not a mesh VM", vm.Namespace, vm.Name)
+	}
+	proxyUUID, err := uuid.Parse(uuidString)
+	if err != nil {
+		return nil, fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+	}
+
+	sa := vm.Spec.ServiceAccountName
+	namespace := vm.Namespace
+	proxy := pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), true, nil)
+	proxy.MachineIP = pipy.NewNetAddress(vm.Spec.MachineIP)
+	return proxy, nil
 }
 
 // GetProxyUUIDFromPod infers and creates a Proxy UUID from a Pod.
@@ -169,6 +208,19 @@ func GetProxyUUIDFromPod(pod *v1.Pod) (string, error) {
 	uuidString, uuidFound := pod.Labels[constants.SidecarUniqueIDLabelName]
 	if !uuidFound {
 		return "", fmt.Errorf("UUID not found for pod %s/%s, not a mesh pod", pod.Namespace, pod.Name)
+	}
+	proxyUUID, err := uuid.Parse(uuidString)
+	if err != nil {
+		return "", fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
+	}
+	return proxyUUID.String(), nil
+}
+
+// GetProxyUUIDFromVm infers and creates a Proxy UUID from a VM.
+func GetProxyUUIDFromVm(vm *machinev1alpha1.VirtualMachine) (string, error) {
+	uuidString, uuidFound := vm.Labels[constants.SidecarUniqueIDLabelName]
+	if !uuidFound {
+		return "", fmt.Errorf("UUID not found for VM %s/%s, not a mesh VM", vm.Namespace, vm.Name)
 	}
 	proxyUUID, err := uuid.Parse(uuidString)
 	if err != nil {

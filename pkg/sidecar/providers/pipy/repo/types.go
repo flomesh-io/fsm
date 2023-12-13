@@ -405,6 +405,7 @@ type WeightedZoneEndpoint struct {
 	Cluster     string `json:"Key,omitempty"`
 	LBType      string `json:"-"`
 	ContextPath string `json:"Path,omitempty"`
+	ViaGateway  string `json:"ViaGateway,omitempty"`
 }
 
 // WeightedEndpoints is a wrapper type of map[HTTPHostPort]WeightedZoneEndpoint

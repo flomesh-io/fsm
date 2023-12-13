@@ -12,6 +12,7 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
@@ -97,15 +98,21 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			}
 			protocol = strings.ToUpper(protocol)
 
+			internalSource := true
+			if len(k8sSvc.Annotations) > 0 {
+				if _, externalSource := k8sSvc.Annotations[connector.AnnotationMeshServiceSync]; externalSource {
+					_, internalSource = k8sSvc.Annotations[connector.AnnotationMeshServiceInternalSync]
+				}
+			}
+
 			var parentRefs []gwv1beta1.ParentReference
 			for _, gatewayEntry := range gatewayList {
 				gateway := gatewayEntry.(*gwv1beta1.Gateway)
 				for _, gatewayListener := range gateway.Spec.Listeners {
-					glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
-					glName := strings.ToUpper(string(gatewayListener.Name))
-					if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-						if strings.EqualFold(glProtocol, strings.ToUpper(constants.ProtocolHTTP)) &&
-							strings.HasPrefix(glName, protocol) {
+					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
+					//glName := strings.ToUpper(string(gatewayListener.Name))
+					if internalSource {
+						if connector.ViaGateway.Ingress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.HTTPPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -113,9 +120,24 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1beta1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-					} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
-						if strings.EqualFold(glProtocol, protocol) &&
-							!strings.HasPrefix(glName, strings.ToUpper(constants.ProtocolGRPC)) {
+						if connector.ViaGateway.Ingress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.GRPCPort {
+							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayPort := gatewayListener.Port
+							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+								Namespace: &gatewayNs,
+								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Port:      &gatewayPort})
+						}
+					} else {
+						if connector.ViaGateway.Egress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.HTTPPort {
+							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayPort := gatewayListener.Port
+							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+								Namespace: &gatewayNs,
+								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Port:      &gatewayPort})
+						}
+						if connector.ViaGateway.Egress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.GRPCPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -124,6 +146,27 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Port:      &gatewayPort})
 						}
 					}
+					//if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
+					//	if strings.EqualFold(glProtocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+					//		strings.HasPrefix(glName, protocol) {
+					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+					//		gatewayPort := gatewayListener.Port
+					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+					//			Namespace: &gatewayNs,
+					//			Name:      gwv1beta1.ObjectName(gateway.Name),
+					//			Port:      &gatewayPort})
+					//	}
+					//} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
+					//	if strings.EqualFold(glProtocol, protocol) &&
+					//		!strings.HasPrefix(glName, strings.ToUpper(constants.ProtocolGRPC)) {
+					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+					//		gatewayPort := gatewayListener.Port
+					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+					//			Namespace: &gatewayNs,
+					//			Name:      gwv1beta1.ObjectName(gateway.Name),
+					//			Port:      &gatewayPort})
+					//	}
+					//}
 				}
 			}
 
