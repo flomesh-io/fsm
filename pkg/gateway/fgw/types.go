@@ -257,7 +257,11 @@ func (by ByHTTPTrafficMatch) Less(i, j int) bool {
 		}
 
 		if a.Path.Path != b.Path.Path {
-			return pathExp(a.Path.Path) > pathExp(b.Path.Path)
+			if len(a.Path.Path) == len(b.Path.Path) {
+				return pathExp(a.Path.Path) > pathExp(b.Path.Path)
+			}
+
+			return len(a.Path.Path) > len(b.Path.Path)
 		}
 
 		if len(a.Methods) != len(b.Methods) {
@@ -360,14 +364,18 @@ func (by ByGRPCTrafficMatch) Less(i, j int) bool {
 		pathA := fmt.Sprintf("%s/%s", stringExp(a.Method.Service), stringExp(a.Method.Method))
 		pathB := fmt.Sprintf("%s/%s", stringExp(b.Method.Service), stringExp(b.Method.Method))
 
-		switch strings.Compare(pathA, pathB) {
-		case -1:
-			return false
-		case 1:
-			return true
-		case 0:
-			return len(a.Headers) > len(b.Headers)
+		if len(pathA) == len(pathB) {
+			switch strings.Compare(pathA, pathB) {
+			case -1:
+				return false
+			case 1:
+				return true
+			case 0:
+				return len(a.Headers) > len(b.Headers)
+			}
 		}
+
+		return len(pathA) > len(pathB)
 	}
 
 	return false
