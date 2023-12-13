@@ -117,7 +117,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, err
 	}
 
-	// If there's multiple GatewayClasses, the oldest is set to active and the rest are set to inactive
+	// If there's multiple GatewayClasses whose ControllerName is flomesh.io/gateway-controller, the oldest is set to active and the rest are set to inactive
 	for _, class := range r.setActiveStatus(gatewayClassList) {
 		result, err := r.updateStatus(ctx, class, gateway.GatewayClassConditionStatusActive)
 		if err != nil {
@@ -172,7 +172,7 @@ func (r *gatewayClassReconciler) setActiveStatus(list *gwv1beta1.GatewayClassLis
 	acceptedClasses := make([]*gwv1beta1.GatewayClass, 0)
 	for _, class := range list.Items {
 		class := class // fix lint GO-LOOP-REF
-		if utils.IsAcceptedGatewayClass(&class) {
+		if class.Spec.ControllerName == constants.GatewayController && utils.IsAcceptedGatewayClass(&class) {
 			acceptedClasses = append(acceptedClasses, &class)
 		}
 	}
