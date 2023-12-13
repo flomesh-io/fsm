@@ -163,9 +163,12 @@ func (r *gatewayClassReconciler) updateStatus(ctx context.Context, class *gwv1be
 func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1beta1.GatewayClass) {
 	if gatewayClass.Spec.ControllerName == constants.GatewayController {
 		r.setAccepted(gatewayClass)
-	} else {
-		r.setRejected(gatewayClass)
 	}
+	// Ignore other GatewayClass whose ControllerName is not flomesh.io/gateway-controller
+	//  as they are not supported and should not be processed by fsm
+	//else {
+	//	r.setRejected(gatewayClass)
+	//}
 }
 
 func (r *gatewayClassReconciler) setActiveStatus(list *gwv1beta1.GatewayClassList) []*gwv1beta1.GatewayClass {
@@ -205,16 +208,16 @@ func (r *gatewayClassReconciler) setActiveStatus(list *gwv1beta1.GatewayClassLis
 	return statusChangedClasses
 }
 
-func (r *gatewayClassReconciler) setRejected(gatewayClass *gwv1beta1.GatewayClass) {
-	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-		Type:               string(gwv1beta1.GatewayClassConditionStatusAccepted),
-		Status:             metav1.ConditionFalse,
-		ObservedGeneration: gatewayClass.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             "Rejected",
-		Message:            fmt.Sprintf("GatewayClass %q is rejected as ControllerName %q is not supported.", gatewayClass.Name, gatewayClass.Spec.ControllerName),
-	})
-}
+//func (r *gatewayClassReconciler) setRejected(gatewayClass *gwv1beta1.GatewayClass) {
+//	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
+//		Type:               string(gwv1beta1.GatewayClassConditionStatusAccepted),
+//		Status:             metav1.ConditionFalse,
+//		ObservedGeneration: gatewayClass.Generation,
+//		LastTransitionTime: metav1.Time{Time: time.Now()},
+//		Reason:             "Rejected",
+//		Message:            fmt.Sprintf("GatewayClass %q is rejected as ControllerName %q is not supported.", gatewayClass.Name, gatewayClass.Spec.ControllerName),
+//	})
+//}
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1beta1.GatewayClass) {
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
