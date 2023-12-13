@@ -309,7 +309,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	raw, ok := svc.Annotations[connector.AnnotationServiceSync]
+	raw, ok := svc.Annotations[connector.AnnotationServiceSyncK8sToCloud]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
 		return !t.ExplicitEnable
@@ -383,6 +383,12 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		NodeMeta: map[string]string{
 			connector.ServiceSourceKey: connector.ServiceSourceValue,
 		},
+	}
+
+	if withGateway {
+		if len(connector.ViaGateway.IngressAddr) > 0 {
+			baseNode.Address = connector.ViaGateway.IngressAddr
+		}
 	}
 
 	baseService := provider.AgentService{
@@ -535,7 +541,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceID(r.Service.Service, ip)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.Port)
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
@@ -600,7 +606,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = connector.ServiceID(r.Service.Service, subsetAddr.IP)
+					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.Port)
 					r.Service.Address = address.Address
 
 					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -621,7 +627,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = connector.ServiceID(r.Service.Service, subsetAddr.IP)
+						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.Port)
 						r.Service.Address = address.Address
 
 						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -661,7 +667,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceID(r.Service.Service, addr)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.Port)
 			r.Service.Address = addr
 
 			// Adding information about service weight.
@@ -738,9 +744,9 @@ func (t *ServiceResource) registerServiceInstance(
 				}
 			}
 
-			if withGatewayAPI {
-				addr = withGatewayViaAddr
-				epPort = int(withGatewayViaPort)
+			if withGateway {
+				addr = connector.ViaGateway.IngressAddr
+				epPort = int(connector.ViaGateway.Ingress.HTTPPort)
 			}
 
 			// Its not clear whether K8S guarantees ready addresses to
@@ -754,7 +760,7 @@ func (t *ServiceResource) registerServiceInstance(
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceID(r.Service.Service, addr)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, epPort)
 			r.Service.Address = addr
 			r.Service.Port = epPort
 			r.Service.Meta = make(map[string]interface{})
@@ -772,12 +778,12 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			r.Check = &provider.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceID(r.Service.Service, addr)),
+				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, epPort)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
 				Status:    provider.HealthPassing,
-				ServiceID: connector.ServiceID(r.Service.Service, addr),
+				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, epPort),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 

@@ -103,6 +103,11 @@ func (c *Client) IsLocalDNSProxyEnabled() bool {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.Enable
 }
 
+// IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled
+func (c *Client) IsWildcardDNSProxyEnabled() bool {
+	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.Enable
+}
+
 // GetLocalDNSProxyPrimaryUpstream returns the primary upstream DNS server for local DNS Proxy
 func (c *Client) GetLocalDNSProxyPrimaryUpstream() string {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.PrimaryUpstreamDNSServerIPAddr

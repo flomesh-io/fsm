@@ -215,6 +215,9 @@ const (
 
 	// ServiceExclusionAnnotation is the annotation used for service exclusion
 	ServiceExclusionAnnotation = "flomesh.io/service-exclusion"
+
+	// EgressViaGatewayAnnotation is the annotation used for endpoints via gateway
+	EgressViaGatewayAnnotation = "flomesh.io/egress-via-gateway"
 )
 
 // Annotations and labels used by the MeshRootCertificate

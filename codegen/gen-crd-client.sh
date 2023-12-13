@@ -87,6 +87,9 @@ generate_client "multicluster" "v1alpha1"
 echo "##### Generating flomesh.io plugin client ######"
 generate_client "plugin" "v1alpha1"
 
+echo "##### Generating flomesh.io machine client ######"
+generate_client "machine" "v1alpha1"
+
 echo "##### Generating flomesh.io NamespacedIngress client ######"
 generate_client "namespacedingress" "v1alpha1"
 

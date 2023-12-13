@@ -108,6 +108,14 @@ rules:
     resources: ["plugins/status", "pluginchains/status", "pluginconfigs/status"]
     verbs: ["update"]
 
+  # FSM's custom machine API
+  - apiGroups: ["machine.flomesh.io"]
+    resources: ["virtualmachines"]
+    verbs: ["list", "get", "watch"]
+  - apiGroups: ["machine.flomesh.io"]
+    resources: ["virtualmachines/status"]
+    verbs: ["update"]
+
   # FSM's NamespacedIngress API
   - apiGroups: [ "flomesh.io" ]
     resources: [ "namespacedingresses" ]
