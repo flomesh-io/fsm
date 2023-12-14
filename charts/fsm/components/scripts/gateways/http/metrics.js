@@ -41,7 +41,8 @@ pipy({
       'egress',
       _route,
       _consumer,
-      __inbound.remoteAddress || ''
+      // __inbound.remoteAddress || ''
+      'downstream'
     ).increase(__requestTail.headSize + __requestTail.bodySize),
 
     _status && _metrics.fgwHttpStatus.withLabels(
@@ -80,7 +81,8 @@ pipy({
       'ingress',
       _route,
       _consumer,
-      __inbound.remoteAddress || ''
+      // __inbound.remoteAddress || ''
+      'downstream'
     ).increase(msg.tail.headSize + msg.tail.bodySize)
   )
 )

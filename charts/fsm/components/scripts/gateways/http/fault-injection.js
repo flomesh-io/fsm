@@ -20,8 +20,8 @@
           ),
           delay.Range ? (
             range = delay.Range.split('-'),
-            min = range[0],
-            max = range[1],
+            min = Number(range[0]),
+            max = Number(range[1]),
             min >= 0 && max >= min && (
               () => (
                 Math.floor(Math.random() * 100) <= percent ? (
