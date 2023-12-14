@@ -92,7 +92,7 @@ func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
 
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1beta1.ListenerStatus) bool {
-	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionProgrammed))
 }
 
 // IsListenerAccepted returns true if the listener is accepted
@@ -100,6 +100,7 @@ func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
 }
 
+// IsAcceptedPolicyAttachment returns true if the policy attachment is accepted
 func IsAcceptedPolicyAttachment(conditions []metav1.Condition) bool {
 	return metautil.IsStatusConditionTrue(conditions, string(gwv1alpha2.PolicyConditionAccepted))
 }
@@ -140,6 +141,7 @@ func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Obj
 	return string(targetRef.Name) == object.GetName()
 }
 
+// IsTargetRefToGVK returns true if the target reference is to the given group version kind
 func IsTargetRefToGVK(targetRef gwv1alpha2.PolicyTargetReference, gvk schema.GroupVersionKind) bool {
 	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
 }
@@ -209,7 +211,7 @@ func GetAllowedListenersAndSetStatus(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNoMatchingParent),
-			Message:            fmt.Sprintf("No listeners match parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
+			Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 
 		return nil
@@ -231,7 +233,7 @@ func GetAllowedListenersAndSetStatus(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1beta1.RouteReasonNotAllowedByListeners),
-			Message:            fmt.Sprintf("No matched listeners of parent ref %s", getParentRefNamespacedName(parentRef, routeNs)),
+			Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 
 		return nil
@@ -273,13 +275,6 @@ func GetAllowedListeners(
 	}
 
 	return allowedListeners
-}
-
-func getParentRefNamespacedName(parentRef gwv1beta1.ParentReference, routeNs string) types.NamespacedName {
-	return types.NamespacedName{
-		Namespace: Namespace(parentRef.Namespace, routeNs),
-		Name:      string(parentRef.Name),
-	}
 }
 
 // GetValidHostnames returns the valid hostnames
