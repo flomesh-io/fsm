@@ -141,8 +141,8 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	c.Labels[constants.FSMAppVersionLabelKey] = w.fsmVersion
 	c.Labels[constants.AppLabel] = constants.FSMIngressName
 
-	if c.Spec.ServiceAccountName == "" {
-		c.Spec.ServiceAccountName = "fsm-namespaced-ingress"
+	if c.Spec.ServiceAccountName == nil {
+		c.Spec.ServiceAccountName = pointer.String("fsm-namespaced-ingress")
 	}
 
 	if c.Spec.LogLevel == nil {

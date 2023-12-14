@@ -56,11 +56,21 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 func updateTLS(mc configurator.Configurator, json string, nsig *v1alpha1.NamespacedIngress) (string, error) {
 	var err error
 
-	if nsig != nil {
+	if nsig != nil && nsig.Spec.TLS != nil {
+		enabled := false
+		if nsig.Spec.TLS.Enabled != nil {
+			enabled = *nsig.Spec.TLS.Enabled
+		}
+
+		mTLS := false
+		if nsig.Spec.TLS.MTLS != nil {
+			mTLS = *nsig.Spec.TLS.MTLS
+		}
+
 		for path, value := range map[string]interface{}{
-			"tls.enabled": nsig.Spec.TLS.Enabled,
-			"tls.listen":  nsig.Spec.TLS.Port,
-			"tls.mTLS":    nsig.Spec.TLS.MTLS,
+			"tls.enabled": enabled,
+			"tls.listen":  nsig.Spec.TLS.Port.Port,
+			"tls.mTLS":    mTLS,
 		} {
 			json, err = sjson.Set(json, path, value)
 			if err != nil {
@@ -88,12 +98,8 @@ func updateTLS(mc configurator.Configurator, json string, nsig *v1alpha1.Namespa
 // IssueCertForIngress issues certificate for ingress controller
 func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) error {
 	// 1. issue cert
-	cert, err := certMgr.IssueCertificate(
-		fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace()),
-		certificate.IngressGateway,
-		certificate.FullCNProvided())
+	cert, err := issueCert(certMgr, mc, nsig)
 	if err != nil {
-		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
 		return err
 	}
 
@@ -114,12 +120,43 @@ func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certM
 	return updateMainJSON(basepath, repoClient, newJSON)
 }
 
-func updateTLSAndCert(json string, mc configurator.Configurator, cert *certificate.Certificate, nsig *v1alpha1.NamespacedIngress) (string, error) {
+func issueCert(certMgr *certificate.Manager, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) (*certificate.Certificate, error) {
+	cert, err := certMgr.IssueCertificate(
+		getCertPrefix(mc, nsig),
+		certificate.IngressGateway,
+		certificate.FullCNProvided())
+	if err != nil {
+		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
+		return nil, err
+	}
+
+	return cert, nil
+}
+
+func getCertPrefix(mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) string {
 	if nsig != nil {
+		return fmt.Sprintf("%s.%s.svc", nsig.Name, nsig.Namespace)
+	}
+
+	return fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace())
+}
+
+func updateTLSAndCert(json string, mc configurator.Configurator, cert *certificate.Certificate, nsig *v1alpha1.NamespacedIngress) (string, error) {
+	if nsig != nil && nsig.Spec.TLS != nil {
+		enabled := false
+		if nsig.Spec.TLS.Enabled != nil {
+			enabled = *nsig.Spec.TLS.Enabled
+		}
+
+		mTLS := false
+		if nsig.Spec.TLS.MTLS != nil {
+			mTLS = *nsig.Spec.TLS.MTLS
+		}
+
 		return sjson.Set(json, "tls", map[string]interface{}{
-			"enabled": nsig.Spec.TLS.Enabled,
-			"listen":  nsig.Spec.TLS.Port,
-			"mTLS":    nsig.Spec.TLS.MTLS,
+			"enabled": enabled,
+			"listen":  nsig.Spec.TLS.Port.Port,
+			"mTLS":    mTLS,
 			"certificate": map[string]interface{}{
 				"cert": string(cert.GetCertificateChain()),
 				"key":  string(cert.GetPrivateKey()),

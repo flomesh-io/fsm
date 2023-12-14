@@ -49,23 +49,32 @@ func UpdateIngressHTTPConfig(basepath string, repoClient *repo.PipyRepoClient, m
 }
 
 func updateHTTPConfig(json string, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) (string, error) {
-	if nsig != nil {
+	var err error
+
+	if nsig != nil && nsig.Spec.HTTP != nil {
+		enabled := false
+		if nsig.Spec.HTTP.Enabled != nil {
+			enabled = *nsig.Spec.HTTP.Enabled
+		}
+
 		for path, value := range map[string]interface{}{
-			"http.enabled": *nsig.Spec.HTTP.Enabled,
+			"http.enabled": enabled,
 			"http.listen":  nsig.Spec.HTTP.Port.Port,
 		} {
-			json, err := sjson.Set(json, path, value)
+			json, err = sjson.Set(json, path, value)
 			if err != nil {
 				return "", err
 			}
 		}
+
+		return json, nil
 	}
 
 	for path, value := range map[string]interface{}{
 		"http.enabled": mc.IsIngressHTTPEnabled(),
 		"http.listen":  mc.GetIngressHTTPListenPort(),
 	} {
-		json, err := sjson.Set(json, path, value)
+		json, err = sjson.Set(json, path, value)
 		if err != nil {
 			return "", err
 		}
