@@ -81,6 +81,18 @@
     )
   )(),
 
+  alpnPolicy = names => (
+    __port?.Protocol === 'TLS' && __port.TLS?.TLSModeType === 'Terminate' ? (
+      __port.TLS.ALPN ? (
+        names.indexOf(__port.TLS.ALPN.toLowerCase())
+      ) : (
+        ((names.indexOf('http/1.1') + 1) || (names.indexOf('h2') + 1)) - 1
+      )
+    ) : (
+      ((names.indexOf('h2') + 1) || (names.indexOf('http/1.1') + 1)) - 1
+    )
+  ),
+
 ) => pipy({
   _tls: undefined,
   _domainName: undefined,
@@ -107,7 +119,7 @@
       () => __port?.TLS?.MTLS, (
         $=>$.acceptTLS({
           certificate: (sni, cert) => (
-            __consumer = {sni, cert, mtls: true, type: 'terminate'},
+            __consumer = { sni, cert, mtls: true, type: 'terminate' },
             {
               cert: _tls.cert,
               key: _tls.key,
@@ -118,16 +130,18 @@
             ok
           ),
           trusted: unionCA,
+          alpn: alpnPolicy,
         }).to($=>$.chain())
       ), (
         $=>$.acceptTLS({
           certificate: (sni, cert) => (
-            __consumer = {sni, cert, type: 'terminate'},
+            __consumer = { sni, cert, type: 'terminate' },
             {
               cert: _tls.cert,
               key: _tls.key,
             }
           ),
+          alpn: alpnPolicy,
         }).to($=>$.chain())
       )
     )
