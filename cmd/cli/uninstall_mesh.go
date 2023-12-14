@@ -287,33 +287,43 @@ func (d *uninstallMeshCmd) uninstallClusterResources() []string {
 
 // uninstallCustomResourceDefinitions uninstalls fsm and smi-related crds from the cluster.
 func (d *uninstallMeshCmd) uninstallCustomResourceDefinitions() error {
-	crds := []string{
-		"egresses.policy.flomesh.io",
-		"ingressbackends.policy.flomesh.io",
-		"meshconfigs.config.flomesh.io",
-		"meshRootCertificate.config.flomesh.io",
-		"upstreamtrafficsettings.policy.flomesh.io",
-		"retries.policy.flomesh.io",
-		"httproutegroups.specs.smi-spec.io",
-		"tcproutes.specs.smi-spec.io",
-		"trafficsplits.split.smi-spec.io",
-		"traffictargets.access.smi-spec.io",
+	//crds := []string{
+	//	"egresses.policy.flomesh.io",
+	//	"ingressbackends.policy.flomesh.io",
+	//	"meshconfigs.config.flomesh.io",
+	//	"meshRootCertificate.config.flomesh.io",
+	//	"upstreamtrafficsettings.policy.flomesh.io",
+	//	"retries.policy.flomesh.io",
+	//	"httproutegroups.specs.smi-spec.io",
+	//	"tcproutes.specs.smi-spec.io",
+	//	"trafficsplits.split.smi-spec.io",
+	//	"traffictargets.access.smi-spec.io",
+	//}
+
+	crds, err := d.extensionsClientset.ApiextensionsV1().CustomResourceDefinitions().List(context.Background(), metav1.ListOptions{
+		LabelSelector: labels.Set(map[string]string{
+			constants.FSMAppNameLabelKey: constants.FSMAppNameLabelValue,
+		}).String(),
+	})
+	if err != nil {
+		fmt.Fprintf(d.out, "Failed to list FSM CRDs in the cluster: %s", err.Error())
+		return errors.New(err.Error())
 	}
 
 	var failedDeletions []string
-	for _, crd := range crds {
-		err := d.extensionsClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crd, metav1.DeleteOptions{})
+	for _, crd := range crds.Items {
+		err := d.extensionsClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crd.Name, metav1.DeleteOptions{})
 
 		if err == nil {
-			fmt.Fprintf(d.out, "Successfully deleted FSM CRD: %s\n", crd)
+			fmt.Fprintf(d.out, "Successfully deleted FSM CRD: %s\n", crd.Name)
 			continue
 		}
 
 		if k8sApiErrors.IsNotFound(err) {
-			fmt.Fprintf(d.out, "Ignoring - did not find FSM CRD: %s\n", crd)
+			fmt.Fprintf(d.out, "Ignoring - did not find FSM CRD: %s\n", crd.Name)
 		} else {
-			fmt.Fprintf(d.out, "Failed to delete FSM CRD %s: %s\n", crd, err.Error())
-			failedDeletions = append(failedDeletions, crd)
+			fmt.Fprintf(d.out, "Failed to delete FSM CRD %s: %s\n", crd.Name, err.Error())
+			failedDeletions = append(failedDeletions, crd.Name)
 		}
 	}
 
