@@ -25,8 +25,9 @@
 package utils
 
 import (
-	"github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	"github.com/tidwall/sjson"
+
+	"github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/repo"
