@@ -143,7 +143,7 @@ type FaultInjectionDelay struct {
 // FaultInjectionAbort is the abort configuration for fault injection
 type FaultInjectionAbort struct {
 	Percent int32   `json:"Percent"`
-	Status  *int32  `json:"StatusCode,omitempty"`
+	Status  *int32  `json:"Status,omitempty"`
 	Message *string `json:"Message,omitempty"`
 }
 
