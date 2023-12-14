@@ -315,14 +315,14 @@ func (d *uninstallMeshCmd) uninstallCustomResourceDefinitions() error {
 		err := d.extensionsClientset.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crd.Name, metav1.DeleteOptions{})
 
 		if err == nil {
-			fmt.Fprintf(d.out, "Successfully deleted FSM CRD: %s\n", crd)
+			fmt.Fprintf(d.out, "Successfully deleted FSM CRD: %s\n", crd.Name)
 			continue
 		}
 
 		if k8sApiErrors.IsNotFound(err) {
-			fmt.Fprintf(d.out, "Ignoring - did not find FSM CRD: %s\n", crd)
+			fmt.Fprintf(d.out, "Ignoring - did not find FSM CRD: %s\n", crd.Name)
 		} else {
-			fmt.Fprintf(d.out, "Failed to delete FSM CRD %s: %s\n", crd, err.Error())
+			fmt.Fprintf(d.out, "Failed to delete FSM CRD %s: %s\n", crd.Name, err.Error())
 			failedDeletions = append(failedDeletions, crd.Name)
 		}
 	}
