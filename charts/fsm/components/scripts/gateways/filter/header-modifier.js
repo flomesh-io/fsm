@@ -31,7 +31,7 @@
     ).join('/')
   ),
 
-  makeModifierHandler = (cfg, type) => (
+  makeModifierHandler = cfg => (
     (
       set = cfg?.Set,
       add = cfg?.Add,
@@ -39,7 +39,7 @@
     ) => (
       (set || add || remove) && (
         msg => (
-          _http = (type === 'RequestHeaderModifier') ? __requestHead : __responseHead,
+          _http = (cfg.Type === 'RequestHeaderModifier') ? __requestHead : __responseHead,
           set && set.forEach(
             e => (msg[e.Name] = resolvPath(e.Value))
           ),
@@ -65,7 +65,7 @@
       handlers = (cfg?.Filters || []).filter(
         e => e?.Type === 'RequestHeaderModifier'
       ).map(
-        e => makeModifierHandler(e.RequestHeaderModifier, e.Type)
+        e => makeModifierHandler(e.RequestHeaderModifier)
       ).filter(
         e => e
       )
@@ -94,7 +94,7 @@
       handlers = (cfg?.Filters || []).filter(
         e => e?.Type === 'ResponseHeaderModifier'
       ).map(
-        e => makeModifierHandler(e.ResponseHeaderModifier, e.Type)
+        e => makeModifierHandler(e.ResponseHeaderModifier)
       ).filter(
         e => e
       )

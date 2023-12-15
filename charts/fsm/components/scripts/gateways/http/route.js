@@ -158,7 +158,6 @@
           .map(([k, v]) => [k, v.Weight])
           .filter(([k, v]) => v > 0)
         )),
-        ...(rule?.VirtualService && { virtualService: rule.VirtualService }),
         ...(rule?.ServerRoot && { serverRoot: rule.ServerRoot })
       }
     )
