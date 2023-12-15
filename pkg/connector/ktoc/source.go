@@ -736,7 +736,7 @@ func (t *ServiceResource) registerServiceInstance(
 					strings.EqualFold(string(*p.AppProtocol), strings.ToUpper(constants.ProtocolGRPC)) {
 					grpcPort = int(p.Port)
 				}
-				if httpPort > 0 && httpPort > 0 {
+				if httpPort > 0 && grpcPort > 0 {
 					break
 				}
 			}

@@ -245,7 +245,6 @@ func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpe
 			log.Error().Msgf("warn updating http route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	}
-	return
 }
 
 func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
@@ -301,7 +300,6 @@ func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpe
 			log.Error().Msgf("warn updating grpc route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	}
-	return
 }
 
 func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
@@ -346,7 +344,6 @@ func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec
 			log.Error().Msgf("warn updating tcp route, name:%s warn:%v", k8sSvc.Name, err)
 		}
 	}
-	return
 }
 
 func (gw *GatewayResource) deleteGatewayRoute(name, namespace string) {
