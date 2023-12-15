@@ -224,6 +224,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.flb.password | string | `"admin"` |  |
 | fsm.flb.secretName | string | `"fsm-flb-secret"` |  |
 | fsm.flb.strictMode | bool | `false` |  |
+| fsm.flb.upstreamMode | string | `"Endpoint"` |  |
 | fsm.flb.username | string | `"admin"` |  |
 | fsm.fluentBit.enableProxySupport | bool | `false` | Enable proxy support toggle for Fluent Bit |
 | fsm.fluentBit.httpProxy | string | `""` | Optional HTTP proxy endpoint for Fluent Bit |
