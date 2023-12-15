@@ -112,7 +112,9 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
 					//glName := strings.ToUpper(string(gatewayListener.Name))
 					if internalSource {
-						if connector.ViaGateway.Ingress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.HTTPPort {
+						if connector.ViaGateway.Ingress.HTTPPort > 0 &&
+							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+							uint(gatewayListener.Port) == connector.ViaGateway.Ingress.HTTPPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -120,7 +122,9 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1beta1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-						if connector.ViaGateway.Ingress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Ingress.GRPCPort {
+						if connector.ViaGateway.Ingress.GRPCPort > 0 &&
+							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+							uint(gatewayListener.Port) == connector.ViaGateway.Ingress.GRPCPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -129,7 +133,9 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Port:      &gatewayPort})
 						}
 					} else {
-						if connector.ViaGateway.Egress.HTTPPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.HTTPPort {
+						if connector.ViaGateway.Egress.HTTPPort > 0 &&
+							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+							uint(gatewayListener.Port) == connector.ViaGateway.Egress.HTTPPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -137,7 +143,9 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Name:      gwv1beta1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
-						if connector.ViaGateway.Egress.GRPCPort > 0 && uint(gatewayListener.Port) == connector.ViaGateway.Egress.GRPCPort {
+						if connector.ViaGateway.Egress.GRPCPort > 0 &&
+							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+							uint(gatewayListener.Port) == connector.ViaGateway.Egress.GRPCPort {
 							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
 							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
@@ -172,17 +180,11 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 
 			if len(parentRefs) > 0 {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
-					if err := gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs); err != nil {
-						return err
-					}
+					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
 				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					if err := gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs); err != nil {
-						return err
-					}
+					gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs)
 				} else {
-					if err := gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs); err != nil {
-						return err
-					}
+					gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
 				}
 			} else {
 				log.Warn().Msgf("error match gateways in namespace:%s for svc:%s/%s protocol:%s", svc.FsmNamespace, k8sSvc.Namespace, k8sSvc.Name, protocol)
@@ -192,7 +194,7 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 	})
 }
 
-func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) error {
+func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
 	var newRt *gwv1beta1.HTTPRoute
 	var exists bool
 	svc := gw.Service
@@ -237,17 +239,16 @@ func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpe
 		if err != nil {
 			log.Error().Msgf("warn creating http route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	} else {
 		_, err := httpRouteClient.Update(svc.Ctx, newRt, metav1.UpdateOptions{})
 		if err != nil {
 			log.Error().Msgf("warn updating http route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	}
+	return
 }
 
-func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) error {
+func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
 	var newRt *gwv1alpha2.GRPCRoute
 	var exists bool
 	svc := gw.Service
@@ -294,17 +295,16 @@ func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpe
 		if err != nil {
 			log.Error().Msgf("warn creating grpc route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	} else {
 		_, err := grpcRouteClient.Update(svc.Ctx, newRt, metav1.UpdateOptions{})
 		if err != nil {
 			log.Error().Msgf("warn updating grpc route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	}
+	return
 }
 
-func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) error {
+func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
 	var newRt *gwv1alpha2.TCPRoute
 	var exists bool
 	svc := gw.Service
@@ -340,14 +340,13 @@ func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec
 		if err != nil {
 			log.Error().Msgf("warn creating tcp route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	} else {
 		_, err := tcpRouteClient.Update(svc.Ctx, newRt, metav1.UpdateOptions{})
 		if err != nil {
 			log.Error().Msgf("warn updating tcp route, name:%s warn:%v", k8sSvc.Name, err)
 		}
-		return err
 	}
+	return
 }
 
 func (gw *GatewayResource) deleteGatewayRoute(name, namespace string) {
