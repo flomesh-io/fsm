@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -65,7 +66,8 @@ type AgentService struct {
 	InstanceId string
 	Namespace  string
 	Address    string
-	Port       int
+	HTTPPort   int
+	GRPCPort   int
 	Weights    AgentWeights
 	Tags       []string
 	Meta       map[string]interface{}
@@ -77,7 +79,7 @@ func (as *AgentService) toConsul() *consul.AgentService {
 	agentService.Service = as.Service
 	agentService.Namespace = as.Namespace
 	agentService.Address = as.Address
-	agentService.Port = as.Port
+	agentService.Port = as.HTTPPort
 	agentService.Weights = as.Weights.toConsul()
 	if len(as.Tags) > 0 {
 		agentService.Tags = append(agentService.Tags, as.Tags...)
@@ -96,7 +98,7 @@ func (as *AgentService) fromConsul(agentService *consul.AgentService) {
 	as.Service = agentService.Service
 	as.Namespace = agentService.Namespace
 	as.Address = agentService.Address
-	as.Port = agentService.Port
+	as.HTTPPort = agentService.Port
 	as.Weights.fromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
 		as.Tags = append(as.Tags, agentService.Tags...)
@@ -117,7 +119,7 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 	as.Service = strings.ToLower(ins.VipAddress)
 	as.InstanceId = ins.InstanceId
 	as.Address = ins.IPAddr
-	as.Port = ins.Port
+	as.HTTPPort = ins.Port
 	metadata := ins.Metadata.GetMap()
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -132,7 +134,7 @@ func (as *AgentService) fromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 	as.Service = svc.ServiceName
 	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
 	as.Address = vm.Spec.MachineIP
-	as.Port = int(svc.Port)
+	as.HTTPPort = int(svc.Port)
 	metadata := vm.Labels
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -210,7 +212,8 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 		r.App = strings.ToUpper(cr.Service.Service)
 		r.VipAddress = strings.ToUpper(cr.Service.Service)
 		r.SecureVipAddress = strings.ToUpper(cr.Service.Service)
-		r.Port = cr.Service.Port
+		r.Port = cr.Service.HTTPPort
+		r.PortEnabled = true
 		r.Status = eureka.UP
 		r.DataCenterInfo = eureka.DataCenterInfo{Name: eureka.MyOwn}
 		if len(cr.Service.Meta) > 0 {
@@ -223,10 +226,17 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 		//r.Metadata.GetMap()["version"] = "release"
 		//r.Metadata.GetMap()["zone"] = "yinzhou"
 
-		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.Port)
-		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.Port)
-		r.HealthCheckUrl = fmt.Sprintf("http://%s:%d/actuator/health", cr.Service.Address, cr.Service.Port)
+		if cr.Service.GRPCPort > 0 {
+			cr.Service.Meta["gRPC__port"] = fmt.Sprintf("%d", cr.Service.GRPCPort)
+			cr.Service.Meta["management.port"] = fmt.Sprintf("%d", cr.Service.HTTPPort)
+		}
+
+		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.HTTPPort)
+		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.HTTPPort)
+		r.HealthCheckUrl = fmt.Sprintf("http://%s:%d/actuator/health", cr.Service.Address, cr.Service.HTTPPort)
 	}
+	bytes, _ := json.MarshalIndent(r, "", " ")
+	fmt.Println(string(bytes))
 	return r
 }
 
