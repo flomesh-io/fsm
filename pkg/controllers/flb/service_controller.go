@@ -38,8 +38,6 @@ import (
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/ghodss/yaml"
 	"github.com/go-resty/resty/v2"
 	"github.com/sethvargo/go-retry"
@@ -49,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -1012,26 +1011,35 @@ func getValidAlgo(value string) string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	bd := ctrl.NewControllerManagedBy(mgr).
 		For(
 			&corev1.Service{},
 			builder.WithPredicates(predicate.NewPredicateFuncs(r.isInterestedService)),
-		).
-		Watches(
+		).Watches(
+		&source.Kind{Type: &corev1.Namespace{}},
+		handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
+		builder.WithPredicates(
+			predicate.Or(
+				predicate.GenerationChangedPredicate{},
+				predicate.AnnotationChangedPredicate{},
+			),
+		),
+	)
+
+	switch r.fctx.Config.GetFLBUpstreamMode() {
+	case configv1alpha3.FLBUpstreamModeNodePort:
+		bd = bd.Watches(
+			&source.Kind{Type: &corev1.Pod{}},
+			handler.EnqueueRequestsFromMapFunc(r.podToService),
+		)
+	case configv1alpha3.FLBUpstreamModeEndpoint:
+		bd = bd.Watches(
 			&source.Kind{Type: &corev1.Endpoints{}},
 			handler.EnqueueRequestsFromMapFunc(r.endpointsToService),
-		).
-		Watches(
-			&source.Kind{Type: &corev1.Namespace{}},
-			handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
-			builder.WithPredicates(
-				predicate.Or(
-					predicate.GenerationChangedPredicate{},
-					predicate.AnnotationChangedPredicate{},
-				),
-			),
-		).
-		Complete(r)
+		)
+	}
+
+	return bd.Complete(r)
 }
 
 func (r *reconciler) isInterestedService(obj client.Object) bool {
@@ -1042,6 +1050,47 @@ func (r *reconciler) isInterestedService(obj client.Object) bool {
 	}
 
 	return flb.IsFLBEnabled(svc, r.fctx.KubeClient)
+}
+
+func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
+	allServices := &corev1.ServiceList{}
+	if err := r.fctx.List(
+		context.TODO(),
+		allServices,
+		client.InNamespace(pod.GetNamespace()),
+		client.MatchingFields{".spec.type": string(corev1.ServiceTypeLoadBalancer)},
+	); err != nil {
+		log.Error().Msgf("failed to list services in ns %s: %s", pod.GetNamespace(), err)
+		return nil
+	}
+
+	if len(allServices.Items) == 0 {
+		return nil
+	}
+
+	services := make(map[types.NamespacedName]struct{})
+	for _, service := range allServices.Items {
+		service := service // fix lint GO-LOOP-REF
+		if service.Spec.Selector == nil {
+			// services with nil selectors match nothing, not everything.
+			continue
+		}
+		selector := labels.Set(service.Spec.Selector).AsSelectorPreValidated()
+		if selector.Matches(labels.Set(pod.GetLabels())) && flb.IsFLBEnabled(&service, r.fctx.KubeClient) {
+			services[client.ObjectKeyFromObject(&service)] = struct{}{}
+		}
+	}
+
+	if len(services) == 0 {
+		return nil
+	}
+
+	requests := make([]reconcile.Request, len(services))
+	for svc := range services {
+		requests = append(requests, reconcile.Request{NamespacedName: svc})
+	}
+
+	return requests
 }
 
 func (r *reconciler) endpointsToService(ep client.Object) []reconcile.Request {
