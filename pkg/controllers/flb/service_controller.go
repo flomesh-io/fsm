@@ -1058,7 +1058,6 @@ func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
 		context.TODO(),
 		allServices,
 		client.InNamespace(pod.GetNamespace()),
-		client.MatchingFields{".spec.type": string(corev1.ServiceTypeLoadBalancer)},
 	); err != nil {
 		log.Error().Msgf("failed to list services in ns %s: %s", pod.GetNamespace(), err)
 		return nil
@@ -1071,12 +1070,18 @@ func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
 	services := make(map[types.NamespacedName]struct{})
 	for _, service := range allServices.Items {
 		service := service // fix lint GO-LOOP-REF
+
 		if service.Spec.Selector == nil {
 			// services with nil selectors match nothing, not everything.
 			continue
 		}
+
+		if !flb.IsFLBEnabled(&service, r.fctx.KubeClient) {
+			continue
+		}
+
 		selector := labels.Set(service.Spec.Selector).AsSelectorPreValidated()
-		if selector.Matches(labels.Set(pod.GetLabels())) && flb.IsFLBEnabled(&service, r.fctx.KubeClient) {
+		if selector.Matches(labels.Set(pod.GetLabels())) {
 			services[client.ObjectKeyFromObject(&service)] = struct{}{}
 		}
 	}
