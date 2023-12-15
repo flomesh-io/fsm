@@ -33,6 +33,8 @@ import (
 type NamespacedIngressSpec struct {
 	// ServiceType determines how the Ingress is exposed. For an Ingress
 	//   the most used types are NodePort, and LoadBalancer
+	// +kubebuilder:default=LoadBalancer
+	// +optional
 	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
 
 	// ServiceAnnotations, those annotations are applied to Ingress Service
@@ -52,15 +54,13 @@ type NamespacedIngressSpec struct {
 	PodLabels map[string]string `json:"podLabels,omitempty"`
 
 	// +kubebuilder:default={enabled: true, port: {name: http, protocol: TCP, port: 80, targetPort: 8000}}
-
-	// The http configuration of this ingress controller.
 	// +optional
+	// The HTTP configuration of this ingress controller.
 	HTTP HTTP `json:"http,omitempty"`
 
 	// +kubebuilder:default={enabled: false, port: {name: https, protocol: TCP, port: 443, targetPort: 8443}, sslPassthrough: {enabled: false, upstreamPort: 443}}
-
-	// TLS is the configuration of TLS of this ingress controller
 	// +optional
+	// TLS is the configuration of TLS of this ingress controller
 	TLS TLS `json:"tls,omitempty"`
 
 	// List of environment variables to set in the ingress container.
@@ -95,16 +95,14 @@ type NamespacedIngressSpec struct {
 
 	// +kubebuilder:default=info
 	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
-
-	// LogLevel is the log level of this ingress controller pod.
 	// +optional
+	// LogLevel is the log level of this ingress controller pod.
 	LogLevel *string `json:"logLevel,omitempty"`
 
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=1
-
-	// Replicas, how many replicas of the ingress controller will be running for this namespace.
 	// +optional
+	// Replicas, how many replicas of the ingress controller will be running for this namespace.
 	Replicas *int32 `json:"replicas,omitempty"`
 
 	// SecurityContext defines the security options the container should be run with.
@@ -121,48 +119,88 @@ type NamespacedIngressSpec struct {
 // HTTP defines the http configuration of this ingress controller.
 type HTTP struct {
 	// +kubebuilder:default=true
-
-	// Enabled, if HTTP is enabled for the Ingress Controller
 	// +optional
+	// Enabled, if HTTP is enabled for the Ingress Controller
 	Enabled bool `json:"enabled"`
 
+	// +kubebuilder:default={name: http, protocol: TCP, port: 80, targetPort: 8000}
+	// +optional
 	// Port, The http port that are exposed by this ingress service.
-	Port corev1.ServicePort `json:"port,omitempty"`
+	Port ServicePort `json:"port,omitempty"`
 }
 
 // TLS defines the TLS configuration of this ingress controller.
 type TLS struct {
 	// +kubebuilder:default=false
-
-	// Enabled, if TLS is enabled for the Ingress Controller
 	// +optional
+	// Enabled, if TLS is enabled for the Ingress Controller
 	Enabled bool `json:"enabled"`
 
+	// +kubebuilder:default={name: https, protocol: TCP, port: 443, targetPort: 8443}
+	// +optional
 	// Port, The https port that are exposed by this ingress service.
-	Port corev1.ServicePort `json:"port,omitempty"`
+	Port ServicePort `json:"port,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	// MTLS, if mTLS is enabled for the Ingress Controller
+	MTLS bool `json:"mTLS,omitempty"`
 
 	// +kubebuilder:default={enabled: false, upstreamPort: 443}
-
-	// SSLPassthrough configuration
 	// +optional
+	// SSLPassthrough configuration
 	SSLPassthrough SSLPassthrough `json:"sslPassthrough,omitempty"`
+}
+
+// ServicePort contains information on service's port.
+type ServicePort struct {
+	// The name of this port within the service. This must be a DNS_LABEL.
+	// All ports within a ServiceSpec must have unique names. When considering
+	// the endpoints for a Service, this must match the 'name' field in the
+	// EndpointPort.
+	// Optional if only one ServicePort is defined on this service.
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+	// Default is TCP.
+	// +default="TCP"
+	// +optional
+	Protocol corev1.Protocol `json:"protocol,omitempty"`
+
+	// The port that will be exposed by this service.
+	Port int32 `json:"port"`
+
+	// Number or name of the port to access on the pods targeted by the service.
+	// Number must be in the range 1 to 65535.
+	// +optional
+	TargetPort int32 `json:"targetPort,omitempty"`
+
+	// The port on each node on which this service is exposed when type is
+	// NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+	// specified, in-range, and not in use it will be used, otherwise the
+	// operation will fail.  If not specified, a port will be allocated if this
+	// Service requires one.  If this field is specified when creating a
+	// Service which does not need it, creation will fail. This field will be
+	// wiped when updating a Service to no longer need it (e.g. changing type
+	// from NodePort to ClusterIP).
+	// +optional
+	NodePort int32 `json:"nodePort,omitempty"`
 }
 
 // SSLPassthrough defines the SSLPassthrough configuration of this ingress controller.
 type SSLPassthrough struct {
 	// +kubebuilder:default=false
-
+	// +optional
 	// Enabled, if SSL passthrough is enabled for the Ingress Controller
 	//  It's mutual exclusive with TLS offload/termination within the controller scope.
-	// +optional
 	Enabled bool `json:"enabled"`
 
 	// +kubebuilder:default=443
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
-
-	// UpstreamPort, is the port of upstream services.
 	// +optional
+	// UpstreamPort, is the port of upstream services.
 	UpstreamPort *int32 `json:"upstreamPort"`
 }
 

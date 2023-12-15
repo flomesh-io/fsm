@@ -153,6 +153,38 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 		c.Spec.Replicas = pointer.Int32(1)
 	}
 
+	if c.Spec.HTTP.Port.Name == "" {
+		c.Spec.HTTP.Port.Name = "http"
+	}
+
+	if c.Spec.HTTP.Port.Protocol == "" {
+		c.Spec.HTTP.Port.Protocol = corev1.ProtocolTCP
+	}
+
+	if c.Spec.HTTP.Port.Port == 0 {
+		c.Spec.HTTP.Port.Port = 80
+	}
+
+	if c.Spec.HTTP.Port.TargetPort == 0 {
+		c.Spec.HTTP.Port.TargetPort = 8000
+	}
+
+	if c.Spec.TLS.Port.Name == "" {
+		c.Spec.TLS.Port.Name = "https"
+	}
+
+	if c.Spec.TLS.Port.Protocol == "" {
+		c.Spec.TLS.Port.Protocol = corev1.ProtocolTCP
+	}
+
+	if c.Spec.TLS.Port.Port == 0 {
+		c.Spec.TLS.Port.Port = 443
+	}
+
+	if c.Spec.TLS.Port.TargetPort == 0 {
+		c.Spec.TLS.Port.TargetPort = 8443
+	}
+
 	if c.Spec.TLS.SSLPassthrough.UpstreamPort == nil {
 		c.Spec.TLS.SSLPassthrough.UpstreamPort = pointer.Int32(443)
 	}

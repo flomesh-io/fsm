@@ -27,6 +27,8 @@ package utils
 import (
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+
 	"github.com/tidwall/sjson"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -36,10 +38,37 @@ import (
 )
 
 // UpdateIngressTLSConfig updates TLS config of ingress controller
-func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
+func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) error {
 	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
+	}
+
+	newJSON, err := updateTLS(mc, json, nsig)
+	if err != nil {
+		log.Error().Msgf("Failed to update TLS config: %s", err)
+		return err
+	}
+
+	return updateMainJSON(basepath, repoClient, newJSON)
+}
+
+func updateTLS(mc configurator.Configurator, json string, nsig *v1alpha1.NamespacedIngress) (string, error) {
+	var err error
+
+	if nsig != nil {
+		for path, value := range map[string]interface{}{
+			"tls.enabled": nsig.Spec.TLS.Enabled,
+			"tls.listen":  nsig.Spec.TLS.Port.TargetPort,
+			"tls.mTLS":    nsig.Spec.TLS.MTLS,
+		} {
+			json, err = sjson.Set(json, path, value)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		return json, err
 	}
 
 	for path, value := range map[string]interface{}{
@@ -49,23 +78,18 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 	} {
 		json, err = sjson.Set(json, path, value)
 		if err != nil {
-			log.Error().Msgf("Failed to update TLS config: %s", err)
-			return err
+			return "", err
 		}
 	}
 
-	return updateMainJSON(basepath, repoClient, json)
+	return json, err
 }
 
 // IssueCertForIngress issues certificate for ingress controller
-func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator) error {
+func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certMgr *certificate.Manager, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) error {
 	// 1. issue cert
-	cert, err := certMgr.IssueCertificate(
-		fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace()),
-		certificate.IngressGateway,
-		certificate.FullCNProvided())
+	cert, err := issueCert(certMgr, mc, nsig)
 	if err != nil {
-		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
 		return err
 	}
 
@@ -75,7 +99,53 @@ func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certM
 		return err
 	}
 
-	newJSON, err := sjson.Set(json, "tls", map[string]interface{}{
+	// 3. update tls config
+	newJSON, err := updateTLSAndCert(json, mc, cert, nsig)
+	if err != nil {
+		log.Error().Msgf("Failed to update TLS config: %s", err)
+		return err
+	}
+
+	// 6. update main.json
+	return updateMainJSON(basepath, repoClient, newJSON)
+}
+
+func issueCert(certMgr *certificate.Manager, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) (*certificate.Certificate, error) {
+	cert, err := certMgr.IssueCertificate(
+		getCertPrefix(mc, nsig),
+		certificate.IngressGateway,
+		certificate.FullCNProvided())
+	if err != nil {
+		log.Error().Msgf("Issue certificate for ingress-pipy error: %s", err)
+		return nil, err
+	}
+
+	return cert, nil
+}
+
+func getCertPrefix(mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) string {
+	if nsig != nil {
+		return fmt.Sprintf("%s.%s.svc", nsig.Name, nsig.Namespace)
+	}
+
+	return fmt.Sprintf("%s.%s.svc", constants.FSMIngressName, mc.GetFSMNamespace())
+}
+
+func updateTLSAndCert(json string, mc configurator.Configurator, cert *certificate.Certificate, nsig *v1alpha1.NamespacedIngress) (string, error) {
+	if nsig != nil {
+		return sjson.Set(json, "tls", map[string]interface{}{
+			"enabled": nsig.Spec.TLS.Enabled,
+			"listen":  nsig.Spec.TLS.Port.TargetPort,
+			"mTLS":    nsig.Spec.TLS.MTLS,
+			"certificate": map[string]interface{}{
+				"cert": string(cert.GetCertificateChain()),
+				"key":  string(cert.GetPrivateKey()),
+				"ca":   string(cert.GetIssuingCA()),
+			},
+		})
+	}
+
+	return sjson.Set(json, "tls", map[string]interface{}{
 		"enabled": mc.IsIngressTLSEnabled(),
 		"listen":  mc.GetIngressTLSListenPort(),
 		"mTLS":    mc.IsIngressMTLSEnabled(),
@@ -85,13 +155,6 @@ func IssueCertForIngress(basepath string, repoClient *repo.PipyRepoClient, certM
 			"ca":   string(cert.GetIssuingCA()),
 		},
 	})
-	if err != nil {
-		log.Error().Msgf("Failed to update TLS config: %s", err)
-		return err
-	}
-
-	// 6. update main.json
-	return updateMainJSON(basepath, repoClient, newJSON)
 }
 
 // UpdateSSLPassthrough updates SSL passthrough config
