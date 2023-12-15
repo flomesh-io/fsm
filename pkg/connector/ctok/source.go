@@ -100,7 +100,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 	svcMetaMap := make(map[MicroSvcName]*MicroSvcMeta)
 
 	for _, svc := range serviceEntries {
-		httpPort := svc.Port
+		httpPort := svc.HTTPPort
 		grpcPort := 0
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
 		if len(svc.Tags) > 0 {

@@ -158,21 +158,21 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 					//	if strings.EqualFold(glProtocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 					//		strings.HasPrefix(glName, protocol) {
 					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
-					//		gatewayPort := gatewayListener.Port
+					//		gatewayPort := gatewayListener.HTTPPort
 					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
 					//			Namespace: &gatewayNs,
 					//			Name:      gwv1beta1.ObjectName(gateway.Name),
-					//			Port:      &gatewayPort})
+					//			HTTPPort:      &gatewayPort})
 					//	}
 					//} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					//	if strings.EqualFold(glProtocol, protocol) &&
 					//		!strings.HasPrefix(glName, strings.ToUpper(constants.ProtocolGRPC)) {
 					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
-					//		gatewayPort := gatewayListener.Port
+					//		gatewayPort := gatewayListener.HTTPPort
 					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
 					//			Namespace: &gatewayNs,
 					//			Name:      gwv1beta1.ObjectName(gateway.Name),
-					//			Port:      &gatewayPort})
+					//			HTTPPort:      &gatewayPort})
 					//	}
 					//}
 				}

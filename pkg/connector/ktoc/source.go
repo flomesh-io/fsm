@@ -18,6 +18,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 const (
@@ -524,7 +525,7 @@ func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseServ
 			}
 		}
 
-		baseService.Port = port
+		baseService.HTTPPort = port
 
 		// Add all the ports as annotations
 		for _, p := range svc.Spec.Ports {
@@ -541,7 +542,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.Port)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.HTTPPort)
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
@@ -606,7 +607,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.Port)
+					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort)
 					r.Service.Address = address.Address
 
 					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -627,7 +628,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.Port)
+						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort)
 						r.Service.Address = address.Address
 
 						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -667,7 +668,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.Port)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.HTTPPort)
 			r.Service.Address = addr
 
 			// Adding information about service weight.
@@ -709,12 +710,13 @@ func (t *ServiceResource) registerServiceInstance(
 		// For ClusterIP services and if LoadBalancerEndpointsSync is true, we use the endpoint port instead
 		// of the service port because we're registering each endpoint
 		// as a separate service instance.
-		epPort := baseService.Port
+		httpPort := baseService.HTTPPort
+		grpcPort := baseService.GRPCPort
 		if overridePortName != "" {
 			// If we're supposed to use a specific named port, find it.
 			for _, p := range subset.Ports {
 				if overridePortName == p.Name {
-					epPort = int(p.Port)
+					httpPort = int(p.Port)
 					break
 				}
 			}
@@ -722,8 +724,21 @@ func (t *ServiceResource) registerServiceInstance(
 			// Otherwise we'll just use the first port in the list
 			// (unless the port number was overridden by an annotation).
 			for _, p := range subset.Ports {
-				epPort = int(p.Port)
-				break
+				if httpPort == 0 &&
+					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
+					p.AppProtocol != nil &&
+					strings.EqualFold(string(*p.AppProtocol), strings.ToUpper(constants.ProtocolHTTP)) {
+					httpPort = int(p.Port)
+				}
+				if grpcPort == 0 &&
+					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
+					p.AppProtocol != nil &&
+					strings.EqualFold(string(*p.AppProtocol), strings.ToUpper(constants.ProtocolGRPC)) {
+					grpcPort = int(p.Port)
+				}
+				if httpPort > 0 && httpPort > 0 {
+					break
+				}
 			}
 		}
 		for _, subsetAddr := range subset.Addresses {
@@ -733,7 +748,7 @@ func (t *ServiceResource) registerServiceInstance(
 			// resource that references it.
 			if t.SyncIngress && t.isIngressService(key) {
 				addr = t.serviceHostnameMap[key].hostName
-				epPort = int(t.serviceHostnameMap[key].port)
+				httpPort = int(t.serviceHostnameMap[key].port)
 			} else {
 				addr = subsetAddr.IP
 				if addr == "" && useHostname {
@@ -746,7 +761,7 @@ func (t *ServiceResource) registerServiceInstance(
 
 			if withGateway {
 				addr = connector.ViaGateway.IngressAddr
-				epPort = int(connector.ViaGateway.Ingress.HTTPPort)
+				httpPort = int(connector.ViaGateway.Ingress.HTTPPort)
 			}
 
 			// Its not clear whether K8S guarantees ready addresses to
@@ -760,9 +775,10 @@ func (t *ServiceResource) registerServiceInstance(
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, epPort)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, httpPort)
 			r.Service.Address = addr
-			r.Service.Port = epPort
+			r.Service.HTTPPort = httpPort
+			r.Service.GRPCPort = grpcPort
 			r.Service.Meta = make(map[string]interface{})
 			// Deepcopy baseService.Meta into r.CatalogService.Meta as baseService is shared
 			// between all nodes of a service
@@ -778,12 +794,12 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			r.Check = &provider.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, epPort)),
+				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, httpPort)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
 				Status:    provider.HealthPassing,
-				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, epPort),
+				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, httpPort),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 
