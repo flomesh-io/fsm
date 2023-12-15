@@ -650,6 +650,13 @@ type ServiceLBSpec struct {
 	Image string `json:"image"`
 }
 
+type FLBUpstreamMode string
+
+const (
+	FLBUpstreamModeNodePort FLBUpstreamMode = "NodePort"
+	FLBUpstreamModeEndpoint FLBUpstreamMode = "Endpoint"
+)
+
 // FLBSpec is the type to represent flb.
 type FLBSpec struct {
 	// +kubebuilder:default=false
@@ -659,6 +666,11 @@ type FLBSpec struct {
 	// +kubebuilder:default=false
 	// StrictMode defines if flb is in strict mode.
 	StrictMode bool `json:"strictMode"`
+
+	// +kubebuilder:default=Endpoint
+	// +kubebuilder:validation:Enum=NodePort;Endpoint
+	// UpstreamMode defines the upstream mode of flb.
+	UpstreamMode FLBUpstreamMode `json:"upstreamMode"`
 
 	// +kubebuilder:default=fsm-flb-secret
 	// SecretName defines the secret name of flb.

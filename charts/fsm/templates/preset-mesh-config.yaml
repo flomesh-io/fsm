@@ -137,6 +137,7 @@ data:
       "flb": {
         "enabled": {{ .Values.fsm.flb.enabled }},
         "strictMode": {{ .Values.fsm.flb.strictMode }},
+        "upstreamMode": "{{ .Values.fsm.flb.upstreamMode }}",
         "secretName": "{{ .Values.fsm.flb.secretName }}"
       },
       "egressGateway": {

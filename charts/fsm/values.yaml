@@ -1027,6 +1027,7 @@ fsm:
   flb:
     enabled: false
     strictMode: false
+    upstreamMode: Endpoint
     secretName: fsm-flb-secret
     baseUrl: http://localhost:1337
     username: admin

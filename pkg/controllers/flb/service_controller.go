@@ -36,6 +36,10 @@ import (
 	"strings"
 	"time"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/ghodss/yaml"
 	"github.com/go-resty/resty/v2"
 	"github.com/sethvargo/go-retry"
@@ -509,12 +513,12 @@ func (r *reconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Ser
 
 	mc := r.fctx.Config
 
-	endpoints, err := r.getEndpoints(ctx, svc, mc)
+	endpoints, err := r.getUpstreams(ctx, svc, mc)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	log.Debug().Msgf("Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
+	log.Debug().Msgf("Upstreams of Service %s/%s: %s", svc.Namespace, svc.Name, endpoints)
 
 	params := r.getFLBParameters(svc)
 
@@ -554,11 +558,103 @@ func getServiceHash(svc *corev1.Service) string {
 	return svc.Annotations[constants.FLBServiceHashAnnotation]
 }
 
-func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ configurator.Configurator) (map[string][]string, error) {
+func (r *reconciler) getUpstreams(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) (map[string][]string, error) {
 	if svc.Spec.Type != corev1.ServiceTypeLoadBalancer {
 		return nil, nil
 	}
 
+	switch mc.GetFLBUpstreamMode() {
+	case configv1alpha3.FLBUpstreamModeNodePort:
+		return r.getNodePorts(ctx, svc, mc)
+	case configv1alpha3.FLBUpstreamModeEndpoint:
+		return r.getEndpoints(ctx, svc, mc)
+	default:
+		return nil, fmt.Errorf("invalid upstream mode %q", mc.GetFLBUpstreamMode())
+	}
+}
+
+func (r *reconciler) getNodePorts(ctx context.Context, svc *corev1.Service, _ configurator.Configurator) (map[string][]string, error) {
+	pods := &corev1.PodList{}
+	if err := r.fctx.List(
+		ctx,
+		pods,
+		client.InNamespace(svc.Namespace),
+		client.MatchingLabelsSelector{
+			Selector: labels.SelectorFromSet(svc.Spec.Selector),
+		},
+	); err != nil {
+		return nil, err
+	}
+
+	extIPs := sets.New[string]()
+	intIPs := sets.New[string]()
+
+	for _, pod := range pods.Items {
+		if pod.Spec.NodeName == "" || pod.Status.PodIP == "" {
+			continue
+		}
+
+		if !utils.IsPodStatusConditionTrue(pod.Status.Conditions, corev1.PodReady) {
+			continue
+		}
+
+		node := &corev1.Node{}
+		if err := r.fctx.Get(ctx, client.ObjectKey{Name: pod.Spec.NodeName}, node); err != nil {
+			if errors.IsNotFound(err) {
+				continue
+			}
+
+			return nil, err
+		}
+
+		for _, addr := range node.Status.Addresses {
+			switch addr.Type {
+			case corev1.NodeExternalIP:
+				extIPs.Insert(addr.Address)
+			case corev1.NodeInternalIP:
+				intIPs.Insert(addr.Address)
+			default:
+				continue
+			}
+		}
+	}
+
+	var nodeIPs []string
+	if len(extIPs) > 0 {
+		nodeIPs = extIPs.UnsortedList()
+	} else {
+		nodeIPs = intIPs.UnsortedList()
+	}
+
+	nodeIPs, err := utils.FilterByIPFamily(nodeIPs, svc)
+	if err != nil {
+		return nil, err
+	}
+
+	setting := r.settings[svc.Namespace]
+	result := make(map[string][]string)
+
+	for _, port := range svc.Spec.Ports {
+		if !isSupportedProtocol(port.Protocol) {
+			continue
+		}
+
+		svcKey := serviceKey(setting, svc, port)
+		result[svcKey] = make([]string, 0)
+
+		for _, nodeIP := range nodeIPs {
+			if port.NodePort <= 0 {
+				continue
+			}
+
+			result[svcKey] = append(result[svcKey], net.JoinHostPort(nodeIP, fmt.Sprintf("%d", port.NodePort)))
+		}
+	}
+
+	return result, nil
+}
+
+func (r *reconciler) getEndpoints(ctx context.Context, svc *corev1.Service, _ configurator.Configurator) (map[string][]string, error) {
 	ep := &corev1.Endpoints{}
 	if err := r.fctx.Get(ctx, client.ObjectKeyFromObject(svc), ep); err != nil {
 		return nil, err
