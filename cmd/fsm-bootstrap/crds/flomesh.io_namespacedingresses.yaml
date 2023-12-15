@@ -871,8 +871,8 @@ spec:
                     type: object
                 type: object
               env:
-                description: Env defines the list of environment variables to set
-                  in the ingress container. Cannot be updated.
+                description: List of environment variables to set in the ingress container.
+                  Cannot be updated.
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -988,24 +988,21 @@ spec:
                     port: 80
                     protocol: TCP
                     targetPort: 8000
-                description: HTTP defines the http configuration of this ingress controller.
+                description: The HTTP configuration of this ingress controller.
                 properties:
                   enabled:
                     default: true
                     description: Enabled, if HTTP is enabled for the Ingress Controller
                     type: boolean
                   port:
+                    default:
+                      name: http
+                      port: 80
+                      protocol: TCP
+                      targetPort: 8000
                     description: Port, The http port that are exposed by this ingress
                       service.
                     properties:
-                      appProtocol:
-                        description: The application protocol for this port. This
-                          field follows standard Kubernetes label syntax. Un-prefixed
-                          names are reserved for IANA standard service names (as per
-                          RFC-6335 and https://www.iana.org/assignments/service-names).
-                          Non-standard protocols should use prefixed names such as
-                          mycompany.com/my-custom-protocol.
-                        type: string
                       name:
                         description: The name of this port within the service. This
                           must be a DNS_LABEL. All ports within a ServiceSpec must
@@ -1014,8 +1011,8 @@ spec:
                           Optional if only one ServicePort is defined on this service.
                         type: string
                       nodePort:
-                        description: 'The port on each node on which this service
-                          is exposed when type is NodePort or LoadBalancer.  Usually
+                        description: The port on each node on which this service is
+                          exposed when type is NodePort or LoadBalancer.  Usually
                           assigned by the system. If a value is specified, in-range,
                           and not in use it will be used, otherwise the operation
                           will fail.  If not specified, a port will be allocated if
@@ -1023,7 +1020,6 @@ spec:
                           creating a Service which does not need it, creation will
                           fail. This field will be wiped when updating a Service to
                           no longer need it (e.g. changing type from NodePort to ClusterIP).
-                          More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport'
                         format: int32
                         type: integer
                       port:
@@ -1036,19 +1032,11 @@ spec:
                           "UDP", and "SCTP". Default is TCP.
                         type: string
                       targetPort:
-                        anyOf:
-                        - type: integer
-                        - type: string
-                        description: 'Number or name of the port to access on the
-                          pods targeted by the service. Number must be in the range
-                          1 to 65535. Name must be an IANA_SVC_NAME. If this is a
-                          string, it will be looked up as a named port in the target
-                          Pod''s container ports. If this is not specified, the value
-                          of the ''port'' field is used (an identity map). This field
-                          is ignored for services with clusterIP=None, and should
-                          be omitted or set equal to the ''port'' field. More info:
-                          https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service'
-                        x-kubernetes-int-or-string: true
+                        description: Number or name of the port to access on the pods
+                          targeted by the service. Number must be in the range 1 to
+                          65535.
+                        format: int32
+                        type: integer
                     required:
                     - port
                     type: object
@@ -1493,9 +1481,6 @@ spec:
                 default: LoadBalancer
                 description: ServiceType determines how the Ingress is exposed. For
                   an Ingress the most used types are NodePort, and LoadBalancer
-                enum:
-                - NodePort
-                - LoadBalancer
                 type: string
               tls:
                 default:
@@ -1516,21 +1501,17 @@ spec:
                     type: boolean
                   mTLS:
                     default: false
-                    description: MTLS defines the mTLS configuration of this ingress
-                      controller.
+                    description: MTLS, if mTLS is enabled for the Ingress Controller
                     type: boolean
                   port:
+                    default:
+                      name: https
+                      port: 443
+                      protocol: TCP
+                      targetPort: 8443
                     description: Port, The https port that are exposed by this ingress
                       service.
                     properties:
-                      appProtocol:
-                        description: The application protocol for this port. This
-                          field follows standard Kubernetes label syntax. Un-prefixed
-                          names are reserved for IANA standard service names (as per
-                          RFC-6335 and https://www.iana.org/assignments/service-names).
-                          Non-standard protocols should use prefixed names such as
-                          mycompany.com/my-custom-protocol.
-                        type: string
                       name:
                         description: The name of this port within the service. This
                           must be a DNS_LABEL. All ports within a ServiceSpec must
@@ -1539,8 +1520,8 @@ spec:
                           Optional if only one ServicePort is defined on this service.
                         type: string
                       nodePort:
-                        description: 'The port on each node on which this service
-                          is exposed when type is NodePort or LoadBalancer.  Usually
+                        description: The port on each node on which this service is
+                          exposed when type is NodePort or LoadBalancer.  Usually
                           assigned by the system. If a value is specified, in-range,
                           and not in use it will be used, otherwise the operation
                           will fail.  If not specified, a port will be allocated if
@@ -1548,7 +1529,6 @@ spec:
                           creating a Service which does not need it, creation will
                           fail. This field will be wiped when updating a Service to
                           no longer need it (e.g. changing type from NodePort to ClusterIP).
-                          More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport'
                         format: int32
                         type: integer
                       port:
@@ -1561,19 +1541,11 @@ spec:
                           "UDP", and "SCTP". Default is TCP.
                         type: string
                       targetPort:
-                        anyOf:
-                        - type: integer
-                        - type: string
-                        description: 'Number or name of the port to access on the
-                          pods targeted by the service. Number must be in the range
-                          1 to 65535. Name must be an IANA_SVC_NAME. If this is a
-                          string, it will be looked up as a named port in the target
-                          Pod''s container ports. If this is not specified, the value
-                          of the ''port'' field is used (an identity map). This field
-                          is ignored for services with clusterIP=None, and should
-                          be omitted or set equal to the ''port'' field. More info:
-                          https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service'
-                        x-kubernetes-int-or-string: true
+                        description: Number or name of the port to access on the pods
+                          targeted by the service. Number must be in the range 1 to
+                          65535.
+                        format: int32
+                        type: integer
                     required:
                     - port
                     type: object
@@ -1581,8 +1553,7 @@ spec:
                     default:
                       enabled: false
                       upstreamPort: 443
-                    description: SSLPassthrough defines the SSLPassthrough configuration
-                      of this ingress controller.
+                    description: SSLPassthrough configuration
                     properties:
                       enabled:
                         default: false

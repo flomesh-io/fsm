@@ -52,15 +52,10 @@ func UpdateIngressHTTPConfig(basepath string, repoClient *repo.PipyRepoClient, m
 func updateHTTPConfig(json string, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) (string, error) {
 	var err error
 
-	if nsig != nil && nsig.Spec.HTTP != nil {
-		enabled := false
-		if nsig.Spec.HTTP.Enabled != nil {
-			enabled = *nsig.Spec.HTTP.Enabled
-		}
-
+	if nsig != nil {
 		for path, value := range map[string]interface{}{
-			"http.enabled": enabled,
-			"http.listen":  nsig.Spec.HTTP.Port.Port,
+			"http.enabled": nsig.Spec.HTTP.Enabled,
+			"http.listen":  nsig.Spec.HTTP.Port.TargetPort,
 		} {
 			json, err = sjson.Set(json, path, value)
 			if err != nil {

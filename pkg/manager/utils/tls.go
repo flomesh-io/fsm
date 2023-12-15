@@ -56,21 +56,11 @@ func UpdateIngressTLSConfig(basepath string, repoClient *repo.PipyRepoClient, mc
 func updateTLS(mc configurator.Configurator, json string, nsig *v1alpha1.NamespacedIngress) (string, error) {
 	var err error
 
-	if nsig != nil && nsig.Spec.TLS != nil {
-		enabled := false
-		if nsig.Spec.TLS.Enabled != nil {
-			enabled = *nsig.Spec.TLS.Enabled
-		}
-
-		mTLS := false
-		if nsig.Spec.TLS.MTLS != nil {
-			mTLS = *nsig.Spec.TLS.MTLS
-		}
-
+	if nsig != nil {
 		for path, value := range map[string]interface{}{
-			"tls.enabled": enabled,
-			"tls.listen":  nsig.Spec.TLS.Port.Port,
-			"tls.mTLS":    mTLS,
+			"tls.enabled": nsig.Spec.TLS.Enabled,
+			"tls.listen":  nsig.Spec.TLS.Port.TargetPort,
+			"tls.mTLS":    nsig.Spec.TLS.MTLS,
 		} {
 			json, err = sjson.Set(json, path, value)
 			if err != nil {
@@ -142,21 +132,11 @@ func getCertPrefix(mc configurator.Configurator, nsig *v1alpha1.NamespacedIngres
 }
 
 func updateTLSAndCert(json string, mc configurator.Configurator, cert *certificate.Certificate, nsig *v1alpha1.NamespacedIngress) (string, error) {
-	if nsig != nil && nsig.Spec.TLS != nil {
-		enabled := false
-		if nsig.Spec.TLS.Enabled != nil {
-			enabled = *nsig.Spec.TLS.Enabled
-		}
-
-		mTLS := false
-		if nsig.Spec.TLS.MTLS != nil {
-			mTLS = *nsig.Spec.TLS.MTLS
-		}
-
+	if nsig != nil {
 		return sjson.Set(json, "tls", map[string]interface{}{
-			"enabled": enabled,
-			"listen":  nsig.Spec.TLS.Port.Port,
-			"mTLS":    mTLS,
+			"enabled": nsig.Spec.TLS.Enabled,
+			"listen":  nsig.Spec.TLS.Port.TargetPort,
+			"mTLS":    nsig.Spec.TLS.MTLS,
 			"certificate": map[string]interface{}{
 				"cert": string(cert.GetCertificateChain()),
 				"key":  string(cert.GetPrivateKey()),
