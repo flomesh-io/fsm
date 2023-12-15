@@ -27,25 +27,54 @@ package utils
 import (
 	"github.com/tidwall/sjson"
 
+	"github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/repo"
 )
 
 // UpdateIngressHTTPConfig updates HTTP config of ingress controller
-func UpdateIngressHTTPConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator) error {
+func UpdateIngressHTTPConfig(basepath string, repoClient *repo.PipyRepoClient, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) error {
 	json, err := getMainJSON(basepath, repoClient)
 	if err != nil {
 		return err
 	}
 
-	newJSON, err := sjson.Set(json, "http", map[string]interface{}{
-		"enabled": mc.IsIngressHTTPEnabled(),
-		"listen":  mc.GetIngressHTTPListenPort(),
-	})
+	newJSON, err := updateHTTPConfig(json, mc, nsig)
 	if err != nil {
 		log.Error().Msgf("Failed to update HTTP config: %s", err)
 		return err
 	}
 
 	return updateMainJSON(basepath, repoClient, newJSON)
+}
+
+func updateHTTPConfig(json string, mc configurator.Configurator, nsig *v1alpha1.NamespacedIngress) (string, error) {
+	var err error
+
+	if nsig != nil {
+		for path, value := range map[string]interface{}{
+			"http.enabled": nsig.Spec.HTTP.Enabled,
+			"http.listen":  nsig.Spec.HTTP.Port.TargetPort,
+		} {
+			json, err = sjson.Set(json, path, value)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		return json, nil
+	}
+
+	for path, value := range map[string]interface{}{
+		"http.enabled": mc.IsIngressHTTPEnabled(),
+		"http.listen":  mc.GetIngressHTTPListenPort(),
+	} {
+		json, err = sjson.Set(json, path, value)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return json, nil
 }

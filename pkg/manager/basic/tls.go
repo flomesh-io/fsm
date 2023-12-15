@@ -50,7 +50,7 @@ func SetupTLS(ctx *fctx.ControllerContext) error {
 			}
 		} else {
 			// TLS Offload
-			if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.CertificateManager, mc); err != nil {
+			if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.CertificateManager, mc, nil); err != nil {
 				return err
 			}
 		}
