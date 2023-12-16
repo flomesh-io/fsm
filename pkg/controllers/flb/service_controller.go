@@ -1015,16 +1015,17 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(
 			&corev1.Service{},
 			builder.WithPredicates(predicate.NewPredicateFuncs(r.isInterestedService)),
-		).Watches(
-		&source.Kind{Type: &corev1.Namespace{}},
-		handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
-		builder.WithPredicates(
-			predicate.Or(
-				predicate.GenerationChangedPredicate{},
-				predicate.AnnotationChangedPredicate{},
+		).
+		Watches(
+			&source.Kind{Type: &corev1.Namespace{}},
+			handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
+			builder.WithPredicates(
+				predicate.Or(
+					predicate.GenerationChangedPredicate{},
+					predicate.AnnotationChangedPredicate{},
+				),
 			),
-		),
-	)
+		)
 
 	switch r.fctx.Config.GetFLBUpstreamMode() {
 	case configv1alpha3.FLBUpstreamModeNodePort:
