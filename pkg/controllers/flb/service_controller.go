@@ -438,7 +438,7 @@ func (r *reconciler) computeServiceAnnotations(svc *corev1.Service) map[string]s
 		constants.FLBAlgoAnnotation:        getValidAlgo(setting.flbDefaultAlgo),
 	} {
 		v, ok := svcCopy.Annotations[key]
-		if !ok || v == "" {
+		if !ok || v != value {
 			svcCopy.Annotations[key] = value
 		}
 	}
