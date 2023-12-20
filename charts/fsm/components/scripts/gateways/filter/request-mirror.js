@@ -20,7 +20,7 @@
       services = (cfg?.Filters || []).filter(
         e => e?.Type === 'RequestMirror'
       ).map(
-        e => serviceCache.get(e.BackendService)
+        e => serviceCache.get(e.RequestMirror?.BackendService)
       ).filter(
         e => e
       )
