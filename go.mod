@@ -65,7 +65,7 @@ require (
 	github.com/hashicorp/vault/sdk v0.6.1-0.20221010215534-6545e24b6023
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.15.0
 	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
