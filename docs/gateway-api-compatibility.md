@@ -4,18 +4,17 @@ This document describes which Gateway API resources FSM supports and the extent 
 
 ## Summary
 
-| Resource                            | Support Status      |
-|-------------------------------------|---------------------|
-| [GatewayClass](#gatewayclass)       | Partially supported |
-| [Gateway](#gateway)                 | Partially supported |
-| [HTTPRoute](#httproute)             | Partially supported |
-| [TLSRoute](#tlsroute)               | Partially supported |
-| [GRPCRoute](#grpcroute)             | Partially supported |
-| [TCPRoute](#tcproute)               | Partially supported |
-| [UDPRoute](#udproute)               | Not supported       |
-| [ReferencePolicy](#referencepolicy) | Not supported       |
-| [ReferenceGrant](#referencegrant)   | Not supported       |
-| [Custom policies](#custom-policies) | Not supported       |
+| Resource                            | Support Status       |
+|-------------------------------------|----------------------|
+| [GatewayClass](#gatewayclass)       | Partially supported  |
+| [Gateway](#gateway)                 | Partially supported  |
+| [HTTPRoute](#httproute)             | Partially supported  |
+| [TLSRoute](#tlsroute)               | Partially supported  |
+| [GRPCRoute](#grpcroute)             | Partially supported  |
+| [TCPRoute](#tcproute)               | Partially supported  |
+| [UDPRoute](#udproute)               | Partially supported  |
+| [ReferenceGrant](#referencegrant)   | Not supported        |
+| [Custom policies](#custom-policies) | Partially supported  |
 
 ## Terminology
 
@@ -50,8 +49,9 @@ Fields:
 > Status: Partially supported.
 
 FSM supports only a single Gateway resource per namespace. 
-The Gateway resource must reference FSM's corresponding effective GatewayClass. 
-In case of multiple Gateway resources created in the same namespace, FSM will choose the oldest ONE by creation timestamp. If the timestamps are equal, FSM will choose the resource that appears first in alphabetical order by “{name}”. We might support multiple Gateway resources. 
+The Gateway resource must reference FSM's corresponding effective GatewayClass, whose controller name is `flomesh.io/gateway-controller`. 
+In case of multiple Gateway resources created in the same namespace, FSM will choose the oldest ONE by creation timestamp. If the timestamps are equal, FSM will choose the resource that appears first in alphabetical order by “{name}”. We might support multiple Gateway resources.
+Due to the limitation of Kubernetes Service of type LoadBalancer, the UDP gateway cannot coexist with gateways of other protocols. If you want to use UDP gateway, you need to create a new one.
 
 Fields:
 - `spec`
@@ -60,10 +60,10 @@ Fields:
 		* `name` - supported.
 		* `hostname` - supported.
 		* `port` - supported, must be LTE 60000, all priviliged ports will be mapped to 60000 + port.
-		* `protocol` - partially supported. Allowed values: `HTTP`, `HTTPS`, `TLS`, `TCP`.
+		* `protocol` - supported. Allowed values: `HTTP`, `HTTPS`, `TLS`, `TCP`, `UDP`.
 		* `tls`
-		  * `mode` - partially supported. Allowed value: `Terminate`.
-		  * `certificateRefs` - partially supported. The TLS certificate and key must be stored in a Secret resource of type `kubernetes.io/tls`. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is not supported.
+		  * `mode` - supported. Allowed value: `Terminate`, `Passthrough`.
+		  * `certificateRefs` - partially supported. The TLS certificate and key must be stored in a Secret. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is **supported**.
 		  * `options` - not supported.
 		* `allowedRoutes` - not supported. 
 	* `addresses` - not supported.
@@ -71,10 +71,10 @@ Fields:
   * `addresses` - supported.
   * `conditions` - supported, `Accepted` type for active Gateway.
   * `listeners`
-	* `name` - supported.
-	* `supportedKinds` - not supported.
-	* `attachedRoutes` - supported.
-	* `conditions` - partially supported.
+	  * `name` - supported.
+    * `supportedKinds` - supported.
+	  * `attachedRoutes` - not supported.
+	  * `conditions` - partially supported.
 
 ### HTTPRoute
 
@@ -101,6 +101,7 @@ Fields:
 	* `conditions` - partially supported. Supported (Condition/Status/Reason):
     	*  `Accepted/True/Accepted`
     	*  `Accepted/False/NoMatchingListenerHostname`
+    	*  `ResolvedRefs/True/ResolvedRefs`
 
 
 ### TLSRoute
@@ -112,7 +113,14 @@ Fields:
   * `parentRefs` - partially supported. `port` must always be set.
   * `hostnames` - supported.
   * `backendRefs` - supported.
-
+* `status`
+  * `parents`
+    * `parentRef` - supported.
+    * `controllerName` - supported.
+    * `conditions` - partially supported. Supported (Condition/Status/Reason):
+      *  `Accepted/True/Accepted`
+      *  `Accepted/False/NoMatchingListenerHostname`
+      *  `ResolvedRefs/True/ResolvedRefs`
 
 ### GRPCRoute
 
@@ -135,7 +143,15 @@ Fields:
     * `type` - supported.
     * `requestHeaderModifier`, `responseHeaderModifier`, `requestMirror` supported
     * `extensionRef` - not supported.
-
+* `status`
+  * `parents`
+    * `parentRef` - supported.
+    * `controllerName` - supported.
+    * `conditions` - partially supported. Supported (Condition/Status/Reason):
+      *  `Accepted/True/Accepted`
+      *  `Accepted/False/NoMatchingListenerHostname`
+      *  `ResolvedRefs/True/ResolvedRefs`
+      
 ### TCPRoute
 
 > Status: Partially supported.
@@ -144,14 +160,29 @@ Fields:
 * `spec`
   * `parentRefs` - partially supported. `port` must always be set.
   * `backendRefs` - supported.
-
+* `status`
+  * `parents`
+    * `parentRef` - supported.
+    * `controllerName` - supported.
+    * `conditions` - partially supported. Supported (Condition/Status/Reason):
+      *  `Accepted/True/Accepted`
+      *  `ResolvedRefs/True/ResolvedRefs`
+      
 ### UDPRoute
 
-> Status: Not supported.
+> Status: Partially supported.
 
-### ReferencePolicy
-
-> Status: Not supported(Officially Deprecated).
+Fields:
+* `spec`
+  * `parentRefs` - partially supported. `port` must always be set.
+  * `backendRefs` - supported.
+* `status`
+  * `parents`
+    * `parentRef` - supported.
+    * `controllerName` - supported.
+    * `conditions` - partially supported. Supported (Condition/Status/Reason):
+      *  `Accepted/True/Accepted`
+      *  `ResolvedRefs/True/ResolvedRefs`
  
 ### ReferenceGrant
 
@@ -159,11 +190,25 @@ Fields:
 
 ### Custom Policies
 
-> Status: Not supported.
+> Status: Partially supported.
 
 Custom policies will be FSM-specific CRDs that will allow supporting features like timeouts, load-balancing methods, authentication, etc. - important data-plane features that are not part of the Gateway API spec.
 
 While those CRDs are not part of the Gateway API, the mechanism of attaching them to Gateway API resources is part of the Gateway API. See the [Policy Attachment doc](https://gateway-api.sigs.k8s.io/references/policy-attachment/).
+
+| Policy                | Attached to Kind              | Attached Aspect                                                               | Status                                                                                          |
+|-----------------------|-------------------------------|-------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| RateLimitPolicy       | Gateway, HTTPRoute, GRPCRoute | Gateway: port<br/> HTTPRoute: hostname, route<br/> GRPCRoute: hostname, route | Done.                                                                                           |
+| AccessControlPolicy   | Gateway, HTTPRoute, GRPCRoute | Gateway: port<br/> HTTPRoute: hostname, route<br/> GRPCRoute: hostname, route | Done.                                                                                           |
+| FaultInjectionPolicy  | HTTPRoute, GRPCRoute          | HTTPRoute: hostname, route<br/> GRPCRoute: hostname, route                    | Done.                                                                                           |
+| GatewayTLSPolicy      | Gateway                       | port                                                                          | Done.                                                                                           |
+| CircuitBreakingPolicy | Service, ServiceImport        | port                                                                          | Done.                                                                                           |
+| HealthCheckPolicy     | Service, ServiceImport        | port                                                                          | Done.                                                                                           |
+| LoadBalancerPolicy    | Service, ServiceImport        | port                                                                          | Done.                                                                                           |
+| SessionStickyPolicy   | Service, ServiceImport        | port                                                                          | Done.                                                                                           |
+| RetryPolicy           | Service, ServiceImport        | port                                                                          | Done.                                                                                           |
+| UpstreamTLSPolicy     | Service, ServiceImport        | port                                                                          | Partially done, only support service port level TLS config, expect to control at endpoint level |
+
 
 ## Listener Protocol and Supported Route Types
 
@@ -174,3 +219,4 @@ While those CRDs are not part of the Gateway API, the mechanism of attaching the
 | TLS               | Passthrough | TLSRoute             |
 | TLS               | Terminate   | TCPRoute             |
 | TCP               |             | TCPRoute             |
+| UDP               |             | UDPRoute             |
