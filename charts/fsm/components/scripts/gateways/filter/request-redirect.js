@@ -29,34 +29,58 @@
     ).join('/')
   ),
 
-  makeRedirectHandler = cfg => (
+  makePathHandle = (path, cfg) => (
+    (cfg?.Path?.Type === 'ReplacePrefixMatch') ? (
+      (cfg?.Path?.ReplacePrefixMatch !== undefined) && (
+        head => (
+          head?.path?.length > path.length ? (
+            head.path = resolvPath(cfg.Path.ReplacePrefixMatch) + head.path.substring(path.length)
+          ) : (
+            head.path = resolvPath(cfg.Path.ReplacePrefixMatch)
+          )
+        )
+      )
+    ) : (cfg?.Path?.Type === 'ReplaceFullPath') && (
+      (cfg?.Path?.ReplaceFullPath !== undefined) && (
+        head => (
+          (
+            prefix = (head?.path || '').split('?')[0],
+            suffix = (head?.path || '').substring(prefix.length),
+          ) => (
+            head.path = resolvPath(cfg.Path.ReplaceFullPath) + suffix
+          )
+        )()
+      )
+    )
+  ),
+
+  makeRedirectHandler = (path, cfg) => (
     head => cfg?.StatusCode ? (
       (
         scheme = cfg?.Scheme || head?.scheme || 'http',
         hostname = cfg?.Hostname || head?.headers?.host,
-        path = resolvPath(cfg?.Path) || head?.path,
+        pathHandle = makePathHandle(path, cfg),
         port = cfg?.Port,
       ) => (
+        pathHandle(head),
         port && hostname && (
           hostname = hostname.split(':')[0] + ':' + port
         ),
-        hostname && path ? (
-          new Message({
-            status: cfg.StatusCode,
-            headers: {
-              Location: scheme + '://' + hostname + path
-            }
-          })
-        ) : null
+        new Message({
+          status: cfg.StatusCode,
+          headers: {
+            Location: scheme + '://' + hostname + head.path
+          }
+        })
       )
     )() : null
   ),
 
-  makeServiceRedirectHandler = svc => (
-    (svc?.Filters || []).filter(
+  makeServiceRedirectHandler = (path, cfg) => (
+    (cfg?.Filters || []).filter(
       e => e?.Type === 'RequestRedirect'
     ).map(
-      e => makeRedirectHandler(e.RequestRedirect)
+      e => makeRedirectHandler(path, e.RequestRedirect)
     ).filter(
       e => e
     )?.[0]
@@ -66,11 +90,12 @@
     route => (
       (
         config = route?.config,
+        path = config?.Path?.Path || '/',
         backendService = config?.BackendService,
       ) => (
         new algo.Cache(
           service => (
-            makeServiceRedirectHandler(backendService?.[service]) || makeServiceRedirectHandler(config)
+            makeServiceRedirectHandler(path, backendService?.[service]) || makeServiceRedirectHandler(path, config)
           )
         )
       )
