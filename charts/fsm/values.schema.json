@@ -1006,122 +1006,129 @@
                     ]
                 },
                 "fluentBit": {
-                    "$id": "#/properties/fsm/properties/fluentBit",
-                    "type": "object",
-                    "title": "The Fluent Bit schema",
-                    "description": "The default details of the Fluent Bit sidecar if enabled.",
-                    "examples": [
-                        {
-                            "name": "fluentbit-logger",
-                            "registry": "fluent",
-                            "tag": "1.6.4",
-                            "pullPolicy": "IfNotPresent",
-                            "outputPlugin": "stdout",
-                            "enableProxySupport": "false",
-                            "httpProxy": "",
-                            "httpsProxy": ""
-                        }
-                    ],
-                    "required": [
+                  "$id": "#/properties/fsm/properties/fluentBit",
+                  "type": "object",
+                  "title": "The Fluent Bit schema",
+                  "description": "The default details of the Fluent Bit sidecar if enabled.",
+                  "examples": [
+                    {
+                      "name": "fluentbit-logger",
+                      "pullPolicy": "IfNotPresent",
+                      "outputPlugin": "stdout",
+                      "enableProxySupport": "false",
+                      "httpProxy": "",
+                      "httpsProxy": ""
+                    }
+                  ],
+                  "required": [
+                    "name",
+                    "image",
+                    "pullPolicy",
+                    "outputPlugin",
+                    "workspaceId",
+                    "primaryKey",
+                    "enableProxySupport",
+                    "httpProxy",
+                    "httpsProxy"
+                  ],
+                  "properties": {
+                    "name": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/name",
+                      "type": "string",
+                      "title": "The name schema",
+                      "description": "The name of the Fluent Bit container",
+                      "examples": [
+                        "fluentbit-logger"
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/image",
+                      "type": "object",
+                      "title": "FluentBit's image schema",
+                      "description": "Image used for FluentBit",
+                      "required": [
                         "name",
-                        "registry",
-                        "tag",
-                        "pullPolicy",
-                        "outputPlugin",
-                        "workspaceId",
-                        "primaryKey",
-                        "enableProxySupport",
-                        "httpProxy",
-                        "httpsProxy"
-                    ],
-                    "properties": {
+                        "tag"
+                      ],
+                      "properties": {
                         "name": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/name",
-                            "type": "string",
-                            "title": "The name schema",
-                            "description": "The name of the Fluent Bit container",
-                            "examples": [
-                                "fluentbit-logger"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
                         },
                         "registry": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/registry",
-                            "type": "string",
-                            "title": "The registry schema",
-                            "description": "The registry of the image to run.",
-                            "examples": [
-                                "fluent"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
                         },
                         "tag": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/tag",
-                            "type": "string",
-                            "title": "The tag schema",
-                            "description": "The image tag to run.",
-                            "examples": [
-                                "1.6.4"
-                            ]
-                        },
-                        "pullPolicy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/pullPolicy",
-                            "type": "string",
-                            "title": "The pullPolicy schema",
-                            "description": "The image pull policy.",
-                            "pattern": "^(Always|Never|IfNotPresent)$",
-                            "examples": [
-                                "IfNotPresent"
-                            ]
-                        },
-                        "outputPlugin": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/outputPlugin",
-                            "type": "string",
-                            "title": "The output plugin for Fluent Bit",
-                            "description": "The log forwarding destination plugin for Fluent Bit",
-                            "examples": [
-                                "stdout"
-                            ]
-                        },
-                        "workspaceId": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/workspaceId",
-                            "type": "string",
-                            "title": "The Fluent Bit workspaceId schema",
-                            "description": "The workspace ID for Fluent Bit output plugin to Log Analytics"
-                        },
-                        "primaryKey": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/primaryKey",
-                            "type": "string",
-                            "title": "The Fluent Bit primaryKey schema",
-                            "description": "The primary key for Fluent Bit output plugin to Log Analytics"
-                        },
-                        "enableProxySupport": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/enableProxySupport",
-                            "type": "boolean",
-                            "title": "The enableProxySupport output schema",
-                            "description": "Indicates whether outbound proxy support should be configured for Fluent Bit",
-                            "examples": [
-                                false
-                            ]
-                        },
-                        "httpProxy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/httpProxy",
-                            "type": "string",
-                            "title": "The httpProxy schema",
-                            "description": "http proxy endpoint",
-                            "examples": [
-                                "http://<host>:<port>"
-                            ]
-                        },
-                        "httpsProxy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/httpsProxy",
-                            "type": "string",
-                            "title": "The httpsProxy schema",
-                            "description": "https proxy endpoint",
-                            "examples": [
-                                "http://<host>:<port>"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
                         }
+                      },
+                      "additionalProperties": false
                     },
-                    "additionalProperties": false
+                    "pullPolicy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/pullPolicy",
+                      "type": "string",
+                      "title": "The pullPolicy schema",
+                      "description": "The image pull policy.",
+                      "pattern": "^(Always|Never|IfNotPresent)$",
+                      "examples": [
+                        "IfNotPresent"
+                      ]
+                    },
+                    "outputPlugin": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/outputPlugin",
+                      "type": "string",
+                      "title": "The output plugin for Fluent Bit",
+                      "description": "The log forwarding destination plugin for Fluent Bit",
+                      "examples": [
+                        "stdout"
+                      ]
+                    },
+                    "workspaceId": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/workspaceId",
+                      "type": "string",
+                      "title": "The Fluent Bit workspaceId schema",
+                      "description": "The workspace ID for Fluent Bit output plugin to Log Analytics"
+                    },
+                    "primaryKey": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/primaryKey",
+                      "type": "string",
+                      "title": "The Fluent Bit primaryKey schema",
+                      "description": "The primary key for Fluent Bit output plugin to Log Analytics"
+                    },
+                    "enableProxySupport": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/enableProxySupport",
+                      "type": "boolean",
+                      "title": "The enableProxySupport output schema",
+                      "description": "Indicates whether outbound proxy support should be configured for Fluent Bit",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "httpProxy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/httpProxy",
+                      "type": "string",
+                      "title": "The httpProxy schema",
+                      "description": "http proxy endpoint",
+                      "examples": [
+                        "http://<host>:<port>"
+                      ]
+                    },
+                    "httpsProxy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/httpsProxy",
+                      "type": "string",
+                      "title": "The httpsProxy schema",
+                      "description": "https proxy endpoint",
+                      "examples": [
+                        "http://<host>:<port>"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "meshName": {
                     "$id": "#/properties/fsm/properties/meshName",

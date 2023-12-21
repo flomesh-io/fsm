@@ -456,10 +456,14 @@ fsm:
   fluentBit:
     # -- Fluent Bit sidecar container name
     name: fluentbit-logger
-    # -- Registry for Fluent Bit sidecar container
-    registry: fluent
-    # -- Fluent Bit sidecar image tag
-    tag: 1.6.4
+    # -- Image used for FluentBit
+    image:
+      # -- Registry for FluentBit image
+      registry: fluent
+      # -- FluentBit image name
+      name: fluent-bit
+      # -- FluentBit image tag
+      tag: 1.6.4
     # -- PullPolicy for Fluent Bit sidecar container
     pullPolicy: IfNotPresent
     # -- Fluent Bit output plugin

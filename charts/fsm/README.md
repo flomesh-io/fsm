@@ -227,12 +227,14 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fluentBit.enableProxySupport | bool | `false` | Enable proxy support toggle for Fluent Bit |
 | fsm.fluentBit.httpProxy | string | `""` | Optional HTTP proxy endpoint for Fluent Bit |
 | fsm.fluentBit.httpsProxy | string | `""` | Optional HTTPS proxy endpoint for Fluent Bit |
+| fsm.fluentBit.image | object | `{"name":"fluent-bit","registry":"fluent","tag":"1.6.4"}` | Image used for FluentBit |
+| fsm.fluentBit.image.name | string | `"fluent-bit"` | FluentBit image name |
+| fsm.fluentBit.image.registry | string | `"fluent"` | Registry for FluentBit image |
+| fsm.fluentBit.image.tag | string | `"1.6.4"` | FluentBit image tag |
 | fsm.fluentBit.name | string | `"fluentbit-logger"` | Fluent Bit sidecar container name |
 | fsm.fluentBit.outputPlugin | string | `"stdout"` | Fluent Bit output plugin |
 | fsm.fluentBit.primaryKey | string | `""` | Primary Key for Fluent Bit output plugin to Log Analytics |
 | fsm.fluentBit.pullPolicy | string | `"IfNotPresent"` | PullPolicy for Fluent Bit sidecar container |
-| fsm.fluentBit.registry | string | `"fluent"` | Registry for Fluent Bit sidecar container |
-| fsm.fluentBit.tag | string | `"1.6.4"` | Fluent Bit sidecar image tag |
 | fsm.fluentBit.workspaceId | string | `""` | WorkspaceId for Fluent Bit output plugin to Log Analytics |
 | fsm.fsmBootstrap.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.fsmBootstrap.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |

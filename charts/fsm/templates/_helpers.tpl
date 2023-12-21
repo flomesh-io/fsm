@@ -202,6 +202,15 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fluentBit image */}}
+{{- define "fluentBit.image" -}}
+{{- if .Values.fsm.fluentBit.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.fluentBit.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

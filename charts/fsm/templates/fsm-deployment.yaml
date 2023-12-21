@@ -157,7 +157,7 @@ spec:
               name: shared-repo
       {{- if .Values.fsm.enableFluentbit }}
         - name: {{ .Values.fsm.fluentBit.name }}
-          image: {{ .Values.fsm.fluentBit.registry }}/fluent-bit:{{ .Values.fsm.fluentBit.tag }}
+          image: "{{ include "fluentBit.image" . }}"
           imagePullPolicy: {{ .Values.fsm.fluentBit.pullPolicy }}
           env:
           {{- if .Values.fsm.fluentBit.enableProxySupport }}
