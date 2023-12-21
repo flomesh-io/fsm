@@ -284,7 +284,13 @@ fsm:
       # -- Prometheus data retention time
       time: 15d
     # -- Image used for Prometheus
-    image: prom/prometheus:v2.34.0
+    image:
+      # -- Registry for Prometheus image
+      registry: prom
+      # -- Prometheus image name
+      name: prometheus
+      # -- Prometheus image tag
+      tag: v2.34.0
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
     nodeSelector: { }
@@ -365,9 +371,21 @@ fsm:
     # -- Enable Remote Rendering in Grafana
     enableRemoteRendering: false
     # -- Image used for Grafana
-    image: grafana/grafana:8.2.2
+    image:
+      # -- Registry for Grafana image
+      registry: grafana
+      # -- Grafana image name
+      name: grafana
+      # -- Grafana image tag
+      tag: 8.2.2
     # -- Image used for Grafana Renderer
-    rendererImage: grafana/grafana-image-renderer:3.2.1
+    rendererImage:
+      # -- Registry for Grafana Renderer image
+      registry: grafana
+      # -- Grafana Renderer image name
+      name: grafana-image-renderer
+      # -- Grafana Renderer image tag
+      tag: 3.2.1
 
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/

@@ -175,6 +175,33 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* prometheus image */}}
+{{- define "prometheus.image" -}}
+{{- if .Values.fsm.prometheus.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.prometheus.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* grafana image */}}
+{{- define "grafana.image" -}}
+{{- if .Values.fsm.grafana.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* grafana renderer image */}}
+{{- define "grafana.renderer.image" -}}
+{{- if .Values.fsm.grafana.rendererImage.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.rendererImage.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

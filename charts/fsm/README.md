@@ -362,10 +362,16 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[3] | string | `"ppc64le"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[4] | string | `"s390x"` |  |
 | fsm.grafana.enableRemoteRendering | bool | `false` | Enable Remote Rendering in Grafana |
-| fsm.grafana.image | string | `"grafana/grafana:8.2.2"` | Image used for Grafana |
+| fsm.grafana.image | object | `{"name":"grafana","registry":"grafana","tag":"8.2.2"}` | Image used for Grafana |
+| fsm.grafana.image.name | string | `"grafana"` | Grafana image name |
+| fsm.grafana.image.registry | string | `"grafana"` | Registry for Grafana image |
+| fsm.grafana.image.tag | string | `"8.2.2"` | Grafana image tag |
 | fsm.grafana.nodeSelector | object | `{}` |  |
 | fsm.grafana.port | int | `3000` | Grafana service's port |
-| fsm.grafana.rendererImage | string | `"grafana/grafana-image-renderer:3.2.1"` | Image used for Grafana Renderer |
+| fsm.grafana.rendererImage | object | `{"name":"grafana-image-renderer","registry":"grafana","tag":"3.2.1"}` | Image used for Grafana Renderer |
+| fsm.grafana.rendererImage.name | string | `"grafana-image-renderer"` | Grafana Renderer image name |
+| fsm.grafana.rendererImage.registry | string | `"grafana"` | Registry for Grafana Renderer image |
+| fsm.grafana.rendererImage.tag | string | `"3.2.1"` | Grafana Renderer image tag |
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.http1PerRequestLoadBalancing | bool | `false` | Specifies a boolean indicating if load balancing based on request is enabled for http1. |
 | fsm.http2PerRequestLoadBalancing | bool | `true` | Specifies a boolean indicating if load balancing based on request is enabled for http2. |
@@ -502,7 +508,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.prometheus.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[2] | string | `"arm"` |  |
 | fsm.prometheus.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[3] | string | `"ppc64le"` |  |
 | fsm.prometheus.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[4] | string | `"s390x"` |  |
-| fsm.prometheus.image | string | `"prom/prometheus:v2.34.0"` | Image used for Prometheus |
+| fsm.prometheus.image | object | `{"name":"prometheus","registry":"prom","tag":"v2.34.0"}` | Image used for Prometheus |
+| fsm.prometheus.image.name | string | `"prometheus"` | Prometheus image name |
+| fsm.prometheus.image.registry | string | `"prom"` | Registry for Prometheus image |
+| fsm.prometheus.image.tag | string | `"v2.34.0"` | Prometheus image tag |
 | fsm.prometheus.nodeSelector | object | `{}` |  |
 | fsm.prometheus.port | int | `7070` | Prometheus service's port |
 | fsm.prometheus.resources | object | `{"limits":{"cpu":"1","memory":"2G"},"requests":{"cpu":"0.5","memory":"512M"}}` | Prometheus's container resource parameters |

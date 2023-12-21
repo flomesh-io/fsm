@@ -773,7 +773,7 @@
                     "additionalProperties": false,
                     "properties": {
                       "image": {
-                        "$id": "#/properties/fsm/properties/repoServer/image",
+                        "$id": "#/properties/fsm/properties/repoServer/properties/image",
                         "type": "object",
                         "title": "Pipy repo server's image schema",
                         "description": "Image used for pipy repo server",
@@ -783,17 +783,17 @@
                         ],
                         "properties": {
                           "name": {
-                            "$id": "#/properties/fsm/properties/repoServer/image/properties/name",
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/name",
                             "type": "string",
                             "title": "The name schema"
                           },
                           "registry": {
-                            "$id": "#/properties/fsm/properties/repoServer/image/properties/registry",
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/registry",
                             "type": "string",
                             "title": "The registry schema"
                           },
                           "tag": {
-                            "$id": "#/properties/fsm/properties/repoServer/image/properties/tag",
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/tag",
                             "type": "string",
                             "title": "The tag schema"
                           }
@@ -801,7 +801,7 @@
                         "additionalProperties": false
                       },
                       "standalone": {
-                        "$id": "#/properties/fsm/properties/repoServer/standalone",
+                        "$id": "#/properties/fsm/properties/repoServer/properties/standalone",
                         "type": "boolean",
                         "title": "Install Mode of RepoServer",
                         "description": "if false , RepoServer is installed within fsmController pod.",
@@ -810,7 +810,7 @@
                         ]
                       },
                       "ipaddr": {
-                        "$id": "#/properties/fsm/properties/repoServer/ipaddr",
+                        "$id": "#/properties/fsm/properties/repoServer/properties/ipaddr",
                         "type": "string",
                         "title": "The ipaddr schema for pipy repo server",
                         "description": "Ip address of the pipy repo server",
@@ -819,7 +819,7 @@
                         ]
                       },
                       "port": {
-                        "$id": "#/properties/fsm/properties/repoServer/port",
+                        "$id": "#/properties/fsm/properties/repoServer/properties/port",
                         "type": "integer",
                         "title": "The port schema for pipy repo server",
                         "description": "Port of the pipy repo server",
@@ -830,7 +830,7 @@
                         ]
                       },
                       "codebase": {
-                        "$id": "#/properties/fsm/properties/repoServer/codebase",
+                        "$id": "#/properties/fsm/properties/repoServer/properties/codebase",
                         "type": "string",
                         "title": "The codebase schema for pipy repo server",
                         "description": "Codebase is the folder used by fsmController.",
@@ -3105,74 +3105,104 @@
                     ]
                 },
                 "grafana": {
-                    "$id": "#/properties/fsm/properties/grafana",
-                    "type": "object",
-                    "title": "The grafana schema",
-                    "description": "Grafana configuration parameters",
-                    "required": [
-                        "port",
-                        "enableRemoteRendering",
-                        "image",
-                        "rendererImage"
-                    ],
-                    "properties": {
-                        "port": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/port",
-                            "title": "Grafana's port schema",
-                            "description": "Grafana's port number",
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                3000
-                            ]
-                        },
-                        "enableRemoteRendering": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/enableRemoteRendering",
-                            "type": "boolean",
-                            "title": "Grafana's enableRemoteRendering schema",
-                            "description": "Enable remote rendering of Grafana's dashboards",
-                            "examples": [
-                                true
-                            ]
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/image",
-                            "type": "string",
-                            "title": "Grafana's image schema",
-                            "description": "Image used for Grafana",
-                            "examples": [
-                                "grafana/grafana:8.2.2"
-                            ]
-                        },
-                        "rendererImage": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/rendererImage",
-                            "type": "string",
-                            "title": "Grafana's rendererImage schema",
-                            "description": "Renderer image used for Grafana",
-                            "examples": [
-                                "grafana/grafana-image-renderer:3.2.1"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/grafana",
+                  "type": "object",
+                  "title": "The grafana schema",
+                  "description": "Grafana configuration parameters",
+                  "required": [
+                    "port",
+                    "enableRemoteRendering",
+                    "image",
+                    "rendererImage"
+                  ],
+                  "properties": {
+                    "port": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/port",
+                      "title": "Grafana's port schema",
+                      "description": "Grafana's port number",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        3000
+                      ]
                     },
-                    "examples": [
-                        {
-                            "port": 3000,
-                            "enableRemoteRendering": true,
-                            "image": "grafana/grafana:8.2.2",
-                            "rendererImage": "grafana/grafana-image-renderer:3.2.1"
+                    "enableRemoteRendering": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/enableRemoteRendering",
+                      "type": "boolean",
+                      "title": "Grafana's enableRemoteRendering schema",
+                      "description": "Enable remote rendering of Grafana's dashboards",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/image",
+                      "type": "object",
+                      "title": "Grafana's image schema",
+                      "description": "Image used for Grafana",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
                         }
-                    ],
-                    "additionalProperties": false
+                      },
+                      "additionalProperties": false
+                    },
+                    "rendererImage": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/rendererImage",
+                      "type": "object",
+                      "title": "Grafana Renderer's image schema",
+                      "description": "Image used for Grafana Renderer",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "certmanager": {
                     "$id": "#/properties/fsm/properties/certmanager",
@@ -3292,71 +3322,90 @@
                     "additionalProperties": false
                 },
                 "prometheus": {
-                    "$id": "#/properties/fsm/properties/prometheus",
-                    "type": "object",
-                    "title": "The prometheus schema",
-                    "description": "Prometheus configurations",
-                    "required": [
-                        "resources",
-                        "port",
-                        "retention",
-                        "image"
-                    ],
-                    "properties": {
-                        "resources": {
-                            "$ref": "#/definitions/containerResources"
-                        },
-                        "port": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/port",
-                            "title": "Prometheus' port schema",
-                            "description": "Prometheus' port number",
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                7070
-                            ]
-                        },
-                        "retention": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/rentention",
-                            "type": "object",
-                            "title": "The Prometheus retention schema",
-                            "description": "Prometheus data retention configurations",
-                            "required": [
-                                "time"
-                            ],
-                            "properties": {
-                                "time": {
-                                    "$id": "#/properties/fsm/properties/prometheus/properties/retention/properties/time",
-                                    "title": "Prometheus' data retention time schema",
-                                    "description": "Prometheus' data retention time",
-                                    "type": "string",
-                                    "examples": [
-                                        "15d"
-                                    ]
-                                }
-                            }
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/image",
-                            "type": "string",
-                            "title": "Prometheus's image schema",
-                            "description": "Image used for Prometheus",
-                            "examples": [
-                                "prom/prometheus:v2.18.1"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/prometheus",
+                  "type": "object",
+                  "title": "The prometheus schema",
+                  "description": "Prometheus configurations",
+                  "required": [
+                    "resources",
+                    "port",
+                    "retention",
+                    "image"
+                  ],
+                  "properties": {
+                    "resources": {
+                      "$ref": "#/definitions/containerResources"
                     },
-                    "additionalProperties": false
+                    "port": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/port",
+                      "title": "Prometheus' port schema",
+                      "description": "Prometheus' port number",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        7070
+                      ]
+                    },
+                    "retention": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/rentention",
+                      "type": "object",
+                      "title": "The Prometheus retention schema",
+                      "description": "Prometheus data retention configurations",
+                      "required": [
+                        "time"
+                      ],
+                      "properties": {
+                        "time": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/retention/properties/time",
+                          "title": "Prometheus' data retention time schema",
+                          "description": "Prometheus' data retention time",
+                          "type": "string",
+                          "examples": [
+                            "15d"
+                          ]
+                        }
+                      }
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/image",
+                      "type": "object",
+                      "title": "Prometheus's image schema",
+                      "description": "Image used for prometheus",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "imagePullSecrets": {
                     "$id": "#/properties/fsm/properties/imagePullSecrets",
