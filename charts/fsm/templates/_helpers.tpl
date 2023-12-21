@@ -139,6 +139,87 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fsm-curl image */}}
+{{- define "fsmCurl.image" -}}
+{{- if .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
+{{- end -}}
+{{- end -}}
+
+{{/* pipy repo image */}}
+{{- define "repoServer.image" -}}
+{{- if .Values.fsm.repoServer.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.repoServer.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* pipy sidecar image */}}
+{{- define "sidecar.image" -}}
+{{- if .Values.fsm.sidecar.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.sidecar.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* serviceLB image */}}
+{{- define "serviceLB.image" -}}
+{{- if .Values.fsm.serviceLB.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.serviceLB.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* prometheus image */}}
+{{- define "prometheus.image" -}}
+{{- if .Values.fsm.prometheus.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.prometheus.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.prometheus.image.name .Values.fsm.prometheus.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* grafana image */}}
+{{- define "grafana.image" -}}
+{{- if .Values.fsm.grafana.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.image.name .Values.fsm.grafana.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* grafana renderer image */}}
+{{- define "grafana.renderer.image" -}}
+{{- if .Values.fsm.grafana.rendererImage.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.grafana.rendererImage.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.grafana.rendererImage.name .Values.fsm.grafana.rendererImage.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fluentBit image */}}
+{{- define "fluentBit.image" -}}
+{{- if .Values.fsm.fluentBit.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.fluentBit.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.fluentBit.image.name .Values.fsm.fluentBit.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* tracing image */}}
+{{- define "tracing.image" -}}
+{{- if .Values.fsm.tracing.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.tracing.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

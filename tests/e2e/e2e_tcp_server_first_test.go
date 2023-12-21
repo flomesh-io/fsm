@@ -31,10 +31,9 @@ var _ = FSMDescribe("TCP server-first traffic",
 			installOpts.EnablePermissiveMode = true
 			Expect(Td.InstallFSM(installOpts)).To(Succeed())
 
-			if sidecarClass, err := Td.GetSidecarClass(Td.FsmNamespace); err == nil {
-				if strings.EqualFold(strings.ToLower(constants.SidecarClassPipy), strings.ToLower(sidecarClass)) {
-					Skip("Pending")
-				}
+			sidecarClass := Td.GetSidecarClass(Td.FsmNamespace)
+			if strings.EqualFold(strings.ToLower(constants.SidecarClassPipy), strings.ToLower(sidecarClass)) {
+				Skip("Pending")
 			}
 
 			// Create Test NS

@@ -194,7 +194,7 @@ func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentServ
 				}
 			}
 		}
-		if strings.EqualFold(metaName, "gRPC__port") {
+		if strings.EqualFold(metaName, provider.EUREKA_METADATA_GRPC_PORT) {
 			if v, ok := metaVal.(float64); ok {
 				grpcPort = int(v)
 			}

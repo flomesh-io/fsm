@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: pipy
-        image: {{ .Values.fsm.repoServer.image }}
+        image: "{{ include "repoServer.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         resources:
           {{- toYaml .Values.fsm.egressGateway.resources | nindent 10 }}

@@ -123,7 +123,7 @@ if [ "$CERT_MANAGER" = "vault" ]; then
       --set=fsm.tracing.address="$TRACING_ADDRESS" \
       --set=fsm.enableFluentbit="$ENABLE_FLUENTBIT" \
       --set=fsm.deployPrometheus="$DEPLOY_PROMETHEUS" \
-      --set=fsm.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
+      --set=fsm.sidecar.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
       --set=fsm.controllerLogLevel="$CONTROLLER_LOG_LEVEL" \
       --set=fsm.fsmIngress.logLevel="$INGRESS_LOG_LEVEL" \
       --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \
@@ -150,7 +150,7 @@ else
       --set=fsm.tracing.address="$TRACING_ADDRESS" \
       --set=fsm.enableFluentbit="$ENABLE_FLUENTBIT" \
       --set=fsm.deployPrometheus="$DEPLOY_PROMETHEUS" \
-      --set=fsm.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
+      --set=fsm.sidecar.sidecarLogLevel="$SIDECAR_LOG_LEVEL" \
       --set=fsm.controllerLogLevel="$CONTROLLER_LOG_LEVEL" \
       --set=fsm.fsmIngress.logLevel="$INGRESS_LOG_LEVEL" \
       --set=fsm.fsmGateway.logLevel="$GATEWAY_LOG_LEVEL" \

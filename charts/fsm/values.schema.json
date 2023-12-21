@@ -166,11 +166,8 @@
             "description": "The top level required key in the values file.",
             "required": [
                 "image",
-                "sidecarClass",
-                "sidecarDrivers",
+                "sidecar",
                 "pluginChains",
-                "curlImage",
-                "serviceLBImage",
                 "caBundleSecretName",
                 "enableDebugServer",
                 "enablePermissiveTrafficPolicy",
@@ -186,8 +183,6 @@
                 "fluentBit",
                 "meshName",
                 "maxDataPlaneConnections",
-                "sidecarLogLevel",
-                "sidecarTimeout",
                 "controllerLogLevel",
                 "enforceSingleMesh",
                 "deployJaeger",
@@ -347,71 +342,92 @@
                             "title": "Default image names",
                             "description": "Default image names for control plane.",
                             "required": [
-                                "fsmController",
-                                "fsmInjector",
-                                "fsmSidecarInit",
-                                "fsmBootstrap",
-                                "fsmCRDs",
-                                "fsmPreinstall",
-                                "fsmHealthcheck",
-                                "fsmInterceptor",
-                                "fsmConnector"
+                              "fsmController",
+                              "fsmInjector",
+                              "fsmSidecarInit",
+                              "fsmBootstrap",
+                              "fsmCRDs",
+                              "fsmPreinstall",
+                              "fsmHealthcheck",
+                              "fsmInterceptor",
+                              "fsmConnector",
+                              "fsmIngress",
+                              "fsmGateway",
+                              "fsmCurl"
                             ],
                             "properties": {
-                                "fsmController": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmController",
-                                    "type": "string",
-                                    "title": "fsm-controller's image names",
-                                    "description": "fsm-controller container's image names."
-                                },
-                                "fsmInjector": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInjector",
-                                    "type": "string",
-                                    "title": "fsm-injector's image name",
-                                    "description": "fsm-injector container's image name."
-                                },
-                                "fsmSidecarInit": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmSidecarInit",
-                                    "type": "string",
-                                    "title": "fsm-fsmSidecarInit's image name",
-                                    "description": "fsm-fsmSidecarInit container's image name."
-                                },
-                                "fsmBootstrap": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmBootstrap",
-                                    "type": "string",
-                                    "title": "fsm-boostrap's image name",
-                                    "description": "fsm-bootstrap container's image name."
-                                },
-                                "fsmCRDs": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmCRDs",
-                                    "type": "string",
-                                    "title": "fsm-crds' image name",
-                                    "description": "fsm-crds container's image name."
-                                },
-                                "fsmPreinstall": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmPreinstall",
-                                    "type": "string",
-                                    "title": "fsm-preinstall's image name",
-                                    "description": "fsm-preinstall container's image name."
-                                },
-                                "fsmHealthcheck": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmHealthcheck",
-                                    "type": "string",
-                                    "title": "fsm-healthcheck's image name",
-                                    "description": "fsm-healthcheck container's image name."
-                                },
-                                "fsmInterceptor": {
-                                    "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInterceptor",
-                                    "type": "string",
-                                    "title": "fsm-interceptor's image name",
-                                    "description": "fsm-interceptor container's image name."
-                                },
-                                "fsmConnector": {
-                                  "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
-                                  "type": "string",
-                                  "title": "fsm-connector's image name",
-                                  "description": "fsm-connector container's image name."
-                                }
+                              "fsmController": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmController",
+                                "type": "string",
+                                "title": "fsm-controller's image names",
+                                "description": "fsm-controller container's image names."
+                              },
+                              "fsmInjector": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInjector",
+                                "type": "string",
+                                "title": "fsm-injector's image name",
+                                "description": "fsm-injector container's image name."
+                              },
+                              "fsmSidecarInit": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmSidecarInit",
+                                "type": "string",
+                                "title": "fsm-fsmSidecarInit's image name",
+                                "description": "fsm-fsmSidecarInit container's image name."
+                              },
+                              "fsmBootstrap": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmBootstrap",
+                                "type": "string",
+                                "title": "fsm-boostrap's image name",
+                                "description": "fsm-bootstrap container's image name."
+                              },
+                              "fsmCRDs": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmCRDs",
+                                "type": "string",
+                                "title": "fsm-crds' image name",
+                                "description": "fsm-crds container's image name."
+                              },
+                              "fsmPreinstall": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmPreinstall",
+                                "type": "string",
+                                "title": "fsm-preinstall's image name",
+                                "description": "fsm-preinstall container's image name."
+                              },
+                              "fsmHealthcheck": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmHealthcheck",
+                                "type": "string",
+                                "title": "fsm-healthcheck's image name",
+                                "description": "fsm-healthcheck container's image name."
+                              },
+                              "fsmInterceptor": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInterceptor",
+                                "type": "string",
+                                "title": "fsm-interceptor's image name",
+                                "description": "fsm-interceptor container's image name."
+                              },
+                              "fsmConnector": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
+                                "type": "string",
+                                "title": "fsm-connector's image name",
+                                "description": "fsm-connector container's image name."
+                              },
+                              "fsmIngress": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmIngress",
+                                "type": "string",
+                                "title": "fsm-ingress's image name",
+                                "description": "fsm-connector container's image name."
+                              },
+                              "fsmGateway": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmGateway",
+                                "type": "string",
+                                "title": "fsm-gateway's image name",
+                                "description": "fsm-gateway container's image name."
+                              },
+                              "fsmCurl": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmCurl",
+                                "type": "string",
+                                "title": "fsm-curl's image name",
+                                "description": "fsm-curl container's image name."
+                              }
                             }
                         },
                         "pullPolicy": {
@@ -439,122 +455,195 @@
                             "title": "Default image digests",
                             "description": "Default image digests for control plane.",
                             "required": [
-                                "fsmController",
-                                "fsmInjector",
-                                "fsmSidecarInit",
-                                "fsmCRDs",
-                                "fsmBootstrap",
-                                "fsmPreinstall",
-                                "fsmHealthcheck",
-                                "fsmInterceptor",
-                                "fsmConnector"
+                              "fsmController",
+                              "fsmInjector",
+                              "fsmSidecarInit",
+                              "fsmCRDs",
+                              "fsmBootstrap",
+                              "fsmPreinstall",
+                              "fsmHealthcheck",
+                              "fsmInterceptor",
+                              "fsmConnector",
+                              "fsmIngress",
+                              "fsmGateway",
+                              "fsmCurl"
                             ],
                             "properties": {
-                                "fsmController": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmController",
-                                    "type": "string",
-                                    "title": "fsm-controller's image digest",
-                                    "description": "fsm-controller container's image digest."
-                                },
-                                "fsmInjector": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInjector",
-                                    "type": "string",
-                                    "title": "fsm-injector's image digest",
-                                    "description": "fsm-injector container's image digest."
-                                },
-                                "fsmSidecarInit": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmSidecarInit",
-                                    "type": "string",
-                                    "title": "fsm-fsmSidecarInit's image digest",
-                                    "description": "fsm-fsmSidecarInit container's image digest."
-                                },
-                                "fsmCRDs": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmCRDs",
-                                    "type": "string",
-                                    "title": "fsm-crds' image digest",
-                                    "description": "fsm-crds container's image digest."
-                                },
-                                "fsmBootstrap": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmBootstrap",
-                                    "type": "string",
-                                    "title": "fsm-boostrap's image digest",
-                                    "description": "fsm-bootstrap container's image digest."
-                                },
-                                "fsmPreinstall": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmPreinstall",
-                                    "type": "string",
-                                    "title": "fsm-preinstall's image digest",
-                                    "description": "fsm-preinstall container's image digest."
-                                },
-                                "fsmHealthcheck": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmHealthcheck",
-                                    "type": "string",
-                                    "title": "fsm-healthcheck's image digest",
-                                    "description": "fsm-healthcheck container's image digest."
-                                },
-                                "fsmInterceptor": {
-                                    "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInterceptor",
-                                    "type": "string",
-                                    "title": "fsm-interceptor's image digest",
-                                    "description": "fsm-interceptor container's image digest."
-                                },
-                                "fsmConnector": {
-                                  "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",
-                                  "type": "string",
-                                  "title": "fsm-connector's image digest",
-                                  "description": "fsm-connector container's image digest."
-                                }
+                              "fsmController": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmController",
+                                "type": "string",
+                                "title": "fsm-controller's image digest",
+                                "description": "fsm-controller container's image digest."
+                              },
+                              "fsmInjector": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInjector",
+                                "type": "string",
+                                "title": "fsm-injector's image digest",
+                                "description": "fsm-injector container's image digest."
+                              },
+                              "fsmSidecarInit": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmSidecarInit",
+                                "type": "string",
+                                "title": "fsm-fsmSidecarInit's image digest",
+                                "description": "fsm-fsmSidecarInit container's image digest."
+                              },
+                              "fsmCRDs": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmCRDs",
+                                "type": "string",
+                                "title": "fsm-crds' image digest",
+                                "description": "fsm-crds container's image digest."
+                              },
+                              "fsmBootstrap": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmBootstrap",
+                                "type": "string",
+                                "title": "fsm-boostrap's image digest",
+                                "description": "fsm-bootstrap container's image digest."
+                              },
+                              "fsmPreinstall": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmPreinstall",
+                                "type": "string",
+                                "title": "fsm-preinstall's image digest",
+                                "description": "fsm-preinstall container's image digest."
+                              },
+                              "fsmHealthcheck": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmHealthcheck",
+                                "type": "string",
+                                "title": "fsm-healthcheck's image digest",
+                                "description": "fsm-healthcheck container's image digest."
+                              },
+                              "fsmInterceptor": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInterceptor",
+                                "type": "string",
+                                "title": "fsm-interceptor's image digest",
+                                "description": "fsm-interceptor container's image digest."
+                              },
+                              "fsmConnector": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",
+                                "type": "string",
+                                "title": "fsm-connector's image digest",
+                                "description": "fsm-connector container's image digest."
+                              },
+                              "fsmIngress": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmIngress",
+                                "type": "string",
+                                "title": "fsm-ingress's image digest",
+                                "description": "fsm-ingress container's image digest."
+                              },
+                              "fsmGateway": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmGateway",
+                                "type": "string",
+                                "title": "fsm-gateway's image digest",
+                                "description": "fsm-gateway container's image digest."
+                              },
+                              "fsmCurl": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmCurl",
+                                "type": "string",
+                                "title": "fsm-curl's image digest",
+                                "description": "fsm-curl container's image digest."
+                              }
                             }
                         }
                     },
                     "additionalProperties": false
                 },
-                "sidecarClass": {
-                    "$id": "#/properties/fsm/properties/sidecarClass",
-                    "type": "string",
-                    "title": "The sidecarClass schema",
-                    "description": "The class of the FSM Sidecar.",
-                    "examples": [
-                        "pipy"
-                    ]
-                },
-                "sidecarImage": {
-                    "$id": "#/properties/fsm/properties/sidecarImage",
-                    "type": "string",
-                    "title": "The sidecarImage schema",
-                    "description": "The proxy side car image to run.",
-                    "examples": [
-                        "flomesh/pipy-nightly:latest"
-                    ]
-                },
-                "sidecarDisabledMTLS": {
-                  "$id": "#/properties/fsm/properties/sidecarDisabledMTLS",
-                  "type": "boolean",
-                  "title": "The sidecarDisabledMTLS schema",
-                  "description": "The proxy side car runs without mTLS",
-                  "examples": [
-                    false
-                  ]
-                },
-                "sidecarDrivers": {
-                    "$id": "#/properties/fsm/properties/sidecarDrivers",
-                    "type": "array",
-                    "title": "The sidecarDriver schema",
-                    "description": "The class of the FSM Sidecar Driver.",
-                    "items": {
-                        "type": "object"
+                "sidecar": {
+                  "$id": "#/properties/fsm/properties/sidecar",
+                  "type": "object",
+                  "title": "The sidecar schema",
+                  "description": "The class of the FSM Sidecar Driver.",
+                  "required": [
+                    "image",
+                    "sidecarDisabledMTLS",
+                    "sidecarLogLevel",
+                    "sidecarTimeout"
+                  ],
+                  "properties": {
+                    "image": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/image",
+                      "type": "object",
+                      "title": "Pipy sidecar's image schema",
+                      "description": "Image used for pipy sidecar",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
                     },
-                    "examples": [
-                        [
-                            {
-                                "sidecarName": "pipy",
-                                "sidecarImage": "flomesh/pipy:latest",
-                                "initContainerImage": "curlimages/curl",
-                                "proxyServerPort": 6060,
-                                "sidecarDisabledMTLS": false
-                            }
-                        ]
-                    ]
+                    "initContainerImage": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/initContainerImage",
+                      "type": "object",
+                      "title": "Init image schema",
+                      "description": "Image used for init",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/initContainerImage/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/initContainerImage/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/sidecar/properties/initContainerImage/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "sidecarDisabledMTLS": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/sidecarDisabledMTLS",
+                      "type": "boolean",
+                      "title": "The sidecarDisabledMTLS schema",
+                      "description": "The proxy side car runs without mTLS",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "sidecarLogLevel": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/sidecarLogLevel",
+                      "type": "string",
+                      "title": "The sidecarLogLevel schema",
+                      "description": "Sidecar log level.",
+                      "pattern": "^(trace|debug|info|warning|warn|error|critical|off)$",
+                      "examples": [
+                        "error"
+                      ]
+                    },
+                    "sidecarTimeout": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/sidecarTimeout",
+                      "type": "integer",
+                      "title": "The sidecarTimeout schema",
+                      "description": "Sets connect/idle/read/write timeout",
+                      "examples": [
+                        "60"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "pluginChains": {
                     "$id": "#/properties/fsm/properties/pluginChains",
@@ -669,24 +758,6 @@
                         }
                     }
                 },
-                "curlImage": {
-                    "$id": "#/properties/fsm/properties/curlImage",
-                    "type": "string",
-                    "title": "The curlImage schema",
-                    "description": "The curl image for control plane init containers.",
-                    "examples": [
-                        "curlimages/curl"
-                    ]
-                },
-                "serviceLBImage": {
-                    "$id": "#/properties/fsm/properties/serviceLBImage",
-                    "type": "string",
-                    "title": "The serviceLBImage schema",
-                    "description": "The serviceLB image for control plane.",
-                    "examples": [
-                        "flomesh/mirrored-klipper-lb:v0.3.5"
-                    ]
-                },
                 "repoServer": {
                     "$id": "#/properties/fsm/properties/repoServer",
                     "type": "object",
@@ -696,46 +767,77 @@
                         "image",
                         "standalone",
                         "ipaddr",
+                        "port",
                         "codebase"
                     ],
                     "additionalProperties": false,
                     "properties": {
-                        "image": {
-                            "$id": "#/properties/fsm/properties/repoServer/image",
+                      "image": {
+                        "$id": "#/properties/fsm/properties/repoServer/properties/image",
+                        "type": "object",
+                        "title": "Pipy repo server's image schema",
+                        "description": "Image used for pipy repo server",
+                        "required": [
+                          "name",
+                          "tag"
+                        ],
+                        "properties": {
+                          "name": {
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/name",
                             "type": "string",
-                            "title": "Pipy repo server's image schema",
-                            "description": "Image used for pipy repo server",
-                            "examples": [
-                                "flomesh/pipy-repo:latest"
-                            ]
-                        },
-                        "standalone": {
-                            "$id": "#/properties/fsm/properties/repoServer/standalone",
-                            "type": "boolean",
-                            "title": "Install Mode of RepoServer",
-                            "description": "if false , RepoServer is installed within fsmController pod.",
-                            "examples": [
-                                false
-                            ]
-                        },
-                        "ipaddr": {
-                            "$id": "#/properties/fsm/properties/repoServer/ipaddr",
+                            "title": "The name schema"
+                          },
+                          "registry": {
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/registry",
                             "type": "string",
-                            "title": "The ipaddr schema for pipy repo server",
-                            "description": "Ip address of the pipy repo server",
-                            "examples": [
-                                "127.0.0.1"
-                            ]
-                        },
-                        "codebase": {
-                            "$id": "#/properties/fsm/properties/repoServer/codebase",
+                            "title": "The registry schema"
+                          },
+                          "tag": {
+                            "$id": "#/properties/fsm/properties/repoServer/properties/image/properties/tag",
                             "type": "string",
-                            "title": "The codebase schema for pipy repo server",
-                            "description": "Codebase is the folder used by fsmController.",
-                            "examples": [
-                                "/fsm1.3.0"
-                            ]
-                        }
+                            "title": "The tag schema"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "standalone": {
+                        "$id": "#/properties/fsm/properties/repoServer/properties/standalone",
+                        "type": "boolean",
+                        "title": "Install Mode of RepoServer",
+                        "description": "if false , RepoServer is installed within fsmController pod.",
+                        "examples": [
+                          false
+                        ]
+                      },
+                      "ipaddr": {
+                        "$id": "#/properties/fsm/properties/repoServer/properties/ipaddr",
+                        "type": "string",
+                        "title": "The ipaddr schema for pipy repo server",
+                        "description": "Ip address of the pipy repo server",
+                        "examples": [
+                          "127.0.0.1"
+                        ]
+                      },
+                      "port": {
+                        "$id": "#/properties/fsm/properties/repoServer/properties/port",
+                        "type": "integer",
+                        "title": "The port schema for pipy repo server",
+                        "description": "Port of the pipy repo server",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "examples": [
+                          6060
+                        ]
+                      },
+                      "codebase": {
+                        "$id": "#/properties/fsm/properties/repoServer/properties/codebase",
+                        "type": "string",
+                        "title": "The codebase schema for pipy repo server",
+                        "description": "Codebase is the folder used by fsmController.",
+                        "examples": [
+                          "/fsm1.2.0"
+                        ]
+                      }
                     }
                 },
                 "trustDomain": {
@@ -904,122 +1006,129 @@
                     ]
                 },
                 "fluentBit": {
-                    "$id": "#/properties/fsm/properties/fluentBit",
-                    "type": "object",
-                    "title": "The Fluent Bit schema",
-                    "description": "The default details of the Fluent Bit sidecar if enabled.",
-                    "examples": [
-                        {
-                            "name": "fluentbit-logger",
-                            "registry": "fluent",
-                            "tag": "1.6.4",
-                            "pullPolicy": "IfNotPresent",
-                            "outputPlugin": "stdout",
-                            "enableProxySupport": "false",
-                            "httpProxy": "",
-                            "httpsProxy": ""
-                        }
-                    ],
-                    "required": [
+                  "$id": "#/properties/fsm/properties/fluentBit",
+                  "type": "object",
+                  "title": "The Fluent Bit schema",
+                  "description": "The default details of the Fluent Bit sidecar if enabled.",
+                  "examples": [
+                    {
+                      "name": "fluentbit-logger",
+                      "pullPolicy": "IfNotPresent",
+                      "outputPlugin": "stdout",
+                      "enableProxySupport": "false",
+                      "httpProxy": "",
+                      "httpsProxy": ""
+                    }
+                  ],
+                  "required": [
+                    "name",
+                    "image",
+                    "pullPolicy",
+                    "outputPlugin",
+                    "workspaceId",
+                    "primaryKey",
+                    "enableProxySupport",
+                    "httpProxy",
+                    "httpsProxy"
+                  ],
+                  "properties": {
+                    "name": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/name",
+                      "type": "string",
+                      "title": "The name schema",
+                      "description": "The name of the Fluent Bit container",
+                      "examples": [
+                        "fluentbit-logger"
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/image",
+                      "type": "object",
+                      "title": "FluentBit's image schema",
+                      "description": "Image used for FluentBit",
+                      "required": [
                         "name",
-                        "registry",
-                        "tag",
-                        "pullPolicy",
-                        "outputPlugin",
-                        "workspaceId",
-                        "primaryKey",
-                        "enableProxySupport",
-                        "httpProxy",
-                        "httpsProxy"
-                    ],
-                    "properties": {
+                        "tag"
+                      ],
+                      "properties": {
                         "name": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/name",
-                            "type": "string",
-                            "title": "The name schema",
-                            "description": "The name of the Fluent Bit container",
-                            "examples": [
-                                "fluentbit-logger"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
                         },
                         "registry": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/registry",
-                            "type": "string",
-                            "title": "The registry schema",
-                            "description": "The registry of the image to run.",
-                            "examples": [
-                                "fluent"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
                         },
                         "tag": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/tag",
-                            "type": "string",
-                            "title": "The tag schema",
-                            "description": "The image tag to run.",
-                            "examples": [
-                                "1.6.4"
-                            ]
-                        },
-                        "pullPolicy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/pullPolicy",
-                            "type": "string",
-                            "title": "The pullPolicy schema",
-                            "description": "The image pull policy.",
-                            "pattern": "^(Always|Never|IfNotPresent)$",
-                            "examples": [
-                                "IfNotPresent"
-                            ]
-                        },
-                        "outputPlugin": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/outputPlugin",
-                            "type": "string",
-                            "title": "The output plugin for Fluent Bit",
-                            "description": "The log forwarding destination plugin for Fluent Bit",
-                            "examples": [
-                                "stdout"
-                            ]
-                        },
-                        "workspaceId": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/workspaceId",
-                            "type": "string",
-                            "title": "The Fluent Bit workspaceId schema",
-                            "description": "The workspace ID for Fluent Bit output plugin to Log Analytics"
-                        },
-                        "primaryKey": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/primaryKey",
-                            "type": "string",
-                            "title": "The Fluent Bit primaryKey schema",
-                            "description": "The primary key for Fluent Bit output plugin to Log Analytics"
-                        },
-                        "enableProxySupport": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/enableProxySupport",
-                            "type": "boolean",
-                            "title": "The enableProxySupport output schema",
-                            "description": "Indicates whether outbound proxy support should be configured for Fluent Bit",
-                            "examples": [
-                                false
-                            ]
-                        },
-                        "httpProxy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/httpProxy",
-                            "type": "string",
-                            "title": "The httpProxy schema",
-                            "description": "http proxy endpoint",
-                            "examples": [
-                                "http://<host>:<port>"
-                            ]
-                        },
-                        "httpsProxy": {
-                            "$id": "#/properties/fsm/properties/fluentBit/properties/httpsProxy",
-                            "type": "string",
-                            "title": "The httpsProxy schema",
-                            "description": "https proxy endpoint",
-                            "examples": [
-                                "http://<host>:<port>"
-                            ]
+                          "$id": "#/properties/fsm/properties/fluentBit/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
                         }
+                      },
+                      "additionalProperties": false
                     },
-                    "additionalProperties": false
+                    "pullPolicy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/pullPolicy",
+                      "type": "string",
+                      "title": "The pullPolicy schema",
+                      "description": "The image pull policy.",
+                      "pattern": "^(Always|Never|IfNotPresent)$",
+                      "examples": [
+                        "IfNotPresent"
+                      ]
+                    },
+                    "outputPlugin": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/outputPlugin",
+                      "type": "string",
+                      "title": "The output plugin for Fluent Bit",
+                      "description": "The log forwarding destination plugin for Fluent Bit",
+                      "examples": [
+                        "stdout"
+                      ]
+                    },
+                    "workspaceId": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/workspaceId",
+                      "type": "string",
+                      "title": "The Fluent Bit workspaceId schema",
+                      "description": "The workspace ID for Fluent Bit output plugin to Log Analytics"
+                    },
+                    "primaryKey": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/primaryKey",
+                      "type": "string",
+                      "title": "The Fluent Bit primaryKey schema",
+                      "description": "The primary key for Fluent Bit output plugin to Log Analytics"
+                    },
+                    "enableProxySupport": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/enableProxySupport",
+                      "type": "boolean",
+                      "title": "The enableProxySupport output schema",
+                      "description": "Indicates whether outbound proxy support should be configured for Fluent Bit",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "httpProxy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/httpProxy",
+                      "type": "string",
+                      "title": "The httpProxy schema",
+                      "description": "http proxy endpoint",
+                      "examples": [
+                        "http://<host>:<port>"
+                      ]
+                    },
+                    "httpsProxy": {
+                      "$id": "#/properties/fsm/properties/fluentBit/properties/httpsProxy",
+                      "type": "string",
+                      "title": "The httpsProxy schema",
+                      "description": "https proxy endpoint",
+                      "examples": [
+                        "http://<host>:<port>"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "meshName": {
                     "$id": "#/properties/fsm/properties/meshName",
@@ -1046,25 +1155,6 @@
                     "description": "Sets the resync interval for regular proxy broadcast updates",
                     "examples": [
                         "30s"
-                    ]
-                },
-                "sidecarTimeout": {
-                  "$id": "#/properties/fsm/properties/sidecarTimeout",
-                  "type": "integer",
-                  "title": "The sidecarTimeout schema",
-                  "description": "Sets connect/idle/read/write timeout",
-                  "examples": [
-                    "60"
-                  ]
-                },
-                "sidecarLogLevel": {
-                    "$id": "#/properties/fsm/properties/sidecarLogLevel",
-                    "type": "string",
-                    "title": "The sidecarLogLevel schema",
-                    "description": "Sidecar log level.",
-                    "pattern": "^(trace|debug|info|warning|warn|error|critical|off)$",
-                    "examples": [
-                        "error"
                     ]
                 },
                 "localProxyMode": {
@@ -1201,90 +1291,109 @@
                     ]
                 },
                 "tracing": {
-                    "$id": "#/properties/fsm/properties/tracing",
-                    "type": "object",
-                    "title": "The tracing schema",
-                    "description": "An explanation about the purpose of this instance.",
-                    "examples": [
-                        {
-                            "enable": true
-                        }
-                    ],
-                    "required": [
-                        "enable",
-                        "address",
-                        "port",
-                        "endpoint",
-                        "image"
-                    ],
-                    "properties": {
-                        "enable": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/enable",
-                            "type": "boolean",
-                            "title": "The enable schema for tracing",
-                            "description": "Indicates whether tracing is enabled or not",
-                            "examples": [
-                                true
-                            ]
-                        },
-                        "address": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/address",
-                            "type": "string",
-                            "title": "The address schema for tracing",
-                            "description": "Address of the tracing collector",
-                            "examples": [
-                                "jaeger.<fsm-namespace>.svc.cluster.local"
-                            ]
-                        },
-                        "port": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/port",
-                            "type": "integer",
-                            "title": "The port schema for tracing",
-                            "description": "Port of the tracing collector",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                9411
-                            ]
-                        },
-                        "endpoint": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/endpoint",
-                            "type": "string",
-                            "title": "The endpoint schema for tracing",
-                            "description": "API path of the collector",
-                            "examples": [
-                                "/api/v2/spans"
-                            ]
-                        },
-                        "sampledFraction": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/sampledFraction",
-                            "type": "string",
-                            "title": "Sampled Fraction",
-                            "description": "Sampled Fraction",
-                            "examples": [
-                                "0.2"
-                            ]
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/image",
-                            "type": "string",
-                            "title": "Jaeger's image schema",
-                            "description": "Image used for jaeger",
-                            "examples": [
-                                "jaegertracing/all-in-one"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/tracing",
+                  "type": "object",
+                  "title": "The tracing schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "examples": [
+                    {
+                      "enable": true
+                    }
+                  ],
+                  "required": [
+                    "enable",
+                    "address",
+                    "port",
+                    "endpoint",
+                    "image"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/enable",
+                      "type": "boolean",
+                      "title": "The enable schema for tracing",
+                      "description": "Indicates whether tracing is enabled or not",
+                      "examples": [
+                        true
+                      ]
                     },
-                    "additionalProperties": false
+                    "address": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/address",
+                      "type": "string",
+                      "title": "The address schema for tracing",
+                      "description": "Address of the tracing collector",
+                      "examples": [
+                        "jaeger.<fsm-namespace>.svc.cluster.local"
+                      ]
+                    },
+                    "port": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/port",
+                      "type": "integer",
+                      "title": "The port schema for tracing",
+                      "description": "Port of the tracing collector",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        9411
+                      ]
+                    },
+                    "endpoint": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/endpoint",
+                      "type": "string",
+                      "title": "The endpoint schema for tracing",
+                      "description": "API path of the collector",
+                      "examples": [
+                        "/api/v2/spans"
+                      ]
+                    },
+                    "sampledFraction": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/sampledFraction",
+                      "type": "string",
+                      "title": "Sampled Fraction",
+                      "description": "Sampled Fraction",
+                      "examples": [
+                        "0.2"
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/image",
+                      "type": "object",
+                      "title": "Tracing's image schema",
+                      "description": "Image used for Tracing",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "remoteLogging": {
                     "$id": "#/properties/fsm/properties/remoteLogging",
@@ -2550,19 +2659,49 @@
                     }
                 },
                 "serviceLB": {
-                    "type": "object",
-                    "default": {},
-                    "title": "The serviceLB Schema",
-                    "required": [
-                        "enabled"
-                    ],
-                    "properties": {
-                        "enabled": {
-                            "type": "boolean",
-                            "default": false,
-                            "title": "The enabled Schema"
+                  "type": "object",
+                  "default": {},
+                  "title": "The serviceLB Schema",
+                  "required": [
+                    "enabled",
+                    "image"
+                  ],
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "default": false,
+                      "title": "The enabled Schema"
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/serviceLB/properties/image",
+                      "type": "object",
+                      "title": "Pipy sidecar's image schema",
+                      "description": "Image used for pipy sidecar",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/serviceLB/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/serviceLB/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/serviceLB/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
                         }
+                      },
+                      "additionalProperties": false
                     }
+                  },
+                  "additionalProperties": false
                 },
                 "egressGateway": {
                     "type": "object",
@@ -2992,74 +3131,104 @@
                     ]
                 },
                 "grafana": {
-                    "$id": "#/properties/fsm/properties/grafana",
-                    "type": "object",
-                    "title": "The grafana schema",
-                    "description": "Grafana configuration parameters",
-                    "required": [
-                        "port",
-                        "enableRemoteRendering",
-                        "image",
-                        "rendererImage"
-                    ],
-                    "properties": {
-                        "port": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/port",
-                            "title": "Grafana's port schema",
-                            "description": "Grafana's port number",
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                3000
-                            ]
-                        },
-                        "enableRemoteRendering": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/enableRemoteRendering",
-                            "type": "boolean",
-                            "title": "Grafana's enableRemoteRendering schema",
-                            "description": "Enable remote rendering of Grafana's dashboards",
-                            "examples": [
-                                true
-                            ]
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/image",
-                            "type": "string",
-                            "title": "Grafana's image schema",
-                            "description": "Image used for Grafana",
-                            "examples": [
-                                "grafana/grafana:8.2.2"
-                            ]
-                        },
-                        "rendererImage": {
-                            "$id": "#/properties/fsm/properties/grafana/properties/rendererImage",
-                            "type": "string",
-                            "title": "Grafana's rendererImage schema",
-                            "description": "Renderer image used for Grafana",
-                            "examples": [
-                                "grafana/grafana-image-renderer:3.2.1"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/grafana",
+                  "type": "object",
+                  "title": "The grafana schema",
+                  "description": "Grafana configuration parameters",
+                  "required": [
+                    "port",
+                    "enableRemoteRendering",
+                    "image",
+                    "rendererImage"
+                  ],
+                  "properties": {
+                    "port": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/port",
+                      "title": "Grafana's port schema",
+                      "description": "Grafana's port number",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        3000
+                      ]
                     },
-                    "examples": [
-                        {
-                            "port": 3000,
-                            "enableRemoteRendering": true,
-                            "image": "grafana/grafana:8.2.2",
-                            "rendererImage": "grafana/grafana-image-renderer:3.2.1"
+                    "enableRemoteRendering": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/enableRemoteRendering",
+                      "type": "boolean",
+                      "title": "Grafana's enableRemoteRendering schema",
+                      "description": "Enable remote rendering of Grafana's dashboards",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/image",
+                      "type": "object",
+                      "title": "Grafana's image schema",
+                      "description": "Image used for Grafana",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
                         }
-                    ],
-                    "additionalProperties": false
+                      },
+                      "additionalProperties": false
+                    },
+                    "rendererImage": {
+                      "$id": "#/properties/fsm/properties/grafana/properties/rendererImage",
+                      "type": "object",
+                      "title": "Grafana Renderer's image schema",
+                      "description": "Image used for Grafana Renderer",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/grafana/properties/rendererImage/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "certmanager": {
                     "$id": "#/properties/fsm/properties/certmanager",
@@ -3179,71 +3348,90 @@
                     "additionalProperties": false
                 },
                 "prometheus": {
-                    "$id": "#/properties/fsm/properties/prometheus",
-                    "type": "object",
-                    "title": "The prometheus schema",
-                    "description": "Prometheus configurations",
-                    "required": [
-                        "resources",
-                        "port",
-                        "retention",
-                        "image"
-                    ],
-                    "properties": {
-                        "resources": {
-                            "$ref": "#/definitions/containerResources"
-                        },
-                        "port": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/port",
-                            "title": "Prometheus' port schema",
-                            "description": "Prometheus' port number",
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                7070
-                            ]
-                        },
-                        "retention": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/rentention",
-                            "type": "object",
-                            "title": "The Prometheus retention schema",
-                            "description": "Prometheus data retention configurations",
-                            "required": [
-                                "time"
-                            ],
-                            "properties": {
-                                "time": {
-                                    "$id": "#/properties/fsm/properties/prometheus/properties/retention/properties/time",
-                                    "title": "Prometheus' data retention time schema",
-                                    "description": "Prometheus' data retention time",
-                                    "type": "string",
-                                    "examples": [
-                                        "15d"
-                                    ]
-                                }
-                            }
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/prometheus/properties/image",
-                            "type": "string",
-                            "title": "Prometheus's image schema",
-                            "description": "Image used for Prometheus",
-                            "examples": [
-                                "prom/prometheus:v2.18.1"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/prometheus",
+                  "type": "object",
+                  "title": "The prometheus schema",
+                  "description": "Prometheus configurations",
+                  "required": [
+                    "resources",
+                    "port",
+                    "retention",
+                    "image"
+                  ],
+                  "properties": {
+                    "resources": {
+                      "$ref": "#/definitions/containerResources"
                     },
-                    "additionalProperties": false
+                    "port": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/port",
+                      "title": "Prometheus' port schema",
+                      "description": "Prometheus' port number",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        7070
+                      ]
+                    },
+                    "retention": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/rentention",
+                      "type": "object",
+                      "title": "The Prometheus retention schema",
+                      "description": "Prometheus data retention configurations",
+                      "required": [
+                        "time"
+                      ],
+                      "properties": {
+                        "time": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/retention/properties/time",
+                          "title": "Prometheus' data retention time schema",
+                          "description": "Prometheus' data retention time",
+                          "type": "string",
+                          "examples": [
+                            "15d"
+                          ]
+                        }
+                      }
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/prometheus/properties/image",
+                      "type": "object",
+                      "title": "Prometheus's image schema",
+                      "description": "Image used for prometheus",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/prometheus/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "imagePullSecrets": {
                     "$id": "#/properties/fsm/properties/imagePullSecrets",

@@ -31,7 +31,7 @@ spec:
         - --storage.tsdb.path=/prometheus/
         - --storage.tsdb.retention.time={{.Values.fsm.prometheus.retention.time}}
         - --web.listen-address=:{{.Values.fsm.prometheus.port}}
-        image: {{.Values.fsm.prometheus.image}}
+        image: "{{ include "prometheus.image" . }}"
         imagePullPolicy: IfNotPresent
         resources:
           limits:

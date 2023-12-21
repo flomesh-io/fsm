@@ -10,6 +10,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
+const (
+	EUREKA_METADATA_GRPC_PORT = "gRPC__port"
+	EUREKA_METADATA_MGMT_PORT = "management.port"
+)
+
 type EurekaDiscoveryClient struct {
 	eurekaClient       *fargo.EurekaConnection
 	isInternalServices bool

@@ -542,7 +542,7 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.HTTPPort)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
@@ -607,7 +607,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort)
+					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
 					r.Service.Address = address.Address
 
 					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -628,7 +628,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort)
+						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
 						r.Service.Address = address.Address
 
 						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
@@ -668,7 +668,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.HTTPPort)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = addr
 
 			// Adding information about service weight.
@@ -775,7 +775,7 @@ func (t *ServiceResource) registerServiceInstance(
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, httpPort)
+			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)
 			r.Service.Address = addr
 			r.Service.HTTPPort = httpPort
 			r.Service.GRPCPort = grpcPort
@@ -794,12 +794,12 @@ func (t *ServiceResource) registerServiceInstance(
 			}
 
 			r.Check = &provider.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, httpPort)),
+				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
 				Status:    provider.HealthPassing,
-				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, httpPort),
+				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 

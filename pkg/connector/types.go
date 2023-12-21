@@ -35,6 +35,9 @@ func (gw *Gateway) Enable() bool {
 
 // ServiceInstanceID generates a unique ID for a service. This ID is not meant
 // to be particularly human-friendly.
-func ServiceInstanceID(name, addr string, port int) string {
-	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, port, ServiceSourceValue))
+func ServiceInstanceID(name, addr string, httpPort, grpcPort int) string {
+	if grpcPort > 0 {
+		return strings.ToLower(fmt.Sprintf("%s-%s-%d-%d-%s", name, addr, httpPort, grpcPort, ServiceSourceValue))
+	}
+	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, httpPort, ServiceSourceValue))
 }

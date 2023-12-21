@@ -26,7 +26,7 @@ spec:
       serviceAccountName: fsm-grafana
       containers:
         - name: grafana
-          image: {{.Values.fsm.grafana.image}}
+          image: "{{ include "grafana.image" . }}"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -64,7 +64,7 @@ spec:
           - name: GF_LOG_FILTERS
             value: "rendering:debug"
         - name: renderer
-          image: {{.Values.fsm.grafana.rendererImage}}
+          image: "{{ include "grafana.renderer.image" . }}"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
