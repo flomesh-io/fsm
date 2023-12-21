@@ -211,6 +211,15 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* tracing image */}}
+{{- define "tracing.image" -}}
+{{- if .Values.fsm.tracing.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.tracing.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.tracing.image.name .Values.fsm.tracing.image.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

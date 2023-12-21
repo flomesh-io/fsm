@@ -528,7 +528,13 @@ fsm:
     # -- Sampled Fraction
     sampledFraction: "1.0"
     # -- Image used for tracing
-    image: jaegertracing/all-in-one
+    image:
+      # -- Registry for Tracing image
+      registry: jaegertracing
+      # -- Tracing image name
+      name: all-in-one
+      # -- Tracing image tag
+      tag: latest
 
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/

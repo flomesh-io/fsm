@@ -1291,90 +1291,109 @@
                     ]
                 },
                 "tracing": {
-                    "$id": "#/properties/fsm/properties/tracing",
-                    "type": "object",
-                    "title": "The tracing schema",
-                    "description": "An explanation about the purpose of this instance.",
-                    "examples": [
-                        {
-                            "enable": true
-                        }
-                    ],
-                    "required": [
-                        "enable",
-                        "address",
-                        "port",
-                        "endpoint",
-                        "image"
-                    ],
-                    "properties": {
-                        "enable": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/enable",
-                            "type": "boolean",
-                            "title": "The enable schema for tracing",
-                            "description": "Indicates whether tracing is enabled or not",
-                            "examples": [
-                                true
-                            ]
-                        },
-                        "address": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/address",
-                            "type": "string",
-                            "title": "The address schema for tracing",
-                            "description": "Address of the tracing collector",
-                            "examples": [
-                                "jaeger.<fsm-namespace>.svc.cluster.local"
-                            ]
-                        },
-                        "port": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/port",
-                            "type": "integer",
-                            "title": "The port schema for tracing",
-                            "description": "Port of the tracing collector",
-                            "minimum": 1,
-                            "maximum": 65535,
-                            "examples": [
-                                9411
-                            ]
-                        },
-                        "endpoint": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/endpoint",
-                            "type": "string",
-                            "title": "The endpoint schema for tracing",
-                            "description": "API path of the collector",
-                            "examples": [
-                                "/api/v2/spans"
-                            ]
-                        },
-                        "sampledFraction": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/sampledFraction",
-                            "type": "string",
-                            "title": "Sampled Fraction",
-                            "description": "Sampled Fraction",
-                            "examples": [
-                                "0.2"
-                            ]
-                        },
-                        "image": {
-                            "$id": "#/properties/fsm/properties/tracing/properties/image",
-                            "type": "string",
-                            "title": "Jaeger's image schema",
-                            "description": "Image used for jaeger",
-                            "examples": [
-                                "jaegertracing/all-in-one"
-                            ]
-                        },
-                        "affinity": {
-                            "type": "object"
-                        },
-                        "nodeSelector": {
-                            "type": "object"
-                        },
-                        "tolerations": {
-                            "type": "array"
-                        }
+                  "$id": "#/properties/fsm/properties/tracing",
+                  "type": "object",
+                  "title": "The tracing schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "examples": [
+                    {
+                      "enable": true
+                    }
+                  ],
+                  "required": [
+                    "enable",
+                    "address",
+                    "port",
+                    "endpoint",
+                    "image"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/enable",
+                      "type": "boolean",
+                      "title": "The enable schema for tracing",
+                      "description": "Indicates whether tracing is enabled or not",
+                      "examples": [
+                        true
+                      ]
                     },
-                    "additionalProperties": false
+                    "address": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/address",
+                      "type": "string",
+                      "title": "The address schema for tracing",
+                      "description": "Address of the tracing collector",
+                      "examples": [
+                        "jaeger.<fsm-namespace>.svc.cluster.local"
+                      ]
+                    },
+                    "port": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/port",
+                      "type": "integer",
+                      "title": "The port schema for tracing",
+                      "description": "Port of the tracing collector",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "examples": [
+                        9411
+                      ]
+                    },
+                    "endpoint": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/endpoint",
+                      "type": "string",
+                      "title": "The endpoint schema for tracing",
+                      "description": "API path of the collector",
+                      "examples": [
+                        "/api/v2/spans"
+                      ]
+                    },
+                    "sampledFraction": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/sampledFraction",
+                      "type": "string",
+                      "title": "Sampled Fraction",
+                      "description": "Sampled Fraction",
+                      "examples": [
+                        "0.2"
+                      ]
+                    },
+                    "image": {
+                      "$id": "#/properties/fsm/properties/tracing/properties/image",
+                      "type": "object",
+                      "title": "Tracing's image schema",
+                      "description": "Image used for Tracing",
+                      "required": [
+                        "name",
+                        "tag"
+                      ],
+                      "properties": {
+                        "name": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/name",
+                          "type": "string",
+                          "title": "The name schema"
+                        },
+                        "registry": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/registry",
+                          "type": "string",
+                          "title": "The registry schema"
+                        },
+                        "tag": {
+                          "$id": "#/properties/fsm/properties/tracing/properties/image/properties/tag",
+                          "type": "string",
+                          "title": "The tag schema"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
                 },
                 "remoteLogging": {
                     "$id": "#/properties/fsm/properties/remoteLogging",
