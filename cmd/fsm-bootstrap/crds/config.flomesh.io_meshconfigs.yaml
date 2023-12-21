@@ -1693,7 +1693,7 @@ spec:
                 description: Misc defines the configurations of misc info
                 properties:
                   curlImage:
-                    default: curlimages/curl
+                    default: flomesh/fsm-curl
                     description: CurlImage defines the image of curl.
                     type: string
                   repoServerImage:
@@ -1887,6 +1887,9 @@ spec:
                   ipaddr:
                     description: IPAddr of the pipy repo server
                     type: string
+                  port:
+                    description: Port defines the pipy repo server's port.
+                    type: integer
                 required:
                 - codebase
                 - ipaddr
@@ -1935,10 +1938,6 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
-                  initContainerImage:
-                    description: InitContainerImage defines the container image used
-                      for the init container injected to meshed pods.
-                    type: string
                   localDNSProxy:
                     description: LocalDNSProxy improves the performance of your computer
                       by caching the responses coming from your DNS servers
@@ -2067,45 +2066,9 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
-                  sidecarClass:
-                    description: SidecarClass defines the class used for the proxy
-                      sidecar.
-                    type: string
                   sidecarDisabledMTLS:
                     description: SidecarDisabledMTLS defines whether mTLS is disabled.
                     type: boolean
-                  sidecarDrivers:
-                    description: SidecarDrivers defines the sidecar supported.
-                    items:
-                      description: SidecarDriverSpec is the type to represent FSM's
-                        sidecar driver define.
-                      properties:
-                        initContainerImage:
-                          description: InitContainerImage defines the container image
-                            used for the init container injected to meshed pods.
-                          type: string
-                        proxyServerPort:
-                          description: ProxyServerPort is the port on which the Discovery
-                            Service listens for new connections from Sidecars
-                          format: int32
-                          type: integer
-                        sidecarDisabledMTLS:
-                          description: SidecarDisabledMTLS defines whether mTLS is
-                            disabled.
-                          type: boolean
-                        sidecarImage:
-                          description: SidecarImage defines the container image used
-                            for the proxy sidecar.
-                          type: string
-                        sidecarName:
-                          description: SidecarName defines the name of the sidecar
-                            driver.
-                          type: string
-                      required:
-                      - proxyServerPort
-                      - sidecarDisabledMTLS
-                      type: object
-                    type: array
                   sidecarImage:
                     description: SidecarImage defines the container image used for
                       the proxy sidecar.

@@ -40,10 +40,10 @@ spec:
       {{- end }}
       initContainers:
         - name: init-fsm-controller
-          image: {{ .Values.fsm.curlImage }}
+          image: "{{ include "fsmCurl.image" . }}"
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
         - name: init-untar
-          image: {{ .Values.fsm.curlImage }}
+          image: "{{ include "fsmCurl.image" . }}"
           imagePullPolicy: IfNotPresent
           command:
           - sh
@@ -57,19 +57,16 @@ spec:
           - mountPath: /repo
             name: shared-repo
       containers:
-        {{- range .Values.fsm.sidecarDrivers }}
-        {{- if eq .sidecarName $.Values.fsm.sidecarClass }}
-        {{- if eq .sidecarName "pipy" }}
-        {{- if not $.Values.fsm.repoServer.standalone }}
+        {{- if not .Values.fsm.repoServer.standalone }}
         - name: fsm-pipy-repo
-          image: {{ $.Values.fsm.repoServer.image }}
+          image: "{{ include "repoServer.image" . }}"
           imagePullPolicy: {{ $.Values.fsm.image.pullPolicy }}
           ports:
             - name: "pipy-admin-port"
-              containerPort: {{ .proxyServerPort }}
+              containerPort: {{ .Values.fsm.repoServer.port }}
           command: ['pipy']
           args: [
-              "--admin-port={{ .proxyServerPort }}",
+              "--admin-port={{ .Values.fsm.repoServer.port }}",
           ]
           readinessProbe:
             initialDelaySeconds: 1
@@ -77,17 +74,14 @@ spec:
             httpGet:
               scheme: HTTP
               path: /
-              port: 6060
+              port: {{ .Values.fsm.repoServer.port }}
           livenessProbe:
             initialDelaySeconds: 1
             timeoutSeconds: 5
             httpGet:
               scheme: HTTP
               path: /
-              port: 6060
-        {{- end }}
-        {{- end }}
-        {{- end }}
+              port: {{ .Values.fsm.repoServer.port }}
         {{- end }}
         - name: fsm-controller
           image: "{{ include "fsmController.image" . }}"
@@ -163,7 +157,7 @@ spec:
               name: shared-repo
       {{- if .Values.fsm.enableFluentbit }}
         - name: {{ .Values.fsm.fluentBit.name }}
-          image: {{ .Values.fsm.fluentBit.registry }}/fluent-bit:{{ .Values.fsm.fluentBit.tag }}
+          image: "{{ include "fluentBit.image" . }}"
           imagePullPolicy: {{ .Values.fsm.fluentBit.pullPolicy }}
           env:
           {{- if .Values.fsm.fluentBit.enableProxySupport }}

@@ -8,15 +8,9 @@ metadata:
     app: fsm-controller
 spec:
   ports:
-    {{- range .Values.fsm.sidecarDrivers }}
-    {{- if eq .sidecarName $.Values.fsm.sidecarClass }}
-    {{- if eq .sidecarName "pipy" }}
     - name: pipy-admin-port
-      port: {{ .proxyServerPort }}
-      targetPort: {{ .proxyServerPort }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
+      port: {{ .Values.fsm.repoServer.port }}
+      targetPort: {{ .Values.fsm.repoServer.port }}
     - name: debug-port
       port: 9092
       targetPort: 9092

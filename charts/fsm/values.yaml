@@ -37,6 +37,8 @@ fsm:
       fsmIngress: fsm-ingress
       # -- fsm-gateway's image name
       fsmGateway: fsm-gateway
+      # -- fsm-curl's image name
+      fsmCurl: fsm-curl
     # -- Image digest (defaults to latest compatible tag)
     digest:
       # -- fsm-controller's image digest
@@ -61,37 +63,42 @@ fsm:
       fsmIngress: ""
       # -- fsm-gateway's image digest
       fsmGateway: ""
+      # -- fsm-curl's image digest
+      fsmCurl: ""
 
   # -- `fsm-controller` image pull secret
   imagePullSecrets: [ ]
-  # -- The class of the FSM Sidecar Driver
-  sidecarClass: pipy
-  # -- Sidecar image for Linux workloads
-  sidecarImage: ""
-  # -- Sidecar runs without mTLS
-  sidecarDisabledMTLS: false
-  # -- Sidecar drivers supported by fsm
-  sidecarDrivers:
-    - sidecarName: pipy
-      # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.99.0-2
-      # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
-      proxyServerPort: 6060
-  # -- Curl image for control plane init container
-  curlImage: curlimages/curl
-
-  # -- service-lb Image
-  serviceLBImage: flomesh/mirrored-klipper-lb:v0.3.5
-
+  # -- Sidecar supported by fsm
+  sidecar:
+    image:
+      # -- Registry for sidecar image
+      registry: flomesh
+      # -- Sidecar image name
+      name: pipy
+      # -- Sidecar image tag
+      tag: 0.99.0-2
+    # -- Sidecar runs without mTLS
+    sidecarDisabledMTLS: false
+    # -- Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error`
+    sidecarLogLevel: error
+    # -- Sets connect/idle/read/write timeout
+    sidecarTimeout: 60
 
   # -- Pipy RepoServer
   repoServer:
-    # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.99.0-2
+    image:
+      # -- Registry for repo server image
+      registry: flomesh
+      # -- Repo server image name
+      name: pipy-repo
+      # -- Repo server image tag
+      tag: 0.99.0-2
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
     ipaddr: "127.0.0.1"
+    # -- port of pipy RepoServer
+    port: 6060
     # -- codebase is the folder used by fsmController.
     codebase: ""
 
@@ -277,7 +284,13 @@ fsm:
       # -- Prometheus data retention time
       time: 15d
     # -- Image used for Prometheus
-    image: prom/prometheus:v2.34.0
+    image:
+      # -- Registry for Prometheus image
+      registry: prom
+      # -- Prometheus image name
+      name: prometheus
+      # -- Prometheus image tag
+      tag: v2.34.0
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
     nodeSelector: { }
@@ -358,9 +371,21 @@ fsm:
     # -- Enable Remote Rendering in Grafana
     enableRemoteRendering: false
     # -- Image used for Grafana
-    image: grafana/grafana:8.2.2
+    image:
+      # -- Registry for Grafana image
+      registry: grafana
+      # -- Grafana image name
+      name: grafana
+      # -- Grafana image tag
+      tag: 8.2.2
     # -- Image used for Grafana Renderer
-    rendererImage: grafana/grafana-image-renderer:3.2.1
+    rendererImage:
+      # -- Registry for Grafana Renderer image
+      registry: grafana
+      # -- Grafana Renderer image name
+      name: grafana-image-renderer
+      # -- Grafana Renderer image tag
+      tag: 3.2.1
 
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -431,10 +456,14 @@ fsm:
   fluentBit:
     # -- Fluent Bit sidecar container name
     name: fluentbit-logger
-    # -- Registry for Fluent Bit sidecar container
-    registry: fluent
-    # -- Fluent Bit sidecar image tag
-    tag: 1.6.4
+    # -- Image used for FluentBit
+    image:
+      # -- Registry for FluentBit image
+      registry: fluent
+      # -- FluentBit image name
+      name: fluent-bit
+      # -- FluentBit image tag
+      tag: 1.6.4
     # -- PullPolicy for Fluent Bit sidecar container
     pullPolicy: IfNotPresent
     # -- Fluent Bit output plugin
@@ -453,9 +482,6 @@ fsm:
   # -- Identifier for the instance of a service mesh within a cluster
   meshName: fsm
 
-  # -- Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error`
-  sidecarLogLevel: error
-
   # -- Proxy mode for the proxy sidecar. Acceptable values are ['Localhost', 'PodIP']
   localProxyMode: Localhost
 
@@ -471,9 +497,6 @@ fsm:
 
   # -- Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync
   configResyncInterval: "90s"
-
-  # -- Sets connect/idle/read/write timeout
-  sidecarTimeout: 60
 
   # -- Controller log verbosity
   controllerLogLevel: info
@@ -505,7 +528,13 @@ fsm:
     # -- Sampled Fraction
     sampledFraction: "1.0"
     # -- Image used for tracing
-    image: jaegertracing/all-in-one
+    image:
+      # -- Registry for Tracing image
+      registry: jaegertracing
+      # -- Tracing image name
+      name: all-in-one
+      # -- Tracing image tag
+      tag: latest
 
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -1021,6 +1050,13 @@ fsm:
   # -- FSM ServiceLB parameters
   serviceLB:
     enabled: false
+    image:
+      # -- Registry for service-lb image
+      registry: flomesh
+      # -- service-lb image name
+      name: mirrored-klipper-lb
+      # -- service-lb image tag
+      tag: v0.3.5
 
   #
   # -- FSM FLB parameters

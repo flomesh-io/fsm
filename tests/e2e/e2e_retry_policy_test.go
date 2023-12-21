@@ -160,7 +160,7 @@ var _ = FSMDescribe("Test Retry Policy",
 					installOpts.EnableRetryPolicy = false
 					Expect(Td.InstallFSM(installOpts)).To(Succeed())
 
-					sidecarClass, _ := Td.GetSidecarClass(Td.FsmNamespace)
+					sidecarClass := Td.GetSidecarClass(Td.FsmNamespace)
 					if len(sidecarClass) == 0 || sidecarClass == constants.SidecarClassPipy {
 						Skip("Pipy doesn't support retry policy")
 					}

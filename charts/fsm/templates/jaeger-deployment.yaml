@@ -24,7 +24,7 @@ spec:
       serviceAccountName: jaeger
       containers:
       - name: jaeger
-        image: {{ .Values.fsm.tracing.image }}
+        image: "{{ include "tracing.image" . }}"
         args:
           - --collector.zipkin.host-port={{ .Values.fsm.tracing.port }}
         imagePullPolicy: IfNotPresent

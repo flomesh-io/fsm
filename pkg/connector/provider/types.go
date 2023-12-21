@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -216,27 +215,26 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 		r.PortEnabled = true
 		r.Status = eureka.UP
 		r.DataCenterInfo = eureka.DataCenterInfo{Name: eureka.MyOwn}
+		rMetadata := r.Metadata.GetMap()
 		if len(cr.Service.Meta) > 0 {
 			for k, v := range cr.Service.Meta {
-				r.Metadata.GetMap()[k] = v
+				rMetadata[k] = v
 			}
 		}
 
-		//r.Metadata.GetMap()["type"] = "smart-gateway"
-		//r.Metadata.GetMap()["version"] = "release"
-		//r.Metadata.GetMap()["zone"] = "yinzhou"
+		//rMetadata["type"] = "smart-gateway"
+		//rMetadata["version"] = "release"
+		//rMetadata["zone"] = "yinzhou"
 
 		if cr.Service.GRPCPort > 0 {
-			cr.Service.Meta["gRPC__port"] = fmt.Sprintf("%d", cr.Service.GRPCPort)
-			cr.Service.Meta["management.port"] = fmt.Sprintf("%d", cr.Service.HTTPPort)
+			rMetadata[EUREKA_METADATA_GRPC_PORT] = fmt.Sprintf("%d", cr.Service.GRPCPort)
+			rMetadata[EUREKA_METADATA_MGMT_PORT] = fmt.Sprintf("%d", cr.Service.HTTPPort)
 		}
 
 		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.HTTPPort)
 		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.HTTPPort)
 		r.HealthCheckUrl = fmt.Sprintf("http://%s:%d/actuator/health", cr.Service.Address, cr.Service.HTTPPort)
 	}
-	bytes, _ := json.MarshalIndent(r, "", " ")
-	fmt.Println(string(bytes))
 	return r
 }
 

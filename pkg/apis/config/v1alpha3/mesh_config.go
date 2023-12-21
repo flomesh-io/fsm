@@ -130,20 +130,11 @@ type SidecarSpec struct {
 	// LogLevel defines the logging level for the sidecar's logs. Non developers should generally never set this value. In production environments the LogLevel should be set to error.
 	LogLevel string `json:"logLevel,omitempty"`
 
-	// SidecarClass defines the class used for the proxy sidecar.
-	SidecarClass string `json:"sidecarClass,omitempty"`
-
 	// SidecarImage defines the container image used for the proxy sidecar.
 	SidecarImage string `json:"sidecarImage,omitempty"`
 
 	// SidecarDisabledMTLS defines whether mTLS is disabled.
 	SidecarDisabledMTLS bool `json:"sidecarDisabledMTLS"`
-
-	// InitContainerImage defines the container image used for the init container injected to meshed pods.
-	InitContainerImage string `json:"initContainerImage,omitempty"`
-
-	// SidecarDrivers defines the sidecar supported.
-	SidecarDrivers []SidecarDriverSpec `json:"sidecarDrivers,omitempty"`
 
 	// MaxDataPlaneConnections defines the maximum allowed data plane connections from a proxy sidecar to the FSM controller.
 	MaxDataPlaneConnections int `json:"maxDataPlaneConnections,omitempty"`
@@ -391,28 +382,13 @@ type FeatureFlags struct {
 	EnableGatewayProxyTag bool `json:"enableGatewayProxyTag"`
 }
 
-// SidecarDriverSpec is the type to represent FSM's sidecar driver define.
-type SidecarDriverSpec struct {
-	// SidecarName defines the name of the sidecar driver.
-	SidecarName string `json:"sidecarName,omitempty"`
-
-	// SidecarImage defines the container image used for the proxy sidecar.
-	SidecarImage string `json:"sidecarImage,omitempty"`
-
-	// InitContainerImage defines the container image used for the init container injected to meshed pods.
-	InitContainerImage string `json:"initContainerImage,omitempty"`
-
-	// ProxyServerPort is the port on which the Discovery Service listens for new connections from Sidecars
-	ProxyServerPort uint32 `json:"proxyServerPort"`
-
-	// SidecarDisabledMTLS defines whether mTLS is disabled.
-	SidecarDisabledMTLS bool `json:"sidecarDisabledMTLS"`
-}
-
 // RepoServerSpec is the type to represent repo server.
 type RepoServerSpec struct {
 	// IPAddr of the pipy repo server
 	IPAddr string `json:"ipaddr"`
+
+	// Port defines the pipy repo server's port.
+	Port int16 `json:"port,omitempty"`
 
 	// Codebase is the folder used by fsmController
 	Codebase string `json:"codebase"`
@@ -715,7 +691,7 @@ type ImageSpec struct {
 
 // MiscSpec is the type to represent misc configs.
 type MiscSpec struct {
-	// +kubebuilder:default="curlimages/curl"
+	// +kubebuilder:default="flomesh/fsm-curl"
 	// CurlImage defines the image of curl.
 	CurlImage string `json:"curlImage"`
 
