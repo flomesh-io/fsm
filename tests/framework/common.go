@@ -504,7 +504,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.enableEgress=%v", instOpts.EgressEnabled),
 		fmt.Sprintf("fsm.enablePermissiveTrafficPolicy=%v", instOpts.EnablePermissiveMode),
 		fmt.Sprintf("fsm.enableDebugServer=%v", instOpts.EnableDebugServer),
-		fmt.Sprintf("fsm.sidecarLogLevel=%s", instOpts.SidecarLogLevel),
+		fmt.Sprintf("fsm.sidecar.sidecarLogLevel=%s", instOpts.SidecarLogLevel),
 		fmt.Sprintf("fsm.deployGrafana=%v", instOpts.DeployGrafana),
 		fmt.Sprintf("fsm.deployPrometheus=%v", instOpts.DeployPrometheus),
 		fmt.Sprintf("fsm.deployJaeger=%v", instOpts.DeployJaeger),
@@ -645,19 +645,8 @@ func (td *FsmTestData) GetMeshConfig(namespace string) (*configv1alpha3.MeshConf
 }
 
 // GetSidecarClass is a wrapper to get sidecarClass in a particular namespace
-func (td *FsmTestData) GetSidecarClass(namespace string) (string, error) {
-	meshConfig, err := td.ConfigClient.ConfigV1alpha3().MeshConfigs(namespace).Get(context.TODO(), td.FsmMeshConfigName, v1.GetOptions{})
-
-	if err != nil {
-		return "", err
-	}
-
-	sidecarClass := meshConfig.Spec.Sidecar.SidecarClass
-	if sidecarClass == "" {
-		sidecarClass = os.Getenv("FSM_DEFAULT_SIDECAR_CLASS")
-	}
-
-	return sidecarClass, nil
+func (td *FsmTestData) GetSidecarClass(namespace string) string {
+	return constants.SidecarClassPipy
 }
 
 // LoadFSMImagesIntoKind loads the FSM images to the node for Kind clusters
@@ -672,6 +661,7 @@ func (td *FsmTestData) LoadFSMImagesIntoKind() error {
 		"fsm-healthcheck",
 		"fsm-ingress",
 		"fsm-gateway",
+		"fsm-curl",
 	}
 
 	return td.LoadImagesToKind(imageNames)

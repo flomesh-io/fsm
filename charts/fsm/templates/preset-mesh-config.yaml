@@ -18,14 +18,12 @@ data:
       },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
-        "logLevel": {{.Values.fsm.sidecarLogLevel | mustToJson}},
+        "logLevel": {{.Values.fsm.sidecar.sidecarLogLevel | mustToJson}},
         "maxDataPlaneConnections": {{.Values.fsm.maxDataPlaneConnections | mustToJson}},
         "configResyncInterval": {{.Values.fsm.configResyncInterval | mustToJson}},
-        "sidecarClass": {{.Values.fsm.sidecarClass | mustToJson }},
-        "sidecarImage": {{.Values.fsm.sidecarImage | mustToJson }},
-        "sidecarDisabledMTLS": {{.Values.fsm.sidecarDisabledMTLS | mustToJson }},
-        "sidecarDrivers": {{.Values.fsm.sidecarDrivers | mustToJson }},
-        "sidecarTimeout": {{.Values.fsm.sidecarTimeout | mustToJson}},
+        "sidecarImage": "{{ include "sidecar.image" .}}",
+        "sidecarDisabledMTLS": {{.Values.fsm.sidecar.sidecarDisabledMTLS | mustToJson }},
+        "sidecarTimeout": {{.Values.fsm.sidecar.sidecarTimeout | mustToJson}},
         "localProxyMode": {{.Values.fsm.localProxyMode | mustToJson}},
         "localDNSProxy": {{.Values.fsm.localDNSProxy | mustToJson}}
       },
@@ -73,6 +71,7 @@ data:
       },
       "repoServer": {
         "ipaddr": {{.Values.fsm.repoServer.ipaddr | mustToJson}},
+        "port": {{.Values.fsm.repoServer.port | mustToJson}},
         "codebase": {{.Values.fsm.repoServer.codebase | mustToJson}}
       },
       "featureFlags": {
@@ -132,7 +131,7 @@ data:
       },
       "serviceLB": {
         "enabled": {{ .Values.fsm.serviceLB.enabled }},
-        "image": "{{ .Values.fsm.serviceLBImage }}"
+        "image": "{{ include "serviceLB.image" . }}"
       },
       "flb": {
         "enabled": {{ .Values.fsm.flb.enabled }},
@@ -153,7 +152,7 @@ data:
         "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
       },
       "misc": {
-        "curlImage": "{{ .Values.fsm.curlImage }}",
-        "repoServerImage": "{{ .Values.fsm.repoServer.image }}"
+        "curlImage": "{{ include "fsmCurl.image" . }}",
+        "repoServerImage": "{{ include "repoServer.image" . }}"
       }
     }

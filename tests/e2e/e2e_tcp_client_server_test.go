@@ -45,10 +45,9 @@ func testTCPTraffic(permissiveMode bool) {
 		installOpts.EnablePermissiveMode = permissiveMode
 		Expect(Td.InstallFSM(installOpts)).To(Succeed())
 
-		if sidecarClass, err := Td.GetSidecarClass(Td.FsmNamespace); err == nil {
-			if strings.EqualFold(strings.ToLower(constants.SidecarClassPipy), strings.ToLower(sidecarClass)) {
-				Skip("pending")
-			}
+		sidecarClass := Td.GetSidecarClass(Td.FsmNamespace)
+		if strings.EqualFold(strings.ToLower(constants.SidecarClassPipy), strings.ToLower(sidecarClass)) {
+			Skip("pending")
 		}
 
 		// Create Test NS

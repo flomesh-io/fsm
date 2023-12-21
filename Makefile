@@ -184,7 +184,7 @@ kind-reset:
 
 .PHONY: test-e2e
 test-e2e: DOCKER_BUILDX_OUTPUT=type=docker
-test-e2e: docker-build-fsm build-fsm docker-build-tcp-echo-server
+test-e2e: docker-build-e2e build-fsm docker-build-tcp-echo-server
 	E2E_FLAGS="--timeout=0" go test ./tests/e2e $(E2E_FLAGS_DEFAULT) $(E2E_FLAGS)
 
 .env:
@@ -209,6 +209,10 @@ $(DOCKER_DEMO_TARGETS):
 
 .PHONY: docker-build-demo
 docker-build-demo: $(DOCKER_DEMO_TARGETS)
+
+.PHONY: docker-build-fsm-curl
+docker-build-fsm-curl:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-curl:$(CTR_TAG) - < dockerfiles/Dockerfile.fsm-curl
 
 .PHONY: docker-build-fsm-sidecar-init
 docker-build-fsm-sidecar-init:
@@ -254,9 +258,9 @@ docker-build-fsm-ingress:
 docker-build-fsm-gateway:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=nonroot .
 
-TRI_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
-FSM_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
-E2E_TARGETS = fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
+TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
+FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
+E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))

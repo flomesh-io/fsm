@@ -178,7 +178,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
-| fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
 | fsm.deployJaeger | bool | `false` | Deploy Jaeger during FSM installation |
 | fsm.deployPrometheus | bool | `false` | Deploy Prometheus with FSM installation |
@@ -370,11 +369,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.http1PerRequestLoadBalancing | bool | `false` | Specifies a boolean indicating if load balancing based on request is enabled for http1. |
 | fsm.http2PerRequestLoadBalancing | bool | `true` | Specifies a boolean indicating if load balancing based on request is enabled for http2. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmCurl":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
 | fsm.image.digest.fsmConnector | string | `""` | fsm-connector's image digest |
 | fsm.image.digest.fsmController | string | `""` | fsm-controller's image digest |
+| fsm.image.digest.fsmCurl | string | `""` | fsm-curl's image digest |
 | fsm.image.digest.fsmGateway | string | `""` | fsm-gateway's image digest |
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
@@ -382,11 +382,12 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmCurl":"fsm-curl","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
 | fsm.image.name.fsmConnector | string | `"fsm-connector"` | fsm-connector's image name |
 | fsm.image.name.fsmController | string | `"fsm-controller"` | fsm-controller's image name |
+| fsm.image.name.fsmCurl | string | `"fsm-curl"` | fsm-curl's image name |
 | fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |
@@ -516,22 +517,26 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
-| fsm.repoServer | object | `{"codebase":"","image":"flomesh/pipy-repo:0.99.0-2","ipaddr":"127.0.0.1","standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"0.99.0-2"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
-| fsm.repoServer.image | string | `"flomesh/pipy-repo:0.99.0-2"` | Image used for Pipy RepoServer |
+| fsm.repoServer.image.name | string | `"pipy-repo"` | Repo server image name |
+| fsm.repoServer.image.registry | string | `"flomesh"` | Registry for repo server image |
+| fsm.repoServer.image.tag | string | `"0.99.0-2"` | Repo server image tag |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
+| fsm.repoServer.port | int | `6060` | port of pipy RepoServer |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
 | fsm.serviceAccessMode | string | `"mixed"` | Service access mode |
 | fsm.serviceLB.enabled | bool | `false` |  |
-| fsm.serviceLBImage | string | `"flomesh/mirrored-klipper-lb:v0.3.5"` | service-lb Image |
-| fsm.sidecarClass | string | `"pipy"` | The class of the FSM Sidecar Driver |
-| fsm.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
-| fsm.sidecarDrivers | list | `[{"proxyServerPort":6060,"sidecarImage":"flomesh/pipy:0.99.0-2","sidecarName":"pipy"}]` | Sidecar drivers supported by fsm |
-| fsm.sidecarDrivers[0].proxyServerPort | int | `6060` | Remote destination port on which the Discovery Service listens for new connections from Sidecars. |
-| fsm.sidecarDrivers[0].sidecarImage | string | `"flomesh/pipy:0.99.0-2"` | Sidecar image for Linux workloads |
-| fsm.sidecarImage | string | `""` | Sidecar image for Linux workloads |
-| fsm.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
-| fsm.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
+| fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
+| fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
+| fsm.serviceLB.image.tag | string | `"v0.3.5"` | service-lb image tag |
+| fsm.sidecar | object | `{"image":{"name":"pipy","registry":"flomesh","tag":"0.99.0-2"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
+| fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
+| fsm.sidecar.image.tag | string | `"0.99.0-2"` | Sidecar image tag |
+| fsm.sidecar.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
+| fsm.sidecar.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
+| fsm.sidecar.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
 | fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |

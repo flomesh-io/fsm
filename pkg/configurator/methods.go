@@ -243,29 +243,12 @@ func (c *Client) GetSidecarLogLevel() string {
 
 // GetSidecarClass returns the sidecar class
 func (c *Client) GetSidecarClass() string {
-	class := c.getMeshConfig().Spec.Sidecar.SidecarClass
-	if class == "" {
-		class = os.Getenv("FSM_DEFAULT_SIDECAR_CLASS")
-	}
-	if class == "" {
-		class = constants.SidecarClassPipy
-	}
-	return class
+	return constants.SidecarClassPipy
 }
 
 // GetSidecarImage returns the sidecar image
 func (c *Client) GetSidecarImage() string {
 	image := c.getMeshConfig().Spec.Sidecar.SidecarImage
-	if len(image) == 0 {
-		sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
-		sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
-		for _, sidecarDriver := range sidecarDrivers {
-			if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
-				image = sidecarDriver.SidecarImage
-				break
-			}
-		}
-	}
 	if len(image) == 0 {
 		image = os.Getenv("FSM_DEFAULT_SIDECAR_IMAGE")
 	}
@@ -274,49 +257,21 @@ func (c *Client) GetSidecarImage() string {
 
 // GetInitContainerImage returns the init container image
 func (c *Client) GetInitContainerImage() string {
-	image := c.getMeshConfig().Spec.Sidecar.InitContainerImage
-	if len(image) == 0 {
-		sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
-		sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
-		for _, sidecarDriver := range sidecarDrivers {
-			if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
-				image = sidecarDriver.InitContainerImage
-				break
-			}
-		}
-	}
-	if len(image) == 0 {
-		image = os.Getenv("FSM_DEFAULT_INIT_CONTAINER_IMAGE")
-	}
-	return image
+	return os.Getenv("FSM_DEFAULT_INIT_CONTAINER_IMAGE")
 }
 
 // GetProxyServerPort returns the port on which the Discovery Service listens for new connections from Sidecars
 func (c *Client) GetProxyServerPort() uint32 {
-	sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
-	sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
-	for _, sidecarDriver := range sidecarDrivers {
-		if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
-			return sidecarDriver.ProxyServerPort
-		}
+	port := c.getMeshConfig().Spec.RepoServer.Port
+	if port > 0 {
+		return uint32(port)
 	}
 	return constants.ProxyServerPort
 }
 
 // GetSidecarDisabledMTLS returns the status of mTLS
 func (c *Client) GetSidecarDisabledMTLS() bool {
-	disabledMTLS := c.getMeshConfig().Spec.Sidecar.SidecarDisabledMTLS
-	if !disabledMTLS {
-		sidecarClass := c.getMeshConfig().Spec.Sidecar.SidecarClass
-		sidecarDrivers := c.getMeshConfig().Spec.Sidecar.SidecarDrivers
-		for _, sidecarDriver := range sidecarDrivers {
-			if strings.EqualFold(strings.ToLower(sidecarClass), strings.ToLower(sidecarDriver.SidecarName)) {
-				disabledMTLS = sidecarDriver.SidecarDisabledMTLS
-				break
-			}
-		}
-	}
-	return disabledMTLS
+	return c.getMeshConfig().Spec.Sidecar.SidecarDisabledMTLS
 }
 
 // GetRepoServerIPAddr returns the ip address of RepoServer

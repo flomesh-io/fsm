@@ -122,7 +122,7 @@ func TestMeshUpgradeDropsInstallOverrides(t *testing.T) {
 	i.setOptions = []string{
 		"fsm.enableEgress=true",
 		"fsm.image.registry=installed",
-		"fsm.sidecarLogLevel=trace",
+		"fsm.sidecar.sidecarLogLevel=trace",
 	}
 
 	err := i.run(config)
@@ -140,7 +140,7 @@ func TestMeshUpgradeDropsInstallOverrides(t *testing.T) {
 
 	// Values overridden at install should be the same as their defaults in the
 	// chart after an upgrade that sets no values
-	for _, valKey := range []string{"fsm.enableEgress", "fsm.image.registry", "fsm.sidecarLogLevel"} {
+	for _, valKey := range []string{"fsm.enableEgress", "fsm.image.registry", "fsm.sidecar.sidecarLogLevel"} {
 		def, defErr := chartutil.Values(u.chart.Values).PathValue(valKey)
 		upgradedVal, upgErr := chartutil.Values(upgraded).PathValue(valKey)
 		a.Equal(def, upgradedVal)

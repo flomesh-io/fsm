@@ -1,6 +1,7 @@
 package configurator
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -54,14 +55,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 					LogLevel:                      "error",
 					MaxDataPlaneConnections:       0,
 					ConfigResyncInterval:          "2m",
-					SidecarClass:                  "pipy",
-					SidecarDrivers: []configv1alpha3.SidecarDriverSpec{
-						{
-							SidecarName:        "pipy",
-							SidecarImage:       "flomesh/pipy:latest",
-							InitContainerImage: "flomesh/init:v0.0.0",
-						},
-					},
+					SidecarImage:                  "flomesh/pipy:latest",
 				},
 				Traffic: configv1alpha3.TrafficSpec{
 					EnablePermissiveTrafficPolicyMode: false,
@@ -85,14 +79,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 						LogLevel:                      "error",
 						MaxDataPlaneConnections:       0,
 						ConfigResyncInterval:          "2m",
-						SidecarClass:                  "pipy",
-						SidecarDrivers: []configv1alpha3.SidecarDriverSpec{
-							{
-								SidecarName:        "pipy",
-								SidecarImage:       "flomesh/pipy:latest",
-								InitContainerImage: "flomesh/init:v0.0.0",
-							},
-						},
+						SidecarImage:                  "flomesh/pipy:latest",
 					},
 					Traffic: configv1alpha3.TrafficSpec{
 						EnablePermissiveTrafficPolicyMode: false,
@@ -229,13 +216,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
 				Sidecar: configv1alpha3.SidecarSpec{
-					SidecarClass: "pipy",
-					SidecarDrivers: []configv1alpha3.SidecarDriverSpec{
-						{
-							SidecarName:  "pipy",
-							SidecarImage: "flomesh/pipy:latest",
-						},
-					},
+					SidecarImage: "flomesh/pipy:latest",
 				},
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
@@ -250,16 +231,11 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
 				Sidecar: configv1alpha3.SidecarSpec{
-					SidecarClass: "pipy",
-					SidecarDrivers: []configv1alpha3.SidecarDriverSpec{
-						{
-							SidecarName:        "pipy",
-							InitContainerImage: "flomesh/init:v0.8.2",
-						},
-					},
+					SidecarImage: "flomesh/pipy:latest",
 				},
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
+				os.Setenv("FSM_DEFAULT_INIT_CONTAINER_IMAGE", "flomesh/init:v0.8.2")
 				assert.Equal("flomesh/init:v0.8.2", cfg.GetInitContainerImage())
 			},
 		},

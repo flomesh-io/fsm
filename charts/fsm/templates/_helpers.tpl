@@ -139,6 +139,42 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fsm-curl image */}}
+{{- define "fsmCurl.image" -}}
+{{- if .Values.fsm.image.tag -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
+{{- end -}}
+{{- end -}}
+
+{{/* pipy repo image */}}
+{{- define "repoServer.image" -}}
+{{- if .Values.fsm.repoServer.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.repoServer.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.repoServer.image.name .Values.fsm.repoServer.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* pipy sidecar image */}}
+{{- define "sidecar.image" -}}
+{{- if .Values.fsm.sidecar.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.sidecar.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.sidecar.image.name .Values.fsm.sidecar.image.tag -}}
+{{- end -}}
+{{- end -}}
+
+{{/* serviceLB image */}}
+{{- define "serviceLB.image" -}}
+{{- if .Values.fsm.serviceLB.image.registry -}}
+{{- printf "%s/%s:%s" .Values.fsm.serviceLB.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- else -}}
+{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.serviceLB.image.name .Values.fsm.serviceLB.image.tag -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

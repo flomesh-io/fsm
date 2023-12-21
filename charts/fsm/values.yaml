@@ -37,6 +37,8 @@ fsm:
       fsmIngress: fsm-ingress
       # -- fsm-gateway's image name
       fsmGateway: fsm-gateway
+      # -- fsm-curl's image name
+      fsmCurl: fsm-curl
     # -- Image digest (defaults to latest compatible tag)
     digest:
       # -- fsm-controller's image digest
@@ -61,37 +63,42 @@ fsm:
       fsmIngress: ""
       # -- fsm-gateway's image digest
       fsmGateway: ""
+      # -- fsm-curl's image digest
+      fsmCurl: ""
 
   # -- `fsm-controller` image pull secret
   imagePullSecrets: [ ]
-  # -- The class of the FSM Sidecar Driver
-  sidecarClass: pipy
-  # -- Sidecar image for Linux workloads
-  sidecarImage: ""
-  # -- Sidecar runs without mTLS
-  sidecarDisabledMTLS: false
-  # -- Sidecar drivers supported by fsm
-  sidecarDrivers:
-    - sidecarName: pipy
-      # -- Sidecar image for Linux workloads
-      sidecarImage: flomesh/pipy:0.99.0-2
-      # -- Remote destination port on which the Discovery Service listens for new connections from Sidecars.
-      proxyServerPort: 6060
-  # -- Curl image for control plane init container
-  curlImage: curlimages/curl
-
-  # -- service-lb Image
-  serviceLBImage: flomesh/mirrored-klipper-lb:v0.3.5
-
+  # -- Sidecar supported by fsm
+  sidecar:
+    image:
+      # -- Registry for sidecar image
+      registry: flomesh
+      # -- Sidecar image name
+      name: pipy
+      # -- Sidecar image tag
+      tag: 0.99.0-2
+    # -- Sidecar runs without mTLS
+    sidecarDisabledMTLS: false
+    # -- Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error`
+    sidecarLogLevel: error
+    # -- Sets connect/idle/read/write timeout
+    sidecarTimeout: 60
 
   # -- Pipy RepoServer
   repoServer:
-    # -- Image used for Pipy RepoServer
-    image: flomesh/pipy-repo:0.99.0-2
+    image:
+      # -- Registry for repo server image
+      registry: flomesh
+      # -- Repo server image name
+      name: pipy-repo
+      # -- Repo server image tag
+      tag: 0.99.0-2
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
     ipaddr: "127.0.0.1"
+    # -- port of pipy RepoServer
+    port: 6060
     # -- codebase is the folder used by fsmController.
     codebase: ""
 
@@ -453,9 +460,6 @@ fsm:
   # -- Identifier for the instance of a service mesh within a cluster
   meshName: fsm
 
-  # -- Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error`
-  sidecarLogLevel: error
-
   # -- Proxy mode for the proxy sidecar. Acceptable values are ['Localhost', 'PodIP']
   localProxyMode: Localhost
 
@@ -471,9 +475,6 @@ fsm:
 
   # -- Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync
   configResyncInterval: "90s"
-
-  # -- Sets connect/idle/read/write timeout
-  sidecarTimeout: 60
 
   # -- Controller log verbosity
   controllerLogLevel: info
@@ -1021,6 +1022,13 @@ fsm:
   # -- FSM ServiceLB parameters
   serviceLB:
     enabled: false
+    image:
+      # -- Registry for service-lb image
+      registry: flomesh
+      # -- service-lb image name
+      name: mirrored-klipper-lb
+      # -- service-lb image tag
+      tag: v0.3.5
 
   #
   # -- FSM FLB parameters
