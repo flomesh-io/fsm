@@ -150,6 +150,20 @@ func (mr *MockConfiguratorMockRecorder) GetFLBSecretName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFLBSecretName", reflect.TypeOf((*MockConfigurator)(nil).GetFLBSecretName))
 }
 
+// GetFLBUpstreamMode mocks base method.
+func (m *MockConfigurator) GetFLBUpstreamMode() v1alpha3.FLBUpstreamMode {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFLBUpstreamMode")
+	ret0, _ := ret[0].(v1alpha3.FLBUpstreamMode)
+	return ret0
+}
+
+// GetFLBUpstreamMode indicates an expected call of GetFLBUpstreamMode.
+func (mr *MockConfiguratorMockRecorder) GetFLBUpstreamMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFLBUpstreamMode", reflect.TypeOf((*MockConfigurator)(nil).GetFLBUpstreamMode))
+}
+
 // GetFSMGatewayLogLevel mocks base method.
 func (m *MockConfigurator) GetFSMGatewayLogLevel() string {
 	m.ctrl.T.Helper()

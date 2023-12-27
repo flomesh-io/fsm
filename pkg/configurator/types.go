@@ -256,4 +256,7 @@ type Configurator interface {
 
 	// GetCurlImage returns the curl image
 	GetCurlImage() string
+
+	// GetFLBUpstreamMode returns the upstream mode of FLB
+	GetFLBUpstreamMode() configv1alpha3.FLBUpstreamMode
 }

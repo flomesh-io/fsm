@@ -524,6 +524,11 @@ func (c *Client) IsFLBEnabled() bool {
 	return mcSpec.FLB.Enabled
 }
 
+func (c *Client) GetFLBUpstreamMode() configv1alpha3.FLBUpstreamMode {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.FLB.UpstreamMode
+}
+
 // IsMultiClusterControlPlane returns whether current cluster is the control plane of a multi cluster set
 func (c *Client) IsMultiClusterControlPlane() bool {
 	clusterSet := c.getMeshConfig().Spec.ClusterSet
