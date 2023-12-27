@@ -1437,10 +1437,18 @@ spec:
                     default: false
                     description: StrictMode defines if flb is in strict mode.
                     type: boolean
+                  upstreamMode:
+                    default: Endpoint
+                    description: UpstreamMode defines the upstream mode of flb.
+                    enum:
+                    - NodePort
+                    - Endpoint
+                    type: string
                 required:
                 - enabled
                 - secretName
                 - strictMode
+                - upstreamMode
                 type: object
               gatewayAPI:
                 description: GatewayAPI defines the configurations of GatewayAPI features.

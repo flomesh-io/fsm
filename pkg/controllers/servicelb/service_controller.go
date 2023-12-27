@@ -39,7 +39,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/net"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -367,7 +366,7 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 			continue
 		}
 
-		if !isPodStatusConditionTrue(pod.Status.Conditions, corev1.PodReady) {
+		if !utils.IsPodStatusConditionTrue(pod.Status.Conditions, corev1.PodReady) {
 			continue
 		}
 
@@ -403,7 +402,7 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 		ips = keys(intIPs)
 	}
 
-	ips, err := filterByIPFamily(ips, svc)
+	ips, err := utils.FilterByIPFamily(ips, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -413,30 +412,6 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 	//}
 
 	return ips, nil
-}
-
-func filterByIPFamily(ips []string, svc *corev1.Service) ([]string, error) {
-	var ipFamilyPolicy corev1.IPFamilyPolicyType
-	var ipv4Addresses []string
-
-	for _, ip := range ips {
-		if net.IsIPv4String(ip) {
-			ipv4Addresses = append(ipv4Addresses, ip)
-		}
-	}
-
-	if svc.Spec.IPFamilyPolicy != nil {
-		ipFamilyPolicy = *svc.Spec.IPFamilyPolicy
-	}
-
-	switch ipFamilyPolicy {
-	case corev1.IPFamilyPolicySingleStack:
-		if svc.Spec.IPFamilies[0] == corev1.IPv4Protocol {
-			return ipv4Addresses, nil
-		}
-	}
-
-	return nil, fmt.Errorf("unhandled ipFamilyPolicy")
 }
 
 func (r *serviceReconciler) addFinalizer(ctx context.Context, svc *corev1.Service) error {
@@ -475,19 +450,6 @@ func (r *serviceReconciler) hasFinalizer(_ context.Context, svc *corev1.Service)
 
 func generateName(svc *corev1.Service) string {
 	return fmt.Sprintf("svclb-%s-%s", svc.Name, svc.UID[:8])
-}
-
-func isPodStatusConditionTrue(conditions []corev1.PodCondition, conditionType corev1.PodConditionType) bool {
-	return isPodStatusConditionPresentAndEqual(conditions, conditionType, corev1.ConditionTrue)
-}
-
-func isPodStatusConditionPresentAndEqual(conditions []corev1.PodCondition, conditionType corev1.PodConditionType, status corev1.ConditionStatus) bool {
-	for _, condition := range conditions {
-		if condition.Type == conditionType {
-			return condition.Status == status
-		}
-	}
-	return false
 }
 
 // SetupWithManager sets up the controller with the Manager.

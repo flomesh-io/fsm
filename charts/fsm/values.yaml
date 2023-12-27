@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.2.0-beta.1"
+    tag: "1.2.0-beta.3"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
@@ -1063,6 +1063,7 @@ fsm:
   flb:
     enabled: false
     strictMode: false
+    upstreamMode: Endpoint
     secretName: fsm-flb-secret
     baseUrl: http://localhost:1337
     username: admin
