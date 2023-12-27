@@ -1,1 +1,1 @@
-FROM curlimages/curl:latest
+FROM flomesh/curl:latest
