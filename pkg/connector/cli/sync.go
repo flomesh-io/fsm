@@ -52,10 +52,12 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 		PassingOnly: Cfg.C2K.FlagPassingOnly,
 	}
 	sink.MicroAggregator = source
+	sink.Ready()
+
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &ctok.Controller{
+	ctl := &connector.Controller{
 		Resource: sink,
 	}
 	go ctl.Run(ctx.Done())
@@ -115,7 +117,7 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	}
 
 	// Build the controller and start it
-	ctl := &ktoc.Controller{
+	ctl := &connector.Controller{
 		Resource: &serviceResource,
 	}
 	go ctl.Run(ctx.Done())
@@ -156,12 +158,12 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClien
 	gatewayResource.Service = serviceResource
 
 	// Build the controller and start it
-	gwCtl := &ktog.Controller{
+	gwCtl := &connector.Controller{
 		Resource: gatewayResource,
 	}
 
 	// Build the controller and start it
-	ctl := &ktog.Controller{
+	ctl := &connector.Controller{
 		Resource: serviceResource,
 	}
 

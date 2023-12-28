@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
@@ -45,14 +43,13 @@ var (
 // NewSink creates a new mesh sink
 func NewSink(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, fsmNamespace string) *Sink {
 	sink := Sink{
-		Ctx:                ctx,
-		KubeClient:         kubeClient,
-		DiscClient:         discClient,
-		fsmNamespace:       fsmNamespace,
-		serviceKeyToName:   make(map[string]string),
-		serviceMapCache:    make(map[string]*apiv1.Service),
-		serviceHashMap:     make(map[string]uint64),
-		endpointsKeyToName: make(map[string]string),
+		Ctx:              ctx,
+		KubeClient:       kubeClient,
+		DiscClient:       discClient,
+		fsmNamespace:     fsmNamespace,
+		serviceKeyToName: make(map[string]string),
+		serviceMapCache:  make(map[string]*apiv1.Service),
+		serviceHashMap:   make(map[string]uint64),
 	}
 	return &sink
 }
@@ -69,9 +66,6 @@ type Sink struct {
 	DiscClient provider.ServiceDiscoveryClient
 
 	MicroAggregator Aggregator
-
-	servicesInformer  cache.SharedIndexInformer
-	endpointsInformer cache.SharedIndexInformer
 
 	// SyncPeriod is the duration to wait between registering or deregistering
 	// services in Kubernetes. This can be fairly short since no work will be
@@ -104,12 +98,6 @@ type Sink struct {
 
 	serviceHashMap map[string]uint64
 
-	// endpointsKeyToName maps from Kube controller keys to Kube endpoints names.
-	// Controller keys are in the form <kube namespace>/<kube endpoints name>
-	// e.g. default/foo, and are the keys Kube uses to inform that something
-	// changed.
-	endpointsKeyToName map[string]string
-
 	triggerCh chan struct{}
 }
 
@@ -140,49 +128,26 @@ func (s *Sink) Ready() {
 	}
 }
 
-// ServiceInformer implements the controller.Resource interface.
+// Informer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
-func (s *Sink) ServiceInformer() cache.SharedIndexInformer {
-	if s.servicesInformer == nil {
-		s.servicesInformer = cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					return s.KubeClient.CoreV1().Services(s.namespace()).List(s.Ctx, options)
-				},
-				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					return s.KubeClient.CoreV1().Services(s.namespace()).Watch(s.Ctx, options)
-				},
+func (s *Sink) Informer() cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
+		&cache.ListWatch{
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return s.KubeClient.CoreV1().Services(s.namespace()).List(s.Ctx, options)
 			},
-			&apiv1.Service{},
-			0,
-			cache.Indexers{},
-		)
-	}
-	return s.servicesInformer
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return s.KubeClient.CoreV1().Services(s.namespace()).Watch(s.Ctx, options)
+			},
+		},
+		&apiv1.Service{},
+		0,
+		cache.Indexers{},
+	)
 }
 
-// EndpointsInformer tells Kubernetes that we want to watch for changes to Endpoints.
-func (s *Sink) EndpointsInformer() cache.SharedIndexInformer {
-	if s.endpointsInformer == nil {
-		s.endpointsInformer = cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					return s.KubeClient.CoreV1().Endpoints(s.namespace()).List(s.Ctx, options)
-				},
-				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					return s.KubeClient.CoreV1().Endpoints(s.namespace()).Watch(s.Ctx, options)
-				},
-			},
-			&apiv1.Endpoints{},
-			0,
-			cache.Indexers{},
-		)
-	}
-	return s.endpointsInformer
-}
-
-// UpsertService implements the controller.Resource interface.
-func (s *Sink) UpsertService(key string, raw interface{}) error {
+// Upsert implements the controller.Resource interface.
+func (s *Sink) Upsert(key string, raw interface{}) error {
 	// We expect a Service. If it isn't a service then just ignore it.
 	service, ok := raw.(*apiv1.Service)
 	if !ok {
@@ -209,88 +174,8 @@ func (s *Sink) UpsertService(key string, raw interface{}) error {
 	return nil
 }
 
-// UpsertEndpoints implements the controller.Resource interface.
-func (s *Sink) UpsertEndpoints(key string, raw interface{}) error {
-	// We expect a Service. If it isn't a service then just ignore it.
-	endpoints, ok := raw.(*apiv1.Endpoints)
-	if !ok {
-		log.Warn().Msgf("UpsertEndpoints got invalid type, raw:%v", raw)
-		return nil
-	}
-
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	// Store all the key to name mappings. We need this because the key
-	// is opaque but we want to do all the lookups by endpoints name.
-	s.endpointsKeyToName[key] = endpoints.Name
-
-	servicePtr, exists := s.serviceMapCache[endpoints.Name]
-	if exists {
-		service := *servicePtr
-		if len(service.Annotations) > 0 {
-			endpoints.Labels[CloudServiceLabel] = service.Name
-
-			if len(endpoints.Annotations) == 0 {
-				endpoints.Annotations = make(map[string]string)
-			}
-
-			if withGateway {
-				if !s.DiscClient.IsInternalServices() {
-					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
-					if connector.ViaGateway.Egress.HTTPPort > 0 {
-						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
-					}
-					if connector.ViaGateway.Egress.GRPCPort > 0 {
-						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
-					}
-				}
-			}
-
-			endpointSubset := apiv1.EndpointSubset{}
-			ported := false
-			for k := range service.Annotations {
-				if !ported {
-					if len(service.Spec.Ports) > 0 {
-						for _, port := range service.Spec.Ports {
-							endpointSubset.Ports = append(endpointSubset.Ports, apiv1.EndpointPort{
-								Name:        port.Name,
-								Port:        port.Port,
-								Protocol:    port.Protocol,
-								AppProtocol: port.AppProtocol,
-							})
-						}
-					}
-					ported = true
-				}
-				if strings.HasPrefix(k, connector.AnnotationMeshEndpointAddr) {
-					ipIntStr := strings.TrimPrefix(k, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
-					if ipInt, err := strconv.ParseUint(ipIntStr, 10, 32); err == nil {
-						ip := utils.Int2IP4(uint32(ipInt))
-						endpointSubset.Addresses = append(endpointSubset.Addresses, apiv1.EndpointAddress{IP: ip.To4().String()})
-					}
-				}
-			}
-			if len(endpointSubset.Addresses) > 0 {
-				endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
-				eptClient := s.KubeClient.CoreV1().Endpoints(s.namespace())
-				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-					if updatedEpt, err := eptClient.Update(s.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
-						log.Warn().Err(err).Msgf("error update endpoints, name:%s", service.Name)
-						return err
-					} else {
-						s.updateGatewayEndpointSlice(s.Ctx, updatedEpt)
-					}
-					return nil
-				})
-			}
-		}
-	}
-	return fmt.Errorf("error update endpoints, name:%s", endpoints.Name)
-}
-
-// DeleteService implements the controller.Resource interface.
-func (s *Sink) DeleteService(key string, _ interface{}) error {
+// Delete implements the controller.Resource interface.
+func (s *Sink) Delete(key string, _ interface{}) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -315,22 +200,6 @@ func (s *Sink) DeleteService(key string, _ interface{}) error {
 	}
 
 	log.Info().Msgf("delete service, key:%s name:%s", key, name)
-	return nil
-}
-
-// DeleteEndpoints implements the controller.Resource interface.
-func (s *Sink) DeleteEndpoints(key string, _ interface{}) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	name, ok := s.endpointsKeyToName[key]
-	if !ok {
-		return nil
-	}
-
-	delete(s.endpointsKeyToName, key)
-
-	log.Info().Msgf("delete endpoints, key:%s name:%s", key, name)
 	return nil
 }
 

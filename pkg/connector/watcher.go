@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	log               = logger.New("connector-mesh-config-watcher")
 	GatewayAPIEnabled = false
 )
 

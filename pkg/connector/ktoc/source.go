@@ -19,6 +19,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector-k2c")
 )
 
 const (
@@ -28,6 +33,7 @@ const (
 	CloudK8SRefKind  = "fsm-connector-external-k8s-ref-kind"
 	CloudK8SRefValue = "fsm-connector-external-k8s-ref-name"
 	CloudK8SNodeName = "fsm-connector-external-k8s-node-name"
+	CloudK8SPort     = "fsm-connector-external-k8s-port"
 
 	// cloudKubernetesCheckType is the type of health check in cloud for Kubernetes readiness status.
 	cloudKubernetesCheckType = "kubernetes-readiness"
@@ -270,7 +276,7 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for endpoints")
 	// Register a controller for Endpoints which subsequently registers a
 	// controller for the Ingress resource.
-	(&Controller{
+	(&connector.Controller{
 		Resource: &serviceEndpointsResource{
 			Service: t,
 			Ctx:     t.Ctx,
@@ -530,7 +536,7 @@ func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseServ
 		// Add all the ports as annotations
 		for _, p := range svc.Spec.Ports {
 			// Set the tag
-			baseService.Meta["port-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
+			baseService.Meta[CloudK8SPort+"-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
 		}
 	}
 	return overridePortName, overridePortNumber
@@ -831,13 +837,13 @@ func (t *ServiceResource) sync() {
 type serviceEndpointsResource struct {
 	Service  *ServiceResource
 	Ctx      context.Context
-	Resource Resource
+	Resource connector.Resource
 }
 
 // Run implements the controller.Backgrounder interface.
 func (t *serviceEndpointsResource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for ingress")
-	(&Controller{
+	(&connector.Controller{
 		Resource: t.Resource,
 	}).Run(ch)
 }
@@ -920,7 +926,7 @@ func (t *serviceEndpointsResource) Delete(key string, _ interface{}) error {
 // to keep track of changing ingress for registered services.
 type serviceIngressResource struct {
 	Service                    *ServiceResource
-	Resource                   Resource
+	Resource                   connector.Resource
 	Ctx                        context.Context
 	EnableIngress              bool
 	SyncIngressLoadBalancerIPs bool

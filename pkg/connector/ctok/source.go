@@ -1,4 +1,4 @@
-// Package c2k implements a syncer from cloud to k8s.
+// Package ctok implements a syncer from cloud to k8s.
 package ctok
 
 import (
@@ -10,8 +10,14 @@ import (
 
 	"github.com/cenkalti/backoff"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector-c2k")
 )
 
 // Source is the source for the sync that watches cloud services and
@@ -30,6 +36,14 @@ type Source struct {
 // Run is the long-running loop for watching cloud services and
 // updating the Sink.
 func (s *Source) Run(ctx context.Context) {
+	// Register a controller for Endpoints
+	go (&connector.Controller{
+		Resource: &endpointsResource{
+			sink:               s.Sink,
+			endpointsKeyToName: make(map[string]string),
+		},
+	}).Run(ctx.Done())
+
 	opts := (&provider.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
