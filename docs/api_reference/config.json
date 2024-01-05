@@ -12,8 +12,17 @@
             "docsURLTemplate": "https://pkg.go.dev/k8s.io/apimachinery/pkg/apis/meta/v1#Duration"
         },
         {
+            "typeMatchPrefix": "^k8s\\.io/apimachinery/pkg/runtime\\.RawExtension",
+            "docsURLTemplate": "https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime#RawExtension"
+        },
+        {
             "typeMatchPrefix": "^k8s\\.io/(api|apimachinery/pkg/apis)/",
-            "docsURLTemplate": "https://v1-20.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#{{lower .TypeIdentifier}}-{{arrIndex .PackageSegments -1}}-{{arrIndex .PackageSegments -2}}"
+            "docsURLTemplate": "https://v1-26.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#{{lower .TypeIdentifier}}-{{arrIndex .PackageSegments -1}}-{{arrIndex .PackageSegments -2}}"
+        }
+        ,
+        {
+            "typeMatchPrefix": "^sigs\\.k8s\\.io/gateway-api/apis/",
+            "docsURLTemplate": "https://pkg.go.dev/sigs.k8s.io/gateway-api@v0.7.1/apis/{{arrIndex .PackageSegments -1}}#{{.TypeIdentifier}}"
         }
     ],
     "typeDisplayNamePrefixOverrides": {
