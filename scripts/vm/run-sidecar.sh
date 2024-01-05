@@ -1,0 +1,100 @@
+#!/bin/bash
+
+if [ "$(id -u)" -ne 0 ]
+then
+    echo "Please run as root." >&2
+    exit 1
+fi
+
+if [ "x$(id -u pipy 2>/dev/null)" != "x1500" ]
+then
+    useradd --no-create-home -r pipy -u 1500 -s /usr/sbin/nologin
+    if [ "x$(id -u pipy 2>/dev/null)" != "x1500" ]
+    then
+        echo "Unable to create user pipy"
+        exit 1
+    fi
+fi
+
+if [ -z "$PIPY_NIC" ]
+then
+      echo "Please set the PIPY_NIC environment variable, for example: PIPY_NIC=eth0"
+      exit 1
+fi
+
+ip=$(ip -4 addr show "$PIPY_NIC" 2>/dev/null | grep inet | sed 's/\// /g' | awk '{print $2}')
+if [ -z "$ip" ]
+then
+    echo  "Unable to get ip from nic [$PIPY_NIC]"
+    exit 1
+fi
+
+if [ -z "$PIPY_REPO" ]
+then
+      echo "Please set the PIPY_REPO environment variable"
+      exit 1
+fi
+
+iptables-restore <<EOF
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED -j ACCEPT
+COMMIT
+*nat
+:FSM_PROXY_INBOUND - [0:0]
+:FSM_PROXY_IN_REDIRECT - [0:0]
+:FSM_PROXY_OUTBOUND - [0:0]
+:FSM_PROXY_OUT_REDIRECT - [0:0]
+-A FSM_PROXY_IN_REDIRECT -p tcp -j REDIRECT --to-port 15003
+-A PREROUTING -p tcp -j FSM_PROXY_INBOUND
+-A FSM_PROXY_INBOUND -p tcp -m multiport --dports 22 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp --dport 15010 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp --dport 15901 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp --dport 15902 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp --dport 15903 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp --dport 15904 -j RETURN
+-A FSM_PROXY_INBOUND -p tcp -j FSM_PROXY_IN_REDIRECT
+-A FSM_PROXY_OUT_REDIRECT -p tcp -j REDIRECT --to-port 15001
+-A FSM_PROXY_OUT_REDIRECT -p tcp --dport 15000 -j ACCEPT
+-A OUTPUT -p tcp -j FSM_PROXY_OUTBOUND
+-A FSM_PROXY_OUTBOUND -d $ip/32 -m owner --uid-owner 1500 -j RETURN
+-A FSM_PROXY_OUTBOUND -o lo ! -d 127.0.0.1/32 -m owner --uid-owner 1500 -j FSM_PROXY_IN_REDIRECT
+-A FSM_PROXY_OUTBOUND -o lo -m owner ! --uid-owner 1500 -j RETURN
+-A FSM_PROXY_OUTBOUND -m owner --uid-owner 1500 -j RETURN
+-A FSM_PROXY_OUTBOUND -d 127.0.0.1/32 -j RETURN
+-A OUTPUT -p udp -d 127.0.0.153 --dport 53 -j DNAT --to-destination 127.0.0.153:5300
+-A FSM_PROXY_OUTBOUND -j FSM_PROXY_OUT_REDIRECT
+COMMIT
+EOF
+
+if [ $? -ne 0 ];
+then
+    echo "Unable to set iptables."
+    exit 1
+fi
+
+cat /etc/resolv.conf 2>&1 | grep 127.0.0.153 >/dev/null
+if [ $? -ne 0 ];
+then
+    sed -i '0,/^nameserver/!b;//i\nameserver 127.0.0.153' /etc/resolv.conf
+fi
+
+cat /etc/resolv.conf 2>&1 | grep svc.cluster.local >/dev/null
+if [ $? -ne 0 ];
+then
+    sed -i '0,/^search/{s/search/search svc.cluster.local cluster.local/}' /etc/resolv.conf
+fi
+
+ns=$(cat /etc/resolv.conf 2>/dev/null | grep "^nameserver" | grep -v 127.0.0.153 | head -n 1 | awk '{print $2}')
+if [ -n "$ns" ]
+then
+    # export PIPY_NAMESERVER=$ns
+    echo ""
+fi
+
+chmod 755 ./pipy
+
+nohup runuser -u pipy -- ./pipy --admin-port=6060 "$PIPY_REPO#?ip=$ip" &
+
