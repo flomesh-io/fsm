@@ -75,12 +75,12 @@ then
     exit 1
 fi
 
-if [ ! "$(grep 127.0.0.153 /etc/resolv.conf)" ];
+if ! grep 127.0.0.153 /etc/resolv.conf >/dev/null
 then
     sed -i '0,/^nameserver/!b;//i\nameserver 127.0.0.153' /etc/resolv.conf
 fi
 
-if [ ! "$(grep '^search svc.cluster.local' /etc/resolv.conf)" ];
+if ! grep '^search svc.cluster.local' /etc/resolv.conf >/dev/null
 then
     sed -i '0,/^search/{s/search/search svc.cluster.local cluster.local/}' /etc/resolv.conf
 fi
@@ -95,3 +95,4 @@ fi
 chmod 755 ./pipy
 
 nohup runuser -u pipy -- ./pipy --admin-port=6060 "$PIPY_REPO#?ip=$ip" &
+
