@@ -35,6 +35,7 @@ then
       exit 1
 fi
 
+if [ "$(
 iptables-restore <<EOF
 *filter
 :INPUT ACCEPT [0:0]
@@ -68,26 +69,23 @@ COMMIT
 -A FSM_PROXY_OUTBOUND -j FSM_PROXY_OUT_REDIRECT
 COMMIT
 EOF
-
-if [ $? -ne 0 ];
+)" ];
 then
     echo "Unable to set iptables."
     exit 1
 fi
 
-cat /etc/resolv.conf 2>&1 | grep 127.0.0.153 >/dev/null
-if [ $? -ne 0 ];
+if ! grep 127.0.0.153 /etc/resolv.conf >/dev/null
 then
     sed -i '0,/^nameserver/!b;//i\nameserver 127.0.0.153' /etc/resolv.conf
 fi
 
-cat /etc/resolv.conf 2>&1 | grep svc.cluster.local >/dev/null
-if [ $? -ne 0 ];
+if ! grep '^search svc.cluster.local' /etc/resolv.conf >/dev/null
 then
     sed -i '0,/^search/{s/search/search svc.cluster.local cluster.local/}' /etc/resolv.conf
 fi
 
-ns=$(cat /etc/resolv.conf 2>/dev/null | grep "^nameserver" | grep -v 127.0.0.153 | head -n 1 | awk '{print $2}')
+ns=$(grep "^nameserver" /etc/resolv.conf | grep -v 127.0.0.153 | head -n 1 | awk '{print $2}')
 if [ -n "$ns" ]
 then
     # export PIPY_NAMESERVER=$ns
