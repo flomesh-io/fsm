@@ -4,7 +4,6 @@ package ctok
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -118,18 +117,10 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 		grpcPort := svc.GRPCPort
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
 		if len(svc.Tags) > 0 {
-			tagGrpcPort := 0
-			tagGrpcPort, svcNames = s.aggregateTag(svcName, svc, svcNames)
-			if tagGrpcPort > 0 {
-				grpcPort = tagGrpcPort
-			}
+			svcNames = s.aggregateTag(svcName, svc, svcNames)
 		}
 		if len(svc.Meta) > 0 {
-			metaGrpcPort := 0
-			metaGrpcPort, svcNames = s.aggregateMetadata(svcName, svc, svcNames)
-			if metaGrpcPort > 0 {
-				grpcPort = metaGrpcPort
-			}
+			svcNames = s.aggregateMetadata(svcName, svc, svcNames)
 		}
 		for _, serviceName := range svcNames {
 			svcMeta, exists := svcMetaMap[serviceName]
@@ -149,10 +140,9 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 	return svcMetaMap
 }
 
-func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) (int, []MicroSvcName) {
+func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) []MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
-	grpcPort := 0
 	for _, tag := range svc.Tags {
 		if len(s.PrefixTag) > 0 {
 			if strings.HasPrefix(tag, fmt.Sprintf("%s=", s.PrefixTag)) {
@@ -168,13 +158,6 @@ func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, 
 				}
 			}
 		}
-		if strings.HasPrefix(tag, "gRPC.port=") {
-			if segs := strings.Split(tag, "="); len(segs) == 2 {
-				if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
-					grpcPort = port
-				}
-			}
-		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
 		extSvcName := string(svcName)
@@ -186,13 +169,12 @@ func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, 
 		}
 		svcNames = append(svcNames, MicroSvcName(extSvcName))
 	}
-	return grpcPort, svcNames
+	return svcNames
 }
 
-func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) (int, []MicroSvcName) {
+func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) []MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
-	grpcPort := 0
 	for metaName, metaVal := range svc.Meta {
 		if len(s.PrefixTag) > 0 {
 			if strings.EqualFold(metaName, s.PrefixTag) {
@@ -208,11 +190,6 @@ func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentServ
 				}
 			}
 		}
-		if strings.EqualFold(metaName, provider.EUREKA_METADATA_GRPC_PORT) {
-			if v, ok := metaVal.(float64); ok {
-				grpcPort = int(v)
-			}
-		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
 		extSvcName := string(svcName)
@@ -224,5 +201,5 @@ func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentServ
 		}
 		svcNames = append(svcNames, MicroSvcName(extSvcName))
 	}
-	return grpcPort, svcNames
+	return svcNames
 }

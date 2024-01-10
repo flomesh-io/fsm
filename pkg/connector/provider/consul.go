@@ -8,6 +8,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
+const (
+	CONSUL_METADATA_GRPC_PORT = "gRPC.port="
+)
+
 type ConsulDiscoveryClient struct {
 	consulClient       *consul.Client
 	isInternalServices bool

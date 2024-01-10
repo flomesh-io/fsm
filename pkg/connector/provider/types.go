@@ -87,6 +87,10 @@ func (as *AgentService) toConsul() *consul.AgentService {
 	if len(as.Tags) > 0 {
 		agentService.Tags = append(agentService.Tags, as.Tags...)
 	}
+	agentService.Tags = append(agentService.Tags, "secure=false")
+	if as.GRPCPort > 0 {
+		agentService.Tags = append(agentService.Tags, fmt.Sprintf("%s%d", CONSUL_METADATA_GRPC_PORT, as.GRPCPort))
+	}
 	if len(as.Meta) > 0 {
 		agentService.Meta = make(map[string]string)
 		for k, v := range as.Meta {
@@ -104,7 +108,16 @@ func (as *AgentService) fromConsul(agentService *consul.AgentService) {
 	as.HTTPPort = agentService.Port
 	as.Weights.fromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
-		as.Tags = append(as.Tags, agentService.Tags...)
+		for _, tag := range agentService.Tags {
+			if strings.HasPrefix(tag, CONSUL_METADATA_GRPC_PORT) {
+				if segs := strings.Split(tag, "="); len(segs) == 2 {
+					if grpcPort, convErr := strconv.Atoi(segs[1]); convErr == nil {
+						as.GRPCPort = grpcPort
+					}
+				}
+			}
+			as.Tags = append(as.Tags, tag)
+		}
 	}
 	if len(agentService.Meta) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -127,6 +140,11 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
+			if strings.EqualFold(k, EUREKA_METADATA_GRPC_PORT) {
+				if grpcPort, ok := v.(float64); ok {
+					as.GRPCPort = int(grpcPort)
+				}
+			}
 			as.Meta[k] = v
 		}
 	}
