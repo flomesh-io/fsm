@@ -154,6 +154,9 @@ spec:
             namespace: httpbin
           - name: grpc-cert
             namespace: grpcbin
+    - protocol: UDP
+      port: 4000
+      name: udp
 EOF
 ```
 
@@ -465,23 +468,6 @@ Hi, I am TCPRoute!
 
 ### Test UDPRoute
 
-#### Deploy UDP Gateway
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: Gateway
-metadata:
-  namespace: udproute
-  name: test-gw-2
-spec:
-  gatewayClassName: fsm-gateway-cls
-  listeners:
-    - protocol: UDP
-      port: 4000
-      name: udp
-EOF
-```
-
 #### Deploy the UDPRoute app
 ```shell
 kubectl -n udproute apply -f - <<EOF
@@ -535,8 +521,8 @@ metadata:
   name: udp-app-1
 spec:
   parentRefs:
-    - name: test-gw-2
-      namespace: udproute
+    - name: test-gw-1
+      namespace: default
       port: 4000
   rules:
   - backendRefs:
