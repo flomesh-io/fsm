@@ -684,6 +684,8 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
 		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
+		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
+		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
 	}
 
 	for _, ov := range overrides {
@@ -693,6 +695,27 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	}
 
 	return finalValues, nil
+}
+
+func hasTCP(gateway *gwv1beta1.Gateway) bool {
+	for _, listener := range gateway.Spec.Listeners {
+		switch listener.Protocol {
+		case gwv1beta1.HTTPProtocolType, gwv1beta1.TCPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasUDP(gateway *gwv1beta1.Gateway) bool {
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Protocol == gwv1beta1.UDPProtocolType {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (r *gatewayReconciler) setAccepted(gateway *gwv1beta1.Gateway) {
