@@ -129,7 +129,7 @@ const (
 	DefaultNamespace  = "default"
 )
 
-// EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
+// EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
 // it will create it and set crossNSACLPolicy as a policy default.
 // Boolean return value indicates if the namespace was created by this call.
 func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {

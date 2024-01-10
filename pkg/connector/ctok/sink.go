@@ -269,6 +269,9 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 			continue
 		}
 		for microSvcName, svcMeta := range svcMetaMap {
+			if len(svcMeta.Addresses) == 0 {
+				continue
+			}
 			if !strings.EqualFold(string(microSvcName), cloudName) {
 				extendServices[string(microSvcName)] = cloudDNS
 			}

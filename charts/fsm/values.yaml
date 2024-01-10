@@ -746,6 +746,42 @@ fsm:
           - ""
         withGateway:
           enable: false
+    nacos:
+      enable: false
+      namespaceId: "public"
+      deriveNamespace: ""
+      asInternalServices: false
+      httpAddr: 127.0.0.1:8848
+      syncToK8S:
+        enable: true
+        passingOnly: true
+        filterMetadata: ""
+        prefixMetadata: ""
+        suffixMetadata: ""
+        clusterSet:
+          - "DEFAULT"
+        groupSet:
+          - "DEFAULT_GROUP"
+        withGateway:
+          enable: false
+      syncFromK8S:
+        enable: false
+        clusterId: "DEFAULT"
+        groupId: "DEFAULT_GROUP"
+        defaultSync: true
+        syncClusterIPServices: true
+        syncLoadBalancerEndpoints: false
+        nodePortSyncType: ExternalOnly
+        syncIngress: false
+        syncIngressLoadBalancerIPs: false
+        addServicePrefix: ""
+        addK8SNamespaceAsServiceSuffix: false
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
+        withGateway:
+          enable: false
     machine:
       enable: false
       deriveNamespace: ""

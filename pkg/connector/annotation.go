@@ -7,6 +7,9 @@ const (
 	//EurekaDiscoveryService defines eureka discovery service name
 	EurekaDiscoveryService = "eureka"
 
+	//NacosDiscoveryService defines nacos discovery service name
+	NacosDiscoveryService = "nacos"
+
 	//MachineDiscoveryService defines machine discovery service name
 	MachineDiscoveryService = "machine"
 )

@@ -115,6 +115,12 @@ func main() {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
+		} else if connector.NacosDiscoveryService == cli.Cfg.SdrProvider {
+			discClient, err = provider.GetNacosDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.Nacos.FlagNamespaceId, cli.Cfg.K2C.Nacos.FlagClusterId, cli.Cfg.K2C.Nacos.FlagGroupId, cli.Cfg.C2K.Nacos.FlagClusterSet, cli.Cfg.C2K.Nacos.FlagGroupSet, cli.Cfg.AsInternalServices)
+			if err != nil {
+				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+				log.Fatal().Msg("Error creating service discovery and registration client")
+			}
 		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
 			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.AsInternalServices)
 			if err != nil {

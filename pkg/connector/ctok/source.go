@@ -115,7 +115,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 
 	for _, svc := range serviceEntries {
 		httpPort := svc.HTTPPort
-		grpcPort := 0
+		grpcPort := svc.GRPCPort
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
 		if len(svc.Tags) > 0 {
 			tagGrpcPort := 0

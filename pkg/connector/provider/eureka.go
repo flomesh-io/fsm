@@ -128,7 +128,7 @@ func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
 	return dc.eurekaClient.RegisterInstance(reg.toEureka())
 }
 
-// EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
+// EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
 // it will create it and set crossNSACLPolicy as a policy default.
 // Boolean return value indicates if the namespace was created by this call.
 func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
