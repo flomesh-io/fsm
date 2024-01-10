@@ -1,0 +1,25 @@
+{{- if and (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) .Values.hasUDP }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "fsm-gateway-%s-udp" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
+  labels:
+    {{- include "fsm.labels" . | nindent 4 }}
+    app: fsm-gateway
+    gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
+spec:
+  type: LoadBalancer
+  ports:
+    {{- range $listener := .Values.listeners }}
+    {{- if eq $listener.protocol "UDP" }}
+    - name: {{ $listener.name }}
+      port: {{ $listener.port }}
+      targetPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
+      protocol: UDP
+    {{- end }}
+    {{- end }}
+  selector:
+    app: fsm-gateway
+    gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
+{{- end }}
