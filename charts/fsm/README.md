@@ -217,7 +217,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableValidateTLSRouteHostnames | bool | `true` | Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
 | fsm.flb.defaultAddressPool | string | `"default"` |  |
-| fsm.flb.defaultAlgo | string | `"rr"` |  |
+| fsm.flb.defaultAlgo | string | Default algorithm for load balancing, default value is `"rr"`(Round Robin). Available optiosn are `"ch"`(Consistency Hash) and `"lc"`(Least Connections) |  |
 | fsm.flb.enabled | bool | `false` |  |
 | fsm.flb.k8sCluster | string | `"UNKNOWN"` |  |
 | fsm.flb.password | string | `"admin"` |  |
