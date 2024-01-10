@@ -2137,6 +2137,18 @@
                           "title": "enable",
                           "description": "enable"
                         },
+                        "username": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/username",
+                          "type": "string",
+                          "title": "username for nacos auth",
+                          "description": "username for nacos auth"
+                        },
+                        "password": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/password",
+                          "type": "string",
+                          "title": "password for nacos auth",
+                          "description": "password for nacos auth"
+                        },
                         "namespaceId": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/namespaceId",
                           "type": "string",

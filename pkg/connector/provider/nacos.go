@@ -179,7 +179,7 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() string {
 	return connector.NacosDiscoveryService
 }
 
-func GetNacosDiscoveryClient(address, namespaceId, clusterId, groupId string,
+func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId, groupId string,
 	clusterSet, groupSet []string,
 	isInternalServices bool) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
@@ -232,6 +232,11 @@ func GetNacosDiscoveryClient(address, namespaceId, clusterId, groupId string,
 		LogDir:               "/tmp/nacos/log",
 		CacheDir:             "/tmp/nacos/cache",
 		LogLevel:             "warn",
+	}
+
+	if len(username) > 0 && len(password) > 0 {
+		clientConfig.Username = username
+		clientConfig.Password = password
 	}
 
 	nacosClient, err := clients.CreateNamingClient(map[string]interface{}{

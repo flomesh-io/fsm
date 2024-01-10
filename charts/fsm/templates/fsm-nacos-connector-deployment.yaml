@@ -57,6 +57,8 @@ spec:
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
             "-derive-namespace={{.Values.fsm.cloudConnector.nacos.deriveNamespace}}",
+            "-nacos-username={{.Values.fsm.cloudConnector.nacos.username}}",
+            "-nacos-password={{.Values.fsm.cloudConnector.nacos.password}}",
             "-nacos-namespace-id={{.Values.fsm.cloudConnector.nacos.namespaceId}}",
             "-as-internal-services={{.Values.fsm.cloudConnector.nacos.asInternalServices}}",
             "-sdr-provider=nacos",

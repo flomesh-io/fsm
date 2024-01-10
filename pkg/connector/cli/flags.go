@@ -52,6 +52,8 @@ func ToSet(s []string) mapset.Set {
 }
 
 type NacosCfg struct {
+	FlagUsername    string
+	FlagPassword    string
 	FlagNamespaceId string
 }
 
@@ -224,6 +226,8 @@ func init() {
 		"[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service "+
 			"discovery across Consul namespaces. Only necessary if ACLs are enabled.")
 
+	flags.StringVar(&Cfg.Nacos.FlagUsername, "nacos-username", "", "username for nacos auth")
+	flags.StringVar(&Cfg.Nacos.FlagPassword, "nacos-password", "", "password for nacos auth")
 	flags.StringVar(&Cfg.Nacos.FlagNamespaceId, "nacos-namespace-id", "", "nacos namespace id")
 	flags.StringVar(&Cfg.K2C.Nacos.FlagClusterId, "sync-k8s-to-cloud-cluster-id", "", "nacos cluster id")
 	flags.StringVar(&Cfg.K2C.Nacos.FlagGroupId, "sync-k8s-to-cloud-group-id", "", "nacos group id")
