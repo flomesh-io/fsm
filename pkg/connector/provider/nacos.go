@@ -121,6 +121,7 @@ func (dc *NacosDiscoveryClient) CatalogService(service, tag string, q *QueryOpti
 	catalogServices := make([]*CatalogService, 0)
 	if len(instances) > 0 {
 		for _, ins := range instances {
+			ins := ins
 			if serviceSource, serviceSourceExist := ins.Metadata[connector.ServiceSourceKey]; serviceSourceExist {
 				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
 					catalogService := new(CatalogService)
@@ -139,6 +140,7 @@ func (dc *NacosDiscoveryClient) HealthService(service, tag string, q *QueryOptio
 	agentServices := make([]*AgentService, 0)
 	if len(instances) > 0 {
 		for _, ins := range instances {
+			ins := ins
 			if serviceSource, serviceSourceExist := ins.Metadata[connector.ServiceSourceKey]; serviceSourceExist {
 				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
 					continue

@@ -170,6 +170,33 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.machine.syncToK8S.prefixLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.suffixLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.nacos.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.nacos.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.httpAddr | string | `"127.0.0.1:8848"` |  |
+| fsm.cloudConnector.nacos.namespaceId | string | `"public"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.addK8SNamespaceAsServiceSuffix | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.addServicePrefix | string | `""` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.clusterId | string | `"DEFAULT"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.groupId | string | `"DEFAULT_GROUP"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.nodePortSyncType | string | `"ExternalOnly"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncClusterIPServices | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncIngress | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncToK8S.clusterSet[0] | string | `"DEFAULT"` |  |
+| fsm.cloudConnector.nacos.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncToK8S.filterMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.groupSet[0] | string | `"DEFAULT_GROUP"` |  |
+| fsm.cloudConnector.nacos.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncToK8S.prefixMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.suffixMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
