@@ -100,6 +100,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.cloudConnector.consul.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.consul.connectorNameSuffix | string | `"consul"` |  |
 | fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.consul.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
@@ -130,6 +131,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.eureka.connectorNameSuffix | string | `"eureka"` |  |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.eureka.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
@@ -151,6 +153,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.gateway.connectorNameSuffix | string | `"gateway"` |  |
 | fsm.cloudConnector.gateway.egress.grpcPort | int | `0` |  |
 | fsm.cloudConnector.gateway.egress.httpPort | int | `0` |  |
 | fsm.cloudConnector.gateway.egress.ipSelector | string | `"ClusterIP"` |  |
@@ -162,6 +165,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
 | fsm.cloudConnector.gateway.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.machine.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.machine.connectorNameSuffix | string | `"machine"` |  |
 | fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.machine.enable | bool | `false` |  |
 | fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |
@@ -171,6 +175,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.machine.syncToK8S.suffixLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.nacos.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.nacos.connectorNameSuffix | string | `"nacos"` |  |
 | fsm.cloudConnector.nacos.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.nacos.enable | bool | `false` |  |
 | fsm.cloudConnector.nacos.httpAddr | string | `"127.0.0.1:8848"` |  |

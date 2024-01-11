@@ -683,6 +683,7 @@ fsm:
   cloudConnector:
     consul:
       enable: false
+      connectorNameSuffix: consul
       deriveNamespace: ""
       asInternalServices: false
       httpAddr: 127.0.0.1:8500
@@ -719,6 +720,7 @@ fsm:
         consulCrossNamespaceACLPolicy: ""
     eureka:
       enable: false
+      connectorNameSuffix: eureka
       deriveNamespace: ""
       asInternalServices: false
       httpAddr: 127.0.0.1:8761/eureka
@@ -748,6 +750,7 @@ fsm:
           enable: false
     nacos:
       enable: false
+      connectorNameSuffix: nacos
       username: ""
       password: ""
       namespaceId: "public"
@@ -786,6 +789,7 @@ fsm:
           enable: false
     machine:
       enable: false
+      connectorNameSuffix: machine
       deriveNamespace: ""
       asInternalServices: false
       syncToK8S:
@@ -797,6 +801,7 @@ fsm:
         withGateway:
           enable: false
     gateway:
+      connectorNameSuffix: gateway
       ingress:
         ipSelector: ClusterIP
         httpPort: 0

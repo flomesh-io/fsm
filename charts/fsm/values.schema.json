@@ -1639,6 +1639,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
@@ -1651,6 +1652,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/asInternalServices",
@@ -1905,6 +1912,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
@@ -1917,6 +1925,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/asInternalServices",
@@ -2123,6 +2137,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "namespaceId",
                         "asInternalServices",
                         "deriveNamespace",
@@ -2136,6 +2151,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "username": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/username",
@@ -2395,6 +2416,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "syncToK8S"
@@ -2405,6 +2427,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/asInternalServices",
@@ -2489,11 +2517,18 @@
                       "type": "object",
                       "title": "The config schema",
                       "required": [
+                        "connectorNameSuffix",
                         "ingress",
                         "egress",
                         "syncToFgw"
                       ],
                       "properties": {
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
+                        },
                         "ingress": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress",
                           "type": "object",

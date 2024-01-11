@@ -220,6 +220,31 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fsm consul connector's name */}}
+{{- define "fsmConnector.consul.name" -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.consul.connectorNameSuffix -}}
+{{- end -}}
+
+{{/* fsm eureka connector's name */}}
+{{- define "fsmConnector.eureka.name" -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.eureka.connectorNameSuffix -}}
+{{- end -}}
+
+{{/* fsm nacos connector's name */}}
+{{- define "fsmConnector.nacos.name" -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.nacos.connectorNameSuffix -}}
+{{- end -}}
+
+{{/* fsm gateway connector's name */}}
+{{- define "fsmConnector.gateway.name" -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.gateway.connectorNameSuffix -}}
+{{- end -}}
+
+{{/* fsm machine connector's name */}}
+{{- define "fsmConnector.machine.name" -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.machine.connectorNameSuffix -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

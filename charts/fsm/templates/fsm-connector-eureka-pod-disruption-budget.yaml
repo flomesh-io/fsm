@@ -3,14 +3,14 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: fsm-connector-eureka-pdb
+  name: {{ include "fsmConnector.eureka.name" . }}-pdb
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    app: fsm-connector-eureka
+    app: {{ include "fsmConnector.eureka.name" . }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: fsm-connector-eureka
+      app: {{ include "fsmConnector.eureka.name" . }}
 {{- end }}
 {{- end }}

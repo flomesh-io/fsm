@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: fsm-connector-nacos
+  name: {{ include "fsmConnector.nacos.name" . }}
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-connector-nacos
+    app: {{ include "fsmConnector.nacos.name" . }}
 spec:
   ports:
     - name: nacos-connector
       port: 9090
   selector:
-    app: fsm-connector-nacos
+    app: {{ include "fsmConnector.nacos.name" . }}
 {{- end }}

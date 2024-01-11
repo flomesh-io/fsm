@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: fsm-connector-gateway
+  name: {{ include "fsmConnector.gateway.name" . }}
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-connector-gateway
+    app: {{ include "fsmConnector.gateway.name" . }}
 spec:
   ports:
     - name: gateway-connector
       port: 9090
   selector:
-    app: fsm-connector-gateway
+    app: {{ include "fsmConnector.gateway.name" . }}
 {{- end }}

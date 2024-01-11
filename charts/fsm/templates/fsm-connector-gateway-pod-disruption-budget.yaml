@@ -3,14 +3,14 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: fsm-connector-gateway-pdb
+  name: {{ include "fsmConnector.gateway.name" . }}-pdb
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    app: fsm-connector-gateway
+    app: {{ include "fsmConnector.gateway.name" . }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: fsm-connector-gateway
+      app: {{ include "fsmConnector.gateway.name" . }}
 {{- end }}
 {{- end }}
