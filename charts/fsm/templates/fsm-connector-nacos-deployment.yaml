@@ -1,12 +1,12 @@
-{{- if .Values.fsm.cloudConnector.consul.enable }}
+{{- if .Values.fsm.cloudConnector.nacos.enable }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fsm-consul-connector
+  name: fsm-connector-nacos
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-consul-connector
+    app: fsm-connector-nacos
     meshName: {{ .Values.fsm.meshName }}
 spec:
   {{- if not .Values.fsm.cloudConnector.autoScale.enable }}
@@ -14,12 +14,12 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app: fsm-consul-connector
+      app: fsm-connector-nacos
   template:
     metadata:
       labels:
         {{- include "fsm.labels" . | nindent 8 }}
-        app: fsm-consul-connector
+        app: fsm-connector-nacos
   {{- if .Values.fsm.cloudConnector.podLabels }}
   {{- toYaml .Values.fsm.cloudConnector.podLabels | nindent 8 }}
   {{- end }}
@@ -37,11 +37,11 @@ spec:
       {{- include "restricted.securityContext" . | nindent 6 }}
       {{- end }}
       initContainers:
-        - name: init-fsm-consul-connector
+        - name: init-fsm-connector-nacos
           image: "{{ include "fsmCurl.image" . }}"
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
       containers:
-        - name: fsm-consul-connector
+        - name: fsm-connector-nacos
           image: "{{ include "fsmConnector.image" . }}"
           imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
           ports:
@@ -56,43 +56,51 @@ spec:
             "-fsm-version", "{{ .Chart.AppVersion }}",
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
-            "-derive-namespace={{.Values.fsm.cloudConnector.consul.deriveNamespace}}",
-            "-as-internal-services={{.Values.fsm.cloudConnector.consul.asInternalServices}}",
-            "-sdr-provider=consul",
-            "-sdr-http-addr={{.Values.fsm.cloudConnector.consul.httpAddr}}",
-            "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.consul.syncToK8S.enable}}",
-            "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.consul.syncToK8S.passingOnly}}",
-            "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.filterTag}}",
-            "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.prefixTag}}",
-            "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.consul.syncToK8S.suffixTag}}",
-            "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.consul.syncToK8S.withGateway.enable}}",
-            "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.consul.syncFromK8S.enable}}",
-            "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.consul.syncFromK8S.defaultSync}}",
-            "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncClusterIPServices}}",
-            "-sync-k8s-to-cloud-sync-load-balancer-services-endpoints={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints}}",
-            "-sync-k8s-to-cloud-node-port-sync-type={{.Values.fsm.cloudConnector.consul.syncFromK8S.nodePortSyncType}}",
-            "-sync-k8s-to-cloud-sync-ingress={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncIngress}}",
-            "-sync-k8s-to-cloud-sync-ingress-load-balancer-ips={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs}}",
-            "-sync-k8s-to-cloud-add-service-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.addServicePrefix}}",
-            "-sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix={{.Values.fsm.cloudConnector.consul.syncFromK8S.addK8SNamespaceAsServiceSuffix}}",
-            {{- if .Values.fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces }}
+            "-derive-namespace={{.Values.fsm.cloudConnector.nacos.deriveNamespace}}",
+            "-nacos-username={{.Values.fsm.cloudConnector.nacos.username}}",
+            "-nacos-password={{.Values.fsm.cloudConnector.nacos.password}}",
+            "-nacos-namespace-id={{.Values.fsm.cloudConnector.nacos.namespaceId}}",
+            "-as-internal-services={{.Values.fsm.cloudConnector.nacos.asInternalServices}}",
+            "-sdr-provider=nacos",
+            "-sdr-http-addr={{.Values.fsm.cloudConnector.nacos.httpAddr}}",
+            "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.nacos.syncToK8S.enable}}",
+            "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.nacos.syncToK8S.passingOnly}}",
+            "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.nacos.syncToK8S.filterMetadata}}",
+            "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.nacos.syncToK8S.prefixMetadata}}",
+            "-sync-cloud-to-k8s-suffix-tag={{.Values.fsm.cloudConnector.nacos.syncToK8S.suffixMetadata}}",
+            "-sync-cloud-to-k8s-with-gateway={{.Values.fsm.cloudConnector.nacos.syncToK8S.withGateway.enable}}",
+            {{- if .Values.fsm.cloudConnector.nacos.syncToK8S.clusterSet }}
+            {{- range .Values.fsm.cloudConnector.nacos.syncToK8S.clusterSet }}
+            "-sync-cloud-to-k8s-nacos-cluster-set={{ . }}",
+            {{- end }}
+            {{- end }}
+            {{- if .Values.fsm.cloudConnector.nacos.syncToK8S.groupSet }}
+            {{- range .Values.fsm.cloudConnector.nacos.syncToK8S.groupSet }}
+            "-sync-cloud-to-k8s-nacos-group-set={{ . }}",
+            {{- end }}
+            {{- end }}
+            "-sync-k8s-to-cloud={{.Values.fsm.cloudConnector.nacos.syncFromK8S.enable}}",
+            "-sync-k8s-to-cloud-cluster-id={{.Values.fsm.cloudConnector.nacos.syncFromK8S.clusterId}}",
+            "-sync-k8s-to-cloud-group-id={{.Values.fsm.cloudConnector.nacos.syncFromK8S.groupId}}",
+            "-sync-k8s-to-cloud-default-sync={{.Values.fsm.cloudConnector.nacos.syncFromK8S.defaultSync}}",
+            "-sync-k8s-to-cloud-sync-cluster-ip-services={{.Values.fsm.cloudConnector.nacos.syncFromK8S.syncClusterIPServices}}",
+            "-sync-k8s-to-cloud-sync-load-balancer-services-endpoints={{.Values.fsm.cloudConnector.nacos.syncFromK8S.syncLoadBalancerEndpoints}}",
+            "-sync-k8s-to-cloud-node-port-sync-type={{.Values.fsm.cloudConnector.nacos.syncFromK8S.nodePortSyncType}}",
+            "-sync-k8s-to-cloud-sync-ingress={{.Values.fsm.cloudConnector.nacos.syncFromK8S.syncIngress}}",
+            "-sync-k8s-to-cloud-sync-ingress-load-balancer-ips={{.Values.fsm.cloudConnector.nacos.syncFromK8S.syncIngressLoadBalancerIPs}}",
+            "-sync-k8s-to-cloud-add-service-prefix={{.Values.fsm.cloudConnector.nacos.syncFromK8S.addServicePrefix}}",
+            "-sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix={{.Values.fsm.cloudConnector.nacos.syncFromK8S.addK8SNamespaceAsServiceSuffix}}",
+            {{- if .Values.fsm.cloudConnector.nacos.syncFromK8S.allowK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.nacos.syncFromK8S.allowK8sNamespaces }}
             "-sync-k8s-to-cloud-allow-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
-            {{- if .Values.fsm.cloudConnector.consul.syncFromK8S.denyK8sNamespaces }}
-            {{- range .Values.fsm.cloudConnector.consul.syncFromK8S.denyK8sNamespaces }}
+            {{- if .Values.fsm.cloudConnector.nacos.syncFromK8S.denyK8sNamespaces }}
+            {{- range .Values.fsm.cloudConnector.nacos.syncFromK8S.denyK8sNamespaces }}
             "-sync-k8s-to-cloud-deny-k8s-namespaces={{ . }}",
             {{- end }}
             {{- end }}
-            "-sync-k8s-to-cloud-with-gateway={{.Values.fsm.cloudConnector.consul.syncFromK8S.withGateway.enable}}",
-            "-sync-k8s-to-cloud-consul-node-name={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulNodeName}}",
-            "-sync-k8s-to-cloud-consul-k8s-tag={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8STag}}",
-            "-sync-k8s-to-cloud-consul-enable-namespaces={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableNamespaces}}",
-            "-sync-k8s-to-cloud-consul-destination-namespace={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulDestinationNamespace}}",
-            "-sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulEnableK8SNSMirroring}}",
-            "-sync-k8s-to-cloud-consul-k8s-namespace-mirroring-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulK8SNSMirroringPrefix}}",
-            "-sync-k8s-to-cloud-consul-cross-namespace-acl-policy={{.Values.fsm.cloudConnector.consul.syncFromK8S.consulCrossNamespaceACLPolicy}}",
+            "-sync-k8s-to-cloud-with-gateway={{.Values.fsm.cloudConnector.nacos.syncFromK8S.withGateway.enable}}",
             "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
             "-via-gateway-egress-ip-selector={{.Values.fsm.cloudConnector.gateway.egress.ipSelector}}",
             "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
@@ -123,8 +131,8 @@ spec:
               port: 9091
           env:
             - name: CONTROLLER_SVC_NAME
-              value: fsm-consul-connector
-            # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-consul-connector to register events
+              value: fsm-connector-nacos
+            # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-connector-nacos to register events
             - name: CONNECTOR_POD_NAME
               valueFrom:
                 fieldRef:

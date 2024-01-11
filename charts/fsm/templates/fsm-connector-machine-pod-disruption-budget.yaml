@@ -1,16 +1,16 @@
-{{- if .Values.fsm.cloudConnector.nacos.enable }}
+{{- if .Values.fsm.cloudConnector.machine.enable }}
 {{- if .Values.fsm.injector.enablePodDisruptionBudget }}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: fsm-nacos-connector-pdb
+  name: fsm-connector-machine-pdb
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    app: fsm-nacos-connector
+    app: fsm-connector-machine
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: fsm-nacos-connector
+      app: fsm-connector-machine
 {{- end }}
 {{- end }}

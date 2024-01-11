@@ -1,15 +1,15 @@
-{{- if .Values.fsm.cloudConnector.gateway.syncToFgw.enable }}
+{{- if .Values.fsm.cloudConnector.machine.enable }}
 {{- if .Values.fsm.injector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: fsm-gateway-connector-hpa
+  name: fsm-connector-machine-hpa
   namespace: {{ include "fsm.namespace" . }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: fsm-gateway-connector
+    name: fsm-connector-machine
   minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
   metrics:

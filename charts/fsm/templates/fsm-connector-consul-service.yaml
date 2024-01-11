@@ -1,16 +1,16 @@
-{{- if .Values.fsm.cloudConnector.nacos.enable }}
+{{- if .Values.fsm.cloudConnector.consul.enable }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: fsm-nacos-connector
+  name: fsm-connector-consul
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-nacos-connector
+    app: fsm-connector-consul
 spec:
   ports:
-    - name: nacos-connector
+    - name: consul-connector
       port: 9090
   selector:
-    app: fsm-nacos-connector
+    app: fsm-connector-consul
 {{- end }}

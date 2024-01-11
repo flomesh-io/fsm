@@ -3,13 +3,13 @@
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: fsm-consul-connector-hpa
+  name: fsm-connector-consul-hpa
   namespace: {{ include "fsm.namespace" . }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: fsm-consul-connector
+    name: fsm-connector-consul
   minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
   metrics:
