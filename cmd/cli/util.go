@@ -61,7 +61,7 @@ type ManifestClient interface {
 	GetDynamicClient() dynamic.Interface
 	GetRESTMapper() meta.RESTMapper
 	GetMeshName() string
-	ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error)
+	ResolveValues(mc *configv1alpha3.MeshConfig, manifestFiles ...string) ([]string, map[string]interface{}, error)
 }
 
 // confirm displays a prompt `s` to the user and returns a bool indicating yes / no
@@ -660,7 +660,7 @@ func installManifests(cmd ManifestClient, mc *configv1alpha3.MeshConfig, fsmName
 
 	debug("Resolving values ...")
 	// resolve values
-	values, err := cmd.ResolveValues(mc)
+	manifestFiles, values, err := cmd.ResolveValues(mc, manifestFiles...)
 	if err != nil {
 		return err
 	}

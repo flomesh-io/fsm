@@ -192,7 +192,7 @@ func (cmd *egressGatewayEnableCmd) run() error {
 	return nil
 }
 
-func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error) {
+func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig, manifestFiles ...string) ([]string, map[string]interface{}, error) {
 	finalValues := map[string]interface{}{}
 
 	valuesConfig := []string{
@@ -211,8 +211,8 @@ func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig) 
 	}
 
 	if err := parseVal(valuesConfig, finalValues); err != nil {
-		return nil, err
+		return manifestFiles, nil, err
 	}
 
-	return finalValues, nil
+	return manifestFiles, finalValues, nil
 }
