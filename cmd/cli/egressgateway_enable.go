@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"k8s.io/utils/pointer"
@@ -195,6 +196,9 @@ func (cmd *egressGatewayEnableCmd) run() error {
 func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig, manifestFiles ...string) ([]string, map[string]interface{}, error) {
 	finalValues := map[string]interface{}{}
 
+	imageNameIndex := strings.LastIndex(mc.Spec.Misc.RepoServerImage, "/")
+	imageTagIndex := strings.LastIndex(mc.Spec.Misc.RepoServerImage, ":")
+
 	valuesConfig := []string{
 		fmt.Sprintf("fsm.egressGateway.enabled=%t", true),
 		fmt.Sprintf("fsm.egressGateway.logLevel=%s", cmd.logLevel),
@@ -207,7 +211,9 @@ func (cmd *egressGatewayEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig, 
 		fmt.Sprintf("fsm.image.registry=%s", mc.Spec.Image.Registry),
 		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.Spec.Image.PullPolicy),
 		fmt.Sprintf("fsm.image.tag=%s", mc.Spec.Image.Tag),
-		fmt.Sprintf("fsm.repoServer.image=%s", mc.Spec.Misc.RepoServerImage),
+		fmt.Sprintf("fsm.repoServer.image.registry=%s", mc.Spec.Misc.RepoServerImage[:imageNameIndex]),
+		fmt.Sprintf("fsm.repoServer.image.name=%s", mc.Spec.Misc.RepoServerImage[imageNameIndex+1:imageTagIndex]),
+		fmt.Sprintf("fsm.repoServer.image.tag=%s", mc.Spec.Misc.RepoServerImage[imageTagIndex+1:]),
 	}
 
 	if err := parseVal(valuesConfig, finalValues); err != nil {
