@@ -1,5 +1,5 @@
 {{- if .Values.fsm.cloudConnector.machine.enable }}
-{{- if .Values.fsm.injector.autoScale.enable }}
+{{- if .Values.fsm.cloudConnector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
