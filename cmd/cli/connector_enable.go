@@ -150,7 +150,7 @@ func (cmd *connectorEnableCmd) run() error {
 				return
 			}
 
-			fmt.Fprintf(cmd.out, fmt.Sprintf("%s is enabled successfully\n", deploy))
+			fmt.Fprintf(cmd.out, "%s is enabled successfully\n", deploy)
 		}(deploy)
 	}
 	wg.Wait()
