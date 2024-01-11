@@ -577,6 +577,22 @@ func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClie
 	return nil
 }
 
+func deleteConnectorResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName, connectorName string) error {
+	if err := kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, connectorName, metav1.DeleteOptions{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := kubeClient.AppsV1().Deployments(fsmNamespace).Delete(ctx, connectorName, metav1.DeleteOptions{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func deleteEgressGatewayResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName string) error {
 	if err := kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, constants.FSMEgressGatewayName, metav1.DeleteOptions{}); err != nil {
 		if !errors.IsNotFound(err) {
