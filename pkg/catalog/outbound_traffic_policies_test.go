@@ -661,7 +661,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 					return nil
 				}).AnyTimes()
 
-			actual := mc.GetOutboundMeshTrafficPolicy(downstreamIdentity, "")
+			actual := mc.GetOutboundMeshTrafficPolicy(downstreamIdentity)
 			assert.NotNil(actual)
 
 			// Verify expected fields
