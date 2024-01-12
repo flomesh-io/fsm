@@ -90,7 +90,8 @@ func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptio
 				}
 			}
 			if updateVM {
-				if _, err = dc.machineClient.MachineV1alpha1().VirtualMachines(vm.Namespace).Update(ctx, &vm, metav1.UpdateOptions{}); err != nil {
+				vm := &vm
+				if _, err = dc.machineClient.MachineV1alpha1().VirtualMachines(vm.Namespace).Update(ctx, vm, metav1.UpdateOptions{}); err != nil {
 					log.Error().Err(err)
 					continue
 				}

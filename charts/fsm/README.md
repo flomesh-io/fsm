@@ -123,6 +123,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
@@ -147,6 +148,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
@@ -168,6 +170,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.machine.connectorNameSuffix | string | `"machine"` |  |
 | fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.machine.enable | bool | `false` |  |
+| fsm.cloudConnector.machine.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.machine.syncToK8S.filterLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.passingOnly | bool | `true` |  |
@@ -195,6 +198,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.nacos.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.nacos.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.nacos.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.nacos.syncToK8S.clusterSet[0] | string | `"DEFAULT"` |  |
 | fsm.cloudConnector.nacos.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.nacos.syncToK8S.filterMetadata | string | `""` |  |
