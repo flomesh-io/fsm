@@ -104,20 +104,20 @@ func main() {
 	if len(cli.Cfg.SdrProvider) > 0 {
 		var discClient provider.ServiceDiscoveryClient = nil
 		if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.NacosDiscoveryService == cli.Cfg.SdrProvider {
 			discClient, err = provider.GetNacosDiscoveryClient(cli.Cfg.HttpAddr,
-				cli.Cfg.Nacos.FlagUsername, cli.Cfg.Nacos.FlagPassword, cli.Cfg.Nacos.FlagNamespaceId,
+				cli.Cfg.Nacos.FlagUsername, cli.Cfg.Nacos.FlagPassword, cli.Cfg.Nacos.FlagNamespaceId, cli.Cfg.C2K.FlagClusterId,
 				cli.Cfg.K2C.Nacos.FlagClusterId, cli.Cfg.K2C.Nacos.FlagGroupId, cli.Cfg.C2K.Nacos.FlagClusterSet, cli.Cfg.C2K.Nacos.FlagGroupSet,
 				cli.Cfg.AsInternalServices)
 			if err != nil {
@@ -125,7 +125,7 @@ func main() {
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.DeriveNamespace, cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")

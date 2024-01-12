@@ -689,6 +689,7 @@ fsm:
       httpAddr: 127.0.0.1:8500
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterTag: ""
         prefixTag: ""
@@ -726,6 +727,7 @@ fsm:
       httpAddr: 127.0.0.1:8761/eureka
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterMetadata: ""
         prefixMetadata: ""
@@ -759,6 +761,7 @@ fsm:
       httpAddr: 127.0.0.1:8848
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterMetadata: ""
         prefixMetadata: ""
@@ -794,6 +797,7 @@ fsm:
       asInternalServices: false
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterLabel: ""
         prefixLabel: ""

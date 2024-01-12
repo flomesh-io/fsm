@@ -49,6 +49,9 @@ type Endpoint struct {
 
 	// ViaGw forward to a gateway's address.
 	ViaGw string `json:"viaGw,omitempty"`
+
+	// ClusterID belongs to cluster.
+	ClusterID string `json:"clusterId,omitempty"`
 }
 
 func (ep Endpoint) String() string {

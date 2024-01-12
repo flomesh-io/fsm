@@ -15,6 +15,7 @@ const (
 type ConsulDiscoveryClient struct {
 	consulClient       *consul.Client
 	isInternalServices bool
+	clusterId          string
 }
 
 func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
@@ -95,6 +96,7 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 		}
 		agentService := new(AgentService)
 		agentService.fromConsul(svc.Service)
+		agentService.ClusterId = dc.clusterId
 		agentServices = append(agentServices, agentService)
 	}
 	return agentServices, nil
@@ -176,7 +178,7 @@ func (dc *ConsulDiscoveryClient) MicroServiceProvider() string {
 	return connector.ConsulDiscoveryService
 }
 
-func GetConsulDiscoveryClient(address string, isInternalServices bool) (*ConsulDiscoveryClient, error) {
+func GetConsulDiscoveryClient(address string, isInternalServices bool, clusterId string) (*ConsulDiscoveryClient, error) {
 	cfg := consul.DefaultConfig()
 	cfg.Address = address
 	consulClient, err := consul.NewClient(cfg)
@@ -186,5 +188,6 @@ func GetConsulDiscoveryClient(address string, isInternalServices bool) (*ConsulD
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.consulClient = consulClient
 	consulDiscoveryClient.isInternalServices = isInternalServices
+	consulDiscoveryClient.clusterId = clusterId
 	return consulDiscoveryClient, nil
 }

@@ -1686,6 +1686,7 @@
                             "filterTag",
                             "prefixTag",
                             "suffixTag",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -1713,6 +1714,12 @@
                               "type": "string",
                               "title": "Suffix Tag",
                               "description": "Suffix Tag"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
                             },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/passingOnly",
@@ -1959,6 +1966,7 @@
                             "filterMetadata",
                             "prefixMetadata",
                             "suffixMetadata",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -1986,6 +1994,12 @@
                               "type": "string",
                               "title": "Suffix Metadata",
                               "description": "Suffix Metadata"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
                             },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/passingOnly",
@@ -2203,6 +2217,7 @@
                             "filterMetadata",
                             "prefixMetadata",
                             "suffixMetadata",
+                            "clusterId",
                             "passingOnly",
                             "clusterSet",
                             "groupSet",
@@ -2232,6 +2247,12 @@
                               "type": "string",
                               "title": "Suffix Metadata",
                               "description": "Suffix Metadata"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
                             },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/passingOnly",
@@ -2455,6 +2476,7 @@
                             "filterLabel",
                             "prefixLabel",
                             "suffixLabel",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -2482,6 +2504,12 @@
                               "type": "string",
                               "title": "Suffix Label",
                               "description": "Suffix Label"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
                             },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/passingOnly",

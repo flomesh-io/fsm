@@ -23,11 +23,12 @@ const (
 type NacosDiscoveryClient struct {
 	nacosClient        naming_client.INamingClient
 	namespaceId        string
-	clusterId          string
-	groupId            string
+	k2cClusterId       string
+	k2cGroupId         string
 	clusterSet         []string
 	groupSet           []string
 	isInternalServices bool
+	clusterId          string
 }
 
 func (dc *NacosDiscoveryClient) getAllServicesInfo() []string {
@@ -148,6 +149,7 @@ func (dc *NacosDiscoveryClient) HealthService(service, tag string, q *QueryOptio
 			}
 			agentService := new(AgentService)
 			agentService.fromNacos(&ins)
+			agentService.ClusterId = dc.clusterId
 			agentServices = append(agentServices, agentService)
 		}
 	}
@@ -164,7 +166,7 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
 }
 
 func (dc *NacosDiscoveryClient) Register(reg *CatalogRegistration) error {
-	_, err := dc.nacosClient.RegisterInstance(*reg.toNacos(dc.clusterId, dc.groupId, float64(1)))
+	_, err := dc.nacosClient.RegisterInstance(*reg.toNacos(dc.k2cClusterId, dc.k2cGroupId, float64(1)))
 	return err
 }
 
@@ -179,11 +181,12 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() string {
 	return connector.NacosDiscoveryService
 }
 
-func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId, groupId string,
+func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId, k2cClusterId, k2cGroupId string,
 	clusterSet, groupSet []string,
 	isInternalServices bool) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.isInternalServices = isInternalServices
+	nacosDiscoveryClient.clusterId = clusterId
 	segs := strings.Split(address, ":")
 	ipAddr := segs[0]
 	port, err := strconv.ParseUint(segs[1], 10, 64)
@@ -196,15 +199,15 @@ func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId
 	}
 	nacosDiscoveryClient.namespaceId = namespaceId
 
-	if len(clusterId) == 0 {
-		clusterId = NACOS_DEFAULT_CLUSTER
+	if len(k2cClusterId) == 0 {
+		k2cClusterId = NACOS_DEFAULT_CLUSTER
 	}
-	nacosDiscoveryClient.clusterId = clusterId
+	nacosDiscoveryClient.k2cClusterId = k2cClusterId
 
-	if len(groupId) == 0 {
-		groupId = constant.DEFAULT_GROUP
+	if len(k2cGroupId) == 0 {
+		k2cGroupId = constant.DEFAULT_GROUP
 	}
-	nacosDiscoveryClient.groupId = groupId
+	nacosDiscoveryClient.k2cGroupId = k2cGroupId
 
 	if len(clusterSet) > 0 {
 		nacosDiscoveryClient.clusterSet = append(nacosDiscoveryClient.clusterSet, clusterSet...)

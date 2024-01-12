@@ -135,6 +135,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 				svcMeta.Ports[MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
 			}
 			svcMeta.Addresses[MicroEndpointAddr(svc.Address)] = 1
+			svcMeta.ClusterId = svc.ClusterId
 		}
 	}
 	return svcMetaMap

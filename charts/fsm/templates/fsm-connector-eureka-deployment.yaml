@@ -61,6 +61,7 @@ spec:
             "-sdr-provider=eureka",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8S.enable}}",
+            "-sync-cloud-to-k8s-cluster-id={{.Values.fsm.cloudConnector.eureka.syncToK8S.clusterId}}",
             "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.eureka.syncToK8S.passingOnly}}",
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.filterMetadata}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.prefixMetadata}}",

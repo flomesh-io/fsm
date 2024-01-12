@@ -29,6 +29,9 @@ const (
 	// AnnotationCloudServiceInheritedFrom defines cloud service inherited annotation
 	AnnotationCloudServiceInheritedFrom = "flomesh.io/cloud-service-inherited-from"
 
+	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
+	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
+
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
 )

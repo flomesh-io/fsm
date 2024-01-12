@@ -13,7 +13,9 @@ import (
 
 type MachineDiscoveryClient struct {
 	machineClient      machineClientset.Interface
+	deriveNamespace    string
 	isInternalServices bool
+	clusterId          string
 }
 
 func (dc *MachineDiscoveryClient) IsInternalServices() bool {
@@ -23,13 +25,16 @@ func (dc *MachineDiscoveryClient) IsInternalServices() bool {
 func (dc *MachineDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.deriveNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	catalogServices := make(map[string][]string)
 	if len(vms.Items) > 0 {
 		for _, vm := range vms.Items {
+			if len(vm.Spec.Services) == 0 {
+				continue
+			}
 			for _, svc := range vm.Spec.Services {
 				svcTagArray, exists := catalogServices[svc.ServiceName]
 				if !exists {
@@ -50,17 +55,54 @@ func (dc *MachineDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][
 func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptions, _ bool) ([]*AgentService, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.deriveNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	agentServices := make([]*AgentService, 0)
 	if len(vms.Items) > 0 {
 		for _, vm := range vms.Items {
+			updateVM := false
+			if clusterId, exists := vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; exists {
+				if len(dc.clusterId) > 0 {
+					if !strings.EqualFold(dc.clusterId, clusterId) {
+						vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.clusterId
+						updateVM = true
+					}
+				} else {
+					delete(vm.Annotations, connector.AnnotationCloudServiceInheritedClusterID)
+					updateVM = true
+				}
+			} else {
+				if len(dc.clusterId) > 0 {
+					vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.clusterId
+					updateVM = true
+				}
+			}
+			if _, internal := vm.Annotations[connector.AnnotationMeshServiceInternalSync]; internal {
+				if !dc.isInternalServices {
+					delete(vm.Annotations, connector.AnnotationMeshServiceInternalSync)
+					updateVM = true
+				}
+			} else {
+				if dc.isInternalServices {
+					vm.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
+				}
+			}
+			if updateVM {
+				if _, err = dc.machineClient.MachineV1alpha1().VirtualMachines(vm.Namespace).Update(ctx, &vm, metav1.UpdateOptions{}); err != nil {
+					log.Error().Err(err)
+					continue
+				}
+			}
+			if len(vm.Spec.Services) == 0 {
+				continue
+			}
 			for _, svc := range vm.Spec.Services {
 				if strings.EqualFold(svc.ServiceName, service) {
 					agentService := new(AgentService)
 					agentService.fromVM(vm, svc)
+					agentService.ClusterId = dc.clusterId
 					agentServices = append(agentServices, agentService)
 				}
 			}
@@ -103,9 +145,11 @@ func (dc *MachineDiscoveryClient) MicroServiceProvider() string {
 	return connector.MachineDiscoveryService
 }
 
-func GetMachineDiscoveryClient(machineClient machineClientset.Interface, isInternalServices bool) (*MachineDiscoveryClient, error) {
+func GetMachineDiscoveryClient(machineClient machineClientset.Interface, deriveNamespace string, isInternalServices bool, clusterId string) (*MachineDiscoveryClient, error) {
 	machineDiscoveryClient := new(MachineDiscoveryClient)
 	machineDiscoveryClient.machineClient = machineClient
+	machineDiscoveryClient.deriveNamespace = deriveNamespace
 	machineDiscoveryClient.isInternalServices = isInternalServices
+	machineDiscoveryClient.clusterId = clusterId
 	return machineDiscoveryClient, nil
 }

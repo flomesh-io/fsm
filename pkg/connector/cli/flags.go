@@ -63,6 +63,7 @@ type Nacos2kCfg struct {
 }
 
 type C2KCfg struct {
+	FlagClusterId   string
 	FlagPassingOnly bool
 	FlagFilterTag   string
 	FlagPrefixTag   string
@@ -167,6 +168,7 @@ func init() {
 	flags.StringVar(&Cfg.C2K.FlagFilterTag, "sync-cloud-to-k8s-filter-tag", "", "filter tag")
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
+	flags.StringVar(&Cfg.C2K.FlagClusterId, "sync-cloud-to-k8s-cluster-id", "", "cloud cluster id")
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
 	flags.BoolVar(&Cfg.C2K.FlagWithGateway.Enable, "sync-cloud-to-k8s-with-gateway", false, "with gateway api")
 

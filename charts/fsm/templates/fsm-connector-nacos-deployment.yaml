@@ -64,6 +64,7 @@ spec:
             "-sdr-provider=nacos",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.nacos.httpAddr}}",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.nacos.syncToK8S.enable}}",
+            "-sync-cloud-to-k8s-cluster-id={{.Values.fsm.cloudConnector.nacos.syncToK8S.clusterId}}",
             "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.nacos.syncToK8S.passingOnly}}",
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.nacos.syncToK8S.filterMetadata}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.nacos.syncToK8S.prefixMetadata}}",

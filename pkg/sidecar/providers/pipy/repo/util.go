@@ -380,7 +380,7 @@ func getEgressClusterDestinationSpec(meshCatalog catalog.MeshCataloger, egressPo
 	return destinationSpec
 }
 
-func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, _ *pipy.Proxy,
+func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, proxy *pipy.Proxy,
 	proxyIdentity identity.ServiceIdentity,
 	pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
 	dependClusters map[service.ClusterName]*WeightedCluster) bool {
@@ -407,7 +407,11 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, upstreamEndpoint.ViaGw)
+			viaGw := upstreamEndpoint.ViaGw
+			if strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
+				viaGw = ""
+			}
+			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
 					clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)

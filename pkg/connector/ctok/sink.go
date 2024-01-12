@@ -392,6 +392,7 @@ func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
 		ports = append(ports, int(port))
 	}
 	sort.Ints(ports)
+	createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = svcMeta.ClusterId
 	for addr := range svcMeta.Addresses {
 		createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 	}

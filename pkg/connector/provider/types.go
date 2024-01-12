@@ -67,6 +67,7 @@ type AgentService struct {
 	ID         string
 	Service    string
 	InstanceId string
+	ClusterId  string
 	Namespace  string
 	Address    string
 	HTTPPort   int

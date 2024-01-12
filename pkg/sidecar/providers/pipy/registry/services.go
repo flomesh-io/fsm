@@ -44,6 +44,15 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 			return nil, err
 		}
 
+		p.MachineIP = pipy.NewNetAddress(vm.Spec.MachineIP)
+		if _, internal := vm.Annotations[connector.AnnotationMeshServiceInternalSync]; internal {
+			p.ClusterID = ""
+		} else {
+			if clusterId, exists := vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; exists {
+				p.ClusterID = clusterId
+			}
+		}
+
 		meshServices = listServicesForVm(vm, k.KubeController)
 
 		servicesForPod := strings.Join(listServiceNames(meshServices), ",")

@@ -71,7 +71,9 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 			if len(endpoints.Annotations) == 0 {
 				endpoints.Annotations = make(map[string]string)
 			}
-
+			if clusterId, clusterIDExists := service.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; clusterIDExists {
+				endpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = clusterId
+			}
 			if withGateway {
 				if !sink.DiscClient.IsInternalServices() {
 					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr

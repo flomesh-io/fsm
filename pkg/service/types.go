@@ -57,6 +57,9 @@ type MeshService struct {
 
 	// CloudInheritedFrom is the cloud service Inherited From
 	CloudInheritedFrom string
+
+	// ClusterID is the cluster id
+	ClusterID string
 }
 
 // NamespacedKey is the key (i.e. namespace + ProviderKey()) with which to lookup the backing service within the provider

@@ -199,7 +199,6 @@ func GetProxyFromVm(vm *machinev1alpha1.VirtualMachine) (*pipy.Proxy, error) {
 	sa := vm.Spec.ServiceAccountName
 	namespace := vm.Namespace
 	proxy := pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), true, nil)
-	proxy.MachineIP = pipy.NewNetAddress(vm.Spec.MachineIP)
 	return proxy, nil
 }
 

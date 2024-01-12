@@ -18,6 +18,7 @@ const (
 type EurekaDiscoveryClient struct {
 	eurekaClient       *fargo.EurekaConnection
 	isInternalServices bool
+	clusterId          string
 }
 
 func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
@@ -110,6 +111,7 @@ func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 			}
 			agentService := new(AgentService)
 			agentService.fromEureka(ins)
+			agentService.ClusterId = dc.clusterId
 			agentServices = append(agentServices, agentService)
 		}
 	}
@@ -139,11 +141,12 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 	return connector.EurekaDiscoveryService
 }
 
-func GetEurekaDiscoveryClient(address string, isInternalServices bool) (*EurekaDiscoveryClient, error) {
+func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	eurekaDiscoveryClient.isInternalServices = isInternalServices
+	eurekaDiscoveryClient.clusterId = clusterId
 	logging.SetLevel(logging.WARNING, "fargo")
 	return eurekaDiscoveryClient, nil
 }
