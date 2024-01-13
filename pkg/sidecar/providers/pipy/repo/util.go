@@ -421,13 +421,24 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 						viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
 					}
 				} else {
-					if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
-						strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
-						viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
-					}
-					if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
-						strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
-						viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
+					if len(upstreamEndpoint.ClusterID) == 0 {
+						if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
+							strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
+						}
+						if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
+							strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
+						}
+					} else {
+						if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+							strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
+						}
+						if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+							strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressGRPCPort)
+						}
 					}
 				}
 			}
