@@ -164,7 +164,7 @@ func init() {
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, Consul)")
 	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
-	flags.BoolVar(&Cfg.SyncCloudToK8s, "sync-cloud-to-k8s", true, "sync from cloud to k8s")
+	flags.BoolVar(&Cfg.SyncCloudToK8s, "sync-cloud-to-k8s", false, "sync from cloud to k8s")
 	flags.StringVar(&Cfg.C2K.FlagFilterTag, "sync-cloud-to-k8s-filter-tag", "", "filter tag")
 	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
 	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
@@ -172,7 +172,7 @@ func init() {
 	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
 	flags.BoolVar(&Cfg.C2K.FlagWithGateway.Enable, "sync-cloud-to-k8s-with-gateway", false, "with gateway api")
 
-	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", true, "sync from k8s to cloud")
+	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", false, "sync from k8s to cloud")
 	flags.BoolVar(&Cfg.K2C.FlagDefaultSync, "sync-k8s-to-cloud-default-sync", true,
 		"If true, all valid services in K8S are synced by default. If false, "+
 			"the service must be annotated properly to sync. In either case "+
@@ -238,7 +238,7 @@ func init() {
 	flags.Var((*AppendSliceValue)(&Cfg.C2K.Nacos.FlagGroupSet), "sync-cloud-to-k8s-nacos-group-set",
 		"nacos group to explicitly allow. May be specified multiple times.")
 
-	flags.BoolVar(&Cfg.SyncK8sToGateway, "sync-k8s-to-fgw", true, "sync from k8s to fgw")
+	flags.BoolVar(&Cfg.SyncK8sToGateway, "sync-k8s-to-fgw", false, "sync from k8s to fgw")
 	flags.BoolVar(&Cfg.K2G.FlagDefaultSync, "sync-k8s-to-fgw-default-sync", true,
 		"If true, all valid services in K8S are synced by default. If false, "+
 			"the service must be annotated properly to sync. In either case "+

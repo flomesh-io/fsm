@@ -135,11 +135,11 @@ func main() {
 		}
 
 		if cli.Cfg.SyncCloudToK8s {
-			go cli.SyncCtoK(ctx, kubeClient, discClient)
+			go cli.SyncCtoK(ctx, kubeClient, configClient, discClient)
 		}
 
 		if cli.Cfg.SyncK8sToCloud {
-			go cli.SyncKtoC(ctx, kubeClient, discClient)
+			go cli.SyncKtoC(ctx, kubeClient, configClient, discClient)
 		}
 	}
 
