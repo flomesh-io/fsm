@@ -1070,6 +1070,7 @@ fsm:
     password: admin
     k8sCluster: "UNKNOWN"
     defaultAddressPool: default
+    # -- Default algorithm for load balancing, default value is `"rr"`(Round Robin). Available optiosn are `"ch"`(Consistency Hash) and `"lc"`(Least Connections) 
     defaultAlgo: rr
 
   #
