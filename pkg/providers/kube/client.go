@@ -2,8 +2,8 @@
 package kube
 
 import (
-	"fmt"
 	"net"
+	"strings"
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
@@ -70,15 +70,17 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					IP:   ip,
 					Port: endpoint.Port(port.Port),
 				}
-				if port.AppProtocol != nil && len(kubernetesEndpoints.Annotations) > 0 {
-					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
-					if len(ept.ClusterID) > 0 {
-						if viaAddr, existAddr := kubernetesEndpoints.Annotations[constants.EgressViaGatewayAnnotation]; existAddr {
-							if viaPort, existPort := kubernetesEndpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, *port.AppProtocol)]; existPort {
-								ept.ViaGw = fmt.Sprintf("%s:%s", viaAddr, viaPort)
-							}
-						}
+				if port.AppProtocol != nil {
+					ept.AppProtocol = *port.AppProtocol
+				} else if len(port.Name) > 0 {
+					if strings.Contains(port.Name, constants.ProtocolHTTP) {
+						ept.AppProtocol = constants.ProtocolHTTP
+					} else if strings.Contains(port.Name, constants.ProtocolGRPC) {
+						ept.AppProtocol = constants.ProtocolGRPC
 					}
+				}
+				if len(kubernetesEndpoints.Annotations) > 0 {
+					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
 				}
 				endpoints = append(endpoints, ept)
 			}

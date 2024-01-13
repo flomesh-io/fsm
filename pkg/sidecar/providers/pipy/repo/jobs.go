@@ -189,7 +189,7 @@ func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceI
 	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
 		outboundTrafficPolicy, desiredSuffix)
 	if len(outboundDependClusters) > 0 {
-		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, proxy, serviceIdentity, pipyConf,
+		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, cfg, proxy, serviceIdentity, pipyConf,
 			outboundTrafficPolicy, outboundDependClusters); !ready {
 			if s.retryProxiesJob != nil {
 				s.retryProxiesJob()

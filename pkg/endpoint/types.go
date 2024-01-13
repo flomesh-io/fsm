@@ -30,10 +30,11 @@ type Provider interface {
 
 // Endpoint is a tuple of IP and Port representing an instance of a service
 type Endpoint struct {
-	net.IP   `json:"ip"`
-	Port     `json:"port"`
-	Weight   `json:"weight"`
-	Priority `json:"priority,omitempty"`
+	net.IP      `json:"ip"`
+	Port        `json:"port"`
+	Weight      `json:"weight"`
+	Priority    `json:"priority,omitempty"`
+	AppProtocol string `json:"appProtocol"`
 
 	// Zone is the zone the endpoint resides in.
 	Zone string `json:"name"`
@@ -46,9 +47,6 @@ type Endpoint struct {
 
 	// Path is a name with which a web service is accessed.
 	Path string `json:"path,omitempty"`
-
-	// ViaGw forward to a gateway's address.
-	ViaGw string `json:"viaGw,omitempty"`
 
 	// ClusterID belongs to cluster.
 	ClusterID string `json:"clusterId,omitempty"`

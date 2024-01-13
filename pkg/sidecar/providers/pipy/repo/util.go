@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -380,11 +381,12 @@ func getEgressClusterDestinationSpec(meshCatalog catalog.MeshCataloger, egressPo
 	return destinationSpec
 }
 
-func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, proxy *pipy.Proxy,
-	proxyIdentity identity.ServiceIdentity,
+func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, cfg configurator.Configurator,
+	proxy *pipy.Proxy, proxyIdentity identity.ServiceIdentity,
 	pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
 	dependClusters map[service.ClusterName]*WeightedCluster) bool {
 	ready := true
+	viaGateway := cfg.GetMeshConfig().Spec.Connector.ViaGateway
 	otp := pipyConf.newOutboundTrafficPolicy()
 	for _, cluster := range dependClusters {
 		clusterConfig := getMeshClusterConfigs(outboundPolicy.ClustersConfigs, cluster.ClusterName)
@@ -407,9 +409,27 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			viaGw := upstreamEndpoint.ViaGw
-			if strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
-				viaGw = ""
+			viaGw := ""
+			if len(upstreamEndpoint.AppProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
+				if len(proxy.ClusterID) == 0 {
+					if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+						strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+						viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
+					}
+					if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+						strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+						viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
+					}
+				} else {
+					if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
+						strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+						viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
+					}
+					if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
+						strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+						viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
+					}
+				}
 			}
 			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {

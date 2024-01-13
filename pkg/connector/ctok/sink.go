@@ -289,15 +289,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
 				if withGateway {
-					if !s.DiscClient.IsInternalServices() {
-						svc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
-						if connector.ViaGateway.Egress.HTTPPort > 0 {
-							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
-						}
-						if connector.ViaGateway.Egress.GRPCPort > 0 {
-							svc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
-						}
-					} else {
+					if s.DiscClient.IsInternalServices() {
 						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 					}
 				}
@@ -333,15 +325,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 				},
 			}
 			if withGateway {
-				if !s.DiscClient.IsInternalServices() {
-					createSvc.ObjectMeta.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
-					if connector.ViaGateway.Egress.HTTPPort > 0 {
-						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
-					}
-					if connector.ViaGateway.Egress.GRPCPort > 0 {
-						createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
-					}
-				} else {
+				if s.DiscClient.IsInternalServices() {
 					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
 			}

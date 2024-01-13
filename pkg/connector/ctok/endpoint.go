@@ -75,14 +75,8 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 				endpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = clusterId
 			}
 			if withGateway {
-				if !sink.DiscClient.IsInternalServices() {
-					endpoints.Annotations[constants.EgressViaGatewayAnnotation] = connector.ViaGateway.EgressAddr
-					if connector.ViaGateway.Egress.HTTPPort > 0 {
-						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolHTTP)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.HTTPPort)
-					}
-					if connector.ViaGateway.Egress.GRPCPort > 0 {
-						endpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, constants.ProtocolGRPC)] = fmt.Sprintf("%d", connector.ViaGateway.Egress.GRPCPort)
-					}
+				if sink.DiscClient.IsInternalServices() {
+					endpoints.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
 			}
 
