@@ -428,7 +428,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, viaGateway *configv1alpha3.ConnectorGatewaySpec) string {
 	viaGw := ""
 	if len(appProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, clusterID) {
-		if len(proxy.ClusterID) == 0 {
+		if len(proxy.ClusterID) == 0 { // k8s -> fgw(EgressIP:EgressPort) -> others
 			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
 				strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
@@ -438,7 +438,7 @@ func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, vi
 				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
 			}
 		} else {
-			if len(clusterID) == 0 {
+			if len(clusterID) == 0 { // others -> fgw(IngressIP:IngressPort) -> k8s
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
 					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
@@ -447,7 +447,7 @@ func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, vi
 					strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
 				}
-			} else {
+			} else { // others -> fgw(IngressIP:EgressPort) -> others
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
 					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
