@@ -155,7 +155,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncToK8S.prefixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.suffixMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.withGateway.enable | bool | `false` |  |
-| fsm.cloudConnector.gateway.connectorNameSuffix | string | `"gateway"` |  |
 | fsm.cloudConnector.gateway.egress.grpcPort | int | `0` |  |
 | fsm.cloudConnector.gateway.egress.httpPort | int | `0` |  |
 | fsm.cloudConnector.gateway.egress.ipSelector | string | `"ClusterIP"` |  |

@@ -145,7 +145,7 @@ func main() {
 
 	if cli.Cfg.SyncK8sToGateway {
 		gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
-		go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
+		go cli.SyncKtoG(ctx, kubeClient, configClient, gatewayClient)
 	}
 
 	version.SetMetric()

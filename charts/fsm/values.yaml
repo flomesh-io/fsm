@@ -805,7 +805,6 @@ fsm:
         withGateway:
           enable: false
     gateway:
-      connectorNameSuffix: gateway
       ingress:
         ipSelector: ClusterIP
         httpPort: 0

@@ -2545,18 +2545,11 @@
                       "type": "object",
                       "title": "The config schema",
                       "required": [
-                        "connectorNameSuffix",
                         "ingress",
                         "egress",
                         "syncToFgw"
                       ],
                       "properties": {
-                        "connectorNameSuffix": {
-                          "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/connectorNameSuffix",
-                          "type": "string",
-                          "title": "Connector Name Suffix",
-                          "description": "Connector Name Suffix"
-                        },
                         "ingress": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/ingress",
                           "type": "object",

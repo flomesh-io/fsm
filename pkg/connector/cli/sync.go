@@ -16,6 +16,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
 	"github.com/flomesh-io/fsm/pkg/connector/ktog"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const (
@@ -123,14 +124,45 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
-	waitGatewayReady(ctx, kubeClient,
+func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
+	ingressAddr, egressAddr := waitGatewayReady(ctx, kubeClient,
 		connector.ViaGateway.IngressIPSelector,
 		connector.ViaGateway.EgressIPSelector,
 		int32(connector.ViaGateway.Ingress.HTTPPort),
 		int32(connector.ViaGateway.Egress.HTTPPort),
 		int32(connector.ViaGateway.Ingress.GRPCPort),
 		int32(connector.ViaGateway.Egress.GRPCPort))
+
+	meshConfigClient := configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
+	meshConfig, err := meshConfigClient.Get(ctx, Cfg.FsmMeshConfigName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	meshConfigChanged := false
+
+	viaGateway := &meshConfig.Spec.Connector.ViaGateway
+	if !strings.EqualFold(viaGateway.IngressAddr, ingressAddr) ||
+		!strings.EqualFold(viaGateway.EgressAddr, egressAddr) ||
+		viaGateway.IngressHTTPPort != connector.ViaGateway.Ingress.HTTPPort ||
+		viaGateway.IngressGRPCPort != connector.ViaGateway.Ingress.GRPCPort ||
+		viaGateway.EgressHTTPPort != connector.ViaGateway.Egress.HTTPPort ||
+		viaGateway.EgressGRPCPort != connector.ViaGateway.Egress.GRPCPort {
+		viaGateway.IngressAddr = ingressAddr
+		viaGateway.IngressHTTPPort = connector.ViaGateway.Ingress.HTTPPort
+		viaGateway.IngressGRPCPort = connector.ViaGateway.Ingress.GRPCPort
+		viaGateway.EgressAddr = egressAddr
+		viaGateway.EgressHTTPPort = connector.ViaGateway.Egress.HTTPPort
+		viaGateway.EgressGRPCPort = connector.ViaGateway.Egress.GRPCPort
+		meshConfigChanged = true
+	}
+
+	if meshConfigChanged {
+		meshConfig, err = meshConfigClient.Update(ctx, meshConfig, metav1.UpdateOptions{})
+		if err != nil {
+			log.Fatal().Err(err)
+		}
+	}
 
 	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
 	denySet := ToSet(Cfg.K2G.FlagDenyK8SNamespaces)

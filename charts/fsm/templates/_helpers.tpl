@@ -247,15 +247,6 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
-{{/* fsm gateway connector's name */}}
-{{- define "fsmConnector.gateway.name" -}}
-{{- if .Values.fsm.cloudConnector.gateway.connectorNameSuffix -}}
-{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.gateway.connectorNameSuffix -}}
-{{- else -}}
-{{- print "fsm-connector-gateway" -}}
-{{- end -}}
-{{- end -}}
-
 {{/* fsm machine connector's name */}}
 {{- define "fsmConnector.machine.name" -}}
 {{- if .Values.fsm.cloudConnector.machine.connectorNameSuffix -}}
@@ -263,6 +254,11 @@ securityContext:
 {{- else -}}
 {{- print "fsm-connector-machine" -}}
 {{- end -}}
+{{- end -}}
+
+{{/* fsm gateway connector's name */}}
+{{- define "fsmConnector.gateway.name" -}}
+{{- print "fsm-connector-gateway" -}}
 {{- end -}}
 
 {{- define "fsmIngress.heath.port" -}}
