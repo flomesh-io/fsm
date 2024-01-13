@@ -410,7 +410,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			viaGw := generatePipyViaGateway(&upstreamEndpoint, proxy, &viaGateway)
+			viaGw := generatePipyViaGateway(upstreamEndpoint.AppProtocol, upstreamEndpoint.ClusterID, proxy, &viaGateway)
 			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
@@ -425,35 +425,35 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 	return ready
 }
 
-func generatePipyViaGateway(upstreamEndpoint *endpoint.Endpoint, proxy *pipy.Proxy, viaGateway *configv1alpha3.ConnectorGatewaySpec) string {
+func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, viaGateway *configv1alpha3.ConnectorGatewaySpec) string {
 	viaGw := ""
-	if len(upstreamEndpoint.AppProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
+	if len(appProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, clusterID) {
 		if len(proxy.ClusterID) == 0 {
 			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
-				strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+				strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
 			}
 			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
-				strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+				strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
 				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
 			}
 		} else {
-			if len(upstreamEndpoint.ClusterID) == 0 {
+			if len(clusterID) == 0 {
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
-					strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
 				}
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
-					strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+					strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
 				}
 			} else {
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
-					strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
 				}
 				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
-					strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+					strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
 					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressGRPCPort)
 				}
 			}
