@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -409,39 +410,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			viaGw := ""
-			if len(upstreamEndpoint.AppProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
-				if len(proxy.ClusterID) == 0 {
-					if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
-						strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
-						viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
-					}
-					if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
-						strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
-						viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
-					}
-				} else {
-					if len(upstreamEndpoint.ClusterID) == 0 {
-						if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
-							strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
-							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
-						}
-						if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
-							strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
-							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
-						}
-					} else {
-						if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
-							strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
-							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
-						}
-						if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
-							strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
-							viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressGRPCPort)
-						}
-					}
-				}
-			}
+			viaGw := generatePipyViaGateway(&upstreamEndpoint, proxy, &viaGateway)
 			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
@@ -454,6 +423,43 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 		}
 	}
 	return ready
+}
+
+func generatePipyViaGateway(upstreamEndpoint *endpoint.Endpoint, proxy *pipy.Proxy, viaGateway *configv1alpha3.ConnectorGatewaySpec) string {
+	viaGw := ""
+	if len(upstreamEndpoint.AppProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, upstreamEndpoint.ClusterID) {
+		if len(proxy.ClusterID) == 0 {
+			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+				strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
+			}
+			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+				strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
+			}
+		} else {
+			if len(upstreamEndpoint.ClusterID) == 0 {
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
+					strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
+				}
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
+					strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
+				}
+			} else {
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+					strings.EqualFold(constants.ProtocolHTTP, upstreamEndpoint.AppProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
+				}
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+					strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressGRPCPort)
+				}
+			}
+		}
+	}
+	return viaGw
 }
 
 func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, ingressPolicy *trafficpolicy.IngressTrafficPolicy) {
