@@ -158,7 +158,7 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	}
 
 	if meshConfigChanged {
-		meshConfig, err = meshConfigClient.Update(ctx, meshConfig, metav1.UpdateOptions{})
+		_, err = meshConfigClient.Update(ctx, meshConfig, metav1.UpdateOptions{})
 		if err != nil {
 			log.Fatal().Err(err)
 		}
