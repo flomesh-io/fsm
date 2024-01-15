@@ -1831,6 +1831,15 @@
                               "title": "Add K8S Namespace as Service Suffix",
                               "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
                             },
+                            "appendTag": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/appendTag",
+                              "type": "array",
+                              "title": "append tags",
+                              "description": "append tags.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/allowK8sNamespaces",
                               "type": "array",
@@ -2103,6 +2112,33 @@
                               "type": "boolean",
                               "title": "Add K8S Namespace as Service Suffix",
                               "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
+                            },
+                            "appendMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata",
+                              "type": "array",
+                              "title": "Append Metadata",
+                              "description": "Append Metadata",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "key",
+                                  "value"
+                                ],
+                                "properties": {
+                                  "key": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata/items/key",
+                                    "type": "string",
+                                    "title": "key of metadata",
+                                    "description": "key of metadata"
+                                  },
+                                  "value": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata/items/value",
+                                    "type": "string",
+                                    "title": "value of metadata",
+                                    "description": "value of metadata"
+                                  }
+                                }
+                              }
                             },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/allowK8sNamespaces",
@@ -2389,6 +2425,33 @@
                               "type": "boolean",
                               "title": "Add K8S Namespace as Service Suffix",
                               "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
+                            },
+                            "appendMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata",
+                              "type": "array",
+                              "title": "Append Metadata",
+                              "description": "Append Metadata",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "key",
+                                  "value"
+                                ],
+                                "properties": {
+                                  "key": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata/items/key",
+                                    "type": "string",
+                                    "title": "key of metadata",
+                                    "description": "key of metadata"
+                                  },
+                                  "value": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata/items/value",
+                                    "type": "string",
+                                    "title": "value of metadata",
+                                    "description": "value of metadata"
+                                  }
+                                }
+                              }
                             },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/allowK8sNamespaces",

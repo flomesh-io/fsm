@@ -107,6 +107,9 @@ type K2CCfg struct {
 
 	FlagAddServicePrefix               string
 	FlagAddK8SNamespaceAsServiceSuffix bool
+	FlagAppendTags                     []string
+	FlagAppendMetadataKeys             []string
+	FlagAppendMetadataValues           []string
 	FlagAllowK8SNamespaces             []string // K8s namespaces to explicitly inject
 	FlagDenyK8SNamespaces              []string // K8s namespaces to deny injection (has precedence)
 
@@ -198,6 +201,12 @@ func init() {
 		"If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. "+
 			"If false, no suffix will be appended to the service names in cloud. "+
 			"If the service name annotation is provided, the suffix is not appended.")
+	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendTags), "sync-k8s-to-cloud-append-tag",
+		"append tag. May be specified multiple times.")
+	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendMetadataKeys), "sync-k8s-to-cloud-append-metadata-key",
+		"append metadata key. May be specified multiple times.")
+	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendMetadataValues), "sync-k8s-to-cloud-append-metadata-value",
+		"append metadata value. May be specified multiple times.")
 	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAllowK8SNamespaces), "sync-k8s-to-cloud-allow-k8s-namespaces",
 		"K8s namespaces to explicitly allow. May be specified multiple times.")
 	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagDenyK8SNamespaces), "sync-k8s-to-cloud-deny-k8s-namespaces",

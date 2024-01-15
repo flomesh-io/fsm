@@ -21,14 +21,16 @@ const (
 )
 
 type NacosDiscoveryClient struct {
-	nacosClient        naming_client.INamingClient
-	namespaceId        string
-	k2cClusterId       string
-	k2cGroupId         string
-	clusterSet         []string
-	groupSet           []string
-	isInternalServices bool
-	clusterId          string
+	nacosClient            naming_client.INamingClient
+	namespaceId            string
+	k2cClusterId           string
+	k2cGroupId             string
+	clusterSet             []string
+	groupSet               []string
+	isInternalServices     bool
+	clusterId              string
+	appendMetadataKeySet   mapset.Set
+	appendMetadataValueSet mapset.Set
 }
 
 func (dc *NacosDiscoveryClient) getAllServicesInfo() []string {
@@ -166,7 +168,18 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
 }
 
 func (dc *NacosDiscoveryClient) Register(reg *CatalogRegistration) error {
-	_, err := dc.nacosClient.RegisterInstance(*reg.toNacos(dc.k2cClusterId, dc.k2cGroupId, float64(1)))
+	ins := reg.toNacos(dc.k2cClusterId, dc.k2cGroupId, float64(1))
+	metaKeys := dc.appendMetadataKeySet.ToSlice()
+	metaVals := dc.appendMetadataValueSet.ToSlice()
+	if len(metaKeys) > 0 && len(metaVals) > 0 && len(metaKeys) == len(metaVals) {
+		rMetadata := ins.Metadata
+		for index, key := range metaKeys {
+			metaKey := key.(string)
+			metaVal := metaVals[index].(string)
+			rMetadata[metaKey] = metaVal
+		}
+	}
+	_, err := dc.nacosClient.RegisterInstance(*ins)
 	return err
 }
 
@@ -183,10 +196,13 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() string {
 
 func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId, k2cClusterId, k2cGroupId string,
 	clusterSet, groupSet []string,
-	isInternalServices bool) (*NacosDiscoveryClient, error) {
+	isInternalServices bool,
+	appendMetadataKeySet, appendMetadataValueSet mapset.Set) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.isInternalServices = isInternalServices
 	nacosDiscoveryClient.clusterId = clusterId
+	nacosDiscoveryClient.appendMetadataKeySet = appendMetadataKeySet
+	nacosDiscoveryClient.appendMetadataValueSet = appendMetadataValueSet
 	segs := strings.Split(address, ":")
 	ipAddr := segs[0]
 	port, err := strconv.ParseUint(segs[1], 10, 64)

@@ -76,6 +76,11 @@ spec:
             "-sync-k8s-to-cloud-sync-ingress-load-balancer-ips={{.Values.fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs}}",
             "-sync-k8s-to-cloud-add-service-prefix={{.Values.fsm.cloudConnector.consul.syncFromK8S.addServicePrefix}}",
             "-sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix={{.Values.fsm.cloudConnector.consul.syncFromK8S.addK8SNamespaceAsServiceSuffix}}",
+            {{- if .Values.fsm.cloudConnector.consul.syncFromK8S.appendTag }}
+            {{- range .Values.fsm.cloudConnector.consul.syncFromK8S.appendTag }}
+            "-sync-k8s-to-cloud-append-tag={{ . }}",
+            {{- end }}
+            {{- end }}
             {{- if .Values.fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces }}
             {{- range .Values.fsm.cloudConnector.consul.syncFromK8S.allowK8sNamespaces }}
             "-sync-k8s-to-cloud-allow-k8s-namespaces={{ . }}",

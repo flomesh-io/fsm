@@ -280,10 +280,6 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 			}
 		}
 
-		//rMetadata["type"] = "smart-gateway"
-		//rMetadata["version"] = "release"
-		//rMetadata["zone"] = "yinzhou"
-
 		if cr.Service.GRPCPort > 0 {
 			rMetadata[EUREKA_METADATA_GRPC_PORT] = fmt.Sprintf("%d", cr.Service.GRPCPort)
 			rMetadata[EUREKA_METADATA_MGMT_PORT] = fmt.Sprintf("%d", cr.Service.HTTPPort)
