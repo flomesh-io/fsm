@@ -355,6 +355,9 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 			if inheritedFrom, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
 				meshSvc.CloudInheritedFrom = inheritedFrom
 			}
+			if clusterId, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; ok {
+				meshSvc.ClusterID = clusterId
+			}
 		}
 
 		// attempt to parse protocol from port name

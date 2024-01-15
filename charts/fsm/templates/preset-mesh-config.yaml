@@ -16,6 +16,15 @@ data:
         "name": {{.Values.clusterSet.name | mustToJson}},
         "controlPlaneUID": {{.Values.clusterSet.controlPlaneUID | mustToJson}}
       },
+      "connector": {
+        "DO_NOT_EDIT": "Managed by fsm-connector-gateway.",
+        "viaGateway": {
+          "ingressHTTPPort": {{.Values.fsm.cloudConnector.gateway.ingress.httpPort | mustToJson}},
+          "ingressGRPCPort": {{.Values.fsm.cloudConnector.gateway.ingress.grpcPort | mustToJson}},
+          "egressHTTPPort": {{.Values.fsm.cloudConnector.gateway.egress.httpPort | mustToJson}},
+          "egressGRPCPort": {{.Values.fsm.cloudConnector.gateway.egress.grpcPort | mustToJson}}
+        }
+      },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
         "logLevel": {{.Values.fsm.sidecar.sidecarLogLevel | mustToJson}},

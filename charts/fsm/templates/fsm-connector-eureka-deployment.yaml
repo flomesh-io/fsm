@@ -2,11 +2,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fsm-eureka-connector
+  name: {{ include "fsmConnector.eureka.name" . }}
   namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    app: fsm-eureka-connector
+    app: {{ include "fsmConnector.eureka.name" . }}
     meshName: {{ .Values.fsm.meshName }}
 spec:
   {{- if not .Values.fsm.cloudConnector.autoScale.enable }}
@@ -14,12 +14,12 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app: fsm-eureka-connector
+      app: {{ include "fsmConnector.eureka.name" . }}
   template:
     metadata:
       labels:
         {{- include "fsm.labels" . | nindent 8 }}
-        app: fsm-eureka-connector
+        app: {{ include "fsmConnector.eureka.name" . }}
   {{- if .Values.fsm.cloudConnector.podLabels }}
   {{- toYaml .Values.fsm.cloudConnector.podLabels | nindent 8 }}
   {{- end }}
@@ -37,11 +37,11 @@ spec:
       {{- include "restricted.securityContext" . | nindent 6 }}
       {{- end }}
       initContainers:
-        - name: init-fsm-eureka-connector
+        - name: init-{{ include "fsmConnector.eureka.name" . }}
           image: "{{ include "fsmCurl.image" . }}"
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
       containers:
-        - name: fsm-eureka-connector
+        - name: {{ include "fsmConnector.eureka.name" . }}
           image: "{{ include "fsmConnector.image" . }}"
           imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
           ports:
@@ -61,6 +61,7 @@ spec:
             "-sdr-provider=eureka",
             "-sdr-http-addr={{.Values.fsm.cloudConnector.eureka.httpAddr}}",
             "-sync-cloud-to-k8s={{.Values.fsm.cloudConnector.eureka.syncToK8S.enable}}",
+            "-sync-cloud-to-k8s-cluster-id={{.Values.fsm.cloudConnector.eureka.syncToK8S.clusterId}}",
             "-sync-cloud-to-k8s-passing-only={{.Values.fsm.cloudConnector.eureka.syncToK8S.passingOnly}}",
             "-sync-cloud-to-k8s-filter-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.filterMetadata}}",
             "-sync-cloud-to-k8s-prefix-tag={{.Values.fsm.cloudConnector.eureka.syncToK8S.prefixMetadata}}",
@@ -75,6 +76,12 @@ spec:
             "-sync-k8s-to-cloud-sync-ingress-load-balancer-ips={{.Values.fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs}}",
             "-sync-k8s-to-cloud-add-service-prefix={{.Values.fsm.cloudConnector.eureka.syncFromK8S.addServicePrefix}}",
             "-sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix={{.Values.fsm.cloudConnector.eureka.syncFromK8S.addK8SNamespaceAsServiceSuffix}}",
+            {{- if .Values.fsm.cloudConnector.eureka.syncFromK8S.appendMetadata }}
+            {{- range .Values.fsm.cloudConnector.eureka.syncFromK8S.appendMetadata }}
+            "-sync-k8s-to-cloud-append-metadata-key={{ .key }}",
+            "-sync-k8s-to-cloud-append-metadata-value={{ .value }}",
+            {{- end }}
+            {{- end }}
             {{- if .Values.fsm.cloudConnector.eureka.syncFromK8S.allowK8sNamespaces }}
             {{- range .Values.fsm.cloudConnector.eureka.syncFromK8S.allowK8sNamespaces }}
             "-sync-k8s-to-cloud-allow-k8s-namespaces={{ . }}",
@@ -86,12 +93,6 @@ spec:
             {{- end }}
             {{- end }}
             "-sync-k8s-to-cloud-with-gateway={{.Values.fsm.cloudConnector.eureka.syncFromK8S.withGateway.enable}}",
-            "-via-gateway-ingress-ip-selector={{.Values.fsm.cloudConnector.gateway.ingress.ipSelector}}",
-            "-via-gateway-egress-ip-selector={{.Values.fsm.cloudConnector.gateway.egress.ipSelector}}",
-            "-via-gateway-ingress-http-port={{.Values.fsm.cloudConnector.gateway.ingress.httpPort}}",
-            "-via-gateway-egress-http-port={{.Values.fsm.cloudConnector.gateway.egress.httpPort}}",
-            "-via-gateway-ingress-grpc-port={{.Values.fsm.cloudConnector.gateway.ingress.grpcPort}}",
-            "-via-gateway-egress-grpc-port={{.Values.fsm.cloudConnector.gateway.egress.grpcPort}}",
           ]
           resources:
             limits:
@@ -116,8 +117,8 @@ spec:
               port: 9091
           env:
             - name: CONTROLLER_SVC_NAME
-              value: fsm-eureka-connector
-            # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-eureka-connector to register events
+              value: {{ include "fsmConnector.eureka.name" . }}
+            # The CONNECTOR_POD_NAME env variable sets pod name dynamically, used by fsm-connector-eureka to register events
             - name: CONNECTOR_POD_NAME
               valueFrom:
                 fieldRef:
