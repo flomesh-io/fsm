@@ -1,4 +1,4 @@
-package ktoc
+package connector
 
 import (
 	"k8s.io/client-go/tools/cache"
@@ -39,29 +39,3 @@ type Resource interface {
 type Backgrounder interface {
 	Run(<-chan struct{})
 }
-
-// NewResource returns a Resource implementation for the given informer,
-// upsert handler, and delete handler.
-func NewResource(
-	informer cache.SharedIndexInformer,
-	upsert ResourceUpsertFunc,
-	delete ResourceDeleteFunc,
-) Resource {
-	return &basicResource{
-		informer: informer,
-		upsert:   upsert,
-		delete:   delete,
-	}
-}
-
-// basicResource is a Resource implementation where all components are given
-// as struct fields. This can only be created with NewResource.
-type basicResource struct {
-	informer cache.SharedIndexInformer
-	upsert   ResourceUpsertFunc
-	delete   ResourceDeleteFunc
-}
-
-func (r *basicResource) Informer() cache.SharedIndexInformer  { return r.informer }
-func (r *basicResource) Upsert(k string, v interface{}) error { return r.upsert(k, v) }
-func (r *basicResource) Delete(k string, v interface{}) error { return r.delete(k, v) }

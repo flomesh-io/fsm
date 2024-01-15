@@ -683,11 +683,13 @@ fsm:
   cloudConnector:
     consul:
       enable: false
+      connectorNameSuffix: consul
       deriveNamespace: ""
       asInternalServices: false
       httpAddr: 127.0.0.1:8500
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterTag: ""
         prefixTag: ""
@@ -719,11 +721,13 @@ fsm:
         consulCrossNamespaceACLPolicy: ""
     eureka:
       enable: false
+      connectorNameSuffix: eureka
       deriveNamespace: ""
       asInternalServices: false
       httpAddr: 127.0.0.1:8761/eureka
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterMetadata: ""
         prefixMetadata: ""
@@ -746,12 +750,54 @@ fsm:
           - ""
         withGateway:
           enable: false
+    nacos:
+      enable: false
+      connectorNameSuffix: nacos
+      username: ""
+      password: ""
+      namespaceId: "public"
+      deriveNamespace: ""
+      asInternalServices: false
+      httpAddr: 127.0.0.1:8848
+      syncToK8S:
+        enable: true
+        clusterId: ""
+        passingOnly: true
+        filterMetadata: ""
+        prefixMetadata: ""
+        suffixMetadata: ""
+        clusterSet:
+          - "DEFAULT"
+        groupSet:
+          - "DEFAULT_GROUP"
+        withGateway:
+          enable: false
+      syncFromK8S:
+        enable: false
+        clusterId: "DEFAULT"
+        groupId: "DEFAULT_GROUP"
+        defaultSync: true
+        syncClusterIPServices: true
+        syncLoadBalancerEndpoints: false
+        nodePortSyncType: ExternalOnly
+        syncIngress: false
+        syncIngressLoadBalancerIPs: false
+        addServicePrefix: ""
+        addK8SNamespaceAsServiceSuffix: false
+        allowK8sNamespaces:
+          - "*"
+        denyK8sNamespaces:
+          - ""
+        withGateway:
+          enable: false
     machine:
       enable: false
+      connectorNameSuffix: machine
       deriveNamespace: ""
       asInternalServices: false
       syncToK8S:
         enable: true
+        clusterId: ""
         passingOnly: true
         filterLabel: ""
         prefixLabel: ""

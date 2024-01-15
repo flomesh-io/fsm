@@ -100,6 +100,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.cloudConnector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.cloudConnector.consul.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.consul.connectorNameSuffix | string | `"consul"` |  |
 | fsm.cloudConnector.consul.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.consul.enable | bool | `false` |  |
 | fsm.cloudConnector.consul.httpAddr | string | `"127.0.0.1:8500"` |  |
@@ -122,6 +123,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.consul.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.consul.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.consul.syncToK8S.filterTag | string | `""` |  |
 | fsm.cloudConnector.consul.syncToK8S.passingOnly | bool | `true` |  |
@@ -130,6 +132,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.consul.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.cloudConnector.eureka.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.eureka.connectorNameSuffix | string | `"eureka"` |  |
 | fsm.cloudConnector.eureka.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.eureka.enable | bool | `false` |  |
 | fsm.cloudConnector.eureka.httpAddr | string | `"127.0.0.1:8761/eureka"` |  |
@@ -145,6 +148,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
 | fsm.cloudConnector.eureka.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.eureka.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.eureka.syncToK8S.filterMetadata | string | `""` |  |
 | fsm.cloudConnector.eureka.syncToK8S.passingOnly | bool | `true` |  |
@@ -162,14 +166,47 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
 | fsm.cloudConnector.gateway.syncToFgw.enable | bool | `false` |  |
 | fsm.cloudConnector.machine.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.machine.connectorNameSuffix | string | `"machine"` |  |
 | fsm.cloudConnector.machine.deriveNamespace | string | `""` |  |
 | fsm.cloudConnector.machine.enable | bool | `false` |  |
+| fsm.cloudConnector.machine.syncToK8S.clusterId | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.enable | bool | `true` |  |
 | fsm.cloudConnector.machine.syncToK8S.filterLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.passingOnly | bool | `true` |  |
 | fsm.cloudConnector.machine.syncToK8S.prefixLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.suffixLabel | string | `""` |  |
 | fsm.cloudConnector.machine.syncToK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.asInternalServices | bool | `false` |  |
+| fsm.cloudConnector.nacos.connectorNameSuffix | string | `"nacos"` |  |
+| fsm.cloudConnector.nacos.deriveNamespace | string | `""` |  |
+| fsm.cloudConnector.nacos.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.httpAddr | string | `"127.0.0.1:8848"` |  |
+| fsm.cloudConnector.nacos.namespaceId | string | `"public"` |  |
+| fsm.cloudConnector.nacos.password | string | `""` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.addK8SNamespaceAsServiceSuffix | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.addServicePrefix | string | `""` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.allowK8sNamespaces[0] | string | `"*"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.clusterId | string | `"DEFAULT"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.defaultSync | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.denyK8sNamespaces[0] | string | `""` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.groupId | string | `"DEFAULT_GROUP"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.nodePortSyncType | string | `"ExternalOnly"` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncClusterIPServices | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncIngress | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncIngressLoadBalancerIPs | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.syncLoadBalancerEndpoints | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncFromK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.syncToK8S.clusterId | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.clusterSet[0] | string | `"DEFAULT"` |  |
+| fsm.cloudConnector.nacos.syncToK8S.enable | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncToK8S.filterMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.groupSet[0] | string | `"DEFAULT_GROUP"` |  |
+| fsm.cloudConnector.nacos.syncToK8S.passingOnly | bool | `true` |  |
+| fsm.cloudConnector.nacos.syncToK8S.prefixMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.suffixMetadata | string | `""` |  |
+| fsm.cloudConnector.nacos.syncToK8S.withGateway.enable | bool | `false` |  |
+| fsm.cloudConnector.nacos.username | string | `""` |  |
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |

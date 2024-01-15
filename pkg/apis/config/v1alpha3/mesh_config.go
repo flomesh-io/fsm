@@ -71,6 +71,9 @@ type MeshConfigSpec struct {
 
 	// Misc defines the configurations of misc info
 	Misc MiscSpec `json:"misc"`
+
+	// Connector defines the configurations of connector info
+	Connector ConnectorSpec `json:"connector"`
 }
 
 // LocalProxyMode is a type alias representing the way the sidecar proxies to the main application
@@ -710,4 +713,24 @@ type MiscSpec struct {
 	// +kubebuilder:default="flomesh/pipy-repo:0.99.0-2"
 	// RepoServerImage defines the image of repo server.
 	RepoServerImage string `json:"repoServerImage"`
+}
+
+// ConnectorGatewaySpec is the type to represent connector gateway configs.
+type ConnectorGatewaySpec struct {
+	IngressAddr     string `json:"ingressAddr"`
+	IngressHTTPPort uint   `json:"ingressHTTPPort"`
+	IngressGRPCPort uint   `json:"ingressGRPCPort"`
+
+	EgressAddr     string `json:"egressAddr"`
+	EgressHTTPPort uint   `json:"egressHTTPPort"`
+	EgressGRPCPort uint   `json:"egressGRPCPort"`
+}
+
+// ConnectorSpec is the type to represent connector configs.
+type ConnectorSpec struct {
+	// +kubebuilder:default="Managed by fsm-connector-gateway."
+	Notice string `json:"DO_NOT_EDIT"`
+
+	// ViaGateway defines gateway settings
+	ViaGateway ConnectorGatewaySpec `json:"viaGateway"`
 }

@@ -1,15 +1,15 @@
-{{- if .Values.fsm.cloudConnector.eureka.enable }}
-{{- if .Values.fsm.injector.autoScale.enable }}
+{{- if .Values.fsm.cloudConnector.machine.enable }}
+{{- if .Values.fsm.cloudConnector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: fsm-eureka-connector-hpa
+  name: {{ include "fsmConnector.machine.name" . }}-hpa
   namespace: {{ include "fsm.namespace" . }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: fsm-eureka-connector
+    name: {{ include "fsmConnector.machine.name" . }}
   minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
   metrics:

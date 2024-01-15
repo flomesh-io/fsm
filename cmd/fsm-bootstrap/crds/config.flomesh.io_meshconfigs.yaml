@@ -1285,6 +1285,39 @@ spec:
                 - properties
                 - uid
                 type: object
+              connector:
+                description: Connector defines the configurations of connector info
+                properties:
+                  DO_NOT_EDIT:
+                    default: Managed by fsm-connector-gateway.
+                    type: string
+                  viaGateway:
+                    description: ViaGateway defines gateway settings
+                    properties:
+                      egressAddr:
+                        type: string
+                      egressGRPCPort:
+                        type: integer
+                      egressHTTPPort:
+                        type: integer
+                      ingressAddr:
+                        type: string
+                      ingressGRPCPort:
+                        type: integer
+                      ingressHTTPPort:
+                        type: integer
+                    required:
+                    - egressAddr
+                    - egressGRPCPort
+                    - egressHTTPPort
+                    - ingressAddr
+                    - ingressGRPCPort
+                    - ingressHTTPPort
+                    type: object
+                required:
+                - DO_NOT_EDIT
+                - viaGateway
+                type: object
               egressGateway:
                 description: EgressGateway defines the configurations of EgressGateway
                   features.
@@ -2212,6 +2245,7 @@ spec:
                 - serviceAccessMode
                 type: object
             required:
+            - connector
             - image
             - misc
             type: object

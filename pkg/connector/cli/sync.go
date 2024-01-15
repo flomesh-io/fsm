@@ -16,6 +16,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
 	"github.com/flomesh-io/fsm/pkg/connector/ktog"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
+	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
 const (
@@ -23,21 +24,13 @@ const (
 	VIA_CLUSTER_IP  = "ClusterIP"
 )
 
-func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
+func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
 	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
 	ctok.WithGateway(Cfg.C2K.FlagWithGateway.Enable)
 
 	if Cfg.C2K.FlagWithGateway.Enable {
-		ingressAddr, egressAddr := waitGatewayReady(ctx, kubeClient,
-			connector.ViaGateway.IngressIPSelector,
-			connector.ViaGateway.EgressIPSelector,
-			int32(connector.ViaGateway.Ingress.HTTPPort),
-			int32(connector.ViaGateway.Egress.HTTPPort),
-			int32(connector.ViaGateway.Ingress.GRPCPort),
-			int32(connector.ViaGateway.Egress.GRPCPort))
-		connector.ViaGateway.IngressAddr = ingressAddr
-		connector.ViaGateway.EgressAddr = egressAddr
+		waitViaGatewayReady(ctx, configClient)
 	}
 
 	sink := ctok.NewSink(ctx, kubeClient, discClient, Cfg.FsmNamespace)
@@ -52,28 +45,22 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 		PassingOnly: Cfg.C2K.FlagPassingOnly,
 	}
 	sink.MicroAggregator = source
+	sink.Ready()
+
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &ctok.Controller{
+	ctl := &connector.Controller{
 		Resource: sink,
 	}
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient) {
+func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
 	ktoc.WithGateway(Cfg.K2C.FlagWithGateway.Enable)
 
 	if Cfg.K2C.FlagWithGateway.Enable {
-		ingressAddr, egressAddr := waitGatewayReady(ctx, kubeClient,
-			connector.ViaGateway.IngressIPSelector,
-			connector.ViaGateway.EgressIPSelector,
-			int32(connector.ViaGateway.Ingress.HTTPPort),
-			int32(connector.ViaGateway.Egress.HTTPPort),
-			int32(connector.ViaGateway.Ingress.GRPCPort),
-			int32(connector.ViaGateway.Egress.GRPCPort))
-		connector.ViaGateway.IngressAddr = ingressAddr
-		connector.ViaGateway.EgressAddr = egressAddr
+		waitViaGatewayReady(ctx, configClient)
 	}
 
 	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
@@ -115,20 +102,51 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, discClient p
 	}
 
 	// Build the controller and start it
-	ctl := &ktoc.Controller{
+	ctl := &connector.Controller{
 		Resource: &serviceResource,
 	}
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClient gwapi.Interface) {
-	waitGatewayReady(ctx, kubeClient,
+func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
+	ingressAddr, egressAddr := waitGatewayReady(ctx, kubeClient,
 		connector.ViaGateway.IngressIPSelector,
 		connector.ViaGateway.EgressIPSelector,
 		int32(connector.ViaGateway.Ingress.HTTPPort),
 		int32(connector.ViaGateway.Egress.HTTPPort),
 		int32(connector.ViaGateway.Ingress.GRPCPort),
 		int32(connector.ViaGateway.Egress.GRPCPort))
+
+	meshConfigClient := configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
+	meshConfig, err := meshConfigClient.Get(ctx, Cfg.FsmMeshConfigName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal().Err(err)
+	}
+
+	meshConfigChanged := false
+
+	viaGateway := &meshConfig.Spec.Connector.ViaGateway
+	if !strings.EqualFold(viaGateway.IngressAddr, ingressAddr) ||
+		!strings.EqualFold(viaGateway.EgressAddr, egressAddr) ||
+		viaGateway.IngressHTTPPort != connector.ViaGateway.Ingress.HTTPPort ||
+		viaGateway.IngressGRPCPort != connector.ViaGateway.Ingress.GRPCPort ||
+		viaGateway.EgressHTTPPort != connector.ViaGateway.Egress.HTTPPort ||
+		viaGateway.EgressGRPCPort != connector.ViaGateway.Egress.GRPCPort {
+		viaGateway.IngressAddr = ingressAddr
+		viaGateway.IngressHTTPPort = connector.ViaGateway.Ingress.HTTPPort
+		viaGateway.IngressGRPCPort = connector.ViaGateway.Ingress.GRPCPort
+		viaGateway.EgressAddr = egressAddr
+		viaGateway.EgressHTTPPort = connector.ViaGateway.Egress.HTTPPort
+		viaGateway.EgressGRPCPort = connector.ViaGateway.Egress.GRPCPort
+		meshConfigChanged = true
+	}
+
+	if meshConfigChanged {
+		_, err = meshConfigClient.Update(ctx, meshConfig, metav1.UpdateOptions{})
+		if err != nil {
+			log.Fatal().Err(err)
+		}
+	}
 
 	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
 	denySet := ToSet(Cfg.K2G.FlagDenyK8SNamespaces)
@@ -156,18 +174,40 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, gatewayClien
 	gatewayResource.Service = serviceResource
 
 	// Build the controller and start it
-	gwCtl := &ktog.Controller{
+	gwCtl := &connector.Controller{
 		Resource: gatewayResource,
 	}
 
 	// Build the controller and start it
-	ctl := &ktog.Controller{
+	ctl := &connector.Controller{
 		Resource: serviceResource,
 	}
 
 	go syncer.Run(ctx, gwCtl, ctl)
 	go gwCtl.Run(ctx.Done())
 	go ctl.Run(ctx.Done())
+}
+
+func waitViaGatewayReady(ctx context.Context, configClient configClientset.Interface) {
+	meshConfigClient := configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
+	for {
+		meshConfig, err := meshConfigClient.Get(ctx, Cfg.FsmMeshConfigName, metav1.GetOptions{})
+		if err != nil {
+			log.Warn().Err(err)
+		} else {
+			viaGateway := &meshConfig.Spec.Connector.ViaGateway
+			if len(viaGateway.IngressAddr) > 0 && len(viaGateway.EgressAddr) > 0 {
+				connector.ViaGateway.IngressAddr = viaGateway.IngressAddr
+				connector.ViaGateway.Ingress.HTTPPort = viaGateway.IngressHTTPPort
+				connector.ViaGateway.Ingress.GRPCPort = viaGateway.IngressGRPCPort
+				connector.ViaGateway.EgressAddr = viaGateway.EgressAddr
+				connector.ViaGateway.Egress.HTTPPort = viaGateway.EgressHTTPPort
+				connector.ViaGateway.Egress.GRPCPort = viaGateway.EgressGRPCPort
+				break
+			}
+		}
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector string, viaPorts ...int32) (ingressAddr, egressAddr string) {

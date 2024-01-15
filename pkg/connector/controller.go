@@ -1,6 +1,6 @@
-// Package ktog contains a reusable abstraction for efficiently
+// Package connector contains a reusable abstraction for efficiently
 // watching for changes in resources in a Kubernetes cluster.
-package ktog
+package connector
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	log = logger.New("connector-k2g")
+	log = logger.New("connector")
 )
 
 // Controller is a generic cache.Controller implementation that watches

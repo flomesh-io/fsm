@@ -7,6 +7,9 @@ const (
 	//EurekaDiscoveryService defines eureka discovery service name
 	EurekaDiscoveryService = "eureka"
 
+	//NacosDiscoveryService defines nacos discovery service name
+	NacosDiscoveryService = "nacos"
+
 	//MachineDiscoveryService defines machine discovery service name
 	MachineDiscoveryService = "machine"
 )
@@ -25,6 +28,9 @@ const (
 
 	// AnnotationCloudServiceInheritedFrom defines cloud service inherited annotation
 	AnnotationCloudServiceInheritedFrom = "flomesh.io/cloud-service-inherited-from"
+
+	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
+	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
 
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"

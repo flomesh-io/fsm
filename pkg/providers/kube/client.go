@@ -2,14 +2,15 @@
 package kube
 
 import (
-	"fmt"
 	"net"
+	"strings"
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -65,18 +66,21 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					log.Error().Msgf("Error parsing endpoint IP address %s for MeshService %s", address.IP, svc)
 					continue
 				}
-				viaGateway := ""
-				if port.AppProtocol != nil && len(kubernetesEndpoints.Annotations) > 0 {
-					if viaAddr, existAddr := kubernetesEndpoints.Annotations[constants.EgressViaGatewayAnnotation]; existAddr {
-						if viaPort, existPort := kubernetesEndpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, *port.AppProtocol)]; existPort {
-							viaGateway = fmt.Sprintf("%s:%s", viaAddr, viaPort)
-						}
+				ept := endpoint.Endpoint{
+					IP:   ip,
+					Port: endpoint.Port(port.Port),
+				}
+				if port.AppProtocol != nil {
+					ept.AppProtocol = *port.AppProtocol
+				} else if len(port.Name) > 0 {
+					if strings.Contains(port.Name, constants.ProtocolHTTP) {
+						ept.AppProtocol = constants.ProtocolHTTP
+					} else if strings.Contains(port.Name, constants.ProtocolGRPC) {
+						ept.AppProtocol = constants.ProtocolGRPC
 					}
 				}
-				ept := endpoint.Endpoint{
-					IP:    ip,
-					Port:  endpoint.Port(port.Port),
-					ViaGw: viaGateway,
+				if len(kubernetesEndpoints.Annotations) > 0 {
+					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
 				}
 				endpoints = append(endpoints, ept)
 			}

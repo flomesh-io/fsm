@@ -6,6 +6,8 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 const (
@@ -72,7 +74,7 @@ func (s *GatewayRouteSyncer) Sync(rs []*corev1.Service) {
 
 // Run is the long-running runloop for reconciling the local set of
 // services to register with the remote state.
-func (s *GatewayRouteSyncer) Run(ctx context.Context, ctrls ...*Controller) {
+func (s *GatewayRouteSyncer) Run(ctx context.Context, ctrls ...*connector.Controller) {
 	s.once.Do(s.init)
 
 	for _, ctrl := range ctrls {
