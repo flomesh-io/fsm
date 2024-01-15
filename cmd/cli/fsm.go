@@ -51,6 +51,7 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		newServiceLBCmd(stdout),
 		newFLBCmd(config, stdout),
 		newEgressGatewayCmd(config, stdout),
+		newConnectorCmd(config, stdout),
 	)
 
 	// Add subcommands related to unmanaged environments

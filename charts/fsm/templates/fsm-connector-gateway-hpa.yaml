@@ -1,15 +1,15 @@
-{{- if .Values.fsm.cloudConnector.consul.enable }}
-{{- if .Values.fsm.injector.autoScale.enable }}
+{{- if .Values.fsm.cloudConnector.gateway.syncToFgw.enable }}
+{{- if .Values.fsm.cloudConnector.autoScale.enable }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: fsm-consul-connector-hpa
+  name: {{ include "fsmConnector.gateway.name" . }}-hpa
   namespace: {{ include "fsm.namespace" . }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: fsm-consul-connector
+    name: {{ include "fsmConnector.gateway.name" . }}
   minReplicas: {{.Values.fsm.cloudConnector.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.cloudConnector.autoScale.maxReplicas}}
   metrics:

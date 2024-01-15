@@ -15,6 +15,11 @@ import (
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector-k2g")
 )
 
 // ServiceResource implements controller.Resource to sync CatalogService resource

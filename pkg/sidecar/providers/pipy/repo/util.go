@@ -10,7 +10,9 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/catalog"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -380,11 +382,12 @@ func getEgressClusterDestinationSpec(meshCatalog catalog.MeshCataloger, egressPo
 	return destinationSpec
 }
 
-func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, _ *pipy.Proxy,
-	proxyIdentity identity.ServiceIdentity,
+func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, cfg configurator.Configurator,
+	proxy *pipy.Proxy, proxyIdentity identity.ServiceIdentity,
 	pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
 	dependClusters map[service.ClusterName]*WeightedCluster) bool {
 	ready := true
+	viaGateway := cfg.GetMeshConfig().Spec.Connector.ViaGateway
 	otp := pipyConf.newOutboundTrafficPolicy()
 	for _, cluster := range dependClusters {
 		clusterConfig := getMeshClusterConfigs(outboundPolicy.ClustersConfigs, cluster.ClusterName)
@@ -407,7 +410,8 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				}
 			}
 			weight := Weight(upstreamEndpoint.Weight)
-			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, upstreamEndpoint.ViaGw)
+			viaGw := generatePipyViaGateway(upstreamEndpoint.AppProtocol, upstreamEndpoint.ClusterID, proxy, &viaGateway)
+			clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
 			if clusterConfig.UpstreamTrafficSetting != nil {
 				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
 					clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)
@@ -419,6 +423,43 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 		}
 	}
 	return ready
+}
+
+func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, viaGateway *configv1alpha3.ConnectorGatewaySpec) string {
+	viaGw := ""
+	if len(appProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, clusterID) {
+		if len(proxy.ClusterID) == 0 { // k8s -> fgw(EgressIP:EgressPort) -> others
+			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+				strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
+			}
+			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+				strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
+			}
+		} else {
+			if len(clusterID) == 0 { // others -> fgw(IngressIP:IngressPort) -> k8s
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressHTTPPort > 0 &&
+					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressHTTPPort)
+				}
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.IngressGRPCPort > 0 &&
+					strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.IngressGRPCPort)
+				}
+			} else { // others -> fgw(IngressIP:EgressPort) -> others
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+					strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressHTTPPort)
+				}
+				if len(viaGateway.IngressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+					strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
+					viaGw = fmt.Sprintf("%s:%d", viaGateway.IngressAddr, viaGateway.EgressGRPCPort)
+				}
+			}
+		}
+	}
+	return viaGw
 }
 
 func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, ingressPolicy *trafficpolicy.IngressTrafficPolicy) {

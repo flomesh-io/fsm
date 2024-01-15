@@ -220,6 +220,47 @@ securityContext:
 {{- end -}}
 {{- end -}}
 
+{{/* fsm consul connector's name */}}
+{{- define "fsmConnector.consul.name" -}}
+{{- if .Values.fsm.cloudConnector.consul.connectorNameSuffix -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.consul.connectorNameSuffix -}}
+{{- else -}}
+{{- print "fsm-connector-consul" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm eureka connector's name */}}
+{{- define "fsmConnector.eureka.name" -}}
+{{- if .Values.fsm.cloudConnector.eureka.connectorNameSuffix -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.eureka.connectorNameSuffix -}}
+{{- else -}}
+{{- print "fsm-connector-eureka" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm nacos connector's name */}}
+{{- define "fsmConnector.nacos.name" -}}
+{{- if .Values.fsm.cloudConnector.nacos.connectorNameSuffix -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.nacos.connectorNameSuffix -}}
+{{- else -}}
+{{- print "fsm-connector-nacos" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm machine connector's name */}}
+{{- define "fsmConnector.machine.name" -}}
+{{- if .Values.fsm.cloudConnector.machine.connectorNameSuffix -}}
+{{- printf "fsm-connector-%s" .Values.fsm.cloudConnector.machine.connectorNameSuffix -}}
+{{- else -}}
+{{- print "fsm-connector-machine" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm gateway connector's name */}}
+{{- define "fsmConnector.gateway.name" -}}
+{{- print "fsm-connector-gateway" -}}
+{{- end -}}
+
 {{- define "fsmIngress.heath.port" -}}
 {{- if .Values.fsm.fsmIngress.enabled }}
 {{- if and .Values.fsm.fsmIngress.http.enabled (not (empty .Values.fsm.fsmIngress.http.containerPort)) }}

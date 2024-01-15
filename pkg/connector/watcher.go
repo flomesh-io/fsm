@@ -2,6 +2,7 @@ package connector
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
@@ -11,7 +12,6 @@ import (
 )
 
 var (
-	log               = logger.New("connector-mesh-config-watcher")
 	GatewayAPIEnabled = false
 )
 
@@ -60,6 +60,18 @@ func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
 					newObj.Spec.ClusterSet.Group,
 					newObj.Spec.ClusterSet.Zone,
 					newObj.Spec.ClusterSet.Region)
+			}
+
+			if !reflect.DeepEqual(prevObj.Spec.Connector, newObj.Spec.Connector) {
+				viaGateway := &newObj.Spec.Connector.ViaGateway
+				if len(viaGateway.IngressAddr) > 0 && len(viaGateway.EgressAddr) > 0 {
+					ViaGateway.IngressAddr = viaGateway.IngressAddr
+					ViaGateway.Ingress.HTTPPort = viaGateway.IngressHTTPPort
+					ViaGateway.Ingress.GRPCPort = viaGateway.IngressGRPCPort
+					ViaGateway.EgressAddr = viaGateway.EgressAddr
+					ViaGateway.Egress.HTTPPort = viaGateway.EgressHTTPPort
+					ViaGateway.Egress.GRPCPort = viaGateway.EgressGRPCPort
+				}
 			}
 		}
 	}

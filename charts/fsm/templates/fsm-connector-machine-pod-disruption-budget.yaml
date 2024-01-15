@@ -1,16 +1,16 @@
 {{- if .Values.fsm.cloudConnector.machine.enable }}
-{{- if .Values.fsm.injector.enablePodDisruptionBudget }}
+{{- if .Values.fsm.cloudConnector.enablePodDisruptionBudget }}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: fsm-machine-connector-pdb
+  name: {{ include "fsmConnector.machine.name" . }}-pdb
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    app: fsm-machine-connector
+    app: {{ include "fsmConnector.machine.name" . }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: fsm-machine-connector
+      app: {{ include "fsmConnector.machine.name" . }}
 {{- end }}
 {{- end }}

@@ -1,16 +1,16 @@
 {{- if .Values.fsm.cloudConnector.eureka.enable }}
-{{- if .Values.fsm.injector.enablePodDisruptionBudget }}
+{{- if .Values.fsm.cloudConnector.enablePodDisruptionBudget }}
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: fsm-eureka-connector-pdb
+  name: {{ include "fsmConnector.eureka.name" . }}-pdb
   namespace: {{ include "fsm.namespace" . }}
   labels:
-    app: fsm-eureka-connector
+    app: {{ include "fsmConnector.eureka.name" . }}
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: fsm-eureka-connector
+      app: {{ include "fsmConnector.eureka.name" . }}
 {{- end }}
 {{- end }}

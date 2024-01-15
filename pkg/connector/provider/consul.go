@@ -3,14 +3,21 @@ package provider
 import (
 	"strings"
 
+	mapset "github.com/deckarep/golang-set"
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
+const (
+	CONSUL_METADATA_GRPC_PORT = "gRPC.port="
+)
+
 type ConsulDiscoveryClient struct {
 	consulClient       *consul.Client
 	isInternalServices bool
+	clusterId          string
+	appendTagSet       mapset.Set
 }
 
 func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
@@ -91,6 +98,7 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 		}
 		agentService := new(AgentService)
 		agentService.fromConsul(svc.Service)
+		agentService.ClusterId = dc.clusterId
 		agentServices = append(agentServices, agentService)
 	}
 	return agentServices, nil
@@ -120,7 +128,14 @@ func (dc *ConsulDiscoveryClient) Deregister(dereg *CatalogDeregistration) error 
 }
 
 func (dc *ConsulDiscoveryClient) Register(reg *CatalogRegistration) error {
-	_, err := dc.consulClient.Catalog().Register(reg.toConsul(), nil)
+	ins := reg.toConsul()
+	appendTags := dc.appendTagSet.ToSlice()
+	if len(appendTags) > 0 {
+		for _, tag := range appendTags {
+			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
+		}
+	}
+	_, err := dc.consulClient.Catalog().Register(ins, nil)
 	return err
 }
 
@@ -129,7 +144,7 @@ const (
 	DefaultNamespace  = "default"
 )
 
-// EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
+// EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
 // it will create it and set crossNSACLPolicy as a policy default.
 // Boolean return value indicates if the namespace was created by this call.
 func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
@@ -172,7 +187,8 @@ func (dc *ConsulDiscoveryClient) MicroServiceProvider() string {
 	return connector.ConsulDiscoveryService
 }
 
-func GetConsulDiscoveryClient(address string, isInternalServices bool) (*ConsulDiscoveryClient, error) {
+func GetConsulDiscoveryClient(address string, isInternalServices bool, clusterId string,
+	appendTagSet mapset.Set) (*ConsulDiscoveryClient, error) {
 	cfg := consul.DefaultConfig()
 	cfg.Address = address
 	consulClient, err := consul.NewClient(cfg)
@@ -182,5 +198,7 @@ func GetConsulDiscoveryClient(address string, isInternalServices bool) (*ConsulD
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.consulClient = consulClient
 	consulDiscoveryClient.isInternalServices = isInternalServices
+	consulDiscoveryClient.clusterId = clusterId
+	consulDiscoveryClient.appendTagSet = appendTagSet
 	return consulDiscoveryClient, nil
 }
