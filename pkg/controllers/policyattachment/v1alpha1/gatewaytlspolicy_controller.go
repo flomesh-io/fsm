@@ -43,7 +43,7 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/types"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -89,7 +89,7 @@ func NewGatewayTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reco
 		FindConflictPort: r.getConflictedPort,
 		GroupKindObjectMapping: map[string]map[string]client.Object{
 			constants.GatewayAPIGroup: {
-				constants.GatewayAPIGatewayKind: &gwv1beta1.Gateway{},
+				constants.GatewayAPIGatewayKind: &gwv1.Gateway{},
 			},
 		},
 	}
@@ -123,7 +123,7 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -154,7 +154,7 @@ func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, 
 	return policies, nil
 }
 
-func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, gatewayTLSPolicy client.Object, allGatewayTLSPolicies []client.Object) *types.NamespacedName {
+func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, gatewayTLSPolicy client.Object, allGatewayTLSPolicies []client.Object) *types.NamespacedName {
 	currentGatewayTLSPolicy := gatewayTLSPolicy.(*gwpav1alpha1.GatewayTLSPolicy)
 
 	if len(currentGatewayTLSPolicy.Spec.Ports) == 0 {

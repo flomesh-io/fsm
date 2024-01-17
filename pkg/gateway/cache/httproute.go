@@ -1,14 +1,14 @@
 package cache
 
 import (
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1beta1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
+func processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
 	routePolicies := filterPoliciesByRoute(policies, httpRoute)
 	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
@@ -56,7 +56,7 @@ func processHTTPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, 
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1beta1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.HTTPRouteRuleSpec {
+func generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.HTTPRouteRuleSpec {
 	httpSpec := &fgw.HTTPRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeHTTP,
 		Matches:   make([]fgw.HTTPTrafficMatch, 0),

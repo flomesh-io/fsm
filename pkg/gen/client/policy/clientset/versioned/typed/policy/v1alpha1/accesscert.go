@@ -17,9 +17,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -44,6 +47,8 @@ type AccessCertInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AccessCertList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessCert, err error)
+	Apply(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error)
+	ApplyStatus(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error)
 	AccessCertExpansion
 }
 
@@ -185,6 +190,62 @@ func (c *accessCerts) Patch(ctx context.Context, name string, pt types.PatchType
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied accessCert.
+func (c *accessCerts) Apply(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error) {
+	if accessCert == nil {
+		return nil, fmt.Errorf("accessCert provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(accessCert)
+	if err != nil {
+		return nil, err
+	}
+	name := accessCert.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessCert.Name must be provided to Apply")
+	}
+	result = &v1alpha1.AccessCert{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("accesscerts").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *accessCerts) ApplyStatus(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error) {
+	if accessCert == nil {
+		return nil, fmt.Errorf("accessCert provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(accessCert)
+	if err != nil {
+		return nil, err
+	}
+
+	name := accessCert.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessCert.Name must be provided to Apply")
+	}
+
+	result = &v1alpha1.AccessCert{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("accesscerts").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

@@ -9,15 +9,15 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 var (
-	pathMatchType  = gwv1beta1.PathMatchPathPrefix
+	pathMatchType  = gwv1.PathMatchPathPrefix
 	pathMatchValue = "/"
 )
 
@@ -37,14 +37,14 @@ func (gw *GatewayResource) Informer() cache.SharedIndexInformer {
 		gw.gatewaysInformer = cache.NewSharedIndexInformer(
 			&cache.ListWatch{
 				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-					return gw.Service.GatewayClient.GatewayV1beta1().Gateways(gw.Service.FsmNamespace).List(gw.Service.Ctx, options)
+					return gw.Service.GatewayClient.GatewayV1().Gateways(gw.Service.FsmNamespace).List(gw.Service.Ctx, options)
 				},
 
 				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-					return gw.Service.GatewayClient.GatewayV1beta1().Gateways(gw.Service.FsmNamespace).Watch(gw.Service.Ctx, options)
+					return gw.Service.GatewayClient.GatewayV1().Gateways(gw.Service.FsmNamespace).Watch(gw.Service.Ctx, options)
 				},
 			},
-			&gwv1beta1.Gateway{},
+			&gwv1.Gateway{},
 			0,
 			cache.Indexers{},
 		)
@@ -53,7 +53,7 @@ func (gw *GatewayResource) Informer() cache.SharedIndexInformer {
 }
 
 func (gw *GatewayResource) Upsert(key string, raw interface{}) error {
-	_, ok := raw.(*gwv1beta1.Gateway)
+	_, ok := raw.(*gwv1.Gateway)
 	if !ok {
 		log.Warn().Msgf("Upsert got invalid type, raw:%v", raw)
 		return nil
@@ -105,9 +105,9 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 				}
 			}
 
-			var parentRefs []gwv1beta1.ParentReference
+			var parentRefs []gwv1.ParentReference
 			for _, gatewayEntry := range gatewayList {
-				gateway := gatewayEntry.(*gwv1beta1.Gateway)
+				gateway := gatewayEntry.(*gwv1.Gateway)
 				for _, gatewayListener := range gateway.Spec.Listeners {
 					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
 					//glName := strings.ToUpper(string(gatewayListener.Name))
@@ -115,63 +115,63 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 						if connector.ViaGateway.Ingress.HTTPPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == connector.ViaGateway.Ingress.HTTPPort {
-							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayNs := gwv1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+							parentRefs = append(parentRefs, gwv1.ParentReference{
 								Namespace: &gatewayNs,
-								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
 						if connector.ViaGateway.Ingress.GRPCPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
 							uint(gatewayListener.Port) == connector.ViaGateway.Ingress.GRPCPort {
-							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayNs := gwv1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+							parentRefs = append(parentRefs, gwv1.ParentReference{
 								Namespace: &gatewayNs,
-								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
 					} else {
 						if connector.ViaGateway.Egress.HTTPPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == connector.ViaGateway.Egress.HTTPPort {
-							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayNs := gwv1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+							parentRefs = append(parentRefs, gwv1.ParentReference{
 								Namespace: &gatewayNs,
-								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
 						if connector.ViaGateway.Egress.GRPCPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
 							uint(gatewayListener.Port) == connector.ViaGateway.Egress.GRPCPort {
-							gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+							gatewayNs := gwv1.Namespace(gateway.Namespace)
 							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+							parentRefs = append(parentRefs, gwv1.ParentReference{
 								Namespace: &gatewayNs,
-								Name:      gwv1beta1.ObjectName(gateway.Name),
+								Name:      gwv1.ObjectName(gateway.Name),
 								Port:      &gatewayPort})
 						}
 					}
 					//if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
 					//	if strings.EqualFold(glProtocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 					//		strings.HasPrefix(glName, protocol) {
-					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+					//		gatewayNs := gwv1.Namespace(gateway.Namespace)
 					//		gatewayPort := gatewayListener.HTTPPort
-					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+					//		parentRefs = append(parentRefs, gwv1.ParentReference{
 					//			Namespace: &gatewayNs,
-					//			Name:      gwv1beta1.ObjectName(gateway.Name),
+					//			Name:      gwv1.ObjectName(gateway.Name),
 					//			HTTPPort:      &gatewayPort})
 					//	}
 					//} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					//	if strings.EqualFold(glProtocol, protocol) &&
 					//		!strings.HasPrefix(glName, strings.ToUpper(constants.ProtocolGRPC)) {
-					//		gatewayNs := gwv1beta1.Namespace(gateway.Namespace)
+					//		gatewayNs := gwv1.Namespace(gateway.Namespace)
 					//		gatewayPort := gatewayListener.HTTPPort
-					//		parentRefs = append(parentRefs, gwv1beta1.ParentReference{
+					//		parentRefs = append(parentRefs, gwv1.ParentReference{
 					//			Namespace: &gatewayNs,
-					//			Name:      gwv1beta1.ObjectName(gateway.Name),
+					//			Name:      gwv1.ObjectName(gateway.Name),
 					//			HTTPPort:      &gatewayPort})
 					//	}
 					//}
@@ -194,13 +194,13 @@ func (gw *GatewayResource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 	})
 }
 
-func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
-	var newRt *gwv1beta1.HTTPRoute
+func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
+	var newRt *gwv1.HTTPRoute
 	var exists bool
 	svc := gw.Service
-	httpRouteClient := svc.GatewayClient.GatewayV1beta1().HTTPRoutes(k8sSvc.Namespace)
+	httpRouteClient := svc.GatewayClient.GatewayV1().HTTPRoutes(k8sSvc.Namespace)
 	if existRt, err := httpRouteClient.Get(svc.Ctx, k8sSvc.Name, metav1.GetOptions{}); err != nil {
-		newRt = &gwv1beta1.HTTPRoute{
+		newRt = &gwv1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: k8sSvc.Namespace,
 				Name:      k8sSvc.Name,
@@ -211,21 +211,21 @@ func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpe
 		exists = true
 	}
 	weight := int32(constants.ClusterWeightAcceptAll)
-	servicePort := gwv1beta1.PortNumber(portSpec.Port)
+	servicePort := gwv1.PortNumber(portSpec.Port)
 	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
-	newRt.Spec.Rules = []gwv1beta1.HTTPRouteRule{{
-		Matches: []gwv1beta1.HTTPRouteMatch{{
-			Path: &gwv1beta1.HTTPPathMatch{
+	newRt.Spec.Rules = []gwv1.HTTPRouteRule{{
+		Matches: []gwv1.HTTPRouteMatch{{
+			Path: &gwv1.HTTPPathMatch{
 				Type:  &pathMatchType,
 				Value: &pathMatchValue,
 			},
 		}},
-		BackendRefs: []gwv1beta1.HTTPBackendRef{
+		BackendRefs: []gwv1.HTTPBackendRef{
 			{
-				BackendRef: gwv1beta1.BackendRef{
-					BackendObjectReference: gwv1beta1.BackendObjectReference{
-						Name: gwv1beta1.ObjectName(k8sSvc.Name),
+				BackendRef: gwv1.BackendRef{
+					BackendObjectReference: gwv1.BackendObjectReference{
+						Name: gwv1.ObjectName(k8sSvc.Name),
 						Port: &servicePort,
 					},
 					Weight: &weight,
@@ -247,7 +247,7 @@ func (gw *GatewayResource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpe
 	}
 }
 
-func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
+func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
 	var newRt *gwv1alpha2.GRPCRoute
 	var exists bool
 	svc := gw.Service
@@ -265,7 +265,7 @@ func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpe
 	}
 	grpMethodType := gwv1alpha2.GRPCMethodMatchExact
 	grpMethodSvc := "grpc.GrpcService"
-	servicePort := gwv1beta1.PortNumber(portSpec.Port)
+	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
 	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
@@ -278,9 +278,9 @@ func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpe
 		}},
 		BackendRefs: []gwv1alpha2.GRPCBackendRef{
 			{
-				BackendRef: gwv1beta1.BackendRef{
-					BackendObjectReference: gwv1beta1.BackendObjectReference{
-						Name: gwv1beta1.ObjectName(k8sSvc.Name),
+				BackendRef: gwv1.BackendRef{
+					BackendObjectReference: gwv1.BackendObjectReference{
+						Name: gwv1.ObjectName(k8sSvc.Name),
 						Port: &servicePort,
 					},
 					Weight: &weight,
@@ -302,7 +302,7 @@ func (gw *GatewayResource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpe
 	}
 }
 
-func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1beta1.ParentReference) {
+func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
 	var newRt *gwv1alpha2.TCPRoute
 	var exists bool
 	svc := gw.Service
@@ -318,14 +318,14 @@ func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec
 		newRt = existRt.DeepCopy()
 		exists = true
 	}
-	servicePort := gwv1beta1.PortNumber(portSpec.Port)
+	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
 	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
 	newRt.Spec.Rules = []gwv1alpha2.TCPRouteRule{{
 		BackendRefs: []gwv1alpha2.BackendRef{
 			{
-				BackendObjectReference: gwv1beta1.BackendObjectReference{
-					Name: gwv1beta1.ObjectName(k8sSvc.Name),
+				BackendObjectReference: gwv1.BackendObjectReference{
+					Name: gwv1.ObjectName(k8sSvc.Name),
 					Port: &servicePort,
 				},
 				Weight: &weight,
@@ -348,7 +348,7 @@ func (gw *GatewayResource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec
 
 func (gw *GatewayResource) deleteGatewayRoute(name, namespace string) {
 	svc := gw.Service
-	httpRouteClient := svc.GatewayClient.GatewayV1beta1().HTTPRoutes(namespace)
+	httpRouteClient := svc.GatewayClient.GatewayV1().HTTPRoutes(namespace)
 	_ = httpRouteClient.Delete(svc.Ctx, name, metav1.DeleteOptions{})
 
 	grpcRouteClient := svc.GatewayClient.GatewayV1alpha2().GRPCRoutes(namespace)
@@ -358,14 +358,14 @@ func (gw *GatewayResource) deleteGatewayRoute(name, namespace string) {
 	_ = tcpRouteClient.Delete(svc.Ctx, name, metav1.DeleteOptions{})
 }
 
-func (gw *GatewayResource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1beta1.Hostname {
+func (gw *GatewayResource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1.Hostname {
 	svc := gw.Service
-	hostnames := []gwv1beta1.Hostname{gwv1beta1.Hostname(k8sSvc.Name)}
+	hostnames := []gwv1.Hostname{gwv1.Hostname(k8sSvc.Name)}
 	endpointsClient := svc.Client.CoreV1().Endpoints(k8sSvc.Namespace)
 	if endpoints, err := endpointsClient.Get(svc.Ctx, k8sSvc.Name, metav1.GetOptions{}); err == nil {
 		for _, subsets := range endpoints.Subsets {
 			for _, addr := range subsets.Addresses {
-				hostnames = append(hostnames, gwv1beta1.Hostname(addr.IP))
+				hostnames = append(hostnames, gwv1.Hostname(addr.IP))
 			}
 		}
 	}

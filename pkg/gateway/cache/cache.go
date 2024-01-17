@@ -13,7 +13,7 @@ import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"k8s.io/client-go/kubernetes"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -27,7 +27,7 @@ type GatewayCache struct {
 	kubeClient   kubernetes.Interface
 	cfg          configurator.Configurator
 	triggers     map[ResourceType]Trigger
-	gatewayclass *gwv1beta1.GatewayClass
+	gatewayclass *gwv1.GatewayClass
 	mutex        *sync.RWMutex
 }
 
@@ -101,11 +101,11 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[EndpointSlicesResourceType]
 	case *corev1.Secret:
 		return c.triggers[SecretsResourceType]
-	case *gwv1beta1.GatewayClass:
+	case *gwv1.GatewayClass:
 		return c.triggers[GatewayClassesResourceType]
-	case *gwv1beta1.Gateway:
+	case *gwv1.Gateway:
 		return c.triggers[GatewaysResourceType]
-	case *gwv1beta1.HTTPRoute:
+	case *gwv1.HTTPRoute:
 		return c.triggers[HTTPRoutesResourceType]
 	case *gwv1alpha2.GRPCRoute:
 		return c.triggers[GRPCRoutesResourceType]

@@ -37,8 +37,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1validation "sigs.k8s.io/gateway-api/apis/v1/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -69,7 +69,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
 		[]string{constants.GatewayAPIGroup},
-		[]string{"v1beta1"},
+		[]string{"v1"},
 		[]string{"gateways"},
 	)
 
@@ -99,8 +99,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered of gateway
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Config, r.MeshName, r.FSMVersion)),
-		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.Config)),
+		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Config, r.MeshName, r.FSMVersion)),
+		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Config)),
 	}
 }
 
@@ -124,12 +124,12 @@ func newDefaulter(kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiCl
 
 // RuntimeObject returns the runtime object of gateway
 func (w *defaulter) RuntimeObject() runtime.Object {
-	return &gwv1beta1.Gateway{}
+	return &gwv1.Gateway{}
 }
 
 // SetDefaults sets the default values of gateway
 func (w *defaulter) SetDefaults(obj interface{}) {
-	gateway, ok := obj.(*gwv1beta1.Gateway)
+	gateway, ok := obj.(*gwv1.Gateway)
 	if !ok {
 		return
 	}
@@ -138,7 +138,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	log.Debug().Msgf("Before setting default values, spec=%v", gateway.Spec)
 
 	gatewayClass, err := w.gatewayAPIClient.
-		GatewayV1beta1().
+		GatewayV1().
 		GatewayClasses().
 		Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})
 	if err != nil {
@@ -170,7 +170,7 @@ type validator struct {
 
 // RuntimeObject returns the runtime object of gateway
 func (w *validator) RuntimeObject() runtime.Object {
-	return &gwv1beta1.Gateway{}
+	return &gwv1.Gateway{}
 }
 
 // ValidateCreate validates the creation of gateway
@@ -196,12 +196,12 @@ func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator
 }
 
 func (w *validator) doValidation(obj interface{}) error {
-	gateway, ok := obj.(*gwv1beta1.Gateway)
+	gateway, ok := obj.(*gwv1.Gateway)
 	if !ok {
 		return nil
 	}
 
-	errorList := gwv1beta1validation.ValidateGateway(gateway)
+	errorList := gwv1validation.ValidateGateway(gateway)
 	errorList = append(errorList, w.validateListenerPort(gateway)...)
 	errorList = append(errorList, w.validateCertificateSecret(gateway)...)
 	if w.cfg.GetFeatureFlags().EnableValidateGatewayListenerHostname {
@@ -214,36 +214,36 @@ func (w *validator) doValidation(obj interface{}) error {
 	return nil
 }
 
-func (w *validator) validateCertificateSecret(gateway *gwv1beta1.Gateway) field.ErrorList {
+func (w *validator) validateCertificateSecret(gateway *gwv1.Gateway) field.ErrorList {
 	var errs field.ErrorList
 
 	for i, c := range gateway.Spec.Listeners {
 		switch c.Protocol {
-		case gwv1beta1.HTTPSProtocolType:
+		case gwv1.HTTPSProtocolType:
 			if c.TLS != nil && c.TLS.Mode != nil {
 				switch *c.TLS.Mode {
-				case gwv1beta1.TLSModeTerminate:
+				case gwv1.TLSModeTerminate:
 					errs = append(errs, w.validateSecretsExistence(gateway, c, i)...)
-				case gwv1beta1.TLSModePassthrough:
+				case gwv1.TLSModePassthrough:
 					path := field.NewPath("spec").
 						Child("listeners").Index(i).
 						Child("tls").
 						Child("mode")
-					errs = append(errs, field.Forbidden(path, fmt.Sprintf("TLSModeType %s is not supported when Protocol is %s, please use Protocol %s", gwv1beta1.TLSModePassthrough, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType)))
+					errs = append(errs, field.Forbidden(path, fmt.Sprintf("TLSModeType %s is not supported when Protocol is %s, please use Protocol %s", gwv1.TLSModePassthrough, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType)))
 				}
 			}
-		case gwv1beta1.TLSProtocolType:
+		case gwv1.TLSProtocolType:
 			if c.TLS != nil && c.TLS.Mode != nil {
 				switch *c.TLS.Mode {
-				case gwv1beta1.TLSModeTerminate:
+				case gwv1.TLSModeTerminate:
 					errs = append(errs, w.validateSecretsExistence(gateway, c, i)...)
-				case gwv1beta1.TLSModePassthrough:
+				case gwv1.TLSModePassthrough:
 					if len(c.TLS.CertificateRefs) > 0 {
 						path := field.NewPath("spec").
 							Child("listeners").Index(i).
 							Child("tls").
 							Child("certificateRefs")
-						errs = append(errs, field.Forbidden(path, fmt.Sprintf("No need to provide certificates when Protocol is %s and TLSModeType is %s", gwv1beta1.TLSProtocolType, gwv1beta1.TLSModePassthrough)))
+						errs = append(errs, field.Forbidden(path, fmt.Sprintf("No need to provide certificates when Protocol is %s and TLSModeType is %s", gwv1.TLSProtocolType, gwv1.TLSModePassthrough)))
 					}
 				}
 			}
@@ -253,7 +253,7 @@ func (w *validator) validateCertificateSecret(gateway *gwv1beta1.Gateway) field.
 	return errs
 }
 
-func (w *validator) validateSecretsExistence(gateway *gwv1beta1.Gateway, c gwv1beta1.Listener, i int) field.ErrorList {
+func (w *validator) validateSecretsExistence(gateway *gwv1.Gateway, c gwv1.Listener, i int) field.ErrorList {
 	var errs field.ErrorList
 
 	for j, ref := range c.TLS.CertificateRefs {
@@ -299,7 +299,7 @@ func (w *validator) validateSecretsExistence(gateway *gwv1beta1.Gateway, c gwv1b
 	return errs
 }
 
-func (w *validator) validateListenerHostname(gateway *gwv1beta1.Gateway) field.ErrorList {
+func (w *validator) validateListenerHostname(gateway *gwv1.Gateway) field.ErrorList {
 	var errs field.ErrorList
 
 	for i, listener := range gateway.Spec.Listeners {
@@ -318,7 +318,7 @@ func (w *validator) validateListenerHostname(gateway *gwv1beta1.Gateway) field.E
 	return errs
 }
 
-func (w *validator) validateListenerPort(gateway *gwv1beta1.Gateway) field.ErrorList {
+func (w *validator) validateListenerPort(gateway *gwv1.Gateway) field.ErrorList {
 	var errs field.ErrorList
 	for i, listener := range gateway.Spec.Listeners {
 		if listener.Port > reservedPortRangeStart {

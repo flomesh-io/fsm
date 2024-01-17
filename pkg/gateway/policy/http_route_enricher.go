@@ -1,7 +1,7 @@
 package policy
 
 import (
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
@@ -12,7 +12,7 @@ import (
 )
 
 type HTTPRoutePolicyEnricher interface {
-	Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch)
+	Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch)
 }
 
 // ---
@@ -22,7 +22,7 @@ type RateLimitHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -46,7 +46,7 @@ type AccessControlHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}
@@ -70,7 +70,7 @@ type FaultInjectionHTTPRouteEnricher struct {
 	Data []gwpav1alpha1.FaultInjectionPolicy
 }
 
-func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1beta1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
 	if len(e.Data) == 0 {
 		return
 	}

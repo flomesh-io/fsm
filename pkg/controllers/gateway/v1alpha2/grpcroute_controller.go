@@ -88,7 +88,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(grpcRoute)
+	r.fctx.EventHandler.OnAdd(grpcRoute, false)
 
 	return ctrl.Result{}, nil
 }

@@ -45,7 +45,7 @@ func TestGetEventHandlers(t *testing.T) {
 					Name:      "p1",
 				},
 			}
-			eventFuncs.OnAdd(obj)
+			eventFuncs.OnAdd(obj, false)
 			eventFuncs.OnUpdate(obj, obj)
 			eventFuncs.OnDelete(obj)
 

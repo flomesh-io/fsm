@@ -1,15 +1,15 @@
 package cache
 
 import (
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
+func processTLSRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -21,7 +21,7 @@ func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 		}
 
 		for _, listener := range allowedListeners {
-			if listener.Protocol != gwv1beta1.TLSProtocolType {
+			if listener.Protocol != gwv1.TLSProtocolType {
 				continue
 			}
 
@@ -33,7 +33,7 @@ func processTLSRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, t
 				continue
 			}
 
-			if *listener.TLS.Mode != gwv1beta1.TLSModePassthrough {
+			if *listener.TLS.Mode != gwv1.TLSModePassthrough {
 				continue
 			}
 

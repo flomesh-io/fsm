@@ -35,7 +35,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -276,7 +276,7 @@ func (r *rebuilder) rebuildRepoJob() error {
 			return err
 		}
 
-		gatewayList := &gwv1beta1.GatewayList{}
+		gatewayList := &gwv1.GatewayList{}
 		if err := r.client.List(
 			context.TODO(),
 			gatewayList,

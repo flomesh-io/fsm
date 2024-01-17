@@ -29,6 +29,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	admissionv1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -37,18 +42,33 @@ type mutatingHandler struct {
 	decoder   *admission.Decoder
 }
 
-var _ admission.DecoderInjector = &mutatingHandler{}
+//var _ admission.DecoderInjector = &mutatingHandler{}
 
 // InjectDecoder injects the decoder into a mutatingHandler.
-func (h *mutatingHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
+//func (h *mutatingHandler) InjectDecoder(d *admission.Decoder) error {
+//	h.decoder = d
+//	return nil
+//}
 
 // Handle handles admission requests.
 func (h *mutatingHandler) Handle(_ context.Context, req admission.Request) admission.Response {
+	if h.decoder == nil {
+		panic("decoder should never be nil")
+	}
+
 	if h.defaulter == nil {
 		panic("defaulter should never be nil")
+	}
+
+	// always skip when a DELETE operation received in mutation handler
+	// describe in https://github.com/kubernetes-sigs/controller-runtime/issues/1762
+	if req.Operation == admissionv1.Delete {
+		return admission.Response{AdmissionResponse: admissionv1.AdmissionResponse{
+			Allowed: true,
+			Result: &metav1.Status{
+				Code: http.StatusOK,
+			},
+		}}
 	}
 
 	obj := h.defaulter.RuntimeObject()
@@ -72,8 +92,8 @@ func (h *mutatingHandler) Handle(_ context.Context, req admission.Request) admis
 }
 
 // DefaultingWebhookFor returns a webhook that defaults the given object.
-func DefaultingWebhookFor(defaulter Defaulter) *admission.Webhook {
+func DefaultingWebhookFor(scheme *runtime.Scheme, defaulter Defaulter) *admission.Webhook {
 	return &admission.Webhook{
-		Handler: &mutatingHandler{defaulter: defaulter},
+		Handler: &mutatingHandler{defaulter: defaulter, decoder: admission.NewDecoder(scheme)},
 	}
 }

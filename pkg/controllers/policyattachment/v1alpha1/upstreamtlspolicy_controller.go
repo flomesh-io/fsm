@@ -91,7 +91,7 @@ func (r *upstreamTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }

@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type RateLimitPolicyMode string
@@ -58,7 +58,7 @@ type RateLimitPolicySpec struct {
 // PortRateLimit defines the rate limit configuration for a port
 type PortRateLimit struct {
 	// Port is the port number for matching the rate limit
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum=1
@@ -69,7 +69,7 @@ type PortRateLimit struct {
 // HostnameRateLimit defines the rate limit configuration for a hostname
 type HostnameRateLimit struct {
 	// Hostname is the hostname for matching the rate limit
-	Hostname gwv1beta1.Hostname `json:"hostname"`
+	Hostname gwv1.Hostname `json:"hostname"`
 
 	// +optional
 	// Config is the rate limit configuration for the hostname
@@ -79,7 +79,7 @@ type HostnameRateLimit struct {
 // HTTPRateLimit defines the rate limit configuration for a HTTP route
 type HTTPRateLimit struct {
 	// Match is the match condition for the HTTP route
-	Match gwv1beta1.HTTPRouteMatch `json:"match"`
+	Match gwv1.HTTPRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the rate limit configuration for the HTTP route
@@ -135,7 +135,7 @@ type L7RateLimit struct {
 	// +listMapKey=name
 	// +kubebuilder:validation:MaxItems=16
 	// ResponseHeadersToAdd is the response headers to be added when the rate limit is exceeded
-	ResponseHeadersToAdd []gwv1beta1.HTTPHeader `json:"responseHeadersToAdd,omitempty"`
+	ResponseHeadersToAdd []gwv1.HTTPHeader `json:"responseHeadersToAdd,omitempty"`
 }
 
 // RateLimitPolicyStatus defines the observed state of RateLimitPolicy

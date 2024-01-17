@@ -1,7 +1,7 @@
 package policy
 
 import (
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/gatewaytls"
 
@@ -14,7 +14,7 @@ import (
 )
 
 type PortPolicyEnricher interface {
-	Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener)
+	Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener)
 }
 
 // ---
@@ -24,9 +24,9 @@ type RateLimitPortEnricher struct {
 	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-func (e *RateLimitPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
+func (e *RateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
-	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType:
+	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType, gwv1.TCPProtocolType:
 		if len(e.Data) == 0 {
 			return
 		}
@@ -57,9 +57,9 @@ type AccessControlPortEnricher struct {
 	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-func (e *AccessControlPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
+func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
-	case gwv1beta1.HTTPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType, gwv1beta1.TCPProtocolType, gwv1beta1.UDPProtocolType:
+	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType, gwv1.TCPProtocolType, gwv1.UDPProtocolType:
 		if len(e.Data) == 0 {
 			return
 		}
@@ -90,9 +90,9 @@ type GatewayTLSPortEnricher struct {
 	Data []gwpav1alpha1.GatewayTLSPolicy
 }
 
-func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.PortNumber, listenerCfg *fgw.Listener) {
+func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
 	switch listenerCfg.Protocol {
-	case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+	case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
 		if len(e.Data) == 0 {
 			return
 		}
@@ -108,7 +108,7 @@ func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1beta1.Gateway, port gwv1beta1.Po
 
 			if c := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(port, policy); c != nil &&
 				listenerCfg.TLS != nil &&
-				listenerCfg.TLS.TLSModeType == gwv1beta1.TLSModeTerminate &&
+				listenerCfg.TLS.TLSModeType == gwv1.TLSModeTerminate &&
 				listenerCfg.TLS.MTLS == nil {
 				// only set if TLS Mode is set to terminate
 				listenerCfg.TLS.MTLS = c.MTLS

@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -48,7 +48,7 @@ import (
 )
 
 // Namespace returns the namespace if it is not nil, otherwise returns the default namespace
-func Namespace(ns *gwv1beta1.Namespace, defaultNs string) string {
+func Namespace(ns *gwv1.Namespace, defaultNs string) string {
 	if ns == nil {
 		return defaultNs
 	}
@@ -57,27 +57,27 @@ func Namespace(ns *gwv1beta1.Namespace, defaultNs string) string {
 }
 
 // IsAcceptedGatewayClass returns true if the gateway class is accepted
-func IsAcceptedGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
-	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gwv1beta1.GatewayClassConditionStatusAccepted))
+func IsAcceptedGatewayClass(gatewayClass *gwv1.GatewayClass) bool {
+	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gwv1.GatewayClassConditionStatusAccepted))
 }
 
 // IsActiveGatewayClass returns true if the gateway class is active
-func IsActiveGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
+func IsActiveGatewayClass(gatewayClass *gwv1.GatewayClass) bool {
 	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gateway.GatewayClassConditionStatusActive))
 }
 
 // IsEffectiveGatewayClass returns true if the gateway class is effective
-func IsEffectiveGatewayClass(gatewayClass *gwv1beta1.GatewayClass) bool {
+func IsEffectiveGatewayClass(gatewayClass *gwv1.GatewayClass) bool {
 	return IsAcceptedGatewayClass(gatewayClass) && IsActiveGatewayClass(gatewayClass)
 }
 
 // IsAcceptedGateway returns true if the gateway is accepted
-func IsAcceptedGateway(gateway *gwv1beta1.Gateway) bool {
-	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1beta1.GatewayConditionAccepted))
+func IsAcceptedGateway(gateway *gwv1.Gateway) bool {
+	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionAccepted))
 }
 
 // IsActiveGateway returns true if the gateway is active
-func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
+func IsActiveGateway(gateway *gwv1.Gateway) bool {
 	hasValidListener := false
 
 	for _, listenerStatus := range gateway.Status.Listeners {
@@ -91,13 +91,13 @@ func IsActiveGateway(gateway *gwv1beta1.Gateway) bool {
 }
 
 // IsListenerProgrammed returns true if the listener is programmed
-func IsListenerProgrammed(listenerStatus gwv1beta1.ListenerStatus) bool {
-	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionProgrammed))
+func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed))
 }
 
 // IsListenerAccepted returns true if the listener is accepted
-func IsListenerAccepted(listenerStatus gwv1beta1.ListenerStatus) bool {
-	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1beta1.ListenerConditionAccepted))
+func IsListenerAccepted(listenerStatus gwv1.ListenerStatus) bool {
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted))
 }
 
 // IsAcceptedPolicyAttachment returns true if the policy attachment is accepted
@@ -106,8 +106,8 @@ func IsAcceptedPolicyAttachment(conditions []metav1.Condition) bool {
 }
 
 // IsRefToGateway returns true if the parent reference is to the gateway
-func IsRefToGateway(parentRef gwv1beta1.ParentReference, gateway client.ObjectKey) bool {
-	if parentRef.Group != nil && string(*parentRef.Group) != gwv1beta1.GroupName {
+func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bool {
+	if parentRef.Group != nil && string(*parentRef.Group) != gwv1.GroupName {
 		return false
 	}
 
@@ -157,15 +157,15 @@ func ObjectKey(obj client.Object) client.ObjectKey {
 }
 
 // GroupPointer returns a pointer to the given group
-func GroupPointer(group string) *gwv1beta1.Group {
-	result := gwv1beta1.Group(group)
+func GroupPointer(group string) *gwv1.Group {
+	result := gwv1.Group(group)
 
 	return &result
 }
 
 // GetValidListenersFromGateway returns the valid listeners from the gateway
-func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
-	listeners := make(map[gwv1beta1.SectionName]gwv1beta1.Listener)
+func GetValidListenersFromGateway(gw *gwv1.Gateway) []gwtypes.Listener {
+	listeners := make(map[gwv1.SectionName]gwv1.Listener)
 	for _, listener := range gw.Spec.Listeners {
 		listeners[listener.Name] = listener
 	}
@@ -189,12 +189,12 @@ func GetValidListenersFromGateway(gw *gwv1beta1.Gateway) []gwtypes.Listener {
 
 // GetAllowedListenersAndSetStatus returns the allowed listeners and set status
 func GetAllowedListenersAndSetStatus(
-	parentRef gwv1beta1.ParentReference,
+	parentRef gwv1.ParentReference,
 	routeNs string,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
 	validListeners []gwtypes.Listener,
-	routeParentStatus gwv1beta1.RouteParentStatus,
+	routeParentStatus gwv1.RouteParentStatus,
 ) []gwtypes.Listener {
 	var selectedListeners []gwtypes.Listener
 	for _, validListener := range validListeners {
@@ -206,11 +206,11 @@ func GetAllowedListenersAndSetStatus(
 
 	if len(selectedListeners) == 0 {
 		metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
-			Type:               string(gwv1beta1.RouteConditionAccepted),
+			Type:               string(gwv1.RouteConditionAccepted),
 			Status:             metav1.ConditionFalse,
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1beta1.RouteReasonNoMatchingParent),
+			Reason:             string(gwv1.RouteReasonNoMatchingParent),
 			Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 
@@ -228,11 +228,11 @@ func GetAllowedListenersAndSetStatus(
 
 	if len(allowedListeners) == 0 {
 		metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
-			Type:               string(gwv1beta1.RouteConditionAccepted),
+			Type:               string(gwv1.RouteConditionAccepted),
 			Status:             metav1.ConditionFalse,
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1beta1.RouteReasonNotAllowedByListeners),
+			Reason:             string(gwv1.RouteReasonNotAllowedByListeners),
 			Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 
@@ -244,7 +244,7 @@ func GetAllowedListenersAndSetStatus(
 
 // GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(
-	parentRef gwv1beta1.ParentReference,
+	parentRef gwv1.ParentReference,
 	routeGvk schema.GroupVersionKind,
 	routeGeneration int64,
 	validListeners []gwtypes.Listener,
@@ -278,7 +278,7 @@ func GetAllowedListeners(
 }
 
 // GetValidHostnames returns the valid hostnames
-func GetValidHostnames(listenerHostname *gwv1beta1.Hostname, routeHostnames []gwv1beta1.Hostname) []string {
+func GetValidHostnames(listenerHostname *gwv1.Hostname, routeHostnames []gwv1.Hostname) []string {
 	if len(routeHostnames) == 0 {
 		if listenerHostname != nil {
 			return []string{string(*listenerHostname)}

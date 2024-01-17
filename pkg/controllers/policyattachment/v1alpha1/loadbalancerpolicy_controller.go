@@ -90,7 +90,7 @@ func (r *loadBalancerPolicyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }

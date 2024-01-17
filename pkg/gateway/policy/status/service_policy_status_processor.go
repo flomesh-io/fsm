@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -117,7 +117,7 @@ func (p *ServicePolicyStatusProcessor) getConflictedPolicyByServiceImport(policy
 	return nil
 }
 
-func (p *ServicePolicyStatusProcessor) getServiceObjectByGroupKind(group gwv1beta1.Group, kind gwv1beta1.Kind) client.Object {
+func (p *ServicePolicyStatusProcessor) getServiceObjectByGroupKind(group gwv1.Group, kind gwv1.Kind) client.Object {
 	mapping := p.getServiceGroupKindObjectMapping()
 
 	g, found := mapping[string(group)]

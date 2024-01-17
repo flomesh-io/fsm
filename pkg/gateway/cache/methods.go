@@ -5,8 +5,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -14,8 +14,8 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) getActiveGateways() []*gwv1beta1.Gateway {
-	gateways := make([]*gwv1beta1.Gateway, 0)
+func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
+	gateways := make([]*gwv1.Gateway, 0)
 
 	allGateways, err := c.informers.GetListers().Gateway.Gateways(corev1.NamespaceAll).List(selectAll)
 	if err != nil {
@@ -178,7 +178,7 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 
 func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 	for _, r := range c.getResourcesFromCache(HTTPRoutesResourceType, false) {
-		r := r.(*gwv1beta1.HTTPRoute)
+		r := r.(*gwv1.HTTPRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
 				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
@@ -186,7 +186,7 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 				}
 
 				for _, filter := range backend.Filters {
-					if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
+					if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
 						if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
 							return true
 						}
@@ -195,7 +195,7 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 			}
 
 			for _, filter := range rule.Filters {
-				if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
+				if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
 					if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
 						return true
 					}
@@ -283,7 +283,7 @@ func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
 	return false
 }
 
-func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) bool {
+func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool {
 	gateways := c.getActiveGateways()
 
 	if len(gateways) == 0 {
@@ -364,12 +364,12 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 	for _, gw := range c.getActiveGateways() {
 		for _, l := range gw.Spec.Listeners {
 			switch l.Protocol {
-			case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+			case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
 				if l.TLS == nil {
 					continue
 				}
 
-				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1beta1.TLSModeTerminate {
+				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
 					if len(l.TLS.CertificateRefs) == 0 {
 						continue
 					}

@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // CircuitBreakingPolicySpec defines the desired state of CircuitBreakingPolicy
@@ -25,7 +25,7 @@ type CircuitBreakingPolicySpec struct {
 
 type PortCircuitBreaking struct {
 	// Port is the port number of the target service
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the circuit breaking configuration for the port

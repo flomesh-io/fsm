@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeUpstreamTrafficSettings struct {
 	ns   string
 }
 
-var upstreamtrafficsettingsResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "upstreamtrafficsettings"}
+var upstreamtrafficsettingsResource = v1alpha1.SchemeGroupVersion.WithResource("upstreamtrafficsettings")
 
-var upstreamtrafficsettingsKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "UpstreamTrafficSetting"}
+var upstreamtrafficsettingsKind = v1alpha1.SchemeGroupVersion.WithKind("UpstreamTrafficSetting")
 
 // Get takes name of the upstreamTrafficSetting, and returns the corresponding upstreamTrafficSetting object, and an error if there is any.
 func (c *FakeUpstreamTrafficSettings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {
@@ -131,6 +133,51 @@ func (c *FakeUpstreamTrafficSettings) DeleteCollection(ctx context.Context, opts
 func (c *FakeUpstreamTrafficSettings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.UpstreamTrafficSetting, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(upstreamtrafficsettingsResource, c.ns, name, pt, data, subresources...), &v1alpha1.UpstreamTrafficSetting{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.UpstreamTrafficSetting), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied upstreamTrafficSetting.
+func (c *FakeUpstreamTrafficSettings) Apply(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {
+	if upstreamTrafficSetting == nil {
+		return nil, fmt.Errorf("upstreamTrafficSetting provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(upstreamTrafficSetting)
+	if err != nil {
+		return nil, err
+	}
+	name := upstreamTrafficSetting.Name
+	if name == nil {
+		return nil, fmt.Errorf("upstreamTrafficSetting.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(upstreamtrafficsettingsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.UpstreamTrafficSetting{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.UpstreamTrafficSetting), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeUpstreamTrafficSettings) ApplyStatus(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {
+	if upstreamTrafficSetting == nil {
+		return nil, fmt.Errorf("upstreamTrafficSetting provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(upstreamTrafficSetting)
+	if err != nil {
+		return nil, err
+	}
+	name := upstreamTrafficSetting.Name
+	if name == nil {
+		return nil, fmt.Errorf("upstreamTrafficSetting.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(upstreamtrafficsettingsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.UpstreamTrafficSetting{})
 
 	if obj == nil {
 		return nil, err

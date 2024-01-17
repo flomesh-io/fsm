@@ -88,7 +88,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(tcpRoute)
+	r.fctx.EventHandler.OnAdd(tcpRoute, false)
 
 	return ctrl.Result{}, nil
 }

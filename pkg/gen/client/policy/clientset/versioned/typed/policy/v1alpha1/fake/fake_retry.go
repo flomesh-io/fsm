@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeRetries struct {
 	ns   string
 }
 
-var retriesResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "retries"}
+var retriesResource = v1alpha1.SchemeGroupVersion.WithResource("retries")
 
-var retriesKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "Retry"}
+var retriesKind = v1alpha1.SchemeGroupVersion.WithKind("Retry")
 
 // Get takes name of the retry, and returns the corresponding retry object, and an error if there is any.
 func (c *FakeRetries) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Retry, err error) {
@@ -119,6 +121,28 @@ func (c *FakeRetries) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 func (c *FakeRetries) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Retry, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(retriesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Retry{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Retry), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied retry.
+func (c *FakeRetries) Apply(ctx context.Context, retry *policyv1alpha1.RetryApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Retry, err error) {
+	if retry == nil {
+		return nil, fmt.Errorf("retry provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(retry)
+	if err != nil {
+		return nil, err
+	}
+	name := retry.Name
+	if name == nil {
+		return nil, fmt.Errorf("retry.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(retriesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.Retry{})
 
 	if obj == nil {
 		return nil, err

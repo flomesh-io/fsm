@@ -44,7 +44,7 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/types"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -124,7 +124,7 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -175,10 +175,10 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 	}
 
 	for _, parent := range route.Parents {
-		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
+		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1.RouteConditionAccepted)) {
 			key := getRouteParentKey(route.Meta, parent)
 
-			gateway := &gwv1beta1.Gateway{}
+			gateway := &gwv1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
@@ -223,7 +223,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedHTTPRouteBasedRateLimitPolicy(route *gwv1beta1.HTTPRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
+func (r *rateLimitPolicyReconciler) getConflictedHTTPRouteBasedRateLimitPolicy(route *gwv1.HTTPRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
 	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
 
 	if len(currentPolicy.Spec.HTTPRateLimits) == 0 {
@@ -305,7 +305,7 @@ func (r *rateLimitPolicyReconciler) getConflictedGRPCRouteBasedRateLimitPolicy(r
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, rateLimitPolicy client.Object, allRateLimitPolicies []client.Object) *types.NamespacedName {
+func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, rateLimitPolicy client.Object, allRateLimitPolicies []client.Object) *types.NamespacedName {
 	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
 
 	if len(currentPolicy.Spec.Ports) == 0 {

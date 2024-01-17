@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
 
@@ -77,8 +77,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for UpstreamTLSPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.UpstreamTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.UpstreamTLSPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.UpstreamTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
+		constants.UpstreamTLSPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }
 
@@ -292,7 +292,7 @@ func (w *validator) validateConfigDetails(policy *gwpav1alpha1.UpstreamTLSPolicy
 	return errs
 }
 
-func (w *validator) validateCertificateRef(path *field.Path, certificateRef gwv1beta1.SecretObjectReference, mTLS *bool, ownerNs string) field.ErrorList {
+func (w *validator) validateCertificateRef(path *field.Path, certificateRef gwv1.SecretObjectReference, mTLS *bool, ownerNs string) field.ErrorList {
 	var errs field.ErrorList
 
 	if certificateRef.Group == nil {
@@ -321,7 +321,7 @@ func (w *validator) validateCertificateRef(path *field.Path, certificateRef gwv1
 	return errs
 }
 
-func (w *validator) validateSecret(path *field.Path, certificateRef gwv1beta1.SecretObjectReference, mTLS *bool, ownerNs string) field.ErrorList {
+func (w *validator) validateSecret(path *field.Path, certificateRef gwv1.SecretObjectReference, mTLS *bool, ownerNs string) field.ErrorList {
 	var errs field.ErrorList
 
 	ns := getSecretNamespace(certificateRef, ownerNs)
@@ -364,7 +364,7 @@ func (w *validator) validateSecret(path *field.Path, certificateRef gwv1beta1.Se
 	return errs
 }
 
-func getSecretNamespace(certificateRef gwv1beta1.SecretObjectReference, ownerNs string) string {
+func getSecretNamespace(certificateRef gwv1.SecretObjectReference, ownerNs string) string {
 	if certificateRef.Namespace == nil {
 		return ownerNs
 	}

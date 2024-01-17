@@ -9,8 +9,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
@@ -475,22 +475,22 @@ const (
 	GatewayController = "flomesh.io/gateway-controller"
 
 	// GatewayMutatingWebhookPath is the path at which the gateway mutating webhook is served
-	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gateway"
 
 	// GatewayValidatingWebhookPath is the path at which the gateway validating webhook is served
-	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gateway"
 
 	// GatewayClassMutatingWebhookPath is the path at which the gateway class mutating webhook is served
-	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gatewayclass"
 
 	// GatewayClassValidatingWebhookPath is the path at which the gateway class validating webhook is served
-	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gatewayclass"
 
 	// HTTPRouteMutatingWebhookPath is the path at which the HTTP route mutating webhook is served
-	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-httproute"
+	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-httproute"
 
 	// HTTPRouteValidatingWebhookPath is the path at which the HTTP route validating webhook is served
-	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-httproute"
+	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-httproute"
 
 	// GRPCRouteMutatingWebhookPath is the path at which the gRPC route mutating webhook is served
 	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
@@ -856,8 +856,8 @@ var (
 
 // GroupVersionKind variables
 var (
-	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), GatewayAPIGatewayKind)
-	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
+	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
+	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
 	TLSRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
 	TCPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
 	UDPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)

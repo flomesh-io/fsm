@@ -17,9 +17,12 @@ package v1alpha3
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/gen/client/config/applyconfiguration/config/v1alpha3"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -43,6 +46,7 @@ type MeshConfigInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha3.MeshConfigList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha3.MeshConfig, err error)
+	Apply(ctx context.Context, meshConfig *configv1alpha3.MeshConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha3.MeshConfig, err error)
 	MeshConfigExpansion
 }
 
@@ -168,6 +172,32 @@ func (c *meshConfigs) Patch(ctx context.Context, name string, pt types.PatchType
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied meshConfig.
+func (c *meshConfigs) Apply(ctx context.Context, meshConfig *configv1alpha3.MeshConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha3.MeshConfig, err error) {
+	if meshConfig == nil {
+		return nil, fmt.Errorf("meshConfig provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(meshConfig)
+	if err != nil {
+		return nil, err
+	}
+	name := meshConfig.Name
+	if name == nil {
+		return nil, fmt.Errorf("meshConfig.Name must be provided to Apply")
+	}
+	result = &v1alpha3.MeshConfig{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("meshconfigs").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

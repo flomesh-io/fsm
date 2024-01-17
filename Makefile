@@ -23,7 +23,7 @@ GIT_SHA=$$(git rev-parse HEAD)
 BUILD_DATE_VAR := github.com/flomesh-io/fsm/pkg/version.BuildDate
 BUILD_VERSION_VAR := github.com/flomesh-io/fsm/pkg/version.Version
 BUILD_GITCOMMIT_VAR := github.com/flomesh-io/fsm/pkg/version.GitCommit
-DOCKER_GO_VERSION = 1.20
+DOCKER_GO_VERSION = 1.21
 DOCKER_BUILDX_PLATFORM ?= linux/amd64
 # Value for the --output flag on docker buildx build.
 # https://docs.docker.com/engine/reference/commandline/buildx_build/#output
@@ -60,7 +60,7 @@ endif
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths="./pkg/apis/..." output:crd:artifacts:config=cmd/fsm-bootstrap/crds
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths=./pkg/apis/config/... output:crd:artifacts:config=cmd/fsm-bootstrap/crds
 
 .PHONY: labels
 labels: kustomize ## Attach required labels to gateway-api resources
@@ -81,7 +81,7 @@ cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/
 pkg/controllers/namespacedingress/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/namespaced-ingress)
 	go run $< --chart-name=namespaced-ingress > $@
 
-pkg/controllers/gateway/v1beta1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
+pkg/controllers/gateway/v1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
 	go run $< --chart-name=gateway > $@
 
 helm-update-dep: helm
@@ -94,7 +94,7 @@ package-scripts: ## Tar all repo initializing scripts
 	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
 
 .PHONY: charts-tgz
-charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1beta1/chart.tgz
+charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1/chart.tgz
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -393,7 +393,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.6
 HELM_VERSION ?= v3.12.2
-CONTROLLER_TOOLS_VERSION ?= v0.12.1
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

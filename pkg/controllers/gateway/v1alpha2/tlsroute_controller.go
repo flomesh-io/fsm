@@ -88,7 +88,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(tlsRoute)
+	r.fctx.EventHandler.OnAdd(tlsRoute, false)
 
 	return ctrl.Result{}, nil
 }

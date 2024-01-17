@@ -17,6 +17,7 @@ import (
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlwh "sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/basic"
@@ -394,7 +395,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionNamespace: cfg.GetFSMNamespace(),
 		LeaderElectionID:        constants.FSMControllerLeaderElectionID,
-		Port:                    constants.FSMWebhookPort,
+		WebhookServer:           ctrlwh.NewServer(ctrlwh.Options{Port: constants.FSMWebhookPort}),
 	})
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
