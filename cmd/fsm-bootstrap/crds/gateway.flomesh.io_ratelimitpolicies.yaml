@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.13.0
   labels:
     app.kubernetes.io/name: flomesh.io
   name: ratelimitpolicies.gateway.flomesh.io
@@ -290,6 +290,21 @@ spec:
                               - RegularExpression
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: One or both of 'service' or 'method' must be
+                              specified
+                            rule: 'has(self.type) ? has(self.service) || has(self.method)
+                              : true'
+                          - message: service must only contain valid characters (matching
+                              ^(?i)\.?[a-z_][a-z_0-9]*(\.[a-z_][a-z_0-9]*)*$)
+                            rule: '(!has(self.type) || self.type == ''Exact'') &&
+                              has(self.service) ? self.service.matches(r"""^(?i)\.?[a-z_][a-z_0-9]*(\.[a-z_][a-z_0-9]*)*$"""):
+                              true'
+                          - message: method must only contain valid characters (matching
+                              ^[A-Za-z_][A-Za-z_0-9]*$)
+                            rule: '(!has(self.type) || self.type == ''Exact'') &&
+                              has(self.method) ? self.method.matches(r"""^[A-Za-z_][A-Za-z_0-9]*$"""):
+                              true'
                       type: object
                   required:
                   - match
@@ -591,6 +606,51 @@ spec:
                               maxLength: 1024
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: value must be an absolute path and start with
+                              '/' when type one of ['Exact', 'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? self.value.startsWith(''/'')
+                              : true'
+                          - message: must not contain '//' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''//'')
+                              : true'
+                          - message: must not contain '/./' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''/./'')
+                              : true'
+                          - message: must not contain '/../' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''/../'')
+                              : true'
+                          - message: must not contain '%2f' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''%2f'')
+                              : true'
+                          - message: must not contain '%2F' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''%2F'')
+                              : true'
+                          - message: must not contain '#' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''#'')
+                              : true'
+                          - message: must not end with '/..' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.endsWith(''/..'')
+                              : true'
+                          - message: must not end with '/.' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.endsWith(''/.'')
+                              : true'
+                          - message: type must be one of ['Exact', 'PathPrefix', 'RegularExpression']
+                            rule: self.type in ['Exact','PathPrefix'] || self.type
+                              == 'RegularExpression'
+                          - message: must only contain valid characters (matching
+                              ^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$)
+                              for types ['Exact', 'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? self.value.matches(r"""^(?:[-A-Za-z0-9/._~!$&''()*+,;=:@]|[%][0-9a-fA-F]{2})+$""")
+                              : true'
                         queryParams:
                           description: "QueryParams specifies HTTP query parameter
                             matchers. Multiple match values are ANDed together, meaning,

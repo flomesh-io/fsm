@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 
-// +kubebuilder:skip=true
-
 // Package apis contains the shared types used by the various components of the Flomesh project.
 package apis
 

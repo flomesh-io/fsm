@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 
-// +kubebuilder:skip=true
-
 // Package gateway contains the GatewayAPI types
 package gateway
 

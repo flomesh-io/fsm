@@ -60,7 +60,7 @@ endif
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths=./pkg/apis/config/... output:crd:artifacts:config=cmd/fsm-bootstrap/crds
+	$(CONTROLLER_GEN) crd:allowDangerousTypes=true paths=./pkg/apis/... output:crd:artifacts:config=cmd/fsm-bootstrap/crds
 
 .PHONY: labels
 labels: kustomize ## Attach required labels to gateway-api resources
