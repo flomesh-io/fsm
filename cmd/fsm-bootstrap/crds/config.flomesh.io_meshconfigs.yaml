@@ -1294,6 +1294,10 @@ spec:
                   viaGateway:
                     description: ViaGateway defines gateway settings
                     properties:
+                      ClusterIP:
+                        type: string
+                      ExternalIP:
+                        type: string
                       egressAddr:
                         type: string
                       egressGRPCPort:
@@ -1307,6 +1311,8 @@ spec:
                       ingressHTTPPort:
                         type: integer
                     required:
+                    - ClusterIP
+                    - ExternalIP
                     - egressAddr
                     - egressGRPCPort
                     - egressHTTPPort

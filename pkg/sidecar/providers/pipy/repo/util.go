@@ -429,13 +429,13 @@ func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, vi
 	viaGw := ""
 	if len(appProtocol) > 0 && !strings.EqualFold(proxy.ClusterID, clusterID) {
 		if len(proxy.ClusterID) == 0 { // k8s -> fgw(EgressIP:EgressPort) -> others
-			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressHTTPPort > 0 &&
+			if len(viaGateway.ClusterIP) > 0 && viaGateway.EgressHTTPPort > 0 &&
 				strings.EqualFold(constants.ProtocolHTTP, appProtocol) {
-				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressHTTPPort)
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.ClusterIP, viaGateway.EgressHTTPPort)
 			}
-			if len(viaGateway.EgressAddr) > 0 && viaGateway.EgressGRPCPort > 0 &&
+			if len(viaGateway.ClusterIP) > 0 && viaGateway.EgressGRPCPort > 0 &&
 				strings.EqualFold(constants.ProtocolGRPC, appProtocol) {
-				viaGw = fmt.Sprintf("%s:%d", viaGateway.EgressAddr, viaGateway.EgressGRPCPort)
+				viaGw = fmt.Sprintf("%s:%d", viaGateway.ClusterIP, viaGateway.EgressGRPCPort)
 			}
 		} else {
 			if len(clusterID) == 0 { // others -> fgw(IngressIP:IngressPort) -> k8s

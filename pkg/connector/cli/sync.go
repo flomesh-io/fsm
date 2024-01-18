@@ -110,7 +110,7 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient
 }
 
 func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
-	ingressAddr, egressAddr := waitGatewayReady(ctx, kubeClient,
+	ingressAddr, egressAddr, clusterIP, externalIP := waitGatewayReady(ctx, kubeClient,
 		connector.ViaGateway.IngressIPSelector,
 		connector.ViaGateway.EgressIPSelector,
 		int32(connector.ViaGateway.Ingress.HTTPPort),
@@ -129,10 +129,14 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	viaGateway := &meshConfig.Spec.Connector.ViaGateway
 	if !strings.EqualFold(viaGateway.IngressAddr, ingressAddr) ||
 		!strings.EqualFold(viaGateway.EgressAddr, egressAddr) ||
+		!strings.EqualFold(viaGateway.ClusterIP, clusterIP) ||
+		!strings.EqualFold(viaGateway.ExternalIP, externalIP) ||
 		viaGateway.IngressHTTPPort != connector.ViaGateway.Ingress.HTTPPort ||
 		viaGateway.IngressGRPCPort != connector.ViaGateway.Ingress.GRPCPort ||
 		viaGateway.EgressHTTPPort != connector.ViaGateway.Egress.HTTPPort ||
 		viaGateway.EgressGRPCPort != connector.ViaGateway.Egress.GRPCPort {
+		viaGateway.ClusterIP = clusterIP
+		viaGateway.ExternalIP = externalIP
 		viaGateway.IngressAddr = ingressAddr
 		viaGateway.IngressHTTPPort = connector.ViaGateway.Ingress.HTTPPort
 		viaGateway.IngressGRPCPort = connector.ViaGateway.Ingress.GRPCPort
@@ -211,13 +215,13 @@ func waitViaGatewayReady(ctx context.Context, configClient configClientset.Inter
 	}
 }
 
-func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector string, viaPorts ...int32) (ingressAddr, egressAddr string) {
+func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector string, viaPorts ...int32) (ingressAddr, egressAddr, clusterIP, externalIP string) {
 	gatewaySvcName := fmt.Sprintf("%s-%s-%s", constants.FSMGatewayName, Cfg.FsmNamespace, constants.ProtocolTCP)
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
 			if fgwSvc != nil {
 				if foundPorts, uncheckPorts := checkGatewayPorts(viaPorts, fgwSvc); foundPorts {
-					ingressAddr, egressAddr = checkGatewayIPs(fgwSvc, ingressIPSelector, egressIPSelector)
+					ingressAddr, egressAddr, clusterIP, externalIP = checkGatewayIPs(fgwSvc, ingressIPSelector, egressIPSelector)
 					if len(ingressAddr) == 0 {
 						log.Warn().Msgf("not find %s from fsm gateway: %s", ingressIPSelector, gatewaySvcName)
 					} else if len(egressAddr) == 0 {
@@ -238,7 +242,23 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingr
 	}
 }
 
-func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector string) (ingressAddr, egressAddr string) {
+func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector string) (ingressAddr, egressAddr, clusterIP, externalIP string) {
+	if len(externalIP) == 0 &&
+		len(fgwSvc.Spec.ExternalIPs) > 0 &&
+		len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
+		externalIP = fgwSvc.Spec.ExternalIPs[0]
+	}
+	if len(externalIP) == 0 &&
+		len(fgwSvc.Status.LoadBalancer.Ingress) > 0 &&
+		len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
+		externalIP = fgwSvc.Status.LoadBalancer.Ingress[0].IP
+	}
+	if len(clusterIP) == 0 &&
+		len(fgwSvc.Spec.ClusterIPs) > 0 &&
+		len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
+		clusterIP = fgwSvc.Spec.ClusterIPs[0]
+	}
+
 	if len(ingressAddr) == 0 && strings.EqualFold(ingressIPSelector, VIA_EXTERNAL_IP) &&
 		len(fgwSvc.Spec.ExternalIPs) > 0 &&
 		len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
@@ -269,7 +289,7 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 		len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
 		egressAddr = fgwSvc.Spec.ClusterIPs[0]
 	}
-	return ingressAddr, egressAddr
+	return
 }
 
 func checkGatewayPorts(viaPorts []int32, fgwSvc *corev1.Service) (bool, map[int32]bool) {

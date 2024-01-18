@@ -717,6 +717,9 @@ type MiscSpec struct {
 
 // ConnectorGatewaySpec is the type to represent connector gateway configs.
 type ConnectorGatewaySpec struct {
+	ClusterIP  string `json:"ClusterIP"`
+	ExternalIP string `json:"ExternalIP"`
+
 	IngressAddr     string `json:"ingressAddr"`
 	IngressHTTPPort uint   `json:"ingressHTTPPort"`
 	IngressGRPCPort uint   `json:"ingressGRPCPort"`
