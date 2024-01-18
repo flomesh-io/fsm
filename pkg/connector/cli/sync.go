@@ -16,6 +16,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
 	"github.com/flomesh-io/fsm/pkg/connector/ktog"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
+	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 )
 
@@ -211,7 +212,7 @@ func waitViaGatewayReady(ctx context.Context, configClient configClientset.Inter
 }
 
 func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector string, viaPorts ...int32) (ingressAddr, egressAddr string) {
-	gatewaySvcName := fmt.Sprintf("fsm-gateway-%s", Cfg.FsmNamespace)
+	gatewaySvcName := fmt.Sprintf("%s-%s-%s", constants.FSMGatewayName, Cfg.FsmNamespace, constants.ProtocolTCP)
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
 			if fgwSvc != nil {
