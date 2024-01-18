@@ -168,6 +168,17 @@ func (dc *ConsulDiscoveryClient) Register(reg *CatalogRegistration) error {
 			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
 		}
 	}
+	ins.Checks = consul.HealthChecks{
+		&consul.HealthCheck{
+			Node:        ins.Node,
+			CheckID:     fmt.Sprintf("service:%s", ins.Service.ID),
+			Name:        fmt.Sprintf("%s-liveness", ins.Service.Service),
+			Status:      HealthPassing,
+			Notes:       fmt.Sprintf("%s is alive and well.", ins.Service.Service),
+			ServiceID:   ins.Service.ID,
+			ServiceName: ins.Service.Service,
+		},
+	}
 	_, err := dc.consulClient.Catalog().Register(ins, nil)
 	return err
 }
