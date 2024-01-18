@@ -252,25 +252,28 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 	if len(clusterIP) == 0 && len(fgwSvc.Spec.ClusterIPs) > 0 && len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
 		clusterIP = fgwSvc.Spec.ClusterIPs[0]
 	}
-	if len(ingressAddr) == 0 && strings.EqualFold(ingressIPSelector, VIA_EXTERNAL_IP) && len(fgwSvc.Spec.ExternalIPs) > 0 && len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
-		ingressAddr = fgwSvc.Spec.ExternalIPs[0]
-	}
-	if len(ingressAddr) == 0 && strings.EqualFold(ingressIPSelector, VIA_EXTERNAL_IP) && len(fgwSvc.Status.LoadBalancer.Ingress) > 0 && len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
-		ingressAddr = fgwSvc.Status.LoadBalancer.Ingress[0].IP
-	}
-	if len(ingressAddr) == 0 && strings.EqualFold(ingressIPSelector, VIA_CLUSTER_IP) && len(fgwSvc.Spec.ClusterIPs) > 0 && len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
-		ingressAddr = fgwSvc.Spec.ClusterIPs[0]
-	}
-	if len(egressAddr) == 0 && strings.EqualFold(egressIPSelector, VIA_EXTERNAL_IP) && len(fgwSvc.Spec.ExternalIPs) > 0 && len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
-		egressAddr = fgwSvc.Spec.ExternalIPs[0]
-	}
-	if len(egressAddr) == 0 && strings.EqualFold(egressIPSelector, VIA_EXTERNAL_IP) && len(fgwSvc.Status.LoadBalancer.Ingress) > 0 && len(fgwSvc.Status.LoadBalancer.Ingress[0].IP) > 0 {
-		egressAddr = fgwSvc.Status.LoadBalancer.Ingress[0].IP
-	}
-	if len(egressAddr) == 0 && strings.EqualFold(egressIPSelector, VIA_CLUSTER_IP) && len(fgwSvc.Spec.ClusterIPs) > 0 && len(fgwSvc.Spec.ClusterIPs[0]) > 0 {
-		egressAddr = fgwSvc.Spec.ClusterIPs[0]
-	}
+
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
+	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
+	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
+	egressAddr = selectIngressIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
+	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
 	return
+}
+
+func selectIP(ip, ipSelector, ipVia string, ips []string) string {
+	if len(ip) == 0 && strings.EqualFold(ipSelector, ipVia) && len(ips) > 0 && len(ips[0]) > 0 {
+		return ips[0]
+	}
+	return ip
+}
+
+func selectIngressIP(ip, ipSelector, ipVia string, ingress []corev1.LoadBalancerIngress) string {
+	if len(ip) == 0 && strings.EqualFold(ipSelector, ipVia) && len(ingress) > 0 && len(ingress[0].IP) > 0 {
+		return ingress[0].IP
+	}
+	return ip
 }
 
 func checkGatewayPorts(viaPorts []int32, fgwSvc *corev1.Service) (bool, map[int32]bool) {
