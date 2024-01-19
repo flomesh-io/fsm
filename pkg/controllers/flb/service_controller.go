@@ -31,7 +31,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -408,46 +407,11 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		log.Debug().Msgf("Annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
-		if newAnnotations := r.computeServiceAnnotations(svc); newAnnotations != nil {
-			svc.Annotations = newAnnotations
-			if err := r.fctx.Update(ctx, svc); err != nil {
-				log.Error().Msgf("Failed update annotations of service %s/%s: %s", svc.Namespace, svc.Name, err)
-				return ctrl.Result{}, err
-			}
-
-			log.Debug().Msgf("After updating, annotations of service %s/%s is %v", svc.Namespace, svc.Name, svc.Annotations)
-		}
 
 		return r.createOrUpdateFLBEntry(ctx, svc)
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *reconciler) computeServiceAnnotations(svc *corev1.Service) map[string]string {
-	setting := r.settings[svc.Namespace]
-	log.Debug().Msgf("Setting for Namespace %q: %v", svc.Namespace, setting)
-
-	svcCopy := svc.DeepCopy()
-	if svcCopy.Annotations == nil {
-		svcCopy.Annotations = make(map[string]string)
-	}
-
-	for key, value := range map[string]string{
-		constants.FLBAddressPoolAnnotation: setting.flbDefaultAddressPool,
-		constants.FLBAlgoAnnotation:        getValidAlgo(setting.flbDefaultAlgo),
-	} {
-		v, ok := svcCopy.Annotations[key]
-		if !ok || v != value {
-			svcCopy.Annotations[key] = value
-		}
-	}
-
-	if !reflect.DeepEqual(svc.GetAnnotations(), svcCopy.GetAnnotations()) {
-		return svcCopy.Annotations
-	}
-
-	return nil
 }
 
 func isSettingChanged(secret *corev1.Secret, setting, defaultSetting *setting, mc configurator.Configurator) bool {
@@ -720,20 +684,53 @@ func isSupportedProtocol(protocol corev1.Protocol) bool {
 }
 
 func (r *reconciler) getFLBParameters(svc *corev1.Service) map[string]string {
-	if svc.Annotations == nil {
-		return map[string]string{}
+	setting := r.settings[svc.Namespace]
+	if len(svc.Annotations) == 0 {
+		return map[string]string{
+			flbAddressPoolHeaderName: setting.flbDefaultAddressPool,
+			flbAlgoHeaderName:        getValidAlgo(setting.flbDefaultAlgo),
+		}
 	}
 
 	return map[string]string{
-		flbAddressPoolHeaderName:    svc.Annotations[constants.FLBAddressPoolAnnotation],
+		flbAddressPoolHeaderName:    r.getAddressPool(svc),
 		flbDesiredIPHeaderName:      svc.Annotations[constants.FLBDesiredIPAnnotation],
 		flbMaxConnectionsHeaderName: svc.Annotations[constants.FLBMaxConnectionsAnnotation],
 		flbReadTimeoutHeaderName:    svc.Annotations[constants.FLBReadTimeoutAnnotation],
 		flbWriteTimeoutHeaderName:   svc.Annotations[constants.FLBWriteTimeoutAnnotation],
 		flbIdleTimeoutHeaderName:    svc.Annotations[constants.FLBIdleTimeoutAnnotation],
-		flbAlgoHeaderName:           getValidAlgo(svc.Annotations[constants.FLBAlgoAnnotation]),
+		flbAlgoHeaderName:           r.getAlgorithm(svc),
 		flbTagsHeaderName:           r.getTags(svc),
 	}
+}
+
+func (r *reconciler) getAddressPool(svc *corev1.Service) string {
+	setting := r.settings[svc.Namespace]
+	if len(svc.Annotations) == 0 {
+		return setting.flbDefaultAddressPool
+	}
+
+	pool, ok := svc.Annotations[constants.FLBAddressPoolAnnotation]
+	if !ok || len(pool) == 0 {
+		return setting.flbDefaultAddressPool
+	}
+
+	return pool
+}
+
+func (r *reconciler) getAlgorithm(svc *corev1.Service) string {
+	setting := r.settings[svc.Namespace]
+	if len(svc.Annotations) == 0 {
+		return getValidAlgo(setting.flbDefaultAlgo)
+	}
+
+	algo, ok := svc.Annotations[constants.FLBAlgoAnnotation]
+	if !ok || len(algo) == 0 {
+		return getValidAlgo(setting.flbDefaultAlgo)
+
+	}
+
+	return getValidAlgo(algo)
 }
 
 func (r *reconciler) getTags(svc *corev1.Service) string {
@@ -1060,7 +1057,7 @@ func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
 		allServices,
 		client.InNamespace(pod.GetNamespace()),
 	); err != nil {
-		log.Error().Msgf("failed to list services in ns %s: %s", pod.GetNamespace(), err)
+		log.Warn().Msgf("failed to list services in ns %s: %s", pod.GetNamespace(), err)
 		return nil
 	}
 
@@ -1106,7 +1103,7 @@ func (r *reconciler) endpointsToService(ep client.Object) []reconcile.Request {
 		client.ObjectKeyFromObject(ep),
 		svc,
 	); err != nil {
-		log.Error().Msgf("failed to get service %s/%s: %s", ep.GetNamespace(), ep.GetName(), err)
+		log.Warn().Msgf("failed to get service %s/%s: %s", ep.GetNamespace(), ep.GetName(), err)
 		return nil
 	}
 
@@ -1131,7 +1128,7 @@ func (r *reconciler) servicesByNamespace(ns client.Object) []reconcile.Request {
 		List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
-		log.Error().Msgf("failed to list services in ns %s: %s", ns.GetName(), err)
+		log.Warn().Msgf("failed to list services in ns %s: %s", ns.GetName(), err)
 		return nil
 	}
 
