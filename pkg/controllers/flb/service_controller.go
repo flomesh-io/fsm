@@ -727,7 +727,6 @@ func (r *reconciler) getAlgorithm(svc *corev1.Service) string {
 	algo, ok := svc.Annotations[constants.FLBAlgoAnnotation]
 	if !ok || len(algo) == 0 {
 		return getValidAlgo(setting.flbDefaultAlgo)
-
 	}
 
 	return getValidAlgo(algo)
