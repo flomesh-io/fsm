@@ -65,6 +65,8 @@ func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
 			if !reflect.DeepEqual(prevObj.Spec.Connector, newObj.Spec.Connector) {
 				viaGateway := &newObj.Spec.Connector.ViaGateway
 				if len(viaGateway.IngressAddr) > 0 && len(viaGateway.EgressAddr) > 0 {
+					ViaGateway.ClusterIP = viaGateway.ClusterIP
+					ViaGateway.ExternalIP = viaGateway.ExternalIP
 					ViaGateway.IngressAddr = viaGateway.IngressAddr
 					ViaGateway.Ingress.HTTPPort = viaGateway.IngressHTTPPort
 					ViaGateway.Ingress.GRPCPort = viaGateway.IngressGRPCPort

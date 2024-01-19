@@ -238,11 +238,31 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 		return nil
 	}
 
+	var ips []net.IP
+	ips = append(ips, ip)
+
+	sam := c.meshConfigurator.GetServiceAccessMode()
+	if len(sam) == 0 || sam == constants.ServiceAccessModeIP || sam == constants.ServiceAccessModeMixed {
+		if eps, err := c.kubeController.GetEndpoints(svc); err == nil && eps != nil {
+			if len(eps.Subsets) > 0 {
+				for _, ep := range eps.Subsets {
+					if len(ep.Addresses) > 0 {
+						for _, addr := range ep.Addresses {
+							ips = append(ips, net.ParseIP(addr.IP))
+						}
+					}
+				}
+			}
+		}
+	}
+
 	for _, svcPort := range kubeService.Spec.Ports {
-		endpoints = append(endpoints, endpoint.Endpoint{
-			IP:   ip,
-			Port: endpoint.Port(svcPort.Port),
-		})
+		for _, addr := range ips {
+			endpoints = append(endpoints, endpoint.Endpoint{
+				IP:   addr,
+				Port: endpoint.Port(svcPort.Port),
+			})
+		}
 	}
 
 	return endpoints

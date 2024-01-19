@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
@@ -82,7 +83,7 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 	if q != nil {
 		opts = q.toConsul()
 	}
-	services, _, err := dc.consulClient.Health().Service(service, tag, passingOnly, opts)
+	services, _, err := dc.consulClient.Health().Service(service, tag, false, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +97,42 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 				}
 			}
 		}
-		agentService := new(AgentService)
-		agentService.fromConsul(svc.Service)
-		agentService.ClusterId = dc.clusterId
-		agentServices = append(agentServices, agentService)
+
+		if !passingOnly {
+			agentService := new(AgentService)
+			agentService.fromConsul(svc.Service)
+			agentService.ClusterId = dc.clusterId
+			agentServices = append(agentServices, agentService)
+			continue
+		}
+
+		healthPassing := false
+		if len(svc.Checks) > 0 {
+			for _, chk := range svc.Checks {
+				if strings.EqualFold(chk.ServiceID, svc.Service.ID) {
+					if strings.EqualFold(chk.Status, consul.HealthPassing) {
+						healthPassing = true
+					}
+					break
+				}
+			}
+		}
+
+		if healthPassing {
+			agentService := new(AgentService)
+			agentService.fromConsul(svc.Service)
+			agentService.ClusterId = dc.clusterId
+			agentServices = append(agentServices, agentService)
+		}
+
+		checkService := new(AgentService)
+		checkService.fromConsul(svc.Service)
+		checkService.ClusterId = dc.clusterId
+		checkService.Service = fmt.Sprintf("%s-check", svc.Service.Service)
+		checkService.HealthCheck = true
+		checkService.Tags = nil
+		checkService.Meta = nil
+		agentServices = append(agentServices, checkService)
 	}
 	return agentServices, nil
 }
@@ -134,6 +167,17 @@ func (dc *ConsulDiscoveryClient) Register(reg *CatalogRegistration) error {
 		for _, tag := range appendTags {
 			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
 		}
+	}
+	ins.Checks = consul.HealthChecks{
+		&consul.HealthCheck{
+			Node:        ins.Node,
+			CheckID:     fmt.Sprintf("service:%s", ins.Service.ID),
+			Name:        fmt.Sprintf("%s-liveness", ins.Service.Service),
+			Status:      HealthPassing,
+			Notes:       fmt.Sprintf("%s is alive and well.", ins.Service.Service),
+			ServiceID:   ins.Service.ID,
+			ServiceName: ins.Service.Service,
+		},
 	}
 	_, err := dc.consulClient.Catalog().Register(ins, nil)
 	return err

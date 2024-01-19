@@ -26,9 +26,10 @@ type MicroSvcAppProtocol string
 
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports     map[MicroSvcPort]MicroSvcAppProtocol
-	Addresses map[MicroEndpointAddr]int
-	ClusterId string
+	Ports       map[MicroSvcPort]MicroSvcAppProtocol
+	Addresses   map[MicroEndpointAddr]int
+	ClusterId   string
+	HealthCheck bool
 }
 
 // Aggregator aggregates micro services
