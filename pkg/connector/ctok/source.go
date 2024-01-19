@@ -136,6 +136,7 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 			}
 			svcMeta.Addresses[MicroEndpointAddr(svc.Address)] = 1
 			svcMeta.ClusterId = svc.ClusterId
+			svcMeta.HealthCheck = svc.HealthCheck
 		}
 	}
 	return svcMetaMap

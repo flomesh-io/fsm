@@ -27,6 +27,9 @@ type Gateway struct {
 
 	Ingress ProtocolPort
 	Egress  ProtocolPort
+
+	ClusterIP  string
+	ExternalIP string
 }
 
 func (gw *Gateway) Enable() bool {

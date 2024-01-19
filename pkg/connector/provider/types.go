@@ -64,17 +64,18 @@ func (aw *AgentWeights) fromConsul(w consul.AgentWeights) {
 
 // AgentService represents a service known to the agent
 type AgentService struct {
-	ID         string
-	Service    string
-	InstanceId string
-	ClusterId  string
-	Namespace  string
-	Address    string
-	HTTPPort   int
-	GRPCPort   int
-	Weights    AgentWeights
-	Tags       []string
-	Meta       map[string]interface{}
+	ID          string
+	Service     string
+	InstanceId  string
+	ClusterId   string
+	Namespace   string
+	Address     string
+	HTTPPort    int
+	GRPCPort    int
+	Weights     AgentWeights
+	Tags        []string
+	Meta        map[string]interface{}
+	HealthCheck bool
 }
 
 func (as *AgentService) toConsul() *consul.AgentService {
