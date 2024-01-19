@@ -32,7 +32,8 @@ const (
 	// if there are active changes going on.
 	K8SMaxPeriod = 5 * time.Second
 
-	True = "true"
+	True  = "true"
+	False = "false"
 )
 
 var (
@@ -293,6 +294,10 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 					}
 				}
+				if svcMeta.HealthCheck {
+					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
+				}
 				s.fillService(svcMeta, svc)
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
@@ -328,6 +333,10 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 				if s.DiscClient.IsInternalServices() {
 					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
+			}
+			if svcMeta.HealthCheck {
+				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
+				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			s.fillService(svcMeta, createSvc)
 			if preHv == s.serviceHash(createSvc) {
