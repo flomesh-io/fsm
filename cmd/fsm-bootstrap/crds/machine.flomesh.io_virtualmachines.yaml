@@ -525,7 +525,6 @@ spec:
                 type: object
             required:
             - machineIP
-            - services
             type: object
           status:
             description: Status is the status of the VirtualMachine configuration.
@@ -539,6 +538,8 @@ spec:
                   VirtualMachine resource.
                 type: string
             type: object
+        required:
+        - spec
         type: object
     served: true
     storage: true

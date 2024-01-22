@@ -1,17 +1,22 @@
-// Package c2k implements a syncer from cloud to k8s.
+// Package ctok implements a syncer from cloud to k8s.
 package ctok
 
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector-c2k")
 )
 
 // Source is the source for the sync that watches cloud services and
@@ -30,6 +35,14 @@ type Source struct {
 // Run is the long-running loop for watching cloud services and
 // updating the Sink.
 func (s *Source) Run(ctx context.Context) {
+	// Register a controller for Endpoints
+	go (&connector.Controller{
+		Resource: &endpointsResource{
+			sink:               s.Sink,
+			endpointsKeyToName: make(map[string]string),
+		},
+	}).Run(ctx.Done())
+
 	opts := (&provider.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
@@ -101,21 +114,13 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 
 	for _, svc := range serviceEntries {
 		httpPort := svc.HTTPPort
-		grpcPort := 0
+		grpcPort := svc.GRPCPort
 		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
 		if len(svc.Tags) > 0 {
-			tagGrpcPort := 0
-			tagGrpcPort, svcNames = s.aggregateTag(svcName, svc, svcNames)
-			if tagGrpcPort > 0 {
-				grpcPort = tagGrpcPort
-			}
+			svcNames = s.aggregateTag(svcName, svc, svcNames)
 		}
 		if len(svc.Meta) > 0 {
-			metaGrpcPort := 0
-			metaGrpcPort, svcNames = s.aggregateMetadata(svcName, svc, svcNames)
-			if metaGrpcPort > 0 {
-				grpcPort = metaGrpcPort
-			}
+			svcNames = s.aggregateMetadata(svcName, svc, svcNames)
 		}
 		for _, serviceName := range svcNames {
 			svcMeta, exists := svcMetaMap[serviceName]
@@ -130,15 +135,16 @@ func (s *Source) Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainNam
 				svcMeta.Ports[MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
 			}
 			svcMeta.Addresses[MicroEndpointAddr(svc.Address)] = 1
+			svcMeta.ClusterId = svc.ClusterId
+			svcMeta.HealthCheck = svc.HealthCheck
 		}
 	}
 	return svcMetaMap
 }
 
-func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) (int, []MicroSvcName) {
+func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) []MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
-	grpcPort := 0
 	for _, tag := range svc.Tags {
 		if len(s.PrefixTag) > 0 {
 			if strings.HasPrefix(tag, fmt.Sprintf("%s=", s.PrefixTag)) {
@@ -154,13 +160,6 @@ func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, 
 				}
 			}
 		}
-		if strings.HasPrefix(tag, "gRPC.port=") {
-			if segs := strings.Split(tag, "="); len(segs) == 2 {
-				if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
-					grpcPort = port
-				}
-			}
-		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
 		extSvcName := string(svcName)
@@ -172,13 +171,12 @@ func (s *Source) aggregateTag(svcName MicroSvcName, svc *provider.AgentService, 
 		}
 		svcNames = append(svcNames, MicroSvcName(extSvcName))
 	}
-	return grpcPort, svcNames
+	return svcNames
 }
 
-func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) (int, []MicroSvcName) {
+func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentService, svcNames []MicroSvcName) []MicroSvcName {
 	svcPrefix := ""
 	svcSuffix := ""
-	grpcPort := 0
 	for metaName, metaVal := range svc.Meta {
 		if len(s.PrefixTag) > 0 {
 			if strings.EqualFold(metaName, s.PrefixTag) {
@@ -194,11 +192,6 @@ func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentServ
 				}
 			}
 		}
-		if strings.EqualFold(metaName, provider.EUREKA_METADATA_GRPC_PORT) {
-			if v, ok := metaVal.(float64); ok {
-				grpcPort = int(v)
-			}
-		}
 	}
 	if len(svcPrefix) > 0 || len(svcSuffix) > 0 {
 		extSvcName := string(svcName)
@@ -210,5 +203,5 @@ func (s *Source) aggregateMetadata(svcName MicroSvcName, svc *provider.AgentServ
 		}
 		svcNames = append(svcNames, MicroSvcName(extSvcName))
 	}
-	return grpcPort, svcNames
+	return svcNames
 }

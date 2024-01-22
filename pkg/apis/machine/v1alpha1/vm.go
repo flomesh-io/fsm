@@ -19,8 +19,7 @@ type VirtualMachine struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec is the VirtualMachine specification
-	// +optional
-	Spec VMSpec `json:"spec,omitempty"`
+	Spec VMSpec `json:"spec"`
 
 	// Status is the status of the VirtualMachine configuration.
 	// +optional
@@ -41,7 +40,8 @@ type VMSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// The list of services that are exposed by this vm.
-	Services []ServiceSpec `json:"services"`
+	// +optional
+	Services []ServiceSpec `json:"services,omitempty"`
 
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.

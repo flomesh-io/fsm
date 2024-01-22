@@ -101,22 +101,39 @@ func main() {
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
+	appendTagSet := cli.ToSet(cli.Cfg.K2C.FlagAppendTags)
+	appendMetadataKeySet := cli.ToSet(cli.Cfg.K2C.FlagAppendMetadataKeys)
+	appendMetadataValueSet := cli.ToSet(cli.Cfg.K2C.FlagAppendMetadataValues)
+
 	if len(cli.Cfg.SdrProvider) > 0 {
 		var discClient provider.ServiceDiscoveryClient = nil
 		if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr,
+				cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId,
+				appendMetadataKeySet, appendMetadataValueSet)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr,
+				cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId,
+				appendTagSet)
+			if err != nil {
+				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+				log.Fatal().Msg("Error creating service discovery and registration client")
+			}
+		} else if connector.NacosDiscoveryService == cli.Cfg.SdrProvider {
+			discClient, err = provider.GetNacosDiscoveryClient(cli.Cfg.HttpAddr,
+				cli.Cfg.Nacos.FlagUsername, cli.Cfg.Nacos.FlagPassword, cli.Cfg.Nacos.FlagNamespaceId, cli.Cfg.C2K.FlagClusterId,
+				cli.Cfg.K2C.Nacos.FlagClusterId, cli.Cfg.K2C.Nacos.FlagGroupId, cli.Cfg.C2K.Nacos.FlagClusterSet, cli.Cfg.C2K.Nacos.FlagGroupSet,
+				cli.Cfg.AsInternalServices, appendMetadataKeySet, appendMetadataValueSet)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
 			}
 		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.AsInternalServices)
+			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.DeriveNamespace, cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId)
 			if err != nil {
 				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 				log.Fatal().Msg("Error creating service discovery and registration client")
@@ -126,17 +143,17 @@ func main() {
 		}
 
 		if cli.Cfg.SyncCloudToK8s {
-			go cli.SyncCtoK(ctx, kubeClient, discClient)
+			go cli.SyncCtoK(ctx, kubeClient, configClient, discClient)
 		}
 
 		if cli.Cfg.SyncK8sToCloud {
-			go cli.SyncKtoC(ctx, kubeClient, discClient)
+			go cli.SyncKtoC(ctx, kubeClient, configClient, discClient)
 		}
 	}
 
 	if cli.Cfg.SyncK8sToGateway {
 		gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
-		go cli.SyncKtoG(ctx, kubeClient, gatewayClient)
+		go cli.SyncKtoG(ctx, kubeClient, configClient, gatewayClient)
 	}
 
 	version.SetMetric()

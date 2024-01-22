@@ -36,6 +36,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	mockCtrl = gomock.NewController(GinkgoT())
 	mockKubeController = k8s.NewMockController(mockCtrl)
 	mockConfigurator = configurator.NewMockConfigurator(mockCtrl)
+	mockConfigurator.EXPECT().GetServiceAccessMode().Return(constants.ServiceAccessModeDomain).AnyTimes()
 
 	mockKubeController.EXPECT().IsMonitoredNamespace(tests.BookbuyerService.Namespace).Return(true).AnyTimes()
 

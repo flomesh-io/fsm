@@ -277,6 +277,10 @@ func applyOrUpdateCRDs(crdClient *apiclient.ApiextensionsV1Client) {
 		} else {
 			log.Info().Msgf("Patching conversion webhook configuration for crd: %s, setting to \"None\"", crd.Name)
 
+			if crdExisting.Labels == nil {
+				crdExisting.Labels = make(map[string]string)
+			}
+
 			crdExisting.Labels[constants.ReconcileLabel] = strconv.FormatBool(enableReconciler)
 			crdExisting.Spec = crd.Spec
 			crdExisting.Spec.Conversion = &apiv1.CustomResourceConversion{

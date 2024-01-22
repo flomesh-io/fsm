@@ -53,6 +53,8 @@ type Proxy struct {
 
 	VM        bool
 	MachineIP net.Addr
+
+	ClusterID string
 }
 
 func (p *Proxy) String() string {

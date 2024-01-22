@@ -54,14 +54,6 @@ func (mc *MeshCatalog) GetAccessControlTrafficPolicy(svc service.MeshService) (*
 		return nil, nil
 	}
 
-	aclWithStatus.Status = policyV1alpha1.AccessControlStatus{
-		CurrentStatus: "committed",
-		Reason:        "successfully committed by the system",
-	}
-	if _, err := mc.kubeController.UpdateStatus(&aclWithStatus); err != nil {
-		log.Error().Err(err).Msg("Error updating status for AccessControl")
-	}
-
 	// Create an inbound traffic policy from the routing rules
 	// TODO(#3779): Implement HTTP route matching from AccessControl.Spec.Matches
 	var httpRoutePolicy *trafficpolicy.InboundTrafficPolicy
@@ -104,14 +96,7 @@ func (mc *MeshCatalog) getPermissiveAccessControlTrafficPolicy(svc service.MeshS
 			}
 			endpoints := mc.listEndpointsForService(sourceMeshSvc)
 			if len(endpoints) == 0 {
-				aclWithStatus.Status = policyV1alpha1.AccessControlStatus{
-					CurrentStatus: "error",
-					Reason:        fmt.Sprintf("endpoints not found for service %s/%s", source.Namespace, source.Name),
-				}
-				if _, err := mc.kubeController.UpdateStatus(&aclWithStatus); err != nil {
-					log.Error().Err(err).Msg("Error updating status for AccessControl")
-				}
-				return fmt.Errorf("Could not list endpoints of the source service %s/%s specified in the AccessControl %s/%s",
+				return fmt.Errorf("could not list endpoints of the source service %s/%s specified in the AccessControl %s/%s",
 					source.Namespace, source.Name, aclPolicy.Namespace, aclPolicy.Name)
 			}
 

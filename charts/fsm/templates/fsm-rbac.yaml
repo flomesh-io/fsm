@@ -111,7 +111,7 @@ rules:
   # FSM's custom machine API
   - apiGroups: ["machine.flomesh.io"]
     resources: ["virtualmachines"]
-    verbs: ["list", "get", "watch"]
+    verbs: ["list", "get", "watch", "update"]
   - apiGroups: ["machine.flomesh.io"]
     resources: ["virtualmachines/status"]
     verbs: ["update"]

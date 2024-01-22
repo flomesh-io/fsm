@@ -1639,6 +1639,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
@@ -1651,6 +1652,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/asInternalServices",
@@ -1679,6 +1686,7 @@
                             "filterTag",
                             "prefixTag",
                             "suffixTag",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -1707,6 +1715,12 @@
                               "title": "Suffix Tag",
                               "description": "Suffix Tag"
                             },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
+                            },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncToK8S/properties/passingOnly",
                               "type": "boolean",
@@ -1729,7 +1743,8 @@
                                 }
                               }
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         },
                         "syncFromK8S": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S",
@@ -1816,6 +1831,15 @@
                               "title": "Add K8S Namespace as Service Suffix",
                               "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
                             },
+                            "appendTag": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/appendTag",
+                              "type": "array",
+                              "title": "append tags",
+                              "description": "append tags.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/consul/properties/syncFromK8S/properties/allowK8sNamespaces",
                               "type": "array",
@@ -1892,9 +1916,11 @@
                               "title": "Consul Cross Namespace ACL Policy",
                               "description": "[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service discovery across Consul namespaces. Only necessary if ACLs are enabled."
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     },
                     "eureka": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka",
@@ -1902,6 +1928,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "httpAddr",
@@ -1914,6 +1941,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/asInternalServices",
@@ -1942,6 +1975,7 @@
                             "filterMetadata",
                             "prefixMetadata",
                             "suffixMetadata",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -1970,6 +2004,12 @@
                               "title": "Suffix Metadata",
                               "description": "Suffix Metadata"
                             },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
+                            },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncToK8S/properties/passingOnly",
                               "type": "boolean",
@@ -1992,7 +2032,8 @@
                                 }
                               }
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         },
                         "syncFromK8S": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S",
@@ -2072,6 +2113,33 @@
                               "title": "Add K8S Namespace as Service Suffix",
                               "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
                             },
+                            "appendMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata",
+                              "type": "array",
+                              "title": "Append Metadata",
+                              "description": "Append Metadata",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "key",
+                                  "value"
+                                ],
+                                "properties": {
+                                  "key": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata/items/key",
+                                    "type": "string",
+                                    "title": "key of metadata",
+                                    "description": "key of metadata"
+                                  },
+                                  "value": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/appendMetadata/items/value",
+                                    "type": "string",
+                                    "title": "value of metadata",
+                                    "description": "value of metadata"
+                                  }
+                                }
+                              }
+                            },
                             "allowK8sNamespaces": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/eureka/properties/syncFromK8S/properties/allowK8sNamespaces",
                               "type": "array",
@@ -2104,11 +2172,327 @@
                                   "title": "enable",
                                   "description": "enable"
                                 }
-                              }
+                              },
+                              "additionalProperties": false
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         }
-                      }
+                      },
+                      "additionalProperties": false
+                    },
+                    "nacos": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos",
+                      "type": "object",
+                      "title": "The config schema",
+                      "required": [
+                        "enable",
+                        "connectorNameSuffix",
+                        "namespaceId",
+                        "asInternalServices",
+                        "deriveNamespace",
+                        "httpAddr",
+                        "syncToK8S",
+                        "syncFromK8S"
+                      ],
+                      "properties": {
+                        "enable": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/enable",
+                          "type": "boolean",
+                          "title": "enable",
+                          "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
+                        },
+                        "username": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/username",
+                          "type": "string",
+                          "title": "username for nacos auth",
+                          "description": "username for nacos auth"
+                        },
+                        "password": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/password",
+                          "type": "string",
+                          "title": "password for nacos auth",
+                          "description": "password for nacos auth"
+                        },
+                        "namespaceId": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/namespaceId",
+                          "type": "string",
+                          "title": "nacos namespace",
+                          "description": "nacos namespace"
+                        },
+                        "asInternalServices": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/asInternalServices",
+                          "type": "boolean",
+                          "title": "as internal services",
+                          "description": "as internal services"
+                        },
+                        "deriveNamespace": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/deriveNamespace",
+                          "type": "string",
+                          "title": "The derive namespace",
+                          "description": "The derive Namespace"
+                        },
+                        "httpAddr": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/httpAddr",
+                          "type": "string",
+                          "title": "The http address of Consul Service",
+                          "description": "Http address of Consul Service"
+                        },
+                        "syncToK8S": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S",
+                          "type": "object",
+                          "title": "The syncToK8s schema",
+                          "required": [
+                            "enable",
+                            "filterMetadata",
+                            "prefixMetadata",
+                            "suffixMetadata",
+                            "clusterId",
+                            "passingOnly",
+                            "clusterSet",
+                            "groupSet",
+                            "withGateway"
+                          ],
+                          "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
+                            "filterMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/filterMetadata",
+                              "type": "string",
+                              "title": "Filter Metadata",
+                              "description": "Filter Metadata"
+                            },
+                            "prefixMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/prefixMetadata",
+                              "type": "string",
+                              "title": "Prefix Metadata",
+                              "description": "Prefix Metadata"
+                            },
+                            "suffixMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/suffixMetadata",
+                              "type": "string",
+                              "title": "Suffix Metadata",
+                              "description": "Suffix Metadata"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
+                            },
+                            "passingOnly": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/passingOnly",
+                              "type": "boolean",
+                              "title": "Passing Only",
+                              "description": "Passing Only"
+                            },
+                            "clusterSet": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/clusterSet",
+                              "type": "array",
+                              "title": "nacos cluster set",
+                              "description": "nacos cluster set",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "groupSet": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/groupSet",
+                              "type": "array",
+                              "title": "nacos group set",
+                              "description": "nacos group set",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/withGateway",
+                              "type": "object",
+                              "title": "with Gateway API",
+                              "required": [
+                                "enable"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncToK8S/properties/withGateway/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "syncFromK8S": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S",
+                          "type": "object",
+                          "title": "The syncFromK8S schema",
+                          "required": [
+                            "enable",
+                            "clusterId",
+                            "groupId",
+                            "defaultSync",
+                            "syncClusterIPServices",
+                            "syncLoadBalancerEndpoints",
+                            "nodePortSyncType",
+                            "syncIngress",
+                            "syncIngressLoadBalancerIPs",
+                            "addServicePrefix",
+                            "addK8SNamespaceAsServiceSuffix",
+                            "allowK8sNamespaces",
+                            "denyK8sNamespaces",
+                            "withGateway"
+                          ],
+                          "properties": {
+                            "enable": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/enable",
+                              "type": "boolean",
+                              "title": "enable",
+                              "description": "enable"
+                            },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "nacos cluster id",
+                              "description": "nacos cluster id"
+                            },
+                            "groupId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/groupId",
+                              "type": "string",
+                              "title": "nacos group id",
+                              "description": "nacos group id"
+                            },
+                            "defaultSync": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/defaultSync",
+                              "type": "boolean",
+                              "title": "Default Sync",
+                              "description": "If true, all valid services in K8S are synced by default. If false, the service must be annotated properly to sync. In either case an annotation can override the default (default true)"
+                            },
+                            "syncClusterIPServices": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/syncClusterIPServices",
+                              "type": "boolean",
+                              "title": "Sync ClusterIP Services",
+                              "description": "If true, all valid ClusterIP services in K8S are synced by default. If false, ClusterIP services are not synced to Consul. (default true)"
+                            },
+                            "syncLoadBalancerEndpoints": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/syncLoadBalancerEndpoints",
+                              "type": "boolean",
+                              "title": "Sync LoadBalancer Endpoints",
+                              "description": "If true, LoadBalancer service endpoints instead of ingress addresses will be synced to cloud. If false, LoadBalancer endpoints are not synced to cloud."
+                            },
+                            "nodePortSyncType": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/nodePortSyncType",
+                              "type": "string",
+                              "title": "Sync LoadBalancer Endpoints",
+                              "description": "Defines the type of sync for NodePort services. Valid options are ExternalOnly, InternalOnly and ExternalFirst. (default \"ExternalOnly\")",
+                              "enum": [
+                                "ExternalOnly",
+                                "InternalOnly",
+                                "ExternalFirst"
+                              ]
+                            },
+                            "syncIngress": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/syncIngress",
+                              "type": "boolean",
+                              "title": "Sync Ingress",
+                              "description": "enables syncing of the hostname from an Ingress resource to the service registration if an Ingress rule matches the service."
+                            },
+                            "syncIngressLoadBalancerIPs": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/syncIngressLoadBalancerIPs",
+                              "type": "boolean",
+                              "title": "Sync Ingress LoadBalancer IPs",
+                              "description": "enables syncing the IP of the Ingress LoadBalancer if we do not want to sync the hostname from the Ingress resource."
+                            },
+                            "addServicePrefix": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/addServicePrefix",
+                              "type": "string",
+                              "title": "Add Service Prefix",
+                              "description": "A prefix to prepend to all services written to cloud from Kubernetes. If this is not set then services will have no prefix."
+                            },
+                            "addK8SNamespaceAsServiceSuffix": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/addK8SNamespaceAsServiceSuffix",
+                              "type": "boolean",
+                              "title": "Add K8S Namespace as Service Suffix",
+                              "description": "If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. If false, no suffix will be appended to the service names in cloud. If the service name annotation is provided, the suffix is not appended."
+                            },
+                            "appendMetadata": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata",
+                              "type": "array",
+                              "title": "Append Metadata",
+                              "description": "Append Metadata",
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "key",
+                                  "value"
+                                ],
+                                "properties": {
+                                  "key": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata/items/key",
+                                    "type": "string",
+                                    "title": "key of metadata",
+                                    "description": "key of metadata"
+                                  },
+                                  "value": {
+                                    "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/appendMetadata/items/value",
+                                    "type": "string",
+                                    "title": "value of metadata",
+                                    "description": "value of metadata"
+                                  }
+                                }
+                              }
+                            },
+                            "allowK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/allowK8sNamespaces",
+                              "type": "array",
+                              "title": "Allow K8s Namespaces",
+                              "description": "K8s namespaces to explicitly allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "denyK8sNamespaces": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/denyK8sNamespaces",
+                              "type": "array",
+                              "title": "Deny K8s Namespaces",
+                              "description": "K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "withGateway": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/withGateway",
+                              "type": "object",
+                              "title": "with Gateway API",
+                              "required": [
+                                "enable"
+                              ],
+                              "properties": {
+                                "enable": {
+                                  "$id": "#/properties/fsm/properties/cloudConnector/properties/nacos/properties/syncFromK8S/properties/withGateway/properties/enable",
+                                  "type": "boolean",
+                                  "title": "enable",
+                                  "description": "enable"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
                     },
                     "machine": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/machine",
@@ -2116,6 +2500,7 @@
                       "title": "The config schema",
                       "required": [
                         "enable",
+                        "connectorNameSuffix",
                         "asInternalServices",
                         "deriveNamespace",
                         "syncToK8S"
@@ -2126,6 +2511,12 @@
                           "type": "boolean",
                           "title": "enable",
                           "description": "enable"
+                        },
+                        "connectorNameSuffix": {
+                          "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/connectorNameSuffix",
+                          "type": "string",
+                          "title": "Connector Name Suffix",
+                          "description": "Connector Name Suffix"
                         },
                         "asInternalServices": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/asInternalServices",
@@ -2148,6 +2539,7 @@
                             "filterLabel",
                             "prefixLabel",
                             "suffixLabel",
+                            "clusterId",
                             "passingOnly",
                             "withGateway"
                           ],
@@ -2176,6 +2568,12 @@
                               "title": "Suffix Label",
                               "description": "Suffix Label"
                             },
+                            "clusterId": {
+                              "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/clusterId",
+                              "type": "string",
+                              "title": "vm cluster id",
+                              "description": "vm cluster id"
+                            },
                             "passingOnly": {
                               "$id": "#/properties/fsm/properties/cloudConnector/properties/machine/properties/syncToK8S/properties/passingOnly",
                               "type": "boolean",
@@ -2196,11 +2594,14 @@
                                   "title": "enable",
                                   "description": "enable"
                                 }
-                              }
+                              },
+                              "additionalProperties": false
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     },
                     "gateway": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway",
@@ -2254,7 +2655,8 @@
                                 30514
                               ]
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         },
                         "egress": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/egress",
@@ -2298,7 +2700,8 @@
                                 30514
                               ]
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         },
                         "syncToFgw": {
                           "$id": "#/properties/fsm/properties/cloudConnector/properties/gateway/properties/syncToFgw",
@@ -2341,9 +2744,11 @@
                                 "type": "string"
                               }
                             }
-                          }
+                          },
+                          "additionalProperties": false
                         }
-                      }
+                      },
+                      "additionalProperties": false
                     }
                   },
                   "additionalProperties": false

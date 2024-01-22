@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	mapset "github.com/deckarep/golang-set"
 	"github.com/hudl/fargo"
 	"github.com/op/go-logging"
 
@@ -16,8 +17,11 @@ const (
 )
 
 type EurekaDiscoveryClient struct {
-	eurekaClient       *fargo.EurekaConnection
-	isInternalServices bool
+	eurekaClient           *fargo.EurekaConnection
+	isInternalServices     bool
+	clusterId              string
+	appendMetadataKeySet   mapset.Set
+	appendMetadataValueSet mapset.Set
 }
 
 func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
@@ -110,6 +114,7 @@ func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 			}
 			agentService := new(AgentService)
 			agentService.fromEureka(ins)
+			agentService.ClusterId = dc.clusterId
 			agentServices = append(agentServices, agentService)
 		}
 	}
@@ -125,10 +130,21 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error 
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
-	return dc.eurekaClient.RegisterInstance(reg.toEureka())
+	ins := reg.toEureka()
+	metaKeys := dc.appendMetadataKeySet.ToSlice()
+	metaVals := dc.appendMetadataValueSet.ToSlice()
+	if len(metaKeys) > 0 && len(metaVals) > 0 && len(metaKeys) == len(metaVals) {
+		rMetadata := ins.Metadata.GetMap()
+		for index, key := range metaKeys {
+			metaKey := key.(string)
+			metaVal := metaVals[index].(string)
+			rMetadata[metaKey] = metaVal
+		}
+	}
+	return dc.eurekaClient.RegisterInstance(ins)
 }
 
-// EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
+// EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
 // it will create it and set crossNSACLPolicy as a policy default.
 // Boolean return value indicates if the namespace was created by this call.
 func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
@@ -139,11 +155,15 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 	return connector.EurekaDiscoveryService
 }
 
-func GetEurekaDiscoveryClient(address string, isInternalServices bool) (*EurekaDiscoveryClient, error) {
+func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string,
+	appendMetadataKeySet, appendMetadataValueSet mapset.Set) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	eurekaDiscoveryClient.isInternalServices = isInternalServices
+	eurekaDiscoveryClient.clusterId = clusterId
+	eurekaDiscoveryClient.appendMetadataKeySet = appendMetadataKeySet
+	eurekaDiscoveryClient.appendMetadataValueSet = appendMetadataValueSet
 	logging.SetLevel(logging.WARNING, "fargo")
 	return eurekaDiscoveryClient, nil
 }

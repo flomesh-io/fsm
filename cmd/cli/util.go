@@ -61,7 +61,7 @@ type ManifestClient interface {
 	GetDynamicClient() dynamic.Interface
 	GetRESTMapper() meta.RESTMapper
 	GetMeshName() string
-	ResolveValues(mc *configv1alpha3.MeshConfig) (map[string]interface{}, error)
+	ResolveValues(mc *configv1alpha3.MeshConfig, manifestFiles ...string) ([]string, map[string]interface{}, error)
 }
 
 // confirm displays a prompt `s` to the user and returns a bool indicating yes / no
@@ -577,6 +577,22 @@ func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClie
 	return nil
 }
 
+func deleteConnectorResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName, connectorName string) error {
+	if err := kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, connectorName, metav1.DeleteOptions{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	if err := kubeClient.AppsV1().Deployments(fsmNamespace).Delete(ctx, connectorName, metav1.DeleteOptions{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func deleteEgressGatewayResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName string) error {
 	if err := kubeClient.CoreV1().Services(fsmNamespace).Delete(ctx, constants.FSMEgressGatewayName, metav1.DeleteOptions{}); err != nil {
 		if !errors.IsNotFound(err) {
@@ -660,7 +676,7 @@ func installManifests(cmd ManifestClient, mc *configv1alpha3.MeshConfig, fsmName
 
 	debug("Resolving values ...")
 	// resolve values
-	values, err := cmd.ResolveValues(mc)
+	manifestFiles, values, err := cmd.ResolveValues(mc, manifestFiles...)
 	if err != nil {
 		return err
 	}

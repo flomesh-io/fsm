@@ -3,11 +3,15 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	consul "github.com/hashicorp/consul/api"
 	eureka "github.com/hudl/fargo"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/model"
+	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -60,16 +64,18 @@ func (aw *AgentWeights) fromConsul(w consul.AgentWeights) {
 
 // AgentService represents a service known to the agent
 type AgentService struct {
-	ID         string
-	Service    string
-	InstanceId string
-	Namespace  string
-	Address    string
-	HTTPPort   int
-	GRPCPort   int
-	Weights    AgentWeights
-	Tags       []string
-	Meta       map[string]interface{}
+	ID          string
+	Service     string
+	InstanceId  string
+	ClusterId   string
+	Namespace   string
+	Address     string
+	HTTPPort    int
+	GRPCPort    int
+	Weights     AgentWeights
+	Tags        []string
+	Meta        map[string]interface{}
+	HealthCheck bool
 }
 
 func (as *AgentService) toConsul() *consul.AgentService {
@@ -82,6 +88,10 @@ func (as *AgentService) toConsul() *consul.AgentService {
 	agentService.Weights = as.Weights.toConsul()
 	if len(as.Tags) > 0 {
 		agentService.Tags = append(agentService.Tags, as.Tags...)
+	}
+	agentService.Tags = append(agentService.Tags, "secure=false")
+	if as.GRPCPort > 0 {
+		agentService.Tags = append(agentService.Tags, fmt.Sprintf("%s%d", CONSUL_METADATA_GRPC_PORT, as.GRPCPort))
 	}
 	if len(as.Meta) > 0 {
 		agentService.Meta = make(map[string]string)
@@ -100,7 +110,16 @@ func (as *AgentService) fromConsul(agentService *consul.AgentService) {
 	as.HTTPPort = agentService.Port
 	as.Weights.fromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
-		as.Tags = append(as.Tags, agentService.Tags...)
+		for _, tag := range agentService.Tags {
+			if strings.HasPrefix(tag, CONSUL_METADATA_GRPC_PORT) {
+				if segs := strings.Split(tag, "="); len(segs) == 2 {
+					if grpcPort, convErr := strconv.Atoi(segs[1]); convErr == nil {
+						as.GRPCPort = grpcPort
+					}
+				}
+			}
+			as.Tags = append(as.Tags, tag)
+		}
 	}
 	if len(agentService.Meta) > 0 {
 		as.Meta = make(map[string]interface{})
@@ -123,6 +142,33 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
+			if strings.EqualFold(k, EUREKA_METADATA_GRPC_PORT) {
+				if grpcPort, ok := v.(float64); ok {
+					as.GRPCPort = int(grpcPort)
+				}
+			}
+			as.Meta[k] = v
+		}
+	}
+}
+
+func (as *AgentService) fromNacos(ins *model.Instance) {
+	if ins == nil {
+		return
+	}
+	as.ID = ins.InstanceId
+	as.Service = strings.ToLower(strings.Split(ins.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
+	as.InstanceId = ins.InstanceId
+	as.Address = ins.Ip
+	as.HTTPPort = int(ins.Port)
+	if len(ins.Metadata) > 0 {
+		as.Meta = make(map[string]interface{})
+		for k, v := range ins.Metadata {
+			if strings.EqualFold(k, NACOS_METADATA_GRPC_PORT) {
+				if grpcPort, err := strconv.ParseInt(v, 10, 32); err == nil {
+					as.GRPCPort = int(grpcPort)
+				}
+			}
 			as.Meta[k] = v
 		}
 	}
@@ -162,6 +208,19 @@ func (cdr *CatalogDeregistration) toEureka() *eureka.Instance {
 	r := new(eureka.Instance)
 	r.InstanceId = cdr.ServiceID
 	r.App = strings.ToUpper(cdr.Service)
+	return r
+}
+
+func (cdr *CatalogDeregistration) toNacos() *vo.DeregisterInstanceParam {
+	r := new(vo.DeregisterInstanceParam)
+	svcInfoSegs := strings.Split(cdr.ServiceID, constant.SERVICE_INFO_SPLITER)
+	r.ServiceName = svcInfoSegs[1]
+	insInfoSegs := strings.Split(svcInfoSegs[0], constant.NAMING_INSTANCE_ID_SPLITTER)
+	r.Ip = insInfoSegs[0]
+	r.Port, _ = strconv.ParseUint(insInfoSegs[1], 10, 64)
+	r.Cluster = insInfoSegs[2]
+	r.GroupName = insInfoSegs[3]
+	r.Ephemeral = true
 	return r
 }
 
@@ -222,18 +281,44 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 			}
 		}
 
-		//rMetadata["type"] = "smart-gateway"
-		//rMetadata["version"] = "release"
-		//rMetadata["zone"] = "yinzhou"
-
 		if cr.Service.GRPCPort > 0 {
 			rMetadata[EUREKA_METADATA_GRPC_PORT] = fmt.Sprintf("%d", cr.Service.GRPCPort)
 			rMetadata[EUREKA_METADATA_MGMT_PORT] = fmt.Sprintf("%d", cr.Service.HTTPPort)
 		}
 
-		r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.HTTPPort)
-		r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.HTTPPort)
-		r.HealthCheckUrl = fmt.Sprintf("http://%s:%d/actuator/health", cr.Service.Address, cr.Service.HTTPPort)
+		//r.HomePageUrl = fmt.Sprintf("http://%s:%d/", cr.Service.Address, cr.Service.HTTPPort)
+		//r.StatusPageUrl = fmt.Sprintf("http://%s:%d/actuator/info", cr.Service.Address, cr.Service.HTTPPort)
+		//r.HealthCheckUrl = fmt.Sprintf("http://%s:%d/actuator/health", cr.Service.Address, cr.Service.HTTPPort)
+	}
+	return r
+}
+
+func (cr *CatalogRegistration) toNacos(cluster, group string, weight float64) *vo.RegisterInstanceParam {
+	r := new(vo.RegisterInstanceParam)
+	r.Metadata = make(map[string]string)
+	if len(cr.NodeMeta) > 0 {
+		for k, v := range cr.NodeMeta {
+			r.Metadata[k] = v
+		}
+	}
+	if cr.Service != nil {
+		r.ClusterName = cluster
+		r.GroupName = group
+		r.ServiceName = strings.ToLower(cr.Service.Service)
+		r.Ip = cr.Service.Address
+		r.Port = uint64(cr.Service.HTTPPort)
+		r.Weight = weight
+		r.Enable = true
+		r.Healthy = true
+		r.Ephemeral = true
+		if len(cr.Service.Meta) > 0 {
+			for k, v := range cr.Service.Meta {
+				r.Metadata[k] = fmt.Sprintf("%v", v)
+			}
+		}
+		if cr.Service.GRPCPort > 0 {
+			r.Metadata[NACOS_METADATA_GRPC_PORT] = fmt.Sprintf("%d", cr.Service.GRPCPort)
+		}
 	}
 	return r
 }
@@ -260,6 +345,15 @@ func (cs *CatalogService) fromEureka(svc *eureka.Instance) {
 	cs.Node = svc.DataCenterInfo.Name
 	cs.ServiceID = svc.Id()
 	cs.ServiceName = strings.ToLower(svc.App)
+}
+
+func (cs *CatalogService) fromNacos(svc *model.Instance) {
+	if svc == nil {
+		return
+	}
+	cs.Node = svc.ClusterName
+	cs.ServiceID = svc.InstanceId
+	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 }
 
 type CatalogNodeServiceList struct {

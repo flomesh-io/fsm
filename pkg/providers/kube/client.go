@@ -2,14 +2,15 @@
 package kube
 
 import (
-	"fmt"
 	"net"
+	"strings"
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -65,18 +66,21 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					log.Error().Msgf("Error parsing endpoint IP address %s for MeshService %s", address.IP, svc)
 					continue
 				}
-				viaGateway := ""
-				if port.AppProtocol != nil && len(kubernetesEndpoints.Annotations) > 0 {
-					if viaAddr, existAddr := kubernetesEndpoints.Annotations[constants.EgressViaGatewayAnnotation]; existAddr {
-						if viaPort, existPort := kubernetesEndpoints.Annotations[fmt.Sprintf("%s-%s", constants.EgressViaGatewayAnnotation, *port.AppProtocol)]; existPort {
-							viaGateway = fmt.Sprintf("%s:%s", viaAddr, viaPort)
-						}
+				ept := endpoint.Endpoint{
+					IP:   ip,
+					Port: endpoint.Port(port.Port),
+				}
+				if port.AppProtocol != nil {
+					ept.AppProtocol = *port.AppProtocol
+				} else if len(port.Name) > 0 {
+					if strings.Contains(port.Name, constants.ProtocolHTTP) {
+						ept.AppProtocol = constants.ProtocolHTTP
+					} else if strings.Contains(port.Name, constants.ProtocolGRPC) {
+						ept.AppProtocol = constants.ProtocolGRPC
 					}
 				}
-				ept := endpoint.Endpoint{
-					IP:    ip,
-					Port:  endpoint.Port(port.Port),
-					ViaGw: viaGateway,
+				if len(kubernetesEndpoints.Annotations) > 0 {
+					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
 				}
 				endpoints = append(endpoints, ept)
 			}
@@ -234,11 +238,31 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 		return nil
 	}
 
+	var ips []net.IP
+	ips = append(ips, ip)
+
+	sam := c.meshConfigurator.GetServiceAccessMode()
+	if len(sam) == 0 || sam == constants.ServiceAccessModeIP || sam == constants.ServiceAccessModeMixed {
+		if eps, err := c.kubeController.GetEndpoints(svc); err == nil && eps != nil {
+			if len(eps.Subsets) > 0 {
+				for _, ep := range eps.Subsets {
+					if len(ep.Addresses) > 0 {
+						for _, addr := range ep.Addresses {
+							ips = append(ips, net.ParseIP(addr.IP))
+						}
+					}
+				}
+			}
+		}
+	}
+
 	for _, svcPort := range kubeService.Spec.Ports {
-		endpoints = append(endpoints, endpoint.Endpoint{
-			IP:   ip,
-			Port: endpoint.Port(svcPort.Port),
-		})
+		for _, addr := range ips {
+			endpoints = append(endpoints, endpoint.Endpoint{
+				IP:   addr,
+				Port: endpoint.Port(svcPort.Port),
+			})
+		}
 	}
 
 	return endpoints

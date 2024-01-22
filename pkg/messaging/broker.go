@@ -701,6 +701,7 @@ func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 		(newSpec.Traffic.InboundExternalAuthorization.Enable && (prevSpec.Traffic.InboundExternalAuthorization != newSpec.Traffic.InboundExternalAuthorization)) ||
 		prevSpec.FeatureFlags != newSpec.FeatureFlags ||
 		!reflect.DeepEqual(prevSpec.PluginChains, newSpec.PluginChains) ||
+		!reflect.DeepEqual(prevSpec.Connector, newSpec.Connector) ||
 		!reflect.DeepEqual(prevSpec.ClusterSet, newSpec.ClusterSet) {
 		return &proxyUpdateEvent{
 			msg:   msg,
