@@ -33,6 +33,7 @@ type MeshConfigSpecApplyConfiguration struct {
 	EgressGateway *EgressGatewaySpecApplyConfiguration `json:"egressGateway,omitempty"`
 	Image         *ImageSpecApplyConfiguration         `json:"image,omitempty"`
 	Misc          *MiscSpecApplyConfiguration          `json:"misc,omitempty"`
+	Connector     *ConnectorSpecApplyConfiguration     `json:"connector,omitempty"`
 }
 
 // MeshConfigSpecApplyConfiguration constructs an declarative configuration of the MeshConfigSpec type for use with
@@ -158,5 +159,13 @@ func (b *MeshConfigSpecApplyConfiguration) WithImage(value *ImageSpecApplyConfig
 // If called multiple times, the Misc field is set to the value of the last call.
 func (b *MeshConfigSpecApplyConfiguration) WithMisc(value *MiscSpecApplyConfiguration) *MeshConfigSpecApplyConfiguration {
 	b.Misc = value
+	return b
+}
+
+// WithConnector sets the Connector field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Connector field is set to the value of the last call.
+func (b *MeshConfigSpecApplyConfiguration) WithConnector(value *ConnectorSpecApplyConfiguration) *MeshConfigSpecApplyConfiguration {
+	b.Connector = value
 	return b
 }

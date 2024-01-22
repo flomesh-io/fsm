@@ -132,6 +132,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &configv1alpha3.ClusterPropertySpecApplyConfiguration{}
 	case v1alpha3.SchemeGroupVersion.WithKind("ClusterSetSpec"):
 		return &configv1alpha3.ClusterSetSpecApplyConfiguration{}
+	case v1alpha3.SchemeGroupVersion.WithKind("ConnectorGatewaySpec"):
+		return &configv1alpha3.ConnectorGatewaySpecApplyConfiguration{}
+	case v1alpha3.SchemeGroupVersion.WithKind("ConnectorSpec"):
+		return &configv1alpha3.ConnectorSpecApplyConfiguration{}
 	case v1alpha3.SchemeGroupVersion.WithKind("EgressGatewaySpec"):
 		return &configv1alpha3.EgressGatewaySpecApplyConfiguration{}
 	case v1alpha3.SchemeGroupVersion.WithKind("ExternalAuthzSpec"):
