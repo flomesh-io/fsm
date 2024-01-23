@@ -8,8 +8,8 @@ import (
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
@@ -43,7 +43,7 @@ func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPol
 }
 
 // GetRateLimitIfHTTPRouteMatchesPolicy returns the rate limit config if the HTTP route matches the policy
-func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 {
 		return nil
 	}
@@ -73,7 +73,7 @@ func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, 
 }
 
 // GetRateLimitIfPortMatchesPolicy returns true if the port matches the rate limit policy
-func GetRateLimitIfPortMatchesPolicy(port gwv1beta1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
+func GetRateLimitIfPortMatchesPolicy(port gwv1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
 	if len(rateLimitPolicy.Spec.Ports) == 0 {
 		return nil
 	}
@@ -143,7 +143,7 @@ func mergeConfig(config *gwpav1alpha1.L7RateLimit, defaultConfig *gwpav1alpha1.L
 	}
 
 	if len(config.ResponseHeadersToAdd) == 0 && len(defaultConfig.ResponseHeadersToAdd) > 0 {
-		cfgCopy.ResponseHeadersToAdd = make([]gwv1beta1.HTTPHeader, 0)
+		cfgCopy.ResponseHeadersToAdd = make([]gwv1.HTTPHeader, 0)
 		cfgCopy.ResponseHeadersToAdd = append(cfgCopy.ResponseHeadersToAdd, defaultConfig.ResponseHeadersToAdd...)
 	}
 

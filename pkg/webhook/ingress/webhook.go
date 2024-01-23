@@ -89,8 +89,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the ingress webhook handlers
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.IngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient)),
-		constants.IngressValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.IngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient)),
+		constants.IngressValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }
 

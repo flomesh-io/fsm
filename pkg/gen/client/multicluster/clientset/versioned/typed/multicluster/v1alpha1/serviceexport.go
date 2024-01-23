@@ -17,9 +17,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/applyconfiguration/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -44,6 +47,8 @@ type ServiceExportInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ServiceExportList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceExport, err error)
+	Apply(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceExport, err error)
+	ApplyStatus(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceExport, err error)
 	ServiceExportExpansion
 }
 
@@ -185,6 +190,62 @@ func (c *serviceExports) Patch(ctx context.Context, name string, pt types.PatchT
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied serviceExport.
+func (c *serviceExports) Apply(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceExport, err error) {
+	if serviceExport == nil {
+		return nil, fmt.Errorf("serviceExport provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(serviceExport)
+	if err != nil {
+		return nil, err
+	}
+	name := serviceExport.Name
+	if name == nil {
+		return nil, fmt.Errorf("serviceExport.Name must be provided to Apply")
+	}
+	result = &v1alpha1.ServiceExport{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("serviceexports").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *serviceExports) ApplyStatus(ctx context.Context, serviceExport *multiclusterv1alpha1.ServiceExportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceExport, err error) {
+	if serviceExport == nil {
+		return nil, fmt.Errorf("serviceExport provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(serviceExport)
+	if err != nil {
+		return nil, err
+	}
+
+	name := serviceExport.Name
+	if name == nil {
+		return nil, fmt.Errorf("serviceExport.Name must be provided to Apply")
+	}
+
+	result = &v1alpha1.ServiceExport{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("serviceexports").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

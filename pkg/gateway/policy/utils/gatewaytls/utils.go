@@ -3,13 +3,13 @@ package gatewaytls
 import (
 	"k8s.io/utils/pointer"
 
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
 
 // GetGatewayTLSConfigIfPortMatchesPolicy returns true if the port matches the access control policy
-func GetGatewayTLSConfigIfPortMatchesPolicy(port gwv1beta1.PortNumber, gatewayTLSPolicy gwpav1alpha1.GatewayTLSPolicy) *gwpav1alpha1.GatewayTLSConfig {
+func GetGatewayTLSConfigIfPortMatchesPolicy(port gwv1.PortNumber, gatewayTLSPolicy gwpav1alpha1.GatewayTLSPolicy) *gwpav1alpha1.GatewayTLSConfig {
 	if len(gatewayTLSPolicy.Spec.Ports) == 0 {
 		return nil
 	}

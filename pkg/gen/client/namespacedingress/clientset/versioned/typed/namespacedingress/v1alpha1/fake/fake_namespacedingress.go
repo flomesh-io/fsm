@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/applyconfiguration/namespacedingress/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeNamespacedIngresses struct {
 	ns   string
 }
 
-var namespacedingressesResource = schema.GroupVersionResource{Group: "flomesh.io", Version: "v1alpha1", Resource: "namespacedingresses"}
+var namespacedingressesResource = v1alpha1.SchemeGroupVersion.WithResource("namespacedingresses")
 
-var namespacedingressesKind = schema.GroupVersionKind{Group: "flomesh.io", Version: "v1alpha1", Kind: "NamespacedIngress"}
+var namespacedingressesKind = v1alpha1.SchemeGroupVersion.WithKind("NamespacedIngress")
 
 // Get takes name of the namespacedIngress, and returns the corresponding namespacedIngress object, and an error if there is any.
 func (c *FakeNamespacedIngresses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NamespacedIngress, err error) {
@@ -131,6 +133,51 @@ func (c *FakeNamespacedIngresses) DeleteCollection(ctx context.Context, opts v1.
 func (c *FakeNamespacedIngresses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NamespacedIngress, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(namespacedingressesResource, c.ns, name, pt, data, subresources...), &v1alpha1.NamespacedIngress{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.NamespacedIngress), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied namespacedIngress.
+func (c *FakeNamespacedIngresses) Apply(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	if namespacedIngress == nil {
+		return nil, fmt.Errorf("namespacedIngress provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(namespacedIngress)
+	if err != nil {
+		return nil, err
+	}
+	name := namespacedIngress.Name
+	if name == nil {
+		return nil, fmt.Errorf("namespacedIngress.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(namespacedingressesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.NamespacedIngress{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.NamespacedIngress), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeNamespacedIngresses) ApplyStatus(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	if namespacedIngress == nil {
+		return nil, fmt.Errorf("namespacedIngress provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(namespacedIngress)
+	if err != nil {
+		return nil, err
+	}
+	name := namespacedIngress.Name
+	if name == nil {
+		return nil, fmt.Errorf("namespacedIngress.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(namespacedingressesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.NamespacedIngress{})
 
 	if obj == nil {
 		return nil, err

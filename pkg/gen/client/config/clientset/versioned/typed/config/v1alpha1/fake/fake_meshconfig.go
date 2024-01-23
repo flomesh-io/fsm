@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha1"
+	configv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/applyconfiguration/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeMeshConfigs struct {
 	ns   string
 }
 
-var meshconfigsResource = schema.GroupVersionResource{Group: "config.flomesh.io", Version: "v1alpha1", Resource: "meshconfigs"}
+var meshconfigsResource = v1alpha1.SchemeGroupVersion.WithResource("meshconfigs")
 
-var meshconfigsKind = schema.GroupVersionKind{Group: "config.flomesh.io", Version: "v1alpha1", Kind: "MeshConfig"}
+var meshconfigsKind = v1alpha1.SchemeGroupVersion.WithKind("MeshConfig")
 
 // Get takes name of the meshConfig, and returns the corresponding meshConfig object, and an error if there is any.
 func (c *FakeMeshConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.MeshConfig, err error) {
@@ -119,6 +121,28 @@ func (c *FakeMeshConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOp
 func (c *FakeMeshConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MeshConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(meshconfigsResource, c.ns, name, pt, data, subresources...), &v1alpha1.MeshConfig{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.MeshConfig), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied meshConfig.
+func (c *FakeMeshConfigs) Apply(ctx context.Context, meshConfig *configv1alpha1.MeshConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MeshConfig, err error) {
+	if meshConfig == nil {
+		return nil, fmt.Errorf("meshConfig provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(meshConfig)
+	if err != nil {
+		return nil, err
+	}
+	name := meshConfig.Name
+	if name == nil {
+		return nil, fmt.Errorf("meshConfig.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(meshconfigsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.MeshConfig{})
 
 	if obj == nil {
 		return nil, err

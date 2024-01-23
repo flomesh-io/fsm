@@ -55,7 +55,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -1013,7 +1012,7 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(r.isInterestedService)),
 		).
 		Watches(
-			&source.Kind{Type: &corev1.Namespace{}},
+			&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
 			builder.WithPredicates(
 				predicate.Or(
@@ -1026,12 +1025,12 @@ func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	switch r.fctx.Config.GetFLBUpstreamMode() {
 	case configv1alpha3.FLBUpstreamModeNodePort:
 		bd = bd.Watches(
-			&source.Kind{Type: &corev1.Pod{}},
+			&corev1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(r.podToService),
 		)
 	case configv1alpha3.FLBUpstreamModeEndpoint:
 		bd = bd.Watches(
-			&source.Kind{Type: &corev1.Endpoints{}},
+			&corev1.Endpoints{},
 			handler.EnqueueRequestsFromMapFunc(r.endpointsToService),
 		)
 	}
@@ -1049,10 +1048,10 @@ func (r *reconciler) isInterestedService(obj client.Object) bool {
 	return flb.IsFLBEnabled(svc, r.fctx.KubeClient)
 }
 
-func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
+func (r *reconciler) podToService(ctx context.Context, pod client.Object) []reconcile.Request {
 	allServices := &corev1.ServiceList{}
 	if err := r.fctx.List(
-		context.TODO(),
+		ctx,
 		allServices,
 		client.InNamespace(pod.GetNamespace()),
 	); err != nil {
@@ -1095,10 +1094,10 @@ func (r *reconciler) podToService(pod client.Object) []reconcile.Request {
 	return requests
 }
 
-func (r *reconciler) endpointsToService(ep client.Object) []reconcile.Request {
+func (r *reconciler) endpointsToService(ctx context.Context, ep client.Object) []reconcile.Request {
 	svc := &corev1.Service{}
 	if err := r.fctx.Get(
-		context.TODO(),
+		ctx,
 		client.ObjectKeyFromObject(ep),
 		svc,
 	); err != nil {
@@ -1121,10 +1120,10 @@ func (r *reconciler) endpointsToService(ep client.Object) []reconcile.Request {
 	return nil
 }
 
-func (r *reconciler) servicesByNamespace(ns client.Object) []reconcile.Request {
+func (r *reconciler) servicesByNamespace(ctx context.Context, ns client.Object) []reconcile.Request {
 	services, err := r.fctx.KubeClient.CoreV1().
 		Services(ns.GetName()).
-		List(context.TODO(), metav1.ListOptions{})
+		List(ctx, metav1.ListOptions{})
 
 	if err != nil {
 		log.Warn().Msgf("failed to list services in ns %s: %s", ns.GetName(), err)

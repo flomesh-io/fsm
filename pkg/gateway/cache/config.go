@@ -15,7 +15,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	corev1 "k8s.io/api/core/v1"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -137,7 +137,7 @@ func (c *GatewayCache) isDebugEnabled() bool {
 	}
 }
 
-func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []fgw.Listener {
+func (c *GatewayCache) listeners(gw *gwv1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) []fgw.Listener {
 	listeners := make([]fgw.Listener, 0)
 	enrichers := c.getPortPolicyEnrichers(policies)
 
@@ -162,7 +162,7 @@ func (c *GatewayCache) listeners(gw *gwv1beta1.Gateway, validListeners []gwtypes
 	return listeners
 }
 
-func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
+func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1.PortNumber {
 	if l.Port < 1024 {
 		return l.Port + 60000
 	}
@@ -170,16 +170,16 @@ func (c *GatewayCache) listenPort(l gwtypes.Listener) gwv1beta1.PortNumber {
 	return l.Port
 }
 
-func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
+func (c *GatewayCache) tls(gw *gwv1.Gateway, l gwtypes.Listener) *fgw.TLS {
 	switch l.Protocol {
-	case gwv1beta1.HTTPSProtocolType:
+	case gwv1.HTTPSProtocolType:
 		// Terminate
 		if l.TLS != nil {
-			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1beta1.TLSModeTerminate {
+			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
 				return c.tlsTerminateCfg(gw, l)
 			}
 		}
-	case gwv1beta1.TLSProtocolType:
+	case gwv1.TLSProtocolType:
 		// Terminate & Passthrough
 		if l.TLS != nil {
 			if l.TLS.Mode == nil {
@@ -187,9 +187,9 @@ func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
 			}
 
 			switch *l.TLS.Mode {
-			case gwv1beta1.TLSModeTerminate:
+			case gwv1.TLSModeTerminate:
 				return c.tlsTerminateCfg(gw, l)
-			case gwv1beta1.TLSModePassthrough:
+			case gwv1.TLSModePassthrough:
 				return c.tlsPassthroughCfg()
 			}
 		}
@@ -198,22 +198,22 @@ func (c *GatewayCache) tls(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
 	return nil
 }
 
-func (c *GatewayCache) tlsTerminateCfg(gw *gwv1beta1.Gateway, l gwtypes.Listener) *fgw.TLS {
+func (c *GatewayCache) tlsTerminateCfg(gw *gwv1.Gateway, l gwtypes.Listener) *fgw.TLS {
 	return &fgw.TLS{
-		TLSModeType:  gwv1beta1.TLSModeTerminate,
+		TLSModeType:  gwv1.TLSModeTerminate,
 		Certificates: c.certificates(gw, l),
 	}
 }
 
 func (c *GatewayCache) tlsPassthroughCfg() *fgw.TLS {
 	return &fgw.TLS{
-		TLSModeType: gwv1beta1.TLSModePassthrough,
+		TLSModeType: gwv1.TLSModePassthrough,
 		// set to false and protect it from being overwritten by the user
 		MTLS: pointer.Bool(false),
 	}
 }
 
-func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) []fgw.Certificate {
+func (c *GatewayCache) certificates(gw *gwv1.Gateway, l gwtypes.Listener) []fgw.Certificate {
 	certs := make([]fgw.Certificate, 0)
 	for _, ref := range l.TLS.CertificateRefs {
 		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
@@ -244,12 +244,12 @@ func (c *GatewayCache) certificates(gw *gwv1beta1.Gateway, l gwtypes.Listener) [
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]fgw.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]fgw.RouteRule, map[string]serviceInfo) {
 	rules := make(map[int32]fgw.RouteRule)
 	services := make(map[string]serviceInfo)
 
 	for _, httpRoute := range c.getResourcesFromCache(HTTPRoutesResourceType, true) {
-		httpRoute := httpRoute.(*gwv1beta1.HTTPRoute)
+		httpRoute := httpRoute.(*gwv1.HTTPRoute)
 		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 

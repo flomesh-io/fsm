@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-// Package v1alpha1 contains controller logic for the Gateway API v1beta1.
+// Package v1alpha1 contains controller logic for the Policy Attachment v1alpha1.
 package v1alpha1
 
 //var (

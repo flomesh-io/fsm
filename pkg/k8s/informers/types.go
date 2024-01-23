@@ -9,8 +9,8 @@ import (
 	v1 "k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
+	gwv1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
@@ -156,9 +156,9 @@ type Lister struct {
 	Endpoints             v1.EndpointsLister
 	EndpointSlice         discoveryv1.EndpointSliceLister
 	Secret                v1.SecretLister
-	GatewayClass          gwv1beta1.GatewayClassLister
-	Gateway               gwv1beta1.GatewayLister
-	HTTPRoute             gwv1beta1.HTTPRouteLister
+	GatewayClass          gwv1.GatewayClassLister
+	Gateway               gwv1.GatewayLister
+	HTTPRoute             gwv1.HTTPRouteLister
 	GRPCRoute             gwv1alpha2.GRPCRouteLister
 	TLSRoute              gwv1alpha2.TLSRouteLister
 	TCPRoute              gwv1alpha2.TCPRouteLister

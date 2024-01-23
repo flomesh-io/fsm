@@ -13,8 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -42,7 +42,7 @@ func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection
 }
 
 func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) *client {
-	fsmGatewayClass := &gwv1beta1.GatewayClass{
+	fsmGatewayClass := &gwv1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constants.FSMGatewayClassName,
 			Labels: map[string]string{
@@ -52,12 +52,12 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 				constants.AppLabel:               constants.FSMGatewayName,
 			},
 		},
-		Spec: gwv1beta1.GatewayClassSpec{
+		Spec: gwv1.GatewayClassSpec{
 			ControllerName: constants.GatewayController,
 		},
 	}
 
-	if _, err := gatewayAPIClient.GatewayV1beta1().
+	if _, err := gatewayAPIClient.GatewayV1().
 		GatewayClasses().
 		Create(context.TODO(), fsmGatewayClass, metav1.CreateOptions{}); err != nil {
 		log.Warn().Msgf("Failed to create FSM GatewayClass: %s", err)
@@ -176,7 +176,7 @@ func (c *client) onChange(oldObj, newObj interface{}) bool {
 	return del || ins
 }
 
-func (c *client) OnAdd(obj interface{}) {
+func (c *client) OnAdd(obj interface{}, isInitialList bool) {
 	if eventTypes := getEventTypesByObjectType(obj); eventTypes != nil {
 		c.onAddFunc(eventTypes)(obj)
 	}
@@ -204,11 +204,11 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpointSlices)
 	case *corev1.Secret:
 		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
-	case *gwv1beta1.GatewayClass:
+	case *gwv1.GatewayClass:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGatewayClass)
-	case *gwv1beta1.Gateway:
+	case *gwv1.Gateway:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGateway)
-	case *gwv1beta1.HTTPRoute:
+	case *gwv1.HTTPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIHTTPRoute)
 	case *gwv1alpha2.GRPCRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGRPCRoute)

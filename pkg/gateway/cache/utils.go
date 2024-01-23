@@ -18,15 +18,15 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
-func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectKey, ns string) bool {
+func isRefToService(ref gwv1.BackendObjectReference, service client.ObjectKey, ns string) bool {
 	if ref.Group == nil {
 		return false
 	}
@@ -53,7 +53,7 @@ func isRefToService(ref gwv1beta1.BackendObjectReference, service client.ObjectK
 	return false
 }
 
-func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
+func isRefToSecret(ref gwv1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
 	if ref.Group == nil {
 		return false
 	}
@@ -80,7 +80,7 @@ func isRefToSecret(ref gwv1beta1.SecretObjectReference, secret client.ObjectKey,
 }
 
 func allowedListeners(
-	parentRef gwv1beta1.ParentReference,
+	parentRef gwv1.ParentReference,
 	routeGvk schema.GroupVersionKind,
 	validListeners []gwtypes.Listener,
 ) []gwtypes.Listener {
@@ -113,17 +113,17 @@ func allowedListeners(
 	return allowedListeners
 }
 
-func httpPathMatchType(matchType *gwv1beta1.PathMatchType) fgw.MatchType {
+func httpPathMatchType(matchType *gwv1.PathMatchType) fgw.MatchType {
 	if matchType == nil {
 		return fgw.MatchTypePrefix
 	}
 
 	switch *matchType {
-	case gwv1beta1.PathMatchPathPrefix:
+	case gwv1.PathMatchPathPrefix:
 		return fgw.MatchTypePrefix
-	case gwv1beta1.PathMatchExact:
+	case gwv1.PathMatchExact:
 		return fgw.MatchTypeExact
-	case gwv1beta1.PathMatchRegularExpression:
+	case gwv1.PathMatchRegularExpression:
 		return fgw.MatchTypeRegex
 	default:
 		return fgw.MatchTypePrefix
@@ -138,7 +138,7 @@ func httpPath(value *string) string {
 	return *value
 }
 
-func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
+func httpMatchHeaders(m gwv1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -149,9 +149,9 @@ func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]s
 		}
 
 		switch *header.Type {
-		case gwv1beta1.HeaderMatchExact:
+		case gwv1.HeaderMatchExact:
 			exact[string(header.Name)] = header.Value
-		case gwv1beta1.HeaderMatchRegularExpression:
+		case gwv1.HeaderMatchRegularExpression:
 			regex[string(header.Name)] = header.Value
 		}
 	}
@@ -169,7 +169,7 @@ func httpMatchHeaders(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]s
 	return headers
 }
 
-func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
+func httpMatchQueryParams(m gwv1.HTTPRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -180,9 +180,9 @@ func httpMatchQueryParams(m gwv1beta1.HTTPRouteMatch) map[fgw.MatchType]map[stri
 		}
 
 		switch *param.Type {
-		case gwv1beta1.QueryParamMatchExact:
+		case gwv1.QueryParamMatchExact:
 			exact[string(param.Name)] = param.Value
-		case gwv1beta1.QueryParamMatchRegularExpression:
+		case gwv1.QueryParamMatchRegularExpression:
 			regex[string(param.Name)] = param.Value
 		}
 	}
@@ -225,9 +225,9 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[fgw.MatchType]map[string]
 		}
 
 		switch *header.Type {
-		case gwv1beta1.HeaderMatchExact:
+		case gwv1.HeaderMatchExact:
 			exact[string(header.Name)] = header.Value
-		case gwv1beta1.HeaderMatchRegularExpression:
+		case gwv1.HeaderMatchRegularExpression:
 			regex[string(header.Name)] = header.Value
 		}
 	}
@@ -245,7 +245,7 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[fgw.MatchType]map[string]
 	return headers
 }
 
-func backendRefToServicePortName(ref gwv1beta1.BackendObjectReference, defaultNs string) *fgw.ServicePortName {
+func backendRefToServicePortName(ref gwv1.BackendObjectReference, defaultNs string) *fgw.ServicePortName {
 	// ONLY supports Service and ServiceImport backend now
 	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
 		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
@@ -277,7 +277,7 @@ func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs 
 	return nil
 }
 
-func passthroughTarget(ref gwv1beta1.BackendRef) *string {
+func passthroughTarget(ref gwv1.BackendRef) *string {
 	// ONLY supports service backend now
 	if *ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup {
 		port := int32(443)
@@ -293,7 +293,7 @@ func passthroughTarget(ref gwv1beta1.BackendRef) *string {
 	return nil
 }
 
-func backendWeight(bk gwv1beta1.BackendRef) int32 {
+func backendWeight(bk gwv1.BackendRef) int32 {
 	if bk.Weight != nil {
 		return *bk.Weight
 	}
@@ -536,7 +536,7 @@ func getDefaultPort(svcPort corev1.ServicePort) int32 {
 	return svcPort.Port
 }
 
-func toFSMHTTPRouteFilter(filter gwv1beta1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
+func toFSMHTTPRouteFilter(filter gwv1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
 	result := fgw.HTTPRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -631,7 +631,7 @@ func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, s
 	return result
 }
 
-func toFSMHTTPPathModifier(path *gwv1beta1.HTTPPathModifier) *fgw.HTTPPathModifier {
+func toFSMHTTPPathModifier(path *gwv1.HTTPPathModifier) *fgw.HTTPPathModifier {
 	if path == nil {
 		return nil
 	}
@@ -643,7 +643,7 @@ func toFSMHTTPPathModifier(path *gwv1beta1.HTTPPathModifier) *fgw.HTTPPathModifi
 	}
 }
 
-func toFSMHostname(hostname *gwv1beta1.PreciseHostname) *string {
+func toFSMHostname(hostname *gwv1.PreciseHostname) *string {
 	if hostname == nil {
 		return nil
 	}
@@ -651,7 +651,7 @@ func toFSMHostname(hostname *gwv1beta1.PreciseHostname) *string {
 	return pointer.String(string(*hostname))
 }
 
-func toFSMHTTPHeaders(headers []gwv1beta1.HTTPHeader) []fgw.HTTPHeader {
+func toFSMHTTPHeaders(headers []gwv1.HTTPHeader) []fgw.HTTPHeader {
 	if len(headers) == 0 {
 		return nil
 	}
@@ -667,7 +667,7 @@ func toFSMHTTPHeaders(headers []gwv1beta1.HTTPHeader) []fgw.HTTPHeader {
 	return results
 }
 
-func toFSMPortNumber(port *gwv1beta1.PortNumber) *int32 {
+func toFSMPortNumber(port *gwv1.PortNumber) *int32 {
 	if port == nil {
 		return nil
 	}

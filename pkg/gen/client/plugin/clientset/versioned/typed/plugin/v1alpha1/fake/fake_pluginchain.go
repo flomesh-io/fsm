@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
+	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/applyconfiguration/plugin/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakePluginChains struct {
 	ns   string
 }
 
-var pluginchainsResource = schema.GroupVersionResource{Group: "plugin.flomesh.io", Version: "v1alpha1", Resource: "pluginchains"}
+var pluginchainsResource = v1alpha1.SchemeGroupVersion.WithResource("pluginchains")
 
-var pluginchainsKind = schema.GroupVersionKind{Group: "plugin.flomesh.io", Version: "v1alpha1", Kind: "PluginChain"}
+var pluginchainsKind = v1alpha1.SchemeGroupVersion.WithKind("PluginChain")
 
 // Get takes name of the pluginChain, and returns the corresponding pluginChain object, and an error if there is any.
 func (c *FakePluginChains) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginChain, err error) {
@@ -131,6 +133,51 @@ func (c *FakePluginChains) DeleteCollection(ctx context.Context, opts v1.DeleteO
 func (c *FakePluginChains) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PluginChain, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(pluginchainsResource, c.ns, name, pt, data, subresources...), &v1alpha1.PluginChain{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.PluginChain), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied pluginChain.
+func (c *FakePluginChains) Apply(ctx context.Context, pluginChain *pluginv1alpha1.PluginChainApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PluginChain, err error) {
+	if pluginChain == nil {
+		return nil, fmt.Errorf("pluginChain provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(pluginChain)
+	if err != nil {
+		return nil, err
+	}
+	name := pluginChain.Name
+	if name == nil {
+		return nil, fmt.Errorf("pluginChain.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(pluginchainsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.PluginChain{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.PluginChain), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakePluginChains) ApplyStatus(ctx context.Context, pluginChain *pluginv1alpha1.PluginChainApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PluginChain, err error) {
+	if pluginChain == nil {
+		return nil, fmt.Errorf("pluginChain provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(pluginChain)
+	if err != nil {
+		return nil, err
+	}
+	name := pluginChain.Name
+	if name == nil {
+		return nil, fmt.Errorf("pluginChain.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(pluginchainsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.PluginChain{})
 
 	if obj == nil {
 		return nil, err

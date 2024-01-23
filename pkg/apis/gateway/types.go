@@ -25,15 +25,15 @@
 // Package gateway contains the GatewayAPI types
 package gateway
 
-import gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+import gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 const (
 	// GatewayClassConditionStatusActive is the status condition for active GatewayClass
-	GatewayClassConditionStatusActive gwv1beta1.GatewayClassConditionType = "Active"
+	GatewayClassConditionStatusActive gwv1.GatewayClassConditionType = "Active"
 
 	// GatewayClassReasonActive is the reason for active GatewayClass
-	GatewayClassReasonActive gwv1beta1.GatewayClassConditionReason = "Active"
+	GatewayClassReasonActive gwv1.GatewayClassConditionReason = "Active"
 
 	// GatewayClassReasonInactive is the reason for inactive GatewayClass
-	GatewayClassReasonInactive gwv1beta1.GatewayClassConditionReason = "Inactive"
+	GatewayClassReasonInactive gwv1.GatewayClassConditionReason = "Inactive"
 )

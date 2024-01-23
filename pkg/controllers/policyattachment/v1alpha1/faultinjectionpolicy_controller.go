@@ -44,7 +44,7 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/types"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -94,7 +94,7 @@ func NewFaultInjectionPolicyReconciler(ctx *fctx.ControllerContext) controllers.
 		FindConflictedGRPCRouteBasedPolicy: r.getConflictedGRPCRouteBasedRFaultInjectionPolicy,
 		GroupKindObjectMapping: map[string]map[string]client.Object{
 			constants.GatewayAPIGroup: {
-				constants.GatewayAPIHTTPRouteKind: &gwv1beta1.HTTPRoute{},
+				constants.GatewayAPIHTTPRouteKind: &gwv1.HTTPRoute{},
 				constants.GatewayAPIGRPCRouteKind: &gwv1alpha2.GRPCRoute{},
 			},
 		},
@@ -129,7 +129,7 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -176,10 +176,10 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 	}
 
 	for _, parent := range route.Parents {
-		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
+		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1.RouteConditionAccepted)) {
 			key := getRouteParentKey(route.Meta, parent)
 
-			gateway := &gwv1beta1.Gateway{}
+			gateway := &gwv1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
@@ -224,7 +224,7 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 	return nil
 }
 
-func (r *faultInjectionPolicyReconciler) getConflictedHTTPRouteBasedFaultInjectionPolicy(route *gwv1beta1.HTTPRoute, faultInjectionPolicy client.Object, routeFaultInjections []client.Object) *types.NamespacedName {
+func (r *faultInjectionPolicyReconciler) getConflictedHTTPRouteBasedFaultInjectionPolicy(route *gwv1.HTTPRoute, faultInjectionPolicy client.Object, routeFaultInjections []client.Object) *types.NamespacedName {
 	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
 
 	if len(currentPolicy.Spec.HTTPFaultInjections) == 0 {

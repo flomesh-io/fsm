@@ -8,8 +8,8 @@ import (
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
@@ -43,7 +43,7 @@ func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, f
 }
 
 // GetFaultInjectionConfigIfHTTPRouteMatchesPolicy returns the fault injection config if the HTTP route matches the policy
-func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
 	if len(faultInjectionPolicy.Spec.HTTPFaultInjections) == 0 {
 		return nil
 	}

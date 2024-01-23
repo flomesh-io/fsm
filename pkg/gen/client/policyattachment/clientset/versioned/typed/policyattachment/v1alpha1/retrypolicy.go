@@ -17,9 +17,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -44,6 +47,8 @@ type RetryPolicyInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RetryPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RetryPolicy, err error)
+	Apply(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error)
+	ApplyStatus(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error)
 	RetryPolicyExpansion
 }
 
@@ -185,6 +190,62 @@ func (c *retryPolicies) Patch(ctx context.Context, name string, pt types.PatchTy
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied retryPolicy.
+func (c *retryPolicies) Apply(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error) {
+	if retryPolicy == nil {
+		return nil, fmt.Errorf("retryPolicy provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(retryPolicy)
+	if err != nil {
+		return nil, err
+	}
+	name := retryPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("retryPolicy.Name must be provided to Apply")
+	}
+	result = &v1alpha1.RetryPolicy{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("retrypolicies").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *retryPolicies) ApplyStatus(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error) {
+	if retryPolicy == nil {
+		return nil, fmt.Errorf("retryPolicy provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(retryPolicy)
+	if err != nil {
+		return nil, err
+	}
+
+	name := retryPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("retryPolicy.Name must be provided to Apply")
+	}
+
+	result = &v1alpha1.RetryPolicy{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("retrypolicies").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

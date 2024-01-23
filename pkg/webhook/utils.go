@@ -32,11 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	netutils "k8s.io/utils/net"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // ValidateParentRefs validates the parent refs of gateway route resource
-func ValidateParentRefs(refs []gwv1beta1.ParentReference) field.ErrorList {
+func ValidateParentRefs(refs []gwv1.ParentReference) field.ErrorList {
 	var errs field.ErrorList
 	for i, ref := range refs {
 		if ref.Port == nil {
@@ -68,7 +68,7 @@ func IsValidHostname(hostname string) error {
 }
 
 // ValidateRouteHostnames validates the hostnames of gateway route resource
-func ValidateRouteHostnames(hostnames []gwv1beta1.Hostname) field.ErrorList {
+func ValidateRouteHostnames(hostnames []gwv1.Hostname) field.ErrorList {
 	var errs field.ErrorList
 
 	for i, hostname := range hostnames {
@@ -105,7 +105,7 @@ func IsValidIPOrCIDR(value string) []string {
 	return []string{"must be a valid IP address or CIDR, (e.g. 10.9.8.7 or 2001:db8::ffff or 192.0.2.0/24 or 2001:db8::/32)"}
 }
 
-func GetListenerIfHasMatchingPort(port gwv1beta1.PortNumber, listeners []gwv1beta1.Listener) *gwv1beta1.Listener {
+func GetListenerIfHasMatchingPort(port gwv1.PortNumber, listeners []gwv1.Listener) *gwv1.Listener {
 	if len(listeners) == 0 {
 		return nil
 	}

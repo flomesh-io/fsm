@@ -1,7 +1,7 @@
 package cache
 
 import (
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
@@ -11,7 +11,7 @@ type GatewaysTrigger struct{}
 
 // Insert adds the Gateway object to the cache and returns true if the cache was modified
 func (p *GatewaysTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
-	gw, ok := obj.(*gwv1beta1.Gateway)
+	gw, ok := obj.(*gwv1.Gateway)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
@@ -33,7 +33,7 @@ func (p *GatewaysTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	//	return false
 	//}
 	//
-	//gw = obj.(*gwv1beta1.Gateway)
+	//gw = obj.(*gwv1.Gateway)
 	//if utils.IsActiveGateway(gw) {
 	//	p.mu.Lock()
 	//	defer p.mu.Unlock()
@@ -49,7 +49,7 @@ func (p *GatewaysTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 
 // Delete removes the Gateway object from the cache and returns true if the cache was modified
 func (p *GatewaysTrigger) Delete(_ interface{}, _ *GatewayCache) bool {
-	//gw, ok := obj.(*gwv1beta1.Gateway)
+	//gw, ok := obj.(*gwv1.Gateway)
 	//if !ok {
 	//	log.Error().Msgf("unexpected object type %T", obj)
 	//	return false

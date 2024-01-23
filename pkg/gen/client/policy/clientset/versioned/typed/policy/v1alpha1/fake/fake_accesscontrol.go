@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeAccessControls struct {
 	ns   string
 }
 
-var accesscontrolsResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "accesscontrols"}
+var accesscontrolsResource = v1alpha1.SchemeGroupVersion.WithResource("accesscontrols")
 
-var accesscontrolsKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "AccessControl"}
+var accesscontrolsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessControl")
 
 // Get takes name of the accessControl, and returns the corresponding accessControl object, and an error if there is any.
 func (c *FakeAccessControls) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessControl, err error) {
@@ -131,6 +133,51 @@ func (c *FakeAccessControls) DeleteCollection(ctx context.Context, opts v1.Delet
 func (c *FakeAccessControls) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessControl, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(accesscontrolsResource, c.ns, name, pt, data, subresources...), &v1alpha1.AccessControl{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.AccessControl), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied accessControl.
+func (c *FakeAccessControls) Apply(ctx context.Context, accessControl *policyv1alpha1.AccessControlApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessControl, err error) {
+	if accessControl == nil {
+		return nil, fmt.Errorf("accessControl provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(accessControl)
+	if err != nil {
+		return nil, err
+	}
+	name := accessControl.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessControl.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(accesscontrolsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.AccessControl{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.AccessControl), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeAccessControls) ApplyStatus(ctx context.Context, accessControl *policyv1alpha1.AccessControlApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessControl, err error) {
+	if accessControl == nil {
+		return nil, fmt.Errorf("accessControl provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(accessControl)
+	if err != nil {
+		return nil, err
+	}
+	name := accessControl.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessControl.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(accesscontrolsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.AccessControl{})
 
 	if obj == nil {
 		return nil, err

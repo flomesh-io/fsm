@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeAccessCerts struct {
 	ns   string
 }
 
-var accesscertsResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "accesscerts"}
+var accesscertsResource = v1alpha1.SchemeGroupVersion.WithResource("accesscerts")
 
-var accesscertsKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "AccessCert"}
+var accesscertsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessCert")
 
 // Get takes name of the accessCert, and returns the corresponding accessCert object, and an error if there is any.
 func (c *FakeAccessCerts) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessCert, err error) {
@@ -131,6 +133,51 @@ func (c *FakeAccessCerts) DeleteCollection(ctx context.Context, opts v1.DeleteOp
 func (c *FakeAccessCerts) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessCert, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(accesscertsResource, c.ns, name, pt, data, subresources...), &v1alpha1.AccessCert{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.AccessCert), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied accessCert.
+func (c *FakeAccessCerts) Apply(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error) {
+	if accessCert == nil {
+		return nil, fmt.Errorf("accessCert provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(accessCert)
+	if err != nil {
+		return nil, err
+	}
+	name := accessCert.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessCert.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(accesscertsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.AccessCert{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.AccessCert), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeAccessCerts) ApplyStatus(ctx context.Context, accessCert *policyv1alpha1.AccessCertApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.AccessCert, err error) {
+	if accessCert == nil {
+		return nil, fmt.Errorf("accessCert provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(accessCert)
+	if err != nil {
+		return nil, err
+	}
+	name := accessCert.Name
+	if name == nil {
+		return nil, fmt.Errorf("accessCert.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(accesscertsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.AccessCert{})
 
 	if obj == nil {
 		return nil, err

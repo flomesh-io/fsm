@@ -88,7 +88,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(udpRoute)
+	r.fctx.EventHandler.OnAdd(udpRoute, false)
 
 	return ctrl.Result{}, nil
 }

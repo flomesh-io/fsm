@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 type LoadBalancerType string
@@ -36,7 +36,7 @@ type LoadBalancerPolicySpec struct {
 // PortLoadBalancer defines the load balancer configuration for a port
 type PortLoadBalancer struct {
 	// Port is the port number for matching the load balancer
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// +kubebuilder:default=RoundRobinLoadBalancer

@@ -2,8 +2,8 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // AccessControlPolicySpec defines the desired state of AccessControlPolicy
@@ -43,7 +43,7 @@ type AccessControlPolicySpec struct {
 // PortAccessControl defines the access control configuration for a port
 type PortAccessControl struct {
 	// Port is the port number for matching the access control
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the access control configuration for the port
@@ -53,7 +53,7 @@ type PortAccessControl struct {
 // HostnameAccessControl defines the access control configuration for a hostname
 type HostnameAccessControl struct {
 	// Hostname is the hostname for matching the access control
-	Hostname gwv1beta1.Hostname `json:"hostname"`
+	Hostname gwv1.Hostname `json:"hostname"`
 
 	// +optional
 	// Config is the access control configuration for the hostname
@@ -63,7 +63,7 @@ type HostnameAccessControl struct {
 // HTTPAccessControl defines the access control configuration for a HTTP route
 type HTTPAccessControl struct {
 	// Match is the match condition for the HTTP route
-	Match gwv1beta1.HTTPRouteMatch `json:"match"`
+	Match gwv1.HTTPRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the HTTP route

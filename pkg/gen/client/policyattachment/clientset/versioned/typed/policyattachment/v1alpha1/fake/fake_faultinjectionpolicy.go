@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeFaultInjectionPolicies struct {
 	ns   string
 }
 
-var faultinjectionpoliciesResource = schema.GroupVersionResource{Group: "gateway.flomesh.io", Version: "v1alpha1", Resource: "faultinjectionpolicies"}
+var faultinjectionpoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("faultinjectionpolicies")
 
-var faultinjectionpoliciesKind = schema.GroupVersionKind{Group: "gateway.flomesh.io", Version: "v1alpha1", Kind: "FaultInjectionPolicy"}
+var faultinjectionpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("FaultInjectionPolicy")
 
 // Get takes name of the faultInjectionPolicy, and returns the corresponding faultInjectionPolicy object, and an error if there is any.
 func (c *FakeFaultInjectionPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FaultInjectionPolicy, err error) {
@@ -131,6 +133,51 @@ func (c *FakeFaultInjectionPolicies) DeleteCollection(ctx context.Context, opts 
 func (c *FakeFaultInjectionPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FaultInjectionPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(faultinjectionpoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.FaultInjectionPolicy{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.FaultInjectionPolicy), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied faultInjectionPolicy.
+func (c *FakeFaultInjectionPolicies) Apply(ctx context.Context, faultInjectionPolicy *policyattachmentv1alpha1.FaultInjectionPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.FaultInjectionPolicy, err error) {
+	if faultInjectionPolicy == nil {
+		return nil, fmt.Errorf("faultInjectionPolicy provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(faultInjectionPolicy)
+	if err != nil {
+		return nil, err
+	}
+	name := faultInjectionPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("faultInjectionPolicy.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(faultinjectionpoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.FaultInjectionPolicy{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.FaultInjectionPolicy), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeFaultInjectionPolicies) ApplyStatus(ctx context.Context, faultInjectionPolicy *policyattachmentv1alpha1.FaultInjectionPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.FaultInjectionPolicy, err error) {
+	if faultInjectionPolicy == nil {
+		return nil, fmt.Errorf("faultInjectionPolicy provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(faultInjectionPolicy)
+	if err != nil {
+		return nil, err
+	}
+	name := faultInjectionPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("faultInjectionPolicy.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(faultinjectionpoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.FaultInjectionPolicy{})
 
 	if obj == nil {
 		return nil, err

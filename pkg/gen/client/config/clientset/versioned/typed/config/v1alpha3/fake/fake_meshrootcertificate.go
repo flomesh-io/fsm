@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/gen/client/config/applyconfiguration/config/v1alpha3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeMeshRootCertificates struct {
 	ns   string
 }
 
-var meshrootcertificatesResource = schema.GroupVersionResource{Group: "config.flomesh.io", Version: "v1alpha3", Resource: "meshrootcertificates"}
+var meshrootcertificatesResource = v1alpha3.SchemeGroupVersion.WithResource("meshrootcertificates")
 
-var meshrootcertificatesKind = schema.GroupVersionKind{Group: "config.flomesh.io", Version: "v1alpha3", Kind: "MeshRootCertificate"}
+var meshrootcertificatesKind = v1alpha3.SchemeGroupVersion.WithKind("MeshRootCertificate")
 
 // Get takes name of the meshRootCertificate, and returns the corresponding meshRootCertificate object, and an error if there is any.
 func (c *FakeMeshRootCertificates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha3.MeshRootCertificate, err error) {
@@ -131,6 +133,51 @@ func (c *FakeMeshRootCertificates) DeleteCollection(ctx context.Context, opts v1
 func (c *FakeMeshRootCertificates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha3.MeshRootCertificate, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(meshrootcertificatesResource, c.ns, name, pt, data, subresources...), &v1alpha3.MeshRootCertificate{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha3.MeshRootCertificate), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied meshRootCertificate.
+func (c *FakeMeshRootCertificates) Apply(ctx context.Context, meshRootCertificate *configv1alpha3.MeshRootCertificateApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha3.MeshRootCertificate, err error) {
+	if meshRootCertificate == nil {
+		return nil, fmt.Errorf("meshRootCertificate provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(meshRootCertificate)
+	if err != nil {
+		return nil, err
+	}
+	name := meshRootCertificate.Name
+	if name == nil {
+		return nil, fmt.Errorf("meshRootCertificate.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(meshrootcertificatesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha3.MeshRootCertificate{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha3.MeshRootCertificate), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeMeshRootCertificates) ApplyStatus(ctx context.Context, meshRootCertificate *configv1alpha3.MeshRootCertificateApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha3.MeshRootCertificate, err error) {
+	if meshRootCertificate == nil {
+		return nil, fmt.Errorf("meshRootCertificate provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(meshRootCertificate)
+	if err != nil {
+		return nil, err
+	}
+	name := meshRootCertificate.Name
+	if name == nil {
+		return nil, fmt.Errorf("meshRootCertificate.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(meshrootcertificatesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha3.MeshRootCertificate{})
 
 	if obj == nil {
 		return nil, err

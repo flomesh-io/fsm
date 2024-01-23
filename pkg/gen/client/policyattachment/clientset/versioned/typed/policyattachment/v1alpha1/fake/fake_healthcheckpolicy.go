@@ -17,11 +17,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +35,9 @@ type FakeHealthCheckPolicies struct {
 	ns   string
 }
 
-var healthcheckpoliciesResource = schema.GroupVersionResource{Group: "gateway.flomesh.io", Version: "v1alpha1", Resource: "healthcheckpolicies"}
+var healthcheckpoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("healthcheckpolicies")
 
-var healthcheckpoliciesKind = schema.GroupVersionKind{Group: "gateway.flomesh.io", Version: "v1alpha1", Kind: "HealthCheckPolicy"}
+var healthcheckpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("HealthCheckPolicy")
 
 // Get takes name of the healthCheckPolicy, and returns the corresponding healthCheckPolicy object, and an error if there is any.
 func (c *FakeHealthCheckPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.HealthCheckPolicy, err error) {
@@ -131,6 +133,51 @@ func (c *FakeHealthCheckPolicies) DeleteCollection(ctx context.Context, opts v1.
 func (c *FakeHealthCheckPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HealthCheckPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(healthcheckpoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.HealthCheckPolicy{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.HealthCheckPolicy), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied healthCheckPolicy.
+func (c *FakeHealthCheckPolicies) Apply(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error) {
+	if healthCheckPolicy == nil {
+		return nil, fmt.Errorf("healthCheckPolicy provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(healthCheckPolicy)
+	if err != nil {
+		return nil, err
+	}
+	name := healthCheckPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("healthCheckPolicy.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(healthcheckpoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.HealthCheckPolicy{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.HealthCheckPolicy), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeHealthCheckPolicies) ApplyStatus(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error) {
+	if healthCheckPolicy == nil {
+		return nil, fmt.Errorf("healthCheckPolicy provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(healthCheckPolicy)
+	if err != nil {
+		return nil, err
+	}
+	name := healthCheckPolicy.Name
+	if name == nil {
+		return nil, fmt.Errorf("healthCheckPolicy.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(healthcheckpoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.HealthCheckPolicy{})
 
 	if obj == nil {
 		return nil, err

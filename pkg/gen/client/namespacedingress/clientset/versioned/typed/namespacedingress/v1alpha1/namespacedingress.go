@@ -17,9 +17,12 @@ package v1alpha1
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
+	namespacedingressv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/applyconfiguration/namespacedingress/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -44,6 +47,8 @@ type NamespacedIngressInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.NamespacedIngressList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NamespacedIngress, err error)
+	Apply(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error)
+	ApplyStatus(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error)
 	NamespacedIngressExpansion
 }
 
@@ -185,6 +190,62 @@ func (c *namespacedIngresses) Patch(ctx context.Context, name string, pt types.P
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied namespacedIngress.
+func (c *namespacedIngresses) Apply(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	if namespacedIngress == nil {
+		return nil, fmt.Errorf("namespacedIngress provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(namespacedIngress)
+	if err != nil {
+		return nil, err
+	}
+	name := namespacedIngress.Name
+	if name == nil {
+		return nil, fmt.Errorf("namespacedIngress.Name must be provided to Apply")
+	}
+	result = &v1alpha1.NamespacedIngress{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("namespacedingresses").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *namespacedIngresses) ApplyStatus(ctx context.Context, namespacedIngress *namespacedingressv1alpha1.NamespacedIngressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	if namespacedIngress == nil {
+		return nil, fmt.Errorf("namespacedIngress provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(namespacedIngress)
+	if err != nil {
+		return nil, err
+	}
+
+	name := namespacedIngress.Name
+	if name == nil {
+		return nil, fmt.Errorf("namespacedIngress.Name must be provided to Apply")
+	}
+
+	result = &v1alpha1.NamespacedIngress{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("namespacedingresses").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

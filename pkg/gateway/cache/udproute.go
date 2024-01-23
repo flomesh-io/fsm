@@ -1,15 +1,15 @@
 package cache
 
 import (
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processUDPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, udpRoute *gwv1alpha2.UDPRoute, rules map[int32]fgw.RouteRule) {
+func processUDPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, udpRoute *gwv1alpha2.UDPRoute, rules map[int32]fgw.RouteRule) {
 	for _, ref := range udpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
@@ -22,7 +22,7 @@ func processUDPRoute(gw *gwv1beta1.Gateway, validListeners []gwtypes.Listener, u
 
 		for _, listener := range allowedListeners {
 			switch listener.Protocol {
-			case gwv1beta1.UDPProtocolType:
+			case gwv1.UDPProtocolType:
 				rules[int32(listener.Port)] = generateUDPRouteCfg(udpRoute)
 			}
 		}

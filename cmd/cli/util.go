@@ -546,13 +546,13 @@ func deleteNamespacedIngressResources(ctx context.Context, nsigClient nsigClient
 func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClientset.Interface) error {
 	// delete gateways
 	debug("Deleting gateways ...")
-	gatewayList, err := gatewayAPIClient.GatewayV1beta1().Gateways(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	gatewayList, err := gatewayAPIClient.GatewayV1().Gateways(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
 	for _, gateway := range gatewayList.Items {
-		if err := gatewayAPIClient.GatewayV1beta1().Gateways(gateway.GetNamespace()).Delete(ctx, gateway.GetName(), metav1.DeleteOptions{}); err != nil {
+		if err := gatewayAPIClient.GatewayV1().Gateways(gateway.GetNamespace()).Delete(ctx, gateway.GetName(), metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}
@@ -561,13 +561,13 @@ func deleteGatewayResources(ctx context.Context, gatewayAPIClient gatewayApiClie
 
 	// delete gatewayclasses
 	debug("Deleting gatewayclasses ...")
-	gatewayClassList, err := gatewayAPIClient.GatewayV1beta1().GatewayClasses().List(ctx, metav1.ListOptions{})
+	gatewayClassList, err := gatewayAPIClient.GatewayV1().GatewayClasses().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
 	for _, gatewayClass := range gatewayClassList.Items {
-		if err := gatewayAPIClient.GatewayV1beta1().GatewayClasses().Delete(ctx, gatewayClass.GetName(), metav1.DeleteOptions{}); err != nil {
+		if err := gatewayAPIClient.GatewayV1().GatewayClasses().Delete(ctx, gatewayClass.GetName(), metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}

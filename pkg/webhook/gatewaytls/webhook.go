@@ -7,7 +7,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -84,8 +84,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for GatewayTLSPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GatewayTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.GatewayTLSPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.gatewayAPIClient)),
+		constants.GatewayTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
+		constants.GatewayTLSPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.gatewayAPIClient)),
 	}
 }
 
@@ -215,7 +215,7 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 				gwNs = string(*policy.Spec.TargetRef.Namespace)
 			}
 
-			gateway, err := w.gatewayAPIClient.GatewayV1beta1().Gateways(gwNs).Get(context.TODO(), gwName, metav1.GetOptions{})
+			gateway, err := w.gatewayAPIClient.GatewayV1().Gateways(gwNs).Get(context.TODO(), gwName, metav1.GetOptions{})
 			if err != nil {
 				path := field.NewPath("spec").Child("targetRef")
 				if errors.IsNotFound(err) {
@@ -235,7 +235,7 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 					continue
 				}
 
-				if listener.Protocol != gwv1beta1.HTTPSProtocolType && listener.Protocol != gwv1beta1.TLSProtocolType {
+				if listener.Protocol != gwv1.HTTPSProtocolType && listener.Protocol != gwv1.TLSProtocolType {
 					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
 					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("Protocol of port %d is %s, it must be HTTPS or TLS in Gateway %s/%s", p.Port, listener.Protocol, gwNs, gwName)))
 					continue
@@ -254,18 +254,18 @@ func (w *validator) validateConfig(policy *gwpav1alpha1.GatewayTLSPolicy) field.
 	return errs
 }
 
-func (w *validator) validateCert(path *field.Path, config *gwpav1alpha1.GatewayTLSConfig, listener *gwv1beta1.Listener, gwNamespace string) field.ErrorList {
+func (w *validator) validateCert(path *field.Path, config *gwpav1alpha1.GatewayTLSConfig, listener *gwv1.Listener, gwNamespace string) field.ErrorList {
 	var errs field.ErrorList
 
 	if config.MTLS != nil && *config.MTLS {
 		switch listener.Protocol {
-		case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+		case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
 			if listener.TLS == nil {
 				errs = append(errs, field.Invalid(path, config, fmt.Sprintf("mTLS is not supported for listener port %d, as there's no TLS configuration, please check gateway spec.", listener.Port)))
 				return errs
 			}
 
-			if listener.TLS.Mode != nil && *listener.TLS.Mode != gwv1beta1.TLSModeTerminate {
+			if listener.TLS.Mode != nil && *listener.TLS.Mode != gwv1.TLSModeTerminate {
 				errs = append(errs, field.Invalid(path, config, fmt.Sprintf("mTLS is not supported for listener port %d, as TLS mode is %s, please check gateway spec.", listener.Port, *listener.TLS.Mode)))
 				return errs
 			}
@@ -309,7 +309,7 @@ func validateSpec(policy *gwpav1alpha1.GatewayTLSPolicy) field.ErrorList {
 	return errs
 }
 
-func (w *validator) validateSecrets(path *field.Path, ref gwv1beta1.SecretObjectReference, listener *gwv1beta1.Listener, gwNamespace string) field.ErrorList {
+func (w *validator) validateSecrets(path *field.Path, ref gwv1.SecretObjectReference, listener *gwv1.Listener, gwNamespace string) field.ErrorList {
 	var errs field.ErrorList
 
 	if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {

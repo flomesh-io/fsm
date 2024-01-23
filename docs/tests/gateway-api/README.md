@@ -115,7 +115,7 @@ kubectl -n grpcbin create secret tls grpc-cert --key grpc.key --cert grpc.crt
 #### Deploy Gateway
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: test-gw-1
@@ -213,7 +213,7 @@ EOF
 #### Create a HTTPRoute
 ```shell
 kubectl -n httpbin apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: http-app-1
@@ -540,7 +540,7 @@ echo -n "Text to send to UDP" | nc -4u -w1 localhost 4000
 #### Create a HTTPRoute and attach to HTTPS port
 ```shell
 kubectl -n httpbin apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: https-app-1

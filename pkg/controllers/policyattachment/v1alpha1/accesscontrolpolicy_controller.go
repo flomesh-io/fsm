@@ -44,7 +44,7 @@ import (
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/types"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -124,7 +124,7 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy)
+	r.fctx.EventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -175,10 +175,10 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 	}
 
 	for _, parent := range route.Parents {
-		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1beta1.RouteConditionAccepted)) {
+		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1.RouteConditionAccepted)) {
 			key := getRouteParentKey(route.Meta, parent)
 
-			gateway := &gwv1beta1.Gateway{}
+			gateway := &gwv1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
@@ -223,7 +223,7 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 	return nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedHTTPRouteBasedAccessControlPolicy(route *gwv1beta1.HTTPRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
+func (r *accessControlPolicyReconciler) getConflictedHTTPRouteBasedAccessControlPolicy(route *gwv1.HTTPRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
 	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
 
 	if len(currentPolicy.Spec.HTTPAccessControls) == 0 {
@@ -305,7 +305,7 @@ func (r *accessControlPolicyReconciler) getConflictedGRPCRouteBasedAccessControl
 	return nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1beta1.Gateway, accessControlPolicy client.Object, allAccessControls []client.Object) *types.NamespacedName {
+func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, accessControlPolicy client.Object, allAccessControls []client.Object) *types.NamespacedName {
 	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
 
 	if len(currentPolicy.Spec.Ports) == 0 {
