@@ -1,6 +1,7 @@
 package ktog
 
 import (
+	"fmt"
 	"strings"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -360,7 +361,11 @@ func (gw *GatewayResource) deleteGatewayRoute(name, namespace string) {
 
 func (gw *GatewayResource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1.Hostname {
 	svc := gw.Service
-	hostnames := []gwv1.Hostname{gwv1.Hostname(k8sSvc.Name)}
+	hostnames := []gwv1.Hostname{
+		gwv1.Hostname(k8sSvc.Name),
+		gwv1.Hostname(fmt.Sprintf("%s.%s", k8sSvc.Name, k8sSvc.Namespace)),
+		gwv1.Hostname(fmt.Sprintf("%s.%s.svc", k8sSvc.Name, k8sSvc.Namespace)),
+	}
 	endpointsClient := svc.Client.CoreV1().Endpoints(k8sSvc.Namespace)
 	if endpoints, err := endpointsClient.Get(svc.Ctx, k8sSvc.Name, metav1.GetOptions{}); err == nil {
 		for _, subsets := range endpoints.Subsets {
