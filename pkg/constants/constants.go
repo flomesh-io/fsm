@@ -463,6 +463,30 @@ const (
 	GatewayTLSPolicyKind = "GatewayTLSPolicy"
 )
 
+// Gateway API Annotations and Labels
+const (
+	// GatewayAnnotationPrefix is the prefix for all gateway annotations
+	GatewayAnnotationPrefix = FlomeshGatewayAPIGroup
+
+	// GatewayLabelPrefix is the prefix for all gateway labels
+	// GatewayLabelPrefix = FlomeshGatewayAPIGroup
+
+	// GatewayCPUAnnotation is the annotation used to indicate the requested cpu
+	GatewayCPUAnnotation = GatewayAnnotationPrefix + "/cpu"
+
+	// GatewayCPULimitAnnotation is the annotation used to indicate the cpu limit
+	GatewayCPULimitAnnotation = GatewayAnnotationPrefix + "/cpu-limit"
+
+	// GatewayMemoryAnnotation is the annotation used to indicate the requested memory
+	GatewayMemoryAnnotation = GatewayAnnotationPrefix + "/memory"
+
+	// GatewayMemoryLimitAnnotation is the annotation used to indicate the memory limit
+	GatewayMemoryLimitAnnotation = GatewayAnnotationPrefix + "/memory-limit"
+
+	// GatewayReplicasAnnotation is the annotation used to indicate the number of replicas
+	GatewayReplicasAnnotation = GatewayAnnotationPrefix + "/replicas"
+)
+
 // Gateway API constants
 const (
 	// FSMGatewayClassName is the name of FSM GatewayClass

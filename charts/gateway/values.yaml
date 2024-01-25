@@ -31,6 +31,7 @@ fsm:
 
   fsmGateway:
     logLevel: info
+    replicas: 1
     # -- FSM Gateway's container resource parameters.
     resources:
       limits:

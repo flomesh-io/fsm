@@ -29,8 +29,11 @@ import (
 	_ "embed"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -686,6 +689,11 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
 		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
+		fmt.Sprintf("fsm.fsmGateway.replicas=%d", replicas(gateway)),
+		fmt.Sprintf("fsm.fsmGateway.resources.requests.cpu=%s", resources(gateway, constants.GatewayCPUAnnotation, resource.MustParse("0.5")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.requests.memory=%s", resources(gateway, constants.GatewayMemoryAnnotation, resource.MustParse("128M")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.limits.cpu=%s", resources(gateway, constants.GatewayCPULimitAnnotation, resource.MustParse("2")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.limits.memory=%s", resources(gateway, constants.GatewayMemoryLimitAnnotation, resource.MustParse("1G")).String()),
 	}
 
 	for _, ov := range overrides {
@@ -695,6 +703,44 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	}
 
 	return finalValues, nil
+}
+
+func replicas(gateway *gwv1beta1.Gateway) int32 {
+	if len(gateway.Annotations) == 0 {
+		return 1
+	}
+
+	replicas, ok := gateway.Annotations[constants.GatewayReplicasAnnotation]
+	if !ok {
+		return 1
+	}
+
+	num, err := strconv.ParseInt(replicas, 10, 32)
+	if err != nil {
+		log.Error().Msgf("Failed to parse replicas %s: %s", replicas, err)
+		return 1
+	}
+
+	return int32(num)
+}
+
+func resources(gateway *gwv1beta1.Gateway, annotation string, defVal resource.Quantity) *resource.Quantity {
+	if len(gateway.Annotations) == 0 {
+		return &defVal
+	}
+
+	res, ok := gateway.Annotations[annotation]
+	if !ok {
+		return &defVal
+	}
+
+	q, err := resource.ParseQuantity(res)
+	if err != nil {
+		log.Error().Msgf("Failed to parse resource %s: %s", res, err)
+		return &defVal
+	}
+
+	return &q
 }
 
 func hasTCP(gateway *gwv1beta1.Gateway) bool {
