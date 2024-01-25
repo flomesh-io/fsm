@@ -29,7 +29,6 @@ import (
 	_ "embed"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -689,11 +688,17 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
 		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
-		fmt.Sprintf("fsm.fsmGateway.replicas=%d", replicas(gateway)),
+		fmt.Sprintf("fsm.fsmGateway.replicas=%d", replicas(gateway, constants.GatewayReplicasAnnotation, 1)),
 		fmt.Sprintf("fsm.fsmGateway.resources.requests.cpu=%s", resources(gateway, constants.GatewayCPUAnnotation, resource.MustParse("0.5")).String()),
 		fmt.Sprintf("fsm.fsmGateway.resources.requests.memory=%s", resources(gateway, constants.GatewayMemoryAnnotation, resource.MustParse("128M")).String()),
 		fmt.Sprintf("fsm.fsmGateway.resources.limits.cpu=%s", resources(gateway, constants.GatewayCPULimitAnnotation, resource.MustParse("2")).String()),
 		fmt.Sprintf("fsm.fsmGateway.resources.limits.memory=%s", resources(gateway, constants.GatewayMemoryLimitAnnotation, resource.MustParse("1G")).String()),
+		fmt.Sprintf("fsm.fsmGateway.enablePodDisruptionBudget=%t", enabled(gateway, constants.GatewayPodDisruptionBudgetAnnotation, false)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.enable=%t", enabled(gateway, constants.GatewayAutoScalingAnnotation, false)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.minReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMinReplicasAnnotation, 1)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.maxReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMaxReplicasAnnotation, 5)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.cpu.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetCPUUtilizationPercentageAnnotation, 80)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.memory.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation, 80)),
 	}
 
 	for _, ov := range overrides {
@@ -703,65 +708,6 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	}
 
 	return finalValues, nil
-}
-
-func replicas(gateway *gwv1beta1.Gateway) int32 {
-	if len(gateway.Annotations) == 0 {
-		return 1
-	}
-
-	replicas, ok := gateway.Annotations[constants.GatewayReplicasAnnotation]
-	if !ok {
-		return 1
-	}
-
-	num, err := strconv.ParseInt(replicas, 10, 32)
-	if err != nil {
-		log.Error().Msgf("Failed to parse replicas %s: %s", replicas, err)
-		return 1
-	}
-
-	return int32(num)
-}
-
-func resources(gateway *gwv1beta1.Gateway, annotation string, defVal resource.Quantity) *resource.Quantity {
-	if len(gateway.Annotations) == 0 {
-		return &defVal
-	}
-
-	res, ok := gateway.Annotations[annotation]
-	if !ok {
-		return &defVal
-	}
-
-	q, err := resource.ParseQuantity(res)
-	if err != nil {
-		log.Error().Msgf("Failed to parse resource %s: %s", res, err)
-		return &defVal
-	}
-
-	return &q
-}
-
-func hasTCP(gateway *gwv1beta1.Gateway) bool {
-	for _, listener := range gateway.Spec.Listeners {
-		switch listener.Protocol {
-		case gwv1beta1.HTTPProtocolType, gwv1beta1.TCPProtocolType, gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasUDP(gateway *gwv1beta1.Gateway) bool {
-	for _, listener := range gateway.Spec.Listeners {
-		if listener.Protocol == gwv1beta1.UDPProtocolType {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (r *gatewayReconciler) setAccepted(gateway *gwv1beta1.Gateway) {
