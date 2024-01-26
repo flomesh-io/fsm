@@ -163,6 +163,11 @@ spec:
     - protocol: UDP
       port: 4000
       name: udp
+  infrastructure:
+    annotations:
+      xyz: abc
+    labels:
+      test: demo
 EOF
 ```
 
