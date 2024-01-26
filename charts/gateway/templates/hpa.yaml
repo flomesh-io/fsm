@@ -1,0 +1,27 @@
+{{- if .Values.fsm.fsmGateway.autoScale.enable }}
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ printf "fsm-gateway-%s-hpa" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
+  minReplicas: {{.Values.fsm.fsmGateway.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.fsmGateway.autoScale.maxReplicas}}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.fsmGateway.autoScale.cpu.targetAverageUtilization}}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{.Values.fsm.fsmGateway.autoScale.memory.targetAverageUtilization}}
+{{- end }}
