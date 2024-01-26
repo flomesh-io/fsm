@@ -72,6 +72,13 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-gateway"` |  |
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
+| fsm.fsmGateway.autoScale | object | `{"cpu":{"targetAverageUtilization":80},"enable":false,"maxReplicas":5,"memory":{"targetAverageUtilization":80},"minReplicas":1}` | Auto scale configuration |
+| fsm.fsmGateway.autoScale.cpu.targetAverageUtilization | int | `80` | Average target CPU utilization (%) |
+| fsm.fsmGateway.autoScale.enable | bool | `false` | Enable Autoscale |
+| fsm.fsmGateway.autoScale.maxReplicas | int | `5` | Maximum replicas for autoscale |
+| fsm.fsmGateway.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
+| fsm.fsmGateway.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
+| fsm.fsmGateway.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.fsmGateway.env[0].name | string | `"GIN_MODE"` |  |
 | fsm.fsmGateway.env[0].value | string | `"release"` |  |
 | fsm.fsmGateway.logLevel | string | `"info"` |  |
@@ -82,6 +89,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmGateway.podSecurityContext.runAsNonRoot | bool | `true` |  |
 | fsm.fsmGateway.podSecurityContext.runAsUser | int | `65532` |  |
 | fsm.fsmGateway.podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| fsm.fsmGateway.replicas | int | `1` |  |
 | fsm.fsmGateway.resources | object | `{"limits":{"cpu":"2","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM Gateway's container resource parameters. |
 | fsm.fsmGateway.securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | fsm.fsmGateway.securityContext.capabilities.drop[0] | string | `"ALL"` |  |

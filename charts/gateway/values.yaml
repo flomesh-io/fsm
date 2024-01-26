@@ -31,6 +31,7 @@ fsm:
 
   fsmGateway:
     logLevel: info
+    replicas: 1
     # -- FSM Gateway's container resource parameters.
     resources:
       limits:
@@ -39,6 +40,22 @@ fsm:
       requests:
         cpu: "0.5"
         memory: "128M"
+    # -- Enable Pod Disruption Budget
+    enablePodDisruptionBudget: false
+    # -- Auto scale configuration
+    autoScale:
+      # -- Enable Autoscale
+      enable: false
+      # -- Minimum replicas for autoscale
+      minReplicas: 1
+      # -- Maximum replicas for autoscale
+      maxReplicas: 5
+      cpu:
+        # -- Average target CPU utilization (%)
+        targetAverageUtilization: 80
+      memory:
+        # -- Average target memory utilization (%)
+        targetAverageUtilization: 80
     # Extra env variables those will be appended to gateway container
     env:
       - name: GIN_MODE
