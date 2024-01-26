@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	ghodssyaml "github.com/ghodss/yaml"
@@ -685,6 +687,17 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
 		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
+		fmt.Sprintf("fsm.fsmGateway.replicas=%d", replicas(gateway, constants.GatewayReplicasAnnotation, 1)),
+		fmt.Sprintf("fsm.fsmGateway.resources.requests.cpu=%s", resources(gateway, constants.GatewayCPUAnnotation, resource.MustParse("0.5")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.requests.memory=%s", resources(gateway, constants.GatewayMemoryAnnotation, resource.MustParse("128M")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.limits.cpu=%s", resources(gateway, constants.GatewayCPULimitAnnotation, resource.MustParse("2")).String()),
+		fmt.Sprintf("fsm.fsmGateway.resources.limits.memory=%s", resources(gateway, constants.GatewayMemoryLimitAnnotation, resource.MustParse("1G")).String()),
+		fmt.Sprintf("fsm.fsmGateway.enablePodDisruptionBudget=%t", enabled(gateway, constants.GatewayPodDisruptionBudgetAnnotation, false)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.enable=%t", enabled(gateway, constants.GatewayAutoScalingAnnotation, false)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.minReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMinReplicasAnnotation, 1)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.maxReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMaxReplicasAnnotation, 5)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.cpu.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetCPUUtilizationPercentageAnnotation, 80)),
+		fmt.Sprintf("fsm.fsmGateway.autoScale.memory.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation, 80)),
 	}
 
 	for _, ov := range overrides {
@@ -694,27 +707,6 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	}
 
 	return finalValues, nil
-}
-
-func hasTCP(gateway *gwv1.Gateway) bool {
-	for _, listener := range gateway.Spec.Listeners {
-		switch listener.Protocol {
-		case gwv1.HTTPProtocolType, gwv1.TCPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasUDP(gateway *gwv1.Gateway) bool {
-	for _, listener := range gateway.Spec.Listeners {
-		if listener.Protocol == gwv1.UDPProtocolType {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (r *gatewayReconciler) setAccepted(gateway *gwv1.Gateway) {

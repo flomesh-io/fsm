@@ -9,7 +9,7 @@ metadata:
     app: fsm-gateway
     meshName: {{ .Values.fsm.meshName }}
 spec:
-  replicas: {{ default 1 .Values.gwy.spec.replicas }}
+  replicas: {{ default 1 .Values.fsm.fsmGateway.replicas }}
   selector:
     matchLabels:
       app: fsm-gateway

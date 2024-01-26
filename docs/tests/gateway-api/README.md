@@ -119,6 +119,12 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: test-gw-1
+  annotations:
+    gateway.flomesh.io/replicas: "2"
+    gateway.flomesh.io/cpu: 100m
+    gateway.flomesh.io/cpu-limit: 1000m
+    gateway.flomesh.io/memory: 256Mi
+    gateway.flomesh.io/memory-limit: 1024Mi
 spec:
   gatewayClassName: fsm-gateway-cls
   listeners:
