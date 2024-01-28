@@ -129,7 +129,7 @@ type AccessControlPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
 
 // AccessControlPolicy is the Schema for the AccessControlPolicy API
 type AccessControlPolicy struct {

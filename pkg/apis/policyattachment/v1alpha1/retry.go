@@ -71,7 +71,7 @@ type RetryPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
 
 // RetryPolicy is the Schema for the RetryPolicy API
 type RetryPolicy struct {
