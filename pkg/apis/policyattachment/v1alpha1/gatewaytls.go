@@ -58,7 +58,7 @@ type GatewayTLSPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
 
 // GatewayTLSPolicy is the Schema for the GatewayTLSPolicy API
 type GatewayTLSPolicy struct {

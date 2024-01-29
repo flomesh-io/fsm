@@ -100,7 +100,7 @@ type HealthCheckPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
 
 // HealthCheckPolicy is the Schema for the HealthCheckPolicy API
 type HealthCheckPolicy struct {

@@ -6,6 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
     app.kubernetes.io/name: flomesh.io
+    gateway.networking.k8s.io/policy: "true"
   name: faultinjectionpolicies.gateway.flomesh.io
 spec:
   group: gateway.flomesh.io
