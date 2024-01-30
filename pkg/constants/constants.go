@@ -469,7 +469,13 @@ const (
 	GatewayAnnotationPrefix = FlomeshGatewayAPIGroup
 
 	// GatewayLabelPrefix is the prefix for all gateway labels
-	// GatewayLabelPrefix = FlomeshGatewayAPIGroup
+	GatewayLabelPrefix = FlomeshGatewayAPIGroup
+
+	// GatewayNamespaceLabel is the label used to indicate the namespace of the gateway
+	GatewayNamespaceLabel = GatewayLabelPrefix + "/ns"
+
+	// GatewayListenersHashAnnotation is the annotation used to indicate the hash value of gateway listener spec
+	GatewayListenersHashAnnotation = GatewayAnnotationPrefix + "/listeners-hash"
 
 	// GatewayCPUAnnotation is the annotation used to indicate the requested cpu
 	GatewayCPUAnnotation = GatewayAnnotationPrefix + "/cpu"
