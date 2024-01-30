@@ -269,10 +269,16 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 	}
 
 	// 7. update addresses of Gateway status if any IP is allocated
+	serviceName := lbServiceName(activeGateway)
+	if serviceName == "" {
+		log.Warn().Msgf("[GW] No supported service protocols for Gateway %s/%s, only TCP and UDP are supported now.", activeGateway.Namespace, activeGateway.Name)
+		return ctrl.Result{}, nil
+	}
+
 	lbSvc := &corev1.Service{}
 	key := client.ObjectKey{
 		Namespace: activeGateway.Namespace,
-		Name:      fmt.Sprintf("fsm-gateway-%s", activeGateway.Namespace),
+		Name:      serviceName,
 	}
 	if err := r.fctx.Get(ctx, key, lbSvc); err != nil {
 		return ctrl.Result{}, err
@@ -326,16 +332,28 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 	return ctrl.Result{}, nil
 }
 
+func lbServiceName(activeGateway *gwv1beta1.Gateway) string {
+	if hasTCP(activeGateway) {
+		return fmt.Sprintf("fsm-gateway-%s-tcp", activeGateway.Namespace)
+	}
+
+	if hasUDP(activeGateway) {
+		return fmt.Sprintf("fsm-gateway-%s-udp", activeGateway.Namespace)
+	}
+
+	return ""
+}
+
 func (r *gatewayReconciler) updateListenerStatus(ctx context.Context, gateway *gwv1beta1.Gateway) (ctrl.Result, error) {
 	if len(gateway.Annotations) == 0 {
 		gateway.Annotations = make(map[string]string)
 	}
 
-	oldHash := gateway.Annotations["gateway.flomesh.io/listeners-hash"]
+	oldHash := gateway.Annotations[constants.GatewayListenersHashAnnotation]
 	hash := utils.SimpleHash(gateway.Spec.Listeners)
 
 	if oldHash != hash {
-		gateway.Annotations["gateway.flomesh.io/listeners-hash"] = hash
+		gateway.Annotations[constants.GatewayListenersHashAnnotation] = hash
 		if err := r.fctx.Update(ctx, gateway); err != nil {
 			return ctrl.Result{}, err
 		}
