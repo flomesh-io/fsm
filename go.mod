@@ -9,7 +9,7 @@ require (
 	github.com/containerd/containerd v1.6.26 // indirect
 	github.com/cskr/pubsub v1.0.2
 	github.com/deckarep/golang-set/v2 v2.1.0
-	github.com/docker/docker v20.10.24+incompatible
+	github.com/docker/docker v20.10.27+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/golang/mock v1.6.0
