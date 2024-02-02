@@ -710,7 +710,7 @@ type MiscSpec struct {
 	// CurlImage defines the image of curl.
 	CurlImage string `json:"curlImage"`
 
-	// +kubebuilder:default="flomesh/pipy-repo:0.99.0-2"
+	// +kubebuilder:default="flomesh/pipy-repo:0.99.1-1"
 	// RepoServerImage defines the image of repo server.
 	RepoServerImage string `json:"repoServerImage"`
 }
