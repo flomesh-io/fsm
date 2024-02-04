@@ -810,7 +810,7 @@ fsm:
         httpPort: 0
         grpcPort: 0
       egress:
-        ipSelector: ClusterIP
+        ipSelector: ExternalIP
         httpPort: 0
         grpcPort: 0
       syncToFgw:
