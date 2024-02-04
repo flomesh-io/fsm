@@ -69,15 +69,15 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 
 // CatalogService is used to query catalog entries for a given service
 func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	//services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
-	//if err != nil {
-	//	return nil, err
-	//}
-	servicesMap, err := dc.eurekaClient.GetApps()
+	services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
 	if err != nil {
 		return nil, err
 	}
-	services := servicesMap[strings.ToUpper(service)]
+	//servicesMap, err := dc.eurekaClient.GetApps()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//services = servicesMap[strings.ToUpper(service)]
 	catalogServices := make([]*CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, ins := range services.Instances {
