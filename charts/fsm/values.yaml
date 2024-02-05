@@ -1085,6 +1085,7 @@ fsm:
     logLevel: info
     fgwLogLevel: info
     stripAnyHostPort: true
+    proxyPreserveHost: true
     sslPassthroughUpstreamPort: 443
     http1PerRequestLoadBalancing: false
     http2PerRequestLoadBalancing: true
