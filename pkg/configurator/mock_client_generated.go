@@ -837,6 +837,20 @@ func (mr *MockConfiguratorMockRecorder) IsFGWHTTP2PerRequestLoadBalancingEnabled
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFGWHTTP2PerRequestLoadBalancingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsFGWHTTP2PerRequestLoadBalancingEnabled))
 }
 
+// IsFGWProxyPreserveHost mocks base method.
+func (m *MockConfigurator) IsFGWProxyPreserveHost() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFGWProxyPreserveHost")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFGWProxyPreserveHost indicates an expected call of IsFGWProxyPreserveHost.
+func (mr *MockConfiguratorMockRecorder) IsFGWProxyPreserveHost() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFGWProxyPreserveHost", reflect.TypeOf((*MockConfigurator)(nil).IsFGWProxyPreserveHost))
+}
+
 // IsFGWStripAnyHostPort mocks base method.
 func (m *MockConfigurator) IsFGWStripAnyHostPort() bool {
 	m.ctrl.T.Helper()

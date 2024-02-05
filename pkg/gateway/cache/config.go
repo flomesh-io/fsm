@@ -113,6 +113,7 @@ func (c *GatewayCache) defaults() fgw.Defaults {
 		EnableDebug:                    c.isDebugEnabled(),
 		DefaultPassthroughUpstreamPort: c.cfg.GetFGWSSLPassthroughUpstreamPort(),
 		StripAnyHostPort:               c.cfg.IsFGWStripAnyHostPort(),
+		ProxyPreserveHost:              c.cfg.IsFGWProxyPreserveHost(),
 		HTTP1PerRequestLoadBalancing:   c.cfg.IsFGWHTTP1PerRequestLoadBalancingEnabled(),
 		HTTP2PerRequestLoadBalancing:   c.cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
 		SocketTimeout:                  pointer.Int32(60),

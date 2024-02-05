@@ -319,6 +319,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmGateway.http1PerRequestLoadBalancing | bool | `false` |  |
 | fsm.fsmGateway.http2PerRequestLoadBalancing | bool | `true` |  |
 | fsm.fsmGateway.logLevel | string | `"info"` |  |
+| fsm.fsmGateway.proxyPreserveHost | bool | `true` |  |
 | fsm.fsmGateway.proxyTag.dstHostHeader | string | `"proxy-tag"` |  |
 | fsm.fsmGateway.proxyTag.srcHostHeader | string | `"orig-host"` |  |
 | fsm.fsmGateway.sslPassthroughUpstreamPort | int | `443` |  |

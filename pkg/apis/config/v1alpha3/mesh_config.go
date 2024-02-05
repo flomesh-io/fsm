@@ -589,7 +589,11 @@ type GatewayAPISpec struct {
 
 	// +kubebuilder:default=false
 	// StripAnyHostPort defines if strip any host port is enabled.
-	StripAnyHostPort bool `json:"StripAnyHostPort"`
+	StripAnyHostPort bool `json:"stripAnyHostPort"`
+
+	// +kubebuilder:default=true
+	// ProxyPreserveHost defines if proxy preserve host is enabled.
+	ProxyPreserveHost bool `json:"proxyPreserveHost"`
 
 	// +kubebuilder:default=443
 	// SSLPassthroughUpstreamPort defines the default upstream port of SSL passthrough.

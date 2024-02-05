@@ -38,9 +38,9 @@
       (_serviceName = __route?.backendServiceBalancer?.borrow?.({})?.id) && (
         (__service = serviceHandlers.get(_serviceName)) && msg?.head?.headers && (
           (_xff = msg.head.headers['x-forwarded-for']) ? (
-            msg.head.headers['x-forwarded-for'] = _xff + ', ' + __inbound.localAddress
+            msg.head.headers['x-forwarded-for'] = _xff + ', ' + __inbound.remoteAddress
           ) : (
-            msg.head.headers['x-forwarded-for'] = __inbound.localAddress
+            msg.head.headers['x-forwarded-for'] = __inbound.remoteAddress
           )
         )
       )

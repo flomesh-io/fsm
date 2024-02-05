@@ -142,7 +142,7 @@
   )(),
 
   proxyPreserveHostCache = new algo.Cache(
-    route => route?.config?.ProxyPreserveHost || __domain?.ProxyPreserveHost || config?.Configs?.ProxyPreserveHost
+    route => !(route?.config?.ProxyPreserveHost === false || __domain?.ProxyPreserveHost === false || config?.Configs?.ProxyPreserveHost === false)
   ),
 
 ) => pipy({
