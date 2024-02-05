@@ -82,6 +82,7 @@ type Defaults struct {
 	EnableDebug                    bool            `json:"EnableDebug"`
 	DefaultPassthroughUpstreamPort int32           `json:"DefaultPassthroughUpstreamPort"`
 	StripAnyHostPort               bool            `json:"StripAnyHostPort"`
+	ProxyPreserveHost              bool            `json:"ProxyPreserveHost"`
 	HTTP1PerRequestLoadBalancing   bool            `json:"HTTP1PerRequestLoadBalancing"`
 	HTTP2PerRequestLoadBalancing   bool            `json:"HTTP2PerRequestLoadBalancing"`
 	SocketTimeout                  *int32          `json:"SocketTimeout,omitempty"`

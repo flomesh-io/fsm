@@ -477,6 +477,12 @@ func (c *Client) IsFGWStripAnyHostPort() bool {
 	return mcSpec.GatewayAPI.StripAnyHostPort
 }
 
+// IsFGWProxyPreserveHost returns whether to preserve host
+func (c *Client) IsFGWProxyPreserveHost() bool {
+	mcSpec := c.getMeshConfig().Spec
+	return mcSpec.GatewayAPI.ProxyPreserveHost
+}
+
 // GetFGWSSLPassthroughUpstreamPort returns the default upstream port that FGW used for SSL Passthrough
 func (c *Client) GetFGWSSLPassthroughUpstreamPort() int32 {
 	mcSpec := c.getMeshConfig().Spec
