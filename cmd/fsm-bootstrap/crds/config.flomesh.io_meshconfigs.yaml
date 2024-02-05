@@ -1494,11 +1494,6 @@ spec:
               gatewayAPI:
                 description: GatewayAPI defines the configurations of GatewayAPI features.
                 properties:
-                  StripAnyHostPort:
-                    default: false
-                    description: StripAnyHostPort defines if strip any host port is
-                      enabled.
-                    type: boolean
                   enabled:
                     default: false
                     description: Enabled defines if gateway api is enabled.
@@ -1539,6 +1534,11 @@ spec:
                     - panic
                     - disabled
                     type: string
+                  proxyPreserveHost:
+                    default: true
+                    description: ProxyPreserveHost defines if proxy preserve host
+                      is enabled.
+                    type: boolean
                   proxyTag:
                     default:
                       dstHostHeader: proxy-tag
@@ -1564,15 +1564,21 @@ spec:
                       port of SSL passthrough.
                     format: int32
                     type: integer
+                  stripAnyHostPort:
+                    default: false
+                    description: StripAnyHostPort defines if strip any host port is
+                      enabled.
+                    type: boolean
                 required:
-                - StripAnyHostPort
                 - enabled
                 - fgwLogLevel
                 - http1PerRequestLoadBalancing
                 - http2PerRequestLoadBalancing
                 - logLevel
+                - proxyPreserveHost
                 - proxyTag
                 - sslPassthroughUpstreamPort
+                - stripAnyHostPort
                 type: object
               image:
                 description: Image defines the configurations of Image info

@@ -176,6 +176,9 @@ type Configurator interface {
 	// IsFGWStripAnyHostPort returns whether to strip any host port
 	IsFGWStripAnyHostPort() bool
 
+	// IsFGWProxyPreserveHost returns whether to preserve host
+	IsFGWProxyPreserveHost() bool
+
 	// GetFGWSSLPassthroughUpstreamPort returns the default upstream port that FGW used for SSL Passthrough
 	GetFGWSSLPassthroughUpstreamPort() int32
 

@@ -854,7 +854,10 @@ func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEven
 	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
 		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
 		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
+		prevSpec.GatewayAPI.ProxyPreserveHost != newSpec.GatewayAPI.ProxyPreserveHost ||
 		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
+		prevSpec.GatewayAPI.ProxyTag.DstHostHeader != newSpec.GatewayAPI.ProxyTag.DstHostHeader ||
+		prevSpec.GatewayAPI.ProxyTag.SrcHostHeader != newSpec.GatewayAPI.ProxyTag.SrcHostHeader ||
 		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
 		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
 		return &gatewayUpdateEvent{
