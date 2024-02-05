@@ -2993,6 +2993,7 @@
                         "logLevel",
                         "fgwLogLevel",
                         "stripAnyHostPort",
+                        "proxyPreserveHost",
                         "sslPassthroughUpstreamPort",
                         "http1PerRequestLoadBalancing",
                         "http2PerRequestLoadBalancing",
@@ -3018,6 +3019,11 @@
                           "type": "boolean",
                           "default": true,
                           "title": "The stripAnyHostPort Schema"
+                        },
+                        "proxyPreserveHost": {
+                          "type": "boolean",
+                          "default": true,
+                          "title": "The proxyPreserveHost Schema"
                         },
                         "sslPassthroughUpstreamPort": {
                           "type": "integer",

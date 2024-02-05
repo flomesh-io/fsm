@@ -40,6 +40,11 @@ func (c *client) IsFGWStripAnyHostPort() bool {
 	panic("implement me")
 }
 
+func (c *client) IsFGWProxyPreserveHost() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetFGWSSLPassthroughUpstreamPort() int32 {
 	//TODO implement me
 	panic("implement me")
