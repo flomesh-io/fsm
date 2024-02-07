@@ -21,7 +21,8 @@ type GatewayAPISpecApplyConfiguration struct {
 	Enabled                      *bool                       `json:"enabled,omitempty"`
 	LogLevel                     *string                     `json:"logLevel,omitempty"`
 	FGWLogLevel                  *string                     `json:"fgwLogLevel,omitempty"`
-	StripAnyHostPort             *bool                       `json:"StripAnyHostPort,omitempty"`
+	StripAnyHostPort             *bool                       `json:"stripAnyHostPort,omitempty"`
+	ProxyPreserveHost            *bool                       `json:"proxyPreserveHost,omitempty"`
 	SSLPassthroughUpstreamPort   *int32                      `json:"sslPassthroughUpstreamPort,omitempty"`
 	HTTP1PerRequestLoadBalancing *bool                       `json:"http1PerRequestLoadBalancing,omitempty"`
 	HTTP2PerRequestLoadBalancing *bool                       `json:"http2PerRequestLoadBalancing,omitempty"`
@@ -63,6 +64,14 @@ func (b *GatewayAPISpecApplyConfiguration) WithFGWLogLevel(value string) *Gatewa
 // If called multiple times, the StripAnyHostPort field is set to the value of the last call.
 func (b *GatewayAPISpecApplyConfiguration) WithStripAnyHostPort(value bool) *GatewayAPISpecApplyConfiguration {
 	b.StripAnyHostPort = &value
+	return b
+}
+
+// WithProxyPreserveHost sets the ProxyPreserveHost field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ProxyPreserveHost field is set to the value of the last call.
+func (b *GatewayAPISpecApplyConfiguration) WithProxyPreserveHost(value bool) *GatewayAPISpecApplyConfiguration {
+	b.ProxyPreserveHost = &value
 	return b
 }
 
