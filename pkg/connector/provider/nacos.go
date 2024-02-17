@@ -120,7 +120,7 @@ func (dc *NacosDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]s
 
 // CatalogService is used to query catalog entries for a given service
 func (dc *NacosDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	instances := dc.selectInstances(service, false)
+	instances := dc.selectAllInstances(service)
 	catalogServices := make([]*CatalogService, 0)
 	if len(instances) > 0 {
 		for _, ins := range instances {
@@ -266,5 +266,10 @@ func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId
 		return nil, err
 	}
 	nacosDiscoveryClient.nacosClient = nacosClient
+
+	connector.ServiceInstanceIDFunc = func(name, addr string, httpPort, grpcPort int) string {
+		return fmt.Sprintf("%s#%d#%s#%s@@%s",
+			addr, httpPort, k2cClusterId, k2cGroupId, name)
+	}
 	return nacosDiscoveryClient, nil
 }
