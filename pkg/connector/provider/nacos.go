@@ -245,7 +245,7 @@ func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId
 	}
 	clientConfig := constant.ClientConfig{
 		NamespaceId:          namespaceId,
-		TimeoutMs:            3000,
+		TimeoutMs:            60000,
 		NotLoadCacheAtStart:  true,
 		UpdateCacheWhenEmpty: true,
 		LogDir:               "/tmp/nacos/log",
