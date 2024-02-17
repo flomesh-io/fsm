@@ -126,7 +126,16 @@ func (dc *EurekaDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (
 }
 
 func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	return dc.eurekaClient.DeregisterInstance(dereg.toEureka())
+	err := dc.eurekaClient.DeregisterInstance(dereg.toEureka())
+	if err != nil {
+		if code, present := fargo.HTTPResponseStatusCode(err); present {
+			if code == 404 {
+				return nil
+			}
+		}
+	}
+
+	return err
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {

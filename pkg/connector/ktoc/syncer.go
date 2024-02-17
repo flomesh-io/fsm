@@ -403,7 +403,8 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 	for _, service := range s.deregs {
 		deregWg.Add(1)
 		go func(r *provider.CatalogDeregistration) {
-			for {
+			maxRetries := 3
+			for maxRetries > 0 {
 				log.Info().Msgf("deregistering service node-name:%s service-id:%s service-namespace:%s",
 					r.Node,
 					r.ServiceID,
@@ -415,7 +416,10 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 						r.ServiceID,
 						r.Namespace,
 						err)
-					time.Sleep(time.Second)
+					maxRetries--
+					if maxRetries > 0 {
+						time.Sleep(time.Second)
+					}
 				} else {
 					deregWg.Done()
 					break
@@ -444,8 +448,9 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 		for _, service := range services {
 			regWg.Add(1)
 			go func(r *provider.CatalogRegistration) {
+				maxRetries := 3
 				// Register the service.
-				for {
+				for maxRetries > 0 {
 					err := s.DiscClient.Register(r)
 					if err != nil {
 						log.Error().Msgf("error registering service node-name:%s service-name:%s service:%v err:%v",
@@ -453,7 +458,10 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 							r.Service.Service,
 							r.Service,
 							err)
-						time.Sleep(time.Second)
+						maxRetries--
+						if maxRetries > 0 {
+							time.Sleep(time.Second)
+						}
 					} else {
 						log.Debug().Msgf("registered service instance node-name:%s service-name:%s namespace-name:%s service:%v",
 							r.Node,
