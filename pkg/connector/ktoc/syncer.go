@@ -248,11 +248,17 @@ func (s *CloudSyncer) watchService(ctx context.Context, name, namespace string) 
 	log.Info().Msgf("starting service watcher service-name:%s service-namespace:%s", name, namespace)
 	defer log.Info().Msgf("stopping service watcher service-name:%s service-namespace:%s", name, namespace)
 
+	stop := false
+
 	for {
+		if stop {
+			return
+		}
+
 		select {
 		// Quit if our context is over
 		case <-ctx.Done():
-			return
+			stop = true
 
 		// Wait for our poll period
 		case <-time.After(s.SyncPeriod):
@@ -359,13 +365,15 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 
 	log.Info().Msg("registering services")
 
+	deregWg := new(sync.WaitGroup)
+
 	// Update the service watchers
 	for ns, watchers := range s.watchers {
 		// If the service the watcher is watching is no longer valid,
 		// cancel the watcher
-		for svc, cf := range watchers {
+		for svc, cancelFunc := range watchers {
 			if s.serviceNames[ns] == nil || !s.serviceNames[ns].Contains(svc) {
-				cf()
+				cancelFunc()
 				delete(s.watchers[ns], svc)
 				log.Debug().Msgf("[syncFull] deleting service watcher namespace:%s service:%s", ns, svc)
 			}
@@ -376,7 +384,7 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 	for ns, services := range s.serviceNames {
 		for svc := range services.Iter() {
 			if _, ok := s.watchers[ns][svc.(string)]; !ok {
-				svcCtx, cancelF := context.WithCancel(ctx)
+				svcCtx, cancelFunc := context.WithCancel(ctx)
 				go s.watchService(svcCtx, svc.(string), ns)
 				log.Debug().Msgf("[syncFull] starting watchService routine namespace:%s service:%s", ns, svc)
 
@@ -386,64 +394,80 @@ func (s *CloudSyncer) syncFull(ctx context.Context) {
 				}
 
 				// Add the watcher to our tracking
-				s.watchers[ns][svc.(string)] = cancelF
+				s.watchers[ns][svc.(string)] = cancelFunc
 			}
 		}
 	}
 
 	// Do all deregistrations first.
-	for _, r := range s.deregs {
-		log.Info().Msgf("deregistering service node-name:%s service-id:%s service-namespace:%s",
-			r.Node,
-			r.ServiceID,
-			r.Namespace)
-		err := s.DiscClient.Deregister(r)
-		if err != nil {
-			log.Warn().Msgf("error deregistering service node-name:%s service-id:%s service-namespace:%s err:%v",
-				r.Node,
-				r.ServiceID,
-				r.Namespace,
-				err)
-		}
+	for _, service := range s.deregs {
+		deregWg.Add(1)
+		go func(r *provider.CatalogDeregistration) {
+			for {
+				log.Info().Msgf("deregistering service node-name:%s service-id:%s service-namespace:%s",
+					r.Node,
+					r.ServiceID,
+					r.Namespace)
+				err := s.DiscClient.Deregister(r)
+				if err != nil {
+					log.Error().Msgf("error deregistering service node-name:%s service-id:%s service-namespace:%s err:%v",
+						r.Node,
+						r.ServiceID,
+						r.Namespace,
+						err)
+					time.Sleep(time.Second)
+				} else {
+					deregWg.Done()
+					break
+				}
+			}
+		}(service)
 	}
+	deregWg.Wait()
 
 	// Always clear deregistrations, they'll repopulate if we had errors
 	s.deregs = make(map[string]*provider.CatalogDeregistration)
 
+	regWg := new(sync.WaitGroup)
 	// Register all the services. This will overwrite any changes that
 	// may have been made to the registered services.
-	for _, services := range s.namespaces {
-		for _, r := range services {
-			if s.EnableNamespaces {
-				_, err := s.DiscClient.EnsureNamespaceExists(r.Service.Namespace, s.CrossNamespaceACLPolicy)
-				if err != nil {
-					log.Warn().Msgf("error checking and creating Consul namespace node-name:%s service-name:%s consul-namespace-name:%s err:%v",
-						r.Node,
-						r.Service.Service,
-						r.Service.Namespace,
-						err)
-					continue
-				}
-			}
-
-			// Register the service.
-			err := s.DiscClient.Register(r)
+	for namespace, services := range s.namespaces {
+		if s.EnableNamespaces {
+			_, err := s.DiscClient.EnsureNamespaceExists(namespace, s.CrossNamespaceACLPolicy)
 			if err != nil {
-				log.Warn().Msgf("error registering service node-name:%s service-name:%s service:%v err:%v",
-					r.Node,
-					r.Service.Service,
-					r.Service,
+				log.Warn().Msgf("error checking and creating Consul namespace:%s err:%v",
+					namespace,
 					err)
 				continue
 			}
-
-			log.Debug().Msgf("registered service instance node-name:%s service-name:%s namespace-name:%s service:%v",
-				r.Node,
-				r.Service.Service,
-				r.Service.Namespace,
-				r.Service)
+		}
+		for _, service := range services {
+			regWg.Add(1)
+			go func(r *provider.CatalogRegistration) {
+				// Register the service.
+				for {
+					err := s.DiscClient.Register(r)
+					if err != nil {
+						log.Error().Msgf("error registering service node-name:%s service-name:%s service:%v err:%v",
+							r.Node,
+							r.Service.Service,
+							r.Service,
+							err)
+						time.Sleep(time.Second)
+					} else {
+						log.Debug().Msgf("registered service instance node-name:%s service-name:%s namespace-name:%s service:%v",
+							r.Node,
+							r.Service.Service,
+							r.Service.Namespace,
+							r.Service)
+						regWg.Done()
+						break
+					}
+				}
+			}(service)
 		}
 	}
+	regWg.Wait()
 }
 
 func (s *CloudSyncer) init() {
