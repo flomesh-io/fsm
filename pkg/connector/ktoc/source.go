@@ -237,7 +237,7 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 			Endpoints(service.Namespace).
 			Get(t.Ctx, service.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Warn().Msgf("error loading initial endpoints key%s err:%v",
+			log.Debug().Msgf("error loading initial endpoints key%s err:%v",
 				key,
 				err)
 		} else {

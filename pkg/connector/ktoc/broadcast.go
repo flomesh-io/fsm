@@ -1,7 +1,6 @@
 package ktoc
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
@@ -71,7 +70,6 @@ func (job *SyncJob) Run() {
 	}
 	// Sync, which should be non-blocking in real-world cases
 	t.Syncer.Sync(rs)
-	fmt.Println("benne fsm connector's job is done.")
 }
 
 // JobName implementation for this job, for logging purposes

@@ -188,7 +188,7 @@ func (s *CloudSyncer) watchReapableServices(ctx context.Context) {
 		}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 
 		if err != nil {
-			log.Warn().Msgf("error querying services, will retry err:%v", err)
+			log.Debug().Msgf("error querying services, will retry err:%v", err)
 		} else {
 			log.Debug().Msgf("[watchReapableServices] services returned from catalog services:%v",
 				services)
