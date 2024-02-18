@@ -1044,18 +1044,13 @@ func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 // result in a service configuration update on an appropriate topic. Nil is returned if the PubSubMessage
 // does not result in a service update event.
 func getServiceUpdateEvent(msg events.PubSubMessage) *serviceUpdateEvent {
-	fmt.Println("benne getServiceUpdateEvent", msg.Kind)
 	switch msg.Kind {
 	case
 		//
 		// K8s native resource events
 		//
-		// Endpoint event
-		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
-		// EndpointSlices event
-		announcements.EndpointSlicesAdded, announcements.EndpointSlicesDeleted, announcements.EndpointSlicesUpdated,
 		// Service event
-		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated:
+		announcements.ServiceUpdate:
 
 		return &serviceUpdateEvent{
 			msg:   msg,
