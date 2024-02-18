@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/hudl/fargo"
@@ -167,6 +168,9 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string,
 	appendMetadataKeySet, appendMetadataValueSet mapset.Set) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
+	eurekaClient.Timeout = time.Duration(60) * time.Second
+	eurekaClient.PollInterval = time.Duration(30) * time.Second
+	eurekaClient.Retries = 3
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	eurekaDiscoveryClient.isInternalServices = isInternalServices
