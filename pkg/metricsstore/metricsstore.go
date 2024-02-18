@@ -75,6 +75,12 @@ type MetricsStore struct {
 	GatewayBroadcastEventCounter prometheus.Counter
 
 	/*
+	 * Service metrics
+	 */
+	// ServiceBroadcastEventCounter is the metric for the total number of ServiceBroadcast events published
+	ServiceBroadcastEventCounter prometheus.Counter
+
+	/*
 	 * Certificate metrics
 	 */
 	// CertIssuedCount is the metric counter for the number of certificates issued
