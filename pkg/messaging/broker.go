@@ -109,7 +109,7 @@ func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
 
 // GetServiceUpdatePubSub returns the PubSub instance corresponding to service update events
 func (b *Broker) GetServiceUpdatePubSub() *pubsub.PubSub {
-	return b.gatewayUpdatePubSub
+	return b.serviceUpdatePubSub
 }
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
@@ -1044,6 +1044,7 @@ func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 // result in a service configuration update on an appropriate topic. Nil is returned if the PubSubMessage
 // does not result in a service update event.
 func getServiceUpdateEvent(msg events.PubSubMessage) *serviceUpdateEvent {
+	fmt.Println("benne getServiceUpdateEvent", msg.Kind)
 	switch msg.Kind {
 	case
 		//
