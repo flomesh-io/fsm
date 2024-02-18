@@ -307,6 +307,13 @@ func init() {
 		Help:      "Represents the number of GatewayBroadcast events published by the FSM controller",
 	})
 
+	defaultMetricsStore.ServiceBroadcastEventCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "service",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of ServiceBroadcast events published by the FSM controller",
+	})
+
 	defaultMetricsStore.registry = prometheus.NewRegistry()
 }
 
