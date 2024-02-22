@@ -177,6 +177,6 @@ func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId
 	eurekaDiscoveryClient.clusterId = clusterId
 	eurekaDiscoveryClient.appendMetadataKeySet = appendMetadataKeySet
 	eurekaDiscoveryClient.appendMetadataValueSet = appendMetadataValueSet
-	logging.SetLevel(logging.WARNING, "fargo")
+	logging.SetLevel(logging.ERROR, "fargo")
 	return eurekaDiscoveryClient, nil
 }
