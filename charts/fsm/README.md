@@ -157,10 +157,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.eureka.syncToK8S.withGateway.enable | bool | `false` |  |
 | fsm.cloudConnector.gateway.egress.grpcPort | int | `0` |  |
 | fsm.cloudConnector.gateway.egress.httpPort | int | `0` |  |
-| fsm.cloudConnector.gateway.egress.ipSelector | string | `"ExternalIP"` |  |
+| fsm.cloudConnector.gateway.egress.ipSelector | string | `"ClusterIP"` |  |
 | fsm.cloudConnector.gateway.ingress.grpcPort | int | `0` |  |
 | fsm.cloudConnector.gateway.ingress.httpPort | int | `0` |  |
-| fsm.cloudConnector.gateway.ingress.ipSelector | string | `"ClusterIP"` |  |
+| fsm.cloudConnector.gateway.ingress.ipSelector | string | `"ExternalIP"` |  |
 | fsm.cloudConnector.gateway.syncToFgw.allowK8sNamespaces[0] | string | `"*"` |  |
 | fsm.cloudConnector.gateway.syncToFgw.defaultSync | bool | `true` |  |
 | fsm.cloudConnector.gateway.syncToFgw.denyK8sNamespaces[0] | string | `""` |  |
