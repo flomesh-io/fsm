@@ -19,6 +19,9 @@ const (
 	// GatewayUpdate is the event kind used to trigger an update to subscribed gateways
 	GatewayUpdate Kind = "gateway-update"
 
+	// ServiceUpdate is the event kind used to trigger an update to subscribed services
+	ServiceUpdate Kind = "service-update"
+
 	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
 	MCSUpdate Kind = "mcs-update"
 
