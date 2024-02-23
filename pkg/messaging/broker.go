@@ -41,6 +41,13 @@ const (
 	// gatewayUpdateMaxWindow is the max window duration used to batch gateway update events, and is
 	// the max amount of time a gateway update event can be held for batching before being dispatched.
 	gatewayUpdateMaxWindow = 10 * time.Second
+
+	// serviceUpdateSlidingWindow is the sliding window duration used to batch service update events
+	serviceUpdateSlidingWindow = 2 * time.Second
+
+	// serviceUpdateMaxWindow is the max window duration used to batch service update events, and is
+	// the max amount of time a service update event can be held for batching before being dispatched.
+	serviceUpdateMaxWindow = 10 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
@@ -54,6 +61,8 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 		ingressUpdateCh:     make(chan ingressUpdateEvent),
 		gatewayUpdatePubSub: pubsub.New(10240),
 		gatewayUpdateCh:     make(chan gatewayUpdateEvent),
+		serviceUpdatePubSub: pubsub.New(10240),
+		serviceUpdateCh:     make(chan serviceUpdateEvent),
 		kubeEventPubSub:     pubsub.New(10240),
 		certPubSub:          pubsub.New(10240),
 		mcsEventPubSub:      pubsub.New(10240),
@@ -64,6 +73,7 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	go b.runProxyUpdateDispatcher(stopCh)
 	go b.runIngressUpdateDispatcher(stopCh)
 	go b.runGatewayUpdateDispatcher(stopCh)
+	go b.runServiceUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -95,6 +105,11 @@ func (b *Broker) GetIngressUpdatePubSub() *pubsub.PubSub {
 // GetGatewayUpdatePubSub returns the PubSub instance corresponding to gateway update events
 func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
 	return b.gatewayUpdatePubSub
+}
+
+// GetServiceUpdatePubSub returns the PubSub instance corresponding to service update events
+func (b *Broker) GetServiceUpdatePubSub() *pubsub.PubSub {
+	return b.serviceUpdatePubSub
 }
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
@@ -146,6 +161,18 @@ func (b *Broker) GetTotalQGatewayEventCount() uint64 {
 // to subscribed gateways
 func (b *Broker) GetTotalDispatchedGatewayEventCount() uint64 {
 	return atomic.LoadUint64(&b.totalDispatchedGatewayEventCount)
+}
+
+// GetTotalQServiceEventCount returns the total number of events read from the workqueue
+// pertaining to service updates
+func (b *Broker) GetTotalQServiceEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalQServiceEventCount)
+}
+
+// GetTotalDispatchedServiceEventCount returns the total number of events dispatched
+// to subscribed services
+func (b *Broker) GetTotalDispatchedServiceEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalDispatchedServiceEventCount)
 }
 
 // runWorkqueueProcessor starts a goroutine to process events from the workqueue until
@@ -476,6 +503,109 @@ func (b *Broker) runGatewayUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+// runServiceUpdateDispatcher runs the dispatcher responsible for batching
+// service update events received in close proximity.
+// It batches service update events with the use of 2 timers:
+// 1. Sliding window timer that resets when a service update event is received
+// 2. Max window timer that caps the max duration a sliding window can be reset to
+// When either of the above timers expire, the service update event is published
+// on the dedicated pub-sub instance.
+func (b *Broker) runServiceUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a service update event is pending
+	// from being published on the pub-sub. A service update event will
+	// be held for 'serviceUpdateSlidingWindow' duration to be able to
+	// coalesce multiple service update events within that duration, before
+	// it is dispatched on the pub-sub. The 'serviceUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'serviceUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering service update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many service update events within the 'serviceUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of service update events batched per dispatch
+
+	var event serviceUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.serviceUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Service update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No service update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(serviceUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(serviceUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A service update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(serviceUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.serviceUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedServiceEventCount, 1)
+			metricsstore.DefaultMetricsStore.ServiceBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.serviceUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedServiceEventCount, 1)
+			metricsstore.DefaultMetricsStore.ServiceBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Service update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
 // 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
@@ -528,6 +658,22 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 			// Pass the broadcast event to the dispatcher routine, that coalesces
 			// multiple broadcasts received in close proximity.
 			b.gatewayUpdateCh <- *event
+		}
+	}
+
+	// Update services if applicable
+	if event := getServiceUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update services", msg.Kind)
+		atomic.AddUint64(&b.totalQServiceEventCount, 1)
+		if event.topic != announcements.ServiceUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more proxies.
+			b.serviceUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedServiceEventCount, 1)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.serviceUpdateCh <- *event
 		}
 	}
 
@@ -891,6 +1037,27 @@ func getMCSUpdateEvent(msg events.PubSubMessage) *mcsUpdateEvent {
 		return &mcsUpdateEvent{
 			msg:   msg,
 			topic: msg.Kind.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getServiceUpdateEvent returns a serviceUpdateEvent type indicating whether the given PubSubMessage should
+// result in a service configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a service update event.
+func getServiceUpdateEvent(msg events.PubSubMessage) *serviceUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		//
+		// Service event
+		announcements.ServiceUpdate:
+
+		return &serviceUpdateEvent{
+			msg:   msg,
+			topic: announcements.ServiceUpdate.String(),
 		}
 	default:
 		return nil

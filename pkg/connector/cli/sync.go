@@ -18,6 +18,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/signals"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 const (
@@ -80,10 +83,17 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	}
 	go syncer.Run(ctx)
 
+	resourceCtx, resourceCancel := context.WithCancel(context.Background())
+	resourceStop := signals.RegisterExitHandlers(resourceCancel)
+	resourceMsgBroker := messaging.NewBroker(resourceStop)
+
 	serviceResource := ktoc.ServiceResource{
 		Client:                         kubeClient,
 		Syncer:                         syncer,
-		Ctx:                            ctx,
+		Ctx:                            resourceCtx,
+		MsgBroker:                      resourceMsgBroker,
+		MsgWorkerPoolSize:              0,
+		MsgWorkQueues:                  workerpool.NewWorkerPool(0),
 		AllowK8sNamespacesSet:          allowSet,
 		DenyK8sNamespacesSet:           denySet,
 		ExplicitEnable:                 !Cfg.K2C.FlagDefaultSync,
@@ -106,6 +116,7 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	ctl := &connector.Controller{
 		Resource: &serviceResource,
 	}
+	go serviceResource.BroadcastListener()
 	go ctl.Run(ctx.Done())
 }
 

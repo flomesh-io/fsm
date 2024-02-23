@@ -16,10 +16,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 var (
@@ -61,6 +65,7 @@ const (
 // types from K8S.
 type ServiceResource struct {
 	Client kubernetes.Interface
+
 	Syncer Syncer
 
 	// Ctx is used to cancel processes kicked off by ServiceResource.
@@ -163,6 +168,11 @@ type ServiceResource struct {
 	// It's populated via cloud's API and lets us diff what is actually in
 	// cloud vs. what we expect to be there.
 	registeredServiceMap map[string][]*provider.CatalogRegistration
+
+	MsgBroker     *messaging.Broker
+	MsgWorkQueues *workerpool.WorkerPool
+	// workerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
+	MsgWorkerPoolSize int
 }
 
 type serviceAddress struct {
@@ -227,7 +237,7 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 			Endpoints(service.Namespace).
 			Get(t.Ctx, service.Name, metav1.GetOptions{})
 		if err != nil {
-			log.Warn().Msgf("error loading initial endpoints key%s err:%v",
+			log.Debug().Msgf("error loading initial endpoints key%s err:%v",
 				key,
 				err)
 		} else {
@@ -818,17 +828,11 @@ func (t *ServiceResource) registerServiceInstance(
 //
 // Precondition: lock must be held.
 func (t *ServiceResource) sync() {
-	// NOTE(mitchellh): This isn't the most efficient way to do this and
-	// the times that sync are called are also not the most efficient. All
-	// of these are implementation details so lets improve this later when
-	// it becomes a performance issue and just do the easy thing first.
-	rs := make([]*provider.CatalogRegistration, 0, len(t.registeredServiceMap)*4)
-	for _, set := range t.registeredServiceMap {
-		rs = append(rs, set...)
-	}
-
-	// Sync, which should be non-blocking in real-world cases
-	t.Syncer.Sync(rs)
+	t.MsgBroker.GetQueue().AddRateLimited(events.PubSubMessage{
+		Kind:   announcements.ServiceUpdate,
+		NewObj: nil,
+		OldObj: nil,
+	})
 }
 
 // serviceEndpointsResource implements controller.Resource and starts
