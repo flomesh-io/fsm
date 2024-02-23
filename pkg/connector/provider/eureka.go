@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/hudl/fargo"
@@ -69,15 +70,15 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 
 // CatalogService is used to query catalog entries for a given service
 func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	//services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
-	//if err != nil {
-	//	return nil, err
-	//}
-	servicesMap, err := dc.eurekaClient.GetApps()
+	services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
 	if err != nil {
 		return nil, err
 	}
-	services := servicesMap[strings.ToUpper(service)]
+	//servicesMap, err := dc.eurekaClient.GetApps()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//services = servicesMap[strings.ToUpper(service)]
 	catalogServices := make([]*CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, ins := range services.Instances {
@@ -126,7 +127,16 @@ func (dc *EurekaDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (
 }
 
 func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	return dc.eurekaClient.DeregisterInstance(dereg.toEureka())
+	err := dc.eurekaClient.DeregisterInstance(dereg.toEureka())
+	if err != nil {
+		if code, present := fargo.HTTPResponseStatusCode(err); present {
+			if code == 404 {
+				return nil
+			}
+		}
+	}
+
+	return err
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
@@ -158,12 +168,15 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
 func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string,
 	appendMetadataKeySet, appendMetadataValueSet mapset.Set) (*EurekaDiscoveryClient, error) {
 	eurekaClient := fargo.NewConn(address)
+	eurekaClient.Timeout = time.Duration(60) * time.Second
+	eurekaClient.PollInterval = time.Duration(30) * time.Second
+	eurekaClient.Retries = 3
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	eurekaDiscoveryClient.isInternalServices = isInternalServices
 	eurekaDiscoveryClient.clusterId = clusterId
 	eurekaDiscoveryClient.appendMetadataKeySet = appendMetadataKeySet
 	eurekaDiscoveryClient.appendMetadataValueSet = appendMetadataValueSet
-	logging.SetLevel(logging.WARNING, "fargo")
+	logging.SetLevel(logging.ERROR, "fargo")
 	return eurekaDiscoveryClient, nil
 }

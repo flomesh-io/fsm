@@ -806,7 +806,7 @@ fsm:
           enable: false
     gateway:
       ingress:
-        ipSelector: ClusterIP
+        ipSelector: ExternalIP
         httpPort: 0
         grpcPort: 0
       egress:
