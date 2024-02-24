@@ -480,7 +480,12 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				pipyConf.Ts = &ts
 				version := fmt.Sprintf("%d", codebaseCurV)
 				pipyConf.Version = &version
-				bytes, _ = json.MarshalIndent(pipyConf, "", " ")
+
+				if prettyConfig() {
+					bytes, _ = json.MarshalIndent(pipyConf, "", " ")
+				} else {
+					bytes, _ = json.Marshal(pipyConf)
+				}
 				_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
 					{
 						Basepath: codebase,
