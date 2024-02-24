@@ -1423,6 +1423,10 @@ spec:
                     description: EnableSidecarActiveHealthChecks defines if FSM will
                       Sidecar active health checks between services allowed to communicate.
                     type: boolean
+                  enableSidecarPrettyConfig:
+                    description: EnableSidecarPrettyConfig defines if pretty sidecar
+                      config is enabled.
+                    type: boolean
                   enableSnapshotCacheMode:
                     description: EnableSnapshotCacheMode defines if XDS server starts
                       with snapshot cache.
@@ -1455,6 +1459,7 @@ spec:
                 - enablePluginPolicy
                 - enableRetryPolicy
                 - enableSidecarActiveHealthChecks
+                - enableSidecarPrettyConfig
                 - enableSnapshotCacheMode
                 - enableValidateGRPCRouteHostnames
                 - enableValidateGatewayListenerHostname
