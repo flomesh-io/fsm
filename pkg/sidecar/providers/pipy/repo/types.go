@@ -114,7 +114,7 @@ type PluginSlice []trafficpolicy.Plugin
 
 // Pluggable is the base struct supported plugin
 type Pluggable struct {
-	Plugins map[string]*runtime.RawExtension `json:"Plugins"`
+	Plugins map[string]*runtime.RawExtension `json:"Plugins,omitempty"`
 }
 
 // URIPath is a uri wrapper type
@@ -133,8 +133,8 @@ type Services []ServiceName
 type HTTPMatchRule struct {
 	Path              URIPathValue
 	Type              URIMatchType
-	Headers           Headers `json:"Headers"`
-	Methods           Methods `json:"Methods"`
+	Headers           Headers `json:"Headers,omitempty"`
+	Methods           Methods `json:"Methods,omitempty"`
 	allowedAnyService bool
 	allowedAnyMethod  bool
 }
@@ -143,7 +143,7 @@ type HTTPMatchRule struct {
 type HTTPRouteRule struct {
 	HTTPMatchRule
 	TargetClusters  WeightedClusters `json:"TargetClusters"`
-	AllowedServices Services         `json:"AllowedServices"`
+	AllowedServices Services         `json:"AllowedServices,omitempty"`
 }
 
 // HTTPRouteRuleName is a string wrapper type
@@ -256,7 +256,7 @@ type MeshConfigSpec struct {
 		LivenessProbes  []v1.Probe `json:"LivenessProbes,omitempty"`
 		StartupProbes   []v1.Probe `json:"StartupProbes,omitempty"`
 	}
-	ClusterSet    map[string]string
+	ClusterSet    map[string]string `json:"ClusterSet,omitempty"`
 	LocalDNSProxy *LocalDNSProxy    `json:"LocalDNSProxy,omitempty"`
 	Observability ObservabilitySpec `json:"Observability,omitempty"`
 }
@@ -310,7 +310,7 @@ type WeightedCluster struct {
 // InboundHTTPRouteRule http route rule
 type InboundHTTPRouteRule struct {
 	HTTPRouteRule
-	RateLimit *HTTPPerRouteRateLimit `json:"RateLimit"`
+	RateLimit *HTTPPerRouteRateLimit `json:"RateLimit,omitempty"`
 }
 
 // InboundHTTPRouteRuleSlice http route rule array
@@ -320,8 +320,8 @@ type InboundHTTPRouteRuleSlice []*InboundHTTPRouteRule
 type InboundHTTPRouteRules struct {
 	RouteRules InboundHTTPRouteRuleSlice `json:"RouteRules"`
 	Pluggable
-	HTTPRateLimit    *HTTPRateLimit   `json:"RateLimit"`
-	AllowedEndpoints AllowedEndpoints `json:"AllowedEndpoints"`
+	HTTPRateLimit    *HTTPRateLimit   `json:"RateLimit,omitempty"`
+	AllowedEndpoints AllowedEndpoints `json:"AllowedEndpoints,omitempty"`
 }
 
 // InboundHTTPServiceRouteRules is a wrapper type of map[HTTPRouteRuleName]*InboundHTTPRouteRules
@@ -337,11 +337,11 @@ type InboundTCPServiceRouteRules struct {
 type InboundTrafficMatch struct {
 	Port                  Port                         `json:"Port"`
 	Protocol              Protocol                     `json:"Protocol"`
-	SourceIPRanges        SourceIPRanges               `json:"SourceIPRanges"`
-	HTTPHostPort2Service  HTTPHostPort2Service         `json:"HttpHostPort2Service"`
-	HTTPServiceRouteRules InboundHTTPServiceRouteRules `json:"HttpServiceRouteRules"`
-	TCPServiceRouteRules  *InboundTCPServiceRouteRules `json:"TcpServiceRouteRules"`
-	TCPRateLimit          *TCPRateLimit                `json:"RateLimit"`
+	SourceIPRanges        SourceIPRanges               `json:"SourceIPRanges,omitempty"`
+	HTTPHostPort2Service  HTTPHostPort2Service         `json:"HttpHostPort2Service,omitempty"`
+	HTTPServiceRouteRules InboundHTTPServiceRouteRules `json:"HttpServiceRouteRules,omitempty"`
+	TCPServiceRouteRules  *InboundTCPServiceRouteRules `json:"TcpServiceRouteRules,omitempty"`
+	TCPRateLimit          *TCPRateLimit                `json:"RateLimit,omitempty"`
 }
 
 // InboundTrafficMatches is a wrapper type of map[Port]*InboundTrafficMatch
@@ -359,7 +359,7 @@ type OutboundHTTPRouteRuleSlice []*OutboundHTTPRouteRule
 type OutboundHTTPRouteRules struct {
 	RouteRules           OutboundHTTPRouteRuleSlice `json:"RouteRules"`
 	ServiceIdentity      identity.ServiceIdentity
-	EgressForwardGateway *string
+	EgressForwardGateway *string `json:"EgressForwardGateway,omitempty"`
 	Pluggable
 }
 
@@ -370,7 +370,7 @@ type OutboundHTTPServiceRouteRules map[HTTPRouteRuleName]*OutboundHTTPRouteRules
 type OutboundTCPServiceRouteRules struct {
 	TargetClusters       WeightedClusters `json:"TargetClusters"`
 	AllowedEgressTraffic bool
-	EgressForwardGateway *string
+	EgressForwardGateway *string `json:"EgressForwardGateway,omitempty"`
 	Pluggable
 }
 
@@ -379,9 +379,9 @@ type OutboundTrafficMatch struct {
 	DestinationIPRanges   DestinationIPRanges
 	Port                  Port                          `json:"Port"`
 	Protocol              Protocol                      `json:"Protocol"`
-	HTTPHostPort2Service  HTTPHostPort2Service          `json:"HttpHostPort2Service"`
-	HTTPServiceRouteRules OutboundHTTPServiceRouteRules `json:"HttpServiceRouteRules"`
-	TCPServiceRouteRules  *OutboundTCPServiceRouteRules `json:"TcpServiceRouteRules"`
+	HTTPHostPort2Service  HTTPHostPort2Service          `json:"HttpHostPort2Service,omitempty"`
+	HTTPServiceRouteRules OutboundHTTPServiceRouteRules `json:"HttpServiceRouteRules,omitempty"`
+	TCPServiceRouteRules  *OutboundTCPServiceRouteRules `json:"TcpServiceRouteRules,omitempty"`
 }
 
 // OutboundTrafficMatchSlice is a wrapper type of []*OutboundTrafficMatch
@@ -546,7 +546,7 @@ type PipyConf struct {
 	Certificate      *Certificate
 	Inbound          *InboundTrafficPolicy    `json:"Inbound"`
 	Outbound         *OutboundTrafficPolicy   `json:"Outbound"`
-	Forward          *ForwardTrafficPolicy    `json:"Forward"`
+	Forward          *ForwardTrafficPolicy    `json:"Forward,omitempty"`
 	AllowedEndpoints map[string]string        `json:"AllowedEndpoints"`
 	Chains           map[string][]string      `json:"Chains,omitempty"`
 	DNSResolveDB     map[string][]interface{} `json:"DNSResolveDB,omitempty"`

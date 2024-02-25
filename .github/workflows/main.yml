@@ -162,7 +162,7 @@ jobs:
       - name: Scan docker images for vulnerabilities
         run: make trivy-scan-images
 
-  e2etest_1-4:
+  e2etest_1-3:
     name: Go test e2e
     runs-on: ubuntu-latest
     needs: build
@@ -170,7 +170,61 @@ jobs:
       matrix:
         k8s_version: [ "" ]
         focus: [ "" ]
-        bucket: [ 1, 2, 3, 4 ]
+        bucket: [ 1, 2, 3 ]
+    env:
+      CTR_TAG: ${{ github.sha }}
+      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build test dependencies
+        env:
+          DOCKER_BUILDX_OUTPUT: type=docker
+        run: make docker-build-e2e build-fsm
+      - name: Run tests
+        id: test
+        env:
+          K8S_NAMESPACE: "fsm-system"
+        run: |
+          export PATH=$PWD/bin:$PATH
+          echo "PATH=$PATH"
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+        continue-on-error: true
+      - name: Set Logs name
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: |
+          if [[ -n "${{ matrix.k8s_version }}" ]]; then
+            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
+          fi
+      - name: Upload test logs
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: /tmp/test**/*
+      - name: Check continue tests
+        if: ${{ steps.test.conclusion != 'skipped' && steps.test.outcome == 'failure'}}
+        run: exit 1
+      - name: Clean tests
+        if: ${{ steps.test.conclusion != 'skipped' }}
+        run: rm -rf /tmp/test*
+
+  e2etest_4:
+    name: Go test e2e
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        k8s_version: [ "" ]
+        focus: [ "" ]
+        bucket: [ 4 ]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework

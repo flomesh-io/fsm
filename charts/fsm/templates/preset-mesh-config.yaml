@@ -90,6 +90,7 @@ data:
         "enableIngressBackendPolicy": {{.Values.fsm.featureFlags.enableIngressBackendPolicy | mustToJson}},
         "enableAccessControlPolicy": {{.Values.fsm.featureFlags.enableAccessControlPolicy | mustToJson}},
         "enableAccessCertPolicy": {{.Values.fsm.featureFlags.enableAccessCertPolicy | mustToJson}},
+        "enableSidecarPrettyConfig": {{.Values.fsm.featureFlags.enableSidecarPrettyConfig | mustToJson}},
         "enableSidecarActiveHealthChecks": {{.Values.fsm.featureFlags.enableSidecarActiveHealthChecks | mustToJson}},
         "enableRetryPolicy": {{.Values.fsm.featureFlags.enableRetryPolicy | mustToJson}},
         "enablePluginPolicy": {{.Values.fsm.featureFlags.enablePluginPolicy | mustToJson}},

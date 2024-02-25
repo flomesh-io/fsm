@@ -57,6 +57,10 @@ func NewRepoServer(meshCatalog catalog.MeshCataloger, proxyRegistry *registry.Pr
 		repoClient:     client.NewRepoClient(cfg.GetRepoServerIPAddr(), uint16(cfg.GetProxyServerPort())),
 	}
 
+	prettyConfig = func() bool {
+		return cfg.GetMeshConfig().Spec.FeatureFlags.EnableSidecarPrettyConfig
+	}
+
 	return &server
 }
 

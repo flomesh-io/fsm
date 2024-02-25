@@ -247,6 +247,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enablePluginPolicy | bool | `false` | Enable Plugin Policy for extend |
 | fsm.featureFlags.enableRetryPolicy | bool | `false` | Enable Retry Policy for automatic request retries |
 | fsm.featureFlags.enableSidecarActiveHealthChecks | bool | `false` | Enable Sidecar active health checks |
+| fsm.featureFlags.enableSidecarPrettyConfig | bool | `true` | Enable Sidecar Pretty Config |
 | fsm.featureFlags.enableSnapshotCacheMode | bool | `false` | Enables SnapshotCache feature for Sidecar xDS server. |
 | fsm.featureFlags.enableValidateGRPCRouteHostnames | bool | `true` | Enable validate GRPC route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
