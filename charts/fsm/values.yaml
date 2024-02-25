@@ -901,6 +901,8 @@ fsm:
     enableAccessControlPolicy: true
     # When enabled, FSM can issue certificates for external services.
     enableAccessCertPolicy: false
+    # -- Enable Sidecar Pretty Config
+    enableSidecarPrettyConfig: true
     # -- Enable Sidecar active health checks
     enableSidecarActiveHealthChecks: false
     # -- Enables SnapshotCache feature for Sidecar xDS server.

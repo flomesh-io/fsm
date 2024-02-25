@@ -24,6 +24,7 @@ type FeatureFlagsApplyConfiguration struct {
 	EnableIngressBackendPolicy            *bool `json:"enableIngressBackendPolicy,omitempty"`
 	EnableAccessControlPolicy             *bool `json:"enableAccessControlPolicy,omitempty"`
 	EnableAccessCertPolicy                *bool `json:"enableAccessCertPolicy,omitempty"`
+	EnableSidecarPrettyConfig             *bool `json:"enableSidecarPrettyConfig,omitempty"`
 	EnableSidecarActiveHealthChecks       *bool `json:"enableSidecarActiveHealthChecks,omitempty"`
 	EnableRetryPolicy                     *bool `json:"enableRetryPolicy,omitempty"`
 	EnablePluginPolicy                    *bool `json:"enablePluginPolicy,omitempty"`
@@ -87,6 +88,14 @@ func (b *FeatureFlagsApplyConfiguration) WithEnableAccessControlPolicy(value boo
 // If called multiple times, the EnableAccessCertPolicy field is set to the value of the last call.
 func (b *FeatureFlagsApplyConfiguration) WithEnableAccessCertPolicy(value bool) *FeatureFlagsApplyConfiguration {
 	b.EnableAccessCertPolicy = &value
+	return b
+}
+
+// WithEnableSidecarPrettyConfig sets the EnableSidecarPrettyConfig field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableSidecarPrettyConfig field is set to the value of the last call.
+func (b *FeatureFlagsApplyConfiguration) WithEnableSidecarPrettyConfig(value bool) *FeatureFlagsApplyConfiguration {
+	b.EnableSidecarPrettyConfig = &value
 	return b
 }
 
