@@ -353,6 +353,9 @@ type FeatureFlags struct {
 	// EnableAccessCertPolicy defines if FSM can issue certificates for external services..
 	EnableAccessCertPolicy bool `json:"enableAccessCertPolicy"`
 
+	// EnableSidecarPrettyConfig defines if pretty sidecar config is enabled.
+	EnableSidecarPrettyConfig bool `json:"enableSidecarPrettyConfig"`
+
 	// EnableSidecarActiveHealthChecks defines if FSM will Sidecar active health
 	// checks between services allowed to communicate.
 	EnableSidecarActiveHealthChecks bool `json:"enableSidecarActiveHealthChecks"`

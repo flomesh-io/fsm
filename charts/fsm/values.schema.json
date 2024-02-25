@@ -3262,6 +3262,7 @@
                         "enableIngressBackendPolicy",
                         "enableAccessControlPolicy",
                         "enableAccessCertPolicy",
+                        "enableSidecarPrettyConfig",
                         "enableSidecarActiveHealthChecks",
                         "enableSnapshotCacheMode",
                         "enableRetryPolicy",
@@ -3320,6 +3321,15 @@
                             "examples": [
                                 true
                             ]
+                        },
+                        "enableSidecarPrettyConfig": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableSidecarPrettyConfig",
+                          "type": "boolean",
+                          "title": "Enable Pretty Sidecar Config",
+                          "description": "EnableSidecarPrettyConfig defines if pretty sidecar's config is enable",
+                          "examples": [
+                            true
+                          ]
                         },
                         "enableSidecarActiveHealthChecks": {
                             "$id": "#/properties/fsm/properties/featureFlags/properties/enableSidecarActiveHealthChecks",
