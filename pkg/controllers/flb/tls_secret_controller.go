@@ -31,7 +31,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/controllers"
 )
 
-// reconciler reconciles a Service object
+// reconciler reconciles a Secret object
 type secretReconciler struct {
 	recorder   record.EventRecorder
 	fctx       *fctx.ControllerContext
@@ -135,7 +135,7 @@ func (r *secretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 func (r *secretReconciler) createOrUpdateFLBSecret(ctx context.Context, secret *corev1.Secret) (ctrl.Result, error) {
 	oldHash := getSecretHash(secret)
-	hash := utils.SimpleHash(secret)
+	hash := utils.SimpleHash(secret.Data)
 
 	if oldHash != hash {
 		data := CertRequest{
@@ -149,8 +149,7 @@ func (r *secretReconciler) createOrUpdateFLBSecret(ctx context.Context, secret *
 			},
 		}
 
-		_, err := r.updateFLBSecret(secret, data, false)
-		if err != nil {
+		if err := r.updateFLBSecret(secret, data, false); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -174,7 +173,7 @@ func (r *secretReconciler) deleteSecretFromFLB(_ context.Context, secret *corev1
 		setting := r.settingMgr.GetSetting(secret.Namespace)
 		secretName := secretKey(setting, secret.Namespace, secret.Name)
 
-		if _, err := r.updateFLBSecret(secret, CertDeleteRequest{Name: secretName}, true); err != nil {
+		if err := r.updateFLBSecret(secret, CertDeleteRequest{Name: secretName}, true); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -182,24 +181,20 @@ func (r *secretReconciler) deleteSecretFromFLB(_ context.Context, secret *corev1
 	return ctrl.Result{}, nil
 }
 
-func (r *secretReconciler) updateFLBSecret(secret *corev1.Secret, request interface{}, del bool) (*resty.Response, error) {
+func (r *secretReconciler) updateFLBSecret(secret *corev1.Secret, request interface{}, del bool) error {
 	setting := r.settingMgr.GetSetting(secret.Namespace)
 
 	if err := setting.UpdateToken(); err != nil {
 		log.Error().Msgf("Login to FLB failed: %s", err)
 		defer r.recorder.Eventf(secret, corev1.EventTypeWarning, "LoginFailed", "Login to FLB failed: %s", err)
 
-		return nil, err
+		return err
 	}
 
-	var resp *resty.Response
-	var statusCode int
-	var err error
+	if err := retry.Fibonacci(context.TODO(), 1*time.Second, func(ctx context.Context) error {
+		statusCode, apiErr := r.invokeFLBAPI(secret.Namespace, request, del)
 
-	if err = retry.Fibonacci(context.TODO(), 1*time.Second, func(ctx context.Context) error {
-		resp, statusCode, err = r.invokeFLBAPI(secret.Namespace, request, del)
-
-		if err != nil {
+		if apiErr != nil {
 			if statusCode == http.StatusUnauthorized {
 				if loginErr := setting.ForceUpdateToken(); loginErr != nil {
 					log.Error().Msgf("Login to FLB failed: %s", loginErr)
@@ -208,11 +203,11 @@ func (r *secretReconciler) updateFLBSecret(secret *corev1.Secret, request interf
 					return loginErr
 				}
 
-				return retry.RetryableError(err)
+				return retry.RetryableError(apiErr)
 			}
 
-			defer r.recorder.Eventf(secret, corev1.EventTypeWarning, "InvokeFLBApiError", "Failed to invoke FLB API: %s", err)
-			return err
+			defer r.recorder.Eventf(secret, corev1.EventTypeWarning, "InvokeFLBApiError", "Failed to invoke FLB API: %s", apiErr)
+			return apiErr
 		}
 
 		return nil
@@ -220,12 +215,12 @@ func (r *secretReconciler) updateFLBSecret(secret *corev1.Secret, request interf
 		log.Error().Msgf("failed to update FLB: %s", err)
 		defer r.recorder.Eventf(secret, corev1.EventTypeWarning, "UpdateFLBFailed", "Failed to update FLB: %s", err)
 
-		return nil, err
+		return err
 	}
 
-	return resp, nil
+	return nil
 }
-func (r *secretReconciler) invokeFLBAPI(namespace string, body interface{}, del bool) (*resty.Response, int, error) {
+func (r *secretReconciler) invokeFLBAPI(namespace string, body interface{}, del bool) (int, error) {
 	setting := r.settingMgr.GetSetting(namespace)
 	request := setting.httpClient.R().
 		SetHeader("Content-Type", "application/json").
@@ -244,19 +239,19 @@ func (r *secretReconciler) invokeFLBAPI(namespace string, body interface{}, del 
 
 	if err != nil {
 		log.Error().Msgf("error happened while trying to update FLB secret, %s", err.Error())
-		return nil, -1, err
+		return -1, err
 	}
 
 	if resp.StatusCode() == http.StatusUnauthorized {
-		return nil, http.StatusUnauthorized, fmt.Errorf("invalid token")
+		return http.StatusUnauthorized, fmt.Errorf("invalid token")
 	}
 
 	if resp.StatusCode() != http.StatusOK {
 		log.Error().Msgf("FLB server responsed with StatusCode: %d", resp.StatusCode())
-		return nil, resp.StatusCode(), fmt.Errorf("%d: %s", resp.StatusCode(), string(resp.Body()))
+		return resp.StatusCode(), fmt.Errorf("%d: %s", resp.StatusCode(), string(resp.Body()))
 	}
 
-	return resp, http.StatusOK, nil
+	return http.StatusOK, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
