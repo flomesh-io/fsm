@@ -104,6 +104,7 @@ func (r *secretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{}, nil
 			}
 		}
+
 		// Error reading the object - requeue the request.
 		log.Error().Msgf("Failed to get Secret, %v", err)
 		return ctrl.Result{}, err
@@ -111,6 +112,10 @@ func (r *secretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if flb.IsFLBTLSSecret(secret) {
 		r.cache[req.NamespacedName] = secret.DeepCopy()
+
+		if result, err := r.settingMgr.CheckSetting(secret); err != nil {
+			return result, err
+		}
 
 		if secret.DeletionTimestamp != nil {
 			result, err := r.deleteSecretFromFLB(ctx, secret)

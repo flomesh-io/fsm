@@ -154,56 +154,8 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		//}
 
 		r.cache[req.NamespacedName] = svc.DeepCopy()
-		mc := r.fctx.Config
-
-		secrets, err := r.fctx.KubeClient.CoreV1().
-			Secrets(svc.Namespace).
-			List(context.TODO(), metav1.ListOptions{
-				FieldSelector: fmt.Sprintf("metadata.name=%s", mc.GetFLBSecretName()),
-				LabelSelector: labels.SelectorFromSet(
-					map[string]string{constants.FLBConfigSecretLabel: "true"},
-				).String(),
-			})
-
-		if err != nil {
-			defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "GetSecretFailed", "Failed to get FLB secret %s/%s", svc.Namespace, mc.GetFLBSecretName())
-			return ctrl.Result{}, err
-		}
-
-		switch len(secrets.Items) {
-		case 0:
-			if mc.IsFLBStrictModeEnabled() {
-				defer r.recorder.Eventf(svc, corev1.EventTypeWarning, "GetSecretFailed", "In StrictMode, FLB secret %s/%s must exist", svc.Namespace, mc.GetFLBSecretName())
-				return ctrl.Result{}, err
-			}
-
-			if r.settingMgr.GetSetting(svc.Namespace) == nil {
-				defer r.recorder.Eventf(svc, corev1.EventTypeNormal, "UseDefaultSecret", "FLB Secret %s/%s doesn't exist, using default ...", svc.Namespace, mc.GetFLBSecretName())
-				r.settingMgr.SetSetting(svc.Namespace, r.settingMgr.GetDefaultSetting())
-			}
-		case 1:
-			secret := &secrets.Items[0]
-
-			if r.settingMgr.GetSetting(svc.Namespace) == nil {
-				if mc.IsFLBStrictModeEnabled() {
-					r.settingMgr.SetSetting(svc.Namespace, newSetting(secret))
-				} else {
-					r.settingMgr.SetSetting(svc.Namespace, newOverrideSetting(secret, r.settingMgr.GetDefaultSetting()))
-				}
-			} else {
-				setting := r.settingMgr.GetSetting(svc.Namespace)
-				if isSettingChanged(secret, setting, r.settingMgr.GetDefaultSetting(), mc) {
-					if svc.Namespace == mc.GetFSMNamespace() {
-						r.settingMgr.SetSetting(flbDefaultSettingKey, newSetting(secret))
-					}
-
-					if mc.IsFLBStrictModeEnabled() {
-						r.settingMgr.SetSetting(svc.Namespace, newSetting(secret))
-					} else {
-						r.settingMgr.SetSetting(svc.Namespace, newOverrideSetting(secret, r.settingMgr.GetDefaultSetting()))
-					}
-				}
-			}
+		if result, err := r.settingMgr.CheckSetting(svc); err != nil {
+			return result, err
 		}
 
 		if svc.DeletionTimestamp != nil {

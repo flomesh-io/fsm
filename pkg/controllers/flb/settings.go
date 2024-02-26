@@ -7,6 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/client-go/tools/record"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -72,8 +77,10 @@ func (s *Setting) login(force bool) error {
 
 // SettingManager is the manager for FLB settings
 type SettingManager struct {
-	ctx      *fctx.ControllerContext
+	fctx     *fctx.ControllerContext
+	recorder record.EventRecorder
 	settings map[string]*Setting
+	mu       sync.Mutex
 }
 
 // NewSettingManager returns a new setting manager
@@ -119,7 +126,8 @@ func NewSettingManager(ctx *fctx.ControllerContext) *SettingManager {
 	}
 
 	return &SettingManager{
-		ctx:      ctx,
+		fctx:     ctx,
+		recorder: ctx.Manager.GetEventRecorderFor("FLB"),
 		settings: settings,
 	}
 }
@@ -131,6 +139,9 @@ func (sm *SettingManager) GetSetting(namespace string) *Setting {
 
 // SetSetting sets the setting for the namespace
 func (sm *SettingManager) SetSetting(namespace string, setting *Setting) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
 	sm.settings[namespace] = setting
 }
 
@@ -139,16 +150,62 @@ func (sm *SettingManager) GetDefaultSetting() *Setting {
 	return sm.settings[flbDefaultSettingKey]
 }
 
-//// UpdateToken updates the token for the namespace
-//func (sm *SettingManager) UpdateToken(namespace string, token string) {
-//	setting := sm.GetSetting(namespace)
-//	if setting == nil {
-//		return
-//	}
-//
-//	setting.token = token
-//	sm.SetSetting(namespace, setting)
-//}
+// CheckSetting checks the setting for the object in the namespace
+func (sm *SettingManager) CheckSetting(obj client.Object) (ctrl.Result, error) {
+	mc := sm.fctx.Config
+
+	secrets, err := sm.fctx.KubeClient.CoreV1().
+		Secrets(obj.GetNamespace()).
+		List(context.TODO(), metav1.ListOptions{
+			FieldSelector: fmt.Sprintf("metadata.name=%s", mc.GetFLBSecretName()),
+			LabelSelector: labels.SelectorFromSet(
+				map[string]string{constants.FLBConfigSecretLabel: "true"},
+			).String(),
+		})
+
+	if err != nil {
+		defer sm.recorder.Eventf(obj, corev1.EventTypeWarning, "GetSecretFailed", "Failed to get FLB secret %s/%s", obj.GetNamespace(), mc.GetFLBSecretName())
+		return ctrl.Result{}, err
+	}
+
+	switch len(secrets.Items) {
+	case 0:
+		if mc.IsFLBStrictModeEnabled() {
+			defer sm.recorder.Eventf(obj, corev1.EventTypeWarning, "GetSecretFailed", "In StrictMode, FLB secret %s/%s must exist", obj.GetNamespace(), mc.GetFLBSecretName())
+			return ctrl.Result{}, err
+		}
+
+		if sm.GetSetting(obj.GetNamespace()) == nil {
+			defer sm.recorder.Eventf(obj, corev1.EventTypeNormal, "UseDefaultSecret", "FLB Secret %s/%s doesn't exist, using default ...", obj.GetNamespace(), mc.GetFLBSecretName())
+			sm.SetSetting(obj.GetNamespace(), sm.GetDefaultSetting())
+		}
+	case 1:
+		secret := &secrets.Items[0]
+
+		if sm.GetSetting(obj.GetNamespace()) == nil {
+			if mc.IsFLBStrictModeEnabled() {
+				sm.SetSetting(obj.GetNamespace(), newSetting(secret))
+			} else {
+				sm.SetSetting(obj.GetNamespace(), newOverrideSetting(secret, sm.GetDefaultSetting()))
+			}
+		} else {
+			setting := sm.GetSetting(obj.GetNamespace())
+			if isSettingChanged(secret, setting, sm.GetDefaultSetting(), mc) {
+				if obj.GetNamespace() == mc.GetFSMNamespace() {
+					sm.SetSetting(flbDefaultSettingKey, newSetting(secret))
+				}
+
+				if mc.IsFLBStrictModeEnabled() {
+					sm.SetSetting(obj.GetNamespace(), newSetting(secret))
+				} else {
+					sm.SetSetting(obj.GetNamespace(), newOverrideSetting(secret, sm.GetDefaultSetting()))
+				}
+			}
+		}
+	}
+
+	return ctrl.Result{}, nil
+}
 
 func defaultGlobalSetting(api kubernetes.Interface, mc configurator.Configurator) (*Setting, error) {
 	secret, err := api.CoreV1().
