@@ -238,6 +238,10 @@ func (r *serviceReconciler) createOrUpdateFLBEntry(ctx context.Context, svc *cor
 			return ctrl.Result{}, err
 		}
 
+		if len(svc.Annotations) == 0 {
+			svc.Annotations = make(map[string]string)
+		}
+
 		svc.Annotations[constants.FLBHashAnnotation] = hash
 		if err := r.fctx.Update(ctx, svc); err != nil {
 			return ctrl.Result{}, err

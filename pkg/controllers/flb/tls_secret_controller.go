@@ -154,6 +154,10 @@ func (r *secretReconciler) createOrUpdateFLBSecret(ctx context.Context, secret *
 			return ctrl.Result{}, err
 		}
 
+		if len(secret.Annotations) == 0 {
+			secret.Annotations = make(map[string]string)
+		}
+
 		secret.Annotations[constants.FLBHashAnnotation] = hash
 		if err := r.fctx.Update(ctx, secret); err != nil {
 			return ctrl.Result{}, err
@@ -163,7 +167,7 @@ func (r *secretReconciler) createOrUpdateFLBSecret(ctx context.Context, secret *
 	return ctrl.Result{}, nil
 }
 
-func (r *secretReconciler) deleteSecretFromFLB(ctx context.Context, secret *corev1.Secret) (ctrl.Result, error) {
+func (r *secretReconciler) deleteSecretFromFLB(_ context.Context, secret *corev1.Secret) (ctrl.Result, error) {
 	if flb.IsFLBTLSSecret(secret) {
 		log.Debug().Msgf("Secret %s/%s is being deleted from FLB ...", secret.Namespace, secret.Name)
 
