@@ -70,6 +70,7 @@ func NewSecretReconciler(ctx *fctx.ControllerContext, settingManager *SettingMan
 		recorder:   ctx.Manager.GetEventRecorderFor("FLB"),
 		fctx:       ctx,
 		settingMgr: settingManager,
+		cache:      make(map[types.NamespacedName]*corev1.Secret),
 	}
 }
 
