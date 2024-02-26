@@ -644,7 +644,7 @@ func deleteServiceLBResources(ctx context.Context, kubeClient kubernetes.Interfa
 func deleteFLBResources(ctx context.Context, kubeClient kubernetes.Interface) error {
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.FLBSecretLabel: "true",
+			constants.FLBConfigSecretLabel: "true",
 		},
 	}
 	listOptions := metav1.ListOptions{
