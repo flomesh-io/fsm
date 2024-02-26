@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   labels:
     app.kubernetes.io/name: flomesh.io
   name: ingressbackends.policy.flomesh.io
@@ -21,19 +21,25 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: IngressBackend is the type used to represent an Ingress backend
-          policy. An Ingress backend policy authorizes one or more backends to accept
+        description: |-
+          IngressBackend is the type used to represent an Ingress backend policy.
+          An Ingress backend policy authorizes one or more backends to accept
           ingress traffic from one or more sources.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -70,9 +76,9 @@ spec:
                         TLS configuration.
                       properties:
                         skipClientCertValidation:
-                          description: SkipClientCertValidation defines whether the
-                            backend should skip validating the certificate presented
-                            by the client.
+                          description: |-
+                            SkipClientCertValidation defines whether the backend should skip validating the
+                            certificate presented by the client.
                           type: boolean
                         sniHosts:
                           description: SNIHosts defines the SNI hostnames that the
@@ -92,15 +98,15 @@ spec:
                 description: Matches defines the list of object references the IngressBackend
                   policy should match on.
                 items:
-                  description: TypedLocalObjectReference contains enough information
-                    to let you locate the typed referenced object inside the same
-                    namespace.
+                  description: |-
+                    TypedLocalObjectReference contains enough information to let you locate the
+                    typed referenced object inside the same namespace.
                   properties:
                     apiGroup:
-                      description: APIGroup is the group for the resource being referenced.
-                        If APIGroup is not specified, the specified Kind must be in
-                        the core API group. For any other third-party types, APIGroup
-                        is required.
+                      description: |-
+                        APIGroup is the group for the resource being referenced.
+                        If APIGroup is not specified, the specified Kind must be in the core API group.
+                        For any other third-party types, APIGroup is required.
                       type: string
                     kind:
                       description: Kind is the type of resource being referenced
@@ -118,13 +124,14 @@ spec:
                 description: Sources defines the list of sources the IngressBackend
                   policy applies to.
                 items:
-                  description: IngressSourceSpec is the type used to represent the
-                    Source in the list of Sources specified in an IngressBackend policy
-                    specification.
+                  description: |-
+                    IngressSourceSpec is the type used to represent the Source in the list of Sources specified in an
+                    IngressBackend policy specification.
                   properties:
                     kind:
-                      description: 'Kind defines the kind for the source in the IngressBackend
-                        policy. Must be one of: Service, AuthenticatedPrincipal, IPRange'
+                      description: |-
+                        Kind defines the kind for the source in the IngressBackend policy.
+                        Must be one of: Service, AuthenticatedPrincipal, IPRange
                       type: string
                     name:
                       description: Name defines the name of the source for the given

@@ -22,12 +22,13 @@
  * SOFTWARE.
  */
 
-// Package secret contains webhook logic for the FLB secret resource
-package secret
+// Package tls contains webhook logic for the FLB TLS secret resource
+package tls
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/flomesh-io/fsm/pkg/flb"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,29 +63,29 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 	)
 
 	return []admissionregv1.MutatingWebhook{flomeshadmission.NewMutatingWebhook(
-			"mflbsecret.kb.flomesh.io",
+			"mflbtlssecret.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.FLBSecretMutatingWebhookPath,
+			constants.FLBTLSSecretMutatingWebhookPath,
 			r.CaBundle,
 			nil,
 			&metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					constants.FLBConfigSecretLabel: "true",
+					constants.FLBTLSSecretLabel: "true",
 				},
 			},
 			admissionregv1.Ignore,
 			[]admissionregv1.RuleWithOperations{rule},
 		)}, []admissionregv1.ValidatingWebhook{flomeshadmission.NewValidatingWebhook(
-			"vflbsecret.kb.flomesh.io",
+			"vflbtlssecret.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.FLBSecretValidatingWebhookPath,
+			constants.FLBTLSSecretValidatingWebhookPath,
 			r.CaBundle,
 			nil,
 			&metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					constants.FLBConfigSecretLabel: "true",
+					constants.FLBTLSSecretLabel: "true",
 				},
 			},
 			admissionregv1.Ignore,
@@ -95,8 +96,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the list of handlers of the FLB Secret resource
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.FLBSecretMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
-		constants.FLBSecretValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Config)),
+		constants.FLBTLSSecretMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
+		constants.FLBTLSSecretValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Config)),
 	}
 }
 
@@ -119,23 +120,10 @@ func (w *defaulter) RuntimeObject() runtime.Object {
 
 // SetDefaults sets the default values of the FLB Secret resource
 func (w *defaulter) SetDefaults(obj interface{}) {
-	secret, ok := obj.(*corev1.Secret)
-	if !ok {
-		return
-	}
-
-	mc := w.cfg
-	if secret.Name != mc.GetFLBSecretName() {
-		return
-	}
-
-	if secret.Annotations == nil {
-		secret.Annotations = make(map[string]string)
-	}
-
-	if len(secret.Data[constants.FLBSecretKeyDefaultAlgo]) == 0 {
-		secret.Data[constants.FLBSecretKeyDefaultAlgo] = []byte("rr")
-	}
+	//secret, ok := obj.(*corev1.Secret)
+	//if !ok {
+	//	return
+	//}
 }
 
 type validator struct {
@@ -176,28 +164,8 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	mc := w.cfg
-	if secret.Name != mc.GetFLBSecretName() {
-		return nil
-	}
-
-	if mc.IsFLBStrictModeEnabled() {
-		for _, key := range []string{
-			constants.FLBSecretKeyBaseURL,
-			constants.FLBSecretKeyUsername,
-			constants.FLBSecretKeyPassword,
-			constants.FLBSecretKeyDefaultAddressPool,
-			constants.FLBSecretKeyDefaultAlgo,
-		} {
-			value, ok := secret.Data[key]
-			if !ok {
-				return fmt.Errorf("%q is required", key)
-			}
-
-			if len(value) == 0 {
-				return fmt.Errorf("%q has an empty value", key)
-			}
-		}
+	if _, err := flb.IsValidTLSSecret(secret); err != nil {
+		return err
 	}
 
 	return nil

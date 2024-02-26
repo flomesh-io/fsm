@@ -174,5 +174,15 @@ func (w *validator) doValidation(obj interface{}) error {
 		}
 	}
 
+	if flb.IsTLSEnabled(service) {
+		if _, err := flb.IsValidTLSPort(service); err != nil {
+			return err
+		}
+
+		if _, err := flb.IsServiceRefToValidTLSSecret(service, w.kubeClient); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

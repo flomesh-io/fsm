@@ -26,6 +26,11 @@ package flb
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
+	"strconv"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,4 +73,135 @@ func IsFLBEnabled(svc *corev1.Service, kubeClient kubernetes.Interface) bool {
 	// parse svc annotation
 	log.Debug().Msgf("Found annotation %q on Service %s/%s", constants.FLBEnabledAnnotation, svc.Namespace, svc.Name)
 	return utils.ParseEnabled(svc.Annotations[constants.FLBEnabledAnnotation])
+}
+
+// IsServiceRefToValidTLSSecret checks if the service is referencing to a valid TLS Secret
+func IsServiceRefToValidTLSSecret(svc *corev1.Service, kubeClient kubernetes.Interface) (bool, error) {
+	if len(svc.Annotations) == 0 {
+		return false, fmt.Errorf("service has empty annotations")
+	}
+
+	name, ok := svc.Annotations[constants.FLBTLSSecretAnnotation]
+	if !ok {
+		return false, fmt.Errorf("service doesn't have annotation %s", constants.FLBTLSSecretAnnotation)
+	}
+
+	mode := GetTLSSecretMode(svc)
+	switch mode {
+	case TLSSecretModeRemote:
+		return true, nil
+	case TLSSecretModeLocal:
+		secret, err := kubeClient.CoreV1().Secrets(svc.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		if !IsFLBTLSSecret(secret) {
+			return false, fmt.Errorf("invalid secret, doesn't have required label: %s=true", constants.FLBTLSSecretLabel)
+		}
+
+		return IsValidTLSSecret(secret)
+	default:
+		return false, fmt.Errorf("invalid TLS Secret Mode: %s", mode)
+	}
+}
+
+// IsValidTLSSecret checks if the secret has a valid TLS Cert and Key
+func IsValidTLSSecret(secret *corev1.Secret) (bool, error) {
+	cert, ok := secret.Data[corev1.TLSCertKey]
+	if !ok {
+		return false, fmt.Errorf("secret doesn't have required cert with name %s", corev1.TLSCertKey)
+	}
+
+	certBlock, _ := pem.Decode(cert)
+	if certBlock == nil {
+		return false, fmt.Errorf("failed to parse certificate PEM")
+	}
+
+	if _, err := x509.ParseCertificate(certBlock.Bytes); err != nil {
+		return false, err
+	}
+
+	key, ok := secret.Data[corev1.TLSPrivateKeyKey]
+	if !ok {
+		return false, fmt.Errorf("secret doesn't have required private key with name %s", corev1.TLSPrivateKeyKey)
+	}
+
+	keyBlock, _ := pem.Decode(key)
+	if keyBlock == nil {
+		return false, fmt.Errorf("failed to parse private key PEM")
+	}
+
+	if _, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// IsFLBTLSSecret checks if the secret is a valid FLB TLS Secret by checking the label
+func IsFLBTLSSecret(secret *corev1.Secret) bool {
+	if len(secret.Labels) == 0 {
+		return false
+	}
+
+	tls, ok := secret.Labels[constants.FLBTLSSecretLabel]
+	if !ok {
+		return false
+	}
+
+	return tls == "true"
+}
+
+// GetTLSSecretMode returns the TLS Secret Mode, default is Local
+func GetTLSSecretMode(svc *corev1.Service) TLSSecretMode {
+	if len(svc.Annotations) == 0 {
+		return TLSSecretModeLocal
+	}
+
+	mode, ok := svc.Annotations[constants.FLBTLSSecretModeAnnotation]
+	if !ok {
+		return TLSSecretModeLocal
+	}
+
+	mode = strings.ToLower(mode)
+
+	switch TLSSecretMode(mode) {
+	case TLSSecretModeRemote, TLSSecretModeLocal:
+		return TLSSecretMode(mode)
+	}
+
+	return TLSSecretModeLocal
+}
+
+// IsTLSEnabled checks if the service is enabled for TLS
+func IsTLSEnabled(svc *corev1.Service) bool {
+	if len(svc.Annotations) == 0 {
+		return false
+	}
+
+	return svc.Annotations[constants.FLBTLSEnabledAnnotation] == "true"
+}
+
+// IsValidTLSPort checks if the service has valid TLS port
+func IsValidTLSPort(svc *corev1.Service) (bool, error) {
+	if len(svc.Annotations) == 0 {
+		return false, fmt.Errorf("service has empty annotations")
+	}
+
+	port, ok := svc.Annotations[constants.FLBTLSPortAnnotation]
+	if !ok {
+		return false, fmt.Errorf("service doesn't have annotation %s", constants.FLBTLSPortAnnotation)
+	}
+
+	p, err := strconv.Atoi(port)
+	if err != nil {
+		return false, err
+	}
+
+	if p <= 0 || p > 65535 {
+		return false, fmt.Errorf("invalid port number: %d", p)
+	}
+
+	return true, nil
 }

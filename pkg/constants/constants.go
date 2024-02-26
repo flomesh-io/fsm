@@ -725,11 +725,26 @@ const (
 	// FLBTagsAnnotation is the annotation used to indicate the tags
 	FLBTagsAnnotation = FLBPrefix + "/tags"
 
-	// FLBServiceHashAnnotation is the annotation used to indicate the hash of the service
-	FLBServiceHashAnnotation = FLBPrefix + "/hash"
+	// FLBTLSEnabledAnnotation is the annotation used to indicate if the TLS is enabled
+	FLBTLSEnabledAnnotation = FLBPrefix + "/tls-enabled"
 
-	// FLBSecretLabel is the label used to indicate the secret
-	FLBSecretLabel = FLBPrefix + "/config"
+	// FLBTLSSecretAnnotation is the annotation used to indicate the secret name which has TLS cert
+	FLBTLSSecretAnnotation = FLBPrefix + "/tls-secret"
+
+	// FLBTLSPortAnnotation is the annotation used to indicate the port for TLS
+	FLBTLSPortAnnotation = FLBPrefix + "/tls-port"
+
+	// FLBTLSSecretModeAnnotation is the annotation used to indicate the mode for TLS secret
+	FLBTLSSecretModeAnnotation = FLBPrefix + "/tls-secret-mode"
+
+	// FLBHashAnnotation is the annotation used to indicate the hash of the service
+	FLBHashAnnotation = FLBPrefix + "/hash"
+
+	// FLBConfigSecretLabel is the label used to indicate the secret
+	FLBConfigSecretLabel = FLBPrefix + "/config"
+
+	// FLBTLSSecretLabel is the label used to indicate the secret is for storing TLS certs of FLB service
+	FLBTLSSecretLabel = FLBPrefix + "/tls"
 
 	// FLBSecretKeyBaseURL is the key for the base url
 	FLBSecretKeyBaseURL = "baseUrl"
@@ -760,6 +775,12 @@ const (
 
 	// FLBSecretValidatingWebhookPath is the path at which the flb secret validating webhook is served
 	FLBSecretValidatingWebhookPath = "/validate-flb-core-v1-secret"
+
+	// FLBTLSSecretMutatingWebhookPath is the path at which the flb tls secret mutating webhook is served
+	FLBTLSSecretMutatingWebhookPath = "/mutate-flb-core-v1-secret-tls"
+
+	// FLBTLSSecretValidatingWebhookPath is the path at which the flb tls secret validating webhook is served
+	FLBTLSSecretValidatingWebhookPath = "/validate-flb-core-v1-secret-tls"
 )
 
 // MultiCluster variables
