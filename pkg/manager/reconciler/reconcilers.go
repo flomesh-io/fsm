@@ -86,7 +86,9 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 	}
 
 	if mc.IsFLBEnabled() {
-		reconcilers["FLB"] = flb.NewReconciler(ctx)
+		settingManager := flb.NewSettingManager(ctx)
+		reconcilers["FLB(Service)"] = flb.NewServiceReconciler(ctx, settingManager)
+		reconcilers["FLB(TLSSecret)"] = flb.NewSecretReconciler(ctx, settingManager)
 	}
 
 	for name, r := range reconcilers {
