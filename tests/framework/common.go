@@ -243,6 +243,36 @@ nodeRegistration:
 							HostPort:      80,
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
 						},
+						{
+							ContainerPort: 8090,
+							HostPort:      8090,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 7443,
+							HostPort:      7443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 8443,
+							HostPort:      8443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 9443,
+							HostPort:      9443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 3000,
+							HostPort:      3000,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 4000,
+							HostPort:      4000,
+							Protocol:      v1alpha4.PortMappingProtocolUDP,
+						},
 					},
 				},
 			},
