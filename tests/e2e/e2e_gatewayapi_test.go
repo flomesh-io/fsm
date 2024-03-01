@@ -30,6 +30,9 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 
 				// Create namespaces
 				Expect(Td.CreateNs("httpbin", nil)).To(Succeed())
+				Expect(Td.CreateNs("grpcbin", nil)).To(Succeed())
+				Expect(Td.CreateNs("tcproute", nil)).To(Succeed())
+				Expect(Td.CreateNs("udproute", nil)).To(Succeed())
 
 				By("Generating CA private key")
 				stdout, stderr, err := Td.RunLocal("openssl", "genrsa", "-out", "ca.key", "2048")
