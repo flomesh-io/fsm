@@ -517,12 +517,19 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-e2e build-fsm
+      - name: Add hosts to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 grpctest.localhost" | sudo tee -a /etc/hosts
+      - name: Install gRPCurl
+        run: |
+          go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Run tests
         id: test
         env:
           K8S_NAMESPACE: "fsm-system"
         run: |
-          export PATH=$PWD/bin:$PATH
+          export PATH=$PWD/bin:$HOME/go/bin:$PATH
           echo "PATH=$PATH"
           go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
