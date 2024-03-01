@@ -471,11 +471,11 @@ func testGRPC() {
 }
 
 func testTCP() {
-
+	By("Deploying app in namespace tcproute")
 }
 
 func testUDP() {
-
+	By("Deploying app in namespace udproute")
 }
 
 func testHTTPS() {
