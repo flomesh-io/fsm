@@ -45,14 +45,17 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, nil)).To(Succeed())
 
 				testDeployGateway()
+
 				testHTTP()
+				testHTTPS()
+				testTLSTerminate()
+
 				testGRPC()
+				testGRPCS()
+
 				testTCP()
 				testUDP()
-				testHTTPS()
-				testGRPCS()
 				testTLSPassthrough()
-				testTLSTerminate()
 			})
 		})
 	})
@@ -472,6 +475,118 @@ func testGRPC() {
 
 func testTCP() {
 	By("Deploying app in namespace tcproute")
+	tcpDeploy := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsTcproute,
+			Name:      "tcproute",
+		},
+		Spec: appv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{constants.AppLabel: "pipy"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "pipy",
+							Image: "flomesh/pipy:latest",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "pipy",
+									ContainerPort: 8080,
+								},
+							},
+							Command: []string{"pipy", "-e", "pipy().listen(8080).serveHTTP(new Message('Hi, I am TCPRoute!'))"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := Td.CreateDeployment(nsTcproute, tcpDeploy)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Td.WaitForPodsRunningReady(nsTcproute, 1, &metav1.LabelSelector{
+		MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+	})).To(Succeed())
+
+	By("Creating svc for tcproute")
+	tcpSvc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsTcproute,
+			Name:      "tcproute",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "pipy",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8080,
+					TargetPort: intstr.FromInt32(8080),
+				},
+			},
+			Selector: map[string]string{"app": "pipy"},
+		},
+	}
+	_, err = Td.CreateService(nsHttpbin, tcpSvc)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating TCPRoute for testing TCP protocol")
+	tcpRoute := gwv1alpha2.TCPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsTcproute,
+			Name:      "tcp-app-1",
+		},
+		Spec: gwv1alpha2.TCPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(corev1.NamespaceDefault),
+						Name:      "test-gw-1",
+						Port:      portPtr(3000),
+					},
+				},
+			},
+			Rules: []gwv1alpha2.TCPRouteRule{
+				{
+					BackendRefs: []gwv1alpha2.BackendRef{
+						{
+							BackendObjectReference: gwv1.BackendObjectReference{
+								Name: "tcproute",
+								Port: portPtr(8080),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPITCPRoute(nsTcproute, tcpRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing TCPRoute")
+	httpReq := HTTPRequestDef{
+		Destination: "http://localhost:3000",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalHTTPRequest(httpReq)
+
+		if result.Err != nil || result.StatusCode != 200 {
+			Td.T.Logf("> (%s) TCP Req failed %d %v",
+				srcToDestStr, result.StatusCode, result.Err)
+			return false
+		}
+		Td.T.Logf("> (%s) TCP Req succeeded: %d", srcToDestStr, result.StatusCode)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing TCP traffic from curl(localhost) to destination %s", httpReq.Destination)
 }
 
 func testUDP() {
