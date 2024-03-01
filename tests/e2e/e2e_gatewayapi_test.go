@@ -220,7 +220,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 
 				_, err = Td.CreateDeployment(nsHttpbin, httpbinDeploy)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(Td.WaitForPodsRunningReady(corev1.NamespaceDefault, 1, &metav1.LabelSelector{
+				Expect(Td.WaitForPodsRunningReady(nsHttpbin, 1, &metav1.LabelSelector{
 					MatchLabels: map[string]string{constants.AppLabel: "pipy"},
 				})).To(Succeed())
 
