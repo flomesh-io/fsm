@@ -296,7 +296,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
 
 				cond := Td.WaitForRepeatedSuccess(func() bool {
-					result := Td.HTTPRequest(httpReq)
+					result := Td.LocalHTTPRequest(httpReq)
 
 					if result.Err != nil || result.StatusCode != 200 {
 						Td.T.Logf("> (%s) HTTP Req failed %d %v",

@@ -130,7 +130,7 @@ func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 	// -s silent progress, -o output to devnull, '-D -' dump headers to "-" (stdout), -i Status code
 	// -I skip body download, '-w StatusCode:%{http_code}' prints Status code label-like for easy parsing
 	// -L follow redirects
-	argStr := fmt.Sprintf("-s -o /dev/null -D - -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
+	argStr := fmt.Sprintf("-s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
 	args := strings.Fields(argStr)
 	stdout, stderr, err := td.RunLocal("curl", args...)
 	if err != nil {
