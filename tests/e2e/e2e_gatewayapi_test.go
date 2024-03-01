@@ -532,7 +532,7 @@ func testTCP() {
 			Selector: map[string]string{"app": "pipy"},
 		},
 	}
-	_, err = Td.CreateService(nsHttpbin, tcpSvc)
+	_, err = Td.CreateService(nsTcproute, tcpSvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating TCPRoute for testing TCP protocol")
