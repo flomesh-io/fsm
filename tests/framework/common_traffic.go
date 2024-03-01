@@ -224,6 +224,38 @@ func (td *FsmTestData) GRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 	}
 }
 
+// LocalGRPCRequest runs a GRPC request to run the GRPCRequestDef and return a GRPCRequestResult
+func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
+	var args []string
+
+	if req.UseTLS {
+		// '-insecure' is to indicate to grpcurl to not validate the server certificate. This is suitable
+		// for testing purpose and does not mean the channel is not encrypted using TLS.
+		args = []string{"-d", req.JSONRequest, "-insecure", req.Destination, req.Symbol}
+	} else {
+		// '-plaintext' is to indicate to the grpcurl to send plaintext requests; not encrypted with TLS
+		args = []string{"-d", req.JSONRequest, "-plaintext", req.Destination, req.Symbol}
+	}
+
+	stdout, stderr, err := td.RunLocal("grpcurl", args...)
+	if err != nil {
+		// Error codes from the execution come through err
+		return GRPCRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, args),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr)
+	}
+
+	return GRPCRequestResult{
+		stdout.String(),
+		nil,
+	}
+}
+
 // MapCurlOuput maps stdout from our specific curl,
 // it expects headers on stdout like "<name>: <value...>"
 func mapCurlOuput(curlOut string) map[string]string {
