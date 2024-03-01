@@ -1,13 +1,25 @@
 package e2e
 
 import (
+	"fmt"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	. "github.com/flomesh-io/fsm/tests/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+)
+
+const (
+	nsHttpbin  = "httpbin"
+	nsGrpcbin  = "grpcbin"
+	nsTcproute = "tcproute"
+	nsUdproute = "udproute"
 )
 
 var _ = FSMDescribe("Test traffic among FSM Gateway",
@@ -29,15 +41,15 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, nil)).To(Succeed())
 
 				// Create namespaces
-				Expect(Td.CreateNs("httpbin", nil)).To(Succeed())
-				Expect(Td.CreateNs("grpcbin", nil)).To(Succeed())
-				Expect(Td.CreateNs("tcproute", nil)).To(Succeed())
-				Expect(Td.CreateNs("udproute", nil)).To(Succeed())
+				Expect(Td.CreateNs(nsHttpbin, nil)).To(Succeed())
+				Expect(Td.CreateNs(nsGrpcbin, nil)).To(Succeed())
+				Expect(Td.CreateNs(nsTcproute, nil)).To(Succeed())
+				Expect(Td.CreateNs(nsUdproute, nil)).To(Succeed())
 
 				By("Generating CA private key")
 				stdout, stderr, err := Td.RunLocal("openssl", "genrsa", "-out", "ca.key", "2048")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
@@ -45,7 +57,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				By("Generating CA certificate")
 				stdout, stderr, err = Td.RunLocal("openssl", "req", "-new", "-x509", "-nodes", "-days", "365", "-key", "ca.key", "-out", "ca.crt", "-subj", "/CN=flomesh.io")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
@@ -53,15 +65,15 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				By("Creating certificate and key for HTTPS")
 				stdout, stderr, err = Td.RunLocal("openssl", "req", "-new", "-x509", "-nodes", "-days", "365", "-newkey", "rsa:2048", "-keyout", "https.key", "-out", "https.crt", "-subj", "/CN=httptest.localhost", "-addext", "subjectAltName = DNS:httptest.localhost")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating secret for HTTPS")
-				stdout, stderr, err = Td.RunLocal("kubectl", "-n", "httpbin", "create", "secret", "generic", "https-cert", "--from-file=ca.crt=./ca.crt", "--from-file=tls.crt=./https.crt", "--from-file=tls.key=./https.key")
+				stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsHttpbin, "create", "secret", "generic", "https-cert", "--from-file=ca.crt=./ca.crt", "--from-file=tls.crt=./https.crt", "--from-file=tls.key=./https.key")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
@@ -69,15 +81,15 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				By("Creating certificate and key for gRPC")
 				stdout, stderr, err = Td.RunLocal("openssl", "req", "-new", "-x509", "-nodes", "-days", "365", "-newkey", "rsa:2048", "-keyout", "grpc.key", "-out", "grpc.crt", "-subj", "/CN=grpctest.localhost", "-addext", "subjectAltName = DNS:grpctest.localhost")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating secret for gRPC")
-				stdout, stderr, err = Td.RunLocal("kubectl", "-n", "grpcbin", "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
+				stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGrpcbin, "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
 				Td.T.Log(stdout.String())
-				if err != nil {
+				if stderr != nil {
 					Td.T.Log("stderr:\n" + stderr.String())
 				}
 				Expect(err).NotTo(HaveOccurred())
@@ -121,11 +133,11 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 									CertificateRefs: []gwv1.SecretObjectReference{
 										{
 											Name:      "https-cert",
-											Namespace: namespacePtr("httpbin"),
+											Namespace: namespacePtr(nsHttpbin),
 										},
 										{
 											Name:      "grpc-cert",
-											Namespace: namespacePtr("grpcbin"),
+											Namespace: namespacePtr(nsGrpcbin),
 										},
 									},
 								},
@@ -149,11 +161,11 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 									CertificateRefs: []gwv1.SecretObjectReference{
 										{
 											Name:      "https-cert",
-											Namespace: namespacePtr("httpbin"),
+											Namespace: namespacePtr(nsHttpbin),
 										},
 										{
 											Name:      "grpc-cert",
-											Namespace: namespacePtr("grpcbin"),
+											Namespace: namespacePtr(nsGrpcbin),
 										},
 									},
 								},
@@ -172,8 +184,130 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 					MatchLabels: map[string]string{constants.AppLabel: constants.FSMGatewayName},
 				})).To(Succeed())
 
-				//Td.CreateDeployment()
-				//Td.CreateService()
+				By("Deploying app in namespace httpbin")
+				httpbinDeploy := appv1.Deployment{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: nsHttpbin,
+						Name:      "httpbin",
+					},
+					Spec: appv1.DeploymentSpec{
+						Replicas: pointer.Int32(1),
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+						},
+						Template: corev1.PodTemplateSpec{
+							ObjectMeta: metav1.ObjectMeta{
+								Labels: map[string]string{constants.AppLabel: "pipy"},
+							},
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "pipy",
+										Image: "flomesh/pipy:latest",
+										Ports: []corev1.ContainerPort{
+											{
+												Name:          "pipy",
+												ContainerPort: 8080,
+											},
+										},
+										Command: []string{"pipy", "-e", "pipy().listen(8080).serveHTTP(new Message('Hi, I am HTTPRoute!'))"},
+									},
+								},
+							},
+						},
+					},
+				}
+
+				_, err = Td.CreateDeployment(nsHttpbin, httpbinDeploy)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(Td.WaitForPodsRunningReady(corev1.NamespaceDefault, 1, &metav1.LabelSelector{
+					MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+				})).To(Succeed())
+
+				By("Creating svc for httpbin")
+				httpbinSvc := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: nsHttpbin,
+						Name:      "httpbin",
+					},
+					Spec: corev1.ServiceSpec{
+						Ports: []corev1.ServicePort{
+							{
+								Name:       "pipy",
+								Protocol:   corev1.ProtocolTCP,
+								Port:       8080,
+								TargetPort: intstr.FromInt32(8080),
+							},
+						},
+						Selector: map[string]string{"app": "pipy"},
+					},
+				}
+				_, err = Td.CreateService(nsHttpbin, httpbinSvc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating HTTPRoute for testing HTTP protocol")
+				httpRoute := gwv1.HTTPRoute{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: nsHttpbin,
+						Name:      "http-app-1",
+					},
+					Spec: gwv1.HTTPRouteSpec{
+						CommonRouteSpec: gwv1.CommonRouteSpec{
+							ParentRefs: []gwv1.ParentReference{
+								{
+									Namespace: namespacePtr(corev1.NamespaceDefault),
+									Name:      "test-gw-1",
+									Port:      portPtr(8090),
+								},
+							},
+						},
+						Hostnames: []gwv1.Hostname{"httptest.localhost"},
+						Rules: []gwv1.HTTPRouteRule{
+							{
+								Matches: []gwv1.HTTPRouteMatch{
+									{
+										Path: &gwv1.HTTPPathMatch{
+											Type:  pathMatchTypePtr(gwv1.PathMatchPathPrefix),
+											Value: pointer.String("/bar"),
+										},
+									},
+								},
+								BackendRefs: []gwv1.HTTPBackendRef{
+									{
+										BackendRef: gwv1.BackendRef{
+											BackendObjectReference: gwv1.BackendObjectReference{
+												Name: "httpbin",
+												Port: portPtr(8080),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				_, err = Td.CreateGatewayAPIHTTPRoute(nsHttpbin, httpRoute)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Testing HTTPRoute")
+				httpReq := HTTPRequestDef{
+					Destination: "http://httptest.localhost:8090/bar",
+				}
+				srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
+
+				cond := Td.WaitForRepeatedSuccess(func() bool {
+					result := Td.HTTPRequest(httpReq)
+
+					if result.Err != nil || result.StatusCode != 200 {
+						Td.T.Logf("> (%s) HTTP Req failed %d %v",
+							srcToDestStr, result.StatusCode, result.Err)
+						return false
+					}
+					Td.T.Logf("> (%s) HTTP Req succeeded: %d", srcToDestStr, result.StatusCode)
+					return true
+				}, 5, Td.ReqSuccessTimeout)
+
+				Expect(cond).To(BeTrue(), "Failed testing HTTP traffic from curl(localhost) to destination %s", httpReq.Destination)
 			})
 		})
 	})
@@ -190,5 +324,15 @@ func hostnamePtr(hostname string) *gwv1.Hostname {
 
 func tlsModePtr(mode gwv1.TLSModeType) *gwv1.TLSModeType {
 	ret := mode
+	return &ret
+}
+
+func portPtr(port int32) *gwv1.PortNumber {
+	ret := gwv1.PortNumber(port)
+	return &ret
+}
+
+func pathMatchTypePtr(pathMatch gwv1.PathMatchType) *gwv1.PathMatchType {
+	ret := pathMatch
 	return &ret
 }

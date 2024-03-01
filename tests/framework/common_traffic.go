@@ -125,6 +125,48 @@ func (td *FsmTestData) HTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 	}
 }
 
+// LocalHTTPRequest runs a synchronous call to run the HTTPRequestDef and return a HTTPRequestResult
+func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
+	// -s silent progress, -o output to devnull, '-D -' dump headers to "-" (stdout), -i Status code
+	// -I skip body download, '-w StatusCode:%{http_code}' prints Status code label-like for easy parsing
+	// -L follow redirects
+	argStr := fmt.Sprintf("-s -o /dev/null -D - -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
+	args := strings.Fields(argStr)
+	stdout, stderr, err := td.RunLocal("curl", args...)
+	if err != nil {
+		// Error codes from the execution come through err
+		// Curl 'Connection refused' err code = 7
+		return HTTPRequestResult{
+			0,
+			nil,
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr),
+		}
+	}
+
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Log("[warn] Stderr:\n" + stderr.String())
+	}
+
+	// Expect predictable output at this point from the curl we executed
+	curlMappedReturn := mapCurlOuput(strings.TrimSpace(stdout.String()))
+	statusCode, err := strconv.Atoi(curlMappedReturn[StatusCodeWord])
+	if err != nil {
+		return HTTPRequestResult{
+			0,
+			nil,
+			fmt.Errorf("could not read status code as integer: %w", err),
+		}
+	}
+	delete(curlMappedReturn, StatusCodeWord)
+
+	return HTTPRequestResult{
+		statusCode,
+		curlMappedReturn,
+		nil,
+	}
+}
+
 // TCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
 func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 	var command []string
