@@ -855,7 +855,61 @@ func testTLSPassthrough() {
 }
 
 func testTLSTerminate() {
+	By("Creating TCPRoute for testing TLS terminate")
+	tcpRoute := gwv1alpha2.TCPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsTcproute,
+			Name:      "tlst-app-1",
+		},
+		Spec: gwv1alpha2.TCPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(corev1.NamespaceDefault),
+						Name:      "test-gw-1",
+						Port:      portPtr(9443),
+					},
+				},
+			},
+			Rules: []gwv1alpha2.TCPRouteRule{
+				{
+					BackendRefs: []gwv1alpha2.BackendRef{
+						{
+							BackendObjectReference: gwv1.BackendObjectReference{
+								Namespace: namespacePtr(nsHttpbin),
+								Name:      "httpbin",
+								Port:      portPtr(8080),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := Td.CreateGatewayAPITCPRoute(nsTcproute, tcpRoute)
+	Expect(err).NotTo(HaveOccurred())
 
+	By("Testing TLS Terminate")
+	httpsReq := HTTPRequestDef{
+		Destination: "https://httptest.localhost:9443",
+		UseTLS:      true,
+		CertFile:    "https.crt",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpsReq.Destination)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalHTTPRequest(httpsReq)
+
+		if result.Err != nil || result.StatusCode != 200 {
+			Td.T.Logf("> (%s) TLS Req failed %d %v",
+				srcToDestStr, result.StatusCode, result.Err)
+			return false
+		}
+		Td.T.Logf("> (%s) TLS Req succeeded: %d", srcToDestStr, result.StatusCode)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing TLS traffic from curl(localhost) to destination %s", httpsReq.Destination)
 }
 
 func namespacePtr(ns string) *gwv1.Namespace {
