@@ -478,29 +478,29 @@ func testTCP() {
 	tcpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsTcproute,
-			Name:      "tcproute",
+			Name:      "tcp-echo",
 		},
 		Spec: appv1.DeploymentSpec{
 			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+				MatchLabels: map[string]string{constants.AppLabel: "tcp-echo"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{constants.AppLabel: "pipy"},
+					Labels: map[string]string{constants.AppLabel: "tcp-echo"},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "pipy",
-							Image: "flomesh/pipy:latest",
+							Name:  "tcp",
+							Image: "istio/fortio:latest",
 							Ports: []corev1.ContainerPort{
 								{
-									Name:          "pipy",
-									ContainerPort: 8080,
+									Name:          "tcp",
+									ContainerPort: 8078,
 								},
 							},
-							Command: []string{"pipy", "-e", "pipy().listen(8080).serveHTTP(new Message('Hi, I am TCPRoute!'))"},
+							Command: []string{"fortio", "tcp-echo"},
 						},
 					},
 				},
@@ -511,25 +511,25 @@ func testTCP() {
 	_, err := Td.CreateDeployment(nsTcproute, tcpDeploy)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(Td.WaitForPodsRunningReady(nsTcproute, 1, &metav1.LabelSelector{
-		MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+		MatchLabels: map[string]string{constants.AppLabel: "tcp-echo"},
 	})).To(Succeed())
 
 	By("Creating svc for tcproute")
 	tcpSvc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsTcproute,
-			Name:      "tcproute",
+			Name:      "tcp-echo",
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name:       "pipy",
+					Name:       "tcp",
 					Protocol:   corev1.ProtocolTCP,
-					Port:       8080,
-					TargetPort: intstr.FromInt32(8080),
+					Port:       8078,
+					TargetPort: intstr.FromInt32(8078),
 				},
 			},
-			Selector: map[string]string{"app": "pipy"},
+			Selector: map[string]string{constants.AppLabel: "tcp-echo"},
 		},
 	}
 	_, err = Td.CreateService(nsTcproute, tcpSvc)
@@ -556,8 +556,8 @@ func testTCP() {
 					BackendRefs: []gwv1alpha2.BackendRef{
 						{
 							BackendObjectReference: gwv1.BackendObjectReference{
-								Name: "tcproute",
-								Port: portPtr(8080),
+								Name: "tcp-echo",
+								Port: portPtr(8078),
 							},
 						},
 					},
@@ -569,24 +569,26 @@ func testTCP() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing TCPRoute")
-	httpReq := HTTPRequestDef{
-		Destination: "http://localhost:3000",
+	tcpReq := TCPRequestDef{
+		DestinationHost: "localhost",
+		DestinationPort: 3000,
+		Message:         "Hi, I am TCP!",
 	}
-	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
+	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", tcpReq.DestinationHost, tcpReq.DestinationPort)
 
 	cond := Td.WaitForRepeatedSuccess(func() bool {
-		result := Td.LocalHTTPRequest(httpReq)
+		result := Td.LocalTCPRequest(tcpReq)
 
-		if result.Err != nil || result.StatusCode != 200 {
-			Td.T.Logf("> (%s) TCP Req failed %d %v",
-				srcToDestStr, result.StatusCode, result.Err)
+		if result.Err != nil {
+			Td.T.Logf("> (%s) TCP req failed, response: %s, err: %s", srcToDestStr, result.Response, result.Err)
 			return false
 		}
-		Td.T.Logf("> (%s) TCP Req succeeded: %d", srcToDestStr, result.StatusCode)
+
+		Td.T.Logf("> (%s) TCP req succeeded, response: %s", srcToDestStr, result.Response)
 		return true
 	}, 5, Td.ReqSuccessTimeout)
 
-	Expect(cond).To(BeTrue(), "Failed testing TCP traffic from curl(localhost) to destination %s", httpReq.Destination)
+	Expect(cond).To(BeTrue(), "Failed testing TCP traffic from echo/nc(localhost) to destination %s:%d", tcpReq.DestinationHost, tcpReq.DestinationPort)
 }
 
 func testUDP() {
@@ -594,7 +596,71 @@ func testUDP() {
 }
 
 func testHTTPS() {
+	By("Creating HTTPRoute for testing HTTPs protocol")
+	httpRoute := gwv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsHttpbin,
+			Name:      "https-app-1",
+		},
+		Spec: gwv1.HTTPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(corev1.NamespaceDefault),
+						Name:      "test-gw-1",
+						Port:      portPtr(7443),
+					},
+				},
+			},
+			Hostnames: []gwv1.Hostname{"httptest.localhost"},
+			Rules: []gwv1.HTTPRouteRule{
+				{
+					Matches: []gwv1.HTTPRouteMatch{
+						{
+							Path: &gwv1.HTTPPathMatch{
+								Type:  pathMatchTypePtr(gwv1.PathMatchPathPrefix),
+								Value: pointer.String("/bar"),
+							},
+						},
+					},
+					BackendRefs: []gwv1.HTTPBackendRef{
+						{
+							BackendRef: gwv1.BackendRef{
+								BackendObjectReference: gwv1.BackendObjectReference{
+									Name: "httpbin",
+									Port: portPtr(8080),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := Td.CreateGatewayAPIHTTPRoute(nsHttpbin, httpRoute)
+	Expect(err).NotTo(HaveOccurred())
 
+	By("Testing HTTPRoute(HTTPS)")
+	httpsReq := HTTPRequestDef{
+		Destination: "https://httptest.localhost:7443/bar",
+		UseTLS:      true,
+		CertFile:    "https.crt",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpsReq.Destination)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalHTTPRequest(httpsReq)
+
+		if result.Err != nil || result.StatusCode != 200 {
+			Td.T.Logf("> (%s) HTTPs Req failed %d %v",
+				srcToDestStr, result.StatusCode, result.Err)
+			return false
+		}
+		Td.T.Logf("> (%s) HTTPs Req succeeded: %d", srcToDestStr, result.StatusCode)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing HTTPs traffic from curl(localhost) to destination %s", httpsReq.Destination)
 }
 
 func testGRPCS() {

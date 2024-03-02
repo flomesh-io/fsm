@@ -27,6 +27,12 @@ type HTTPRequestDef struct {
 	// The entire destination URL processed by curl, including host name and
 	// optionally protocol, port, and path
 	Destination string
+
+	// UseTLS indicates if the request should be encrypted with TLS
+	UseTLS bool
+
+	// CertFile is the path to the certificate file
+	CertFile string
 }
 
 // TCPRequestDef defines a remote TCP request intent
@@ -130,7 +136,12 @@ func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 	// -s silent progress, -o output to devnull, '-D -' dump headers to "-" (stdout), -i Status code
 	// -I skip body download, '-w StatusCode:%{http_code}' prints Status code label-like for easy parsing
 	// -L follow redirects
-	argStr := fmt.Sprintf("-s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
+	var argStr string
+	if ht.UseTLS {
+		argStr = fmt.Sprintf("--cacert %s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.CertFile, StatusCodeWord, ht.Destination)
+	} else {
+		argStr = fmt.Sprintf("-s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
+	}
 	args := strings.Fields(argStr)
 	stdout, stderr, err := td.RunLocal("curl", args...)
 	if err != nil {
@@ -188,6 +199,30 @@ func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 
 	return TCPRequestResult{
 		stdout,
+		nil,
+	}
+}
+
+// LocalTCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
+func (td *FsmTestData) LocalTCPRequest(req TCPRequestDef) TCPRequestResult {
+	var command []string
+	commandArgs := fmt.Sprintf("echo \"%s\" | nc %s %d", req.Message, req.DestinationHost, req.DestinationPort)
+
+	stdout, stderr, err := td.RunLocal("sh", "-c", commandArgs)
+	if err != nil {
+		// Error codes from the execution come through err
+		return TCPRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, command),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr)
+	}
+
+	return TCPRequestResult{
+		stdout.String(),
 		nil,
 	}
 }
