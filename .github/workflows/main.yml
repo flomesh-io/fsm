@@ -394,6 +394,9 @@ jobs:
           - k8s_version: v1.25.1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+          - k8s_version: v1.27.11
+            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+            bucket: ".*"
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
