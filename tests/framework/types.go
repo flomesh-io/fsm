@@ -3,6 +3,8 @@ package framework
 import (
 	"time"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	"github.com/onsi/ginkgo"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -81,8 +83,9 @@ type FsmTestData struct {
 	SmiClients *smiClients
 
 	// FSM's API clients
-	PolicyClient *versioned.Clientset
-	ConfigClient *versioned2.Clientset
+	PolicyClient     *versioned.Clientset
+	ConfigClient     *versioned2.Clientset
+	GatewayAPIClient gatewayApiClientset.Interface
 
 	ClusterProvider *cluster.Provider // provider, used when kindCluster is used
 

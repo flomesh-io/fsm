@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -243,6 +245,36 @@ nodeRegistration:
 							HostPort:      80,
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
 						},
+						{
+							ContainerPort: 8090,
+							HostPort:      8090,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 7443,
+							HostPort:      7443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 8443,
+							HostPort:      8443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 9443,
+							HostPort:      9443,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 3000,
+							HostPort:      3000,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 4000,
+							HostPort:      4000,
+							Protocol:      v1alpha4.PortMappingProtocolUDP,
+						},
 					},
 				},
 			},
@@ -287,11 +319,17 @@ nodeRegistration:
 		return fmt.Errorf("failed to create api server client: %w", err)
 	}
 
+	gatewayAPIClient, err := gatewayApiClientset.NewForConfig(kubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create gatewayAPI client: %w", err)
+	}
+
 	td.RestConfig = kubeConfig
 	td.Client = clientset
 	td.ConfigClient = configClient
 	td.PolicyClient = policyClient
 	td.APIServerClient = apiServerClient
+	td.GatewayAPIClient = gatewayAPIClient
 
 	td.Env = cli.New()
 
