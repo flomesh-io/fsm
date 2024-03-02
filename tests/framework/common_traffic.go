@@ -190,7 +190,7 @@ func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 					port = "443"
 				}
 			}
-			argStr = fmt.Sprintf("--connect-to %s:%d:%s:%s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.PassthroughHost, ht.PassthroughPort, u.Host, u.Port(), StatusCodeWord, ht.Destination)
+			argStr = fmt.Sprintf("--connect-to %s:%d:%s:%s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.PassthroughHost, ht.PassthroughPort, u.Hostname(), port, StatusCodeWord, ht.Destination)
 		} else {
 			argStr = fmt.Sprintf("--cacert %s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.CertFile, StatusCodeWord, ht.Destination)
 		}
