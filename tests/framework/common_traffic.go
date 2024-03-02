@@ -3,6 +3,7 @@ package framework
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,6 +34,15 @@ type HTTPRequestDef struct {
 
 	// CertFile is the path to the certificate file
 	CertFile string
+
+	// IsTLSPassthrough indicates if the request should be TLS passthrough
+	IsTLSPassthrough bool
+
+	// PassthroughHost is the host to passthrough
+	PassthroughHost string
+
+	// PassthroughPort is the port to passthrough
+	PassthroughPort int
 }
 
 // TCPRequestDef defines a remote TCP request intent
@@ -162,7 +172,28 @@ func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 	// -L follow redirects
 	var argStr string
 	if ht.UseTLS {
-		argStr = fmt.Sprintf("--cacert %s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.CertFile, StatusCodeWord, ht.Destination)
+		if ht.IsTLSPassthrough {
+			u, err := url.Parse(ht.Destination)
+			if err != nil {
+				return HTTPRequestResult{
+					0,
+					nil,
+					fmt.Errorf("parse URL err: %w", err),
+				}
+			}
+			port := u.Port()
+			if len(port) == 0 {
+				switch u.Scheme {
+				case "http":
+					port = "80"
+				case "https":
+					port = "443"
+				}
+			}
+			argStr = fmt.Sprintf("--connect-to %s:%d:%s:%s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.PassthroughHost, ht.PassthroughPort, u.Host, u.Port(), StatusCodeWord, ht.Destination)
+		} else {
+			argStr = fmt.Sprintf("--cacert %s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.CertFile, StatusCodeWord, ht.Destination)
+		}
 	} else {
 		argStr = fmt.Sprintf("-s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
 	}
