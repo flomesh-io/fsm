@@ -570,7 +570,7 @@ func testTCP() {
 
 	By("Testing TCPRoute")
 	tcpReq := TCPRequestDef{
-		DestinationHost: "localhost",
+		DestinationHost: "tcptest.localhost",
 		DestinationPort: 3000,
 		Message:         "Hi, I am TCP!",
 	}
@@ -709,9 +709,9 @@ func testGRPCS() {
 	_, err := Td.CreateGatewayAPIGRPCRoute(nsGrpcbin, grpcRoute)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Testing GRPCRoute")
+	By("Testing GRPCRoute(GRPCs)")
 	grpcReq := GRPCRequestDef{
-		Destination: "grpctest.localhost:8090",
+		Destination: "grpctest.localhost:7443",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
 		UseTLS:      true,

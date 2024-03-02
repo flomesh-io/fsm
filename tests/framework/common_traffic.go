@@ -37,7 +37,7 @@ type HTTPRequestDef struct {
 
 // TCPRequestDef defines a remote TCP request intent
 type TCPRequestDef struct {
-	// Source pod where to run the HTTP request from
+	// Source pod where to run the TCP request from
 	SourceNs        string
 	SourcePod       string
 	SourceContainer string
@@ -52,7 +52,7 @@ type TCPRequestDef struct {
 
 // GRPCRequestDef defines a remote GRPC request intent
 type GRPCRequestDef struct {
-	// Source pod where to run the HTTP request from
+	// Source pod where to run the GRPC request from
 	SourceNs        string
 	SourcePod       string
 	SourceContainer string
@@ -74,6 +74,21 @@ type GRPCRequestDef struct {
 	CertFile string
 }
 
+// UDPRequestDef defines a remote UDP request intent
+type UDPRequestDef struct {
+	// Source pod where to run the UDP request from
+	SourceNs        string
+	SourcePod       string
+	SourceContainer string
+
+	// The destination server host (FQDN or IP address) and port the request is directed to
+	DestinationHost string
+	DestinationPort int
+
+	// Message to send as a part of the request
+	Message string
+}
+
 // HTTPRequestResult represents results of an HTTPRequest call
 type HTTPRequestResult struct {
 	StatusCode int
@@ -89,6 +104,12 @@ type TCPRequestResult struct {
 
 // GRPCRequestResult represents the result of a GRPCRequest call
 type GRPCRequestResult struct {
+	Response string
+	Err      error
+}
+
+// UDPRequestResult represents the result of a UDPRequest call
+type UDPRequestResult struct {
 	Response string
 	Err      error
 }
