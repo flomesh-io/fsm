@@ -664,6 +664,75 @@ func testHTTPS() {
 }
 
 func testGRPCS() {
+	By("Creating GRPCRoute for testing GRPCs protocol")
+	grpcRoute := gwv1alpha2.GRPCRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGrpcbin,
+			Name:      "grpcs-app-1",
+		},
+		Spec: gwv1alpha2.GRPCRouteSpec{
+			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
+				ParentRefs: []gwv1alpha2.ParentReference{
+					{
+						Namespace: namespacePtr(corev1.NamespaceDefault),
+						Name:      "test-gw-1",
+						Port:      portPtr(7443),
+					},
+				},
+			},
+			Hostnames: []gwv1alpha2.Hostname{"grpctest.localhost"},
+			Rules: []gwv1alpha2.GRPCRouteRule{
+				{
+					Matches: []gwv1alpha2.GRPCRouteMatch{
+						{
+							Method: &gwv1alpha2.GRPCMethodMatch{
+								Type:    grpcMethodMatchTypePtr(gwv1alpha2.GRPCMethodMatchExact),
+								Service: pointer.String("hello.HelloService"),
+								Method:  pointer.String("SayHello"),
+							},
+						},
+					},
+					BackendRefs: []gwv1alpha2.GRPCBackendRef{
+						{
+							BackendRef: gwv1alpha2.BackendRef{
+								BackendObjectReference: gwv1alpha2.BackendObjectReference{
+									Name: "grpcbin",
+									Port: portPtr(9000),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := Td.CreateGatewayAPIGRPCRoute(nsGrpcbin, grpcRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing GRPCRoute")
+	grpcReq := GRPCRequestDef{
+		Destination: "grpctest.localhost:8090",
+		Symbol:      "hello.HelloService/SayHello",
+		JSONRequest: `{"greeting":"Flomesh"}`,
+		UseTLS:      true,
+		CertFile:    "grpc.crt",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalGRPCRequest(grpcReq)
+
+		if result.Err != nil {
+			Td.T.Logf("> (%s) gRPCs req failed, response: %s, err: %s",
+				srcToDestStr, result.Response, result.Err)
+			return false
+		}
+
+		Td.T.Logf("> (%s) gRPCs req succeeded, response: %s", srcToDestStr, result.Response)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing GRPCs traffic from grpcurl(localhost) to destination %s/%s", grpcReq.Destination, grpcReq.Symbol)
 
 }
 

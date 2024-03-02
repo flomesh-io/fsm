@@ -69,6 +69,9 @@ type GRPCRequestDef struct {
 
 	// UseTLS indicates if the request should be encrypted with TLS
 	UseTLS bool
+
+	// CertFile is the path to the certificate file
+	CertFile string
 }
 
 // HTTPRequestResult represents results of an HTTPRequest call
@@ -205,13 +208,14 @@ func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 
 // LocalTCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
 func (td *FsmTestData) LocalTCPRequest(req TCPRequestDef) TCPRequestResult {
-	command := fmt.Sprintf("echo \"%s\" | nc %s %d", req.Message, req.DestinationHost, req.DestinationPort)
-	stdout, stderr, err := td.RunLocal(command)
+	argStr := fmt.Sprintf("'%s' | nc %s %d", req.Message, req.DestinationHost, req.DestinationPort)
+	args := strings.Fields(argStr)
+	stdout, stderr, err := td.RunLocal("echo", args...)
 	if err != nil {
 		// Error codes from the execution come through err
 		return TCPRequestResult{
 			stdout.String(),
-			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, command),
+			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, fmt.Sprintf("echo %s", argStr)),
 		}
 	}
 	if stderr != nil {
@@ -262,9 +266,7 @@ func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 	var args []string
 
 	if req.UseTLS {
-		// '-insecure' is to indicate to grpcurl to not validate the server certificate. This is suitable
-		// for testing purpose and does not mean the channel is not encrypted using TLS.
-		args = []string{"-d", req.JSONRequest, "-insecure", req.Destination, req.Symbol}
+		args = []string{"-d", req.JSONRequest, "-cacert", req.CertFile, req.Destination, req.Symbol}
 	} else {
 		// '-plaintext' is to indicate to the grpcurl to send plaintext requests; not encrypted with TLS
 		args = []string{"-d", req.JSONRequest, "-plaintext", req.Destination, req.Symbol}
