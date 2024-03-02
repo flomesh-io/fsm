@@ -310,6 +310,27 @@ func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 	}
 }
 
+// LocalUDPRequest runs a synchronous UDP request to run the UDPRequestDef and return a UDPRequestResult
+func (td *FsmTestData) LocalUDPRequest(req UDPRequestDef) UDPRequestResult {
+	stdout, stderr, err := td.RunLocal("echo", fmt.Sprintf(`"%s"`, req.Message), "|", "nc", "-4u", "-w1", req.DestinationHost, strconv.Itoa(req.DestinationPort))
+	if err != nil {
+		// Error codes from the execution come through err
+		return UDPRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr.String()),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr.String())
+	}
+
+	return UDPRequestResult{
+		stdout.String(),
+		nil,
+	}
+}
+
 // MapCurlOuput maps stdout from our specific curl,
 // it expects headers on stdout like "<name>: <value...>"
 func mapCurlOuput(curlOut string) map[string]string {

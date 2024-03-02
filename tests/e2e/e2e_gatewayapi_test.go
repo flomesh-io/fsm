@@ -593,6 +593,120 @@ func testTCP() {
 
 func testUDP() {
 	By("Deploying app in namespace udproute")
+	udpDeploy := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsUdproute,
+			Name:      "udp-echo",
+		},
+		Spec: appv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{constants.AppLabel: "udp-echo"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{constants.AppLabel: "udp-echo"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "udp",
+							Image: "istio/fortio:latest",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "udp",
+									ContainerPort: 8078,
+								},
+							},
+							Command: []string{"fortio", "udp-echo"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := Td.CreateDeployment(nsUdproute, udpDeploy)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Td.WaitForPodsRunningReady(nsUdproute, 1, &metav1.LabelSelector{
+		MatchLabels: map[string]string{constants.AppLabel: "udp-echo"},
+	})).To(Succeed())
+
+	By("Creating svc for UDPRoute")
+	udpSvc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsUdproute,
+			Name:      "udp-echo",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "udp",
+					Protocol:   corev1.ProtocolUDP,
+					Port:       8078,
+					TargetPort: intstr.FromInt32(8078),
+				},
+			},
+			Selector: map[string]string{constants.AppLabel: "udp-echo"},
+		},
+	}
+	_, err = Td.CreateService(nsUdproute, udpSvc)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating UDPRoute for testing UDP protocol")
+	udpRoute := gwv1alpha2.UDPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsUdproute,
+			Name:      "udp-app-1",
+		},
+		Spec: gwv1alpha2.UDPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(corev1.NamespaceDefault),
+						Name:      "test-gw-1",
+						Port:      portPtr(4000),
+					},
+				},
+			},
+			Rules: []gwv1alpha2.UDPRouteRule{
+				{
+					BackendRefs: []gwv1alpha2.BackendRef{
+						{
+							BackendObjectReference: gwv1.BackendObjectReference{
+								Name: "udp-echo",
+								Port: portPtr(8078),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIUDPRoute(nsUdproute, udpRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing UDPRoute")
+	udpReq := UDPRequestDef{
+		DestinationHost: "udptest.localhost",
+		DestinationPort: 4000,
+		Message:         "Hi, I am UDP!",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", udpReq.DestinationHost, udpReq.DestinationPort)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalUDPRequest(udpReq)
+
+		if result.Err != nil {
+			Td.T.Logf("> (%s) UDP req failed, response: %s, err: %s", srcToDestStr, result.Response, result.Err)
+			return false
+		}
+
+		Td.T.Logf("> (%s) UDP req succeeded, response: %s", srcToDestStr, result.Response)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing UDP traffic from echo/nc(localhost) to destination %s:%d", udpReq.DestinationHost, udpReq.DestinationPort)
 }
 
 func testHTTPS() {
