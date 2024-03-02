@@ -229,19 +229,17 @@ func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 
 // LocalTCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
 func (td *FsmTestData) LocalTCPRequest(req TCPRequestDef) TCPRequestResult {
-	argStr := fmt.Sprintf("'%s' | nc %s %d", req.Message, req.DestinationHost, req.DestinationPort)
-	args := strings.Fields(argStr)
-	stdout, stderr, err := td.RunLocal("echo", args...)
+	stdout, stderr, err := td.RunLocal("echo", fmt.Sprintf(`"%s"`, req.Message), "|", "nc", req.DestinationHost, strconv.Itoa(req.DestinationPort))
 	if err != nil {
 		// Error codes from the execution come through err
 		return TCPRequestResult{
 			stdout.String(),
-			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, fmt.Sprintf("echo %s", argStr)),
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr.String()),
 		}
 	}
 	if stderr != nil {
 		// no error from execution and proper exit code, we got some stderr though
-		td.T.Logf("[warn] Stderr: %v", stderr)
+		td.T.Logf("[warn] Stderr: %v", stderr.String())
 	}
 
 	return TCPRequestResult{
