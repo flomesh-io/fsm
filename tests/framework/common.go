@@ -381,6 +381,9 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		DeployFluentbit:         false,
 		EnableReconciler:        false,
 		EnableIngress:           false,
+		IngressHTTPPort:         80,
+		EnableIngressTLS:        false,
+		IngressTLSPort:          443,
 		EnableNamespacedIngress: false,
 		EnableGateway:           false,
 		EnableServiceLB:         false,
@@ -489,6 +492,9 @@ func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.
 	meshConfig.Spec.FeatureFlags.EnableRetryPolicy = instOpts.EnableRetryPolicy
 
 	meshConfig.Spec.Ingress.Enabled = instOpts.EnableIngress
+	meshConfig.Spec.Ingress.HTTP.Bind = instOpts.IngressHTTPPort
+	meshConfig.Spec.Ingress.TLS.Enabled = instOpts.EnableIngressTLS
+	meshConfig.Spec.Ingress.TLS.Bind = instOpts.IngressTLSPort
 	meshConfig.Spec.Ingress.Namespaced = instOpts.EnableNamespacedIngress
 	meshConfig.Spec.GatewayAPI.Enabled = instOpts.EnableGateway
 	meshConfig.Spec.ServiceLB.Enabled = instOpts.EnableServiceLB
@@ -552,6 +558,9 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.featureFlags.enableRetryPolicy=%v", instOpts.EnableRetryPolicy),
 		fmt.Sprintf("fsm.enableReconciler=%v", instOpts.EnableReconciler),
 		fmt.Sprintf("fsm.fsmIngress.enabled=%v", instOpts.EnableIngress),
+		fmt.Sprintf("fsm.fsmIngress.http.port=%d", instOpts.IngressHTTPPort),
+		fmt.Sprintf("fsm.fsmIngress.tls.enabled=%v", instOpts.EnableIngressTLS),
+		fmt.Sprintf("fsm.fsmIngress.tls.port=%d", instOpts.IngressTLSPort),
 		fmt.Sprintf("fsm.fsmIngress.namespaced=%v", instOpts.EnableNamespacedIngress),
 		fmt.Sprintf("fsm.fsmGateway.enabled=%v", instOpts.EnableGateway),
 		fmt.Sprintf("fsm.flb.enabled=%v", instOpts.EnableFLB),

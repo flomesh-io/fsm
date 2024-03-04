@@ -107,6 +107,9 @@ type InstallFSMOpts struct {
 	DeployFluentbit         bool
 	EnableReconciler        bool
 	EnableIngress           bool
+	IngressHTTPPort         int32
+	EnableIngressTLS        bool
+	IngressTLSPort          int32
 	EnableNamespacedIngress bool
 	EnableGateway           bool
 	EnableFLB               bool
