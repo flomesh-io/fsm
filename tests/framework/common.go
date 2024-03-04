@@ -245,9 +245,6 @@ nodeRegistration:
 						},
 					},
 				},
-				{
-					Role: v1alpha4.WorkerRole,
-				},
 			},
 		}
 		if Td.ClusterVersion != "" {
