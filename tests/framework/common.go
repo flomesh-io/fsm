@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	. "github.com/onsi/ginkgo"
@@ -324,12 +326,18 @@ nodeRegistration:
 		return fmt.Errorf("failed to create gatewayAPI client: %w", err)
 	}
 
+	nsigClient, err := nsigClientset.NewForConfig(kubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create NamespacedIngress client: %w", err)
+	}
+
 	td.RestConfig = kubeConfig
 	td.Client = clientset
 	td.ConfigClient = configClient
 	td.PolicyClient = policyClient
 	td.APIServerClient = apiServerClient
 	td.GatewayAPIClient = gatewayAPIClient
+	td.NsigClient = nsigClient
 
 	td.Env = cli.New()
 
@@ -381,6 +389,10 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		DeployFluentbit:         false,
 		EnableReconciler:        false,
 		EnableIngress:           false,
+		IngressHTTPPort:         80,
+		EnableIngressTLS:        false,
+		IngressTLSPort:          443,
+		EnableNamespacedIngress: false,
 		EnableGateway:           false,
 		EnableServiceLB:         false,
 		EnableFLB:               false,
@@ -488,6 +500,10 @@ func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.
 	meshConfig.Spec.FeatureFlags.EnableRetryPolicy = instOpts.EnableRetryPolicy
 
 	meshConfig.Spec.Ingress.Enabled = instOpts.EnableIngress
+	meshConfig.Spec.Ingress.HTTP.Bind = instOpts.IngressHTTPPort
+	meshConfig.Spec.Ingress.TLS.Enabled = instOpts.EnableIngressTLS
+	meshConfig.Spec.Ingress.TLS.Bind = instOpts.IngressTLSPort
+	meshConfig.Spec.Ingress.Namespaced = instOpts.EnableNamespacedIngress
 	meshConfig.Spec.GatewayAPI.Enabled = instOpts.EnableGateway
 	meshConfig.Spec.ServiceLB.Enabled = instOpts.EnableServiceLB
 	meshConfig.Spec.FLB.Enabled = instOpts.EnableFLB
@@ -550,6 +566,10 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.featureFlags.enableRetryPolicy=%v", instOpts.EnableRetryPolicy),
 		fmt.Sprintf("fsm.enableReconciler=%v", instOpts.EnableReconciler),
 		fmt.Sprintf("fsm.fsmIngress.enabled=%v", instOpts.EnableIngress),
+		fmt.Sprintf("fsm.fsmIngress.http.port=%d", instOpts.IngressHTTPPort),
+		fmt.Sprintf("fsm.fsmIngress.tls.enabled=%v", instOpts.EnableIngressTLS),
+		fmt.Sprintf("fsm.fsmIngress.tls.port=%d", instOpts.IngressTLSPort),
+		fmt.Sprintf("fsm.fsmIngress.namespaced=%v", instOpts.EnableNamespacedIngress),
 		fmt.Sprintf("fsm.fsmGateway.enabled=%v", instOpts.EnableGateway),
 		fmt.Sprintf("fsm.flb.enabled=%v", instOpts.EnableFLB),
 		fmt.Sprintf("fsm.serviceLB.enabled=%v", instOpts.EnableServiceLB),

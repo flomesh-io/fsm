@@ -44,23 +44,23 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				Expect(Td.InstallFSM(installOpts)).To(Succeed())
 				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, nil)).To(Succeed())
 
-				testDeployGateway()
+				testDeployFSMGateway()
 
-				testHTTP()
-				testHTTPS()
-				testTLSTerminate()
+				testFSMGatewayHTTPTraffic()
+				testFSMGatewayHTTPSTraffic()
+				testFSMGatewayTLSTerminate()
+				testFSMGatewayTLSPassthrough()
 
-				testGRPC()
-				testGRPCS()
+				testFSMGatewayGRPCTraffic()
+				testFSMGatewayGRPCSTraffic()
 
-				testTCP()
-				testUDP()
-				testTLSPassthrough()
+				testFSMGatewayTCPTraffic()
+				testFSMGatewayUDPTraffic()
 			})
 		})
 	})
 
-func testDeployGateway() {
+func testDeployFSMGateway() {
 	// Create namespaces
 	Expect(Td.CreateNs(nsHttpbin, nil)).To(Succeed())
 	Expect(Td.CreateNs(nsGrpcbin, nil)).To(Succeed())
@@ -206,7 +206,7 @@ func testDeployGateway() {
 	})).To(Succeed())
 }
 
-func testHTTP() {
+func testFSMGatewayHTTPTraffic() {
 	By("Deploying app in namespace httpbin")
 	httpbinDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -333,7 +333,7 @@ func testHTTP() {
 	Expect(cond).To(BeTrue(), "Failed testing HTTP traffic from curl(localhost) to destination %s", httpReq.Destination)
 }
 
-func testGRPC() {
+func testFSMGatewayGRPCTraffic() {
 	By("Deploying app in namespace grpcbin")
 	grpcDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -473,7 +473,7 @@ func testGRPC() {
 	Expect(cond).To(BeTrue(), "Failed testing GRPC traffic from grpcurl(localhost) to destination %s/%s", grpcReq.Destination, grpcReq.Symbol)
 }
 
-func testTCP() {
+func testFSMGatewayTCPTraffic() {
 	By("Deploying app in namespace tcproute")
 	tcpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -591,7 +591,7 @@ func testTCP() {
 	Expect(cond).To(BeTrue(), "Failed testing TCP traffic from echo/nc(localhost) to destination %s:%d", tcpReq.DestinationHost, tcpReq.DestinationPort)
 }
 
-func testUDP() {
+func testFSMGatewayUDPTraffic() {
 	By("Deploying app in namespace udproute")
 	udpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -709,7 +709,7 @@ func testUDP() {
 	Expect(cond).To(BeTrue(), "Failed testing UDP traffic from echo/nc(localhost) to destination %s:%d", udpReq.DestinationHost, udpReq.DestinationPort)
 }
 
-func testHTTPS() {
+func testFSMGatewayHTTPSTraffic() {
 	By("Creating HTTPRoute for testing HTTPs protocol")
 	httpRoute := gwv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -777,7 +777,7 @@ func testHTTPS() {
 	Expect(cond).To(BeTrue(), "Failed testing HTTPs traffic from curl(localhost) to destination %s", httpsReq.Destination)
 }
 
-func testGRPCS() {
+func testFSMGatewayGRPCSTraffic() {
 	By("Creating GRPCRoute for testing GRPCs protocol")
 	grpcRoute := gwv1alpha2.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -850,7 +850,7 @@ func testGRPCS() {
 
 }
 
-func testTLSPassthrough() {
+func testFSMGatewayTLSPassthrough() {
 	By("Creating TLSRoute for testing TLS passthrough")
 	tlsRoute := gwv1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -909,7 +909,7 @@ func testTLSPassthrough() {
 	Expect(cond).To(BeTrue(), "Failed testing TLS passthrough traffic from curl(localhost) to destination %s", httpsReq.Destination)
 }
 
-func testTLSTerminate() {
+func testFSMGatewayTLSTerminate() {
 	By("Creating TCPRoute for testing TLS terminate")
 	tcpRoute := gwv1alpha2.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
