@@ -267,15 +267,20 @@ docker-build-fsm-gateway:
 TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
 FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
 E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
+MIN_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))
+DOCKER_MIN_TARGETS = $(addprefix docker-build-, $(MIN_TARGETS))
 
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
 .PHONY: docker-build-e2e
 docker-build-e2e: charts-tgz $(DOCKER_E2E_TARGETS)
+
+.PHONY: docker-build-min
+docker-build-min: charts-tgz $(DOCKER_MIN_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:
