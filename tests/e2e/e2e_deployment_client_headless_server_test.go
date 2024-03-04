@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("Test HTTP traffic from N deployment client -> 1 deployment server",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 11,
+		Bucket: 10,
 	},
 	func() {
 		const (
