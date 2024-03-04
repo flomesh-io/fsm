@@ -45,7 +45,10 @@ var _ = FSMDescribe("Test traffic among FSM Ingress",
 					},
 				})).To(Succeed())
 
-				deployApp()
+				// Create namespaces
+				Expect(Td.CreateNs(nsIngress, nil)).To(Succeed())
+
+				deployAppForTestingIngress()
 				testIngressHTTPTraffic()
 				testIngressTLSTraffic()
 			})
@@ -218,10 +221,7 @@ func testIngressHTTPTraffic() {
 	Expect(cond).To(BeTrue(), "Failed testing HTTP traffic from curl(localhost) to destination %s", httpReq.Destination)
 }
 
-func deployApp() {
-	// Create namespaces
-	Expect(Td.CreateNs(nsIngress, nil)).To(Succeed())
-
+func deployAppForTestingIngress() {
 	// Deploy test app
 	By("Deploying app in namespace test")
 	pipyDeploy := appv1.Deployment{

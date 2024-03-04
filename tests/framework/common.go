@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	. "github.com/onsi/ginkgo"
@@ -324,12 +326,18 @@ nodeRegistration:
 		return fmt.Errorf("failed to create gatewayAPI client: %w", err)
 	}
 
+	nsigClient, err := nsigClientset.NewForConfig(kubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create NamespacedIngress client: %w", err)
+	}
+
 	td.RestConfig = kubeConfig
 	td.Client = clientset
 	td.ConfigClient = configClient
 	td.PolicyClient = policyClient
 	td.APIServerClient = apiServerClient
 	td.GatewayAPIClient = gatewayAPIClient
+	td.NsigClient = nsigClient
 
 	td.Env = cli.New()
 

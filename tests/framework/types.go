@@ -3,6 +3,8 @@ package framework
 import (
 	"time"
 
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/onsi/ginkgo"
@@ -86,6 +88,7 @@ type FsmTestData struct {
 	PolicyClient     *versioned.Clientset
 	ConfigClient     *versioned2.Clientset
 	GatewayAPIClient gatewayApiClientset.Interface
+	NsigClient       nsigClientset.Interface
 
 	ClusterProvider *cluster.Provider // provider, used when kindCluster is used
 
