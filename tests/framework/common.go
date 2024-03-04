@@ -381,6 +381,7 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		DeployFluentbit:         false,
 		EnableReconciler:        false,
 		EnableIngress:           false,
+		EnableNamespacedIngress: false,
 		EnableGateway:           false,
 		EnableServiceLB:         false,
 		EnableFLB:               false,
@@ -488,6 +489,7 @@ func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.
 	meshConfig.Spec.FeatureFlags.EnableRetryPolicy = instOpts.EnableRetryPolicy
 
 	meshConfig.Spec.Ingress.Enabled = instOpts.EnableIngress
+	meshConfig.Spec.Ingress.Namespaced = instOpts.EnableNamespacedIngress
 	meshConfig.Spec.GatewayAPI.Enabled = instOpts.EnableGateway
 	meshConfig.Spec.ServiceLB.Enabled = instOpts.EnableServiceLB
 	meshConfig.Spec.FLB.Enabled = instOpts.EnableFLB
@@ -550,6 +552,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.featureFlags.enableRetryPolicy=%v", instOpts.EnableRetryPolicy),
 		fmt.Sprintf("fsm.enableReconciler=%v", instOpts.EnableReconciler),
 		fmt.Sprintf("fsm.fsmIngress.enabled=%v", instOpts.EnableIngress),
+		fmt.Sprintf("fsm.fsmIngress.namespaced=%v", instOpts.EnableNamespacedIngress),
 		fmt.Sprintf("fsm.fsmGateway.enabled=%v", instOpts.EnableGateway),
 		fmt.Sprintf("fsm.flb.enabled=%v", instOpts.EnableFLB),
 		fmt.Sprintf("fsm.serviceLB.enabled=%v", instOpts.EnableServiceLB),

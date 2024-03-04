@@ -107,6 +107,7 @@ type InstallFSMOpts struct {
 	DeployFluentbit         bool
 	EnableReconciler        bool
 	EnableIngress           bool
+	EnableNamespacedIngress bool
 	EnableGateway           bool
 	EnableFLB               bool
 	EnableServiceLB         bool
