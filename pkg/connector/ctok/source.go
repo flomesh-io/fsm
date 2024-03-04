@@ -36,7 +36,7 @@ type Source struct {
 // updating the Sink.
 func (s *Source) Run(ctx context.Context) {
 	// Register a controller for Endpoints
-	go (&connector.Controller{
+	go (&connector.CacheController{
 		Resource: &endpointsResource{
 			sink:               s.Sink,
 			endpointsKeyToName: make(map[string]string),

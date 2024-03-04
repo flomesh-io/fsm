@@ -16,27 +16,31 @@ var (
 
 // Broker implements the message broker functionality
 type Broker struct {
-	queue                            workqueue.RateLimitingInterface
-	proxyUpdatePubSub                *pubsub.PubSub
-	proxyUpdateCh                    chan proxyUpdateEvent
-	ingressUpdatePubSub              *pubsub.PubSub
-	ingressUpdateCh                  chan ingressUpdateEvent
-	gatewayUpdatePubSub              *pubsub.PubSub
-	gatewayUpdateCh                  chan gatewayUpdateEvent
-	serviceUpdatePubSub              *pubsub.PubSub
-	serviceUpdateCh                  chan serviceUpdateEvent
-	mcsEventPubSub                   *pubsub.PubSub
-	kubeEventPubSub                  *pubsub.PubSub
-	certPubSub                       *pubsub.PubSub
-	totalQEventCount                 uint64
-	totalQProxyEventCount            uint64
-	totalQIngressEventCount          uint64
-	totalQGatewayEventCount          uint64
-	totalQServiceEventCount          uint64
-	totalDispatchedProxyEventCount   uint64
-	totalDispatchedIngressEventCount uint64
-	totalDispatchedGatewayEventCount uint64
-	totalDispatchedServiceEventCount uint64
+	queue                              workqueue.RateLimitingInterface
+	proxyUpdatePubSub                  *pubsub.PubSub
+	proxyUpdateCh                      chan proxyUpdateEvent
+	ingressUpdatePubSub                *pubsub.PubSub
+	ingressUpdateCh                    chan ingressUpdateEvent
+	gatewayUpdatePubSub                *pubsub.PubSub
+	gatewayUpdateCh                    chan gatewayUpdateEvent
+	serviceUpdatePubSub                *pubsub.PubSub
+	serviceUpdateCh                    chan serviceUpdateEvent
+	connectorUpdatePubSub              *pubsub.PubSub
+	connectorUpdateCh                  chan connectorUpdateEvent
+	mcsEventPubSub                     *pubsub.PubSub
+	kubeEventPubSub                    *pubsub.PubSub
+	certPubSub                         *pubsub.PubSub
+	totalQEventCount                   uint64
+	totalQProxyEventCount              uint64
+	totalQIngressEventCount            uint64
+	totalQGatewayEventCount            uint64
+	totalQServiceEventCount            uint64
+	totalQConnectorEventCount          uint64
+	totalDispatchedProxyEventCount     uint64
+	totalDispatchedIngressEventCount   uint64
+	totalDispatchedGatewayEventCount   uint64
+	totalDispatchedServiceEventCount   uint64
+	totalDispatchedConnectorEventCount uint64
 }
 
 // proxyUpdateEvent specifies the PubSubMessage and topic for an event that
@@ -70,6 +74,13 @@ type mcsUpdateEvent struct {
 // serviceUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a service config update
 type serviceUpdateEvent struct {
+	msg   events.PubSubMessage
+	topic string
+}
+
+// connectorUpdateEvent specifies the PubSubMessage and topic for an event that
+// results in a connector config update
+type connectorUpdateEvent struct {
 	msg   events.PubSubMessage
 	topic string
 }

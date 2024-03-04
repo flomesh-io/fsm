@@ -222,7 +222,7 @@ func (cmd *connectorEnableCmd) parseConsulConnectorFinalValues(cloudConnector ma
 		}
 		if enableConsul {
 			suffix := ""
-			if v, ok = consul["connectorNameSuffix"]; ok {
+			if v, ok = consul["connectorControllerSuffix"]; ok {
 				suffix = v.(string)
 			}
 			if len(suffix) == 0 {
@@ -249,7 +249,7 @@ func (cmd *connectorEnableCmd) parseEurekaConnectorFinalValues(cloudConnector ma
 		}
 		if enableEureka {
 			suffix := ""
-			if v, ok = eureka["connectorNameSuffix"]; ok {
+			if v, ok = eureka["connectorControllerSuffix"]; ok {
 				suffix = v.(string)
 			}
 			if len(suffix) == 0 {
@@ -276,7 +276,7 @@ func (cmd *connectorEnableCmd) parseNacosConnectorFinalValues(cloudConnector map
 		}
 		if enableNacos {
 			suffix := ""
-			if v, ok = nacos["connectorNameSuffix"]; ok {
+			if v, ok = nacos["connectorControllerSuffix"]; ok {
 				suffix = v.(string)
 			}
 			if len(suffix) == 0 {
@@ -303,7 +303,7 @@ func (cmd *connectorEnableCmd) parseMachineConnectorFinalValues(cloudConnector m
 		}
 		if enableMachine {
 			suffix := ""
-			if v, ok = machine["connectorNameSuffix"]; ok {
+			if v, ok = machine["connectorControllerSuffix"]; ok {
 				suffix = v.(string)
 			}
 			if len(suffix) == 0 {
@@ -333,7 +333,7 @@ func (cmd *connectorEnableCmd) parseGatewayConnectorFinalValues(cloudConnector m
 		}
 		if enableGateway {
 			suffix := ""
-			if v, ok = gateway["connectorNameSuffix"]; ok {
+			if v, ok = gateway["connectorControllerSuffix"]; ok {
 				suffix = v.(string)
 			}
 			if len(suffix) == 0 {

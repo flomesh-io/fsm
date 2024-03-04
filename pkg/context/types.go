@@ -54,6 +54,7 @@ type ControllerContext struct {
 	EventHandler       gateway.Controller
 	StopCh             <-chan struct{}
 	MeshName           string
+	TrustDomain        string
 	FSMVersion         string
 	KubeConfig         *rest.Config
 }

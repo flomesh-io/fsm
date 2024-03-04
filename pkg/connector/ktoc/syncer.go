@@ -77,12 +77,10 @@ type CloudSyncer struct {
 	// to ensure it isn't closed more than once.
 	initialSyncOnce sync.Once
 
-	// serviceNames is all namespaces mapped to a set of valid
-	// cloud service names
+	// serviceNames is all namespaces mapped to a set of valid cloud service names
 	serviceNames map[string]mapset.Set
 
-	// namespaces is all namespaces mapped to a map of cloud service
-	// ids mapped to their CatalogRegistrations
+	// namespaces is all namespaces mapped to a map of cloud service ids mapped to their CatalogRegistrations
 	namespaces map[string]map[string]*provider.CatalogRegistration
 	deregs     map[string]*provider.CatalogDeregistration
 

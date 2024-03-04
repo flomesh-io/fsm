@@ -13,6 +13,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -443,7 +444,7 @@ type ServiceDiscoveryClient interface {
 	Register(reg *CatalogRegistration) error
 	Deregister(dereg *CatalogDeregistration) error
 	EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error)
-	MicroServiceProvider() string
+	MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider
 	IsInternalServices() bool
 }
 

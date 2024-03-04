@@ -1,0 +1,185 @@
+package v1alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
+// +kubebuilder:resource:shortName=nacosconnector,scope=Cluster
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
+// +kubebuilder:printcolumn:name="SyncToK8S",type=string,JSONPath=`.spec.syncToK8S.enable`
+// +kubebuilder:printcolumn:name="SyncFromK8S",type=string,JSONPath=`.spec.syncFromK8S.enable`
+
+// NacosConnector is the type used to represent a Nacos Connector resource.
+type NacosConnector struct {
+	// Object's type metadata
+	metav1.TypeMeta `json:",inline"`
+
+	// Object's metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// Spec is the Nacos Connector specification
+	Spec NacosSpec `json:"spec"`
+
+	// Status is the status of the Nacos Connector configuration.
+	// +optional
+	Status NacosStatus `json:"status,omitempty"`
+}
+
+func (c *NacosConnector) GetProvider() DiscoveryServiceProvider {
+	return NacosDiscoveryService
+}
+
+// NacosSyncToK8SSpec is the type used to represent the sync from Nacos to K8S specification.
+type NacosSyncToK8SSpec struct {
+	Enable bool `json:"enable"`
+
+	// +kubebuilder:default=""
+	// +optional
+	ClusterId string `json:"clusterId,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	PassingOnly bool `json:"passingOnly,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	FilterMetadata string `json:"filterMetadata,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	PrefixMetadata string `json:"prefixMetadata,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	SuffixMetadata string `json:"suffixMetadata,omitempty"`
+
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:default={"DEFAULT"}
+	// +optional
+	ClusterSet []string `json:"clusterSet,omitempty"`
+
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:default={"DEFAULT_GROUP"}
+	// +optional
+	GroupSet []string `json:"groupSet,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	WithGateway bool `json:"withGateway,omitempty"`
+}
+
+// NacosSyncFromK8SSpec is the type used to represent the sync from K8S to Nacos specification.
+type NacosSyncFromK8SSpec struct {
+	Enable bool `json:"enable"`
+
+	// +kubebuilder:default=DEFAULT
+	// +optional
+	ClusterId string `json:"clusterId,omitempty"`
+
+	// +kubebuilder:default=DEFAULT_GROUP
+	// +optional
+	GroupId string `json:"groupId,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	DefaultSync bool `json:"defaultSync,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	SyncClusterIPServices bool `json:"syncClusterIPServices,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	SyncLoadBalancerEndpoints bool `json:"syncLoadBalancerEndpoints,omitempty"`
+
+	// +kubebuilder:default=ExternalOnly
+	// +optional
+	NodePortSyncType NodePortSyncType `json:"nodePortSyncType"`
+
+	// +kubebuilder:default=false
+	// +optional
+	SyncIngress bool `json:"syncIngress,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	SyncIngressLoadBalancerIPs bool `json:"syncIngressLoadBalancerIPs,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	AddServicePrefix string `json:"addServicePrefix,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
+
+	// +optional
+	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
+
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:default={"*"}
+	// +optional
+	AllowK8sNamespaces []string `json:"allowK8sNamespaces,omitempty"`
+
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:default={""}
+	// +optional
+	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	WithGateway bool `json:"withGateway,omitempty"`
+}
+
+// NacosSpec is the type used to represent the Nacos Connector specification.
+type NacosSpec struct {
+	HTTPAddr        string `json:"httpAddr"`
+	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	AsInternalServices bool `json:"asInternalServices,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	Username string `json:"username,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	Password string `json:"password,omitempty"`
+
+	// +kubebuilder:default=public
+	// +optional
+	NamespaceId string `json:"namespaceId,omitempty"`
+
+	SyncToK8S   NacosSyncToK8SSpec   `json:"syncToK8S"`
+	SyncFromK8S NacosSyncFromK8SSpec `json:"syncFromK8S"`
+}
+
+// NacosStatus is the type used to represent the status of a Nacos Connector resource.
+type NacosStatus struct {
+	// CurrentStatus defines the current status of a Nacos Connector resource.
+	// +optional
+	CurrentStatus string `json:"currentStatus,omitempty"`
+
+	// Reason defines the reason for the current status of a Nacos Connector resource.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// NacosConnectorList contains a list of Nacos Connectors.
+type NacosConnectorList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []NacosConnector `json:"items"`
+}

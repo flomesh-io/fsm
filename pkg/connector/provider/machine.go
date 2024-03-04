@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 )
@@ -142,8 +143,8 @@ func (dc *MachineDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPol
 	return false, nil
 }
 
-func (dc *MachineDiscoveryClient) MicroServiceProvider() string {
-	return connector.MachineDiscoveryService
+func (dc *MachineDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
+	return connectorv1alpha1.MachineDiscoveryService
 }
 
 func GetMachineDiscoveryClient(machineClient machineClientset.Interface, deriveNamespace string, isInternalServices bool, clusterId string) (*MachineDiscoveryClient, error) {

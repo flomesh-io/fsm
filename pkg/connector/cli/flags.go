@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
@@ -130,20 +130,23 @@ type K2GCfg struct {
 
 // Config is used to configure the creation of a client
 type Config struct {
-	Verbosity          string
-	MeshName           string // An ID that uniquely identifies an FSM instance
-	KubeConfigFile     string
-	FsmNamespace       string
-	FsmMeshConfigName  string
-	FsmVersion         string
-	TrustDomain        string
+	Verbosity         string
+	MeshName          string // An ID that uniquely identifies an FSM instance
+	KubeConfigFile    string
+	FsmNamespace      string
+	FsmMeshConfigName string
+	FsmVersion        string
+	TrustDomain       string
+	SdrProvider       string
+	SdrConnector      string
+
 	DeriveNamespace    string
 	AsInternalServices bool
-	SdrProvider        string
-	HttpAddr           string
-	SyncCloudToK8s     bool
-	SyncK8sToCloud     bool
-	SyncK8sToGateway   bool
+
+	HttpAddr         string
+	SyncCloudToK8s   bool
+	SyncK8sToCloud   bool
+	SyncK8sToGateway bool
 
 	Nacos NacosCfg
 
@@ -162,117 +165,13 @@ func init() {
 	flags.StringVar(&Cfg.FsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
-	flags.StringVar(&Cfg.DeriveNamespace, "derive-namespace", "", "derive namespace")
-	flags.BoolVar(&Cfg.AsInternalServices, "as-internal-services", false, "as internal services synced from cloud")
-	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (eureka, Consul)")
-	flags.StringVar(&Cfg.HttpAddr, "sdr-http-addr", "", "http addr")
 
-	flags.BoolVar(&Cfg.SyncCloudToK8s, "sync-cloud-to-k8s", false, "sync from cloud to k8s")
-	flags.StringVar(&Cfg.C2K.FlagFilterTag, "sync-cloud-to-k8s-filter-tag", "", "filter tag")
-	flags.StringVar(&Cfg.C2K.FlagPrefixTag, "sync-cloud-to-k8s-prefix-tag", "", "prefix tag")
-	flags.StringVar(&Cfg.C2K.FlagSuffixTag, "sync-cloud-to-k8s-suffix-tag", "", "suffix tag")
-	flags.StringVar(&Cfg.C2K.FlagClusterId, "sync-cloud-to-k8s-cluster-id", "", "cloud cluster id")
-	flags.BoolVar(&Cfg.C2K.FlagPassingOnly, "sync-cloud-to-k8s-passing-only", true, "passing only")
-	flags.BoolVar(&Cfg.C2K.FlagWithGateway.Enable, "sync-cloud-to-k8s-with-gateway", false, "with gateway api")
-
-	flags.BoolVar(&Cfg.SyncK8sToCloud, "sync-k8s-to-cloud", false, "sync from k8s to cloud")
-	flags.BoolVar(&Cfg.K2C.FlagDefaultSync, "sync-k8s-to-cloud-default-sync", true,
-		"If true, all valid services in K8S are synced by default. If false, "+
-			"the service must be annotated properly to sync. In either case "+
-			"an annotation can override the default")
-	flags.DurationVar(&Cfg.K2C.FlagSyncPeriod, "sync-k8s-to-cloud-sync-interval", 5*time.Second,
-		"The interval to perform syncing operations creating cloud services, formatted "+
-			"as a time.Duration. All changes are merged and write calls are only made "+
-			"on this interval. Defaults to 5 seconds (5s).")
-	flags.BoolVar(&Cfg.K2C.FlagSyncClusterIPServices, "sync-k8s-to-cloud-sync-cluster-ip-services", true,
-		"If true, all valid ClusterIP services in K8S are synced by default. If false, "+
-			"ClusterIP services are not synced to Consul.")
-	flags.BoolVar(&Cfg.K2C.FlagSyncLoadBalancerEndpoints, "sync-k8s-to-cloud-sync-load-balancer-services-endpoints", false,
-		"If true, LoadBalancer service endpoints instead of ingress addresses will be synced to cloud. If false, "+
-			"LoadBalancer endpoints are not synced to cloud.")
-	flags.StringVar(&Cfg.K2C.FlagNodePortSyncType, "sync-k8s-to-cloud-node-port-sync-type", "ExternalOnly",
-		"Defines the type of sync for NodePort services. Valid options are ExternalOnly, "+
-			"InternalOnly and ExternalFirst.")
-
-	flags.StringVar(&Cfg.K2C.FlagAddServicePrefix, "sync-k8s-to-cloud-add-service-prefix", "",
-		"A prefix to prepend to all services written to cloud from Kubernetes. "+
-			"If this is not set then services will have no prefix.")
-	flags.BoolVar(&Cfg.K2C.FlagAddK8SNamespaceAsServiceSuffix, "sync-k8s-to-cloud-add-k8s-namespace-as-service-suffix", false,
-		"If true, Kubernetes namespace will be appended to service names synced to cloud separated by a dash. "+
-			"If false, no suffix will be appended to the service names in cloud. "+
-			"If the service name annotation is provided, the suffix is not appended.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendTags), "sync-k8s-to-cloud-append-tag",
-		"append tag. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendMetadataKeys), "sync-k8s-to-cloud-append-metadata-key",
-		"append metadata key. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAppendMetadataValues), "sync-k8s-to-cloud-append-metadata-value",
-		"append metadata value. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagAllowK8SNamespaces), "sync-k8s-to-cloud-allow-k8s-namespaces",
-		"K8s namespaces to explicitly allow. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2C.FlagDenyK8SNamespaces), "sync-k8s-to-cloud-deny-k8s-namespaces",
-		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
-
-	flags.BoolVar(&Cfg.K2C.FlagSyncIngress, "sync-k8s-to-cloud-sync-ingress", false,
-		"enables syncing of the hostname from an Ingress resource to the service registration if an Ingress rule matches the service.")
-	flags.BoolVar(&Cfg.K2C.FlagSyncIngressLoadBalancerIPs, "sync-k8s-to-cloud-sync-ingress-load-balancer-ips", false,
-		"enables syncing the IP of the Ingress LoadBalancer if we do not want to sync the hostname from the Ingress resource.")
-
-	flags.BoolVar(&Cfg.K2C.FlagWithGateway.Enable, "sync-k8s-to-cloud-with-gateway", false, "with gateway api")
-
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulNodeName, "sync-k8s-to-cloud-consul-node-name", "k8s-sync",
-		"The Consul node name to register for catalog sync. Defaults to k8s-sync. To be discoverable "+
-			"via DNS, the name should only contain alpha-numerics and dashes.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8STag, "sync-k8s-to-cloud-consul-k8s-tag", "k8s",
-		"Tag value for K8S services registered in cloud")
-	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableNamespaces, "sync-k8s-to-cloud-consul-enable-namespaces", false,
-		"[Enterprise Only] Enables namespaces, in either a single Consul namespace or mirrored.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulDestinationNamespace, "sync-k8s-to-cloud-consul-destination-namespace", "default",
-		"[Enterprise Only] Defines which Consul namespace to register all synced services into. If '-sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring' "+
-			"is true, this is not used.")
-	flags.BoolVar(&Cfg.K2C.Consul.FlagConsulEnableK8SNSMirroring, "sync-k8s-to-cloud-consul-enable-k8s-namespace-mirroring", false, "[Enterprise Only] Enables "+
-		"namespace mirroring.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulK8SNSMirroringPrefix, "sync-k8s-to-cloud-consul-k8s-namespace-mirroring-prefix", "",
-		"[Enterprise Only] Prefix that will be added to all k8s namespaces mirrored into Consul if mirroring is enabled.")
-	flags.StringVar(&Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy, "sync-k8s-to-cloud-consul-cross-namespace-acl-policy", "",
-		"[Enterprise Only] Name of the ACL policy to attach to all created Consul namespaces to allow service "+
-			"discovery across Consul namespaces. Only necessary if ACLs are enabled.")
-
-	flags.StringVar(&Cfg.Nacos.FlagUsername, "nacos-username", "", "username for nacos auth")
-	flags.StringVar(&Cfg.Nacos.FlagPassword, "nacos-password", "", "password for nacos auth")
-	flags.StringVar(&Cfg.Nacos.FlagNamespaceId, "nacos-namespace-id", "", "nacos namespace id")
-	flags.StringVar(&Cfg.K2C.Nacos.FlagClusterId, "sync-k8s-to-cloud-cluster-id", "", "nacos cluster id")
-	flags.StringVar(&Cfg.K2C.Nacos.FlagGroupId, "sync-k8s-to-cloud-group-id", "", "nacos group id")
-	flags.Var((*AppendSliceValue)(&Cfg.C2K.Nacos.FlagClusterSet), "sync-cloud-to-k8s-nacos-cluster-set",
-		"nacos cluster to explicitly allow. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.C2K.Nacos.FlagGroupSet), "sync-cloud-to-k8s-nacos-group-set",
-		"nacos group to explicitly allow. May be specified multiple times.")
-
-	flags.BoolVar(&Cfg.SyncK8sToGateway, "sync-k8s-to-fgw", false, "sync from k8s to fgw")
-	flags.BoolVar(&Cfg.K2G.FlagDefaultSync, "sync-k8s-to-fgw-default-sync", true,
-		"If true, all valid services in K8S are synced by default. If false, "+
-			"the service must be annotated properly to sync. In either case "+
-			"an annotation can override the default")
-	flags.DurationVar(&Cfg.K2G.FlagSyncPeriod, "sync-k8s-to-fgw-sync-interval", 5*time.Second,
-		"The interval to perform syncing operations creating cloud services, formatted "+
-			"as a time.Duration. All changes are merged and write calls are only made "+
-			"on this interval. Defaults to 5 seconds (5s).")
-	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagAllowK8SNamespaces), "sync-k8s-to-fgw-allow-k8s-namespaces",
-		"K8s namespaces to explicitly allow. May be specified multiple times.")
-	flags.Var((*AppendSliceValue)(&Cfg.K2G.FlagDenyK8SNamespaces), "sync-k8s-to-fgw-deny-k8s-namespaces",
-		"K8s namespaces to explicitly deny. Takes precedence over allow. May be specified multiple times.")
-
-	flags.StringVar(&Cfg.Via.IngressIPSelector, "via-gateway-ingress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
-	flags.StringVar(&Cfg.Via.EgressIPSelector, "via-gateway-egress-ip-selector", "ClusterIP", "ClusterIP/ExternalIP")
-	flags.UintVar(&Cfg.Via.Ingress.HTTPPort, "via-gateway-ingress-http-port", 0, "ingress http port")
-	flags.UintVar(&Cfg.Via.Ingress.GRPCPort, "via-gateway-ingress-grpc-port", 0, "ingress grpc port")
-	flags.UintVar(&Cfg.Via.Egress.HTTPPort, "via-gateway-egress-http-port", 0, "egress http port")
-	flags.UintVar(&Cfg.Via.Egress.GRPCPort, "via-gateway-egress-grpc-port", 0, "egress grpc port")
+	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
+	flags.StringVar(&Cfg.SdrConnector, "sdr-connector", "", "connector name")
 }
 
 // ValidateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent
 func ValidateCLIParams() error {
-	bytes, _ := json.MarshalIndent(Cfg, "", " ")
-	fmt.Println(string(bytes))
 	if len(Cfg.MeshName) == 0 {
 		return fmt.Errorf("please specify the mesh name using --mesh-name")
 	}
@@ -281,42 +180,20 @@ func ValidateCLIParams() error {
 		return fmt.Errorf("please specify the FSM namespace using -fsm-namespace")
 	}
 
-	if len(Cfg.SdrProvider) > 0 {
-		if connector.EurekaDiscoveryService != Cfg.SdrProvider &&
-			connector.ConsulDiscoveryService != Cfg.SdrProvider &&
-			connector.NacosDiscoveryService != Cfg.SdrProvider &&
-			connector.MachineDiscoveryService != Cfg.SdrProvider {
-			return fmt.Errorf("please specify service discovery and registration provider using -sdr-provider")
-		}
+	if len(Cfg.SdrProvider) == 0 {
+		return fmt.Errorf("please specify the connector using -sdr-provider(consul/eureka/nacos/machine/gateway)")
 	}
 
-	if connector.EurekaDiscoveryService == Cfg.SdrProvider ||
-		connector.ConsulDiscoveryService == Cfg.SdrProvider ||
-		connector.NacosDiscoveryService == Cfg.SdrProvider {
-		if len(Cfg.HttpAddr) == 0 {
-			return fmt.Errorf("please specify service discovery and registration server address using -sdr-http-addr")
-		}
-		if Cfg.SyncCloudToK8s || Cfg.SyncK8sToCloud {
-			if len(Cfg.DeriveNamespace) == 0 {
-				return fmt.Errorf("please specify the cloud derive namespace using -derive-namespace")
-			}
-		}
+	if string(connectorv1alpha1.EurekaDiscoveryService) != Cfg.SdrProvider &&
+		string(connectorv1alpha1.ConsulDiscoveryService) != Cfg.SdrProvider &&
+		string(connectorv1alpha1.NacosDiscoveryService) != Cfg.SdrProvider &&
+		string(connectorv1alpha1.MachineDiscoveryService) != Cfg.SdrProvider &&
+		string(connectorv1alpha1.GatewayDiscoveryService) != Cfg.SdrProvider {
+		return fmt.Errorf("please specify the connector using -sdr-provider(consul/eureka/nacos/machine/gateway)")
 	}
 
-	if connector.NacosDiscoveryService == Cfg.SdrProvider {
-		if Cfg.SyncCloudToK8s || Cfg.SyncK8sToCloud {
-			if len(Cfg.Nacos.FlagNamespaceId) == 0 {
-				return fmt.Errorf("please specify the nacos namespace id using -nacos-namespace-id")
-			}
-		}
-		if Cfg.SyncK8sToCloud {
-			if len(Cfg.K2C.Nacos.FlagClusterId) == 0 {
-				return fmt.Errorf("please specify the nacos cluster id using -sync-k8s-to-cloud-cluster-id")
-			}
-			if len(Cfg.K2C.Nacos.FlagGroupId) == 0 {
-				return fmt.Errorf("please specify the nacos group id using -sync-k8s-to-cloud-group-id")
-			}
-		}
+	if len(Cfg.SdrConnector) == 0 {
+		return fmt.Errorf("please specify the connector using -sdr-connector")
 	}
 
 	return nil

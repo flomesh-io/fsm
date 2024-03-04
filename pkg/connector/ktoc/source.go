@@ -171,7 +171,7 @@ type ServiceResource struct {
 
 	MsgBroker     *messaging.Broker
 	MsgWorkQueues *workerpool.WorkerPool
-	// workerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
+	// MsgWorkerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
 	MsgWorkerPoolSize int
 }
 
@@ -286,7 +286,7 @@ func (t *ServiceResource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for endpoints")
 	// Register a controller for Endpoints which subsequently registers a
 	// controller for the Ingress resource.
-	(&connector.Controller{
+	(&connector.CacheController{
 		Resource: &serviceEndpointsResource{
 			Service: t,
 			Ctx:     t.Ctx,
@@ -847,7 +847,7 @@ type serviceEndpointsResource struct {
 // Run implements the controller.Backgrounder interface.
 func (t *serviceEndpointsResource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for ingress")
-	(&connector.Controller{
+	(&connector.CacheController{
 		Resource: t.Resource,
 	}).Run(ch)
 }

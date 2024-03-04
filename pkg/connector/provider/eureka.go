@@ -9,6 +9,7 @@ import (
 	"github.com/hudl/fargo"
 	"github.com/op/go-logging"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
@@ -161,8 +162,8 @@ func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPoli
 	return false, nil
 }
 
-func (dc *EurekaDiscoveryClient) MicroServiceProvider() string {
-	return connector.EurekaDiscoveryService
+func (dc *EurekaDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
+	return connectorv1alpha1.EurekaDiscoveryService
 }
 
 func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string,
@@ -171,6 +172,7 @@ func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId
 	eurekaClient.Timeout = time.Duration(60) * time.Second
 	eurekaClient.PollInterval = time.Duration(30) * time.Second
 	eurekaClient.Retries = 3
+	eurekaClient.DNSDiscovery = false
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.eurekaClient = &eurekaClient
 	eurekaDiscoveryClient.isInternalServices = isInternalServices

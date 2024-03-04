@@ -28,6 +28,7 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/cluster/v1alpha1"
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/controllers/flb"
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1alpha2"
 	gatewayv1beta1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1beta1"
@@ -75,6 +76,12 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(ctx)
 	}
+
+	reconcilers["Connector(ConsulConnector)"] = connectorv1alpha1.NewConsulConnectorReconciler(ctx)
+	reconcilers["Connector(EurekaConnector)"] = connectorv1alpha1.NewEurekaConnectorReconciler(ctx)
+	reconcilers["Connector(NacosConnector)"] = connectorv1alpha1.NewNacosConnectorReconciler(ctx)
+	reconcilers["Connector(MachineConnector)"] = connectorv1alpha1.NewMachineConnectorReconciler(ctx)
+	reconcilers["Connector(GatewayConnector)"] = connectorv1alpha1.NewGatewayConnectorReconciler(ctx)
 
 	if mc.IsNamespacedIngressEnabled() {
 		reconcilers["NamespacedIngress"] = nsigv1alpha1.NewReconciler(ctx)

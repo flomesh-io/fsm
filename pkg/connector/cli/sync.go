@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
@@ -23,12 +24,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
-const (
-	VIA_EXTERNAL_IP = "ExternalIP"
-	VIA_CLUSTER_IP  = "ClusterIP"
-)
-
-func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
+func syncCtoK(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
 	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
 
 	ctok.WithGateway(Cfg.C2K.FlagWithGateway.Enable)
@@ -54,13 +50,13 @@ func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
+	ctl := &connector.CacheController{
 		Resource: sink,
 	}
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
+func syncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
 	ktoc.WithGateway(Cfg.K2C.FlagWithGateway.Enable)
 
 	if Cfg.K2C.FlagWithGateway.Enable {
@@ -113,14 +109,14 @@ func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	}
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
+	ctl := &connector.CacheController{
 		Resource: &serviceResource,
 	}
 	go serviceResource.BroadcastListener()
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
+func syncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
 	ingressAddr, egressAddr, clusterIP, externalIP := waitGatewayReady(ctx, kubeClient,
 		connector.ViaGateway.IngressIPSelector,
 		connector.ViaGateway.EgressIPSelector,
@@ -190,12 +186,12 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient
 	gatewayResource.Service = serviceResource
 
 	// Build the controller and start it
-	gwCtl := &connector.Controller{
+	gwCtl := &connector.CacheController{
 		Resource: gatewayResource,
 	}
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
+	ctl := &connector.CacheController{
 		Resource: serviceResource,
 	}
 
@@ -264,12 +260,12 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 		clusterIP = fgwSvc.Spec.ClusterIPs[0]
 	}
 
-	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
-	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
-	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
-	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
-	egressAddr = selectIngressIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
-	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, string(connectorv1alpha1.ExternalIP), fgwSvc.Spec.ExternalIPs)
+	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, string(connectorv1alpha1.ExternalIP), fgwSvc.Status.LoadBalancer.Ingress)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, string(connectorv1alpha1.ClusterIP), fgwSvc.Spec.ClusterIPs)
+	egressAddr = selectIP(egressAddr, egressIPSelector, string(connectorv1alpha1.ExternalIP), fgwSvc.Spec.ExternalIPs)
+	egressAddr = selectIngressIP(egressAddr, egressIPSelector, string(connectorv1alpha1.ExternalIP), fgwSvc.Status.LoadBalancer.Ingress)
+	egressAddr = selectIP(egressAddr, egressIPSelector, string(connectorv1alpha1.ClusterIP), fgwSvc.Spec.ClusterIPs)
 	return
 }
 

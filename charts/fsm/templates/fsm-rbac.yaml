@@ -116,6 +116,14 @@ rules:
     resources: ["virtualmachines/status"]
     verbs: ["update"]
 
+  # FSM's custom connector API
+  - apiGroups: ["connector.flomesh.io"]
+    resources: ["consulconnectors", "eurekaconnectors", "nacosconnectors", "machineconnectors", "gatewayconnectors"]
+    verbs: ["list", "get", "watch", "update"]
+  - apiGroups: ["connector.flomesh.io"]
+    resources: ["consulconnectors/status", "eurekaconnectors/status", "nacosconnectors/status", "machineconnectors/status", "gatewayconnectors/status"]
+    verbs: ["update"]
+
   # FSM's NamespacedIngress API
   - apiGroups: [ "flomesh.io" ]
     resources: [ "namespacedingresses" ]

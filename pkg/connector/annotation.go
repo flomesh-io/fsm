@@ -1,20 +1,6 @@
 package connector
 
 const (
-	//ConsulDiscoveryService defines consul discovery service name
-	ConsulDiscoveryService = "consul"
-
-	//EurekaDiscoveryService defines eureka discovery service name
-	EurekaDiscoveryService = "eureka"
-
-	//NacosDiscoveryService defines nacos discovery service name
-	NacosDiscoveryService = "nacos"
-
-	//MachineDiscoveryService defines machine discovery service name
-	MachineDiscoveryService = "machine"
-)
-
-const (
 	// ServiceSourceKey is the key used in the meta to track the "k8s" source.
 	ServiceSourceKey = "fsm-connector-external-source"
 )

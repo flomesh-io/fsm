@@ -44,7 +44,7 @@ func (t *ServiceResource) BroadcastListener() {
 	}
 }
 
-// SyncJob is the job to generate pipy policy json
+// SyncJob is the job to sync
 type SyncJob struct {
 	// Optional waiter
 	done     chan struct{}

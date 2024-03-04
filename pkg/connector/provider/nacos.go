@@ -12,6 +12,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
@@ -190,8 +191,8 @@ func (dc *NacosDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolic
 	return false, nil
 }
 
-func (dc *NacosDiscoveryClient) MicroServiceProvider() string {
-	return connector.NacosDiscoveryService
+func (dc *NacosDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
+	return connectorv1alpha1.NacosDiscoveryService
 }
 
 func GetNacosDiscoveryClient(address, username, password, namespaceId, clusterId, k2cClusterId, k2cGroupId string,

@@ -7,6 +7,7 @@ import (
 	mapset "github.com/deckarep/golang-set"
 	consul "github.com/hashicorp/consul/api"
 
+	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
@@ -227,8 +228,8 @@ func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPoli
 	return true, err
 }
 
-func (dc *ConsulDiscoveryClient) MicroServiceProvider() string {
-	return connector.ConsulDiscoveryService
+func (dc *ConsulDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
+	return connectorv1alpha1.ConsulDiscoveryService
 }
 
 func GetConsulDiscoveryClient(address string, isInternalServices bool, clusterId string,

@@ -3,6 +3,12 @@ package connector
 import (
 	"fmt"
 	"strings"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
+
+var (
+	log = logger.New("connector")
 )
 
 var (

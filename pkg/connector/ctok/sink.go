@@ -286,7 +286,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
+					connector.AnnotationMeshServiceSync:           string(s.DiscClient.MicroServiceProvider()),
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
 				if withGateway {
@@ -314,7 +314,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           s.DiscClient.MicroServiceProvider(),
+						connector.AnnotationMeshServiceSync:           string(s.DiscClient.MicroServiceProvider()),
 						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},
