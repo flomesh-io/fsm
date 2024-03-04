@@ -82,9 +82,9 @@ var _ = FSMDescribe("Test traffic among FSM Ingress",
 					},
 				}
 
-				_, err := Td.CreateDeployment(nsHttpbin, pipyDeploy)
+				_, err := Td.CreateDeployment(nsIngress, pipyDeploy)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(Td.WaitForPodsRunningReady(nsHttpbin, 1, &metav1.LabelSelector{
+				Expect(Td.WaitForPodsRunningReady(nsIngress, 1, &metav1.LabelSelector{
 					MatchLabels: map[string]string{constants.AppLabel: "pipy"},
 				})).To(Succeed())
 
