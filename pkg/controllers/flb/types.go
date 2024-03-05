@@ -9,7 +9,7 @@ const (
 	flbAuthAPIPath          = "/api/auth/local"
 	flbUpdateServiceAPIPath = "/api/l-4-lbs/updateservice"
 	flbDeleteServiceAPIPath = "/api/l-4-lbs/updateservice/delete"
-	flbCertAPIPath          = "/api/certificates"
+	flbCertAPIPath          = "/api/updatecertificate"
 	flbDeleteCertAPIPath    = "/api/deleteCertificates"
 )
 
