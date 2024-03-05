@@ -201,7 +201,7 @@ func testDeployFSMGateway() {
 	_, err = Td.CreateGateway(corev1.NamespaceDefault, gateway)
 	Expect(err).NotTo(HaveOccurred())
 	// Expect it to be up and running in default namespace
-	Expect(Td.WaitForPodsRunningReady(corev1.NamespaceDefault, 1, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(corev1.NamespaceDefault, 2, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: constants.FSMGatewayName},
 	})).To(Succeed())
 }

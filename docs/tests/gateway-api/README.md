@@ -397,42 +397,38 @@ metadata:
   name: tcproute
 spec:
   ports:
-    - name: pipy
-      port: 8080
-      targetPort: 8080
+    - name: tcp
+      port: 8078
+      targetPort: 8078
       protocol: TCP
   selector:
-    app: pipy
+    app: tcproute
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tcproute
-  labels:
-    app: pipy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pipy
+      app: tcproute
   template:
     metadata:
       labels:
-        app: pipy
+        app: tcproute
     spec:
       containers:
-        - name: pipy
-          image: flomesh/pipy:latest
+        - name: tcp
+          image: fortio/fortio:latest
           ports:
-            - name: pipy
-              containerPort: 8080
+            - name: tcp
+              containerPort: 8078
           command:
-            - pipy
-            - -e
-            - |
-              pipy()
-              .listen(8080)
-              .serveHTTP(new Message('Hi, I am TCPRoute!\n'))
+            - fortio
+            - tcp-echo
+            - -loglevel
+            - debug
 EOF
 ```
 
@@ -451,30 +447,14 @@ spec:
   rules:
   - backendRefs:
     - name: tcproute
-      port: 8080
+      port: 8078
 EOF
 ```
 
 #### Test it:
 ```shell
-❯ curl -iv http://localhost:3000
-*   Trying 127.0.0.1:3000...
-* Connected to localhost (127.0.0.1) port 3000 (#0)
-> GET / HTTP/1.1
-> Host: localhost:3000
-> User-Agent: curl/7.88.1
-> Accept: */*
->
-< HTTP/1.1 200 OK
-HTTP/1.1 200 OK
-< content-length: 19
-content-length: 19
-< connection: keep-alive
-connection: keep-alive
-
-<
-Hi, I am TCPRoute!
-* Connection #0 to host localhost left intact
+❯ echo "Text to send to TCP" | nc localhost 3000
+Text to send to TCP
 ```
 
 ### Test UDPRoute
@@ -499,8 +479,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: udproute
-  labels:
-    app: pipy
 spec:
   replicas: 1
   selector:
@@ -512,14 +490,16 @@ spec:
         app: udproute
     spec:
       containers:
-        - name: pipy
-          image: istio/fortio:latest
+        - name: udp
+          image: fortio/fortio:latest
           ports:
             - name: udp
               containerPort: 8078
           command:
             - fortio
             - udp-echo
+            - -loglevel
+            - debug
 EOF
 ```
 
