@@ -126,6 +126,9 @@ type LocalDNSProxy struct {
 
 // SidecarSpec is the type used to represent the specifications for the proxy sidecar.
 type SidecarSpec struct {
+	// Enabled defines a boolean indicating if the sidecar is enabled. It implies if service mesh is enabled.
+	Enabled bool `json:"enabled"`
+
 	// EnablePrivilegedInitContainer defines a boolean indicating whether the init container for a meshed pod should run as privileged.
 	EnablePrivilegedInitContainer bool `json:"enablePrivilegedInitContainer"`
 

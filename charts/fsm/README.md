@@ -581,7 +581,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
 | fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
 | fsm.serviceLB.image.tag | string | `"v0.3.5"` | service-lb image tag |
-| fsm.sidecar | object | `{"image":{"name":"pipy","registry":"flomesh","tag":"0.99.1-1"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar | object | `{"enabled":true,"image":{"name":"pipy","registry":"flomesh","tag":"0.99.1-1"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar.enabled | bool | `true` | Sidecar is enabled or not, it implies if service mesh is enabled |
 | fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
 | fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
 | fsm.sidecar.image.tag | string | `"0.99.1-1"` | Sidecar image tag |

@@ -70,6 +70,8 @@ fsm:
   imagePullSecrets: [ ]
   # -- Sidecar supported by fsm
   sidecar:
+    # -- Sidecar is enabled or not, it implies if service mesh is enabled
+    enabled: true
     image:
       # -- Registry for sidecar image
       registry: flomesh

@@ -552,12 +552,22 @@
                   "title": "The sidecar schema",
                   "description": "The class of the FSM Sidecar Driver.",
                   "required": [
+                    "enabled",
                     "image",
                     "sidecarDisabledMTLS",
                     "sidecarLogLevel",
                     "sidecarTimeout"
                   ],
                   "properties": {
+                    "enabled": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/enabled",
+                      "type": "boolean",
+                      "title": "The enabled schema",
+                      "description": "Sidecar is enabled or not, it implies if service mesh is enabled",
+                      "examples": [
+                        false
+                      ]
+                    },
                     "image": {
                       "$id": "#/properties/fsm/properties/sidecar/properties/image",
                       "type": "object",

@@ -26,6 +26,7 @@ data:
         }
       },
       "sidecar": {
+        "enabled": {{.Values.fsm.sidecar.enabled | mustToJson}},
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},
         "logLevel": {{.Values.fsm.sidecar.sidecarLogLevel | mustToJson}},
         "maxDataPlaneConnections": {{.Values.fsm.maxDataPlaneConnections | mustToJson}},
