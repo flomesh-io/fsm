@@ -1,6 +1,6 @@
 module github.com/flomesh-io/fsm
 
-go 1.21
+go 1.22
 
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
