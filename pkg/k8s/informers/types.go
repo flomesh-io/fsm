@@ -11,6 +11,7 @@ import (
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
 	gwv1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
@@ -106,6 +107,8 @@ const (
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
 	// InformerKeyGatewayAPIUDPRoute is the InformerKey for a UDPRoute informer
 	InformerKeyGatewayAPIUDPRoute InformerKey = "UDPRoute-gwapi"
+	// InformerKeyGatewayAPIReferenceGrant is the InformerKey for a ReferenceGrant informer
+	InformerKeyGatewayAPIReferenceGrant InformerKey = "ReferenceGrant-gwapi"
 	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
 	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
@@ -176,4 +179,5 @@ type Lister struct {
 	UpstreamTLSPolicy     gwpav1alpha1.UpstreamTLSPolicyLister
 	RetryPolicy           gwpav1alpha1.RetryPolicyLister
 	GatewayTLSPolicy      gwpav1alpha1.GatewayTLSPolicyLister
+	ReferenceGrant        gwv1beta1.ReferenceGrantLister
 }

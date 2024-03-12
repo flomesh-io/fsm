@@ -274,6 +274,7 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIUDPRoute] = informerFactory.Gateway().V1alpha2().UDPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIReferenceGrant] = informerFactory.Gateway().V1beta1().ReferenceGrants().Informer()
 
 		ic.listers.GatewayClass = informerFactory.Gateway().V1().GatewayClasses().Lister()
 		ic.listers.Gateway = informerFactory.Gateway().V1().Gateways().Lister()
@@ -282,6 +283,7 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
 		ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
 		ic.listers.UDPRoute = informerFactory.Gateway().V1alpha2().UDPRoutes().Lister()
+		ic.listers.ReferenceGrant = informerFactory.Gateway().V1beta1().ReferenceGrants().Lister()
 	}
 }
 

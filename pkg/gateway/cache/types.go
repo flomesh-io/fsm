@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -75,6 +76,9 @@ const (
 
 	// UDPRoutesResourceType is the type used to represent the UDP routes resource
 	UDPRoutesResourceType ResourceType = "udproutes"
+
+	// ReferenceGrantResourceType is the type used to represent the reference grants resource
+	ReferenceGrantResourceType ResourceType = "referencegrants"
 
 	// RateLimitPoliciesResourceType is the type used to represent the rate limit policies resource
 	RateLimitPoliciesResourceType ResourceType = "ratelimits"
@@ -149,7 +153,7 @@ type routePolicies struct {
 }
 
 type GatewayAPIResource interface {
-	*gwv1.HTTPRoute | *gwv1alpha2.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute |
+	*gwv1.HTTPRoute | *gwv1alpha2.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
 		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
 		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
 		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy | *gwpav1alpha1.GatewayTLSPolicy

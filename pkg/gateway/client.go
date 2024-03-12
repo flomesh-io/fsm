@@ -15,6 +15,7 @@ import (
 	k8scache "k8s.io/client-go/tools/cache"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -84,6 +85,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyGatewayAPITLSRoute,
 		fsminformers.InformerKeyGatewayAPITCPRoute,
 		fsminformers.InformerKeyGatewayAPIUDPRoute,
+		fsminformers.InformerKeyGatewayAPIReferenceGrant,
 		fsminformers.InformerKeyRateLimitPolicy,
 		fsminformers.InformerKeySessionStickyPolicy,
 		fsminformers.InformerKeyLoadBalancerPolicy,
@@ -218,6 +220,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITCPRoute)
 	case *gwv1alpha2.UDPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIUDPRoute)
+	case *gwv1beta1.ReferenceGrant:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIReferenceGrant)
 	case *gwpav1alpha1.RateLimitPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRateLimitPolicy)
 	case *gwpav1alpha1.SessionStickyPolicy:
@@ -310,6 +314,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayAPIUDPRouteAdded,
 			Update: announcements.GatewayAPIUDPRouteUpdated,
 			Delete: announcements.GatewayAPIUDPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIReferenceGrant:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIReferenceGrantAdded,
+			Update: announcements.GatewayAPIReferenceGrantUpdated,
+			Delete: announcements.GatewayAPIReferenceGrantDeleted,
 		}
 	case fsminformers.InformerKeyRateLimitPolicy:
 		return &k8s.EventTypes{

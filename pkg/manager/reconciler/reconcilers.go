@@ -31,6 +31,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/controllers/flb"
 	gatewayv1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1"
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1alpha2"
+	gatewayv1beta1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1beta1"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/mcs/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/namespacedingress/v1alpha1"
 	pav1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/policyattachment/v1alpha1"
@@ -64,6 +65,7 @@ func RegisterReconcilers(ctx *fctx.ControllerContext) error {
 		reconcilers["GatewayAPI(TCPRoute)"] = gatewayv1alpha2.NewTCPRouteReconciler(ctx)
 		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(ctx)
 		reconcilers["GatewayAPI(UDPRoute)"] = gatewayv1alpha2.NewUDPRouteReconciler(ctx)
+		reconcilers["GatewayAPI(ReferenceGrant)"] = gatewayv1beta1.NewReferenceGrantReconciler(ctx)
 		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(SessionSticky)"] = pav1alpha1.NewSessionStickyPolicyReconciler(ctx)
 		reconcilers["PolicyAttachment(LoadBalancer)"] = pav1alpha1.NewLoadBalancerPolicyReconciler(ctx)

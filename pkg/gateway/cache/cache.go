@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -53,6 +55,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			TCPRoutesResourceType:               &TCPRoutesTrigger{},
 			TLSRoutesResourceType:               &TLSRoutesTrigger{},
 			UDPRoutesResourceType:               &UDPRoutesTrigger{},
+			ReferenceGrantResourceType:          &ReferenceGrantTrigger{},
 			RateLimitPoliciesResourceType:       &RateLimitPoliciesTrigger{},
 			SessionStickyPoliciesResourceType:   &SessionStickyPoliciesTrigger{},
 			LoadBalancerPoliciesResourceType:    &LoadBalancerPoliciesTrigger{},
@@ -115,6 +118,8 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[TLSRoutesResourceType]
 	case *gwv1alpha2.UDPRoute:
 		return c.triggers[UDPRoutesResourceType]
+	case *gwv1beta1.ReferenceGrant:
+		return c.triggers[ReferenceGrantResourceType]
 	case *gwpav1alpha1.RateLimitPolicy:
 		return c.triggers[RateLimitPoliciesResourceType]
 	case *gwpav1alpha1.SessionStickyPolicy:
