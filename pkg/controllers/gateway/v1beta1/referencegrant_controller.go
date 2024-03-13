@@ -37,13 +37,11 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
 type referenceGrantReconciler struct {
-	recorder        record.EventRecorder
-	fctx            *fctx.ControllerContext
-	statusProcessor *status.RouteStatusProcessor
+	recorder record.EventRecorder
+	fctx     *fctx.ControllerContext
 }
 
 func (r *referenceGrantReconciler) NeedLeaderElection() bool {
@@ -53,9 +51,8 @@ func (r *referenceGrantReconciler) NeedLeaderElection() bool {
 // NewReferenceGrantReconciler returns a new ReferenceGrant Reconciler
 func NewReferenceGrantReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &referenceGrantReconciler{
-		recorder:        ctx.Manager.GetEventRecorderFor("ReferenceGrant"),
-		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		recorder: ctx.Manager.GetEventRecorderFor("ReferenceGrant"),
+		fctx:     ctx,
 	}
 }
 
@@ -77,7 +74,7 @@ func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
-	// TODO: Add logic of updating status here
+	// As ReferenceGrant has no status, we don't need to update it
 
 	r.fctx.EventHandler.OnAdd(referenceGrant, false)
 
