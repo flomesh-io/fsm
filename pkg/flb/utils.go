@@ -203,5 +203,12 @@ func IsValidTLSPort(svc *corev1.Service) (bool, error) {
 		return false, fmt.Errorf("invalid port number: %d", p)
 	}
 
-	return true, nil
+	// check if the TLS port is in the service spec
+	for _, port := range svc.Spec.Ports {
+		if port.Port == int32(p) {
+			return true, nil
+		}
+	}
+
+	return false, fmt.Errorf("port %d is not found in service spec", p)
 }
