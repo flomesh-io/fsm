@@ -194,7 +194,7 @@ func IsValidTLSPort(svc *corev1.Service) (bool, error) {
 		return false, fmt.Errorf("service doesn't have annotation %s", constants.FLBTLSPortAnnotation)
 	}
 
-	p, err := strconv.Atoi(port)
+	p, err := strconv.ParseInt(port, 10, 32)
 	if err != nil {
 		return false, err
 	}
