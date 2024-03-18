@@ -9,127 +9,70 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/connector/ktoc"
 	"github.com/flomesh-io/fsm/pkg/connector/ktog"
-	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"github.com/flomesh-io/fsm/pkg/signals"
-	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
-const (
-	VIA_EXTERNAL_IP = "ExternalIP"
-	VIA_CLUSTER_IP  = "ClusterIP"
-)
+func (c *client) syncCtoK() {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	c.cancelFuncs = append(c.cancelFuncs, cancelFunc)
 
-func SyncCtoK(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
-	ctok.SetSyncCloudNamespace(Cfg.DeriveNamespace)
-
-	ctok.WithGateway(Cfg.C2K.FlagWithGateway.Enable)
-
-	if Cfg.C2K.FlagWithGateway.Enable {
-		waitViaGatewayReady(ctx, configClient)
+	if c.GetC2KWithGateway() {
+		c.waitViaGatewayReady(ctx, c.configClient)
 	}
 
-	sink := ctok.NewSink(ctx, kubeClient, discClient, Cfg.FsmNamespace)
-	source := &ctok.Source{
-		DiscClient:  discClient,
-		Domain:      Cfg.TrustDomain,
-		Sink:        sink,
-		Prefix:      "",
-		FilterTag:   Cfg.C2K.FlagFilterTag,
-		PrefixTag:   Cfg.C2K.FlagPrefixTag,
-		SuffixTag:   Cfg.C2K.FlagSuffixTag,
-		PassingOnly: Cfg.C2K.FlagPassingOnly,
-	}
-	sink.MicroAggregator = source
-	sink.Ready()
+	syncer := ctok.NewCtoKSyncer(c, c.discClient, c.kubeClient, ctx, Cfg.FsmNamespace)
+	source := ctok.NewCtoKSource(c, syncer, c.discClient, Cfg.TrustDomain)
+
+	syncer.SetMicroAggregator(source)
+	syncer.Ready()
 
 	go source.Run(ctx)
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
-		Resource: sink,
-	}
+	ctl := &connector.CacheController{Resource: syncer}
 	go ctl.Run(ctx.Done())
 }
 
-func SyncKtoC(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, discClient provider.ServiceDiscoveryClient) {
-	ktoc.WithGateway(Cfg.K2C.FlagWithGateway.Enable)
+func (c *client) syncKtoC() {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	c.cancelFuncs = append(c.cancelFuncs, cancelFunc)
 
-	if Cfg.K2C.FlagWithGateway.Enable {
-		waitViaGatewayReady(ctx, configClient)
+	if c.GetK2CWithGateway() {
+		c.waitViaGatewayReady(ctx, c.configClient)
 	}
 
-	ktoc.SetSyncCloudNamespace(Cfg.DeriveNamespace)
-
-	allowSet := ToSet(Cfg.K2C.FlagAllowK8SNamespaces)
-	denySet := ToSet(Cfg.K2C.FlagDenyK8SNamespaces)
-
-	syncer := &ktoc.CloudSyncer{
-		DiscClient:              discClient,
-		EnableNamespaces:        Cfg.K2C.Consul.FlagConsulEnableNamespaces,
-		CrossNamespaceACLPolicy: Cfg.K2C.Consul.FlagConsulCrossNamespaceACLPolicy,
-		SyncPeriod:              Cfg.K2C.FlagSyncPeriod,
-		ServicePollPeriod:       Cfg.K2C.FlagSyncPeriod * 2,
-		ConsulK8STag:            Cfg.K2C.Consul.FlagConsulK8STag,
-		ConsulNodeName:          Cfg.K2C.Consul.FlagConsulNodeName,
-	}
+	syncer := ktoc.NewKtoCSyncer(c, c.discClient)
 	go syncer.Run(ctx)
 
-	resourceCtx, resourceCancel := context.WithCancel(context.Background())
-	resourceStop := signals.RegisterExitHandlers(resourceCancel)
-	resourceMsgBroker := messaging.NewBroker(resourceStop)
+	msgBroker := messaging.NewBroker(ctx.Done())
+	serviceSource := ktoc.NewKtoCSource(c, syncer, ctx, msgBroker, c.kubeClient, c.discClient)
+	cacheCtl := &connector.CacheController{Resource: serviceSource}
 
-	serviceResource := ktoc.ServiceResource{
-		Client:                         kubeClient,
-		Syncer:                         syncer,
-		Ctx:                            resourceCtx,
-		MsgBroker:                      resourceMsgBroker,
-		MsgWorkerPoolSize:              0,
-		MsgWorkQueues:                  workerpool.NewWorkerPool(0),
-		AllowK8sNamespacesSet:          allowSet,
-		DenyK8sNamespacesSet:           denySet,
-		ExplicitEnable:                 !Cfg.K2C.FlagDefaultSync,
-		ClusterIPSync:                  Cfg.K2C.FlagSyncClusterIPServices,
-		LoadBalancerEndpointsSync:      Cfg.K2C.FlagSyncLoadBalancerEndpoints,
-		NodePortSync:                   ktoc.NodePortSyncType(Cfg.K2C.FlagNodePortSyncType),
-		ConsulK8STag:                   Cfg.K2C.Consul.FlagConsulK8STag,
-		AddServicePrefix:               Cfg.K2C.FlagAddServicePrefix,
-		AddK8SNamespaceAsServiceSuffix: Cfg.K2C.FlagAddK8SNamespaceAsServiceSuffix,
-		EnableNamespaces:               Cfg.K2C.Consul.FlagConsulEnableNamespaces,
-		ConsulDestinationNamespace:     Cfg.K2C.Consul.FlagConsulDestinationNamespace,
-		EnableK8SNSMirroring:           Cfg.K2C.Consul.FlagConsulEnableK8SNSMirroring,
-		K8SNSMirroringPrefix:           Cfg.K2C.Consul.FlagConsulK8SNSMirroringPrefix,
-		ConsulNodeName:                 Cfg.K2C.Consul.FlagConsulNodeName,
-		SyncIngress:                    Cfg.K2C.FlagSyncIngress,
-		SyncIngressLoadBalancerIPs:     Cfg.K2C.FlagSyncIngressLoadBalancerIPs,
-	}
-
-	// Build the controller and start it
-	ctl := &connector.Controller{
-		Resource: &serviceResource,
-	}
-	go serviceResource.BroadcastListener()
-	go ctl.Run(ctx.Done())
+	go serviceSource.BroadcastListener(ctx.Done())
+	go cacheCtl.Run(ctx.Done())
 }
 
-func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient configClientset.Interface, gatewayClient gwapi.Interface) {
-	ingressAddr, egressAddr, clusterIP, externalIP := waitGatewayReady(ctx, kubeClient,
-		connector.ViaGateway.IngressIPSelector,
-		connector.ViaGateway.EgressIPSelector,
-		int32(connector.ViaGateway.Ingress.HTTPPort),
-		int32(connector.ViaGateway.Egress.HTTPPort),
-		int32(connector.ViaGateway.Ingress.GRPCPort),
-		int32(connector.ViaGateway.Egress.GRPCPort))
+func (c *client) syncKtoG() {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	c.cancelFuncs = append(c.cancelFuncs, cancelFunc)
 
-	meshConfigClient := configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
+	ingressAddr, egressAddr, clusterIP, externalIP := waitGatewayReady(ctx, c.kubeClient,
+		c.GetViaIngressIPSelector(),
+		c.GetViaEgressIPSelector(),
+		int32(c.GetViaIngressHTTPPort()),
+		int32(c.GetViaEgressHTTPPort()),
+		int32(c.GetViaIngressGRPCPort()),
+		int32(c.GetViaEgressGRPCPort()))
+
+	meshConfigClient := c.configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
 	meshConfig, err := meshConfigClient.Get(ctx, Cfg.FsmMeshConfigName, metav1.GetOptions{})
 	if err != nil {
 		log.Fatal().Err(err)
@@ -142,18 +85,18 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient
 		!strings.EqualFold(viaGateway.EgressAddr, egressAddr) ||
 		!strings.EqualFold(viaGateway.ClusterIP, clusterIP) ||
 		!strings.EqualFold(viaGateway.ExternalIP, externalIP) ||
-		viaGateway.IngressHTTPPort != connector.ViaGateway.Ingress.HTTPPort ||
-		viaGateway.IngressGRPCPort != connector.ViaGateway.Ingress.GRPCPort ||
-		viaGateway.EgressHTTPPort != connector.ViaGateway.Egress.HTTPPort ||
-		viaGateway.EgressGRPCPort != connector.ViaGateway.Egress.GRPCPort {
+		viaGateway.IngressHTTPPort != c.GetViaIngressHTTPPort() ||
+		viaGateway.IngressGRPCPort != c.GetViaIngressGRPCPort() ||
+		viaGateway.EgressHTTPPort != c.GetViaEgressHTTPPort() ||
+		viaGateway.EgressGRPCPort != c.GetViaEgressGRPCPort() {
 		viaGateway.ClusterIP = clusterIP
 		viaGateway.ExternalIP = externalIP
 		viaGateway.IngressAddr = ingressAddr
-		viaGateway.IngressHTTPPort = connector.ViaGateway.Ingress.HTTPPort
-		viaGateway.IngressGRPCPort = connector.ViaGateway.Ingress.GRPCPort
+		viaGateway.IngressHTTPPort = c.GetViaIngressHTTPPort()
+		viaGateway.IngressGRPCPort = c.GetViaIngressGRPCPort()
 		viaGateway.EgressAddr = egressAddr
-		viaGateway.EgressHTTPPort = connector.ViaGateway.Egress.HTTPPort
-		viaGateway.EgressGRPCPort = connector.ViaGateway.Egress.GRPCPort
+		viaGateway.EgressHTTPPort = c.GetViaEgressHTTPPort()
+		viaGateway.EgressGRPCPort = c.GetViaEgressGRPCPort()
 		meshConfigChanged = true
 	}
 
@@ -164,47 +107,30 @@ func SyncKtoG(ctx context.Context, kubeClient kubernetes.Interface, configClient
 		}
 	}
 
-	allowSet := ToSet(Cfg.K2G.FlagAllowK8SNamespaces)
-	denySet := ToSet(Cfg.K2G.FlagDenyK8SNamespaces)
+	gatewaySource := &ktog.GatewaySource{}
 
-	gatewayResource := &ktog.GatewayResource{}
+	syncer := ktog.NewKtoGSyncer(c, gatewaySource)
 
-	syncer := &ktog.GatewayRouteSyncer{
-		SyncPeriod:        Cfg.K2G.FlagSyncPeriod,
-		ServicePollPeriod: Cfg.K2G.FlagSyncPeriod * 2,
-		GatewayResource:   gatewayResource,
-	}
+	serviceResource := ktog.NewKtoGSource(
+		c, syncer, gatewaySource,
+		Cfg.FsmNamespace,
+		c.kubeClient, c.gatewayClient,
+		ctx)
 
-	serviceResource := &ktog.ServiceResource{
-		FsmNamespace:          Cfg.FsmNamespace,
-		Client:                kubeClient,
-		GatewayClient:         gatewayClient,
-		GatewayResource:       gatewayResource,
-		Ctx:                   ctx,
-		Syncer:                syncer,
-		AllowK8sNamespacesSet: allowSet,
-		DenyK8sNamespacesSet:  denySet,
-		ExplicitEnable:        !Cfg.K2G.FlagDefaultSync,
-	}
-
-	gatewayResource.Service = serviceResource
+	gatewaySource.SetServiceResource(serviceResource)
 
 	// Build the controller and start it
-	gwCtl := &connector.Controller{
-		Resource: gatewayResource,
-	}
+	gwCtl := &connector.CacheController{Resource: gatewaySource}
 
 	// Build the controller and start it
-	ctl := &connector.Controller{
-		Resource: serviceResource,
-	}
+	svcCtl := &connector.CacheController{Resource: serviceResource}
 
-	go syncer.Run(ctx, gwCtl, ctl)
+	go syncer.Run(ctx, gwCtl, svcCtl)
 	go gwCtl.Run(ctx.Done())
-	go ctl.Run(ctx.Done())
+	go svcCtl.Run(ctx.Done())
 }
 
-func waitViaGatewayReady(ctx context.Context, configClient configClientset.Interface) {
+func (c *client) waitViaGatewayReady(ctx context.Context, configClient configClientset.Interface) {
 	meshConfigClient := configClient.ConfigV1alpha3().MeshConfigs(Cfg.FsmNamespace)
 	for {
 		meshConfig, err := meshConfigClient.Get(ctx, Cfg.FsmMeshConfigName, metav1.GetOptions{})
@@ -213,12 +139,13 @@ func waitViaGatewayReady(ctx context.Context, configClient configClientset.Inter
 		} else {
 			viaGateway := &meshConfig.Spec.Connector.ViaGateway
 			if len(viaGateway.IngressAddr) > 0 && len(viaGateway.EgressAddr) > 0 {
-				connector.ViaGateway.IngressAddr = viaGateway.IngressAddr
-				connector.ViaGateway.Ingress.HTTPPort = viaGateway.IngressHTTPPort
-				connector.ViaGateway.Ingress.GRPCPort = viaGateway.IngressGRPCPort
-				connector.ViaGateway.EgressAddr = viaGateway.EgressAddr
-				connector.ViaGateway.Egress.HTTPPort = viaGateway.EgressHTTPPort
-				connector.ViaGateway.Egress.GRPCPort = viaGateway.EgressGRPCPort
+				c.SetViaIngressAddr(viaGateway.IngressAddr)
+				c.SetViaIngressHTTPPort(viaGateway.IngressHTTPPort)
+				c.SetViaIngressGRPCPort(viaGateway.IngressGRPCPort)
+
+				c.SetViaEgressAddr(viaGateway.EgressAddr)
+				c.SetViaEgressHTTPPort(viaGateway.EgressHTTPPort)
+				c.SetViaEgressGRPCPort(viaGateway.EgressGRPCPort)
 				break
 			}
 		}
@@ -226,7 +153,7 @@ func waitViaGatewayReady(ctx context.Context, configClient configClientset.Inter
 	}
 }
 
-func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector string, viaPorts ...int32) (ingressAddr, egressAddr, clusterIP, externalIP string) {
+func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector ctv1.AddrSelector, viaPorts ...int32) (ingressAddr, egressAddr, clusterIP, externalIP string) {
 	gatewaySvcName := fmt.Sprintf("%s-%s-%s", constants.FSMGatewayName, Cfg.FsmNamespace, constants.ProtocolTCP)
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
@@ -253,7 +180,7 @@ func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingr
 	}
 }
 
-func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector string) (ingressAddr, egressAddr, clusterIP, externalIP string) {
+func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector ctv1.AddrSelector) (ingressAddr, egressAddr, clusterIP, externalIP string) {
 	if len(externalIP) == 0 && len(fgwSvc.Spec.ExternalIPs) > 0 && len(fgwSvc.Spec.ExternalIPs[0]) > 0 {
 		externalIP = fgwSvc.Spec.ExternalIPs[0]
 	}
@@ -264,24 +191,24 @@ func checkGatewayIPs(fgwSvc *corev1.Service, ingressIPSelector, egressIPSelector
 		clusterIP = fgwSvc.Spec.ClusterIPs[0]
 	}
 
-	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
-	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
-	ingressAddr = selectIP(ingressAddr, ingressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
-	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Spec.ExternalIPs)
-	egressAddr = selectIngressIP(egressAddr, egressIPSelector, VIA_EXTERNAL_IP, fgwSvc.Status.LoadBalancer.Ingress)
-	egressAddr = selectIP(egressAddr, egressIPSelector, VIA_CLUSTER_IP, fgwSvc.Spec.ClusterIPs)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Spec.ExternalIPs)
+	ingressAddr = selectIngressIP(ingressAddr, ingressIPSelector, ctv1.ExternalIP, fgwSvc.Status.LoadBalancer.Ingress)
+	ingressAddr = selectIP(ingressAddr, ingressIPSelector, ctv1.ClusterIP, fgwSvc.Spec.ClusterIPs)
+	egressAddr = selectIP(egressAddr, egressIPSelector, ctv1.ExternalIP, fgwSvc.Spec.ExternalIPs)
+	egressAddr = selectIngressIP(egressAddr, egressIPSelector, ctv1.ExternalIP, fgwSvc.Status.LoadBalancer.Ingress)
+	egressAddr = selectIP(egressAddr, egressIPSelector, ctv1.ClusterIP, fgwSvc.Spec.ClusterIPs)
 	return
 }
 
-func selectIP(ip, ipSelector, ipVia string, ips []string) string {
-	if len(ip) == 0 && strings.EqualFold(ipSelector, ipVia) && len(ips) > 0 && len(ips[0]) > 0 {
+func selectIP(ip string, ipSelector, ipVia ctv1.AddrSelector, ips []string) string {
+	if len(ip) == 0 && strings.EqualFold(string(ipSelector), string(ipVia)) && len(ips) > 0 && len(ips[0]) > 0 {
 		return ips[0]
 	}
 	return ip
 }
 
-func selectIngressIP(ip, ipSelector, ipVia string, ingress []corev1.LoadBalancerIngress) string {
-	if len(ip) == 0 && strings.EqualFold(ipSelector, ipVia) && len(ingress) > 0 && len(ingress[0].IP) > 0 {
+func selectIngressIP(ip string, ipSelector, ipVia ctv1.AddrSelector, ingress []corev1.LoadBalancerIngress) string {
+	if len(ip) == 0 && strings.EqualFold(string(ipSelector), string(ipVia)) && len(ingress) > 0 && len(ingress[0].IP) > 0 {
 		return ingress[0].IP
 	}
 	return ip

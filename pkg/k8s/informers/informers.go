@@ -29,6 +29,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	configInformers "github.com/flomesh-io/fsm/pkg/gen/client/config/informers/externalversions"
+	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
+	connectorInformers "github.com/flomesh-io/fsm/pkg/gen/client/connector/informers/externalversions"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	machineInformers "github.com/flomesh-io/fsm/pkg/gen/client/machine/informers/externalversions"
 	multiclusterClientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
@@ -190,6 +192,19 @@ func WithMachineClient(machineClient machineClientset.Interface) InformerCollect
 		informerFactory := machineInformers.NewSharedInformerFactory(machineClient, DefaultKubeEventResyncInterval)
 
 		ic.informers[InformerKeyVirtualMachine] = informerFactory.Machine().V1alpha1().VirtualMachines().Informer()
+	}
+}
+
+// WithConnectorClient sets the connector client for the InformerCollection
+func WithConnectorClient(connectorClient connectorClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := connectorInformers.NewSharedInformerFactory(connectorClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyConsulConnector] = informerFactory.Connector().V1alpha1().ConsulConnectors().Informer()
+		ic.informers[InformerKeyEurekaConnector] = informerFactory.Connector().V1alpha1().EurekaConnectors().Informer()
+		ic.informers[InformerKeyNacosConnector] = informerFactory.Connector().V1alpha1().NacosConnectors().Informer()
+		ic.informers[InformerKeyMachineConnector] = informerFactory.Connector().V1alpha1().MachineConnectors().Informer()
+		ic.informers[InformerKeyGatewayConnector] = informerFactory.Connector().V1alpha1().GatewayConnectors().Informer()
 	}
 }
 

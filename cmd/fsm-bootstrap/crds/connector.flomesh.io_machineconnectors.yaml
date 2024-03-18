@@ -1,0 +1,105 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: machineconnectors.connector.flomesh.io
+spec:
+  group: connector.flomesh.io
+  names:
+    kind: MachineConnector
+    listKind: MachineConnectorList
+    plural: machineconnectors
+    shortNames:
+    - machineconnector
+    singular: machineconnector
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.syncToK8S.enable
+      name: SyncToK8S
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: MachineConnector is the type used to represent a Machine Connector
+          resource.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Machine Connector specification
+            properties:
+              asInternalServices:
+                default: false
+                type: boolean
+              deriveNamespace:
+                type: string
+              syncToK8S:
+                description: MachineSyncToK8SSpec is the type used to represent the
+                  sync from Machine to K8S specification.
+                properties:
+                  clusterId:
+                    default: ""
+                    type: string
+                  enable:
+                    type: boolean
+                  filterLabel:
+                    default: ""
+                    type: string
+                  passingOnly:
+                    default: true
+                    type: boolean
+                  prefixLabel:
+                    default: ""
+                    type: string
+                  suffixLabel:
+                    default: ""
+                    type: string
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+            required:
+            - deriveNamespace
+            - syncToK8S
+            type: object
+          status:
+            description: Status is the status of the Machine Connector configuration.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of a Machine
+                  Connector resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of a
+                  Machine Connector resource.
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

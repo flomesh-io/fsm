@@ -48,24 +48,33 @@ const (
 	// serviceUpdateMaxWindow is the max window duration used to batch service update events, and is
 	// the max amount of time a service update event can be held for batching before being dispatched.
 	serviceUpdateMaxWindow = 10 * time.Second
+
+	// connectorUpdateSlidingWindow is the sliding window duration used to batch connector update events
+	connectorUpdateSlidingWindow = 2 * time.Second
+
+	// connectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
+	// the max amount of time a connector update event can be held for batching before being dispatched.
+	connectorUpdateMaxWindow = 10 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
 // to process events added to the workqueue.
 func NewBroker(stopCh <-chan struct{}) *Broker {
 	b := &Broker{
-		queue:               workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
-		proxyUpdatePubSub:   pubsub.New(10240),
-		proxyUpdateCh:       make(chan proxyUpdateEvent),
-		ingressUpdatePubSub: pubsub.New(10240),
-		ingressUpdateCh:     make(chan ingressUpdateEvent),
-		gatewayUpdatePubSub: pubsub.New(10240),
-		gatewayUpdateCh:     make(chan gatewayUpdateEvent),
-		serviceUpdatePubSub: pubsub.New(10240),
-		serviceUpdateCh:     make(chan serviceUpdateEvent),
-		kubeEventPubSub:     pubsub.New(10240),
-		certPubSub:          pubsub.New(10240),
-		mcsEventPubSub:      pubsub.New(10240),
+		queue:                 workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
+		proxyUpdatePubSub:     pubsub.New(10240),
+		proxyUpdateCh:         make(chan proxyUpdateEvent),
+		ingressUpdatePubSub:   pubsub.New(10240),
+		ingressUpdateCh:       make(chan ingressUpdateEvent),
+		gatewayUpdatePubSub:   pubsub.New(10240),
+		gatewayUpdateCh:       make(chan gatewayUpdateEvent),
+		serviceUpdatePubSub:   pubsub.New(10240),
+		serviceUpdateCh:       make(chan serviceUpdateEvent),
+		connectorUpdatePubSub: pubsub.New(10240),
+		connectorUpdateCh:     make(chan connectorUpdateEvent),
+		kubeEventPubSub:       pubsub.New(10240),
+		certPubSub:            pubsub.New(10240),
+		mcsEventPubSub:        pubsub.New(10240),
 		//mcsUpdateCh:         make(chan mcsUpdateEvent),
 	}
 
@@ -74,6 +83,7 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	go b.runIngressUpdateDispatcher(stopCh)
 	go b.runGatewayUpdateDispatcher(stopCh)
 	go b.runServiceUpdateDispatcher(stopCh)
+	go b.runConnectorUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -110,6 +120,11 @@ func (b *Broker) GetGatewayUpdatePubSub() *pubsub.PubSub {
 // GetServiceUpdatePubSub returns the PubSub instance corresponding to service update events
 func (b *Broker) GetServiceUpdatePubSub() *pubsub.PubSub {
 	return b.serviceUpdatePubSub
+}
+
+// GetConnectorUpdatePubSub returns the PubSub instance corresponding to connector update events
+func (b *Broker) GetConnectorUpdatePubSub() *pubsub.PubSub {
+	return b.connectorUpdatePubSub
 }
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
@@ -173,6 +188,18 @@ func (b *Broker) GetTotalQServiceEventCount() uint64 {
 // to subscribed services
 func (b *Broker) GetTotalDispatchedServiceEventCount() uint64 {
 	return atomic.LoadUint64(&b.totalDispatchedServiceEventCount)
+}
+
+// GetTotalQConnectorEventCount returns the total number of events read from the workqueue
+// pertaining to connector updates
+func (b *Broker) GetTotalQConnectorEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalQConnectorEventCount)
+}
+
+// GetTotalDispatchedConnectorEventCount returns the total number of events dispatched
+// to subscribed connectors
+func (b *Broker) GetTotalDispatchedConnectorEventCount() uint64 {
+	return atomic.LoadUint64(&b.totalDispatchedConnectorEventCount)
 }
 
 // runWorkqueueProcessor starts a goroutine to process events from the workqueue until
@@ -606,6 +633,109 @@ func (b *Broker) runServiceUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+// runConnectorUpdateDispatcher runs the dispatcher responsible for batching
+// service update events received in close proximity.
+// It batches connector update events with the use of 2 timers:
+// 1. Sliding window timer that resets when a connector update event is received
+// 2. Max window timer that caps the max duration a sliding window can be reset to
+// When either of the above timers expire, the connector update event is published
+// on the dedicated pub-sub instance.
+func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a connector update event is pending
+	// from being published on the pub-sub. A connector update event will
+	// be held for 'connectorUpdateSlidingWindow' duration to be able to
+	// coalesce multiple connector update events within that duration, before
+	// it is dispatched on the pub-sub. The 'connectorUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'connectorUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering connector update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many connector update events within the 'connectorUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of connector update events batched per dispatch
+
+	var event connectorUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.connectorUpdateCh:
+			if !ok {
+				log.Warn().Msgf("Connector update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No connector update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(connectorUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(connectorUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A connector update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(connectorUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.connectorUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedConnectorEventCount, 1)
+			metricsstore.DefaultMetricsStore.ConnectorBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.connectorUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedConnectorEventCount, 1)
+			metricsstore.DefaultMetricsStore.ConnectorBroadcastEventCounter.Inc()
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("Connector update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
 // 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
@@ -667,13 +797,29 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 		atomic.AddUint64(&b.totalQServiceEventCount, 1)
 		if event.topic != announcements.ServiceUpdate.String() {
 			// This is not a broadcast event, so it cannot be coalesced with
-			// other events as the event is specific to one or more proxies.
+			// other events as the event is specific to one or more services.
 			b.serviceUpdatePubSub.Pub(event.msg, event.topic)
 			atomic.AddUint64(&b.totalDispatchedServiceEventCount, 1)
 		} else {
 			// Pass the broadcast event to the dispatcher routine, that coalesces
 			// multiple broadcasts received in close proximity.
 			b.serviceUpdateCh <- *event
+		}
+	}
+
+	// Update connectors if applicable
+	if event := getConnectorUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update connectors", msg.Kind)
+		atomic.AddUint64(&b.totalQConnectorEventCount, 1)
+		if event.topic != announcements.ConnectorUpdate.String() {
+			// This is not a broadcast event, so it cannot be coalesced with
+			// other events as the event is specific to one or more connectors.
+			b.connectorUpdatePubSub.Pub(event.msg, event.topic)
+			atomic.AddUint64(&b.totalDispatchedConnectorEventCount, 1)
+		} else {
+			// Pass the broadcast event to the dispatcher routine, that coalesces
+			// multiple broadcasts received in close proximity.
+			b.connectorUpdateCh <- *event
 		}
 	}
 
@@ -1058,6 +1204,32 @@ func getServiceUpdateEvent(msg events.PubSubMessage) *serviceUpdateEvent {
 		return &serviceUpdateEvent{
 			msg:   msg,
 			topic: announcements.ServiceUpdate.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getConnectorUpdateEvent returns a connectorUpdateEvent type indicating whether the given PubSubMessage should
+// result in a connector configuration update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a connector update event.
+func getConnectorUpdateEvent(msg events.PubSubMessage) *connectorUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		//
+		// Connector event
+		announcements.ConsulConnectorAdded, announcements.ConsulConnectorUpdated, announcements.ConsulConnectorDeleted,
+		announcements.EurekaConnectorAdded, announcements.EurekaConnectorUpdated, announcements.EurekaConnectorDeleted,
+		announcements.NacosConnectorAdded, announcements.NacosConnectorUpdated, announcements.NacosConnectorDeleted,
+		announcements.MachineConnectorAdded, announcements.MachineConnectorUpdated, announcements.MachineConnectorDeleted,
+		announcements.GatewayConnectorAdded, announcements.GatewayConnectorUpdated, announcements.GatewayConnectorDeleted,
+		announcements.ConnectorUpdate:
+
+		return &connectorUpdateEvent{
+			msg:   msg,
+			topic: announcements.ConnectorUpdate.String(),
 		}
 	default:
 		return nil

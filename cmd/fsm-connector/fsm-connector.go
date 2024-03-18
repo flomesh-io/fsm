@@ -4,25 +4,26 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/cli"
-	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
+	connectorscheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
+	machinescheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/httpserver"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -42,6 +43,9 @@ var (
 
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
+	_ = machinescheme.AddToScheme(scheme)
+	_ = connectorscheme.AddToScheme(scheme)
 }
 
 func main() {
@@ -66,6 +70,8 @@ func main() {
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
+	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
+	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
@@ -92,69 +98,23 @@ func main() {
 		informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithMachineClient(machineClient),
+		informers.WithConnectorClient(connectorClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
+	connectController := cli.NewConnectController(
+		cli.Cfg.SdrProvider, cli.Cfg.SdrConnector,
+		ctx, kubeConfig, kubeClient, configClient,
+		machineClient, gatewayClient,
+		informerCollection, msgBroker)
+
 	connector.GatewayAPIEnabled = cfg.GetMeshConfig().Spec.GatewayAPI.Enabled
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
-	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
+	connectController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	appendTagSet := cli.ToSet(cli.Cfg.K2C.FlagAppendTags)
-	appendMetadataKeySet := cli.ToSet(cli.Cfg.K2C.FlagAppendMetadataKeys)
-	appendMetadataValueSet := cli.ToSet(cli.Cfg.K2C.FlagAppendMetadataValues)
-
-	if len(cli.Cfg.SdrProvider) > 0 {
-		var discClient provider.ServiceDiscoveryClient = nil
-		if connector.EurekaDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetEurekaDiscoveryClient(cli.Cfg.HttpAddr,
-				cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId,
-				appendMetadataKeySet, appendMetadataValueSet)
-			if err != nil {
-				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-				log.Fatal().Msg("Error creating service discovery and registration client")
-			}
-		} else if connector.ConsulDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetConsulDiscoveryClient(cli.Cfg.HttpAddr,
-				cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId,
-				appendTagSet)
-			if err != nil {
-				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-				log.Fatal().Msg("Error creating service discovery and registration client")
-			}
-		} else if connector.NacosDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetNacosDiscoveryClient(cli.Cfg.HttpAddr,
-				cli.Cfg.Nacos.FlagUsername, cli.Cfg.Nacos.FlagPassword, cli.Cfg.Nacos.FlagNamespaceId, cli.Cfg.C2K.FlagClusterId,
-				cli.Cfg.K2C.Nacos.FlagClusterId, cli.Cfg.K2C.Nacos.FlagGroupId, cli.Cfg.C2K.Nacos.FlagClusterSet, cli.Cfg.C2K.Nacos.FlagGroupSet,
-				cli.Cfg.AsInternalServices, appendMetadataKeySet, appendMetadataValueSet)
-			if err != nil {
-				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-				log.Fatal().Msg("Error creating service discovery and registration client")
-			}
-		} else if connector.MachineDiscoveryService == cli.Cfg.SdrProvider {
-			discClient, err = provider.GetMachineDiscoveryClient(machineClient, cli.Cfg.DeriveNamespace, cli.Cfg.AsInternalServices, cli.Cfg.C2K.FlagClusterId)
-			if err != nil {
-				events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
-				log.Fatal().Msg("Error creating service discovery and registration client")
-			}
-		} else {
-			log.Fatal().Msg("Unsupported service discovery and registration provider")
-		}
-
-		if cli.Cfg.SyncCloudToK8s {
-			go cli.SyncCtoK(ctx, kubeClient, configClient, discClient)
-		}
-
-		if cli.Cfg.SyncK8sToCloud {
-			go cli.SyncKtoC(ctx, kubeClient, configClient, discClient)
-		}
-	}
-
-	if cli.Cfg.SyncK8sToGateway {
-		gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
-		go cli.SyncKtoG(ctx, kubeClient, configClient, gatewayClient)
-	}
+	go connectController.BroadcastListener()
 
 	version.SetMetric()
 	/*
@@ -173,7 +133,7 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go connector.WatchMeshConfigUpdated(msgBroker, stop)
+	go connector.WatchMeshConfigUpdated(connectController, msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)
