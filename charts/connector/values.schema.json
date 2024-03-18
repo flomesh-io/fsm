@@ -1,0 +1,404 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "title": "The FSM Connector Helm chart values schema",
+    "required": [
+        "fsm"
+    ],
+    "definitions": {
+        "containerResources": {
+            "$id": "#/properties/definitions/properties/containerResources",
+            "type": "object",
+            "title": "The containerResources schema definition",
+            "description": "The container's resource configuration",
+            "required": [
+                "limits",
+                "requests"
+            ],
+            "properties": {
+                "limits": {
+                    "$id": "#/properties/definitions/properties/containerResources/properties/limits",
+                    "type": "object",
+                    "title": "The containerResources' limits schema",
+                    "description": "The container's resource limits",
+                    "required": [
+                        "cpu",
+                        "memory"
+                    ],
+                    "properties": {
+                        "cpu": {
+                            "$id": "#/properties/definitions/properties/containerResources/properties/limits/properties/cpu",
+                            "type": "string",
+                            "title": "The containerResources' CPU limit schema",
+                            "description": "The container's CPU limit"
+                        },
+                        "memory": {
+                            "$id": "#/properties/definitions/properties/containerResources/properties/limits/properties/memory",
+                            "type": "string",
+                            "title": "The containerResources' memory limit schema",
+                            "description": "The container's memory limit"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "requests": {
+                    "$id": "#/properties/definitions/properties/containerResources/properties/requests",
+                    "type": "object",
+                    "title": "The containerResources' requests schema",
+                    "description": "The container's request limits",
+                    "required": [
+                        "cpu",
+                        "memory"
+                    ],
+                    "properties": {
+                        "cpu": {
+                            "$id": "#/properties/definitions/properties/containerResources/properties/requests/properties/cpu",
+                            "type": "string",
+                            "title": "The containerResources' CPU request schema",
+                            "description": "The container's CPU request limit"
+                        },
+                        "memory": {
+                            "$id": "#/properties/definitions/properties/containerResources/properties/requests/properties/memory",
+                            "type": "string",
+                            "title": "The containerResources' memory request schema",
+                            "description": "The container's memory request limit"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            }
+        },
+        "autoScale": {
+            "$id": "#/properties/definitions/properties/autoScale",
+            "type": "object",
+            "title": "The autoScale schema",
+            "description": "Autoscale configuration parameters",
+            "required": [
+                "enable"
+            ],
+            "properties": {
+                "enable": {
+                    "$id": "#/properties/definitions/properties/autoScale/properties/enable",
+                    "type": "boolean",
+                    "title": "Autoscale enable",
+                    "description": "Indicates whether autoscale should be enabled or not.",
+                    "examples": [
+                        false
+                    ]
+                },
+                "minReplicas": {
+                    "$id": "#/properties/definitions/properties/autoScale/properties/minReplicas",
+                    "type": "integer",
+                    "title": "Autoscale minimum replicas",
+                    "description": "Indicates the minimum replicas for autoscale.",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "examples": [
+                        1
+                    ]
+                },
+                "maxReplicas": {
+                    "$id": "#/properties/definitions/properties/autoScale/properties/maxReplicas",
+                    "type": "integer",
+                    "title": "Autoscale maximum replicase",
+                    "description": "Indicates the maximum replicas for autoscale.",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "examples": [
+                        5
+                    ]
+                },
+                "cpu": {
+                    "$id": "#/properties/definitions/properties/autoScale/properties/cpu",
+                    "type": "object",
+                    "title": "Autoscale CPU resource schema",
+                    "description": "Autoscale CPU configuration",
+                    "required": [
+                        "targetAverageUtilization"
+                    ],
+                    "properties": {
+                        "targetAverageUtilization": {
+                            "$id": "#/properties/definitions/properties/autoScale/properties/cpu/properties/targetAverageUtilization",
+                            "type": "integer",
+                            "title": "Autoscale cpu targetAverageUtilization",
+                            "description": "Indicates average target cpu utilization (percentage) for autoscale.",
+                            "minimum": 0,
+                            "maximum": 100,
+                            "examples": [
+                                80
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "memory": {
+                    "$id": "#/properties/definitions/properties/autoScale/properties/memory",
+                    "type": "object",
+                    "title": "Autoscale memory resource schema",
+                    "description": "Autoscale memory configuration",
+                    "required": [
+                        "targetAverageUtilization"
+                    ],
+                    "properties": {
+                        "targetAverageUtilization": {
+                            "$id": "#/properties/definitions/properties/autoScale/properties/memory/properties/targetAverageUtilization",
+                            "type": "integer",
+                            "title": "Autoscale memory targetAverageUtilization",
+                            "description": "Indicates average target memory utilization (percentage) for autoscale.",
+                            "minimum": 0,
+                            "maximum": 100,
+                            "examples": [
+                                80
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            }
+        }
+    },
+    "properties": {
+        "fsm": {
+            "$id": "#/properties/fsm",
+            "type": "object",
+            "title": "The fsm schema",
+            "description": "The top level required key in the values file.",
+            "required": [
+                "image",
+                "meshName",
+                "controllerLogLevel",
+                "cloudConnector"
+            ],
+            "properties": {
+                "image": {
+                    "$id": "#/properties/fsm/properties/image",
+                    "type": "object",
+                    "title": "The image schema",
+                    "description": "The details of the images to run.",
+                    "examples": [
+                        {
+                            "registry": "flomesh",
+                            "pullPolicy": "IfNotPresent",
+                            "tag": "v0.4.2"
+                        }
+                    ],
+                    "required": [
+                        "registry",
+                        "name",
+                        "pullPolicy",
+                        "tag",
+                        "digest"
+                    ],
+                    "properties": {
+                        "registry": {
+                            "$id": "#/properties/fsm/properties/image/properties/registry",
+                            "type": "string",
+                            "title": "The registry schema",
+                            "description": "The registry of the images to run.",
+                            "examples": [
+                                "flomesh"
+                            ]
+                        },
+                        "name": {
+                            "$id": "#/properties/fsm/properties/image/properties/name",
+                            "type": "object",
+                            "title": "Default image names",
+                            "description": "Default image names for control plane.",
+                            "required": [
+                              "fsmConnector",
+                              "fsmCurl"
+                            ],
+                            "properties": {
+                              "fsmConnector": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
+                                "type": "string",
+                                "title": "fsm-connector's image name",
+                                "description": "fsm-connector container's image name."
+                              },
+                              "fsmCurl": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmCurl",
+                                "type": "string",
+                                "title": "fsm-curl's image name",
+                                "description": "fsm-curl container's image name."
+                              }
+                            }
+                        },
+                        "pullPolicy": {
+                            "$id": "#/properties/fsm/properties/image/properties/pullPolicy",
+                            "type": "string",
+                            "title": "The pullPolicy schema",
+                            "description": "The image pull policy.",
+                            "pattern": "^(Always|Never|IfNotPresent)?$",
+                            "examples": [
+                                "IfNotPresent"
+                            ]
+                        },
+                        "tag": {
+                            "$id": "#/properties/fsm/properties/image/properties/tag",
+                            "type": "string",
+                            "title": "The tag schema",
+                            "description": "The image tag to run.",
+                            "examples": [
+                                "v0.4.2"
+                            ]
+                        },
+                        "digest": {
+                            "$id": "#/properties/fsm/properties/image/properties/digest",
+                            "type": "object",
+                            "title": "Default image digests",
+                            "description": "Default image digests for control plane.",
+                            "required": [
+                              "fsmConnector",
+                              "fsmCurl"
+                            ],
+                            "properties": {
+                              "fsmConnector": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",
+                                "type": "string",
+                                "title": "fsm-connector's image digest",
+                                "description": "fsm-connector container's image digest."
+                              },
+                              "fsmCurl": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmCurl",
+                                "type": "string",
+                                "title": "fsm-curl's image digest",
+                                "description": "fsm-curl container's image digest."
+                              }
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "trustDomain": {
+                    "$id": "#/properties/fsm/properties/trustDomain",
+                    "type": "string",
+                    "title": "The certificate issuance Trust Domain",
+                    "description": "The trust domain to use as part of the common name when requesting new certificates.",
+                    "examples": [
+                        "cluster.local",
+                        "example.com"
+                    ]
+                },
+                "meshName": {
+                    "$id": "#/properties/fsm/properties/meshName",
+                    "type": "string",
+                    "title": "The meshName schema",
+                    "description": "The name associated with the control plane being installed.",
+                    "examples": [
+                        "fsm"
+                    ]
+                },
+                "controllerLogLevel": {
+                    "$id": "#/properties/fsm/properties/controllerLogLevel",
+                    "type": "string",
+                    "title": "The controllerLogLevel schema",
+                    "description": "FSM Controller log level.",
+                    "pattern": "^(debug|info|warn|error|fatal|panic|disabled|trace)$",
+                    "examples": [
+                        "error"
+                    ]
+                },
+                "fsmNamespace": {
+                    "$id": "#/properties/fsm/properties/fsmNamespace",
+                    "type": "string",
+                    "title": "The namespace of the FSM control plane components",
+                    "description": "Indicates the namespace in which the FSM control plane components will be installed",
+                    "examples": [
+                        "fsm-system"
+                    ]
+                },
+                "cloudConnector": {
+                  "$id": "#/properties/fsm/properties/cloudConnector",
+                  "type": "object",
+                  "title": "The consul connector schema",
+                  "description": "Consul connector configurations",
+                  "required": [
+                    "enable",
+                    "connectorProvider",
+                    "connectorName",
+                    "replicaCount",
+                    "resource"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/properties/enable",
+                      "type": "boolean",
+                      "title": "enable",
+                      "description": "enable"
+                    },
+                    "connectorProvider": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorProvider",
+                      "type": "string",
+                      "title": "Connector Provider",
+                      "description": "Connector Provider"
+                    },
+                    "connectorName": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorName",
+                      "type": "string",
+                      "title": "Connector Name",
+                      "description": "Connector Name"
+                    },
+                    "replicaCount": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/replicaCount",
+                      "type": "integer",
+                      "title": "The replicaCount schema",
+                      "description": "The number of replicas of the fsm-consul-connector pod.",
+                      "examples": [
+                        1
+                      ]
+                    },
+                    "resource": {
+                      "$ref": "#/definitions/containerResources"
+                    },
+                    "podLabels": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/podLabels",
+                      "type": "object",
+                      "title": "The podLabels schema",
+                      "description": "Labels for the fsm-consul-connector pod.",
+                      "default": {}
+                    },
+                    "enablePodDisruptionBudget": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/enablePodDisruptionBudget",
+                      "type": "boolean",
+                      "title": "The enablePodDisruptionBudget schema",
+                      "description": "Indicates whether Pod Disruption Budget should be enabled or not.",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "autoScale": {
+                      "$ref": "#/definitions/autoScale"
+                    },
+                    "affinity": {
+                      "type": "object"
+                    },
+                    "nodeSelector": {
+                      "type": "object"
+                    },
+                    "tolerations": {
+                      "type": "array"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "imagePullSecrets": {
+                    "$id": "#/properties/fsm/properties/imagePullSecrets",
+                    "type": "array",
+                    "title": "The imagePullSecrets schema",
+                    "description": "ImagePullSecrets for the control plane pod",
+                    "items": {
+                        "type": "object"
+                    },
+                    "examples": [
+                        [
+                            {
+                                "name": "secret-name"
+                            }
+                        ]
+                    ]
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

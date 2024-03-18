@@ -1,0 +1,16 @@
+{{- if .Values.fsm.cloudConnector.enable }}
+{{- if .Values.fsm.cloudConnector.enablePodDisruptionBudget }}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "fsmConnector.name" . }}-pdb
+  namespace: {{ include "fsm.namespace" . }}
+  labels:
+    app: {{ include "fsmConnector.name" . }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ include "fsmConnector.name" . }}
+{{- end }}
+{{- end }}

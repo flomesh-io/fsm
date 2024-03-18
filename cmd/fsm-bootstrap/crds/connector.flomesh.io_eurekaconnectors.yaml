@@ -1,0 +1,195 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: eurekaconnectors.connector.flomesh.io
+spec:
+  group: connector.flomesh.io
+  names:
+    kind: EurekaConnector
+    listKind: EurekaConnectorList
+    plural: eurekaconnectors
+    shortNames:
+    - eurekaconnector
+    singular: eurekaconnector
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.httpAddr
+      name: HttpAddr
+      type: string
+    - jsonPath: .spec.syncToK8S.enable
+      name: SyncToK8S
+      type: string
+    - jsonPath: .spec.syncFromK8S.enable
+      name: SyncFromK8S
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: EurekaConnector is the type used to represent a Eureka Connector
+          resource.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Eureka Connector specification
+            properties:
+              Limiter:
+                default:
+                  burst: 750
+                  limit: 500
+                properties:
+                  burst:
+                    format: int32
+                    type: integer
+                  limit:
+                    format: int32
+                    type: integer
+                required:
+                - burst
+                - limit
+                type: object
+              asInternalServices:
+                default: false
+                type: boolean
+              deriveNamespace:
+                type: string
+              httpAddr:
+                type: string
+              syncFromK8S:
+                description: EurekaSyncFromK8SSpec is the type used to represent the
+                  sync from K8S to Eureka specification.
+                properties:
+                  addK8SNamespaceAsServiceSuffix:
+                    default: false
+                    type: boolean
+                  addServicePrefix:
+                    default: ""
+                    type: string
+                  allowK8sNamespaces:
+                    default:
+                    - '*'
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  appendMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  defaultSync:
+                    default: true
+                    type: boolean
+                  denyK8sNamespaces:
+                    default:
+                    - ""
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  enable:
+                    type: boolean
+                  nodePortSyncType:
+                    default: ExternalOnly
+                    enum:
+                    - ExternalOnly
+                    - InternalOnly
+                    - ExternalFirst
+                    type: string
+                  syncClusterIPServices:
+                    default: true
+                    type: boolean
+                  syncIngress:
+                    default: false
+                    type: boolean
+                  syncIngressLoadBalancerIPs:
+                    default: false
+                    type: boolean
+                  syncLoadBalancerEndpoints:
+                    default: false
+                    type: boolean
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+              syncToK8S:
+                description: EurekaSyncToK8SSpec is the type used to represent the
+                  sync from Eureka to K8S specification.
+                properties:
+                  clusterId:
+                    default: ""
+                    type: string
+                  enable:
+                    type: boolean
+                  filterMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  prefixMetadata:
+                    type: string
+                  suffixMetadata:
+                    type: string
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+            required:
+            - deriveNamespace
+            - httpAddr
+            - syncFromK8S
+            - syncToK8S
+            type: object
+          status:
+            description: Status is the status of the Eureka Connector configuration.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of a Eureka
+                  Connector resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of a
+                  Eureka Connector resource.
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

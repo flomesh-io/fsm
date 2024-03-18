@@ -1,7 +1,6 @@
 package connector
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
@@ -16,7 +15,10 @@ var (
 )
 
 // WatchMeshConfigUpdated watches update of meshconfig
-func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
+func WatchMeshConfigUpdated(
+	connectController ConnectController,
+	msgBroker *messaging.Broker,
+	stop <-chan struct{}) {
 	kubePubSub := msgBroker.GetKubeEventPubSub()
 	meshCfgUpdateChan := kubePubSub.Sub(announcements.MeshConfigUpdated.String())
 	defer msgBroker.Unsub(kubePubSub, meshCfgUpdateChan)
@@ -55,8 +57,7 @@ func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
 				prevObj.Spec.ClusterSet.Group != newObj.Spec.ClusterSet.Group &&
 				prevObj.Spec.ClusterSet.Zone != newObj.Spec.ClusterSet.Zone &&
 				prevObj.Spec.ClusterSet.Region != newObj.Spec.ClusterSet.Region {
-				ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s",
-					newObj.Spec.ClusterSet.Name,
+				connectController.SetClusterSet(newObj.Spec.ClusterSet.Name,
 					newObj.Spec.ClusterSet.Group,
 					newObj.Spec.ClusterSet.Zone,
 					newObj.Spec.ClusterSet.Region)
@@ -65,14 +66,13 @@ func WatchMeshConfigUpdated(msgBroker *messaging.Broker, stop <-chan struct{}) {
 			if !reflect.DeepEqual(prevObj.Spec.Connector, newObj.Spec.Connector) {
 				viaGateway := &newObj.Spec.Connector.ViaGateway
 				if len(viaGateway.IngressAddr) > 0 && len(viaGateway.EgressAddr) > 0 {
-					ViaGateway.ClusterIP = viaGateway.ClusterIP
-					ViaGateway.ExternalIP = viaGateway.ExternalIP
-					ViaGateway.IngressAddr = viaGateway.IngressAddr
-					ViaGateway.Ingress.HTTPPort = viaGateway.IngressHTTPPort
-					ViaGateway.Ingress.GRPCPort = viaGateway.IngressGRPCPort
-					ViaGateway.EgressAddr = viaGateway.EgressAddr
-					ViaGateway.Egress.HTTPPort = viaGateway.EgressHTTPPort
-					ViaGateway.Egress.GRPCPort = viaGateway.EgressGRPCPort
+					connectController.SetViaIngressAddr(viaGateway.IngressAddr)
+					connectController.SetViaIngressHTTPPort(viaGateway.IngressHTTPPort)
+					connectController.SetViaIngressGRPCPort(viaGateway.IngressGRPCPort)
+
+					connectController.SetViaEgressAddr(viaGateway.EgressAddr)
+					connectController.SetViaEgressHTTPPort(viaGateway.EgressHTTPPort)
+					connectController.SetViaEgressGRPCPort(viaGateway.EgressGRPCPort)
 				}
 			}
 		}

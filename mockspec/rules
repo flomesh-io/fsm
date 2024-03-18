@@ -17,9 +17,6 @@ multicluster; pkg/multicluster/mock_client_generated.go; github.com/flomesh-io/f
 # pkg/plugin
 plugin; pkg/plugin/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/plugin; Controller
 
-# pkg/machine
-machine; pkg/machine/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/machine; Controller
-
 # pkg/catalog
 catalog; pkg/catalog/mock_catalog_generated.go; github.com/flomesh-io/fsm/pkg/catalog; MeshCataloger
 

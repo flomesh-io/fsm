@@ -1,0 +1,245 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: consulconnectors.connector.flomesh.io
+spec:
+  group: connector.flomesh.io
+  names:
+    kind: ConsulConnector
+    listKind: ConsulConnectorList
+    plural: consulconnectors
+    shortNames:
+    - consulconnector
+    singular: consulconnector
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.httpAddr
+      name: HttpAddr
+      type: string
+    - jsonPath: .spec.syncToK8S.enable
+      name: SyncToK8S
+      type: string
+    - jsonPath: .spec.syncFromK8S.enable
+      name: SyncFromK8S
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ConsulConnector is the type used to represent a Consul Connector
+          resource.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Consul Connector specification
+            properties:
+              asInternalServices:
+                default: false
+                type: boolean
+              auth:
+                description: NacosAuthSpec is the type used to represent the Nacos
+                  auth specification.
+                properties:
+                  accessKey:
+                    default: ""
+                    type: string
+                  namespaceId:
+                    default: public
+                    type: string
+                  password:
+                    default: ""
+                    type: string
+                  secretKey:
+                    default: ""
+                    type: string
+                  username:
+                    default: ""
+                    type: string
+                type: object
+              deriveNamespace:
+                type: string
+              httpAddr:
+                type: string
+              limiter:
+                default:
+                  burst: 750
+                  limit: 500
+                properties:
+                  burst:
+                    format: int32
+                    type: integer
+                  limit:
+                    format: int32
+                    type: integer
+                required:
+                - burst
+                - limit
+                type: object
+              syncFromK8S:
+                description: ConsulSyncFromK8SSpec is the type used to represent the
+                  sync from K8S to Consul specification.
+                properties:
+                  addK8SNamespaceAsServiceSuffix:
+                    default: false
+                    type: boolean
+                  addServicePrefix:
+                    default: ""
+                    type: string
+                  allowK8sNamespaces:
+                    default:
+                    - '*'
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  appendMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  appendTags:
+                    items:
+                      type: string
+                    type: array
+                  consulCrossNamespaceACLPolicy:
+                    default: ""
+                    type: string
+                  consulDestinationNamespace:
+                    default: default
+                    type: string
+                  consulEnableK8SNSMirroring:
+                    default: false
+                    type: boolean
+                  consulEnableNamespaces:
+                    default: false
+                    type: boolean
+                  consulK8SNSMirroringPrefix:
+                    default: ""
+                    type: string
+                  consulNodeName:
+                    type: string
+                  defaultSync:
+                    default: true
+                    type: boolean
+                  denyK8sNamespaces:
+                    default:
+                    - ""
+                    items:
+                      type: string
+                    minItems: 1
+                    type: array
+                  enable:
+                    type: boolean
+                  nodePortSyncType:
+                    default: ExternalOnly
+                    enum:
+                    - ExternalOnly
+                    - InternalOnly
+                    - ExternalFirst
+                    type: string
+                  syncClusterIPServices:
+                    default: true
+                    type: boolean
+                  syncIngress:
+                    default: false
+                    type: boolean
+                  syncIngressLoadBalancerIPs:
+                    default: false
+                    type: boolean
+                  syncLoadBalancerEndpoints:
+                    default: false
+                    type: boolean
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+              syncToK8S:
+                description: ConsulSyncToK8SSpec is the type used to represent the
+                  sync from Consul to K8S specification.
+                properties:
+                  clusterId:
+                    default: ""
+                    type: string
+                  enable:
+                    type: boolean
+                  filterMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  filterTag:
+                    type: string
+                  passingOnly:
+                    default: true
+                    type: boolean
+                  prefixMetadata:
+                    type: string
+                  prefixTag:
+                    type: string
+                  suffixMetadata:
+                    type: string
+                  suffixTag:
+                    type: string
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+            required:
+            - deriveNamespace
+            - httpAddr
+            - syncFromK8S
+            - syncToK8S
+            type: object
+          status:
+            description: Status is the status of the Consul Connector configuration.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of a Consul
+                  Connector resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of a
+                  Consul Connector resource.
+                type: string
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

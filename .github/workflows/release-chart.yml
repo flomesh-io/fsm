@@ -29,7 +29,8 @@ jobs:
         run: |
           rm -rfv charts/gateway/
           rm -rfv charts/namespaced-ingress/
-          
+          rm -rfv charts/connector/
+
       - name: Publish Helm charts
         uses: stefanprodan/helm-gh-pages@v1.7.0
         with:

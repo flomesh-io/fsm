@@ -2,6 +2,8 @@
 // watching for changes in resources in a Kubernetes cluster.
 package ctok
 
+import "context"
+
 const (
 	// CloudSourcedServiceLabel defines cloud-sourced service label
 	CloudSourcedServiceLabel = "cloud-sourced-service"
@@ -35,5 +37,5 @@ type MicroSvcMeta struct {
 // Aggregator aggregates micro services
 type Aggregator interface {
 	// Aggregate micro services
-	Aggregate(svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta
+	Aggregate(context.Context, MicroSvcName, MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta
 }

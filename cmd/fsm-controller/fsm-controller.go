@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 
@@ -37,6 +38,8 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
+	connectorscheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
+	machinescheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
 	pascheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
@@ -165,6 +168,8 @@ func init() {
 	_ = mcscheme.AddToScheme(scheme)
 	_ = nsigscheme.AddToScheme(scheme)
 	_ = pascheme.AddToScheme(scheme)
+	_ = machinescheme.AddToScheme(scheme)
+	_ = connectorscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -202,6 +207,7 @@ func main() {
 	policyClient := policyClientset.NewForConfigOrDie(kubeConfig)
 	pluginClient := pluginClientset.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
+	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 	multiclusterClient := multiclusterClientset.NewForConfigOrDie(kubeConfig)
 	networkingClient := networkingClientset.NewForConfigOrDie(kubeConfig)
@@ -252,6 +258,7 @@ func main() {
 		informers.WithPolicyClient(policyClient),
 		informers.WithPluginClient(pluginClient),
 		informers.WithMachineClient(machineClient),
+		informers.WithConnectorClient(connectorClient),
 		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
@@ -414,6 +421,7 @@ func main() {
 		Broker:             msgBroker,
 		StopCh:             stop,
 		MeshName:           meshName,
+		TrustDomain:        trustDomain,
 		FSMVersion:         fsmVersion,
 	}
 	for _, f := range []func(*fctx.ControllerContext) error{
