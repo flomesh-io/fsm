@@ -49,15 +49,12 @@ type NacosSyncToK8SSpec struct {
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
-	FilterMetadata string `json:"filterMetadata,omitempty"`
+	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	SuffixMetadata string `json:"suffixMetadata,omitempty"`
 
@@ -147,6 +144,20 @@ type NacosSpec struct {
 	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
+	// +kubebuilder:default={}
+	// +optional
+	Auth NacosAuthSpec `json:"auth,omitempty"`
+
+	SyncToK8S   NacosSyncToK8SSpec   `json:"syncToK8S"`
+	SyncFromK8S NacosSyncFromK8SSpec `json:"syncFromK8S"`
+
+	// +kubebuilder:default={limit:500, burst:750}
+	// +optional
+	Limiter *Limiter `json:"Limiter,omitempty"`
+}
+
+// NacosAuthSpec is the type used to represent the Nacos auth specification.
+type NacosAuthSpec struct {
 	// +kubebuilder:default=""
 	// +optional
 	Username string `json:"username,omitempty"`
@@ -155,12 +166,17 @@ type NacosSpec struct {
 	// +optional
 	Password string `json:"password,omitempty"`
 
+	// +kubebuilder:default=""
+	// +optional
+	AccessKey string `json:"accessKey,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	SecretKey string `json:"secretKey,omitempty"`
+
 	// +kubebuilder:default=public
 	// +optional
 	NamespaceId string `json:"namespaceId,omitempty"`
-
-	SyncToK8S   NacosSyncToK8SSpec   `json:"syncToK8S"`
-	SyncFromK8S NacosSyncFromK8SSpec `json:"syncFromK8S"`
 }
 
 // NacosStatus is the type used to represent the status of a Nacos Connector resource.

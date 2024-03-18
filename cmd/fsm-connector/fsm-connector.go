@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,6 +11,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -70,6 +70,7 @@ func main() {
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
+	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
@@ -103,13 +104,17 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
 	cfg := configurator.NewConfigurator(informerCollection, cli.Cfg.FsmNamespace, cli.Cfg.FsmMeshConfigName, msgBroker)
-	connectorController := cli.NewConnectorController(cli.Cfg.SdrProvider, cli.Cfg.SdrConnector, ctx, kubeConfig, kubeClient, configClient, machineClient, informerCollection, msgBroker)
+	connectController := cli.NewConnectController(
+		cli.Cfg.SdrProvider, cli.Cfg.SdrConnector,
+		ctx, kubeConfig, kubeClient, configClient,
+		machineClient, gatewayClient,
+		informerCollection, msgBroker)
 
 	connector.GatewayAPIEnabled = cfg.GetMeshConfig().Spec.GatewayAPI.Enabled
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
-	connector.ServiceSourceValue = fmt.Sprintf("%s.%s.%s.%s", clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
+	connectController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	go connectorController.BroadcastListener()
+	go connectController.BroadcastListener()
 
 	version.SetMetric()
 	/*
@@ -128,7 +133,7 @@ func main() {
 	}
 
 	// Start the global log level watcher that updates the log level dynamically
-	go connector.WatchMeshConfigUpdated(msgBroker, stop)
+	go connector.WatchMeshConfigUpdated(connectController, msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)

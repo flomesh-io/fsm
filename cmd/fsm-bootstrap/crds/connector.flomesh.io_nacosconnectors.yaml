@@ -49,18 +49,47 @@ spec:
           spec:
             description: Spec is the Nacos Connector specification
             properties:
+              Limiter:
+                default:
+                  burst: 750
+                  limit: 500
+                properties:
+                  burst:
+                    format: int32
+                    type: integer
+                  limit:
+                    format: int32
+                    type: integer
+                required:
+                - burst
+                - limit
+                type: object
               asInternalServices:
                 default: false
                 type: boolean
+              auth:
+                description: NacosAuthSpec is the type used to represent the Nacos
+                  auth specification.
+                properties:
+                  accessKey:
+                    default: ""
+                    type: string
+                  namespaceId:
+                    default: public
+                    type: string
+                  password:
+                    default: ""
+                    type: string
+                  secretKey:
+                    default: ""
+                    type: string
+                  username:
+                    default: ""
+                    type: string
+                type: object
               deriveNamespace:
                 type: string
               httpAddr:
-                type: string
-              namespaceId:
-                default: public
-                type: string
-              password:
-                default: ""
                 type: string
               syncFromK8S:
                 description: NacosSyncFromK8SSpec is the type used to represent the
@@ -150,9 +179,18 @@ spec:
                     type: array
                   enable:
                     type: boolean
-                  filterMetadata:
-                    default: ""
-                    type: string
+                  filterMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
                   groupSet:
                     default:
                     - DEFAULT_GROUP
@@ -164,10 +202,8 @@ spec:
                     default: true
                     type: boolean
                   prefixMetadata:
-                    default: ""
                     type: string
                   suffixMetadata:
-                    default: ""
                     type: string
                   withGateway:
                     default: false
@@ -175,9 +211,6 @@ spec:
                 required:
                 - enable
                 type: object
-              username:
-                default: ""
-                type: string
             required:
             - deriveNamespace
             - httpAddr

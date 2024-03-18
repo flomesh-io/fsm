@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
@@ -47,9 +48,15 @@ func (c *CacheController) Run(stopCh <-chan struct{}) {
 	informer := c.Resource.Informer()
 	c.informer = informer
 
+	rateLimiter := workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 30*time.Second),
+		// 256 qps, 512 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(256), 512)},
+	)
+
 	// Create a queue for storing items to process from the informer.
 	var queueOnce sync.Once
-	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	queue := workqueue.NewRateLimitingQueue(rateLimiter)
 	shutdown := func() { queue.ShutDown() }
 	defer queueOnce.Do(shutdown)
 
@@ -98,7 +105,7 @@ func (c *CacheController) Run(stopCh <-chan struct{}) {
 				cancelF()
 
 			case <-ctx.Done():
-				// Cancelled outside
+				return
 			}
 		}()
 
@@ -152,10 +159,7 @@ func (c *CacheController) LastSyncResourceVersion() string {
 	return c.informer.LastSyncResourceVersion()
 }
 
-func (c *CacheController) processSingle(
-	queue workqueue.RateLimitingInterface,
-	informer cache.SharedIndexInformer,
-) bool {
+func (c *CacheController) processSingle(queue workqueue.RateLimitingInterface, informer cache.SharedIndexInformer) bool {
 	// Fetch the next item
 	rawEvent, quit := queue.Get()
 	if quit {

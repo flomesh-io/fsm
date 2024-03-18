@@ -1,4 +1,4 @@
-package provider
+package connector
 
 import (
 	"context"
@@ -9,19 +9,32 @@ import (
 
 	consul "github.com/hashicorp/consul/api"
 	eureka "github.com/hudl/fargo"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	nacos "github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
-var (
-	log = logger.New("connector-provider")
+const (
+	CONSUL_METADATA_GRPC_PORT = "gRPC.port="
 )
+
+const (
+	EUREKA_METADATA_GRPC_PORT = "gRPC__port"
+	EUREKA_METADATA_MGMT_PORT = "management.port"
+)
+
+const (
+	NACOS_METADATA_GRPC_PORT = "gRPC_port"
+	NACOS_DEFAULT_CLUSTER    = "DEFAULT"
+)
+
+type ServiceAddress struct {
+	HostName string
+	Port     int32
+}
 
 // AgentCheck represents a check known to the agent
 type AgentCheck struct {
@@ -34,7 +47,7 @@ type AgentCheck struct {
 	Output    string
 }
 
-func (ac *AgentCheck) toConsul() *consul.AgentCheck {
+func (ac *AgentCheck) ToConsul() *consul.AgentCheck {
 	check := new(consul.AgentCheck)
 	check.CheckID = ac.CheckID
 	check.ServiceID = ac.ServiceID
@@ -51,14 +64,14 @@ type AgentWeights struct {
 	Warning int
 }
 
-func (aw *AgentWeights) toConsul() consul.AgentWeights {
+func (aw *AgentWeights) ToConsul() consul.AgentWeights {
 	return consul.AgentWeights{
 		Passing: aw.Passing,
 		Warning: aw.Warning,
 	}
 }
 
-func (aw *AgentWeights) fromConsul(w consul.AgentWeights) {
+func (aw *AgentWeights) FromConsul(w consul.AgentWeights) {
 	aw.Passing = w.Passing
 	aw.Warning = w.Warning
 }
@@ -79,14 +92,14 @@ type AgentService struct {
 	HealthCheck bool
 }
 
-func (as *AgentService) toConsul() *consul.AgentService {
+func (as *AgentService) ToConsul() *consul.AgentService {
 	agentService := new(consul.AgentService)
 	agentService.ID = as.ID
 	agentService.Service = as.Service
 	agentService.Namespace = as.Namespace
 	agentService.Address = as.Address
 	agentService.Port = as.HTTPPort
-	agentService.Weights = as.Weights.toConsul()
+	agentService.Weights = as.Weights.ToConsul()
 	if len(as.Tags) > 0 {
 		agentService.Tags = append(agentService.Tags, as.Tags...)
 	}
@@ -103,13 +116,13 @@ func (as *AgentService) toConsul() *consul.AgentService {
 	return agentService
 }
 
-func (as *AgentService) fromConsul(agentService *consul.AgentService) {
+func (as *AgentService) FromConsul(agentService *consul.AgentService) {
 	as.ID = agentService.ID
 	as.Service = agentService.Service
 	as.Namespace = agentService.Namespace
 	as.Address = agentService.Address
 	as.HTTPPort = agentService.Port
-	as.Weights.fromConsul(agentService.Weights)
+	as.Weights.FromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
 		for _, tag := range agentService.Tags {
 			if strings.HasPrefix(tag, CONSUL_METADATA_GRPC_PORT) {
@@ -130,7 +143,7 @@ func (as *AgentService) fromConsul(agentService *consul.AgentService) {
 	}
 }
 
-func (as *AgentService) fromEureka(ins *eureka.Instance) {
+func (as *AgentService) FromEureka(ins *eureka.Instance) {
 	if ins == nil {
 		return
 	}
@@ -153,7 +166,7 @@ func (as *AgentService) fromEureka(ins *eureka.Instance) {
 	}
 }
 
-func (as *AgentService) fromNacos(ins *model.Instance) {
+func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	if ins == nil {
 		return
 	}
@@ -175,7 +188,7 @@ func (as *AgentService) fromNacos(ins *model.Instance) {
 	}
 }
 
-func (as *AgentService) fromVM(vm machinev1alpha1.VirtualMachine, svc machinev1alpha1.ServiceSpec) {
+func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1alpha1.ServiceSpec) {
 	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
 	as.Service = svc.ServiceName
 	as.InstanceId = fmt.Sprintf("%s-%s-%s", vm.Name, svc.ServiceName, vm.UID)
@@ -197,7 +210,7 @@ type CatalogDeregistration struct {
 	Namespace string
 }
 
-func (cdr *CatalogDeregistration) toConsul() *consul.CatalogDeregistration {
+func (cdr *CatalogDeregistration) ToConsul() *consul.CatalogDeregistration {
 	r := new(consul.CatalogDeregistration)
 	r.Node = cdr.Node
 	r.ServiceID = cdr.ServiceID
@@ -205,14 +218,14 @@ func (cdr *CatalogDeregistration) toConsul() *consul.CatalogDeregistration {
 	return r
 }
 
-func (cdr *CatalogDeregistration) toEureka() *eureka.Instance {
+func (cdr *CatalogDeregistration) ToEureka() *eureka.Instance {
 	r := new(eureka.Instance)
 	r.InstanceId = cdr.ServiceID
 	r.App = strings.ToUpper(cdr.Service)
 	return r
 }
 
-func (cdr *CatalogDeregistration) toNacos() *vo.DeregisterInstanceParam {
+func (cdr *CatalogDeregistration) ToNacos() *vo.DeregisterInstanceParam {
 	r := new(vo.DeregisterInstanceParam)
 	svcInfoSegs := strings.Split(cdr.ServiceID, constant.SERVICE_INFO_SPLITER)
 	r.ServiceName = svcInfoSegs[1]
@@ -234,7 +247,7 @@ type CatalogRegistration struct {
 	SkipNodeUpdate bool
 }
 
-func (cr *CatalogRegistration) toConsul() *consul.CatalogRegistration {
+func (cr *CatalogRegistration) ToConsul() *consul.CatalogRegistration {
 	r := new(consul.CatalogRegistration)
 	r.Node = cr.Node
 	r.Address = cr.Address
@@ -245,16 +258,16 @@ func (cr *CatalogRegistration) toConsul() *consul.CatalogRegistration {
 		}
 	}
 	if cr.Service != nil {
-		r.Service = cr.Service.toConsul()
+		r.Service = cr.Service.ToConsul()
 	}
 	if cr.Check != nil {
-		r.Check = cr.Check.toConsul()
+		r.Check = cr.Check.ToConsul()
 	}
 	r.SkipNodeUpdate = cr.SkipNodeUpdate
 	return r
 }
 
-func (cr *CatalogRegistration) toEureka() *eureka.Instance {
+func (cr *CatalogRegistration) ToEureka() *eureka.Instance {
 	r := new(eureka.Instance)
 	if len(cr.NodeMeta) > 0 {
 		for k, v := range cr.NodeMeta {
@@ -294,7 +307,7 @@ func (cr *CatalogRegistration) toEureka() *eureka.Instance {
 	return r
 }
 
-func (cr *CatalogRegistration) toNacos(cluster, group string, weight float64) *vo.RegisterInstanceParam {
+func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *vo.RegisterInstanceParam {
 	r := new(vo.RegisterInstanceParam)
 	r.Metadata = make(map[string]string)
 	if len(cr.NodeMeta) > 0 {
@@ -330,7 +343,7 @@ type CatalogService struct {
 	ServiceName string
 }
 
-func (cs *CatalogService) fromConsul(svc *consul.CatalogService) {
+func (cs *CatalogService) FromConsul(svc *consul.CatalogService) {
 	if svc == nil {
 		return
 	}
@@ -339,7 +352,7 @@ func (cs *CatalogService) fromConsul(svc *consul.CatalogService) {
 	cs.ServiceName = svc.ServiceName
 }
 
-func (cs *CatalogService) fromEureka(svc *eureka.Instance) {
+func (cs *CatalogService) FromEureka(svc *eureka.Instance) {
 	if svc == nil {
 		return
 	}
@@ -348,7 +361,7 @@ func (cs *CatalogService) fromEureka(svc *eureka.Instance) {
 	cs.ServiceName = strings.ToLower(svc.App)
 }
 
-func (cs *CatalogService) fromNacos(svc *model.Instance) {
+func (cs *CatalogService) FromNacos(svc *nacos.Instance) {
 	if svc == nil {
 		return
 	}
@@ -357,24 +370,40 @@ func (cs *CatalogService) fromNacos(svc *model.Instance) {
 	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 }
 
-type CatalogNodeServiceList struct {
+type RegisteredServiceList struct {
 	Services []*AgentService
 }
 
-func (cnsl *CatalogNodeServiceList) fromConsul(svcList *consul.CatalogNodeServiceList) {
-	if svcList == nil || len(svcList.Services) == 0 {
+func (rsl *RegisteredServiceList) FromConsul(instances []*consul.AgentService) {
+	if len(instances) == 0 {
 		return
 	}
-	for _, svc := range svcList.Services {
-		if len(svc.Meta) > 0 {
-			if serviceSource, serviceSourceExists := svc.Meta[connector.ServiceSourceKey]; serviceSourceExists {
-				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-					agentService := new(AgentService)
-					agentService.fromConsul(svc)
-					cnsl.Services = append(cnsl.Services, agentService)
-				}
-			}
-		}
+	for _, instance := range instances {
+		agentService := new(AgentService)
+		agentService.FromConsul(instance)
+		rsl.Services = append(rsl.Services, agentService)
+	}
+}
+
+func (rsl *RegisteredServiceList) FromEureka(instances []*eureka.Instance) {
+	if len(instances) == 0 {
+		return
+	}
+	for _, instance := range instances {
+		agentService := new(AgentService)
+		agentService.FromEureka(instance)
+		rsl.Services = append(rsl.Services, agentService)
+	}
+}
+
+func (rsl *RegisteredServiceList) FromNacos(instances []*nacos.Instance) {
+	if len(instances) == 0 {
+		return
+	}
+	for _, instance := range instances {
+		agentService := new(AgentService)
+		agentService.FromNacos(instance)
+		rsl.Services = append(rsl.Services, agentService)
 	}
 }
 
@@ -424,7 +453,7 @@ func (o *QueryOptions) WithContext(ctx context.Context) *QueryOptions {
 	return o2
 }
 
-func (o *QueryOptions) toConsul() *consul.QueryOptions {
+func (o *QueryOptions) ToConsul() *consul.QueryOptions {
 	opts := new(consul.QueryOptions)
 	opts.AllowStale = o.AllowStale
 	opts.Namespace = o.Namespace
@@ -437,14 +466,16 @@ func (o *QueryOptions) toConsul() *consul.QueryOptions {
 }
 
 type ServiceDiscoveryClient interface {
-	NodeServiceList(node string, q *QueryOptions) (*CatalogNodeServiceList, error)
 	CatalogServices(q *QueryOptions) (map[string][]string, error)
-	CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error)
-	HealthService(service, tag string, q *QueryOptions, passingOnly bool) ([]*AgentService, error)
+	CatalogInstances(service string, q *QueryOptions) ([]*AgentService, error)
+	RegisteredInstances(service string, q *QueryOptions) ([]*CatalogService, error)
+	RegisteredServices(q *QueryOptions) (*RegisteredServiceList, error)
 	Register(reg *CatalogRegistration) error
 	Deregister(dereg *CatalogDeregistration) error
-	EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error)
-	MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider
+	EnableNamespaces() bool
+	EnsureNamespaceExists(ns string) (bool, error)
+	RegisteredNamespace(kubeNS string) string
+	MicroServiceProvider() ctv1.DiscoveryServiceProvider
 	IsInternalServices() bool
 }
 
@@ -457,19 +488,3 @@ const (
 	HealthCritical = "critical"
 	HealthMaint    = "maintenance"
 )
-
-// CloudNamespace returns the cloud namespace that a service should be
-// registered in based on the namespace options. It returns an
-// empty string if namespaces aren't enabled.
-func CloudNamespace(kubeNS string, enableCloudNamespaces bool, cloudDestNS string, enableMirroring bool, mirroringPrefix string) string {
-	if !enableCloudNamespaces {
-		return ""
-	}
-
-	// Mirroring takes precedence.
-	if enableMirroring {
-		return fmt.Sprintf("%s%s", mirroringPrefix, kubeNS)
-	}
-
-	return cloudDestNS
-}

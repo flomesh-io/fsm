@@ -9,8 +9,15 @@ import (
 type NodePortSyncType string
 
 const (
-	ExternalOnly  NodePortSyncType = "ExternalOnly"
-	InternalOnly  NodePortSyncType = "InternalOnly"
+	// ExternalOnly only sync NodePort services with a node's ExternalIP address.
+	// Doesn't sync if an ExternalIP doesn't exist.
+	ExternalOnly NodePortSyncType = "ExternalOnly"
+
+	// InternalOnly sync NodePort services using.
+	InternalOnly NodePortSyncType = "InternalOnly"
+
+	// ExternalFirst sync with an ExternalIP first, if it doesn't exist, use the
+	// node's InternalIP address instead.
 	ExternalFirst NodePortSyncType = "ExternalFirst"
 )
 
@@ -50,4 +57,9 @@ const (
 type Metadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type Limiter struct {
+	Limit uint32 `json:"limit"`
+	Burst uint32 `json:"burst"`
 }

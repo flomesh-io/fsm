@@ -49,17 +49,23 @@ type ConsulSyncToK8SSpec struct {
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	FilterTag string `json:"filterTag,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	PrefixTag string `json:"prefixTag,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	SuffixTag string `json:"suffixTag,omitempty"`
+
+	// +optional
+	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	PrefixMetadata string `json:"prefixMetadata,omitempty"`
+
+	// +optional
+	SuffixMetadata string `json:"suffixMetadata,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional
@@ -105,6 +111,9 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	AppendTags []string `json:"appendTags,omitempty"`
 
+	// +optional
+	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
+
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"*"}
 	// +optional
@@ -119,13 +128,8 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	WithGateway bool `json:"withGateway,omitempty"`
 
-	// +kubebuilder:default=k8s-sync
 	// +optional
 	ConsulNodeName string `json:"consulNodeName,omitempty"`
-
-	// +kubebuilder:default=k8s
-	// +optional
-	ConsulK8STag string `json:"consulK8STag,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional
@@ -157,8 +161,27 @@ type ConsulSpec struct {
 	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
+	// +kubebuilder:default={}
+	// +optional
+	Auth NacosAuthSpec `json:"auth,omitempty"`
+
 	SyncToK8S   ConsulSyncToK8SSpec   `json:"syncToK8S"`
 	SyncFromK8S ConsulSyncFromK8SSpec `json:"syncFromK8S"`
+
+	// +kubebuilder:default={limit:500, burst:750}
+	// +optional
+	Limiter *Limiter `json:"limiter,omitempty"`
+}
+
+// ConsulAuthSpec is the type used to represent the Consul auth specification.
+type ConsulAuthSpec struct {
+	// +kubebuilder:default=""
+	// +optional
+	Username string `json:"username,omitempty"`
+
+	// +kubebuilder:default=""
+	// +optional
+	Password string `json:"password,omitempty"`
 }
 
 // ConsulStatus is the type used to represent the status of a Consul Connector resource.

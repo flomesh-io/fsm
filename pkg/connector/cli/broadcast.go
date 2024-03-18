@@ -13,8 +13,8 @@ func (c *client) BroadcastListener() {
 	connectorUpdateChan := connectorUpdatePubSub.Sub(announcements.ConnectorUpdate.String())
 	defer c.msgBroker.Unsub(connectorUpdatePubSub, connectorUpdateChan)
 
-	// Wait for two informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 20)
+	// Wait for one informer synchronization periods
+	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
 
 	reconfirm := true
@@ -27,10 +27,10 @@ func (c *client) BroadcastListener() {
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
-			newJob := func() *connectorControllerJob {
-				return &connectorControllerJob{
-					done:                make(chan struct{}),
-					connectorController: c,
+			newJob := func() *connectControllerJob {
+				return &connectControllerJob{
+					done:              make(chan struct{}),
+					connectController: c,
 				}
 			}
 			<-c.msgWorkQueues.AddJob(newJob())

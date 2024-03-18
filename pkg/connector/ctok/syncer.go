@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -41,71 +40,54 @@ var (
 	protocolGRPC = constants.ProtocolGRPC
 )
 
-// NewSink creates a new mesh sink
-func NewSink(ctx context.Context, kubeClient kubernetes.Interface, discClient provider.ServiceDiscoveryClient, fsmNamespace string) *Sink {
-	sink := Sink{
-		Ctx:              ctx,
-		KubeClient:       kubeClient,
-		DiscClient:       discClient,
-		fsmNamespace:     fsmNamespace,
-		serviceKeyToName: make(map[string]string),
-		serviceMapCache:  make(map[string]*apiv1.Service),
-		serviceHashMap:   make(map[string]uint64),
-	}
-	return &sink
-}
-
-// Sink is the destination where services are registered.
+// CtoKSyncer is the destination where services are registered.
 //
-// While in practice we only have one sink (K8S), the interface abstraction
-// makes it easy and possible to test the Source in isolation.
-type Sink struct {
+// While in practice we only have one syncer (K8S), the interface abstraction
+// makes it easy and possible to test the CtoKSource in isolation.
+type CtoKSyncer struct {
+	controller connector.ConnectController
+	discClient connector.ServiceDiscoveryClient
+
+	kubeClient kubernetes.Interface
+
+	microAggregator Aggregator
+
+	// ctx is used to cancel the CtoKSyncer.
+	ctx context.Context
+
 	fsmNamespace string
-
-	KubeClient kubernetes.Interface
-
-	DiscClient provider.ServiceDiscoveryClient
-
-	MicroAggregator Aggregator
-
-	// SyncPeriod is the duration to wait between registering or deregistering
-	// services in Kubernetes. This can be fairly short since no work will be
-	// done if there are no changes.
-	SyncPeriod time.Duration
-
-	// Ctx is used to cancel the Sink.
-	Ctx context.Context
 
 	// lock gates concurrent access to all the maps.
 	lock sync.Mutex
 
-	// sourceServices holds cloud services that should be synced to Kube.
-	// It maps from cloud service names to cloud DNS entry, e.g.
-	// We lowercase the cloud service names and DNS entries
-	// because Kube names must be lowercase.
-	sourceServices map[string]string
-	rawServices    map[string]string
-
-	// serviceKeyToName maps from Kube controller keys to Kube service names.
-	// Controller keys are in the form <kube namespace>/<kube svc name>
-	// e.g. default/foo, and are the keys Kube uses to inform that something
-	// changed.
-	serviceKeyToName map[string]string
-
-	// serviceMapCache is a subset of serviceMap. It holds all Kube services
-	// that were created by this sync process. Keys are Kube service names.
-	// It's populated from Kubernetes data.
-	serviceMapCache map[string]*apiv1.Service
-
-	serviceHashMap map[string]uint64
-
 	triggerCh chan struct{}
+}
+
+// NewCtoKSyncer creates a new mesh syncer
+func NewCtoKSyncer(
+	controller connector.ConnectController,
+	discClient connector.ServiceDiscoveryClient,
+	kubeClient kubernetes.Interface,
+	ctx context.Context,
+	fsmNamespace string) *CtoKSyncer {
+	syncer := CtoKSyncer{
+		controller:   controller,
+		discClient:   discClient,
+		kubeClient:   kubeClient,
+		ctx:          ctx,
+		fsmNamespace: fsmNamespace,
+	}
+	return &syncer
+}
+
+func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
+	s.microAggregator = microAggregator
 }
 
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *Sink) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
+func (s *CtoKSyncer) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -114,15 +96,15 @@ func (s *Sink) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 		lowercasedSvcs[strings.ToLower(string(serviceName))] = strings.ToLower(string(serviceDNS))
 	}
 
-	s.sourceServices = lowercasedSvcs
-	s.rawServices = maps.Clone(lowercasedSvcs)
+	s.controller.GetC2KContext().SourceServices = lowercasedSvcs
+	s.controller.GetC2KContext().RawServices = maps.Clone(lowercasedSvcs)
 	s.trigger() // Any service change probably requires syncing
 }
 
 // Ready wait util ready
-func (s *Sink) Ready() {
+func (s *CtoKSyncer) Ready() {
 	for {
-		if ns, err := s.KubeClient.CoreV1().Namespaces().Get(s.Ctx, s.namespace(), metav1.GetOptions{}); err == nil && ns != nil {
+		if ns, err := s.kubeClient.CoreV1().Namespaces().Get(s.ctx, s.namespace(), metav1.GetOptions{}); err == nil && ns != nil {
 			break
 		}
 		time.Sleep(5 * time.Second)
@@ -131,14 +113,14 @@ func (s *Sink) Ready() {
 
 // Informer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
-func (s *Sink) Informer() cache.SharedIndexInformer {
+func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return s.KubeClient.CoreV1().Services(s.namespace()).List(s.Ctx, options)
+				return s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return s.KubeClient.CoreV1().Services(s.namespace()).Watch(s.Ctx, options)
+				return s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
 			},
 		},
 		&apiv1.Service{},
@@ -148,7 +130,7 @@ func (s *Sink) Informer() cache.SharedIndexInformer {
 }
 
 // Upsert implements the controller.Resource interface.
-func (s *Sink) Upsert(key string, raw interface{}) error {
+func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 	// We expect a Service. If it isn't a service then just ignore it.
 	service, ok := raw.(*apiv1.Service)
 	if !ok {
@@ -161,13 +143,13 @@ func (s *Sink) Upsert(key string, raw interface{}) error {
 
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by service name.
-	s.serviceKeyToName[key] = service.Name
-	s.serviceHashMap[service.Name] = s.serviceHash(service)
+	s.controller.GetC2KContext().ServiceKeyToName[key] = service.Name
+	s.controller.GetC2KContext().ServiceHashMap[service.Name] = s.serviceHash(service)
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
 	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
-		s.serviceMapCache[service.Name] = service
+		s.controller.GetC2KContext().ServiceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
 
@@ -176,11 +158,11 @@ func (s *Sink) Upsert(key string, raw interface{}) error {
 }
 
 // Delete implements the controller.Resource interface.
-func (s *Sink) Delete(key string, _ interface{}) error {
+func (s *CtoKSyncer) Delete(key string, _ interface{}) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	name, ok := s.serviceKeyToName[key]
+	name, ok := s.controller.GetC2KContext().ServiceKeyToName[key]
 	if !ok {
 		// This is a weird scenario, but in unit tests we've seen this happen
 		// in cases where the delete happens very quickly after the create.
@@ -190,13 +172,13 @@ func (s *Sink) Delete(key string, _ interface{}) error {
 		return nil
 	}
 
-	delete(s.serviceKeyToName, key)
-	delete(s.serviceMapCache, name)
-	delete(s.serviceHashMap, name)
+	delete(s.controller.GetC2KContext().ServiceKeyToName, key)
+	delete(s.controller.GetC2KContext().ServiceMapCache, name)
+	delete(s.controller.GetC2KContext().ServiceHashMap, name)
 
 	// If the service that is deleted is part of cloud services, then
 	// we need to trigger a sync to recreate it.
-	if _, ok = s.sourceServices[name]; ok {
+	if _, ok = s.controller.GetC2KContext().SourceServices[name]; ok {
 		s.trigger()
 	}
 
@@ -205,7 +187,7 @@ func (s *Sink) Delete(key string, _ interface{}) error {
 }
 
 // Run implements the controller.Backgrounder interface.
-func (s *Sink) Run(ch <-chan struct{}) {
+func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for syncing")
 
 	// Initialize the trigger channel. We send an initial message so that
@@ -225,7 +207,7 @@ func (s *Sink) Run(ch <-chan struct{}) {
 			return
 		case <-triggerCh:
 			// Coalesce to prevent lots of API calls during churn periods.
-			coalesce(s.Ctx,
+			coalesce(s.ctx,
 				K8SQuietPeriod, K8SMaxPeriod,
 				func(ctx context.Context) {
 					select {
@@ -242,15 +224,15 @@ func (s *Sink) Run(ch <-chan struct{}) {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
 		}
 
-		svcClient := s.KubeClient.CoreV1().Services(s.namespace())
+		svcClient := s.kubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
-			if err := svcClient.Delete(s.Ctx, name, metav1.DeleteOptions{}); err != nil {
+			if err := svcClient.Delete(s.ctx, name, metav1.DeleteOptions{}); err != nil {
 				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
 			}
 		}
 
 		for _, svc := range creates {
-			if _, err := svcClient.Create(s.Ctx, svc, metav1.CreateOptions{}); err != nil {
+			if _, err := svcClient.Create(s.ctx, svc, metav1.CreateOptions{}); err != nil {
 				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
 			}
 		}
@@ -258,14 +240,14 @@ func (s *Sink) Run(ch <-chan struct{}) {
 }
 
 // crudList returns the services to create, update, and delete (respectively).
-func (s *Sink) crudList() ([]*apiv1.Service, []string) {
+func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	var createSvcs []*apiv1.Service
 	var deleteSvcs []string
 	extendServices := make(map[string]string, 0)
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
-	for cloudName, cloudDNS := range s.sourceServices {
-		svcMetaMap := s.MicroAggregator.Aggregate(MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
+	for cloudName, cloudDNS := range s.controller.GetC2KContext().SourceServices {
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
@@ -276,9 +258,9 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 			if !strings.EqualFold(string(microSvcName), cloudName) {
 				extendServices[string(microSvcName)] = cloudDNS
 			}
-			preHv := s.serviceHashMap[string(microSvcName)]
+			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 			// If this is an already registered service, then update it
-			if svc, ok := s.serviceMapCache[string(microSvcName)]; ok {
+			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
 				if svc.Spec.ExternalName == cloudDNS {
 					// Matching service, no update required.
 					continue
@@ -286,11 +268,11 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
-					connector.AnnotationMeshServiceSync:           string(s.DiscClient.MicroServiceProvider()),
+					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
 					connector.AnnotationCloudServiceInheritedFrom: cloudName,
 				}
-				if withGateway {
-					if s.DiscClient.IsInternalServices() {
+				if s.controller.GetC2KWithGateway() {
+					if s.discClient.IsInternalServices() {
 						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 					}
 				}
@@ -314,7 +296,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 					Labels: map[string]string{CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
-						connector.AnnotationMeshServiceSync:           string(s.DiscClient.MicroServiceProvider()),
+						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
 						connector.AnnotationCloudServiceInheritedFrom: cloudName,
 					},
 				},
@@ -329,8 +311,8 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
 			}
-			if withGateway {
-				if s.DiscClient.IsInternalServices() {
+			if s.controller.GetC2KWithGateway() {
+				if s.discClient.IsInternalServices() {
 					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
 			}
@@ -350,13 +332,13 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 
 	if len(extendServices) > 0 {
 		for cloudName, cloudDNS := range extendServices {
-			s.sourceServices[cloudName] = cloudDNS
+			s.controller.GetC2KContext().SourceServices[cloudName] = cloudDNS
 		}
 	}
 
 	// Determine what needs to be deleted
-	for k := range s.serviceMapCache {
-		if _, ok := s.sourceServices[k]; !ok {
+	for k := range s.controller.GetC2KContext().ServiceMapCache {
+		if _, ok := s.controller.GetC2KContext().SourceServices[k]; !ok {
 			deleteSvcs = append(deleteSvcs, k)
 		}
 	}
@@ -364,7 +346,7 @@ func (s *Sink) crudList() ([]*apiv1.Service, []string) {
 	return createSvcs, deleteSvcs
 }
 
-func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
+func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
 	ports := make([]int, 0)
 	for port, appProtocol := range svcMeta.Ports {
 		if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
@@ -391,7 +373,7 @@ func (s *Sink) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
 	}
 }
 
-func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||
@@ -404,9 +386,9 @@ func (s *Sink) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol Micr
 }
 
 // namespace returns the K8S namespace to setup the resource watchers in.
-func (s *Sink) namespace() string {
-	if syncCloudNamespace != "" {
-		return syncCloudNamespace
+func (s *CtoKSyncer) namespace() string {
+	if deriveNamespace := s.controller.GetDeriveNamespace(); len(deriveNamespace) > 0 {
+		return deriveNamespace
 	}
 
 	// Default to the default namespace. This should not be "all" since we
@@ -418,7 +400,7 @@ func (s *Sink) namespace() string {
 //
 // This is not synchronous and does not guarantee a sync will happen. This
 // just sends a notification that a sync is likely necessary.
-func (s *Sink) trigger() {
+func (s *CtoKSyncer) trigger() {
 	if s.triggerCh != nil {
 		// Non-blocking send. This is okay because we always buffer triggerCh
 		// to one. So if this blocks it means that a message is already waiting
@@ -430,7 +412,7 @@ func (s *Sink) trigger() {
 	}
 }
 
-func (s *Sink) serviceHash(service *apiv1.Service) uint64 {
+func (s *CtoKSyncer) serviceHash(service *apiv1.Service) uint64 {
 	bytes := make([]byte, 0)
 	if len(service.Labels) > 0 {
 		labelBytes, _ := json.Marshal(service.Labels)

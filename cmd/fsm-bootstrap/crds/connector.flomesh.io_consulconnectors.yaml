@@ -52,10 +52,45 @@ spec:
               asInternalServices:
                 default: false
                 type: boolean
+              auth:
+                description: NacosAuthSpec is the type used to represent the Nacos
+                  auth specification.
+                properties:
+                  accessKey:
+                    default: ""
+                    type: string
+                  namespaceId:
+                    default: public
+                    type: string
+                  password:
+                    default: ""
+                    type: string
+                  secretKey:
+                    default: ""
+                    type: string
+                  username:
+                    default: ""
+                    type: string
+                type: object
               deriveNamespace:
                 type: string
               httpAddr:
                 type: string
+              limiter:
+                default:
+                  burst: 750
+                  limit: 500
+                properties:
+                  burst:
+                    format: int32
+                    type: integer
+                  limit:
+                    format: int32
+                    type: integer
+                required:
+                - burst
+                - limit
+                type: object
               syncFromK8S:
                 description: ConsulSyncFromK8SSpec is the type used to represent the
                   sync from K8S to Consul specification.
@@ -72,6 +107,18 @@ spec:
                     items:
                       type: string
                     minItems: 1
+                    type: array
+                  appendMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
                     type: array
                   appendTags:
                     items:
@@ -92,11 +139,7 @@ spec:
                   consulK8SNSMirroringPrefix:
                     default: ""
                     type: string
-                  consulK8STag:
-                    default: k8s
-                    type: string
                   consulNodeName:
-                    default: k8s-sync
                     type: string
                   defaultSync:
                     default: true
@@ -144,17 +187,30 @@ spec:
                     type: string
                   enable:
                     type: boolean
+                  filterMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
                   filterTag:
-                    default: ""
                     type: string
                   passingOnly:
                     default: true
                     type: boolean
+                  prefixMetadata:
+                    type: string
                   prefixTag:
-                    default: ""
+                    type: string
+                  suffixMetadata:
                     type: string
                   suffixTag:
-                    default: ""
                     type: string
                   withGateway:
                     default: false

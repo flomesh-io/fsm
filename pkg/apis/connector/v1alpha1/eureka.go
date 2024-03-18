@@ -45,19 +45,12 @@ type EurekaSyncToK8SSpec struct {
 	// +optional
 	ClusterId string `json:"clusterId,omitempty"`
 
-	// +kubebuilder:default=true
 	// +optional
-	PassingOnly bool `json:"passingOnly,omitempty"`
+	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
 
-	// +kubebuilder:default=""
-	// +optional
-	FilterMetadata string `json:"filterMetadata,omitempty"`
-
-	// +kubebuilder:default=""
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
 
-	// +kubebuilder:default=""
 	// +optional
 	SuffixMetadata string `json:"suffixMetadata,omitempty"`
 
@@ -131,6 +124,10 @@ type EurekaSpec struct {
 
 	SyncToK8S   EurekaSyncToK8SSpec   `json:"syncToK8S"`
 	SyncFromK8S EurekaSyncFromK8SSpec `json:"syncFromK8S"`
+
+	// +kubebuilder:default={limit:500, burst:750}
+	// +optional
+	Limiter *Limiter `json:"Limiter,omitempty"`
 }
 
 // EurekaStatus is the type used to represent the status of a Eureka Connector resource.

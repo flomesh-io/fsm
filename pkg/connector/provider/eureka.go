@@ -3,35 +3,102 @@ package provider
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/hudl/fargo"
 	"github.com/op/go-logging"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
-const (
-	EUREKA_METADATA_GRPC_PORT = "gRPC__port"
-	EUREKA_METADATA_MGMT_PORT = "management.port"
-)
-
 type EurekaDiscoveryClient struct {
-	eurekaClient           *fargo.EurekaConnection
-	isInternalServices     bool
-	clusterId              string
-	appendMetadataKeySet   mapset.Set
-	appendMetadataValueSet mapset.Set
+	connectController connector.ConnectController
+	namingClient      *fargo.EurekaConnection
+	lock              sync.Mutex
+}
+
+func (dc *EurekaDiscoveryClient) eurekaClient() *fargo.EurekaConnection {
+	dc.lock.Lock()
+	defer dc.lock.Unlock()
+
+	if dc.namingClient != nil {
+		eurekaAddr := dc.connectController.GetHTTPAddr()
+		match := false
+		for _, addr := range dc.namingClient.ServiceUrls {
+			if strings.EqualFold(addr, eurekaAddr) {
+				match = true
+				break
+			}
+		}
+		if !match {
+			dc.namingClient = nil
+		}
+	}
+
+	if dc.namingClient == nil {
+		eurekaConnection := fargo.NewConn(dc.connectController.GetHTTPAddr())
+		eurekaConnection.Timeout = time.Duration(60) * time.Second
+		eurekaConnection.PollInterval = time.Duration(10) * time.Second
+		eurekaConnection.Retries = 2
+		eurekaConnection.DNSDiscovery = false
+		dc.namingClient = &eurekaConnection
+	}
+
+	dc.connectController.WaitLimiter()
+
+	return dc.namingClient
 }
 
 func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
-	return dc.isInternalServices
+	return dc.connectController.AsInternalServices()
 }
 
-func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
-	servicesMap, err := dc.eurekaClient.GetApps()
+func (dc *EurekaDiscoveryClient) CatalogInstances(service string, q *connector.QueryOptions) ([]*connector.AgentService, error) {
+	services, err := dc.eurekaClient().GetApp(strings.ToUpper(service))
+	if err != nil {
+		return nil, err
+	}
+	//servicesMap, err := dc.eurekaClient().GetApps()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//services := servicesMap[strings.ToUpper(service)]
+	agentServices := make([]*connector.AgentService, 0)
+	if services != nil && len(services.Instances) > 0 {
+		for _, ins := range services.Instances {
+			if clusterSet, clusterSetErr := ins.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
+				if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
+					continue
+				}
+			}
+			if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+				matched := true
+				for _, meta := range filterMetadatas {
+					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
+						if strings.EqualFold(metaSet, meta.Value) {
+							continue
+						}
+					}
+					matched = false
+					break
+				}
+				if !matched {
+					continue
+				}
+			}
+			agentService := new(connector.AgentService)
+			agentService.FromEureka(ins)
+			agentService.ClusterId = dc.connectController.GetClusterId()
+			agentServices = append(agentServices, agentService)
+		}
+	}
+	return agentServices, nil
+}
+
+func (dc *EurekaDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
+	servicesMap, err := dc.eurekaClient().GetApps()
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +114,23 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 				continue
 			}
 			for _, svcIns := range svcApp.Instances {
-				if serviceSource, serviceSourceErr := svcIns.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-					if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
+				if clusterSet, clusterSetErr := svcIns.Metadata.GetString(connector.ClusterSetKey); clusterSetErr == nil {
+					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
+						continue
+					}
+				}
+				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+					matched := true
+					for _, meta := range filterMetadatas {
+						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
+							if strings.EqualFold(metaSet, meta.Value) {
+								continue
+							}
+						}
+						matched = false
+						break
+					}
+					if !matched {
 						continue
 					}
 				}
@@ -69,24 +151,56 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]
 	return catalogServices, nil
 }
 
-// CatalogService is used to query catalog entries for a given service
-func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
+func (dc *EurekaDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
+	servicesMap, err := dc.eurekaClient().GetApps()
 	if err != nil {
 		return nil, err
 	}
-	//servicesMap, err := dc.eurekaClient.GetApps()
+	registeredIServices := make([]*fargo.Instance, 0)
+	if len(servicesMap) > 0 {
+		for svc, svcApp := range servicesMap {
+			svc := strings.ToLower(svc)
+			if strings.Contains(svc, "_") {
+				log.Warn().Msgf("invalid format, ignore service: %s", svc)
+				continue
+			}
+			instances := svcApp.Instances
+			if len(instances) == 0 {
+				continue
+			}
+			for _, instance := range instances {
+				instance := instance
+				if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
+					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
+						registeredIServices = append(registeredIServices, instance)
+					}
+				}
+			}
+		}
+	}
+	registeredServiceList := new(connector.RegisteredServiceList)
+	registeredServiceList.FromEureka(registeredIServices)
+	return registeredServiceList, nil
+}
+
+// RegisteredInstances is used to query catalog entries for a given service
+func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
+	services, err := dc.eurekaClient().GetApp(strings.ToUpper(service))
+	if err != nil {
+		return nil, err
+	}
+	//servicesMap, err := dc.eurekaClient().GetApps()
 	//if err != nil {
 	//	return nil, err
 	//}
 	//services = servicesMap[strings.ToUpper(service)]
-	catalogServices := make([]*CatalogService, 0)
+	catalogServices := make([]*connector.CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
-		for _, ins := range services.Instances {
-			if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-					catalogService := new(CatalogService)
-					catalogService.fromEureka(ins)
+		for _, instance := range services.Instances {
+			if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
+				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
+					catalogService := new(connector.CatalogService)
+					catalogService.FromEureka(instance)
 					catalogServices = append(catalogServices, catalogService)
 				}
 			}
@@ -95,40 +209,8 @@ func (dc *EurekaDiscoveryClient) CatalogService(service, tag string, q *QueryOpt
 	return catalogServices, nil
 }
 
-// HealthService is used to query catalog entries for a given service
-func (dc *EurekaDiscoveryClient) HealthService(service, tag string, q *QueryOptions, passingOnly bool) ([]*AgentService, error) {
-	//services, err := dc.eurekaClient.GetApp(strings.ToUpper(service))
-	//if err != nil {
-	//	return nil, err
-	//}
-	servicesMap, err := dc.eurekaClient.GetApps()
-	if err != nil {
-		return nil, err
-	}
-	services := servicesMap[strings.ToUpper(service)]
-	agentServices := make([]*AgentService, 0)
-	if services != nil && len(services.Instances) > 0 {
-		for _, ins := range services.Instances {
-			if serviceSource, serviceSourceErr := ins.Metadata.GetString(connector.ServiceSourceKey); serviceSourceErr == nil {
-				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-					continue
-				}
-			}
-			agentService := new(AgentService)
-			agentService.fromEureka(ins)
-			agentService.ClusterId = dc.clusterId
-			agentServices = append(agentServices, agentService)
-		}
-	}
-	return agentServices, nil
-}
-
-func (dc *EurekaDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (*CatalogNodeServiceList, error) {
-	return nil, nil
-}
-
-func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	err := dc.eurekaClient.DeregisterInstance(dereg.toEureka())
+func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
+	err := dc.eurekaClient().DeregisterInstance(dereg.ToEureka())
 	if err != nil {
 		if code, present := fargo.HTTPResponseStatusCode(err); present {
 			if code == 404 {
@@ -136,49 +218,45 @@ func (dc *EurekaDiscoveryClient) Deregister(dereg *CatalogDeregistration) error 
 			}
 		}
 	}
-
 	return err
 }
 
-func (dc *EurekaDiscoveryClient) Register(reg *CatalogRegistration) error {
-	ins := reg.toEureka()
-	metaKeys := dc.appendMetadataKeySet.ToSlice()
-	metaVals := dc.appendMetadataValueSet.ToSlice()
-	if len(metaKeys) > 0 && len(metaVals) > 0 && len(metaKeys) == len(metaVals) {
+func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
+	ins := reg.ToEureka()
+	metadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	if len(metadataSet) > 0 {
 		rMetadata := ins.Metadata.GetMap()
-		for index, key := range metaKeys {
-			metaKey := key.(string)
-			metaVal := metaVals[index].(string)
-			rMetadata[metaKey] = metaVal
+		for _, item := range metadataSet {
+			metadata := item.(ctv1.Metadata)
+			rMetadata[metadata.Key] = metadata.Value
 		}
 	}
-	return dc.eurekaClient.RegisterInstance(ins)
+	return dc.eurekaClient().RegisterInstance(ins)
 }
 
-// EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
-// it will create it and set crossNSACLPolicy as a policy default.
-// Boolean return value indicates if the namespace was created by this call.
-func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
+func (dc *EurekaDiscoveryClient) EnableNamespaces() bool {
+	return false
+}
+
+// EnsureNamespaceExists ensures a namespace with name ns exists.
+func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error) {
 	return false, nil
 }
 
-func (dc *EurekaDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
-	return connectorv1alpha1.EurekaDiscoveryService
+// RegisteredNamespace returns the cloud namespace that a service should be
+// registered in based on the namespace options. It returns an
+// empty string if namespaces aren't enabled.
+func (dc *EurekaDiscoveryClient) RegisteredNamespace(kubeNS string) string {
+	return ""
 }
 
-func GetEurekaDiscoveryClient(address string, isInternalServices bool, clusterId string,
-	appendMetadataKeySet, appendMetadataValueSet mapset.Set) (*EurekaDiscoveryClient, error) {
-	eurekaClient := fargo.NewConn(address)
-	eurekaClient.Timeout = time.Duration(60) * time.Second
-	eurekaClient.PollInterval = time.Duration(30) * time.Second
-	eurekaClient.Retries = 3
-	eurekaClient.DNSDiscovery = false
+func (dc *EurekaDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProvider {
+	return ctv1.EurekaDiscoveryService
+}
+
+func GetEurekaDiscoveryClient(connectController connector.ConnectController) (*EurekaDiscoveryClient, error) {
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
-	eurekaDiscoveryClient.eurekaClient = &eurekaClient
-	eurekaDiscoveryClient.isInternalServices = isInternalServices
-	eurekaDiscoveryClient.clusterId = clusterId
-	eurekaDiscoveryClient.appendMetadataKeySet = appendMetadataKeySet
-	eurekaDiscoveryClient.appendMetadataValueSet = appendMetadataValueSet
-	logging.SetLevel(logging.ERROR, "fargo")
+	eurekaDiscoveryClient.connectController = connectController
+	logging.SetLevel(logging.CRITICAL, "fargo")
 	return eurekaDiscoveryClient, nil
 }

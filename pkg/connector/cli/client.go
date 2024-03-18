@@ -2,12 +2,16 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"golang.org/x/time/rate"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
@@ -17,43 +21,61 @@ import (
 	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
-// NewConnectorController returns a new Connector.Controller which means to provide access to locally-cached connector resources
-func NewConnectorController(provider, connector string,
+// NewConnectController returns a new Connector.Controller which means to provide access to locally-cached connector resources
+func NewConnectController(provider, connector string,
 	context context.Context,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
 	configClient configClientset.Interface,
 	machineClient machineClientset.Interface,
+	gatewayClient gwapi.Interface,
 	informerCollection *fsminformers.InformerCollection,
 	msgBroker *messaging.Broker,
-	selectInformers ...InformerKey) connector.ConnectorController {
-	return newClient(provider, connector, context, kubeConfig, kubeClient, configClient, machineClient, informerCollection, msgBroker, selectInformers...)
+	selectInformers ...InformerKey) connector.ConnectController {
+	return newClient(provider, connector,
+		context,
+		kubeConfig,
+		kubeClient,
+		configClient,
+		machineClient,
+		gatewayClient,
+		informerCollection,
+		msgBroker,
+		selectInformers...)
 }
 
-func newClient(provider, connector string,
+func newClient(provider, connectorName string,
 	context context.Context,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
 	configClient configClientset.Interface,
 	machineClient machineClientset.Interface,
+	gatewayClient gwapi.Interface,
 	informerCollection *fsminformers.InformerCollection,
 	msgBroker *messaging.Broker,
 	selectInformers ...InformerKey) *client {
 	// Initialize client object
 	c := &client{
 		connectorProvider: provider,
-		connectorName:     connector,
+		connectorName:     connectorName,
 
 		context:       context,
 		kubeConfig:    kubeConfig,
 		kubeClient:    kubeClient,
 		configClient:  configClient,
 		machineClient: machineClient,
+		gatewayClient: gatewayClient,
+
+		c2kContext: connector.NewC2KContext(),
+		k2cContext: connector.NewK2CContext(),
+		k2gContext: connector.NewK2GContext(),
 
 		informers:         informerCollection,
 		msgBroker:         msgBroker,
 		msgWorkerPoolSize: 0,
 		msgWorkQueues:     workerpool.NewWorkerPool(0),
+
+		limiter: rate.NewLimiter(0, 0),
 	}
 
 	// Initialize informers
@@ -133,46 +155,46 @@ func (c *client) initGatewayConnectorMonitor() {
 }
 
 // GetConsulConnector returns a ConsulConnector resource if found, nil otherwise.
-func (c *client) GetConsulConnector(connector string) *connectorv1alpha1.ConsulConnector {
+func (c *client) GetConsulConnector(connector string) *ctv1.ConsulConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyConsulConnector, connector)
 	if exists && err == nil {
-		return connectorIf.(*connectorv1alpha1.ConsulConnector)
+		return connectorIf.(*ctv1.ConsulConnector)
 	}
 	return nil
 }
 
 // GetEurekaConnector returns a EurekaConnector resource if found, nil otherwise.
-func (c *client) GetEurekaConnector(connector string) *connectorv1alpha1.EurekaConnector {
+func (c *client) GetEurekaConnector(connector string) *ctv1.EurekaConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyEurekaConnector, connector)
 	if exists && err == nil {
-		return connectorIf.(*connectorv1alpha1.EurekaConnector)
+		return connectorIf.(*ctv1.EurekaConnector)
 	}
 	return nil
 }
 
 // GetNacosConnector returns a NacosConnector resource if found, nil otherwise.
-func (c *client) GetNacosConnector(connector string) *connectorv1alpha1.NacosConnector {
+func (c *client) GetNacosConnector(connector string) *ctv1.NacosConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNacosConnector, connector)
 	if exists && err == nil {
-		return connectorIf.(*connectorv1alpha1.NacosConnector)
+		return connectorIf.(*ctv1.NacosConnector)
 	}
 	return nil
 }
 
 // GetMachineConnector returns a MachineConnector resource if found, nil otherwise.
-func (c *client) GetMachineConnector(connector string) *connectorv1alpha1.MachineConnector {
+func (c *client) GetMachineConnector(connector string) *ctv1.MachineConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyMachineConnector, connector)
 	if exists && err == nil {
-		return connectorIf.(*connectorv1alpha1.MachineConnector)
+		return connectorIf.(*ctv1.MachineConnector)
 	}
 	return nil
 }
 
 // GetGatewayConnector returns a GatewayConnector resource if found, nil otherwise.
-func (c *client) GetGatewayConnector(connector string) *connectorv1alpha1.GatewayConnector {
+func (c *client) GetGatewayConnector(connector string) *ctv1.GatewayConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyGatewayConnector, connector)
 	if exists && err == nil {
-		return connectorIf.(*connectorv1alpha1.GatewayConnector)
+		return connectorIf.(*ctv1.GatewayConnector)
 	}
 	return nil
 }
@@ -180,31 +202,31 @@ func (c *client) GetGatewayConnector(connector string) *connectorv1alpha1.Gatewa
 // GetConnector returns a Connector resource if found, nil otherwise.
 func (c *client) GetConnector() (spec interface{}, uid string, ok bool) {
 	switch c.GetConnectorProvider() {
-	case connectorv1alpha1.ConsulDiscoveryService:
+	case ctv1.ConsulDiscoveryService:
 		if connector := c.GetConsulConnector(c.GetConnectorName()); connector != nil {
 			spec = connector.Spec
 			uid = string(connector.UID)
 			ok = true
 		}
-	case connectorv1alpha1.EurekaDiscoveryService:
+	case ctv1.EurekaDiscoveryService:
 		if connector := c.GetEurekaConnector(c.GetConnectorName()); connector != nil {
 			spec = connector.Spec
 			uid = string(connector.UID)
 			ok = true
 		}
-	case connectorv1alpha1.NacosDiscoveryService:
+	case ctv1.NacosDiscoveryService:
 		if connector := c.GetNacosConnector(c.GetConnectorName()); connector != nil {
 			spec = connector.Spec
 			uid = string(connector.UID)
 			ok = true
 		}
-	case connectorv1alpha1.MachineDiscoveryService:
+	case ctv1.MachineDiscoveryService:
 		if connector := c.GetMachineConnector(c.GetConnectorName()); connector != nil {
 			spec = connector.Spec
 			uid = string(connector.UID)
 			ok = true
 		}
-	case connectorv1alpha1.GatewayDiscoveryService:
+	case ctv1.GatewayDiscoveryService:
 		if connector := c.GetGatewayConnector(c.GetConnectorName()); connector != nil {
 			spec = connector.Spec
 			uid = string(connector.UID)
@@ -216,11 +238,42 @@ func (c *client) GetConnector() (spec interface{}, uid string, ok bool) {
 }
 
 // GetConnectorProvider returns connector provider.
-func (c *client) GetConnectorProvider() connectorv1alpha1.DiscoveryServiceProvider {
-	return connectorv1alpha1.DiscoveryServiceProvider(c.connectorProvider)
+func (c *client) GetConnectorProvider() ctv1.DiscoveryServiceProvider {
+	return ctv1.DiscoveryServiceProvider(c.connectorProvider)
 }
 
 // GetConnectorName returns connector name.
 func (c *client) GetConnectorName() string {
 	return c.connectorName
+}
+
+// GetConnectorUID returns connector uid.
+func (c *client) GetConnectorUID() string {
+	return c.connectorUID
+}
+
+// GetClusterSet returns cluster set.
+func (c *client) GetClusterSet() string {
+	return c.clusterSet
+}
+
+// SetClusterSet sets cluster set.
+func (c *client) SetClusterSet(name, group, zone, region string) {
+	c.clusterSet = fmt.Sprintf("%s.%s.%s.%s", name, group, zone, region)
+}
+
+func (c *client) SetServiceInstanceIDFunc(f connector.ServiceInstanceIDFunc) {
+	c.serviceInstanceIDFunc = f
+}
+
+// GetServiceInstanceID generates a unique ID for a service. This ID is not meant
+// to be particularly human-friendly.
+func (c *client) GetServiceInstanceID(name, addr string, httpPort, grpcPort int) string {
+	if c.serviceInstanceIDFunc != nil {
+		return c.serviceInstanceIDFunc(name, addr, httpPort, grpcPort)
+	}
+	if grpcPort > 0 {
+		return strings.ToLower(fmt.Sprintf("%s-%s-%d-%d-%s", name, addr, httpPort, grpcPort, c.clusterSet))
+	}
+	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, httpPort, c.clusterSet))
 }

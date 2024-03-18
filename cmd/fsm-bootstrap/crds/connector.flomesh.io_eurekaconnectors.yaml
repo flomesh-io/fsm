@@ -49,6 +49,21 @@ spec:
           spec:
             description: Spec is the Eureka Connector specification
             properties:
+              Limiter:
+                default:
+                  burst: 750
+                  limit: 500
+                properties:
+                  burst:
+                    format: int32
+                    type: integer
+                  limit:
+                    format: int32
+                    type: integer
+                required:
+                - burst
+                - limit
+                type: object
               asInternalServices:
                 default: false
                 type: boolean
@@ -131,17 +146,21 @@ spec:
                     type: string
                   enable:
                     type: boolean
-                  filterMetadata:
-                    default: ""
-                    type: string
-                  passingOnly:
-                    default: true
-                    type: boolean
+                  filterMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
                   prefixMetadata:
-                    default: ""
                     type: string
                   suffixMetadata:
-                    default: ""
                     type: string
                   withGateway:
                     default: false

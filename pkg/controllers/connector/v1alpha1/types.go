@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -63,7 +63,7 @@ func (r *connectorReconciler) NeedLeaderElection() bool {
 	return true
 }
 
-func (r *connectorReconciler) deployConnector(connector connectorv1alpha1.Connector, mc configurator.Configurator) (ctrl.Result, error) {
+func (r *connectorReconciler) deployConnector(connector ctv1.Connector, mc configurator.Configurator) (ctrl.Result, error) {
 	actionConfig := helm.ActionConfig(connector.GetNamespace(), log.Debug().Msgf)
 
 	templateClient := helm.TemplateClient(
@@ -82,7 +82,7 @@ func (r *connectorReconciler) deployConnector(connector connectorv1alpha1.Connec
 }
 
 func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
-	connector, ok := object.(connectorv1alpha1.Connector)
+	connector, ok := object.(ctv1.Connector)
 	if !ok {
 		return nil, fmt.Errorf("object %v is not type of *connectorv1alpha1.Connector", object)
 	}

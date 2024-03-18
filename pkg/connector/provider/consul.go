@@ -3,106 +3,122 @@ package provider
 import (
 	"fmt"
 	"strings"
+	"sync"
 
-	mapset "github.com/deckarep/golang-set"
 	consul "github.com/hashicorp/consul/api"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 const (
-	CONSUL_METADATA_GRPC_PORT = "gRPC.port="
+	consulServiceName = "consul"
 )
 
 type ConsulDiscoveryClient struct {
-	consulClient       *consul.Client
-	isInternalServices bool
-	clusterId          string
-	appendTagSet       mapset.Set
+	connectController connector.ConnectController
+	lock              sync.Mutex
+	clientConfig      *consul.Config
+	namingClient      *consul.Client
+}
+
+func (dc *ConsulDiscoveryClient) consulClient() *consul.Client {
+	dc.lock.Lock()
+	defer dc.lock.Unlock()
+
+	if httpAddr := dc.connectController.GetHTTPAddr(); !strings.EqualFold(dc.clientConfig.Address, httpAddr) {
+		dc.clientConfig.Address = httpAddr
+		dc.namingClient = nil
+	}
+
+	username := dc.connectController.GetAuthConsulUsername()
+	password := dc.connectController.GetAuthConsulPassword()
+	httpAuthUsername := ""
+	httpAuthPassword := ""
+	if dc.clientConfig != nil && dc.clientConfig.HttpAuth != nil {
+		httpAuthUsername = dc.clientConfig.HttpAuth.Username
+		httpAuthPassword = dc.clientConfig.HttpAuth.Password
+	}
+	if !strings.EqualFold(username, httpAuthUsername) || !strings.EqualFold(password, httpAuthPassword) {
+		dc.namingClient = nil
+		if len(username) > 0 || len(password) > 0 {
+			if dc.clientConfig.HttpAuth == nil {
+				dc.clientConfig.HttpAuth = new(consul.HttpBasicAuth)
+			}
+			dc.clientConfig.HttpAuth.Username = username
+			dc.clientConfig.HttpAuth.Password = password
+		} else {
+			dc.clientConfig.HttpAuth = nil
+		}
+	}
+
+	if dc.namingClient == nil {
+		dc.namingClient, _ = consul.NewClient(dc.clientConfig)
+	}
+
+	dc.connectController.WaitLimiter()
+	return dc.namingClient
 }
 
 func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
-	return dc.isInternalServices
+	return dc.connectController.AsInternalServices()
 }
 
-func (dc *ConsulDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
-	servicesMap, meta, err := dc.consulClient.Catalog().Services(q.toConsul())
+func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
+	opts := q.ToConsul()
+	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
+		connector.ClusterSetKey,
+		dc.connectController.GetClusterSet())}
+	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+		for _, meta := range filterMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
+		}
+	}
+	servicesMap, meta, err := dc.consulClient().Catalog().Services(opts)
 	if err != nil {
 		return nil, err
 	}
-
 	q.WaitIndex = meta.LastIndex
 
 	catalogServices := make(map[string][]string)
 	if len(servicesMap) > 0 {
-		for svc, svcTags := range servicesMap {
-			if strings.EqualFold(svc, "consul") {
+		for svc, tags := range servicesMap {
+			if strings.EqualFold(svc, consulServiceName) {
 				continue
 			}
-			svcTagArray, exists := catalogServices[svc]
+			svcTags, exists := catalogServices[svc]
 			if !exists {
-				svcTagArray = make([]string, 0)
+				svcTags = make([]string, 0)
 			}
-			svcTagArray = append(svcTagArray, svcTags...)
-			catalogServices[svc] = svcTagArray
+			svcTags = append(svcTags, tags...)
+			catalogServices[svc] = svcTags
 		}
 	}
 	return catalogServices, nil
 }
 
-// CatalogService is used to query catalog entries for a given service
-func (dc *ConsulDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
-	// Only consider services that are tagged from k8s
-	var opts *consul.QueryOptions = nil
-	if q != nil {
-		opts = q.toConsul()
+func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.QueryOptions) ([]*connector.AgentService, error) {
+	opts := q.ToConsul()
+	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
+		connector.ClusterSetKey,
+		dc.connectController.GetClusterSet())}
+	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+		for _, meta := range filterMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
+		}
 	}
-	services, _, err := dc.consulClient.Catalog().Service(service, tag, opts)
+	opts.Filter = strings.Join(filters, " and ")
+	services, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetFilterTag(), false, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	catalogServices := make([]*CatalogService, 0)
+	agentServices := make([]*connector.AgentService, 0)
 	for _, svc := range services {
-		if len(svc.ServiceMeta) > 0 {
-			if serviceSource, serviceSourceExists := svc.ServiceMeta[connector.ServiceSourceKey]; serviceSourceExists {
-				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-					catalogService := new(CatalogService)
-					catalogService.fromConsul(svc)
-					catalogServices = append(catalogServices, catalogService)
-				}
-			}
-		}
-	}
-	return catalogServices, nil
-}
-
-// HealthService is used to query catalog entries for a given service
-func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOptions, passingOnly bool) ([]*AgentService, error) {
-	var opts *consul.QueryOptions = nil
-	if q != nil {
-		opts = q.toConsul()
-	}
-	services, _, err := dc.consulClient.Health().Service(service, tag, false, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	agentServices := make([]*AgentService, 0)
-	for _, svc := range services {
-		if len(svc.Service.Meta) > 0 {
-			if serviceSource, serviceSourceExists := svc.Service.Meta[connector.ServiceSourceKey]; serviceSourceExists {
-				if strings.EqualFold(serviceSource, connector.ServiceSourceValue) {
-					continue
-				}
-			}
-		}
-
-		if !passingOnly {
-			agentService := new(AgentService)
-			agentService.fromConsul(svc.Service)
-			agentService.ClusterId = dc.clusterId
+		if !dc.connectController.GetPassingOnly() {
+			agentService := new(connector.AgentService)
+			agentService.FromConsul(svc.Service)
+			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 			continue
 		}
@@ -120,15 +136,15 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 		}
 
 		if healthPassing {
-			agentService := new(AgentService)
-			agentService.fromConsul(svc.Service)
-			agentService.ClusterId = dc.clusterId
+			agentService := new(connector.AgentService)
+			agentService.FromConsul(svc.Service)
+			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 		}
 
-		checkService := new(AgentService)
-		checkService.fromConsul(svc.Service)
-		checkService.ClusterId = dc.clusterId
+		checkService := new(connector.AgentService)
+		checkService.FromConsul(svc.Service)
+		checkService.ClusterId = dc.connectController.GetClusterId()
 		checkService.Service = fmt.Sprintf("%s-check", svc.Service.Service)
 		checkService.HealthCheck = true
 		checkService.Tags = nil
@@ -138,35 +154,81 @@ func (dc *ConsulDiscoveryClient) HealthService(service, tag string, q *QueryOpti
 	return agentServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (*CatalogNodeServiceList, error) {
-	var opts *consul.QueryOptions = nil
-	if q != nil {
-		opts = q.toConsul()
+func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
+	registeredServices := make([]*consul.AgentService, 0)
+
+	var opts = q.ToConsul()
+	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
+		connector.ConnectUIDKey,
+		dc.connectController.GetConnectorUID())
+	if servicesMap, meta, err := dc.consulClient().Catalog().Services(opts); err == nil {
+		q.WaitIndex = meta.LastIndex
+		if len(servicesMap) > 0 {
+			for svc := range servicesMap {
+				if strings.EqualFold(svc, consulServiceName) {
+					continue
+				}
+				agentService := &consul.AgentService{
+					Service: svc,
+				}
+				registeredServices = append(registeredServices, agentService)
+			}
+		}
 	}
-	nodeServices, meta, err := dc.consulClient.Catalog().NodeServiceList(node, opts)
+
+	registeredServiceList := new(connector.RegisteredServiceList)
+	registeredServiceList.FromConsul(registeredServices)
+	return registeredServiceList, nil
+}
+
+// RegisteredInstances is used to query catalog entries for a given service
+func (dc *ConsulDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
+	opts := q.ToConsul()
+	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
+		connector.ConnectUIDKey,
+		dc.connectController.GetConnectorUID())
+	services, _, err := dc.consulClient().Catalog().Service(service, "", opts)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update our blocking index
-	q.WaitIndex = meta.LastIndex
-
-	nodeServiceList := new(CatalogNodeServiceList)
-	nodeServiceList.fromConsul(nodeServices)
-	return nodeServiceList, nil
+	catalogServices := make([]*connector.CatalogService, 0)
+	for _, svc := range services {
+		catalogService := new(connector.CatalogService)
+		catalogService.FromConsul(svc)
+		catalogServices = append(catalogServices, catalogService)
+	}
+	return catalogServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
-	_, err := dc.consulClient.Catalog().Deregister(dereg.toConsul(), nil)
+func (dc *ConsulDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
+	_, err := dc.consulClient().Catalog().Deregister(dereg.ToConsul(), nil)
 	return err
 }
 
-func (dc *ConsulDiscoveryClient) Register(reg *CatalogRegistration) error {
-	ins := reg.toConsul()
-	appendTags := dc.appendTagSet.ToSlice()
-	if len(appendTags) > 0 {
-		for _, tag := range appendTags {
+func (dc *ConsulDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
+	reg.Node = dc.connectController.GetConsulNodeName()
+	if len(reg.Node) == 0 {
+		reg.Node = dc.connectController.GetClusterSet()
+	}
+	reg.Address = "127.0.0.1"
+	ins := reg.ToConsul()
+
+	ins.Service.Tags = append(ins.Service.Tags, dc.GetClusterTag())
+	ins.Service.Tags = append(ins.Service.Tags, dc.GetConnectorUidTag())
+
+	appendTagSet := dc.connectController.GetAppendTagSet().ToSlice()
+	if len(appendTagSet) > 0 {
+		for _, tag := range appendTagSet {
 			ins.Service.Tags = append(ins.Service.Tags, tag.(string))
+		}
+	}
+	appendMetadataSet := dc.connectController.GetAppendMetadataSet().ToSlice()
+	if len(appendMetadataSet) > 0 {
+		rMetadata := ins.Service.Meta
+		for _, item := range appendMetadataSet {
+			metadata := item.(ctv1.Metadata)
+			rMetadata[metadata.Key] = metadata.Value
 		}
 	}
 	ins.Checks = consul.HealthChecks{
@@ -174,13 +236,13 @@ func (dc *ConsulDiscoveryClient) Register(reg *CatalogRegistration) error {
 			Node:        ins.Node,
 			CheckID:     fmt.Sprintf("service:%s", ins.Service.ID),
 			Name:        fmt.Sprintf("%s-liveness", ins.Service.Service),
-			Status:      HealthPassing,
+			Status:      connector.HealthPassing,
 			Notes:       fmt.Sprintf("%s is alive and well.", ins.Service.Service),
 			ServiceID:   ins.Service.ID,
 			ServiceName: ins.Service.Service,
 		},
 	}
-	_, err := dc.consulClient.Catalog().Register(ins, nil)
+	_, err := dc.consulClient().Catalog().Register(ins, nil)
 	return err
 }
 
@@ -189,15 +251,19 @@ const (
 	DefaultNamespace  = "default"
 )
 
+func (dc *ConsulDiscoveryClient) EnableNamespaces() bool {
+	return dc.connectController.GetConsulEnableNamespaces()
+}
+
 // EnsureNamespaceExists ensures a namespace with name ns exists. If it doesn't,
 // it will create it and set crossNSACLPolicy as a policy default.
 // Boolean return value indicates if the namespace was created by this call.
-func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
+func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error) {
 	if ns == WildcardNamespace || ns == DefaultNamespace {
 		return false, nil
 	}
 	// Check if the Consul namespace exists.
-	namespaceInfo, _, err := dc.consulClient.Namespaces().Read(ns, nil)
+	namespaceInfo, _, err := dc.consulClient().Namespaces().Read(ns, nil)
 	if err != nil {
 		return false, err
 	}
@@ -207,43 +273,67 @@ func (dc *ConsulDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPoli
 
 	// If not, create it.
 	var aclConfig consul.NamespaceACLConfig
-	if crossNSAClPolicy != "" {
+	if len(dc.connectController.GetConsulCrossNamespaceACLPolicy()) > 0 {
 		// Create the ACLs config for the cross-Consul-namespace
 		// default policy that needs to be attached
 		aclConfig = consul.NamespaceACLConfig{
 			PolicyDefaults: []consul.ACLLink{
-				{Name: crossNSAClPolicy},
+				{Name: dc.connectController.GetConsulCrossNamespaceACLPolicy()},
 			},
 		}
 	}
 
 	consulNamespace := consul.Namespace{
 		Name:        ns,
-		Description: "Auto-generated by consul-k8s",
+		Description: "Auto-generated by flomesh",
 		ACLs:        &aclConfig,
-		Meta:        map[string]string{"external-source": "kubernetes"},
+		Meta:        map[string]string{"external-source": "kubernetes(flomesh)"},
 	}
 
-	_, _, err = dc.consulClient.Namespaces().Create(&consulNamespace, nil)
+	_, _, err = dc.consulClient().Namespaces().Create(&consulNamespace, nil)
 	return true, err
 }
 
-func (dc *ConsulDiscoveryClient) MicroServiceProvider() connectorv1alpha1.DiscoveryServiceProvider {
-	return connectorv1alpha1.ConsulDiscoveryService
+// RegisteredNamespace returns the cloud namespace that a service should be
+// registered in based on the namespace options. It returns an
+// empty string if namespaces aren't enabled.
+func (dc *ConsulDiscoveryClient) RegisteredNamespace(kubeNS string) string {
+	if !dc.connectController.GetConsulEnableNamespaces() {
+		return ""
+	}
+
+	// Mirroring takes precedence.
+	if dc.connectController.GetConsulEnableK8SNSMirroring() {
+		return fmt.Sprintf("%s%s", dc.connectController.GetConsulK8SNSMirroringPrefix(), kubeNS)
+	}
+
+	return dc.connectController.GetConsulDestinationNamespace()
 }
 
-func GetConsulDiscoveryClient(address string, isInternalServices bool, clusterId string,
-	appendTagSet mapset.Set) (*ConsulDiscoveryClient, error) {
-	cfg := consul.DefaultConfig()
-	cfg.Address = address
-	consulClient, err := consul.NewClient(cfg)
-	if err != nil {
-		return nil, err
-	}
+func (dc *ConsulDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProvider {
+	return ctv1.ConsulDiscoveryService
+}
+
+func (dc *ConsulDiscoveryClient) GetClusterTag() string {
+	return fmt.Sprintf("flomesh_cluster_id=%s", dc.connectController.GetClusterSet())
+}
+
+func (dc *ConsulDiscoveryClient) GetConnectorUidTag() string {
+	return fmt.Sprintf("flomesh_connector_uid=%s", dc.connectController.GetConnectorUID())
+}
+
+func GetConsulDiscoveryClient(connectController connector.ConnectController) (*ConsulDiscoveryClient, error) {
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
-	consulDiscoveryClient.consulClient = consulClient
-	consulDiscoveryClient.isInternalServices = isInternalServices
-	consulDiscoveryClient.clusterId = clusterId
-	consulDiscoveryClient.appendTagSet = appendTagSet
+	consulDiscoveryClient.connectController = connectController
+	consulDiscoveryClient.clientConfig = consul.DefaultConfig()
+
+	connector.ClusterSetKey = "fsm_connector_service_cluster_set"
+	connector.ConnectUIDKey = "fsm_connector_service_connector_uid"
+	connector.CloudK8SNS = "fsm_connector_service_k8s_ns"
+	connector.CloudK8SRefKind = "fsm_connector_service_k8s_ref_kind"
+	connector.CloudK8SRefValue = "fsm_connector_service_k8s_ref_name"
+	connector.CloudK8SNodeName = "fsm_connector_service_k8s_node_name"
+	connector.CloudK8SPort = "fsm_connector_service_k8s_port"
+
 	return consulDiscoveryClient, nil
 }

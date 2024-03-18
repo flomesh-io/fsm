@@ -34,7 +34,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -58,7 +58,7 @@ func NewEurekaConnectorReconciler(ctx *fctx.ControllerContext) controllers.Recon
 
 // Reconcile reconciles a Gateway resource
 func (r *eurekaConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	connector := &connectorv1alpha1.EurekaConnector{}
+	connector := &ctv1.EurekaConnector{}
 	if err := r.fctx.Get(
 		ctx,
 		req.NamespacedName,
@@ -92,8 +92,8 @@ func (r *eurekaConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *eurekaConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&connectorv1alpha1.EurekaConnector{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
-			_, ok := obj.(*connectorv1alpha1.EurekaConnector)
+		For(&ctv1.EurekaConnector{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+			_, ok := obj.(*ctv1.EurekaConnector)
 			if !ok {
 				log.Error().Msgf("unexpected object type %T", obj)
 			}

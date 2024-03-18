@@ -1,8 +1,19 @@
 package connector
 
-const (
-	// ServiceSourceKey is the key used in the meta to track the "k8s" source.
-	ServiceSourceKey = "fsm-connector-external-source"
+var (
+	// ClusterSetKey is the key used in the meta to track the "k8s" source.
+	ClusterSetKey = "fsm.connector.service.cluster.set"
+
+	// ConnectUIDKey is the key used in the meta to track the "k8s" source.
+	ConnectUIDKey = "fsm.connector.service.connector.uid"
+
+	// CloudK8SNS is the key used in the meta to record the namespace
+	// of the service/node registration.
+	CloudK8SNS       = "fsm.connector.service.k8s.ns"
+	CloudK8SRefKind  = "fsm.connector.service.k8s.ref.kind"
+	CloudK8SRefValue = "fsm.connector.service.k8s.ref.name"
+	CloudK8SNodeName = "fsm.connector.service.k8s.node.name"
+	CloudK8SPort     = "fsm.connector.service.k8s.port"
 )
 
 const (

@@ -21,23 +21,27 @@ import (
 )
 
 type endpointsResource struct {
-	sink *Sink
-	// endpointsKeyToName maps from Kube controller keys to Kube endpoints names.
-	// Controller keys are in the form <kube namespace>/<kube endpoints name>
-	// e.g. default/foo, and are the keys Kube uses to inform that something
-	// changed.
-	endpointsKeyToName map[string]string
+	controller connector.ConnectController
+	syncer     *CtoKSyncer
+}
+
+func newEndpointsResource(controller connector.ConnectController, syncer *CtoKSyncer) *endpointsResource {
+	resource := endpointsResource{
+		controller: controller,
+		syncer:     syncer,
+	}
+	return &resource
 }
 
 func (t *endpointsResource) Informer() cache.SharedIndexInformer {
-	sink := t.sink
+	syncer := t.syncer
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return sink.KubeClient.CoreV1().Endpoints(sink.namespace()).List(sink.Ctx, options)
+				return syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).List(syncer.ctx, options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return sink.KubeClient.CoreV1().Endpoints(sink.namespace()).Watch(sink.Ctx, options)
+				return syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).Watch(syncer.ctx, options)
 			},
 		},
 		&apiv1.Endpoints{},
@@ -54,15 +58,15 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 		return nil
 	}
 
-	sink := t.sink
-	sink.lock.Lock()
-	defer sink.lock.Unlock()
+	syncer := t.syncer
+	syncer.lock.Lock()
+	defer syncer.lock.Unlock()
 
 	// Store all the key to name mappings. We need this because the key
 	// is opaque but we want to do all the lookups by endpoints name.
-	t.endpointsKeyToName[key] = endpoints.Name
+	t.controller.GetC2KContext().EndpointsKeyToName[key] = endpoints.Name
 
-	servicePtr, exists := sink.serviceMapCache[endpoints.Name]
+	servicePtr, exists := syncer.controller.GetC2KContext().ServiceMapCache[endpoints.Name]
 	if exists {
 		service := *servicePtr
 		if len(service.Annotations) > 0 {
@@ -74,8 +78,8 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 			if clusterId, clusterIDExists := service.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; clusterIDExists {
 				endpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = clusterId
 			}
-			if withGateway {
-				if sink.DiscClient.IsInternalServices() {
+			if t.controller.GetC2KWithGateway() {
+				if syncer.discClient.IsInternalServices() {
 					endpoints.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
 			}
@@ -106,13 +110,13 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 			}
 			if len(endpointSubset.Addresses) > 0 {
 				endpoints.Subsets = []apiv1.EndpointSubset{endpointSubset}
-				eptClient := sink.KubeClient.CoreV1().Endpoints(sink.namespace())
+				eptClient := syncer.kubeClient.CoreV1().Endpoints(syncer.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-					if updatedEpt, err := eptClient.Update(sink.Ctx, endpoints, metav1.UpdateOptions{}); err != nil {
+					if updatedEpt, err := eptClient.Update(syncer.ctx, endpoints, metav1.UpdateOptions{}); err != nil {
 						log.Warn().Err(err).Msgf("error update endpoints, name:%s", service.Name)
 						return err
 					} else {
-						t.updateGatewayEndpointSlice(sink.Ctx, updatedEpt)
+						t.updateGatewayEndpointSlice(syncer.ctx, updatedEpt)
 					}
 					return nil
 				})
@@ -123,16 +127,16 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 }
 
 func (t *endpointsResource) Delete(key string, _ interface{}) error {
-	sink := t.sink
-	sink.lock.Lock()
-	defer sink.lock.Unlock()
+	syncer := t.syncer
+	syncer.lock.Lock()
+	defer syncer.lock.Unlock()
 
-	name, ok := t.endpointsKeyToName[key]
+	name, ok := t.controller.GetC2KContext().EndpointsKeyToName[key]
 	if !ok {
 		return nil
 	}
 
-	delete(t.endpointsKeyToName, key)
+	delete(t.controller.GetC2KContext().EndpointsKeyToName, key)
 
 	log.Info().Msgf("delete endpoints, key:%s name:%s", key, name)
 	return nil
@@ -140,9 +144,9 @@ func (t *endpointsResource) Delete(key string, _ interface{}) error {
 
 func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endpoints *apiv1.Endpoints) {
 	endpointsDup := endpoints.DeepCopy()
-	sink := t.sink
+	syncer := t.syncer
 	_ = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		eptSliceClient := sink.KubeClient.DiscoveryV1().EndpointSlices(endpointsDup.Namespace)
+		eptSliceClient := syncer.kubeClient.DiscoveryV1().EndpointSlices(endpointsDup.Namespace)
 		labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{
 			constants.KubernetesEndpointSliceServiceNameLabel: endpointsDup.Name,
 		}}
@@ -188,7 +192,7 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 		newEpSlice.Ports = ports
 		newEpSlice.Endpoints = epts
 
-		_, err = eptSliceClient.Update(sink.Ctx, newEpSlice, metav1.UpdateOptions{})
+		_, err = eptSliceClient.Update(syncer.ctx, newEpSlice, metav1.UpdateOptions{})
 		if err != nil {
 			log.Error().Msgf("error updating EndpointSlice, name:%s warn:%v", newEpSlice.Name, err)
 		}

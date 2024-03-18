@@ -4,8 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"golang.org/x/time/rate"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
@@ -38,6 +40,7 @@ type client struct {
 	connectorSpec     interface{}
 	connectorUID      string
 	connectorHash     uint64
+	clusterSet        string
 
 	informers     *informers.InformerCollection
 	msgBroker     *messaging.Broker
@@ -48,17 +51,20 @@ type client struct {
 	kubeConfig    *rest.Config
 	kubeClient    kubernetes.Interface
 	configClient  configClientset.Interface
+	discClient    connector.ServiceDiscoveryClient
 	machineClient machineClientset.Interface
-	//discClient    provider.ServiceDiscoveryClient
+	gatewayClient gwapi.Interface
 
 	lock        sync.Mutex
+	limiter     *rate.Limiter
 	context     context.Context
 	cancelFuncs []context.CancelFunc
-}
 
-// connectorControllerJob is the job to generate pipy policy json
-type connectorControllerJob struct {
-	// Optional waiter
-	done                chan struct{}
-	connectorController connector.ConnectorController
+	c2kContext *connector.C2KContext
+	k2cContext *connector.K2CContext
+	k2gContext *connector.K2GContext
+
+	serviceInstanceIDFunc connector.ServiceInstanceIDFunc
+
+	config
 }

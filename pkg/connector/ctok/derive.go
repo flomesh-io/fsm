@@ -8,16 +8,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
-var (
-	syncCloudNamespace string
-	withGateway        bool
-)
-
-// SetSyncCloudNamespace sets sync namespace
-func SetSyncCloudNamespace(ns string) {
-	syncCloudNamespace = ns
-}
-
 // IsSyncCloudNamespace if sync namespace
 func IsSyncCloudNamespace(ns *corev1.Namespace) bool {
 	if ns != nil {
@@ -37,9 +27,4 @@ func (addr MicroEndpointAddr) To4() net.IP {
 // If ip is not an IP address (it is the wrong length), To16 returns nil.
 func (addr MicroEndpointAddr) To16() net.IP {
 	return net.ParseIP(string(addr)).To16()
-}
-
-// WithGateway sets enable or disable
-func WithGateway(enable bool) {
-	withGateway = enable
 }

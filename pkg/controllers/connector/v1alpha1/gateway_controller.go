@@ -34,7 +34,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -58,7 +58,7 @@ func NewGatewayConnectorReconciler(ctx *fctx.ControllerContext) controllers.Reco
 
 // Reconcile reconciles a Gateway resource
 func (r *gatewayConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	connector := &connectorv1alpha1.GatewayConnector{}
+	connector := &ctv1.GatewayConnector{}
 	if err := r.fctx.Get(
 		ctx,
 		req.NamespacedName,
@@ -92,8 +92,8 @@ func (r *gatewayConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Req
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&connectorv1alpha1.GatewayConnector{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
-			_, ok := obj.(*connectorv1alpha1.GatewayConnector)
+		For(&ctv1.GatewayConnector{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+			_, ok := obj.(*ctv1.GatewayConnector)
 			if !ok {
 				log.Error().Msgf("unexpected object type %T", obj)
 			}
