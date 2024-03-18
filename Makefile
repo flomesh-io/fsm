@@ -84,17 +84,21 @@ pkg/controllers/namespacedingress/v1alpha1/chart.tgz: scripts/generate_chart/gen
 pkg/controllers/gateway/v1beta1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/gateway)
 	go run $< --chart-name=gateway > $@
 
+pkg/controllers/connector/v1alpha1/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/connector)
+	go run $< --chart-name=connector > $@
+
 helm-update-dep: helm
 	$(HELM) dependency update charts/fsm/
 	$(HELM) dependency update charts/gateway/
 	$(HELM) dependency update charts/namespaced-ingress/
+	$(HELM) dependency update charts/connector/
 
 .PHONY: package-scripts
 package-scripts: ## Tar all repo initializing scripts
 	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
 
 .PHONY: charts-tgz
-charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1beta1/chart.tgz
+charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1beta1/chart.tgz pkg/controllers/connector/v1alpha1/chart.tgz
 
 .PHONY: clean-fsm
 clean-fsm:
@@ -111,6 +115,9 @@ chart-readme:
 .PHONY: chart-check-readme
 chart-check-readme: chart-readme
 	@git diff --exit-code charts/fsm/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
+	@git diff --exit-code charts/gateway/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
+	@git diff --exit-code charts/namespaced-ingress/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
+	@git diff --exit-code charts/connector/README.md || { echo "----- Please commit the changes made by 'make chart-readme' -----"; exit 1; }
 
 .PHONY: helm-lint
 helm-lint:
@@ -261,15 +268,20 @@ docker-build-fsm-gateway:
 TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
 FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
 E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
+MIN_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
 DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))
+DOCKER_MIN_TARGETS = $(addprefix docker-build-, $(MIN_TARGETS))
 
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
 .PHONY: docker-build-e2e
 docker-build-e2e: charts-tgz $(DOCKER_E2E_TARGETS)
+
+.PHONY: docker-build-min
+docker-build-min: charts-tgz $(DOCKER_MIN_TARGETS)
 
 .PHONY: buildx-context
 buildx-context:

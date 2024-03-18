@@ -90,6 +90,9 @@ generate_client "plugin" "v1alpha1"
 echo "##### Generating flomesh.io machine client ######"
 generate_client "machine" "v1alpha1"
 
+echo "##### Generating flomesh.io connector client ######"
+generate_client "connector" "v1alpha1"
+
 echo "##### Generating flomesh.io NamespacedIngress client ######"
 generate_client "namespacedingress" "v1alpha1"
 

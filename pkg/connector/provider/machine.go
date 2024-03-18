@@ -7,25 +7,24 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 )
 
 type MachineDiscoveryClient struct {
-	machineClient      machineClientset.Interface
-	deriveNamespace    string
-	isInternalServices bool
-	clusterId          string
+	connectController connector.ConnectController
+	machineClient     machineClientset.Interface
 }
 
 func (dc *MachineDiscoveryClient) IsInternalServices() bool {
-	return dc.isInternalServices
+	return dc.connectController.AsInternalServices()
 }
 
-func (dc *MachineDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][]string, error) {
+func (dc *MachineDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.deriveNamespace).List(ctx, metav1.ListOptions{})
+	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.connectController.GetDeriveNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -51,22 +50,21 @@ func (dc *MachineDiscoveryClient) CatalogServices(q *QueryOptions) (map[string][
 	return catalogServices, nil
 }
 
-// HealthService is used to query catalog entries for a given service
-func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptions, _ bool) ([]*AgentService, error) {
+func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.QueryOptions) ([]*connector.AgentService, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.deriveNamespace).List(ctx, metav1.ListOptions{})
+	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.connectController.GetDeriveNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	agentServices := make([]*AgentService, 0)
+	agentServices := make([]*connector.AgentService, 0)
 	if len(vms.Items) > 0 {
 		for _, vm := range vms.Items {
 			updateVM := false
 			if clusterId, exists := vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; exists {
-				if len(dc.clusterId) > 0 {
-					if !strings.EqualFold(dc.clusterId, clusterId) {
-						vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.clusterId
+				if len(dc.connectController.GetClusterId()) > 0 {
+					if !strings.EqualFold(dc.connectController.GetClusterId(), clusterId) {
+						vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.connectController.GetClusterId()
 						updateVM = true
 					}
 				} else {
@@ -74,18 +72,18 @@ func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptio
 					updateVM = true
 				}
 			} else {
-				if len(dc.clusterId) > 0 {
-					vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.clusterId
+				if len(dc.connectController.GetClusterId()) > 0 {
+					vm.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = dc.connectController.GetClusterId()
 					updateVM = true
 				}
 			}
 			if _, internal := vm.Annotations[connector.AnnotationMeshServiceInternalSync]; internal {
-				if !dc.isInternalServices {
+				if !dc.connectController.AsInternalServices() {
 					delete(vm.Annotations, connector.AnnotationMeshServiceInternalSync)
 					updateVM = true
 				}
 			} else {
-				if dc.isInternalServices {
+				if dc.connectController.AsInternalServices() {
 					vm.Annotations[connector.AnnotationMeshServiceInternalSync] = "true"
 				}
 			}
@@ -101,9 +99,9 @@ func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptio
 			}
 			for _, svc := range vm.Spec.Services {
 				if strings.EqualFold(svc.ServiceName, service) {
-					agentService := new(AgentService)
-					agentService.fromVM(vm, svc)
-					agentService.ClusterId = dc.clusterId
+					agentService := new(connector.AgentService)
+					agentService.FromVM(vm, svc)
+					agentService.ClusterId = dc.connectController.GetClusterId()
 					agentServices = append(agentServices, agentService)
 				}
 			}
@@ -112,45 +110,53 @@ func (dc *MachineDiscoveryClient) HealthService(service, _ string, _ *QueryOptio
 	return agentServices, nil
 }
 
-// CatalogService is used to query catalog entries for a given service
-func (dc *MachineDiscoveryClient) CatalogService(service, tag string, q *QueryOptions) ([]*CatalogService, error) {
+// RegisteredInstances is used to query catalog entries for a given service
+func (dc *MachineDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
 	// useless
-	catalogServices := make([]*CatalogService, 0)
+	catalogServices := make([]*connector.CatalogService, 0)
 	return catalogServices, nil
 }
 
-func (dc *MachineDiscoveryClient) NodeServiceList(node string, q *QueryOptions) (*CatalogNodeServiceList, error) {
+func (dc *MachineDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
 	// useless
 	return nil, nil
 }
 
-func (dc *MachineDiscoveryClient) Deregister(dereg *CatalogDeregistration) error {
+func (dc *MachineDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
 	// useless
 	return nil
 }
 
-func (dc *MachineDiscoveryClient) Register(reg *CatalogRegistration) error {
+func (dc *MachineDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
 	// useless
 	return nil
 }
 
-// EnsureNamespaceExists ensures a Consul namespace with name ns exists. If it doesn't,
-// it will create it and set crossNSACLPolicy as a policy default.
-// Boolean return value indicates if the namespace was created by this call.
-func (dc *MachineDiscoveryClient) EnsureNamespaceExists(ns string, crossNSAClPolicy string) (bool, error) {
+func (dc *MachineDiscoveryClient) EnableNamespaces() bool {
+	return false
+}
+
+// EnsureNamespaceExists ensures a namespace with name ns exists.
+func (dc *MachineDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error) {
 	// useless
 	return false, nil
 }
 
-func (dc *MachineDiscoveryClient) MicroServiceProvider() string {
-	return connector.MachineDiscoveryService
+// RegisteredNamespace returns the cloud namespace that a service should be
+// registered in based on the namespace options. It returns an
+// empty string if namespaces aren't enabled.
+func (dc *MachineDiscoveryClient) RegisteredNamespace(kubeNS string) string {
+	return ""
 }
 
-func GetMachineDiscoveryClient(machineClient machineClientset.Interface, deriveNamespace string, isInternalServices bool, clusterId string) (*MachineDiscoveryClient, error) {
+func (dc *MachineDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProvider {
+	return ctv1.MachineDiscoveryService
+}
+
+func GetMachineDiscoveryClient(connectController connector.ConnectController,
+	machineClient machineClientset.Interface) (*MachineDiscoveryClient, error) {
 	machineDiscoveryClient := new(MachineDiscoveryClient)
+	machineDiscoveryClient.connectController = connectController
 	machineDiscoveryClient.machineClient = machineClient
-	machineDiscoveryClient.deriveNamespace = deriveNamespace
-	machineDiscoveryClient.isInternalServices = isInternalServices
-	machineDiscoveryClient.clusterId = clusterId
 	return machineDiscoveryClient, nil
 }
