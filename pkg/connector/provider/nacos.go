@@ -272,7 +272,7 @@ func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]c
 
 func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
 	ins := *dereg.ToNacos()
-	return dc.connectController.CacheDeregisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, int(ins.Port), 0), func() error {
+	return dc.connectController.CacheDeregisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, ins.Port, 0), func() error {
 		_, err := dc.nacosClient().DeregisterInstance(ins)
 		return err
 	})
@@ -297,7 +297,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 			rMetadata[metadata.Key] = metadata.Value
 		}
 	}
-	return dc.connectController.CacheRegisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, int(ins.Port), 0), ins, func() error {
+	return dc.connectController.CacheRegisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, ins.Port, 0), ins, func() error {
 		_, err := dc.nacosClient().RegisterInstance(*ins)
 		return err
 	})
@@ -323,7 +323,7 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProv
 	return ctv1.NacosDiscoveryService
 }
 
-func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort, _ int) string {
+func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort, _ uint64) string {
 	k2cGroupId := dc.connectController.GetNacosGroupId()
 	if len(k2cGroupId) == 0 {
 		k2cGroupId = constant.DEFAULT_GROUP

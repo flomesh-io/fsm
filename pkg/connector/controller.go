@@ -35,7 +35,7 @@ type ConnectController interface {
 	SetClusterSet(name, group, zone, region string)
 
 	SetServiceInstanceIDFunc(f ServiceInstanceIDFunc)
-	GetServiceInstanceID(name, addr string, httpPort, grpcPort int) string
+	GetServiceInstanceID(name, addr string, httpPort, grpcPort uint64) string
 
 	/* config for ctok source */
 
@@ -137,4 +137,4 @@ type ConnectController interface {
 	CacheCleaner(stopCh <-chan struct{})
 }
 
-type ServiceInstanceIDFunc func(name, addr string, httpPort, grpcPort int) string
+type ServiceInstanceIDFunc func(name, addr string, httpPort, grpcPort uint64) string
