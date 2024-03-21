@@ -29,6 +29,7 @@ func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
+			c.updateConnectorMetrics()
 
 			newJob := func() *connectControllerJob {
 				return &connectControllerJob{
@@ -42,8 +43,6 @@ func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 				reconfirm = false
 				slidingTimer.Reset(c.GetSyncPeriod())
 			}
-
-			c.updateConnectorMetrics()
 		}
 	}
 }
