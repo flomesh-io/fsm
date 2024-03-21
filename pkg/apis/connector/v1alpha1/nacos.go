@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -15,6 +16,8 @@ import (
 // +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
 // +kubebuilder:printcolumn:name="SyncToK8S",type=string,JSONPath=`.spec.syncToK8S.enable`
 // +kubebuilder:printcolumn:name="SyncFromK8S",type=string,JSONPath=`.spec.syncFromK8S.enable`
+// +kubebuilder:printcolumn:name="toK8SServices",type=integer,JSONPath=`.status.toK8SServiceCnt`
+// +kubebuilder:printcolumn:name="fromK8SServices",type=integer,JSONPath=`.status.fromK8SServiceCnt`
 
 // NacosConnector is the type used to represent a Nacos Connector resource.
 type NacosConnector struct {
@@ -35,6 +38,14 @@ type NacosConnector struct {
 
 func (c *NacosConnector) GetProvider() DiscoveryServiceProvider {
 	return NacosDiscoveryService
+}
+
+func (c *NacosConnector) GetReplicas() *int32 {
+	return c.Spec.Replicas
+}
+
+func (c *NacosConnector) GetResources() *corev1.ResourceRequirements {
+	return &c.Spec.Resources
 }
 
 // NacosSyncToK8SSpec is the type used to represent the sync from Nacos to K8S specification.
@@ -148,12 +159,25 @@ type NacosSpec struct {
 	// +optional
 	Auth NacosAuthSpec `json:"auth,omitempty"`
 
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="5s"
+	// +optional
+	SyncPeriod  metav1.Duration      `json:"syncPeriod"`
 	SyncToK8S   NacosSyncToK8SSpec   `json:"syncToK8S"`
 	SyncFromK8S NacosSyncFromK8SSpec `json:"syncFromK8S"`
 
 	// +kubebuilder:default={limit:500, burst:750}
 	// +optional
 	Limiter *Limiter `json:"Limiter,omitempty"`
+
+	// Compute Resources required by connector container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // NacosAuthSpec is the type used to represent the Nacos auth specification.
@@ -188,6 +212,10 @@ type NacosStatus struct {
 	// Reason defines the reason for the current status of a Nacos Connector resource.
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
+
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

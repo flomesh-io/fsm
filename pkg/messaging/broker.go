@@ -47,14 +47,14 @@ const (
 
 	// serviceUpdateMaxWindow is the max window duration used to batch service update events, and is
 	// the max amount of time a service update event can be held for batching before being dispatched.
-	serviceUpdateMaxWindow = 10 * time.Second
+	serviceUpdateMaxWindow = 5 * time.Second
 
 	// connectorUpdateSlidingWindow is the sliding window duration used to batch connector update events
 	connectorUpdateSlidingWindow = 2 * time.Second
 
 	// connectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
 	// the max amount of time a connector update event can be held for batching before being dispatched.
-	connectorUpdateMaxWindow = 10 * time.Second
+	connectorUpdateMaxWindow = 5 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine

@@ -90,7 +90,7 @@ func (s *KtoGSyncer) Run(ctx context.Context, ctrls ...*connector.CacheControlle
 		}
 	}
 
-	reconcileTimer := time.NewTimer(s.controller.GetK2GSyncPeriod())
+	reconcileTimer := time.NewTimer(s.controller.GetSyncPeriod())
 	defer reconcileTimer.Stop()
 
 	for {
@@ -101,7 +101,7 @@ func (s *KtoGSyncer) Run(ctx context.Context, ctrls ...*connector.CacheControlle
 
 		case <-reconcileTimer.C:
 			s.syncFull(ctx)
-			reconcileTimer.Reset(s.controller.GetK2GSyncPeriod())
+			reconcileTimer.Reset(s.controller.GetSyncPeriod())
 		}
 	}
 }

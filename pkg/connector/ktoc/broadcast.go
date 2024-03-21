@@ -9,13 +9,12 @@ import (
 )
 
 // BroadcastListener listens for broadcast messages from the message broker
-func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}) {
+func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.Duration) {
 	// Register for service config updates broadcast by the message broker
 	serviceUpdatePubSub := t.msgBroker.GetServiceUpdatePubSub()
 	serviceUpdateChan := serviceUpdatePubSub.Sub(announcements.ServiceUpdate.String())
 	defer t.msgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
 
-	// Wait for two informer synchronization periods
 	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
 
@@ -43,7 +42,7 @@ func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}) {
 				lastServiceDetas = serviceDetas
 			}
 
-			slidingTimer.Reset(time.Second * 5)
+			slidingTimer.Reset(syncPeriod)
 		}
 	}
 }

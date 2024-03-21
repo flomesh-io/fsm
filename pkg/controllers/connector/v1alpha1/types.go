@@ -31,6 +31,7 @@ import (
 
 	"helm.sh/helm/v3/pkg/strvals"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -105,6 +106,12 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 		fmt.Sprintf("fsm.cloudConnector.enable=%t", true),
 		fmt.Sprintf("fsm.cloudConnector.connectorProvider=%s", connector.GetProvider()),
 		fmt.Sprintf("fsm.cloudConnector.connectorName=%s", connector.GetName()),
+
+		fmt.Sprintf("fsm.cloudConnector.replicaCount=%d", replicas(connector, 1)),
+		fmt.Sprintf("fsm.cloudConnector.resource.requests.cpu='%s'", requestsCpu(connector, resource.MustParse("0.5")).String()),
+		fmt.Sprintf("fsm.cloudConnector.resource.requests.memory=%s", requestsMem(connector, resource.MustParse("128M")).String()),
+		fmt.Sprintf("fsm.cloudConnector.resource.limits.cpu='%s'", limitsCpu(connector, resource.MustParse("1")).String()),
+		fmt.Sprintf("fsm.cloudConnector.resource.limits.memory=%s", limitsMem(connector, resource.MustParse("1G")).String()),
 	}
 
 	for _, ov := range overrides {
@@ -114,4 +121,75 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 	}
 
 	return finalValues, nil
+}
+
+func replicas(connector ctv1.Connector, defVal int32) int32 {
+	if connector.GetReplicas() == nil {
+		return defVal
+	}
+	return *connector.GetReplicas()
+}
+
+func requestsCpu(connector ctv1.Connector, defVal resource.Quantity) *resource.Quantity {
+	if connector.GetResources() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Requests.Cpu() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Requests.Cpu().Value() == 0 {
+		return &defVal
+	}
+
+	return connector.GetResources().Requests.Cpu()
+}
+
+func requestsMem(connector ctv1.Connector, defVal resource.Quantity) *resource.Quantity {
+	if connector.GetResources() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Requests.Memory() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Requests.Memory().Value() == 0 {
+		return &defVal
+	}
+
+	return connector.GetResources().Requests.Memory()
+}
+
+func limitsCpu(connector ctv1.Connector, defVal resource.Quantity) *resource.Quantity {
+	if connector.GetResources() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Limits.Cpu() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Limits.Cpu().Value() == 0 {
+		return &defVal
+	}
+
+	return connector.GetResources().Limits.Cpu()
+}
+
+func limitsMem(connector ctv1.Connector, defVal resource.Quantity) *resource.Quantity {
+	if connector.GetResources() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Limits.Memory() == nil {
+		return &defVal
+	}
+
+	if connector.GetResources().Limits.Memory().Value() == 0 {
+		return &defVal
+	}
+
+	return connector.GetResources().Limits.Memory()
 }

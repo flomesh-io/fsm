@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"golang.org/x/time/rate"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -14,6 +15,7 @@ import (
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -27,6 +29,7 @@ func NewConnectController(provider, connector string,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
 	configClient configClientset.Interface,
+	connectorClient connectorClientset.Interface,
 	machineClient machineClientset.Interface,
 	gatewayClient gwapi.Interface,
 	informerCollection *fsminformers.InformerCollection,
@@ -37,6 +40,7 @@ func NewConnectController(provider, connector string,
 		kubeConfig,
 		kubeClient,
 		configClient,
+		connectorClient,
 		machineClient,
 		gatewayClient,
 		informerCollection,
@@ -49,6 +53,7 @@ func newClient(provider, connectorName string,
 	kubeConfig *rest.Config,
 	kubeClient kubernetes.Interface,
 	configClient configClientset.Interface,
+	connectorClient connectorClientset.Interface,
 	machineClient machineClientset.Interface,
 	gatewayClient gwapi.Interface,
 	informerCollection *fsminformers.InformerCollection,
@@ -59,12 +64,13 @@ func newClient(provider, connectorName string,
 		connectorProvider: provider,
 		connectorName:     connectorName,
 
-		context:       context,
-		kubeConfig:    kubeConfig,
-		kubeClient:    kubeClient,
-		configClient:  configClient,
-		machineClient: machineClient,
-		gatewayClient: gatewayClient,
+		context:         context,
+		kubeConfig:      kubeConfig,
+		kubeClient:      kubeClient,
+		configClient:    configClient,
+		connectorClient: connectorClient,
+		machineClient:   machineClient,
+		gatewayClient:   gatewayClient,
 
 		c2kContext: connector.NewC2KContext(),
 		k2cContext: connector.NewK2CContext(),
@@ -76,6 +82,11 @@ func newClient(provider, connectorName string,
 		msgWorkQueues:     workerpool.NewWorkerPool(0),
 
 		limiter: rate.NewLimiter(0, 0),
+
+		cache: cache{
+			catalogInstances:    connector.NewConcurrentMap[*catalogTimeScale](),
+			registeredInstances: connector.NewConcurrentMap[*registerTimeScale](),
+		},
 	}
 
 	// Initialize informers
@@ -200,36 +211,41 @@ func (c *client) GetGatewayConnector(connector string) *ctv1.GatewayConnector {
 }
 
 // GetConnector returns a Connector resource if found, nil otherwise.
-func (c *client) GetConnector() (spec interface{}, uid string, ok bool) {
+func (c *client) GetConnector() (connector, spec interface{}, uid string, ok bool) {
 	switch c.GetConnectorProvider() {
 	case ctv1.ConsulDiscoveryService:
-		if connector := c.GetConsulConnector(c.GetConnectorName()); connector != nil {
-			spec = connector.Spec
-			uid = string(connector.UID)
+		if consulConnector := c.GetConsulConnector(c.GetConnectorName()); consulConnector != nil {
+			connector = consulConnector
+			spec = consulConnector.Spec
+			uid = string(consulConnector.UID)
 			ok = true
 		}
 	case ctv1.EurekaDiscoveryService:
-		if connector := c.GetEurekaConnector(c.GetConnectorName()); connector != nil {
-			spec = connector.Spec
-			uid = string(connector.UID)
+		if eurekaConnector := c.GetEurekaConnector(c.GetConnectorName()); eurekaConnector != nil {
+			connector = eurekaConnector.Spec
+			spec = eurekaConnector.Spec
+			uid = string(eurekaConnector.UID)
 			ok = true
 		}
 	case ctv1.NacosDiscoveryService:
-		if connector := c.GetNacosConnector(c.GetConnectorName()); connector != nil {
-			spec = connector.Spec
-			uid = string(connector.UID)
+		if nacosConnector := c.GetNacosConnector(c.GetConnectorName()); nacosConnector != nil {
+			connector = nacosConnector.Spec
+			spec = nacosConnector.Spec
+			uid = string(nacosConnector.UID)
 			ok = true
 		}
 	case ctv1.MachineDiscoveryService:
-		if connector := c.GetMachineConnector(c.GetConnectorName()); connector != nil {
-			spec = connector.Spec
-			uid = string(connector.UID)
+		if machineConnector := c.GetMachineConnector(c.GetConnectorName()); machineConnector != nil {
+			connector = machineConnector.Spec
+			spec = machineConnector.Spec
+			uid = string(machineConnector.UID)
 			ok = true
 		}
 	case ctv1.GatewayDiscoveryService:
-		if connector := c.GetGatewayConnector(c.GetConnectorName()); connector != nil {
-			spec = connector.Spec
-			uid = string(connector.UID)
+		if gatewayConnector := c.GetGatewayConnector(c.GetConnectorName()); gatewayConnector != nil {
+			connector = gatewayConnector.Spec
+			spec = gatewayConnector.Spec
+			uid = string(gatewayConnector.UID)
 			ok = true
 		}
 	default:
@@ -276,4 +292,77 @@ func (c *client) GetServiceInstanceID(name, addr string, httpPort, grpcPort int)
 		return strings.ToLower(fmt.Sprintf("%s-%s-%d-%d-%s", name, addr, httpPort, grpcPort, c.clusterSet))
 	}
 	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, httpPort, c.clusterSet))
+}
+
+func (c *client) updateConnectorMetrics() {
+	toK8sServiceCnt := len(c.c2kContext.ServiceKeyToName)
+	fromK8sServiceCnt := c.k2cContext.ServiceMap.Count() + c.k2cContext.IngressServiceMap.Count()
+
+	if c.toK8sServiceCnt == toK8sServiceCnt && c.fromK8sServiceCnt == fromK8sServiceCnt {
+		return
+	}
+
+	if connector, _, _, exists := c.GetConnector(); exists {
+		if consulConnector, ok := connector.(*ctv1.ConsulConnector); ok {
+			if toK8sServiceCnt >= 0 {
+				consulConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			}
+			if fromK8sServiceCnt >= 0 {
+				consulConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
+			}
+			if _, err := c.connectorClient.ConnectorV1alpha1().ConsulConnectors().
+				UpdateStatus(c.context, consulConnector, metav1.UpdateOptions{}); err != nil {
+				log.Error().Err(err)
+			} else {
+				c.toK8sServiceCnt = toK8sServiceCnt
+				c.fromK8sServiceCnt = fromK8sServiceCnt
+			}
+			return
+		}
+		if eurekaConnector, ok := connector.(*ctv1.EurekaConnector); ok {
+			if toK8sServiceCnt >= 0 {
+				eurekaConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			}
+			if fromK8sServiceCnt >= 0 {
+				eurekaConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
+			}
+			if _, err := c.connectorClient.ConnectorV1alpha1().EurekaConnectors().
+				UpdateStatus(c.context, eurekaConnector, metav1.UpdateOptions{}); err != nil {
+				log.Error().Err(err)
+			} else {
+				c.toK8sServiceCnt = toK8sServiceCnt
+				c.fromK8sServiceCnt = fromK8sServiceCnt
+			}
+			return
+		}
+		if nacosConnector, ok := connector.(*ctv1.NacosConnector); ok {
+			if toK8sServiceCnt >= 0 {
+				nacosConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			}
+			if fromK8sServiceCnt >= 0 {
+				nacosConnector.Status.FromK8SServiceCnt = fromK8sServiceCnt
+			}
+			if _, err := c.connectorClient.ConnectorV1alpha1().NacosConnectors().
+				UpdateStatus(c.context, nacosConnector, metav1.UpdateOptions{}); err != nil {
+				log.Error().Err(err)
+			} else {
+				c.toK8sServiceCnt = toK8sServiceCnt
+				c.fromK8sServiceCnt = fromK8sServiceCnt
+			}
+			return
+		}
+		if machineConnector, ok := connector.(*ctv1.MachineConnector); ok {
+			machineConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			if toK8sServiceCnt >= 0 {
+				machineConnector.Status.ToK8SServiceCnt = toK8sServiceCnt
+			}
+			if _, err := c.connectorClient.ConnectorV1alpha1().MachineConnectors().
+				UpdateStatus(c.context, machineConnector, metav1.UpdateOptions{}); err != nil {
+				log.Error().Err(err)
+			} else {
+				c.toK8sServiceCnt = toK8sServiceCnt
+				c.fromK8sServiceCnt = fromK8sServiceCnt
+			}
+		}
+	}
 }

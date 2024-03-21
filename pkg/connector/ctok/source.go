@@ -49,14 +49,14 @@ func (s *CtoKSource) Run(ctx context.Context) {
 	opts := (&connector.QueryOptions{
 		AllowStale: true,
 		WaitIndex:  1,
-		WaitTime:   5 * time.Second,
+		WaitTime:   s.controller.GetSyncPeriod(),
 	}).WithContext(ctx)
 	for {
-		// Get all services with tags.
-		var servicesMap map[string][]string
+		// Get all services.
+		var catalogServices []connector.MicroService
 		err := backoff.Retry(func() error {
 			var err error
-			servicesMap, err = s.discClient.CatalogServices(opts)
+			catalogServices, err = s.discClient.CatalogServices(opts)
 			return err
 		}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 
@@ -72,9 +72,9 @@ func (s *CtoKSource) Run(ctx context.Context) {
 		}
 
 		// Setup the services
-		services := make(map[MicroSvcName]MicroSvcDomainName, len(servicesMap))
-		for service := range servicesMap {
-			services[MicroSvcName(s.controller.GetPrefix()+service)] = MicroSvcDomainName(fmt.Sprintf("%s.service.%s", service, s.domain))
+		services := make(map[MicroSvcName]MicroSvcDomainName, len(catalogServices))
+		for _, svc := range catalogServices {
+			services[MicroSvcName(s.controller.GetPrefix()+svc.Service)] = MicroSvcDomainName(fmt.Sprintf("%s.service.%s", svc.Service, s.domain))
 		}
 		log.Trace().Msgf("received services from cloud, count:%d", len(services))
 		s.syncer.SetServices(services)
@@ -83,9 +83,7 @@ func (s *CtoKSource) Run(ctx context.Context) {
 }
 
 // Aggregate micro services
-//
-//lint:ignore U1000 ignore unused
-func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName, svcDomainName MicroSvcDomainName) map[MicroSvcName]*MicroSvcMeta {
+func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[MicroSvcName]*MicroSvcMeta {
 	if _, exists := s.syncer.controller.GetC2KContext().RawServices[string(svcName)]; !exists {
 		return nil
 	}
@@ -96,26 +94,26 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName, svcDom
 		WaitTime:   5 * time.Second,
 	}).WithContext(ctx)
 
-	serviceEntries, err := s.discClient.CatalogInstances(string(svcName), opts)
+	instanceEntries, err := s.discClient.CatalogInstances(string(svcName), opts)
 	if err != nil {
 		return nil
 	}
 
-	if len(serviceEntries) == 0 {
+	if len(instanceEntries) == 0 {
 		return nil
 	}
 
 	svcMetaMap := make(map[MicroSvcName]*MicroSvcMeta)
 
-	for _, svc := range serviceEntries {
-		httpPort := svc.HTTPPort
-		grpcPort := svc.GRPCPort
-		svcNames := []MicroSvcName{MicroSvcName(svc.Service)}
-		if len(svc.Tags) > 0 {
-			svcNames = s.aggregateTag(svcName, svc, svcNames)
+	for _, instance := range instanceEntries {
+		httpPort := instance.HTTPPort
+		grpcPort := instance.GRPCPort
+		svcNames := []MicroSvcName{MicroSvcName(instance.Service)}
+		if len(instance.Tags) > 0 {
+			svcNames = s.aggregateTag(svcName, instance, svcNames)
 		}
-		if len(svc.Meta) > 0 {
-			svcNames = s.aggregateMetadata(svcName, svc, svcNames)
+		if len(instance.Meta) > 0 {
+			svcNames = s.aggregateMetadata(svcName, instance, svcNames)
 		}
 		for _, serviceName := range svcNames {
 			svcMeta, exists := svcMetaMap[serviceName]
@@ -129,9 +127,9 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName, svcDom
 			if grpcPort > 0 {
 				svcMeta.Ports[MicroSvcPort(grpcPort)] = constants.ProtocolGRPC
 			}
-			svcMeta.Addresses[MicroEndpointAddr(svc.Address)] = 1
-			svcMeta.ClusterId = svc.ClusterId
-			svcMeta.HealthCheck = svc.HealthCheck
+			svcMeta.Addresses[MicroEndpointAddr(instance.Address)] = 1
+			svcMeta.ClusterId = instance.ClusterId
+			svcMeta.HealthCheck = instance.HealthCheck
 		}
 	}
 	return svcMetaMap
