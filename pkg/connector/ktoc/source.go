@@ -295,7 +295,9 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	}
 
 	baseService := connector.AgentService{
-		Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
+		MicroService: connector.MicroService{
+			Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
+		},
 		Meta: map[string]interface{}{
 			connector.ClusterSetKey: t.controller.GetClusterSet(),
 			connector.ConnectUIDKey: t.controller.GetConnectorUID(),

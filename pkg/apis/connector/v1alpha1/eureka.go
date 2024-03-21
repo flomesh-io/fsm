@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -15,6 +16,8 @@ import (
 // +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
 // +kubebuilder:printcolumn:name="SyncToK8S",type=string,JSONPath=`.spec.syncToK8S.enable`
 // +kubebuilder:printcolumn:name="SyncFromK8S",type=string,JSONPath=`.spec.syncFromK8S.enable`
+// +kubebuilder:printcolumn:name="toK8SServices",type=integer,JSONPath=`.status.toK8SServiceCnt`
+// +kubebuilder:printcolumn:name="fromK8SServices",type=integer,JSONPath=`.status.fromK8SServiceCnt`
 
 // EurekaConnector is the type used to represent a Eureka Connector resource.
 type EurekaConnector struct {
@@ -35,6 +38,14 @@ type EurekaConnector struct {
 
 func (c *EurekaConnector) GetProvider() DiscoveryServiceProvider {
 	return EurekaDiscoveryService
+}
+
+func (c *EurekaConnector) GetReplicas() *int32 {
+	return c.Spec.Replicas
+}
+
+func (c *EurekaConnector) GetResources() *corev1.ResourceRequirements {
+	return &c.Spec.Resources
 }
 
 // EurekaSyncToK8SSpec is the type used to represent the sync from Eureka to K8S specification.
@@ -122,12 +133,25 @@ type EurekaSpec struct {
 	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="5s"
+	// +optional
+	SyncPeriod  metav1.Duration       `json:"syncPeriod"`
 	SyncToK8S   EurekaSyncToK8SSpec   `json:"syncToK8S"`
 	SyncFromK8S EurekaSyncFromK8SSpec `json:"syncFromK8S"`
 
 	// +kubebuilder:default={limit:500, burst:750}
 	// +optional
 	Limiter *Limiter `json:"Limiter,omitempty"`
+
+	// Compute Resources required by connector container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // EurekaStatus is the type used to represent the status of a Eureka Connector resource.
@@ -139,6 +163,10 @@ type EurekaStatus struct {
 	// Reason defines the reason for the current status of a Eureka Connector resource.
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
+
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

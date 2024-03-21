@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -33,6 +34,8 @@ type Connector interface {
 	runtime.Object
 	metav1.Object
 	GetProvider() DiscoveryServiceProvider
+	GetReplicas() *int32
+	GetResources() *corev1.ResourceRequirements
 }
 
 type DiscoveryServiceProvider string

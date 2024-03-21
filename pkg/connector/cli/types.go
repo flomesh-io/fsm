@@ -11,6 +11,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
+	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
@@ -48,12 +49,15 @@ type client struct {
 	// msgWorkerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
 	msgWorkerPoolSize int
 
-	kubeConfig    *rest.Config
-	kubeClient    kubernetes.Interface
-	configClient  configClientset.Interface
-	discClient    connector.ServiceDiscoveryClient
-	machineClient machineClientset.Interface
-	gatewayClient gwapi.Interface
+	kubeConfig   *rest.Config
+	kubeClient   kubernetes.Interface
+	configClient configClientset.Interface
+
+	connectorClient connectorClientset.Interface
+	machineClient   machineClientset.Interface
+	gatewayClient   gwapi.Interface
+
+	discClient connector.ServiceDiscoveryClient
 
 	lock        sync.Mutex
 	limiter     *rate.Limiter
@@ -66,5 +70,7 @@ type client struct {
 
 	serviceInstanceIDFunc connector.ServiceInstanceIDFunc
 
-	config
+	toK8sServiceCnt, fromK8sServiceCnt int
+
+	cache
 }

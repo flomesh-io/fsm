@@ -51,7 +51,7 @@ fsm:
         memory: "1G"
       requests:
         cpu: "0.5"
-        memory: "256M"
+        memory: "128M"
     # -- Sidecar injector's pod labels
     podLabels: { }
     # -- Enable Pod Disruption Budget
