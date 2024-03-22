@@ -64,7 +64,7 @@ func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
+func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.MicroService, error) {
 	opts := q.ToConsul()
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
@@ -80,18 +80,13 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map
 	}
 	q.WaitIndex = meta.LastIndex
 
-	catalogServices := make(map[string][]string)
+	var catalogServices []connector.MicroService
 	if len(servicesMap) > 0 {
-		for svc, tags := range servicesMap {
+		for svc := range servicesMap {
 			if strings.EqualFold(svc, consulServiceName) {
 				continue
 			}
-			svcTags, exists := catalogServices[svc]
-			if !exists {
-				svcTags = make([]string, 0)
-			}
-			svcTags = append(svcTags, tags...)
-			catalogServices[svc] = svcTags
+			catalogServices = append(catalogServices, connector.MicroService{Service: svc})
 		}
 	}
 	return catalogServices, nil
@@ -154,31 +149,25 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	return agentServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
-	registeredServices := make([]*consul.AgentService, 0)
-
+func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.MicroService, error) {
+	var registeredServices []connector.MicroService
 	var opts = q.ToConsul()
 	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
 		connector.ConnectUIDKey,
 		dc.connectController.GetConnectorUID())
-	if servicesMap, meta, err := dc.consulClient().Catalog().Services(opts); err == nil {
+	servicesMap, meta, err := dc.consulClient().Catalog().Services(opts)
+	if err == nil {
 		q.WaitIndex = meta.LastIndex
 		if len(servicesMap) > 0 {
 			for svc := range servicesMap {
 				if strings.EqualFold(svc, consulServiceName) {
 					continue
 				}
-				agentService := &consul.AgentService{
-					Service: svc,
-				}
-				registeredServices = append(registeredServices, agentService)
+				registeredServices = append(registeredServices, connector.MicroService{Service: svc})
 			}
 		}
 	}
-
-	registeredServiceList := new(connector.RegisteredServiceList)
-	registeredServiceList.FromConsul(registeredServices)
-	return registeredServiceList, nil
+	return registeredServices, err
 }
 
 // RegisteredInstances is used to query catalog entries for a given service
@@ -202,8 +191,11 @@ func (dc *ConsulDiscoveryClient) RegisteredInstances(service string, q *connecto
 }
 
 func (dc *ConsulDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	_, err := dc.consulClient().Catalog().Deregister(dereg.ToConsul(), nil)
-	return err
+	ins := dereg.ToConsul()
+	return dc.connectController.CacheDeregisterInstance(ins.ServiceID, func() error {
+		_, err := dc.consulClient().Catalog().Deregister(ins, nil)
+		return err
+	})
 }
 
 func (dc *ConsulDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
@@ -242,8 +234,11 @@ func (dc *ConsulDiscoveryClient) Register(reg *connector.CatalogRegistration) er
 			ServiceName: ins.Service.Service,
 		},
 	}
-	_, err := dc.consulClient().Catalog().Register(ins, nil)
-	return err
+
+	return dc.connectController.CacheRegisterInstance(ins.Service.ID, ins, func() error {
+		_, err := dc.consulClient().Catalog().Register(ins, nil)
+		return err
+	})
 }
 
 const (

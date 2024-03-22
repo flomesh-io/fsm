@@ -107,14 +107,15 @@ func main() {
 	connectController := cli.NewConnectController(
 		cli.Cfg.SdrProvider, cli.Cfg.SdrConnector,
 		ctx, kubeConfig, kubeClient, configClient,
-		machineClient, gatewayClient,
+		connectorClient, machineClient, gatewayClient,
 		informerCollection, msgBroker)
 
 	connector.GatewayAPIEnabled = cfg.GetMeshConfig().Spec.GatewayAPI.Enabled
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connectController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	go connectController.BroadcastListener()
+	go connectController.BroadcastListener(stop)
+	go connectController.CacheCleaner(stop)
 
 	version.SetMetric()
 	/*

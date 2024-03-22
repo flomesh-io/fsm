@@ -10,7 +10,7 @@ import (
 
 // ConnectController is the controller interface for K8s connectors
 type ConnectController interface {
-	BroadcastListener()
+	BroadcastListener(stopCh <-chan struct{})
 
 	GetConnectorProvider() ctv1.DiscoveryServiceProvider
 	GetConnectorName() string
@@ -21,7 +21,7 @@ type ConnectController interface {
 	GetNacosConnector(connector string) *ctv1.NacosConnector
 	GetMachineConnector(connector string) *ctv1.MachineConnector
 	GetGatewayConnector(connector string) *ctv1.GatewayConnector
-	GetConnector() (spec interface{}, uid string, ok bool)
+	GetConnector() (connector, spec interface{}, uid string, ok bool)
 
 	Refresh()
 
@@ -87,7 +87,6 @@ type ConnectController interface {
 
 	/* config for ktog source */
 
-	GetK2GSyncPeriod() time.Duration
 	GetK2GDefaultSync() bool
 	GetK2GAllowK8SNamespaceSet() mapset.Set
 	GetK2GDenyK8SNamespaceSet() mapset.Set
@@ -131,6 +130,11 @@ type ConnectController interface {
 	GetHTTPAddr() string
 	GetDeriveNamespace() string
 	AsInternalServices() bool
+
+	CacheCatalogInstances(key string, catalogFunc func() (interface{}, error)) (interface{}, error)
+	CacheRegisterInstance(key string, instance interface{}, registerFunc func() error) error
+	CacheDeregisterInstance(key string, deregisterFunc func() error) error
+	CacheCleaner(stopCh <-chan struct{})
 }
 
 type ServiceInstanceIDFunc func(name, addr string, httpPort, grpcPort int) string

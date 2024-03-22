@@ -56,7 +56,7 @@ func (c *client) syncKtoC() {
 	serviceSource := ktoc.NewKtoCSource(c, syncer, ctx, msgBroker, c.kubeClient, c.discClient)
 	cacheCtl := &connector.CacheController{Resource: serviceSource}
 
-	go serviceSource.BroadcastListener(ctx.Done())
+	go serviceSource.BroadcastListener(ctx.Done(), c.GetSyncPeriod())
 	go cacheCtl.Run(ctx.Done())
 }
 

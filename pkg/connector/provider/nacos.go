@@ -80,8 +80,8 @@ func (dc *NacosDiscoveryClient) nacosClient() naming_client.INamingClient {
 	return dc.namingClient
 }
 
-func (dc *NacosDiscoveryClient) getAllServicesInfo() []string {
-	services := make([]string, 0)
+func (dc *NacosDiscoveryClient) selectServices() ([]string, error) {
+	var services []string
 	serviceSet := mapset.NewSet()
 	for _, group := range dc.connectController.GetNacos2KGroupSet() {
 		namespaceId := dc.connectController.GetAuthNacosNamespaceId()
@@ -102,109 +102,45 @@ func (dc *NacosDiscoveryClient) getAllServicesInfo() []string {
 					}
 				}
 			}
+		} else {
+			return nil, err
 		}
 	}
-	return services
+	return services, nil
 }
 
-func (dc *NacosDiscoveryClient) selectAllInstances(svc string) []model.Instance {
-	instances := make([]model.Instance, 0)
-	for _, group := range dc.connectController.GetNacos2KGroupSet() {
-		if groupInstances, err := dc.nacosClient().SelectAllInstances(vo.SelectAllInstancesParam{
-			ServiceName: svc,
-			GroupName:   group,
-			Clusters:    dc.connectController.GetNacos2KClusterSet(),
-		}); err == nil {
-			instances = append(instances, groupInstances...)
+func (dc *NacosDiscoveryClient) selectInstances(svc string) ([]model.Instance, error) {
+	result, err := dc.connectController.CacheCatalogInstances(svc, func() (interface{}, error) {
+		var instances []model.Instance
+		for _, group := range dc.connectController.GetNacos2KGroupSet() {
+			if groupInstances, err := dc.nacosClient().SelectInstances(vo.SelectInstancesParam{
+				ServiceName: svc,
+				GroupName:   group,
+				Clusters:    dc.connectController.GetNacos2KClusterSet(),
+				HealthyOnly: dc.connectController.GetPassingOnly(),
+			}); err == nil {
+				instances = append(instances, groupInstances...)
+			} else {
+				return nil, err
+			}
 		}
+		return instances, nil
+	})
+	if result != nil {
+		return result.([]model.Instance), err
 	}
-	return instances
-}
-
-func (dc *NacosDiscoveryClient) selectInstances(svc string, passingOnly bool) []model.Instance {
-	instances := make([]model.Instance, 0)
-	for _, group := range dc.connectController.GetNacos2KGroupSet() {
-		if groupInstances, err := dc.nacosClient().SelectInstances(vo.SelectInstancesParam{
-			ServiceName: svc,
-			GroupName:   group,
-			Clusters:    dc.connectController.GetNacos2KClusterSet(),
-			HealthyOnly: passingOnly,
-		}); err == nil {
-			instances = append(instances, groupInstances...)
-		}
-	}
-	return instances
+	return nil, err
 }
 
 func (dc *NacosDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *NacosDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
-	serviceList := dc.getAllServicesInfo()
-	catalogServices := make(map[string][]string)
-	if len(serviceList) > 0 {
-		for _, svc := range serviceList {
-			instances := dc.selectAllInstances(svc)
-			if len(instances) == 0 {
-				continue
-			}
-			for _, svcIns := range instances {
-				if clusterSet, clusterSetExist := svcIns.Metadata[connector.ClusterSetKey]; clusterSetExist {
-					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
-						continue
-					}
-				}
-				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
-					matched := true
-					for _, meta := range filterMetadatas {
-						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
-							if strings.EqualFold(metaSet, meta.Value) {
-								continue
-							}
-						}
-						matched = false
-						break
-					}
-					if !matched {
-						continue
-					}
-				}
-				svcTagArray, exists := catalogServices[svc]
-				if !exists {
-					svcTagArray = make([]string, 0)
-				}
-				for k, v := range svcIns.Metadata {
-					svcTagArray = append(svcTagArray, fmt.Sprintf("%s=%v", k, v))
-				}
-				catalogServices[svc] = svcTagArray
-			}
-		}
+func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.QueryOptions) ([]*connector.AgentService, error) {
+	instances, err := dc.selectInstances(service)
+	if err != nil {
+		return nil, err
 	}
-	return catalogServices, nil
-}
-
-// RegisteredInstances is used to query catalog entries for a given service
-func (dc *NacosDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
-	instances := dc.selectAllInstances(service)
-	catalogServices := make([]*connector.CatalogService, 0)
-	if len(instances) > 0 {
-		for _, instance := range instances {
-			instance := instance
-			if connectUID, connectUIDExist := instance.Metadata[connector.ConnectUIDKey]; connectUIDExist {
-				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-					catalogService := new(connector.CatalogService)
-					catalogService.FromNacos(&instance)
-					catalogServices = append(catalogServices, catalogService)
-				}
-			}
-		}
-	}
-	return catalogServices, nil
-}
-
-func (dc *NacosDiscoveryClient) CatalogInstances(service string, q *connector.QueryOptions) ([]*connector.AgentService, error) {
-	instances := dc.selectInstances(service, dc.connectController.GetPassingOnly())
 	agentServices := make([]*connector.AgentService, 0)
 	if len(instances) > 0 {
 		for _, ins := range instances {
@@ -238,9 +174,75 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, q *connector.Qu
 	return agentServices, nil
 }
 
-func (dc *NacosDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
-	serviceList := dc.getAllServicesInfo()
-	registeredServices := make([]*model.Instance, 0)
+func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+	serviceList, err := dc.selectServices()
+	if err != nil {
+		return nil, err
+	}
+	var catalogServices []connector.MicroService
+	if len(serviceList) > 0 {
+		for _, svc := range serviceList {
+			instances, _ := dc.selectInstances(svc)
+			if len(instances) == 0 {
+				continue
+			}
+			for _, svcIns := range instances {
+				if clusterSet, clusterSetExist := svcIns.Metadata[connector.ClusterSetKey]; clusterSetExist {
+					if strings.EqualFold(clusterSet, dc.connectController.GetClusterSet()) {
+						continue
+					}
+				}
+				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+					matched := true
+					for _, meta := range filterMetadatas {
+						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
+							if strings.EqualFold(metaSet, meta.Value) {
+								continue
+							}
+						}
+						matched = false
+						break
+					}
+					if !matched {
+						continue
+					}
+				}
+				catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+				break
+			}
+		}
+	}
+	return catalogServices, nil
+}
+
+// RegisteredInstances is used to query catalog entries for a given service
+func (dc *NacosDiscoveryClient) RegisteredInstances(service string, _ *connector.QueryOptions) ([]*connector.CatalogService, error) {
+	instances, err := dc.selectInstances(service)
+	if err != nil {
+		return nil, err
+	}
+	catalogServices := make([]*connector.CatalogService, 0)
+	if len(instances) > 0 {
+		for _, instance := range instances {
+			instance := instance
+			if connectUID, connectUIDExist := instance.Metadata[connector.ConnectUIDKey]; connectUIDExist {
+				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
+					catalogService := new(connector.CatalogService)
+					catalogService.FromNacos(&instance)
+					catalogServices = append(catalogServices, catalogService)
+				}
+			}
+		}
+	}
+	return catalogServices, nil
+}
+
+func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+	serviceList, err := dc.selectServices()
+	if err != nil {
+		return nil, err
+	}
+	var registeredServices []connector.MicroService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			svc := strings.ToLower(svc)
@@ -248,8 +250,7 @@ func (dc *NacosDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*
 				log.Info().Msgf("invalid format, ignore service: %s", svc)
 				continue
 			}
-			//instances := dc.selectAllInstances(svc)
-			instances := dc.selectInstances(svc, true)
+			instances, _ := dc.selectInstances(svc)
 			if len(instances) == 0 {
 				continue
 			}
@@ -258,22 +259,24 @@ func (dc *NacosDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*
 				if len(instance.Metadata) > 0 {
 					if connectUID, connectUIDExist := instance.Metadata[connector.ConnectUIDKey]; connectUIDExist {
 						if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-							registeredServices = append(registeredServices, &instance)
+							registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+							break
 						}
 					}
 				}
 			}
 		}
 	}
-	registeredServiceList := new(connector.RegisteredServiceList)
-	registeredServiceList.FromNacos(registeredServices)
-	return registeredServiceList, nil
+	return registeredServices, nil
 }
 
 func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	deregIns := *dereg.ToNacos()
-	_, err := dc.nacosClient().DeregisterInstance(deregIns)
-	return err
+	ins := *dereg.ToNacos()
+	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
+	return dc.connectController.CacheDeregisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0), func() error {
+		_, err := dc.nacosClient().DeregisterInstance(ins)
+		return err
+	})
 }
 
 func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
@@ -295,8 +298,11 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 			rMetadata[metadata.Key] = metadata.Value
 		}
 	}
-	_, err := dc.nacosClient().RegisterInstance(*ins)
-	return err
+	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
+	return dc.connectController.CacheRegisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0), ins, func() error {
+		_, err := dc.nacosClient().RegisterInstance(*ins)
+		return err
+	})
 }
 
 func (dc *NacosDiscoveryClient) EnableNamespaces() bool {
@@ -319,6 +325,21 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProv
 	return ctv1.NacosDiscoveryService
 }
 
+func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort, _ int) string {
+	k2cGroupId := dc.connectController.GetNacosGroupId()
+	if len(k2cGroupId) == 0 {
+		k2cGroupId = constant.DEFAULT_GROUP
+	}
+
+	k2cClusterId := dc.connectController.GetNacosClusterId()
+	if len(k2cClusterId) == 0 {
+		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
+	}
+
+	return fmt.Sprintf("%s#%d#%s#%s@@%s",
+		addr, httpPort, k2cClusterId, k2cGroupId, name)
+}
+
 func GetNacosDiscoveryClient(connectController connector.ConnectController) (*NacosDiscoveryClient, error) {
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.connectController = connectController
@@ -332,20 +353,6 @@ func GetNacosDiscoveryClient(connectController connector.ConnectController) (*Na
 		LogLevel:             "warn",
 	}
 
-	nacosDiscoveryClient.connectController.SetServiceInstanceIDFunc(
-		func(name, addr string, httpPort, grpcPort int) string {
-			k2cGroupId := connectController.GetNacosGroupId()
-			if len(k2cGroupId) == 0 {
-				k2cGroupId = constant.DEFAULT_GROUP
-			}
-
-			k2cClusterId := connectController.GetNacosClusterId()
-			if len(k2cClusterId) == 0 {
-				k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
-			}
-
-			return fmt.Sprintf("%s#%d#%s#%s@@%s",
-				addr, httpPort, k2cClusterId, k2cGroupId, name)
-		})
+	nacosDiscoveryClient.connectController.SetServiceInstanceIDFunc(nacosDiscoveryClient.getServiceInstanceID)
 	return nacosDiscoveryClient, nil
 }

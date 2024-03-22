@@ -140,7 +140,7 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 	// This prevents a lot of churn in services causing high CPU usage.
 	minWait := s.controller.GetSyncPeriod()
 	minWaitCh := time.After(minWait)
-	var services *connector.RegisteredServiceList
+	var services []connector.MicroService
 	var err error
 	for {
 		// Wait our minimum time before continuing or retrying
@@ -152,12 +152,11 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 			} else {
 				log.Debug().Msgf("[watchReapableServices] services returned from catalog services:%v",
 					services)
-				//fmt.Println(time.Now().Format(time.DateTime), "watchReapableServices:", len(services.Services))
 			}
 
 			minWaitCh = time.After(minWait)
 
-			if err != nil || services == nil || len(services.Services) == 0 {
+			if err != nil || len(services) == 0 {
 				continue
 			}
 
@@ -169,7 +168,7 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 		s.Lock()
 
 		// Go through the service array and find services that should be reaped
-		for _, service := range services.Services {
+		for _, service := range services {
 			// Check that the namespace exists in the valid service names map
 			// before checking whether it contains the service
 			svcNs := ""
@@ -251,7 +250,9 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 			deregistration := &connector.CatalogDeregistration{
 				Node:      svc.Node,
 				ServiceID: svc.ServiceID,
-				Service:   svc.ServiceName,
+				MicroService: connector.MicroService{
+					Service: svc.ServiceName,
+				},
 			}
 			if s.discClient.EnableNamespaces() {
 				deregistration.Namespace = namespace
@@ -280,26 +281,28 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 	}
 
 	// Only consider services that are tagged from k8s
-	services, err := s.discClient.RegisteredInstances(name, &opts)
+	instances, err := s.discClient.RegisteredInstances(name, &opts)
 	if err != nil {
 		return err
 	}
 
 	// Create deregistrations for all of these
-	for _, svc := range services {
+	for _, instance := range instances {
 		deregistration := &connector.CatalogDeregistration{
-			Node:      svc.Node,
-			ServiceID: svc.ServiceID,
-			Service:   svc.ServiceName,
+			Node:      instance.Node,
+			ServiceID: instance.ServiceID,
+			MicroService: connector.MicroService{
+				Service: instance.ServiceName,
+			},
 		}
 		if s.discClient.EnableNamespaces() {
 			deregistration.Namespace = namespace
 		}
-		s.controller.GetK2CContext().Deregs.Set(svc.ServiceID, deregistration)
-		log.Debug().Msgf("[scheduleReapServiceLocked] service being scheduled for deregistration namespace:%s service name:%s service id:%s",
+		s.controller.GetK2CContext().Deregs.Set(instance.ServiceID, deregistration)
+		log.Debug().Msgf("[scheduleReapServiceLocked] instance being scheduled for deregistration namespace:%s service name:%s service id:%s",
 			namespace,
-			svc.ServiceName,
-			svc.ServiceID)
+			instance.ServiceName,
+			instance.ServiceID)
 	}
 
 	return nil
@@ -439,7 +442,6 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 		}
 	}
 	regWg.Wait()
-	//fmt.Println(time.Now().Format(time.DateTime), "syncFull", "deregCnt:", deregCnt, "regCnt:", regCnt)
 }
 
 func (s *KtoCSyncer) Lock() {

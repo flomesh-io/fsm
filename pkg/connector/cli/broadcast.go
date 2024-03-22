@@ -7,26 +7,30 @@ import (
 )
 
 // BroadcastListener listens for broadcast messages from the message broker
-func (c *client) BroadcastListener() {
+func (c *client) BroadcastListener(stopCh <-chan struct{}) {
 	// Register for service config updates broadcast by the message broker
 	connectorUpdatePubSub := c.msgBroker.GetConnectorUpdatePubSub()
 	connectorUpdateChan := connectorUpdatePubSub.Sub(announcements.ConnectorUpdate.String())
 	defer c.msgBroker.Unsub(connectorUpdatePubSub, connectorUpdateChan)
 
 	// Wait for one informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 10)
+	slidingTimer := time.NewTimer(c.GetSyncPeriod())
 	defer slidingTimer.Stop()
 
 	reconfirm := true
 
 	for {
 		select {
+		case <-stopCh:
+			return
 		case <-connectorUpdateChan:
 			// Wait for an informer synchronization period
-			slidingTimer.Reset(time.Second * 5)
+			slidingTimer.Reset(c.GetSyncPeriod())
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
+			c.updateConnectorMetrics()
+
 			newJob := func() *connectControllerJob {
 				return &connectControllerJob{
 					done:              make(chan struct{}),
@@ -37,7 +41,7 @@ func (c *client) BroadcastListener() {
 
 			if reconfirm {
 				reconfirm = false
-				slidingTimer.Reset(time.Second * 10)
+				slidingTimer.Reset(c.GetSyncPeriod())
 			}
 		}
 	}

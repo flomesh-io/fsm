@@ -31,6 +31,11 @@ const (
 	NACOS_DEFAULT_CLUSTER    = "DEFAULT"
 )
 
+type MicroService struct {
+	Service   string
+	Namespace string
+}
+
 type ServiceAddress struct {
 	HostName string
 	Port     int32
@@ -78,11 +83,11 @@ func (aw *AgentWeights) FromConsul(w consul.AgentWeights) {
 
 // AgentService represents a service known to the agent
 type AgentService struct {
+	MicroService
+
 	ID          string
-	Service     string
 	InstanceId  string
 	ClusterId   string
-	Namespace   string
 	Address     string
 	HTTPPort    int
 	GRPCPort    int
@@ -204,10 +209,10 @@ func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 }
 
 type CatalogDeregistration struct {
+	MicroService
+
 	Node      string
 	ServiceID string
-	Service   string
-	Namespace string
 }
 
 func (cdr *CatalogDeregistration) ToConsul() *consul.CatalogDeregistration {
@@ -370,43 +375,6 @@ func (cs *CatalogService) FromNacos(svc *nacos.Instance) {
 	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
 }
 
-type RegisteredServiceList struct {
-	Services []*AgentService
-}
-
-func (rsl *RegisteredServiceList) FromConsul(instances []*consul.AgentService) {
-	if len(instances) == 0 {
-		return
-	}
-	for _, instance := range instances {
-		agentService := new(AgentService)
-		agentService.FromConsul(instance)
-		rsl.Services = append(rsl.Services, agentService)
-	}
-}
-
-func (rsl *RegisteredServiceList) FromEureka(instances []*eureka.Instance) {
-	if len(instances) == 0 {
-		return
-	}
-	for _, instance := range instances {
-		agentService := new(AgentService)
-		agentService.FromEureka(instance)
-		rsl.Services = append(rsl.Services, agentService)
-	}
-}
-
-func (rsl *RegisteredServiceList) FromNacos(instances []*nacos.Instance) {
-	if len(instances) == 0 {
-		return
-	}
-	for _, instance := range instances {
-		agentService := new(AgentService)
-		agentService.FromNacos(instance)
-		rsl.Services = append(rsl.Services, agentService)
-	}
-}
-
 // QueryOptions are used to parameterize a query
 type QueryOptions struct {
 	// AllowStale allows any Consul server (non-leader) to service
@@ -466,10 +434,10 @@ func (o *QueryOptions) ToConsul() *consul.QueryOptions {
 }
 
 type ServiceDiscoveryClient interface {
-	CatalogServices(q *QueryOptions) (map[string][]string, error)
+	CatalogServices(q *QueryOptions) ([]MicroService, error)
 	CatalogInstances(service string, q *QueryOptions) ([]*AgentService, error)
 	RegisteredInstances(service string, q *QueryOptions) ([]*CatalogService, error)
-	RegisteredServices(q *QueryOptions) (*RegisteredServiceList, error)
+	RegisteredServices(q *QueryOptions) ([]MicroService, error)
 	Register(reg *CatalogRegistration) error
 	Deregister(dereg *CatalogDeregistration) error
 	EnableNamespaces() bool
