@@ -1996,6 +1996,10 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  enabled:
+                    description: Enabled defines a boolean indicating if the sidecar
+                      is enabled. It implies if service mesh is enabled.
+                    type: boolean
                   localDNSProxy:
                     description: LocalDNSProxy improves the performance of your computer
                       by caching the responses coming from your DNS servers
@@ -2147,6 +2151,7 @@ spec:
                     type: string
                 required:
                 - enablePrivilegedInitContainer
+                - enabled
                 - sidecarDisabledMTLS
                 type: object
               traffic:
