@@ -12,8 +12,13 @@ func (c *client) Refresh() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if spec, uid, ok := c.GetConnector(); ok {
-		if hash, err := hashstructure.Hash(spec, hashstructure.FormatV2, nil); err == nil {
+	if _, spec, uid, ok := c.GetConnector(); ok {
+		if hash, err := hashstructure.Hash(spec, hashstructure.FormatV2,
+			&hashstructure.HashOptions{
+				ZeroNil:         true,
+				IgnoreZeroValue: true,
+				SlicesAsSets:    true,
+			}); err == nil {
 			if c.connectorHash == hash {
 				return
 			}
@@ -25,9 +30,6 @@ func (c *client) Refresh() {
 			c.connectorSpec = spec
 			c.connectorUID = uid
 			c.connectorHash = hash
-
-			//bytes, _ := json.MarshalIndent(spec, "", " ")
-			//fmt.Println(time.Now().Format(time.DateTime), "\n", string(bytes))
 
 			if len(c.cancelFuncs) > 0 {
 				for _, cancelFunc := range c.cancelFuncs {

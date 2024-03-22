@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,6 +14,7 @@ import (
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="SyncToK8S",type=string,JSONPath=`.spec.syncToK8S.enable`
+// +kubebuilder:printcolumn:name="toK8SServices",type=integer,JSONPath=`.status.toK8SServiceCnt`
 
 // MachineConnector is the type used to represent a Machine Connector resource.
 type MachineConnector struct {
@@ -33,6 +35,14 @@ type MachineConnector struct {
 
 func (c *MachineConnector) GetProvider() DiscoveryServiceProvider {
 	return MachineDiscoveryService
+}
+
+func (c *MachineConnector) GetReplicas() *int32 {
+	return c.Spec.Replicas
+}
+
+func (c *MachineConnector) GetResources() *corev1.ResourceRequirements {
+	return &c.Spec.Resources
 }
 
 // MachineSyncToK8SSpec is the type used to represent the sync from Machine to K8S specification.
@@ -73,6 +83,15 @@ type MachineSpec struct {
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
 	SyncToK8S MachineSyncToK8SSpec `json:"syncToK8S"`
+
+	// Compute Resources required by connector container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // MachineStatus is the type used to represent the status of a Machine Connector resource.
@@ -84,6 +103,8 @@ type MachineStatus struct {
 	// Reason defines the reason for the current status of a Machine Connector resource.
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

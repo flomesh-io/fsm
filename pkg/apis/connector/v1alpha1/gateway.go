@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,6 +36,14 @@ func (c *GatewayConnector) GetProvider() DiscoveryServiceProvider {
 	return GatewayDiscoveryService
 }
 
+func (c *GatewayConnector) GetReplicas() *int32 {
+	return c.Spec.Replicas
+}
+
+func (c *GatewayConnector) GetResources() *corev1.ResourceRequirements {
+	return &c.Spec.Resources
+}
+
 // IngressSelectorSpec is the type used to represent the ingress selector specification.
 type IngressSelectorSpec struct {
 	// +kubebuilder:default=ExternalIP
@@ -67,6 +76,11 @@ type EgressSelectorSpec struct {
 type SyncToFgwSpec struct {
 	Enable bool `json:"enable"`
 
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="5s"
+	// +optional
+	SyncPeriod metav1.Duration `json:"syncPeriod"`
+
 	// +kubebuilder:default=true
 	// +optional
 	DefaultSync bool `json:"defaultSync,omitempty"`
@@ -89,6 +103,15 @@ type GatewaySpec struct {
 	Egress IngressSelectorSpec `json:"egress"`
 
 	SyncToFgw SyncToFgwSpec `json:"syncToFgw"`
+
+	// Compute Resources required by connector container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // GatewayStatus is the type used to represent the status of a Gateway Connector resource.

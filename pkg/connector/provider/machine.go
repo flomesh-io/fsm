@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,35 +18,6 @@ type MachineDiscoveryClient struct {
 
 func (dc *MachineDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
-}
-
-func (dc *MachineDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.connectController.GetDeriveNamespace()).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	catalogServices := make(map[string][]string)
-	if len(vms.Items) > 0 {
-		for _, vm := range vms.Items {
-			if len(vm.Spec.Services) == 0 {
-				continue
-			}
-			for _, svc := range vm.Spec.Services {
-				svcTagArray, exists := catalogServices[svc.ServiceName]
-				if !exists {
-					svcTagArray = make([]string, 0)
-				}
-				metadata := vm.Labels
-				for k, v := range metadata {
-					svcTagArray = append(svcTagArray, fmt.Sprintf("%s=%v", k, v))
-				}
-				catalogServices[svc.ServiceName] = svcTagArray
-			}
-		}
-	}
-	return catalogServices, nil
 }
 
 func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.QueryOptions) ([]*connector.AgentService, error) {
@@ -110,24 +80,45 @@ func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.
 	return agentServices, nil
 }
 
+func (dc *MachineDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.connectController.GetDeriveNamespace()).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var catalogServices []connector.MicroService
+	if len(vms.Items) > 0 {
+		for _, vm := range vms.Items {
+			if len(vm.Spec.Services) == 0 {
+				continue
+			}
+			for _, svc := range vm.Spec.Services {
+				catalogServices = append(catalogServices, connector.MicroService{Service: svc.ServiceName})
+			}
+		}
+	}
+	return catalogServices, nil
+}
+
 // RegisteredInstances is used to query catalog entries for a given service
-func (dc *MachineDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
+func (dc *MachineDiscoveryClient) RegisteredInstances(string, *connector.QueryOptions) ([]*connector.CatalogService, error) {
 	// useless
 	catalogServices := make([]*connector.CatalogService, 0)
 	return catalogServices, nil
 }
 
-func (dc *MachineDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
+func (dc *MachineDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
 	// useless
 	return nil, nil
 }
 
-func (dc *MachineDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
+func (dc *MachineDiscoveryClient) Deregister(*connector.CatalogDeregistration) error {
 	// useless
 	return nil
 }
 
-func (dc *MachineDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
+func (dc *MachineDiscoveryClient) Register(*connector.CatalogRegistration) error {
 	// useless
 	return nil
 }
@@ -137,7 +128,7 @@ func (dc *MachineDiscoveryClient) EnableNamespaces() bool {
 }
 
 // EnsureNamespaceExists ensures a namespace with name ns exists.
-func (dc *MachineDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error) {
+func (dc *MachineDiscoveryClient) EnsureNamespaceExists(string) (bool, error) {
 	// useless
 	return false, nil
 }
@@ -145,7 +136,7 @@ func (dc *MachineDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error)
 // RegisteredNamespace returns the cloud namespace that a service should be
 // registered in based on the namespace options. It returns an
 // empty string if namespaces aren't enabled.
-func (dc *MachineDiscoveryClient) RegisteredNamespace(kubeNS string) string {
+func (dc *MachineDiscoveryClient) RegisteredNamespace(string) string {
 	return ""
 }
 

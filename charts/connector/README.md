@@ -84,7 +84,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cloudConnector.nodeSelector | object | `{}` |  |
 | fsm.cloudConnector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.cloudConnector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
-| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}` | Sidecar injector's container resource parameters |
+| fsm.cloudConnector.resource | object | `{"limits":{"cpu":"1","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
 | fsm.cloudConnector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |

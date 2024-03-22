@@ -62,11 +62,11 @@ spec:
           ]
           resources:
             limits:
-              cpu: "{{.Values.fsm.cloudConnector.resource.limits.cpu}}"
-              memory: "{{.Values.fsm.cloudConnector.resource.limits.memory}}"
+              cpu: {{.Values.fsm.cloudConnector.resource.limits.cpu}}
+              memory: {{.Values.fsm.cloudConnector.resource.limits.memory}}
             requests:
-              cpu: "{{.Values.fsm.cloudConnector.resource.requests.cpu}}"
-              memory: "{{.Values.fsm.cloudConnector.resource.requests.memory}}"
+              cpu: {{.Values.fsm.cloudConnector.resource.requests.cpu}}
+              memory: {{.Values.fsm.cloudConnector.resource.requests.memory}}
           readinessProbe:
             initialDelaySeconds: 5
             timeoutSeconds: 5
