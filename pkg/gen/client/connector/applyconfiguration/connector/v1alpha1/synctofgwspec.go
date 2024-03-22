@@ -15,13 +15,18 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // SyncToFgwSpecApplyConfiguration represents an declarative configuration of the SyncToFgwSpec type for use
 // with apply.
 type SyncToFgwSpecApplyConfiguration struct {
-	Enable             *bool    `json:"enable,omitempty"`
-	DefaultSync        *bool    `json:"defaultSync,omitempty"`
-	AllowK8sNamespaces []string `json:"allowK8sNamespaces,omitempty"`
-	DenyK8sNamespaces  []string `json:"denyK8sNamespaces,omitempty"`
+	Enable             *bool        `json:"enable,omitempty"`
+	SyncPeriod         *v1.Duration `json:"syncPeriod,omitempty"`
+	DefaultSync        *bool        `json:"defaultSync,omitempty"`
+	AllowK8sNamespaces []string     `json:"allowK8sNamespaces,omitempty"`
+	DenyK8sNamespaces  []string     `json:"denyK8sNamespaces,omitempty"`
 }
 
 // SyncToFgwSpecApplyConfiguration constructs an declarative configuration of the SyncToFgwSpec type for use with
@@ -35,6 +40,14 @@ func SyncToFgwSpec() *SyncToFgwSpecApplyConfiguration {
 // If called multiple times, the Enable field is set to the value of the last call.
 func (b *SyncToFgwSpecApplyConfiguration) WithEnable(value bool) *SyncToFgwSpecApplyConfiguration {
 	b.Enable = &value
+	return b
+}
+
+// WithSyncPeriod sets the SyncPeriod field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SyncPeriod field is set to the value of the last call.
+func (b *SyncToFgwSpecApplyConfiguration) WithSyncPeriod(value v1.Duration) *SyncToFgwSpecApplyConfiguration {
+	b.SyncPeriod = &value
 	return b
 }
 

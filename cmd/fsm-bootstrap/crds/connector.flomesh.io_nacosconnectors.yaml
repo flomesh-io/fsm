@@ -28,6 +28,12 @@ spec:
     - jsonPath: .spec.syncFromK8S.enable
       name: SyncFromK8S
       type: string
+    - jsonPath: .status.toK8SServiceCnt
+      name: toK8SServices
+      type: integer
+    - jsonPath: .status.fromK8SServiceCnt
+      name: fromK8SServices
+      type: integer
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -97,6 +103,66 @@ spec:
                 type: string
               httpAddr:
                 type: string
+              replicas:
+                default: 1
+                format: int32
+                minimum: 1
+                type: integer
+              resources:
+                description: Compute Resources required by connector container.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+
+                      This is an alpha field and requires enabling the
+                      DynamicResourceAllocation feature gate.
+
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
               syncFromK8S:
                 description: NacosSyncFromK8SSpec is the type used to represent the
                   sync from K8S to Nacos specification.
@@ -169,6 +235,10 @@ spec:
                 required:
                 - enable
                 type: object
+              syncPeriod:
+                default: 5s
+                format: duration
+                type: string
               syncToK8S:
                 description: NacosSyncToK8SSpec is the type used to represent the
                   sync from Nacos to K8S specification.
@@ -230,10 +300,17 @@ spec:
                 description: CurrentStatus defines the current status of a Nacos Connector
                   resource.
                 type: string
+              fromK8SServiceCnt:
+                type: integer
               reason:
                 description: Reason defines the reason for the current status of a
                   Nacos Connector resource.
                 type: string
+              toK8SServiceCnt:
+                type: integer
+            required:
+            - fromK8SServiceCnt
+            - toK8SServiceCnt
             type: object
         required:
         - spec

@@ -18,8 +18,9 @@ package v1alpha1
 // MachineStatusApplyConfiguration represents an declarative configuration of the MachineStatus type for use
 // with apply.
 type MachineStatusApplyConfiguration struct {
-	CurrentStatus *string `json:"currentStatus,omitempty"`
-	Reason        *string `json:"reason,omitempty"`
+	CurrentStatus   *string `json:"currentStatus,omitempty"`
+	Reason          *string `json:"reason,omitempty"`
+	ToK8SServiceCnt *int    `json:"toK8SServiceCnt,omitempty"`
 }
 
 // MachineStatusApplyConfiguration constructs an declarative configuration of the MachineStatus type for use with
@@ -41,5 +42,13 @@ func (b *MachineStatusApplyConfiguration) WithCurrentStatus(value string) *Machi
 // If called multiple times, the Reason field is set to the value of the last call.
 func (b *MachineStatusApplyConfiguration) WithReason(value string) *MachineStatusApplyConfiguration {
 	b.Reason = &value
+	return b
+}
+
+// WithToK8SServiceCnt sets the ToK8SServiceCnt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ToK8SServiceCnt field is set to the value of the last call.
+func (b *MachineStatusApplyConfiguration) WithToK8SServiceCnt(value int) *MachineStatusApplyConfiguration {
+	b.ToK8SServiceCnt = &value
 	return b
 }

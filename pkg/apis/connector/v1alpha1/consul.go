@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -15,6 +16,8 @@ import (
 // +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
 // +kubebuilder:printcolumn:name="SyncToK8S",type=string,JSONPath=`.spec.syncToK8S.enable`
 // +kubebuilder:printcolumn:name="SyncFromK8S",type=string,JSONPath=`.spec.syncFromK8S.enable`
+// +kubebuilder:printcolumn:name="toK8SServices",type=integer,JSONPath=`.status.toK8SServiceCnt`
+// +kubebuilder:printcolumn:name="fromK8SServices",type=integer,JSONPath=`.status.fromK8SServiceCnt`
 
 // ConsulConnector is the type used to represent a Consul Connector resource.
 type ConsulConnector struct {
@@ -35,6 +38,14 @@ type ConsulConnector struct {
 
 func (c *ConsulConnector) GetProvider() DiscoveryServiceProvider {
 	return ConsulDiscoveryService
+}
+
+func (c *ConsulConnector) GetReplicas() *int32 {
+	return c.Spec.Replicas
+}
+
+func (c *ConsulConnector) GetResources() *corev1.ResourceRequirements {
+	return &c.Spec.Resources
 }
 
 // ConsulSyncToK8SSpec is the type used to represent the sync from Consul to K8S specification.
@@ -165,12 +176,25 @@ type ConsulSpec struct {
 	// +optional
 	Auth NacosAuthSpec `json:"auth,omitempty"`
 
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="5s"
+	// +optional
+	SyncPeriod  metav1.Duration       `json:"syncPeriod"`
 	SyncToK8S   ConsulSyncToK8SSpec   `json:"syncToK8S"`
 	SyncFromK8S ConsulSyncFromK8SSpec `json:"syncFromK8S"`
 
 	// +kubebuilder:default={limit:500, burst:750}
 	// +optional
 	Limiter *Limiter `json:"limiter,omitempty"`
+
+	// Compute Resources required by connector container.
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// +kubebuilder:default=1
+	// +kubebuilder:validation:Minimum=1
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // ConsulAuthSpec is the type used to represent the Consul auth specification.
@@ -193,6 +217,10 @@ type ConsulStatus struct {
 	// Reason defines the reason for the current status of a Consul Connector resource.
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	ToK8SServiceCnt int `json:"toK8SServiceCnt"`
+
+	FromK8SServiceCnt int `json:"fromK8SServiceCnt"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

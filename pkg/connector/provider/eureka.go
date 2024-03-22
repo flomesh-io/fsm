@@ -1,12 +1,11 @@
 package provider
 
 import (
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/hudl/fargo"
+	eureka "github.com/hudl/fargo"
 	"github.com/op/go-logging"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
@@ -15,11 +14,11 @@ import (
 
 type EurekaDiscoveryClient struct {
 	connectController connector.ConnectController
-	namingClient      *fargo.EurekaConnection
+	namingClient      *eureka.EurekaConnection
 	lock              sync.Mutex
 }
 
-func (dc *EurekaDiscoveryClient) eurekaClient() *fargo.EurekaConnection {
+func (dc *EurekaDiscoveryClient) eurekaClient() *eureka.EurekaConnection {
 	dc.lock.Lock()
 	defer dc.lock.Unlock()
 
@@ -38,7 +37,7 @@ func (dc *EurekaDiscoveryClient) eurekaClient() *fargo.EurekaConnection {
 	}
 
 	if dc.namingClient == nil {
-		eurekaConnection := fargo.NewConn(dc.connectController.GetHTTPAddr())
+		eurekaConnection := eureka.NewConn(dc.connectController.GetHTTPAddr())
 		eurekaConnection.Timeout = time.Duration(60) * time.Second
 		eurekaConnection.PollInterval = time.Duration(10) * time.Second
 		eurekaConnection.Retries = 2
@@ -55,16 +54,22 @@ func (dc *EurekaDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *EurekaDiscoveryClient) CatalogInstances(service string, q *connector.QueryOptions) ([]*connector.AgentService, error) {
-	services, err := dc.eurekaClient().GetApp(strings.ToUpper(service))
+func (dc *EurekaDiscoveryClient) selectServices() (map[string]*eureka.Application, error) {
+	result, err := dc.connectController.CacheCatalogInstances("cache", func() (interface{}, error) {
+		return dc.eurekaClient().GetApps()
+	})
+	if result != nil {
+		return result.(map[string]*eureka.Application), err
+	}
+	return nil, err
+}
+
+func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.QueryOptions) ([]*connector.AgentService, error) {
+	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	//servicesMap, err := dc.eurekaClient().GetApps()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//services := servicesMap[strings.ToUpper(service)]
+	services := servicesMap[strings.ToUpper(service)]
 	agentServices := make([]*connector.AgentService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, ins := range services.Instances {
@@ -97,12 +102,12 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	return agentServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map[string][]string, error) {
-	servicesMap, err := dc.eurekaClient().GetApps()
+func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	catalogServices := make(map[string][]string)
+	var catalogServices []connector.MicroService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -134,29 +139,20 @@ func (dc *EurekaDiscoveryClient) CatalogServices(q *connector.QueryOptions) (map
 						continue
 					}
 				}
-				svcIns.App = strings.ToLower(svcIns.App)
-				svcIns.VipAddress = strings.ToLower(svcIns.VipAddress)
-				svcTagArray, exists := catalogServices[svc]
-				if !exists {
-					svcTagArray = make([]string, 0)
-				}
-				metadata := svcIns.Metadata.GetMap()
-				for k, v := range metadata {
-					svcTagArray = append(svcTagArray, fmt.Sprintf("%s=%v", k, v))
-				}
-				catalogServices[svc] = svcTagArray
+				catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+				break
 			}
 		}
 	}
 	return catalogServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (*connector.RegisteredServiceList, error) {
-	servicesMap, err := dc.eurekaClient().GetApps()
+func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	registeredIServices := make([]*fargo.Instance, 0)
+	var registeredServices []connector.MicroService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -172,28 +168,23 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (
 				instance := instance
 				if connectUID, connectUIDErr := instance.Metadata.GetString(connector.ConnectUIDKey); connectUIDErr == nil {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-						registeredIServices = append(registeredIServices, instance)
+						registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+						break
 					}
 				}
 			}
 		}
 	}
-	registeredServiceList := new(connector.RegisteredServiceList)
-	registeredServiceList.FromEureka(registeredIServices)
-	return registeredServiceList, nil
+	return registeredServices, nil
 }
 
 // RegisteredInstances is used to query catalog entries for a given service
-func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, q *connector.QueryOptions) ([]*connector.CatalogService, error) {
-	services, err := dc.eurekaClient().GetApp(strings.ToUpper(service))
+func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, _ *connector.QueryOptions) ([]*connector.CatalogService, error) {
+	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	//servicesMap, err := dc.eurekaClient().GetApps()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//services = servicesMap[strings.ToUpper(service)]
+	services := servicesMap[strings.ToUpper(service)]
 	catalogServices := make([]*connector.CatalogService, 0)
 	if services != nil && len(services.Instances) > 0 {
 		for _, instance := range services.Instances {
@@ -210,15 +201,18 @@ func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, q *connecto
 }
 
 func (dc *EurekaDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	err := dc.eurekaClient().DeregisterInstance(dereg.ToEureka())
-	if err != nil {
-		if code, present := fargo.HTTPResponseStatusCode(err); present {
-			if code == 404 {
-				return nil
+	ins := dereg.ToEureka()
+	return dc.connectController.CacheDeregisterInstance(ins.InstanceId, func() error {
+		err := dc.eurekaClient().DeregisterInstance(ins)
+		if err != nil {
+			if code, present := eureka.HTTPResponseStatusCode(err); present {
+				if code == 404 {
+					return nil
+				}
 			}
 		}
-	}
-	return err
+		return err
+	})
 }
 
 func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) error {
@@ -231,7 +225,11 @@ func (dc *EurekaDiscoveryClient) Register(reg *connector.CatalogRegistration) er
 			rMetadata[metadata.Key] = metadata.Value
 		}
 	}
-	return dc.eurekaClient().RegisterInstance(ins)
+	cacheIns := *ins
+	cacheIns.UniqueID = nil
+	return dc.connectController.CacheRegisterInstance(ins.InstanceId, cacheIns, func() error {
+		return dc.eurekaClient().RegisterInstance(ins)
+	})
 }
 
 func (dc *EurekaDiscoveryClient) EnableNamespaces() bool {
@@ -239,14 +237,14 @@ func (dc *EurekaDiscoveryClient) EnableNamespaces() bool {
 }
 
 // EnsureNamespaceExists ensures a namespace with name ns exists.
-func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(ns string) (bool, error) {
+func (dc *EurekaDiscoveryClient) EnsureNamespaceExists(string) (bool, error) {
 	return false, nil
 }
 
 // RegisteredNamespace returns the cloud namespace that a service should be
 // registered in based on the namespace options. It returns an
 // empty string if namespaces aren't enabled.
-func (dc *EurekaDiscoveryClient) RegisteredNamespace(kubeNS string) string {
+func (dc *EurekaDiscoveryClient) RegisteredNamespace(string) string {
 	return ""
 }
 

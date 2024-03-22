@@ -15,15 +15,23 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // EurekaSpecApplyConfiguration represents an declarative configuration of the EurekaSpec type for use
 // with apply.
 type EurekaSpecApplyConfiguration struct {
 	HTTPAddr           *string                                  `json:"httpAddr,omitempty"`
 	DeriveNamespace    *string                                  `json:"deriveNamespace,omitempty"`
 	AsInternalServices *bool                                    `json:"asInternalServices,omitempty"`
+	SyncPeriod         *v1.Duration                             `json:"syncPeriod,omitempty"`
 	SyncToK8S          *EurekaSyncToK8SSpecApplyConfiguration   `json:"syncToK8S,omitempty"`
 	SyncFromK8S        *EurekaSyncFromK8SSpecApplyConfiguration `json:"syncFromK8S,omitempty"`
 	Limiter            *LimiterApplyConfiguration               `json:"Limiter,omitempty"`
+	Resources          *corev1.ResourceRequirements             `json:"resources,omitempty"`
+	Replicas           *int32                                   `json:"replicas,omitempty"`
 }
 
 // EurekaSpecApplyConfiguration constructs an declarative configuration of the EurekaSpec type for use with
@@ -56,6 +64,14 @@ func (b *EurekaSpecApplyConfiguration) WithAsInternalServices(value bool) *Eurek
 	return b
 }
 
+// WithSyncPeriod sets the SyncPeriod field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SyncPeriod field is set to the value of the last call.
+func (b *EurekaSpecApplyConfiguration) WithSyncPeriod(value v1.Duration) *EurekaSpecApplyConfiguration {
+	b.SyncPeriod = &value
+	return b
+}
+
 // WithSyncToK8S sets the SyncToK8S field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SyncToK8S field is set to the value of the last call.
@@ -77,5 +93,21 @@ func (b *EurekaSpecApplyConfiguration) WithSyncFromK8S(value *EurekaSyncFromK8SS
 // If called multiple times, the Limiter field is set to the value of the last call.
 func (b *EurekaSpecApplyConfiguration) WithLimiter(value *LimiterApplyConfiguration) *EurekaSpecApplyConfiguration {
 	b.Limiter = value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *EurekaSpecApplyConfiguration) WithResources(value corev1.ResourceRequirements) *EurekaSpecApplyConfiguration {
+	b.Resources = &value
+	return b
+}
+
+// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Replicas field is set to the value of the last call.
+func (b *EurekaSpecApplyConfiguration) WithReplicas(value int32) *EurekaSpecApplyConfiguration {
+	b.Replicas = &value
 	return b
 }

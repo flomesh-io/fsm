@@ -247,7 +247,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for cloudName, cloudDNS := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(cloudName), MicroSvcDomainName(cloudDNS))
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(cloudName))
 		if len(svcMetaMap) == 0 {
 			continue
 		}

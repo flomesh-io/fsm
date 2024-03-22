@@ -15,12 +15,18 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/api/core/v1"
+)
+
 // GatewaySpecApplyConfiguration represents an declarative configuration of the GatewaySpec type for use
 // with apply.
 type GatewaySpecApplyConfiguration struct {
 	Ingress   *IngressSelectorSpecApplyConfiguration `json:"ingress,omitempty"`
 	Egress    *IngressSelectorSpecApplyConfiguration `json:"egress,omitempty"`
 	SyncToFgw *SyncToFgwSpecApplyConfiguration       `json:"syncToFgw,omitempty"`
+	Resources *v1.ResourceRequirements               `json:"resources,omitempty"`
+	Replicas  *int32                                 `json:"replicas,omitempty"`
 }
 
 // GatewaySpecApplyConfiguration constructs an declarative configuration of the GatewaySpec type for use with
@@ -50,5 +56,21 @@ func (b *GatewaySpecApplyConfiguration) WithEgress(value *IngressSelectorSpecApp
 // If called multiple times, the SyncToFgw field is set to the value of the last call.
 func (b *GatewaySpecApplyConfiguration) WithSyncToFgw(value *SyncToFgwSpecApplyConfiguration) *GatewaySpecApplyConfiguration {
 	b.SyncToFgw = value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *GatewaySpecApplyConfiguration) WithResources(value v1.ResourceRequirements) *GatewaySpecApplyConfiguration {
+	b.Resources = &value
+	return b
+}
+
+// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Replicas field is set to the value of the last call.
+func (b *GatewaySpecApplyConfiguration) WithReplicas(value int32) *GatewaySpecApplyConfiguration {
+	b.Replicas = &value
 	return b
 }

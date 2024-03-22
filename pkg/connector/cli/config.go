@@ -13,9 +13,7 @@ import (
 )
 
 const (
-	// SyncPeriod is how often the syncer will attempt to
-	// reconcile the expected service states with the remote cloud server.
-	SyncPeriod = 5 * time.Second
+	MinSyncPeriod = 2 * time.Second
 )
 
 type protocolPort struct {
@@ -44,6 +42,11 @@ type config struct {
 	deriveNamespace    string
 	asInternalServices bool
 
+	// syncPeriod is the interval between full catalog syncs. These will
+	// re-register all services to prevent overwrites of data. This should
+	// happen relatively infrequently and default to 5 seconds.
+	syncPeriod time.Duration
+
 	c2kCfg struct {
 		enable          bool
 		clusterId       string
@@ -67,11 +70,6 @@ type config struct {
 
 	k2cCfg struct {
 		enable bool
-
-		// syncPeriod is the interval between full catalog syncs. These will
-		// re-register all services to prevent overwrites of data. This should
-		// happen relatively infrequently and default to 5 seconds.
-		syncPeriod time.Duration
 
 		// defaultSync should set to be false to require explicit enabling
 		// using annotations. If this is true, then services are implicitly
@@ -164,8 +162,6 @@ type config struct {
 
 	k2gCfg struct {
 		enable bool
-
-		syncPeriod time.Duration
 
 		// defaultSync should set to be false to require explicit enabling
 		// using annotations. If this is true, then services are implicitly
@@ -281,12 +277,6 @@ func (c *config) SetViaEgressGRPCPort(grpcPort uint) {
 	c.viaCfg.egress.grpcPort = grpcPort
 }
 
-func (c *config) GetK2GSyncPeriod() time.Duration {
-	c.flock.RLock()
-	defer c.flock.RUnlock()
-	return c.k2gCfg.syncPeriod
-}
-
 func (c *config) GetK2GDefaultSync() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -303,12 +293,6 @@ func (c *config) GetK2GDenyK8SNamespaceSet() mapset.Set {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2gCfg.denyK8sNamespacesSet
-}
-
-func (c *config) GetSyncPeriod() time.Duration {
-	c.flock.RLock()
-	defer c.flock.RUnlock()
-	return c.k2cCfg.syncPeriod
 }
 
 func (c *config) GetDefaultSync() bool {
@@ -569,6 +553,12 @@ func (c *config) AsInternalServices() bool {
 	return c.asInternalServices
 }
 
+func (c *config) GetSyncPeriod() time.Duration {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.syncPeriod
+}
+
 func (c *config) SyncCloudToK8s() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -590,8 +580,12 @@ func (c *client) initGatewayConnectorConfig(spec ctv1.GatewaySpec) {
 	c.flock.Lock()
 	defer c.flock.Unlock()
 
+	c.syncPeriod = spec.SyncToFgw.SyncPeriod.Duration
+	if c.syncPeriod < MinSyncPeriod {
+		c.syncPeriod = MinSyncPeriod
+	}
+
 	c.k2gCfg.enable = spec.SyncToFgw.Enable
-	c.k2gCfg.syncPeriod = SyncPeriod
 	c.k2gCfg.defaultSync = spec.SyncToFgw.DefaultSync
 	c.k2gCfg.allowK8sNamespacesSet = ToSet(spec.SyncToFgw.AllowK8sNamespaces)
 	c.k2gCfg.denyK8sNamespacesSet = ToSet(spec.SyncToFgw.DenyK8sNamespaces)
@@ -628,6 +622,10 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
 	c.asInternalServices = spec.AsInternalServices
+	c.syncPeriod = spec.SyncPeriod.Duration
+	if c.syncPeriod < MinSyncPeriod {
+		c.syncPeriod = MinSyncPeriod
+	}
 
 	c.auth.nacos.username = spec.Auth.Username
 	c.auth.nacos.password = spec.Auth.Password
@@ -654,7 +652,6 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	}
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
-	c.k2cCfg.syncPeriod = SyncPeriod
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
 	c.k2cCfg.syncClusterIPServices = spec.SyncFromK8S.SyncClusterIPServices
 	c.k2cCfg.syncLoadBalancerEndpoints = spec.SyncFromK8S.SyncLoadBalancerEndpoints
@@ -682,6 +679,10 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
 	c.asInternalServices = spec.AsInternalServices
+	c.syncPeriod = spec.SyncPeriod.Duration
+	if c.syncPeriod < MinSyncPeriod {
+		c.syncPeriod = MinSyncPeriod
+	}
 
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
@@ -691,7 +692,6 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
-	c.k2cCfg.syncPeriod = SyncPeriod
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
 	c.k2cCfg.syncClusterIPServices = spec.SyncFromK8S.SyncClusterIPServices
 	c.k2cCfg.syncLoadBalancerEndpoints = spec.SyncFromK8S.SyncLoadBalancerEndpoints
@@ -716,6 +716,10 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
 	c.asInternalServices = spec.AsInternalServices
+	c.syncPeriod = spec.SyncPeriod.Duration
+	if c.syncPeriod < MinSyncPeriod {
+		c.syncPeriod = MinSyncPeriod
+	}
 
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
@@ -729,7 +733,6 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
-	c.k2cCfg.syncPeriod = SyncPeriod
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
 	c.k2cCfg.syncClusterIPServices = spec.SyncFromK8S.SyncClusterIPServices
 	c.k2cCfg.syncLoadBalancerEndpoints = spec.SyncFromK8S.SyncLoadBalancerEndpoints

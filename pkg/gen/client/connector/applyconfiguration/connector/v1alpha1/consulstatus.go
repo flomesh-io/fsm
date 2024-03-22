@@ -18,8 +18,10 @@ package v1alpha1
 // ConsulStatusApplyConfiguration represents an declarative configuration of the ConsulStatus type for use
 // with apply.
 type ConsulStatusApplyConfiguration struct {
-	CurrentStatus *string `json:"currentStatus,omitempty"`
-	Reason        *string `json:"reason,omitempty"`
+	CurrentStatus     *string `json:"currentStatus,omitempty"`
+	Reason            *string `json:"reason,omitempty"`
+	ToK8SServiceCnt   *int    `json:"toK8SServiceCnt,omitempty"`
+	FromK8SServiceCnt *int    `json:"fromK8SServiceCnt,omitempty"`
 }
 
 // ConsulStatusApplyConfiguration constructs an declarative configuration of the ConsulStatus type for use with
@@ -41,5 +43,21 @@ func (b *ConsulStatusApplyConfiguration) WithCurrentStatus(value string) *Consul
 // If called multiple times, the Reason field is set to the value of the last call.
 func (b *ConsulStatusApplyConfiguration) WithReason(value string) *ConsulStatusApplyConfiguration {
 	b.Reason = &value
+	return b
+}
+
+// WithToK8SServiceCnt sets the ToK8SServiceCnt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ToK8SServiceCnt field is set to the value of the last call.
+func (b *ConsulStatusApplyConfiguration) WithToK8SServiceCnt(value int) *ConsulStatusApplyConfiguration {
+	b.ToK8SServiceCnt = &value
+	return b
+}
+
+// WithFromK8SServiceCnt sets the FromK8SServiceCnt field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the FromK8SServiceCnt field is set to the value of the last call.
+func (b *ConsulStatusApplyConfiguration) WithFromK8SServiceCnt(value int) *ConsulStatusApplyConfiguration {
+	b.FromK8SServiceCnt = &value
 	return b
 }

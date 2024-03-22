@@ -15,6 +15,11 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 // ConsulSpecApplyConfiguration represents an declarative configuration of the ConsulSpec type for use
 // with apply.
 type ConsulSpecApplyConfiguration struct {
@@ -22,9 +27,12 @@ type ConsulSpecApplyConfiguration struct {
 	DeriveNamespace    *string                                  `json:"deriveNamespace,omitempty"`
 	AsInternalServices *bool                                    `json:"asInternalServices,omitempty"`
 	Auth               *NacosAuthSpecApplyConfiguration         `json:"auth,omitempty"`
+	SyncPeriod         *v1.Duration                             `json:"syncPeriod,omitempty"`
 	SyncToK8S          *ConsulSyncToK8SSpecApplyConfiguration   `json:"syncToK8S,omitempty"`
 	SyncFromK8S        *ConsulSyncFromK8SSpecApplyConfiguration `json:"syncFromK8S,omitempty"`
 	Limiter            *LimiterApplyConfiguration               `json:"limiter,omitempty"`
+	Resources          *corev1.ResourceRequirements             `json:"resources,omitempty"`
+	Replicas           *int32                                   `json:"replicas,omitempty"`
 }
 
 // ConsulSpecApplyConfiguration constructs an declarative configuration of the ConsulSpec type for use with
@@ -65,6 +73,14 @@ func (b *ConsulSpecApplyConfiguration) WithAuth(value *NacosAuthSpecApplyConfigu
 	return b
 }
 
+// WithSyncPeriod sets the SyncPeriod field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SyncPeriod field is set to the value of the last call.
+func (b *ConsulSpecApplyConfiguration) WithSyncPeriod(value v1.Duration) *ConsulSpecApplyConfiguration {
+	b.SyncPeriod = &value
+	return b
+}
+
 // WithSyncToK8S sets the SyncToK8S field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SyncToK8S field is set to the value of the last call.
@@ -86,5 +102,21 @@ func (b *ConsulSpecApplyConfiguration) WithSyncFromK8S(value *ConsulSyncFromK8SS
 // If called multiple times, the Limiter field is set to the value of the last call.
 func (b *ConsulSpecApplyConfiguration) WithLimiter(value *LimiterApplyConfiguration) *ConsulSpecApplyConfiguration {
 	b.Limiter = value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *ConsulSpecApplyConfiguration) WithResources(value corev1.ResourceRequirements) *ConsulSpecApplyConfiguration {
+	b.Resources = &value
+	return b
+}
+
+// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Replicas field is set to the value of the last call.
+func (b *ConsulSpecApplyConfiguration) WithReplicas(value int32) *ConsulSpecApplyConfiguration {
+	b.Replicas = &value
 	return b
 }

@@ -15,12 +15,18 @@ limitations under the License.
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/api/core/v1"
+)
+
 // MachineSpecApplyConfiguration represents an declarative configuration of the MachineSpec type for use
 // with apply.
 type MachineSpecApplyConfiguration struct {
 	DeriveNamespace    *string                                 `json:"deriveNamespace,omitempty"`
 	AsInternalServices *bool                                   `json:"asInternalServices,omitempty"`
 	SyncToK8S          *MachineSyncToK8SSpecApplyConfiguration `json:"syncToK8S,omitempty"`
+	Resources          *v1.ResourceRequirements                `json:"resources,omitempty"`
+	Replicas           *int32                                  `json:"replicas,omitempty"`
 }
 
 // MachineSpecApplyConfiguration constructs an declarative configuration of the MachineSpec type for use with
@@ -50,5 +56,21 @@ func (b *MachineSpecApplyConfiguration) WithAsInternalServices(value bool) *Mach
 // If called multiple times, the SyncToK8S field is set to the value of the last call.
 func (b *MachineSpecApplyConfiguration) WithSyncToK8S(value *MachineSyncToK8SSpecApplyConfiguration) *MachineSpecApplyConfiguration {
 	b.SyncToK8S = value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *MachineSpecApplyConfiguration) WithResources(value v1.ResourceRequirements) *MachineSpecApplyConfiguration {
+	b.Resources = &value
+	return b
+}
+
+// WithReplicas sets the Replicas field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Replicas field is set to the value of the last call.
+func (b *MachineSpecApplyConfiguration) WithReplicas(value int32) *MachineSpecApplyConfiguration {
+	b.Replicas = &value
 	return b
 }
