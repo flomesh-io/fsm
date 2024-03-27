@@ -25,16 +25,23 @@
 package basic
 
 import (
+	"context"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
 // SetupTLS sets up TLS of ingress controller
-func SetupTLS(ctx *fctx.ControllerContext) error {
+func SetupTLS(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Setting up TLS ...")
 
-	mc := ctx.Config
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	mc := cctx.Configurator
 	//log.Info().Msgf("mc.Ingress.TLS=%v", mc.Ingress.TLS)
 
 	if mc.IsIngressTLSEnabled() {
@@ -42,7 +49,7 @@ func SetupTLS(ctx *fctx.ControllerContext) error {
 			// SSL Passthrough
 			if err := utils.UpdateSSLPassthrough(
 				constants.DefaultIngressBasePath,
-				ctx.RepoClient,
+				cctx.RepoClient,
 				mc.IsIngressSSLPassthroughEnabled(),
 				mc.GetIngressSSLPassthroughUpstreamPort(),
 			); err != nil {
@@ -50,7 +57,7 @@ func SetupTLS(ctx *fctx.ControllerContext) error {
 			}
 		} else {
 			// TLS Offload
-			if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.CertificateManager, mc, nil); err != nil {
+			if err := utils.IssueCertForIngress(constants.DefaultIngressBasePath, cctx.RepoClient, cctx.CertManager, mc, nil); err != nil {
 				return err
 			}
 		}

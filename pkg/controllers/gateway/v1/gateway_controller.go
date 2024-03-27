@@ -115,7 +115,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			log.Info().Msgf("Gateway resource not found. Ignoring since object must be deleted")
-			r.fctx.EventHandler.OnDelete(&gwv1.Gateway{
+			r.fctx.GatewayEventHandler.OnDelete(&gwv1.Gateway{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: req.Namespace,
 					Name:      req.Name,
@@ -128,7 +128,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if gateway.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(gateway)
+		r.fctx.GatewayEventHandler.OnDelete(gateway)
 		return ctrl.Result{}, nil
 	}
 
@@ -158,7 +158,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return result, err
 	}
 
-	r.fctx.EventHandler.OnAdd(gateway, false)
+	r.fctx.GatewayEventHandler.OnAdd(gateway, false)
 
 	return ctrl.Result{}, nil
 }
@@ -619,7 +619,7 @@ func isSameGateway(oldGateway, newGateway *gwv1.Gateway) bool {
 }
 
 func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway) (ctrl.Result, error) {
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	result, err := r.deriveCodebases(gateway, mc)
 	if err != nil {

@@ -80,7 +80,7 @@ func (r *consulConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 	result, err := r.deployConnector(connector, mc)
 	if err != nil || result.RequeueAfter > 0 || result.Requeue {
 		return result, err

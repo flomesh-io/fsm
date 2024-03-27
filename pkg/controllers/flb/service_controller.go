@@ -206,7 +206,7 @@ func (r *serviceReconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.
 func (r *serviceReconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
 	log.Debug().Msgf("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	endpoints, err := r.getUpstreams(ctx, svc, mc)
 	if err != nil {
@@ -683,7 +683,7 @@ func (r *serviceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			),
 		)
 
-	switch r.fctx.Config.GetFLBUpstreamMode() {
+	switch r.fctx.Configurator.GetFLBUpstreamMode() {
 	case configv1alpha3.FLBUpstreamModeNodePort:
 		bd = bd.Watches(
 			&corev1.Pod{},

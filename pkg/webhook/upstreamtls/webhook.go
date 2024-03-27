@@ -77,7 +77,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for UpstreamTLSPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.UpstreamTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
+		constants.UpstreamTLSPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
 		constants.UpstreamTLSPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }

@@ -85,7 +85,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for global traffic policy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GlobalTrafficPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
+		constants.GlobalTrafficPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
 		constants.GlobalTrafficPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }

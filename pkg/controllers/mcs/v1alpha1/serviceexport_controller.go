@@ -126,7 +126,7 @@ func (r *serviceExportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return r.unsupportedServiceType(ctx, req, export)
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 	if mc.IsIngressEnabled() {
 		// Find and compare path from ingress
 		ingList := &networkingv1.IngressList{}
@@ -414,7 +414,7 @@ func (r *serviceExportReconciler) successExport(ctx context.Context, req ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	if mc.IsIngressEnabled() {
 		return ctrl.NewControllerManagedBy(mgr).

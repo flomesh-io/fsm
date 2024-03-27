@@ -86,8 +86,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for GRPCRoute
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GRPCRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Config)),
-		constants.GRPCRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Config)),
+		constants.GRPCRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.GRPCRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
 	}
 }
 

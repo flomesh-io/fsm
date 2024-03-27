@@ -72,6 +72,13 @@ func (c *GatewayCache) getResourcesFromCache(resourceType ResourceType, shouldSo
 			return resources
 		}
 		resources = setGroupVersionKind(routes, constants.UDPRouteGVK)
+	case ReferenceGrantResourceType:
+		grants, err := c.informers.GetListers().ReferenceGrant.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get ReferenceGrants: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(grants, constants.ReferenceGrantGVK)
 	case UpstreamTLSPoliciesResourceType:
 		policies, err := c.informers.GetListers().UpstreamTLSPolicy.List(selectAll)
 		if err != nil {

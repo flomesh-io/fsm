@@ -97,7 +97,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	if err := r.deployDaemonSet(ctx, svc, mc); err != nil {
 		return ctrl.Result{}, err

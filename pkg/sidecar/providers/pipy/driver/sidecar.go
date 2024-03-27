@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/injector"
 	"github.com/flomesh-io/fsm/pkg/sidecar/driver"
@@ -17,16 +18,16 @@ import (
 
 // PipySidecarDriver is the pipy sidecar driver
 type PipySidecarDriver struct {
-	ctx *driver.ControllerContext
+	ctx *fctx.ControllerContext
 }
 
 // Start is the implement for ControllerDriver.Start
 func (sd PipySidecarDriver) Start(ctx context.Context) (health.Probes, error) {
-	parentCtx := ctx.Value(&driver.ControllerCtxKey)
+	parentCtx := ctx.Value(&fctx.ControllerCtxKey)
 	if parentCtx == nil {
 		return nil, errors.New("missing Controller Context")
 	}
-	ctrlCtx := parentCtx.(*driver.ControllerContext)
+	ctrlCtx := parentCtx.(*fctx.ControllerContext)
 	cfg := ctrlCtx.Configurator
 	certManager := ctrlCtx.CertManager
 	k8sClient := ctrlCtx.MeshCatalog.GetKubeController()

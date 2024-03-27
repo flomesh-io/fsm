@@ -22,48 +22,46 @@
  * SOFTWARE.
  */
 
-package v1
+package v1beta1
 
 import (
 	"context"
+
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
-type httpRouteReconciler struct {
-	recorder        record.EventRecorder
-	fctx            *fctx.ControllerContext
-	statusProcessor *status.RouteStatusProcessor
+type referenceGrantReconciler struct {
+	recorder record.EventRecorder
+	fctx     *fctx.ControllerContext
 }
 
-func (r *httpRouteReconciler) NeedLeaderElection() bool {
+func (r *referenceGrantReconciler) NeedLeaderElection() bool {
 	return true
 }
 
-// NewHTTPRouteReconciler returns a new HTTPRoute Reconciler
-func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
-	return &httpRouteReconciler{
-		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
-		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+// NewReferenceGrantReconciler returns a new ReferenceGrant Reconciler
+func NewReferenceGrantReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+	return &referenceGrantReconciler{
+		recorder: ctx.Manager.GetEventRecorderFor("ReferenceGrant"),
+		fctx:     ctx,
 	}
 }
 
-// Reconcile reads that state of the cluster for a HTTPRoute object and makes changes based on the state read
-func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	httpRoute := &gwv1.HTTPRoute{}
-	err := r.fctx.Get(ctx, req.NamespacedName, httpRoute)
+// Reconcile reads that state of the cluster for a ReferenceGrant object and makes changes based on the state read
+func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	referenceGrant := &gwv1beta1.ReferenceGrant{}
+	err := r.fctx.Get(ctx, req.NamespacedName, referenceGrant)
 	if errors.IsNotFound(err) {
-		r.fctx.GatewayEventHandler.OnDelete(&gwv1.HTTPRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1beta1.ReferenceGrant{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -71,31 +69,21 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if httpRoute.DeletionTimestamp != nil {
-		r.fctx.GatewayEventHandler.OnDelete(httpRoute)
+	if referenceGrant.DeletionTimestamp != nil {
+		r.fctx.GatewayEventHandler.OnDelete(referenceGrant)
 		return ctrl.Result{}, nil
 	}
 
-	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, httpRoute)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	// As ReferenceGrant has no status, we don't need to update it
 
-	if len(routeStatus) > 0 {
-		httpRoute.Status.Parents = routeStatus
-		if err := r.fctx.Status().Update(ctx, httpRoute); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
-
-	r.fctx.GatewayEventHandler.OnAdd(httpRoute, false)
+	r.fctx.GatewayEventHandler.OnAdd(referenceGrant, false)
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *referenceGrantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gwv1.HTTPRoute{}).
+		For(&gwv1beta1.ReferenceGrant{}).
 		Complete(r)
 }

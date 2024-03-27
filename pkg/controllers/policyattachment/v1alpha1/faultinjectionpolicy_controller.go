@@ -108,7 +108,7 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 	policy := &gwpav1alpha1.FaultInjectionPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwpav1alpha1.FaultInjectionPolicy{
+		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha1.FaultInjectionPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -117,7 +117,7 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	if policy.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(policy)
+		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
 
@@ -129,7 +129,7 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy, false)
+	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
