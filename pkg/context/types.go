@@ -10,11 +10,12 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/gateway"
 
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
-	"github.com/flomesh-io/fsm/pkg/repo"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/repo"
 
 	"k8s.io/client-go/rest"
 

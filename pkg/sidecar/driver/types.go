@@ -3,12 +3,13 @@ package driver
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/flomesh-io/fsm/pkg/certificate"
+	"github.com/flomesh-io/fsm/pkg/configurator"
+	"github.com/flomesh-io/fsm/pkg/health"
 )
 
 // Driver is an interface that must be implemented by a sidecar driver.

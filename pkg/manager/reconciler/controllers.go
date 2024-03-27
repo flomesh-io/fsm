@@ -3,8 +3,9 @@ package reconciler
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
