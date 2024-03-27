@@ -22,6 +22,9 @@ const (
 	// ServiceUpdate is the event kind used to trigger an update to subscribed services
 	ServiceUpdate Kind = "service-update"
 
+	// ConnectorUpdate is the event kind used to trigger an update to subscribed connectors
+	ConnectorUpdate Kind = "connector-update"
+
 	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
 	MCSUpdate Kind = "mcs-update"
 
@@ -215,6 +218,51 @@ const (
 
 	// AccessCertUpdated is the type of announcement emitted when we observe an update to accesscerts.policy.flomesh.io
 	AccessCertUpdated Kind = "accesscert-updated"
+
+	// ConsulConnectorAdded is the type of announcement emitted when we observe an addition of consulconnectors.connector.flomesh.io
+	ConsulConnectorAdded Kind = "consulconnector-added"
+
+	// ConsulConnectorDeleted the type of announcement emitted when we observe a deletion of consulconnectors.connector.flomesh.io
+	ConsulConnectorDeleted Kind = "consulconnector-deleted"
+
+	// ConsulConnectorUpdated is the type of announcement emitted when we observe an update to consulconnectors.connector.flomesh.io
+	ConsulConnectorUpdated Kind = "consulconnector-updated"
+
+	// EurekaConnectorAdded is the type of announcement emitted when we observe an addition of eurekaconnectors.connector.flomesh.io
+	EurekaConnectorAdded Kind = "eurekaconnector-added"
+
+	// EurekaConnectorDeleted the type of announcement emitted when we observe a deletion of eurekaconnectors.connector.flomesh.io
+	EurekaConnectorDeleted Kind = "eurekaconnector-deleted"
+
+	// EurekaConnectorUpdated is the type of announcement emitted when we observe an update to eurekaconnectors.connector.flomesh.io
+	EurekaConnectorUpdated Kind = "eurekaconnector-updated"
+
+	// NacosConnectorAdded is the type of announcement emitted when we observe an addition of nacosconnectors.connector.flomesh.io
+	NacosConnectorAdded Kind = "nacosconnector-added"
+
+	// NacosConnectorDeleted the type of announcement emitted when we observe a deletion of nacosconnectors.connector.flomesh.io
+	NacosConnectorDeleted Kind = "nacosconnector-deleted"
+
+	// NacosConnectorUpdated is the type of announcement emitted when we observe an update to nacosconnectors.connector.flomesh.io
+	NacosConnectorUpdated Kind = "nacosconnector-updated"
+
+	// MachineConnectorAdded is the type of announcement emitted when we observe an addition of machineconnectors.connector.flomesh.io
+	MachineConnectorAdded Kind = "machineconnector-added"
+
+	// MachineConnectorDeleted the type of announcement emitted when we observe a deletion of machineconnectors.connector.flomesh.io
+	MachineConnectorDeleted Kind = "machineconnector-deleted"
+
+	// MachineConnectorUpdated is the type of announcement emitted when we observe an update to machineconnectors.connector.flomesh.io
+	MachineConnectorUpdated Kind = "machineconnector-updated"
+
+	// GatewayConnectorAdded is the type of announcement emitted when we observe an addition of gatewayconnectors.connector.flomesh.io
+	GatewayConnectorAdded Kind = "gatewayconnector-added"
+
+	// GatewayConnectorDeleted the type of announcement emitted when we observe a deletion of gatewayconnectors.connector.flomesh.io
+	GatewayConnectorDeleted Kind = "gatewayconnector-deleted"
+
+	// GatewayConnectorUpdated is the type of announcement emitted when we observe an update to gatewayconnectors.connector.flomesh.io
+	GatewayConnectorUpdated Kind = "gatewayconnector-updated"
 
 	// ServiceExportAdded is the type of announcement emitted when we observe an addition of serviceexports.flomesh.io
 	ServiceExportAdded Kind = "serviceexport-added"

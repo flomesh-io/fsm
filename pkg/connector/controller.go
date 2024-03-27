@@ -1,232 +1,140 @@
-// Package connector contains a reusable abstraction for efficiently
-// watching for changes in resources in a Kubernetes cluster.
 package connector
 
 import (
-	"context"
-	"fmt"
-	"sync"
 	"time"
 
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/util/workqueue"
+	mapset "github.com/deckarep/golang-set"
 
-	"github.com/flomesh-io/fsm/pkg/logger"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 )
 
-var (
-	log = logger.New("connector")
-)
+// ConnectController is the controller interface for K8s connectors
+type ConnectController interface {
+	BroadcastListener(stopCh <-chan struct{})
 
-// Controller is a generic cache.Controller implementation that watches
-// Kubernetes for changes to specific set of resources and calls the configured
-// callbacks as data changes.
-type Controller struct {
-	Resource Resource
-	informer cache.SharedIndexInformer
+	GetConnectorProvider() ctv1.DiscoveryServiceProvider
+	GetConnectorName() string
+	GetConnectorUID() string
+
+	GetConsulConnector(connector string) *ctv1.ConsulConnector
+	GetEurekaConnector(connector string) *ctv1.EurekaConnector
+	GetNacosConnector(connector string) *ctv1.NacosConnector
+	GetMachineConnector(connector string) *ctv1.MachineConnector
+	GetGatewayConnector(connector string) *ctv1.GatewayConnector
+	GetConnector() (connector, spec interface{}, uid string, ok bool)
+
+	Refresh()
+
+	WaitLimiter()
+
+	GetC2KContext() *C2KContext
+	GetK2CContext() *K2CContext
+	GetK2GContext() *K2GContext
+
+	GetClusterSet() string
+	SetClusterSet(name, group, zone, region string)
+
+	SetServiceInstanceIDFunc(f ServiceInstanceIDFunc)
+	GetServiceInstanceID(name, addr string, httpPort, grpcPort int) string
+
+	/* config for ctok source */
+
+	GetClusterId() string
+	GetPassingOnly() bool
+	GetFilterTag() string
+	GetFilterMetadatas() []ctv1.Metadata
+	GetPrefix() string
+	GetPrefixTag() string
+	GetSuffixTag() string
+	GetPrefixMetadata() string
+	GetSuffixMetadata() string
+
+	GetC2KWithGateway() bool
+
+	GetNacos2KClusterSet() []string
+	GetNacos2KGroupSet() []string
+
+	/* config for ktoc source */
+
+	GetSyncPeriod() time.Duration
+	GetDefaultSync() bool
+	GetSyncClusterIPServices() bool
+	GetSyncLoadBalancerEndpoints() bool
+	GetNodePortSyncType() ctv1.NodePortSyncType
+
+	GetSyncIngress() bool
+	GetSyncIngressLoadBalancerIPs() bool
+
+	GetAddServicePrefix() string
+	GetAddK8SNamespaceAsServiceSuffix() bool
+
+	GetAppendTagSet() mapset.Set
+	GetAppendMetadataSet() mapset.Set
+	GetAllowK8SNamespaceSet() mapset.Set
+	GetDenyK8SNamespaceSet() mapset.Set
+
+	GetK2CWithGateway() bool
+
+	GetConsulNodeName() string
+	GetConsulEnableNamespaces() bool
+	GetConsulDestinationNamespace() string
+	GetConsulEnableK8SNSMirroring() bool
+	GetConsulK8SNSMirroringPrefix() string
+	GetConsulCrossNamespaceACLPolicy() string
+
+	GetNacosGroupId() string
+	GetNacosClusterId() string
+
+	/* config for ktog source */
+
+	GetK2GDefaultSync() bool
+	GetK2GAllowK8SNamespaceSet() mapset.Set
+	GetK2GDenyK8SNamespaceSet() mapset.Set
+
+	/* config for via gateway */
+
+	GetViaIngressIPSelector() ctv1.AddrSelector
+	GetViaEgressIPSelector() ctv1.AddrSelector
+
+	GetViaIngressAddr() string
+	SetViaIngressAddr(ingressAddr string)
+
+	GetViaEgressAddr() string
+	SetViaEgressAddr(egressAddr string)
+
+	GetViaIngressHTTPPort() uint
+	SetViaIngressHTTPPort(httpPort uint)
+
+	GetViaIngressGRPCPort() uint
+	SetViaIngressGRPCPort(grpcPort uint)
+
+	GetViaEgressHTTPPort() uint
+	SetViaEgressHTTPPort(httpPort uint)
+
+	GetViaEgressGRPCPort() uint
+	SetViaEgressGRPCPort(grpcPort uint)
+
+	GetAuthConsulUsername() string
+	GetAuthConsulPassword() string
+
+	GetAuthNacosUsername() string
+	GetAuthNacosPassword() string
+	GetAuthNacosAccessKey() string
+	GetAuthNacosSecretKey() string
+	GetAuthNacosNamespaceId() string
+
+	SyncCloudToK8s() bool
+	SyncK8sToCloud() bool
+	SyncK8sToGateway() bool
+
+	GetHTTPAddr() string
+	GetDeriveNamespace() string
+	AsInternalServices() bool
+
+	CacheCatalogInstances(key string, catalogFunc func() (interface{}, error)) (interface{}, error)
+	CacheRegisterInstance(key string, instance interface{}, registerFunc func() error) error
+	CacheDeregisterInstance(key string, deregisterFunc func() error) error
+	CacheCleaner(stopCh <-chan struct{})
 }
 
-// Event is something that occurred to the resources we're watching.
-type Event struct {
-	// Key is in the form of <namespace>/<name>, e.g. default/pod-abc123,
-	// and corresponds to the resource modified.
-	Key string
-	// Obj holds the resource that was modified at the time of the event
-	// occurring. If possible, the resource should be retrieved from the informer
-	// cache, instead of using this field because the cache will be more up to
-	// date at the time the event is processed.
-	// In some cases, such as a delete event, the resource will no longer exist
-	// in the cache and then it is useful to have the resource here.
-	Obj interface{}
-}
-
-// Run starts the Controller and blocks until stopCh is closed.
-//
-// Important: Callers must ensure that Run is only called once at a time.
-func (c *Controller) Run(stopCh <-chan struct{}) {
-	// Properly handle any panics
-	defer utilruntime.HandleCrash()
-
-	// Create an informer so we can keep track of all Service changes.
-	informer := c.Resource.Informer()
-	c.informer = informer
-
-	// Create a queue for storing items to process from the informer.
-	var queueOnce sync.Once
-	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	shutdown := func() { queue.ShutDown() }
-	defer queueOnce.Do(shutdown)
-
-	// Add an event handler when data is received from the informer. The
-	// event handlers here will block the informer so we just offload them
-	// immediately into a workqueue.
-	_, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			// convert the resource object into a key (in this case
-			// we are just doing it in the format of 'namespace/name')
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			log.Debug().Msgf("queue op %s %s:%s", "add", "key", key)
-			if err == nil {
-				queue.Add(Event{Key: key, Obj: obj})
-			}
-		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(newObj)
-			log.Debug().Msgf("queue op %s %s:%s", "update", "key", key)
-			if err == nil {
-				queue.Add(Event{Key: key, Obj: newObj})
-			}
-		},
-		DeleteFunc: c.informerDeleteHandler(queue),
-	})
-	if err != nil {
-		log.Error().Msgf("error adding informer event handlers:%v", err)
-	}
-
-	// If the type is a background syncer, then we startup the background
-	// process.
-	if bg, ok := c.Resource.(Backgrounder); ok {
-		ctx, cancelF := context.WithCancel(context.Background())
-
-		// Run the backgrounder
-		doneCh := make(chan struct{})
-		go func() {
-			defer close(doneCh)
-			bg.Run(ctx.Done())
-		}()
-
-		// Start a goroutine that automatically closes the context when we stop
-		go func() {
-			select {
-			case <-stopCh:
-				cancelF()
-
-			case <-ctx.Done():
-				// Cancelled outside
-			}
-		}()
-
-		// When we exit, close the context so the backgrounder ends
-		defer func() {
-			cancelF()
-			<-doneCh
-		}()
-	}
-
-	// Run the informer to start requesting resources
-	go func() {
-		informer.Run(stopCh)
-
-		// We have to shut down the queue here if we stop so that
-		// wait.Until stops below too. We can't wait until the defer at
-		// the top since wait.Until will block.
-		queueOnce.Do(shutdown)
-	}()
-
-	// Initial sync
-	if !cache.WaitForCacheSync(stopCh, informer.HasSynced) {
-		utilruntime.HandleError(fmt.Errorf("error syncing cache"))
-		return
-	}
-	log.Debug().Msg("initial cache sync complete")
-
-	// run the runWorker method every second with a stop channel
-	wait.Until(func() {
-		for c.processSingle(queue, informer) {
-			// Process
-		}
-	}, time.Second, stopCh)
-}
-
-// HasSynced implements cache.Controller.
-func (c *Controller) HasSynced() bool {
-	if c.informer == nil {
-		return false
-	}
-
-	return c.informer.HasSynced()
-}
-
-// LastSyncResourceVersion implements cache.Controller.
-func (c *Controller) LastSyncResourceVersion() string {
-	if c.informer == nil {
-		return ""
-	}
-
-	return c.informer.LastSyncResourceVersion()
-}
-
-func (c *Controller) processSingle(
-	queue workqueue.RateLimitingInterface,
-	informer cache.SharedIndexInformer,
-) bool {
-	// Fetch the next item
-	rawEvent, quit := queue.Get()
-	if quit {
-		return false
-	}
-	defer queue.Done(rawEvent)
-
-	event, ok := rawEvent.(Event)
-	if !ok {
-		log.Warn().Msgf("processSingle: dropping event with unexpected type event:%v", rawEvent)
-		return true
-	}
-
-	// Get the item from the informer to ensure we have the most up-to-date
-	// copy.
-	key := event.Key
-	item, exists, err := informer.GetIndexer().GetByKey(key)
-
-	// If we got the item successfully, call the proper method
-	if err == nil {
-		log.Debug().Msgf("processing object key:%s exists:%v", key, exists)
-		log.Trace().Msgf("processing object:%v", item)
-		if !exists {
-			// In the case of deletes, the item is no longer in the cache so
-			// we use the copy we got at the time of the event (event.Obj).
-			err = c.Resource.Delete(key, event.Obj)
-		} else {
-			err = c.Resource.Upsert(key, item)
-		}
-
-		if err == nil {
-			queue.Forget(rawEvent)
-		}
-	}
-
-	if err != nil {
-		if queue.NumRequeues(event) < 5 {
-			log.Error().Msgf("failed processing item, retrying key:%s error:%v", key, err)
-			queue.AddRateLimited(rawEvent)
-		} else {
-			log.Error().Msgf("failed processing item, no more retries key:%s error:%v", key, err)
-			queue.Forget(rawEvent)
-			utilruntime.HandleError(err)
-		}
-	}
-
-	return true
-}
-
-// informerDeleteHandler returns a function that implements
-// `DeleteFunc` from the `ResourceEventHandlerFuncs` interface.
-// It is split out as its own method to aid in testing.
-func (c *Controller) informerDeleteHandler(queue workqueue.RateLimitingInterface) func(obj interface{}) {
-	return func(obj interface{}) {
-		key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-		log.Debug().Msgf("queue op %s %s:%s", "delete", "key", key)
-		if err == nil {
-			// obj might be of type `cache.DeletedFinalStateUnknown`
-			// in which case we need to extract the object from
-			// within that struct.
-			if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
-				queue.Add(Event{Key: key, Obj: d.Obj})
-			} else {
-				queue.Add(Event{Key: key, Obj: obj})
-			}
-		}
-	}
-}
+type ServiceInstanceIDFunc func(name, addr string, httpPort, grpcPort int) string

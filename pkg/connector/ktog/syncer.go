@@ -26,10 +26,10 @@ type Syncer interface {
 	Sync([]*corev1.Service)
 }
 
-// GatewayRouteSyncer is a Syncer that takes the set of gateway routes.
-type GatewayRouteSyncer struct {
-	SyncPeriod        time.Duration
-	ServicePollPeriod time.Duration
+// KtoGSyncer is a Syncer that takes the set of gateway routes.
+type KtoGSyncer struct {
+	controller connector.ConnectController
+	source     *GatewaySource
 
 	lock sync.Mutex
 	once sync.Once
@@ -38,33 +38,37 @@ type GatewayRouteSyncer struct {
 	// of services before we start reaping services. When it is closed,
 	// the initial sync is complete.
 	initialSync chan bool
+
 	// initialSyncOnce controls the close operation on the initialSync channel
 	// to ensure it isn't closed more than once.
 	initialSyncOnce sync.Once
+}
 
-	GatewayResource *GatewayResource
-
-	services map[string]*corev1.Service
-	deregs   map[string]*corev1.Service
+func NewKtoGSyncer(controller connector.ConnectController,
+	gatewaySource *GatewaySource) *KtoGSyncer {
+	return &KtoGSyncer{
+		controller: controller,
+		source:     gatewaySource,
+	}
 }
 
 // Sync implements Syncer.
-func (s *GatewayRouteSyncer) Sync(rs []*corev1.Service) {
+func (s *KtoGSyncer) Sync(rs []*corev1.Service) {
 	// Grab the lock so we can replace the sync state
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	for _, svc := range s.services {
+	for _, svc := range s.controller.GetK2GContext().Services {
 		shadowSvc := svc
-		s.deregs[string(shadowSvc.UID)] = shadowSvc
+		s.controller.GetK2GContext().Deregs[string(shadowSvc.UID)] = shadowSvc
 	}
 
-	s.services = make(map[string]*corev1.Service)
+	s.controller.GetK2GContext().Services = make(map[string]*corev1.Service)
 
 	for _, svc := range rs {
 		shadowSvc := svc
-		s.services[string(shadowSvc.UID)] = shadowSvc
-		delete(s.deregs, string(shadowSvc.UID))
+		s.controller.GetK2GContext().Services[string(shadowSvc.UID)] = shadowSvc
+		delete(s.controller.GetK2GContext().Deregs, string(shadowSvc.UID))
 	}
 
 	// Signal that the initial sync is complete and our maps have been populated.
@@ -74,7 +78,7 @@ func (s *GatewayRouteSyncer) Sync(rs []*corev1.Service) {
 
 // Run is the long-running runloop for reconciling the local set of
 // services to register with the remote state.
-func (s *GatewayRouteSyncer) Run(ctx context.Context, ctrls ...*connector.Controller) {
+func (s *KtoGSyncer) Run(ctx context.Context, ctrls ...*connector.CacheController) {
 	s.once.Do(s.init)
 
 	for _, ctrl := range ctrls {
@@ -86,18 +90,18 @@ func (s *GatewayRouteSyncer) Run(ctx context.Context, ctrls ...*connector.Contro
 		}
 	}
 
-	reconcileTimer := time.NewTimer(s.SyncPeriod)
+	reconcileTimer := time.NewTimer(s.controller.GetSyncPeriod())
 	defer reconcileTimer.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info().Msg("GatewayRouteSyncer quitting")
+			log.Info().Msg("KtoGSyncer quitting")
 			return
 
 		case <-reconcileTimer.C:
 			s.syncFull(ctx)
-			reconcileTimer.Reset(s.SyncPeriod)
+			reconcileTimer.Reset(s.controller.GetSyncPeriod())
 		}
 	}
 }
@@ -105,36 +109,24 @@ func (s *GatewayRouteSyncer) Run(ctx context.Context, ctrls ...*connector.Contro
 // syncFull is called periodically to perform all the write-based API
 // calls to sync the data with cloud. This may also start background
 // watchers for specific services.
-func (s *GatewayRouteSyncer) syncFull(ctx context.Context) {
+func (s *KtoGSyncer) syncFull(ctx context.Context) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	for _, svc := range s.deregs {
-		s.GatewayResource.deleteGatewayRoute(svc.Name, svc.Namespace)
+	for _, svc := range s.controller.GetK2GContext().Deregs {
+		s.source.deleteGatewayRoute(svc.Name, svc.Namespace)
 	}
 
-	s.deregs = make(map[string]*corev1.Service)
+	s.controller.GetK2GContext().Deregs = make(map[string]*corev1.Service)
 
-	for _, svc := range s.services {
-		s.GatewayResource.updateGatewayRoute(svc)
+	for _, svc := range s.controller.GetK2GContext().Services {
+		s.source.updateGatewayRoute(svc)
 	}
 }
 
-func (s *GatewayRouteSyncer) init() {
+func (s *KtoGSyncer) init() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if s.services == nil {
-		s.services = make(map[string]*corev1.Service)
-	}
-	if s.deregs == nil {
-		s.deregs = make(map[string]*corev1.Service)
-	}
-	if s.SyncPeriod == 0 {
-		s.SyncPeriod = SyncPeriod
-	}
-	if s.ServicePollPeriod == 0 {
-		s.ServicePollPeriod = ServicePollPeriod
-	}
 	if s.initialSync == nil {
 		s.initialSync = make(chan bool)
 	}

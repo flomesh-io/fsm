@@ -10,7 +10,7 @@ type ResourceUpsertFunc func(string, interface{}) error
 type ResourceDeleteFunc func(string, interface{}) error
 
 // Resource should be implemented by anything that should be watchable
-// by Controller. The Resource needs to be aware of how to create the Informer
+// by CacheController. The Resource needs to be aware of how to create the Informer
 // that is responsible for making API calls as well as what to do on Upsert
 // and Delete.
 type Resource interface {
@@ -31,10 +31,10 @@ type Resource interface {
 }
 
 // Backgrounder should be implemented by a Resource that requires additional
-// background processing. If a Resource implements this, then the Controller
+// background processing. If a Resource implements this, then the CacheController
 // will automatically Run the Backgrounder for the duration of the controller.
 //
-// The channel will be closed when the Controller is quitting. The Controller
+// The channel will be closed when the CacheController is quitting. The CacheController
 // will block until the Backgrounder completes.
 type Backgrounder interface {
 	Run(<-chan struct{})

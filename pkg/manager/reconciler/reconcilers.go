@@ -30,6 +30,7 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/cluster/v1alpha1"
+	ctv1 "github.com/flomesh-io/fsm/pkg/controllers/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/controllers/flb"
 	gatewayv1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1"
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1alpha2"
@@ -84,6 +85,12 @@ func RegisterReconcilers(ctx context.Context) error {
 		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(cctx)
 		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(cctx)
 	}
+
+	reconcilers["Connector(ConsulConnector)"] = ctv1.NewConsulConnectorReconciler(ctx)
+	reconcilers["Connector(EurekaConnector)"] = ctv1.NewEurekaConnectorReconciler(ctx)
+	reconcilers["Connector(NacosConnector)"] = ctv1.NewNacosConnectorReconciler(ctx)
+	reconcilers["Connector(MachineConnector)"] = ctv1.NewMachineConnectorReconciler(ctx)
+	reconcilers["Connector(GatewayConnector)"] = ctv1.NewGatewayConnectorReconciler(ctx)
 
 	if mc.IsNamespacedIngressEnabled() {
 		reconcilers["NamespacedIngress"] = nsigv1alpha1.NewReconciler(cctx)

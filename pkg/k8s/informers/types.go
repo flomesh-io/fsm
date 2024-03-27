@@ -85,6 +85,21 @@ const (
 	// InformerKeyVirtualMachine is the InformerKey for a VirtualMachine informer
 	InformerKeyVirtualMachine InformerKey = "VirtualMachine"
 
+	// InformerKeyConsulConnector is the InformerKey for a ConsulConnector informer
+	InformerKeyConsulConnector InformerKey = "ConsulConnector"
+
+	// InformerKeyEurekaConnector is the InformerKey for a EurekaConnector informer
+	InformerKeyEurekaConnector InformerKey = "EurekaConnector"
+
+	// InformerKeyNacosConnector is the InformerKey for a NacosConnector informer
+	InformerKeyNacosConnector InformerKey = "NacosConnector"
+
+	// InformerKeyMachineConnector is the InformerKey for a MachineConnector informer
+	InformerKeyMachineConnector InformerKey = "MachineConnector"
+
+	// InformerKeyGatewayConnector is the InformerKey for a GatewayConnector informer
+	InformerKeyGatewayConnector InformerKey = "GatewayConnector"
+
 	// InformerKeyK8sIngressClass is the InformerKey for a k8s IngressClass informer
 	InformerKeyK8sIngressClass InformerKey = "IngressClass-k8s"
 	// InformerKeyK8sIngress is the InformerKey for a k8s Ingress informer

@@ -12,3 +12,7 @@ fi
 if [ ! -f "pkg/controllers/gateway/v1/chart.tgz" ]; then
 touch pkg/controllers/gateway/v1/chart.tgz
 fi
+
+if [ ! -f "pkg/controllers/connector/v1alpha1/chart.tgz" ]; then
+touch pkg/controllers/connector/v1alpha1/chart.tgz
+fi

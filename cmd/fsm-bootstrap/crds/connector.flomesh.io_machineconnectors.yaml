@@ -1,0 +1,172 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: machineconnectors.connector.flomesh.io
+spec:
+  group: connector.flomesh.io
+  names:
+    kind: MachineConnector
+    listKind: MachineConnectorList
+    plural: machineconnectors
+    shortNames:
+    - machineconnector
+    singular: machineconnector
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.syncToK8S.enable
+      name: SyncToK8S
+      type: string
+    - jsonPath: .status.toK8SServiceCnt
+      name: toK8SServices
+      type: integer
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: MachineConnector is the type used to represent a Machine Connector
+          resource.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Machine Connector specification
+            properties:
+              asInternalServices:
+                default: false
+                type: boolean
+              deriveNamespace:
+                type: string
+              replicas:
+                default: 1
+                format: int32
+                minimum: 1
+                type: integer
+              resources:
+                description: Compute Resources required by connector container.
+                properties:
+                  claims:
+                    description: |-
+                      Claims lists the names of resources, defined in spec.resourceClaims,
+                      that are used by this container.
+
+
+                      This is an alpha field and requires enabling the
+                      DynamicResourceAllocation feature gate.
+
+
+                      This field is immutable. It can only be set for containers.
+                    items:
+                      description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                      properties:
+                        name:
+                          description: |-
+                            Name must match the name of one entry in pod.spec.resourceClaims of
+                            the Pod where this field is used. It makes that resource available
+                            inside a container.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Limits describes the maximum amount of compute resources allowed.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Requests describes the minimum amount of compute resources required.
+                      If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                      otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                      More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                    type: object
+                type: object
+              syncToK8S:
+                description: MachineSyncToK8SSpec is the type used to represent the
+                  sync from Machine to K8S specification.
+                properties:
+                  clusterId:
+                    default: ""
+                    type: string
+                  enable:
+                    type: boolean
+                  filterLabel:
+                    default: ""
+                    type: string
+                  passingOnly:
+                    default: true
+                    type: boolean
+                  prefixLabel:
+                    default: ""
+                    type: string
+                  suffixLabel:
+                    default: ""
+                    type: string
+                  withGateway:
+                    default: false
+                    type: boolean
+                required:
+                - enable
+                type: object
+            required:
+            - deriveNamespace
+            - syncToK8S
+            type: object
+          status:
+            description: Status is the status of the Machine Connector configuration.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of a Machine
+                  Connector resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of a
+                  Machine Connector resource.
+                type: string
+              toK8SServiceCnt:
+                type: integer
+            required:
+            - toK8SServiceCnt
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

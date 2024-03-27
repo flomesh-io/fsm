@@ -81,6 +81,12 @@ type MetricsStore struct {
 	ServiceBroadcastEventCounter prometheus.Counter
 
 	/*
+	 * Connector metrics
+	 */
+	// ConnectorBroadcastEventCounter is the metric for the total number of ConnectorBroadcast events published
+	ConnectorBroadcastEventCounter prometheus.Counter
+
+	/*
 	 * Certificate metrics
 	 */
 	// CertIssuedCount is the metric counter for the number of certificates issued
@@ -312,6 +318,13 @@ func init() {
 		Subsystem: "service",
 		Name:      "broadcast_event_count",
 		Help:      "Represents the number of ServiceBroadcast events published by the FSM controller",
+	})
+
+	defaultMetricsStore.ConnectorBroadcastEventCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsRootNamespace,
+		Subsystem: "connector",
+		Name:      "broadcast_event_count",
+		Help:      "Represents the number of ConnectorBroadcast events published by the FSM controller",
 	})
 
 	defaultMetricsStore.registry = prometheus.NewRegistry()

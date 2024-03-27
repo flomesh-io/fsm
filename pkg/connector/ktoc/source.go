@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
-	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,8 +17,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/connector/provider"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -31,14 +31,6 @@ var (
 )
 
 const (
-	// CloudK8SNS is the key used in the meta to record the namespace
-	// of the service/node registration.
-	CloudK8SNS       = "fsm-connector-external-k8s-ns"
-	CloudK8SRefKind  = "fsm-connector-external-k8s-ref-kind"
-	CloudK8SRefValue = "fsm-connector-external-k8s-ref-name"
-	CloudK8SNodeName = "fsm-connector-external-k8s-node-name"
-	CloudK8SPort     = "fsm-connector-external-k8s-port"
-
 	// cloudKubernetesCheckType is the type of health check in cloud for Kubernetes readiness status.
 	cloudKubernetesCheckType = "kubernetes-readiness"
 	// cloudKubernetesCheckName is the name of health check in cloud for Kubernetes readiness status.
@@ -46,152 +38,65 @@ const (
 	kubernetesSuccessReasonMsg = "Kubernetes health checks passing"
 )
 
-type NodePortSyncType string
-
-const (
-	// ExternalOnly only sync NodePort services with a node's ExternalIP address.
-	// Doesn't sync if an ExternalIP doesn't exist.
-	ExternalOnly NodePortSyncType = "ExternalOnly"
-
-	// ExternalFirst sync with an ExternalIP first, if it doesn't exist, use the
-	// node's InternalIP address instead.
-	ExternalFirst NodePortSyncType = "ExternalFirst"
-
-	// InternalOnly sync NodePort services using.
-	InternalOnly NodePortSyncType = "InternalOnly"
-)
-
-// ServiceResource implements controller.Resource to sync CatalogService resource
+// KtoCSource implements controller.Resource to sync RegisteredInstances resource
 // types from K8S.
-type ServiceResource struct {
-	Client kubernetes.Interface
+type KtoCSource struct {
+	controller connector.ConnectController
+	syncer     Syncer
+	discClient connector.ServiceDiscoveryClient
 
-	Syncer Syncer
-
-	// Ctx is used to cancel processes kicked off by ServiceResource.
-	Ctx context.Context
-
-	// AllowK8sNamespacesSet is a set of k8s namespaces to explicitly allow for
-	// syncing. It supports the special character `*` which indicates that
-	// all k8s namespaces are eligible unless explicitly denied. This filter
-	// is applied before checking pod annotations.
-	AllowK8sNamespacesSet mapset.Set
-
-	// DenyK8sNamespacesSet is a set of k8s namespaces to explicitly deny
-	// syncing and thus service registration with Consul. An empty set
-	// means that no namespaces are removed from consideration. This filter
-	// takes precedence over AllowK8sNamespacesSet.
-	DenyK8sNamespacesSet mapset.Set
-
-	// ConsulK8STag is the tag value for services registered.
-	ConsulK8STag string
-
-	//AddServicePrefix prepends K8s services in cloud with a prefix
-	AddServicePrefix string
-
-	// ExplictEnable should be set to true to require explicit enabling
-	// using annotations. If this is false, then services are implicitly
-	// enabled (aka default enabled).
-	ExplicitEnable bool
-
-	// ClusterIPSync set to true (the default) syncs ClusterIP-type services.
-	// Setting this to false will ignore ClusterIP services during the sync.
-	ClusterIPSync bool
-
-	// LoadBalancerEndpointsSync set to true (default false) will sync ServiceTypeLoadBalancer endpoints.
-	LoadBalancerEndpointsSync bool
-
-	// NodeExternalIPSync set to true (the default) syncs NodePort services
-	// using the node's external ip address. When false, the node's internal
-	// ip address will be used instead.
-	NodePortSync NodePortSyncType
-
-	// AddK8SNamespaceAsServiceSuffix set to true appends Kubernetes namespace
-	// to the service name being synced to Cloud separated by a dash.
-	// For example, service 'foo' in the 'default' namespace will be synced
-	// as 'foo-default'.
-	AddK8SNamespaceAsServiceSuffix bool
-
-	// EnableNamespaces indicates that a user is running Consul Enterprise
-	// with version 1.7+ which is namespace aware. It enables Consul namespaces,
-	// with syncing into either a single Consul namespace or mirrored from
-	// k8s namespaces.
-	EnableNamespaces bool
-
-	// ConsulDestinationNamespace is the name of the Consul namespace to register all
-	// synced services into if Consul namespaces are enabled and mirroring
-	// is disabled. This will not be used if mirroring is enabled.
-	ConsulDestinationNamespace string
-
-	// EnableK8SNSMirroring causes Consul namespaces to be created to match the
-	// organization within k8s. Services are registered into the Consul
-	// namespace that mirrors their k8s namespace.
-	EnableK8SNSMirroring bool
-
-	// K8SNSMirroringPrefix is an optional prefix that can be added to the Consul
-	// namespaces created while mirroring. For example, if it is set to "k8s-",
-	// then the k8s `default` namespace will be mirrored in Consul's
-	// `k8s-default` namespace.
-	K8SNSMirroringPrefix string
-
-	// The Consul node name to register service with.
-	ConsulNodeName string
+	msgBroker     *messaging.Broker
+	msgWorkQueues *workerpool.WorkerPool
 
 	// serviceLock must be held for any read/write to these maps.
-	serviceLock sync.RWMutex
+	serviceLock  sync.Mutex
+	serviceDetas uint64
 
-	// serviceMap holds services we should sync to cloud. Keys are the
-	// in the form <kube namespace>/<kube svc name>.
-	serviceMap map[string]*corev1.Service
+	kubeClient kubernetes.Interface
 
-	// endpointsMap uses the same keys as serviceMap but maps to the endpoints
-	// of each service.
-	endpointsMap map[string]*corev1.Endpoints
+	endpointsResource *serviceEndpointsSource
 
-	// SyncIngress enables syncing of the hostname from an Ingress resource
-	// to the service registration if an Ingress rule matches the service.
-	SyncIngress bool
-
-	// SyncIngressLoadBalancerIPs enables syncing the IP of the Ingress LoadBalancer
-	// if we do not want to sync the hostname from the Ingress resource.
-	SyncIngressLoadBalancerIPs bool
-
-	// ingressServiceMap uses the same keys as serviceMap but maps to the ingress
-	// of each service if it exists.
-	ingressServiceMap map[string]map[string]string
-
-	// serviceHostnameMap maps the name of a service to the hostName and port that
-	// is provided by the Ingress resource for the service.
-	serviceHostnameMap map[string]serviceAddress
-
-	// registeredServiceMap holds the services in cloud that we've registered from kube.
-	// It's populated via cloud's API and lets us diff what is actually in
-	// cloud vs. what we expect to be there.
-	registeredServiceMap map[string][]*provider.CatalogRegistration
-
-	MsgBroker     *messaging.Broker
-	MsgWorkQueues *workerpool.WorkerPool
-	// workerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
-	MsgWorkerPoolSize int
+	// ctx is used to cancel processes kicked off by KtoCSource.
+	ctx context.Context
 }
 
-type serviceAddress struct {
-	hostName string
-	port     int32
+func NewKtoCSource(controller connector.ConnectController,
+	syncer Syncer,
+	ctx context.Context,
+	msgBroker *messaging.Broker,
+	kubeClient kubernetes.Interface,
+	discClient connector.ServiceDiscoveryClient) *KtoCSource {
+	return &KtoCSource{
+		controller:    controller,
+		syncer:        syncer,
+		discClient:    discClient,
+		msgBroker:     msgBroker,
+		msgWorkQueues: workerpool.NewWorkerPool(1),
+		kubeClient:    kubeClient,
+		ctx:           ctx,
+	}
+}
+
+func (t *KtoCSource) Lock() {
+	t.serviceLock.Lock()
+}
+
+func (t *KtoCSource) Unlock() {
+	t.serviceLock.Unlock()
 }
 
 // Informer implements the controller.Resource interface.
-func (t *ServiceResource) Informer() cache.SharedIndexInformer {
+func (t *KtoCSource) Informer() cache.SharedIndexInformer {
 	// Watch all k8s namespaces. Events will be filtered out as appropriate
 	// based on the allow and deny lists in the `shouldSync` function.
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return t.Client.CoreV1().Services(metav1.NamespaceAll).List(t.Ctx, options)
+				return t.kubeClient.CoreV1().Services(metav1.NamespaceAll).List(t.ctx, options)
 			},
 
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return t.Client.CoreV1().Services(metav1.NamespaceAll).Watch(t.Ctx, options)
+				return t.kubeClient.CoreV1().Services(metav1.NamespaceAll).Watch(t.ctx, options)
 			},
 		},
 		&corev1.Service{},
@@ -201,51 +106,42 @@ func (t *ServiceResource) Informer() cache.SharedIndexInformer {
 }
 
 // Upsert implements the controller.Resource interface.
-func (t *ServiceResource) Upsert(key string, raw interface{}) error {
-	// We expect a CatalogService. If it isn't a service then just ignore it.
+func (t *KtoCSource) Upsert(key string, raw interface{}) error {
+	// We expect a RegisteredInstances. If it isn't a service then just ignore it.
 	service, ok := raw.(*corev1.Service)
 	if !ok {
 		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
 	}
 
-	t.serviceLock.Lock()
-	defer t.serviceLock.Unlock()
-
-	if t.serviceMap == nil {
-		t.serviceMap = make(map[string]*corev1.Service)
-	}
+	t.Lock()
+	defer t.Unlock()
 
 	if !t.shouldSync(service) {
 		// Check if its in our map and delete it.
-		if _, ok := t.serviceMap[key]; ok {
+		if _, ok = t.controller.GetK2CContext().ServiceMap.Get(key); ok {
 			log.Info().Msgf("service should no longer be synced service:%s", key)
 			t.doDelete(key)
 		} else {
-			log.Debug().Msgf("[ServiceResource.Upsert] syncing disabled for service, ignoring key:%s", key)
+			log.Debug().Msgf("[KtoCSource.Upsert] syncing disabled for service, ignoring key:%s", key)
 		}
 		return nil
 	}
 
 	// Syncing is enabled, let's keep track of this service.
-	t.serviceMap[key] = service
-	log.Debug().Msgf("[ServiceResource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
+	t.controller.GetK2CContext().ServiceMap.Set(key, service)
+	log.Debug().Msgf("[KtoCSource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
 
 	// If we care about endpoints, we should do the initial endpoints load.
 	if t.shouldTrackEndpoints(key) {
-		endpoints, err := t.Client.CoreV1().
-			Endpoints(service.Namespace).
-			Get(t.Ctx, service.Name, metav1.GetOptions{})
+		endpoints, err := t.endpointsResource.getEndpoints(key)
 		if err != nil {
 			log.Debug().Msgf("error loading initial endpoints key%s err:%v",
 				key,
 				err)
 		} else {
-			if t.endpointsMap == nil {
-				t.endpointsMap = make(map[string]*corev1.Endpoints)
-			}
-			t.endpointsMap[key] = endpoints
-			log.Debug().Msgf("[ServiceResource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
+			t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
+			log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
 		}
 	}
 
@@ -257,9 +153,9 @@ func (t *ServiceResource) Upsert(key string, raw interface{}) error {
 }
 
 // Delete implements the controller.Resource interface.
-func (t *ServiceResource) Delete(key string, _ interface{}) error {
-	t.serviceLock.Lock()
-	defer t.serviceLock.Unlock()
+func (t *KtoCSource) Delete(key string, _ interface{}) error {
+	t.Lock()
+	defer t.Unlock()
 	t.doDelete(key)
 	log.Info().Msgf("delete key:%s", key)
 	return nil
@@ -268,60 +164,57 @@ func (t *ServiceResource) Delete(key string, _ interface{}) error {
 // doDelete is a helper function for deletion.
 //
 // Precondition: assumes t.serviceLock is held.
-func (t *ServiceResource) doDelete(key string) {
-	delete(t.serviceMap, key)
+func (t *KtoCSource) doDelete(key string) {
+	t.controller.GetK2CContext().ServiceMap.Remove(key)
 	log.Debug().Msgf("[doDelete] deleting service from serviceMap key:%s", key)
-	delete(t.endpointsMap, key)
+	t.controller.GetK2CContext().EndpointsMap.Remove(key)
 	log.Debug().Msgf("[doDelete] deleting endpoints from endpointsMap key:%s", key)
 	// If there were registrations related to this service, then
 	// delete them and sync.
-	if _, ok := t.registeredServiceMap[key]; ok {
-		delete(t.registeredServiceMap, key)
-		t.sync()
-	}
+	t.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
+	t.sync()
 }
 
 // Run implements the controller.Backgrounder interface.
-func (t *ServiceResource) Run(ch <-chan struct{}) {
+func (t *KtoCSource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for endpoints")
 	// Register a controller for Endpoints which subsequently registers a
 	// controller for the Ingress resource.
-	(&connector.Controller{
-		Resource: &serviceEndpointsResource{
+	t.endpointsResource = &serviceEndpointsSource{
+		Service: t,
+		Ctx:     t.ctx,
+		Resource: &serviceIngressSource{
 			Service: t,
-			Ctx:     t.Ctx,
-			Resource: &serviceIngressResource{
-				Service:                    t,
-				Ctx:                        t.Ctx,
-				SyncIngressLoadBalancerIPs: t.SyncIngressLoadBalancerIPs,
-				EnableIngress:              t.SyncIngress,
-			},
+			Ctx:     t.ctx,
 		},
+	}
+	(&connector.CacheController{
+		Resource: t.endpointsResource,
 	}).Run(ch)
 }
 
 // shouldSync returns true if resyncing should be enabled for the given service.
-func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
+func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 	// Namespace logic
-	if svc.Namespace == syncCloudNamespace {
+	if deriveNamespace := t.controller.GetDeriveNamespace(); strings.EqualFold(svc.Namespace, deriveNamespace) {
 		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// If in deny list, don't sync
-	if t.DenyK8sNamespacesSet.Contains(svc.Namespace) {
+	if t.controller.GetDenyK8SNamespaceSet().Contains(svc.Namespace) {
 		log.Debug().Msgf("[shouldSync] service is in the deny list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// If not in allow list or allow list is not *, don't sync
-	if !t.AllowK8sNamespacesSet.Contains("*") && !t.AllowK8sNamespacesSet.Contains(svc.Namespace) {
+	if !t.controller.GetAllowK8SNamespaceSet().Contains("*") && !t.controller.GetAllowK8SNamespaceSet().Contains(svc.Namespace) {
 		log.Debug().Msgf("[shouldSync] service not in allow list svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
 
 	// Ignore ClusterIP services if ClusterIP sync is disabled
-	if svc.Spec.Type == corev1.ServiceTypeClusterIP && !t.ClusterIPSync {
+	if svc.Spec.Type == corev1.ServiceTypeClusterIP && !t.controller.GetSyncClusterIPServices() {
 		log.Debug().Msgf("[shouldSync] ignoring clusterip service svc.Namespace:%s service:%v", svc.Namespace, svc)
 		return false
 	}
@@ -329,7 +222,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 	raw, ok := svc.Annotations[connector.AnnotationServiceSyncK8sToCloud]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
-		return !t.ExplicitEnable
+		return t.controller.GetDefaultSync()
 	}
 
 	v, err := strconv.ParseBool(raw)
@@ -339,7 +232,7 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 			err)
 
 		// Fallback to default
-		return !t.ExplicitEnable
+		return t.controller.GetDefaultSync()
 	}
 
 	return v
@@ -349,22 +242,22 @@ func (t *ServiceResource) shouldSync(svc *corev1.Service) bool {
 // should be tracked.
 //
 // Precondition: this requires the lock to be held.
-func (t *ServiceResource) shouldTrackEndpoints(key string) bool {
+func (t *KtoCSource) shouldTrackEndpoints(key string) bool {
 	// The service must be one we care about for us to watch the endpoints.
 	// We care about a service that exists in our service map (is enabled
 	// for syncing) and is a NodePort or ClusterIP type since only those
 	// types use endpoints.
-	if t.serviceMap == nil {
+	if t.controller.GetK2CContext().ServiceMap.IsEmpty() {
 		return false
 	}
-	svc, ok := t.serviceMap[key]
+	svc, ok := t.controller.GetK2CContext().ServiceMap.Get(key)
 	if !ok {
 		return false
 	}
 
 	return svc.Spec.Type == corev1.ServiceTypeNodePort ||
 		svc.Spec.Type == corev1.ServiceTypeClusterIP ||
-		(t.LoadBalancerEndpointsSync && svc.Spec.Type == corev1.ServiceTypeLoadBalancer)
+		(t.controller.GetSyncLoadBalancerEndpoints() && svc.Spec.Type == corev1.ServiceTypeLoadBalancer)
 }
 
 // generateRegistrations generates the necessary cloud registrations for
@@ -372,48 +265,43 @@ func (t *ServiceResource) shouldTrackEndpoints(key string) bool {
 // yet to register a service, then no registration will be generated.
 //
 // Precondition: the lock t.lock is held.
-func (t *ServiceResource) generateRegistrations(key string) {
+func (t *KtoCSource) generateRegistrations(key string) {
 	// Get the service. If it doesn't exist, then we can't generate.
-	svc, ok := t.serviceMap[key]
+	svc, ok := t.controller.GetK2CContext().ServiceMap.Get(key)
 	if !ok {
 		return
 	}
 
 	log.Debug().Msgf("[generateRegistrations] generating registration key:%s", key)
 
-	// Initialize our cloud service map here if it isn't already.
-	if t.registeredServiceMap == nil {
-		t.registeredServiceMap = make(map[string][]*provider.CatalogRegistration)
-	}
-
 	// Begin by always clearing the old value out since we'll regenerate
 	// a new one if there is one.
-	delete(t.registeredServiceMap, key)
+	t.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
 
 	// baseNode and baseService are the base that should be modified with
 	// service-type specific changes. These are not pointers, they should be
 	// shallow copied for each instance.
-	baseNode := provider.CatalogRegistration{
+	baseNode := connector.CatalogRegistration{
 		SkipNodeUpdate: true,
-		Node:           t.ConsulNodeName,
-		Address:        "127.0.0.1",
 		NodeMeta: map[string]string{
-			connector.ServiceSourceKey: connector.ServiceSourceValue,
+			connector.ClusterSetKey: t.controller.GetClusterSet(),
 		},
 	}
 
-	if withGateway {
-		if len(connector.ViaGateway.IngressAddr) > 0 {
-			baseNode.Address = connector.ViaGateway.IngressAddr
+	if t.controller.GetK2CWithGateway() {
+		if ingressAddr := t.controller.GetViaIngressAddr(); len(ingressAddr) > 0 {
+			baseNode.Address = ingressAddr
 		}
 	}
 
-	baseService := provider.AgentService{
-		Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
-		Tags:    []string{t.ConsulK8STag},
+	baseService := connector.AgentService{
+		MicroService: connector.MicroService{
+			Service: t.addPrefixAndK8SNamespace(svc.Name, svc.Namespace),
+		},
 		Meta: map[string]interface{}{
-			connector.ServiceSourceKey: connector.ServiceSourceValue,
-			CloudK8SNS:                 svc.Namespace,
+			connector.ClusterSetKey: t.controller.GetClusterSet(),
+			connector.ConnectUIDKey: t.controller.GetConnectorUID(),
+			connector.CloudK8SNS:    svc.Namespace,
 		},
 	}
 
@@ -422,15 +310,11 @@ func (t *ServiceResource) generateRegistrations(key string) {
 		baseService.Service = strings.TrimSpace(v)
 	}
 
-	// Update the Consul namespace based on namespace settings
-	consulNS := provider.CloudNamespace(svc.Namespace,
-		t.EnableNamespaces,
-		t.ConsulDestinationNamespace,
-		t.EnableK8SNSMirroring,
-		t.K8SNSMirroringPrefix)
-	if consulNS != "" {
-		log.Debug().Msgf("[generateRegistrations] namespace being used key:%s namespace:%s", key, consulNS)
-		baseService.Namespace = consulNS
+	// Update the service namespace based on namespace settings
+	registeredNS := t.discClient.RegisteredNamespace(svc.Namespace)
+	if registeredNS != "" {
+		log.Debug().Msgf("[generateRegistrations] namespace being used key:%s namespace:%s", key, registeredNS)
+		baseService.Namespace = registeredNS
 	}
 
 	// Determine the default port and set port annotations
@@ -455,7 +339,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 			key,
 			baseService.Service,
 			baseService.Namespace,
-			len(t.registeredServiceMap[key]))
+			t.controller.GetK2CContext().RegisteredServiceMap.Count())
 	}()
 
 	// If there are external IPs then those become the instance registrations
@@ -468,7 +352,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	// For LoadBalancer type services, we create a service instance for
 	// each LoadBalancer entry. We only support entries that have an IP
 	// address assigned (not hostnames).
-	// If LoadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
+	// If loadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
 	case corev1.ServiceTypeLoadBalancer:
 		t.generateLoadBalanceEndpointsRegistrations(key, baseNode, baseService, overridePortName, overridePortNumber, svc)
 
@@ -488,7 +372,7 @@ func (t *ServiceResource) generateRegistrations(key string) {
 	}
 }
 
-func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseService provider.AgentService) (string, int) {
+func (t *KtoCSource) determinePortAnnotations(svc *corev1.Service, baseService connector.AgentService) (string, int) {
 	var overridePortName string
 	var overridePortNumber int
 	if len(svc.Spec.Ports) > 0 {
@@ -546,26 +430,26 @@ func (t *ServiceResource) determinePortAnnotations(svc *corev1.Service, baseServ
 		// Add all the ports as annotations
 		for _, p := range svc.Spec.Ports {
 			// Set the tag
-			baseService.Meta[CloudK8SPort+"-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
+			baseService.Meta[connector.CloudK8SPort+"-"+p.Name] = strconv.FormatInt(int64(p.Port), 10)
 		}
 	}
 	return overridePortName, overridePortNumber
 }
 
-func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev1.Service, baseNode provider.CatalogRegistration, baseService provider.AgentService) bool {
+func (t *KtoCSource) generateExternalIPRegistrations(key string, svc *corev1.Service, baseNode connector.CatalogRegistration, baseService connector.AgentService) bool {
 	if ips := svc.Spec.ExternalIPs; len(ips) > 0 {
 		for _, ip := range ips {
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, ip, rs.HTTPPort, rs.GRPCPort)
+			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, ip, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = ip
 			// Adding information about service weight.
 			// Overrides the existing weight if present.
 			if weight, ok := svc.Annotations[connector.AnnotationServiceWeight]; ok && weight != "" {
 				weightI, err := getServiceWeight(weight)
 				if err == nil {
-					r.Service.Weights = provider.AgentWeights{
+					r.Service.Weights = connector.AgentWeights{
 						Passing: weightI,
 					}
 				} else {
@@ -573,7 +457,15 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 				}
 			}
 
-			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
+			t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+				key,
+				[]*connector.CatalogRegistration{&r},
+				func(exist bool,
+					valueInMap []*connector.CatalogRegistration,
+					newValue []*connector.CatalogRegistration,
+				) []*connector.CatalogRegistration {
+					return append(valueInMap, newValue...)
+				})
 		}
 
 		return true
@@ -581,13 +473,13 @@ func (t *ServiceResource) generateExternalIPRegistrations(key string, svc *corev
 	return false
 }
 
-func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService) bool {
-	if t.endpointsMap == nil {
+func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connector.CatalogRegistration, baseService connector.AgentService) bool {
+	if t.controller.GetK2CContext().EndpointsMap.IsEmpty() {
 		return true
 	}
 
-	endpoints := t.endpointsMap[key]
-	if endpoints == nil {
+	endpoints, ok := t.controller.GetK2CContext().EndpointsMap.Get(key)
+	if !ok || endpoints == nil || len(endpoints.Subsets) == 0 {
 		return true
 	}
 
@@ -600,7 +492,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 			}
 
 			// Look up the node's ip address by getting node info
-			node, err := t.Client.CoreV1().Nodes().Get(t.Ctx, *subsetAddr.NodeName, metav1.GetOptions{})
+			node, err := t.kubeClient.CoreV1().Nodes().Get(t.ctx, *subsetAddr.NodeName, metav1.GetOptions{})
 			if err != nil {
 				log.Warn().Msgf("error getting node info error:%v", err)
 				continue
@@ -608,7 +500,7 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 
 			// Set the expected node address type
 			var expectedType corev1.NodeAddressType
-			if t.NodePortSync == InternalOnly {
+			if t.controller.GetNodePortSyncType() == ctv1.InternalOnly {
 				expectedType = corev1.NodeInternalIP
 			} else {
 				expectedType = corev1.NodeExternalIP
@@ -623,10 +515,18 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 					r := baseNode
 					rs := baseService
 					r.Service = &rs
-					r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
+					r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
 					r.Service.Address = address.Address
 
-					t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
+					t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+						key,
+						[]*connector.CatalogRegistration{&r},
+						func(exist bool,
+							valueInMap []*connector.CatalogRegistration,
+							newValue []*connector.CatalogRegistration,
+						) []*connector.CatalogRegistration {
+							return append(valueInMap, newValue...)
+						})
 					// Only consider the first address that matches. In some cases
 					// there will be multiple addresses like when using AWS CNI.
 					// In those cases, Kubernetes will ensure eth0 is always the first
@@ -638,16 +538,24 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 
 			// If an ExternalIP wasn't found, and ExternalFirst is set,
 			// use an InternalIP
-			if t.NodePortSync == ExternalFirst && !found {
+			if t.controller.GetNodePortSyncType() == ctv1.ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
 					if address.Type == corev1.NodeInternalIP {
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
-						r.Service.ID = connector.ServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
+						r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, subsetAddr.IP, rs.HTTPPort, rs.GRPCPort)
 						r.Service.Address = address.Address
 
-						t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
+						t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+							key,
+							[]*connector.CatalogRegistration{&r},
+							func(exist bool,
+								valueInMap []*connector.CatalogRegistration,
+								newValue []*connector.CatalogRegistration,
+							) []*connector.CatalogRegistration {
+								return append(valueInMap, newValue...)
+							})
 						// Only consider the first address that matches. In some cases
 						// there will be multiple addresses like when using AWS CNI.
 						// In those cases, Kubernetes will ensure eth0 is always the first
@@ -662,8 +570,8 @@ func (t *ServiceResource) generateNodeportRegistrations(key string, baseNode pro
 	return false
 }
 
-func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, baseNode provider.CatalogRegistration, baseService provider.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service) {
-	if t.LoadBalancerEndpointsSync {
+func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseNode connector.CatalogRegistration, baseService connector.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service) {
+	if t.controller.GetSyncLoadBalancerEndpoints() {
 		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, false)
 	} else {
 		seen := map[string]struct{}{}
@@ -684,7 +592,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			r := baseNode
 			rs := baseService
 			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
+			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = addr
 
 			// Adding information about service weight.
@@ -692,7 +600,7 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 			if weight, ok := svc.Annotations[connector.AnnotationServiceWeight]; ok && weight != "" {
 				weightI, err := getServiceWeight(weight)
 				if err == nil {
-					r.Service.Weights = provider.AgentWeights{
+					r.Service.Weights = connector.AgentWeights{
 						Passing: weightI,
 					}
 				} else {
@@ -700,30 +608,38 @@ func (t *ServiceResource) generateLoadBalanceEndpointsRegistrations(key string, 
 				}
 			}
 
-			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
+			t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+				key,
+				[]*connector.CatalogRegistration{&r},
+				func(exist bool,
+					valueInMap []*connector.CatalogRegistration,
+					newValue []*connector.CatalogRegistration,
+				) []*connector.CatalogRegistration {
+					return append(valueInMap, newValue...)
+				})
 		}
 	}
 }
 
-func (t *ServiceResource) registerServiceInstance(
-	baseNode provider.CatalogRegistration,
-	baseService provider.AgentService,
+func (t *KtoCSource) registerServiceInstance(
+	baseNode connector.CatalogRegistration,
+	baseService connector.AgentService,
 	key string,
 	overridePortName string,
 	overridePortNumber int,
 	useHostname bool) {
-	if t.endpointsMap == nil {
+	if t.controller.GetK2CContext().EndpointsMap.IsEmpty() {
 		return
 	}
 
-	endpoints := t.endpointsMap[key]
-	if endpoints == nil {
+	endpoints, ok := t.controller.GetK2CContext().EndpointsMap.Get(key)
+	if !ok || endpoints == nil || len(endpoints.Subsets) == 0 {
 		return
 	}
 
 	seen := map[string]struct{}{}
 	for _, subset := range endpoints.Subsets {
-		// For ClusterIP services and if LoadBalancerEndpointsSync is true, we use the endpoint port instead
+		// For ClusterIP services and if loadBalancerEndpointsSync is true, we use the endpoint port instead
 		// of the service port because we're registering each endpoint
 		// as a separate service instance.
 		httpPort := baseService.HTTPPort
@@ -759,125 +675,158 @@ func (t *ServiceResource) registerServiceInstance(
 		}
 		for _, subsetAddr := range subset.Addresses {
 			var addr string
-			// Use the address and port from the Ingress resource if
-			// ingress-sync is enabled and the service has an ingress
-			// resource that references it.
-			if t.SyncIngress && t.isIngressService(key) {
-				addr = t.serviceHostnameMap[key].hostName
-				httpPort = int(t.serviceHostnameMap[key].port)
-			} else {
-				addr = subsetAddr.IP
-				if addr == "" && useHostname {
-					addr = subsetAddr.Hostname
-				}
-				if addr == "" {
-					continue
-				}
+			addr, httpPort = t.chooseServiceAddrPort(key, httpPort, subsetAddr, useHostname)
+			if len(addr) == 0 {
+				continue
 			}
 
-			if withGateway {
-				addr = connector.ViaGateway.IngressAddr
-				httpPort = int(connector.ViaGateway.Ingress.HTTPPort)
+			if t.controller.GetK2CWithGateway() {
+				addr = t.controller.GetViaIngressAddr()
+				httpPort = int(t.controller.GetViaIngressHTTPPort())
 			}
 
 			// Its not clear whether K8S guarantees ready addresses to
 			// be unique so we maintain a set to prevent duplicates just
 			// in case.
-			if _, ok := seen[addr]; ok {
+			if _, has := seen[addr]; has {
 				continue
 			}
 			seen[addr] = struct{}{}
 
 			r := baseNode
-			rs := baseService
-			r.Service = &rs
-			r.Service.ID = connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)
-			r.Service.Address = addr
-			r.Service.HTTPPort = httpPort
-			r.Service.GRPCPort = grpcPort
-			r.Service.Meta = make(map[string]interface{})
-			// Deepcopy baseService.Meta into r.CatalogService.Meta as baseService is shared
+			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort)
+			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
 			// between all nodes of a service
 			for k, v := range baseService.Meta {
 				r.Service.Meta[k] = v
 			}
 			if subsetAddr.TargetRef != nil {
-				r.Service.Meta[CloudK8SRefValue] = subsetAddr.TargetRef.Name
-				r.Service.Meta[CloudK8SRefKind] = subsetAddr.TargetRef.Kind
+				r.Service.Meta[connector.CloudK8SRefValue] = subsetAddr.TargetRef.Name
+				r.Service.Meta[connector.CloudK8SRefKind] = subsetAddr.TargetRef.Kind
 			}
 			if subsetAddr.NodeName != nil {
-				r.Service.Meta[CloudK8SNodeName] = *subsetAddr.NodeName
+				r.Service.Meta[connector.CloudK8SNodeName] = *subsetAddr.NodeName
 			}
 
-			r.Check = &provider.AgentCheck{
-				CheckID:   healthCheckID(endpoints.Namespace, connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)),
+			r.Check = &connector.AgentCheck{
+				CheckID:   healthCheckID(endpoints.Namespace, t.controller.GetServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort)),
 				Name:      cloudKubernetesCheckName,
 				Namespace: baseService.Namespace,
 				Type:      cloudKubernetesCheckType,
-				Status:    provider.HealthPassing,
-				ServiceID: connector.ServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort),
+				Status:    connector.HealthPassing,
+				ServiceID: t.controller.GetServiceInstanceID(r.Service.Service, addr, httpPort, grpcPort),
 				Output:    kubernetesSuccessReasonMsg,
 			}
 
-			t.registeredServiceMap[key] = append(t.registeredServiceMap[key], &r)
+			t.controller.GetK2CContext().RegisteredServiceMap.Upsert(
+				key,
+				[]*connector.CatalogRegistration{&r},
+				t.joinCatalogRegistrations)
 		}
 	}
+}
+
+func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr corev1.EndpointAddress, useHostname bool) (addr string, httpPort int) {
+	// Use the address and port from the Ingress resource if
+	// ingress-sync is enabled and the service has an ingress
+	// resource that references it.
+	if t.controller.GetSyncIngress() && t.isIngressService(key) {
+		if svcAddr, exists := t.controller.GetK2CContext().ServiceHostnameMap.Get(key); exists {
+			addr = svcAddr.HostName
+			httpPort = int(svcAddr.Port)
+		}
+	} else {
+		addr = subsetAddr.IP
+		if len(addr) == 0 && useHostname {
+			addr = subsetAddr.Hostname
+		}
+		httpPort = port
+	}
+	return addr, httpPort
+}
+
+func (t *KtoCSource) bindService(baseService connector.AgentService, service, addr string, httpPort, grpcPort int) *connector.AgentService {
+	rs := baseService
+	rs.ID = t.controller.GetServiceInstanceID(service, addr, httpPort, grpcPort)
+	rs.Address = addr
+	rs.HTTPPort = httpPort
+	rs.GRPCPort = grpcPort
+	rs.Meta = make(map[string]interface{})
+	return &rs
+}
+
+func (t *KtoCSource) joinCatalogRegistrations(exist bool,
+	valueInMap, newValue []*connector.CatalogRegistration) []*connector.CatalogRegistration {
+	return append(valueInMap, newValue...)
 }
 
 // sync calls the Syncer.Sync function from the generated registrations.
 //
 // Precondition: lock must be held.
-func (t *ServiceResource) sync() {
-	t.MsgBroker.GetQueue().AddRateLimited(events.PubSubMessage{
+func (t *KtoCSource) sync() {
+	atomic.AddUint64(&t.serviceDetas, 1)
+	t.msgBroker.GetQueue().AddRateLimited(events.PubSubMessage{
 		Kind:   announcements.ServiceUpdate,
 		NewObj: nil,
 		OldObj: nil,
 	})
 }
 
-// serviceEndpointsResource implements controller.Resource and starts
-// a background watcher on endpoints that is used by the ServiceResource
+// serviceEndpointsSource implements controller.Resource and starts
+// a background watcher on endpoints that is used by the KtoCSource
 // to keep track of changing endpoints for registered services.
-type serviceEndpointsResource struct {
-	Service  *ServiceResource
+type serviceEndpointsSource struct {
+	Service  *KtoCSource
 	Ctx      context.Context
 	Resource connector.Resource
+	informer cache.SharedIndexInformer
 }
 
 // Run implements the controller.Backgrounder interface.
-func (t *serviceEndpointsResource) Run(ch <-chan struct{}) {
+func (t *serviceEndpointsSource) Run(ch <-chan struct{}) {
 	log.Info().Msg("starting runner for ingress")
-	(&connector.Controller{
+	(&connector.CacheController{
 		Resource: t.Resource,
 	}).Run(ch)
 }
 
-func (t *serviceEndpointsResource) Informer() cache.SharedIndexInformer {
+func (t *serviceEndpointsSource) Informer() cache.SharedIndexInformer {
 	// Watch all k8s namespaces. Events will be filtered out as appropriate in the
 	// `shouldTrackEndpoints` function which checks whether the service is marked
 	// to be tracked by the `shouldSync` function which uses the allow and deny
 	// namespace lists.
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return t.Service.Client.CoreV1().
-					Endpoints(metav1.NamespaceAll).
-					List(t.Ctx, options)
-			},
+	if t.informer == nil {
+		t.informer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					return t.Service.kubeClient.CoreV1().
+						Endpoints(metav1.NamespaceAll).
+						List(t.Ctx, options)
+				},
 
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return t.Service.Client.CoreV1().
-					Endpoints(metav1.NamespaceAll).
-					Watch(t.Ctx, options)
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					return t.Service.kubeClient.CoreV1().
+						Endpoints(metav1.NamespaceAll).
+						Watch(t.Ctx, options)
+				},
 			},
-		},
-		&corev1.Endpoints{},
-		0,
-		cache.Indexers{},
-	)
+			&corev1.Endpoints{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return t.informer
 }
 
-func (t *serviceEndpointsResource) Upsert(key string, raw interface{}) error {
+func (t *serviceEndpointsSource) getEndpoints(key string) (*corev1.Endpoints, error) {
+	item, exists, err := t.informer.GetIndexer().GetByKey(key)
+	if err == nil && exists {
+		return item.(*corev1.Endpoints), nil
+	}
+	return nil, err
+}
+
+func (t *serviceEndpointsSource) Upsert(key string, raw interface{}) error {
 	svc := t.Service
 	endpoints, ok := raw.(*corev1.Endpoints)
 	if !ok {
@@ -885,19 +834,15 @@ func (t *serviceEndpointsResource) Upsert(key string, raw interface{}) error {
 		return nil
 	}
 
-	svc.serviceLock.Lock()
-	defer svc.serviceLock.Unlock()
+	svc.Lock()
+	defer svc.Unlock()
 
 	// Check if we care about endpoints for this service
 	if !svc.shouldTrackEndpoints(key) {
 		return nil
 	}
 
-	// We are tracking this service so let's keep track of the endpoints
-	if svc.endpointsMap == nil {
-		svc.endpointsMap = make(map[string]*corev1.Endpoints)
-	}
-	svc.endpointsMap[key] = endpoints
+	svc.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
 
 	// Update the registration and trigger a sync
 	svc.generateRegistrations(key)
@@ -906,47 +851,41 @@ func (t *serviceEndpointsResource) Upsert(key string, raw interface{}) error {
 	return nil
 }
 
-func (t *serviceEndpointsResource) Delete(key string, _ interface{}) error {
-	t.Service.serviceLock.Lock()
-	defer t.Service.serviceLock.Unlock()
+func (t *serviceEndpointsSource) Delete(key string, _ interface{}) error {
+	t.Service.Lock()
+	defer t.Service.Unlock()
 
 	// This is a bit of an optimization. We only want to force a resync
 	// if we were tracking this endpoint to begin with and that endpoint
 	// had associated registrations.
-	if _, ok := t.Service.endpointsMap[key]; ok {
-		delete(t.Service.endpointsMap, key)
-		if _, ok := t.Service.registeredServiceMap[key]; ok {
-			delete(t.Service.registeredServiceMap, key)
-			t.Service.sync()
-		}
-	}
+	t.Service.controller.GetK2CContext().EndpointsMap.Remove(key)
+	t.Service.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
+	t.Service.sync()
 
 	log.Info().Msgf("delete endpoint key:%s", key)
 	return nil
 }
 
-// serviceIngressResource implements controller.Resource and starts
-// a background watcher on ingress resources that is used by the ServiceResource
+// serviceIngressSource implements controller.Resource and starts
+// a background watcher on ingress resources that is used by the KtoCSource
 // to keep track of changing ingress for registered services.
-type serviceIngressResource struct {
-	Service                    *ServiceResource
-	Resource                   connector.Resource
-	Ctx                        context.Context
-	EnableIngress              bool
-	SyncIngressLoadBalancerIPs bool
+type serviceIngressSource struct {
+	Service  *KtoCSource
+	Resource connector.Resource
+	Ctx      context.Context
 }
 
-func (t *serviceIngressResource) Informer() cache.SharedIndexInformer {
+func (t *serviceIngressSource) Informer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return t.Service.Client.NetworkingV1().
+				return t.Service.kubeClient.NetworkingV1().
 					Ingresses(metav1.NamespaceAll).
 					List(t.Ctx, options)
 			},
 
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return t.Service.Client.NetworkingV1().
+				return t.Service.kubeClient.NetworkingV1().
 					Ingresses(metav1.NamespaceAll).
 					Watch(t.Ctx, options)
 			},
@@ -957,8 +896,8 @@ func (t *serviceIngressResource) Informer() cache.SharedIndexInformer {
 	)
 }
 
-func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
-	if !t.EnableIngress {
+func (t *serviceIngressSource) Upsert(key string, raw interface{}) error {
+	if !t.Service.controller.GetSyncIngress() {
 		return nil
 	}
 	svc := t.Service
@@ -968,8 +907,8 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 		return nil
 	}
 
-	svc.serviceLock.Lock()
-	defer svc.serviceLock.Unlock()
+	svc.Lock()
+	defer svc.Unlock()
 
 	for _, rule := range ingress.Spec.Rules {
 		var svcName string
@@ -986,7 +925,7 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 		if svcName == "" {
 			continue
 		}
-		if t.SyncIngressLoadBalancerIPs {
+		if t.Service.controller.GetSyncIngressLoadBalancerIPs() {
 			if len(ingress.Status.LoadBalancer.Ingress) > 0 && ingress.Status.LoadBalancer.Ingress[0].IP == "" {
 				continue
 			}
@@ -1002,50 +941,54 @@ func (t *serviceIngressResource) Upsert(key string, raw interface{}) error {
 			}
 		}
 
-		if svc.serviceHostnameMap == nil {
-			svc.serviceHostnameMap = make(map[string]serviceAddress)
-		}
 		// Maintain a list of the service name to the hostname from the Ingress resource.
-		svc.serviceHostnameMap[fmt.Sprintf("%s/%s", ingress.Namespace, svcName)] = serviceAddress{
-			hostName: hostName,
-			port:     svcPort,
-		}
-		if svc.ingressServiceMap == nil {
-			svc.ingressServiceMap = make(map[string]map[string]string)
-		}
-		if svc.ingressServiceMap[key] == nil {
-			svc.ingressServiceMap[key] = make(map[string]string)
+		svc.controller.GetK2CContext().ServiceHostnameMap.Set(
+			fmt.Sprintf("%s/%s", ingress.Namespace, svcName),
+			connector.ServiceAddress{
+				HostName: hostName,
+				Port:     svcPort,
+			})
+		set, exists := svc.controller.GetK2CContext().IngressServiceMap.Get(key)
+		if !exists {
+			svc.controller.GetK2CContext().IngressServiceMap.SetIfAbsent(key, connector.NewConcurrentMap[string]())
+			set, _ = svc.controller.GetK2CContext().IngressServiceMap.Get(key)
 		}
 		// Maintain a list of all the service names that map to an Ingress resource.
-		svc.ingressServiceMap[key][fmt.Sprintf("%s/%s", ingress.Namespace, svcName)] = ""
+		set.SetIfAbsent(fmt.Sprintf("%s/%s", ingress.Namespace, svcName), "")
 	}
 
 	// Update the registration for each matched service and trigger a sync
-	for svcName := range svc.ingressServiceMap[key] {
-		log.Info().Msgf("generating registrations for %s", svcName)
-		svc.generateRegistrations(svcName)
+	if set, exists := svc.controller.GetK2CContext().IngressServiceMap.Get(key); exists {
+		for item := range set.IterBuffered() {
+			svcName := item.Key
+			log.Info().Msgf("generating registrations for %s", svcName)
+			svc.generateRegistrations(svcName)
+		}
+		svc.sync()
 	}
-	svc.sync()
+
 	log.Info().Msgf("upsert ingress key:%s", key)
 
 	return nil
 }
 
-func (t *serviceIngressResource) Delete(key string, _ interface{}) error {
-	if !t.EnableIngress {
+func (t *serviceIngressSource) Delete(key string, _ interface{}) error {
+	if !t.Service.controller.GetSyncIngress() {
 		return nil
 	}
-	t.Service.serviceLock.Lock()
-	defer t.Service.serviceLock.Unlock()
+
+	t.Service.Lock()
+	defer t.Service.Unlock()
 
 	// This is a bit of an optimization. We only want to force a resync
 	// if we were tracking this ingress to begin with and that ingress
 	// had associated registrations.
-	if _, ok := t.Service.ingressServiceMap[key]; ok {
-		for svcName := range t.Service.ingressServiceMap[key] {
-			delete(t.Service.serviceHostnameMap, svcName)
+	if set, ok := t.Service.controller.GetK2CContext().IngressServiceMap.Get(key); ok {
+		for item := range set.IterBuffered() {
+			svcName := item.Key
+			t.Service.controller.GetK2CContext().ServiceHostnameMap.Remove(svcName)
 		}
-		delete(t.Service.ingressServiceMap, key)
+		t.Service.controller.GetK2CContext().IngressServiceMap.Remove(key)
 		t.Service.sync()
 	}
 
@@ -1053,12 +996,12 @@ func (t *serviceIngressResource) Delete(key string, _ interface{}) error {
 	return nil
 }
 
-func (t *ServiceResource) addPrefixAndK8SNamespace(name, namespace string) string {
-	if t.AddServicePrefix != "" {
-		name = fmt.Sprintf("%s%s", t.AddServicePrefix, name)
+func (t *KtoCSource) addPrefixAndK8SNamespace(name, namespace string) string {
+	if addServicePrefix := t.controller.GetAddServicePrefix(); len(addServicePrefix) > 0 {
+		name = fmt.Sprintf("%s%s", addServicePrefix, name)
 	}
 
-	if t.AddK8SNamespaceAsServiceSuffix {
+	if t.controller.GetAddK8SNamespaceAsServiceSuffix() {
 		name = fmt.Sprintf("%s-%s", name, namespace)
 	}
 
@@ -1066,8 +1009,12 @@ func (t *ServiceResource) addPrefixAndK8SNamespace(name, namespace string) strin
 }
 
 // isIngressService return if a service has an Ingress resource that references it.
-func (t *ServiceResource) isIngressService(key string) bool {
-	return t.serviceHostnameMap != nil && t.serviceHostnameMap[key].hostName != ""
+func (t *KtoCSource) isIngressService(key string) bool {
+	svcAddr, ok := t.controller.GetK2CContext().ServiceHostnameMap.Get(key)
+	if ok && len(svcAddr.HostName) > 0 {
+		return true
+	}
+	return false
 }
 
 // healthCheckID deterministically generates a health check ID based on service ID and Kubernetes namespace.

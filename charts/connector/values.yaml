@@ -1,0 +1,108 @@
+fsm:
+  #
+  # -- FSM control plane image parameters
+  image:
+    # -- Container image registry for control plane images
+    registry: flomesh
+    # -- Container image pull policy for control plane containers
+    pullPolicy: IfNotPresent
+    # -- Container image tag for control plane images
+    tag: "1.2.1-alpha.4"
+    # -- Image name defaults
+    name:
+      # -- fsm-connector's image name
+      fsmConnector: fsm-connector
+      # -- fsm-curl's image name
+      fsmCurl: fsm-curl
+    # -- Image digest (defaults to latest compatible tag)
+    digest:
+      # -- fsm-connector's image digest
+      fsmConnector: ""
+      # -- fsm-curl's image digest
+      fsmCurl: ""
+
+  # -- `fsm-connector` image pull secret
+  imagePullSecrets: []
+
+  # -- Identifier for the instance of a service mesh within a cluster
+  meshName: fsm
+
+  # -- Namespace to deploy FSM in. If not specified, the Helm release namespace is used.
+  fsmNamespace: ""
+
+  # -- Controller log verbosity
+  controllerLogLevel: info
+
+  # -- The trust domain to use as part of the common name when requesting new certificates.
+  trustDomain: cluster.local
+
+  #
+  # -- FSM's cloud connector parameters
+  cloudConnector:
+    enable: false
+    connectorProvider: ""
+    connectorName: ""
+    # -- Sidecar injector's replica count (ignored when autoscale.enable is true)
+    replicaCount: 1
+    # -- Sidecar injector's container resource parameters
+    resource:
+      limits:
+        cpu: "1"
+        memory: "1G"
+      requests:
+        cpu: "0.5"
+        memory: "128M"
+    # -- Sidecar injector's pod labels
+    podLabels: { }
+    # -- Enable Pod Disruption Budget
+    enablePodDisruptionBudget: false
+    # -- Auto scale configuration
+    autoScale:
+      # -- Enable Autoscale
+      enable: false
+      # -- Minimum replicas for autoscale
+      minReplicas: 1
+      # -- Maximum replicas for autoscale
+      maxReplicas: 5
+      cpu:
+        # -- Average target CPU utilization (%)
+        targetAverageUtilization: 80
+      memory:
+        # -- Average target memory utilization (%)
+        targetAverageUtilization: 80
+
+    ## Node labels for pod assignment
+    ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+    nodeSelector: { }
+
+    ## Affinity settings for pod assignment
+    ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: kubernetes.io/arch
+                  operator: In
+                  values:
+                    - amd64
+                    - arm64
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - fsm-injector
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+
+    # -- Node tolerations applied to control plane pods.
+    # The specified tolerations allow pods to schedule onto nodes with matching taints.
+    tolerations: [ ]

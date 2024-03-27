@@ -1,54 +1,57 @@
 package ktoc
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	"github.com/flomesh-io/fsm/pkg/connector/provider"
+	"github.com/flomesh-io/fsm/pkg/connector"
 )
 
 // BroadcastListener listens for broadcast messages from the message broker
-func (t *ServiceResource) BroadcastListener() {
+func (t *KtoCSource) BroadcastListener(stopCh <-chan struct{}, syncPeriod time.Duration) {
 	// Register for service config updates broadcast by the message broker
-	serviceUpdatePubSub := t.MsgBroker.GetServiceUpdatePubSub()
+	serviceUpdatePubSub := t.msgBroker.GetServiceUpdatePubSub()
 	serviceUpdateChan := serviceUpdatePubSub.Sub(announcements.ServiceUpdate.String())
-	defer t.MsgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
+	defer t.msgBroker.Unsub(serviceUpdatePubSub, serviceUpdateChan)
 
-	// Wait for two informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 20)
+	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
 
-	reconfirm := true
+	lastServiceDetas := uint64(0)
 
 	for {
 		select {
+		case <-stopCh:
+			return
 		case <-serviceUpdateChan:
-			// Wait for an informer synchronization period
-			slidingTimer.Reset(time.Second * 5)
-			// Avoid data omission
-			reconfirm = true
+			serviceDetas := atomic.LoadUint64(&t.serviceDetas)
+			if lastServiceDetas == serviceDetas {
+				atomic.CompareAndSwapUint64(&t.serviceDetas, lastServiceDetas, 0)
+			}
 		case <-slidingTimer.C:
-			newJob := func() *SyncJob {
-				return &SyncJob{
-					done:     make(chan struct{}),
-					resource: t,
+			serviceDetas := atomic.LoadUint64(&t.serviceDetas)
+			if lastServiceDetas != serviceDetas {
+				newJob := func() *SyncJob {
+					return &SyncJob{
+						done:     make(chan struct{}),
+						resource: t,
+					}
 				}
+				<-t.msgWorkQueues.AddJob(newJob())
+				lastServiceDetas = serviceDetas
 			}
-			<-t.MsgWorkQueues.AddJob(newJob())
 
-			if reconfirm {
-				reconfirm = false
-				slidingTimer.Reset(time.Second * 10)
-			}
+			slidingTimer.Reset(syncPeriod)
 		}
 	}
 }
 
-// SyncJob is the job to generate pipy policy json
+// SyncJob is the job to sync
 type SyncJob struct {
 	// Optional waiter
 	done     chan struct{}
-	resource *ServiceResource
+	resource *KtoCSource
 }
 
 // GetDoneCh returns the channel, which when closed, indicates the job has been finished.
@@ -60,16 +63,20 @@ func (job *SyncJob) GetDoneCh() <-chan struct{} {
 func (job *SyncJob) Run() {
 	defer close(job.done)
 	t := job.resource
+	t.Lock()
+	defer t.Unlock()
 	// NOTE(mitchellh): This isn't the most efficient way to do this and
 	// the times that sync are called are also not the most efficient. All
 	// of these are implementation details so lets improve this later when
 	// it becomes a performance issue and just do the easy thing first.
-	rs := make([]*provider.CatalogRegistration, 0, len(t.registeredServiceMap)*4)
-	for _, set := range t.registeredServiceMap {
-		rs = append(rs, set...)
+	rs := make([]*connector.CatalogRegistration, 0, t.controller.GetK2CContext().RegisteredServiceMap.Count()*4)
+	for item := range t.controller.GetK2CContext().RegisteredServiceMap.IterBuffered() {
+		if set := item.Val; len(set) > 0 {
+			rs = append(rs, set...)
+		}
 	}
 	// Sync, which should be non-blocking in real-world cases
-	t.Syncer.Sync(rs)
+	t.syncer.Sync(rs)
 }
 
 // JobName implementation for this job, for logging purposes
