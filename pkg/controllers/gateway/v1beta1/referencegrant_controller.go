@@ -61,7 +61,7 @@ func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	referenceGrant := &gwv1beta1.ReferenceGrant{}
 	err := r.fctx.Get(ctx, req.NamespacedName, referenceGrant)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1beta1.ReferenceGrant{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1beta1.ReferenceGrant{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -70,13 +70,13 @@ func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if referenceGrant.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(referenceGrant)
+		r.fctx.GatewayEventHandler.OnDelete(referenceGrant)
 		return ctrl.Result{}, nil
 	}
 
 	// As ReferenceGrant has no status, we don't need to update it
 
-	r.fctx.EventHandler.OnAdd(referenceGrant, false)
+	r.fctx.GatewayEventHandler.OnAdd(referenceGrant, false)
 
 	return ctrl.Result{}, nil
 }

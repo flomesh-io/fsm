@@ -25,6 +25,8 @@
 package reconciler
 
 import (
+	"context"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/cluster/v1alpha1"
@@ -40,61 +42,66 @@ import (
 )
 
 // RegisterReconcilers registers all reconcilers based on the configuration
-func RegisterReconcilers(ctx *fctx.ControllerContext) error {
+func RegisterReconcilers(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Registering Reconcilers ...")
 
-	mc := ctx.Config
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	mc := cctx.Configurator
 
 	reconcilers := make(map[string]controllers.Reconciler)
 
-	//reconcilers["ProxyProfile"] = proxyprofilev1alpha1.NewReconciler(ctx)
-	reconcilers["MCS(Cluster)"] = clusterv1alpha1.NewReconciler(ctx)
-	reconcilers["MCS(ServiceExport)"] = mcsv1alpha1.NewServiceExportReconciler(ctx)
+	//reconcilers["ProxyProfile"] = proxyprofilev1alpha1.NewReconciler(cctx)
+	reconcilers["MCS(Cluster)"] = clusterv1alpha1.NewReconciler(cctx)
+	reconcilers["MCS(ServiceExport)"] = mcsv1alpha1.NewServiceExportReconciler(cctx)
 
 	//if mc.ShouldCreateServiceAndEndpointSlicesForMCS() && version.IsEndpointSliceEnabled(ctx.K8sAPI) {
-	//	reconcilers["MCS(ServiceImport)"] = mcsv1alpha1.NewServiceImportReconciler(ctx)
-	//	reconcilers["MCS(Service)"] = mcsv1alpha1.NewServiceReconciler(ctx)
-	//	reconcilers["MCS(EndpointSlice)"] = mcsv1alpha1.NewEndpointSliceReconciler(ctx)
+	//	reconcilers["MCS(ServiceImport)"] = mcsv1alpha1.NewServiceImportReconciler(cctx)
+	//	reconcilers["MCS(Service)"] = mcsv1alpha1.NewServiceReconciler(cctx)
+	//	reconcilers["MCS(EndpointSlice)"] = mcsv1alpha1.NewEndpointSliceReconciler(cctx)
 	//}
 
-	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(ctx.KubeClient) {
-		reconcilers["GatewayAPI(GatewayClass)"] = gatewayv1.NewGatewayClassReconciler(ctx)
-		reconcilers["GatewayAPI(Gateway)"] = gatewayv1.NewGatewayReconciler(ctx)
-		reconcilers["GatewayAPI(HTTPRoute)"] = gatewayv1.NewHTTPRouteReconciler(ctx)
-		reconcilers["GatewayAPI(GRPCRoute)"] = gatewayv1alpha2.NewGRPCRouteReconciler(ctx)
-		reconcilers["GatewayAPI(TCPRoute)"] = gatewayv1alpha2.NewTCPRouteReconciler(ctx)
-		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(ctx)
-		reconcilers["GatewayAPI(UDPRoute)"] = gatewayv1alpha2.NewUDPRouteReconciler(ctx)
-		reconcilers["GatewayAPI(ReferenceGrant)"] = gatewayv1beta1.NewReferenceGrantReconciler(ctx)
-		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(SessionSticky)"] = pav1alpha1.NewSessionStickyPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(LoadBalancer)"] = pav1alpha1.NewLoadBalancerPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(CircuitBreaking)"] = pav1alpha1.NewCircuitBreakingPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(AccessControl)"] = pav1alpha1.NewAccessControlPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(HealthCheck)"] = pav1alpha1.NewHealthCheckPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(FaultInjection)"] = pav1alpha1.NewFaultInjectionPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(UpstreamTLS)"] = pav1alpha1.NewUpstreamTLSPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(ctx)
-		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(ctx)
+	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(cctx.KubeClient) {
+		reconcilers["GatewayAPI(GatewayClass)"] = gatewayv1.NewGatewayClassReconciler(cctx)
+		reconcilers["GatewayAPI(Gateway)"] = gatewayv1.NewGatewayReconciler(cctx)
+		reconcilers["GatewayAPI(HTTPRoute)"] = gatewayv1.NewHTTPRouteReconciler(cctx)
+		reconcilers["GatewayAPI(GRPCRoute)"] = gatewayv1alpha2.NewGRPCRouteReconciler(cctx)
+		reconcilers["GatewayAPI(TCPRoute)"] = gatewayv1alpha2.NewTCPRouteReconciler(cctx)
+		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(cctx)
+		reconcilers["GatewayAPI(UDPRoute)"] = gatewayv1alpha2.NewUDPRouteReconciler(cctx)
+		reconcilers["GatewayAPI(ReferenceGrant)"] = gatewayv1beta1.NewReferenceGrantReconciler(cctx)
+		reconcilers["PolicyAttachment(RateLimit)"] = pav1alpha1.NewRateLimitPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(SessionSticky)"] = pav1alpha1.NewSessionStickyPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(LoadBalancer)"] = pav1alpha1.NewLoadBalancerPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(CircuitBreaking)"] = pav1alpha1.NewCircuitBreakingPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(AccessControl)"] = pav1alpha1.NewAccessControlPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(HealthCheck)"] = pav1alpha1.NewHealthCheckPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(FaultInjection)"] = pav1alpha1.NewFaultInjectionPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(UpstreamTLS)"] = pav1alpha1.NewUpstreamTLSPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(cctx)
+		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(cctx)
 	}
 
 	if mc.IsNamespacedIngressEnabled() {
-		reconcilers["NamespacedIngress"] = nsigv1alpha1.NewReconciler(ctx)
+		reconcilers["NamespacedIngress"] = nsigv1alpha1.NewReconciler(cctx)
 	}
 
 	if mc.IsServiceLBEnabled() {
-		reconcilers["ServiceLB(Service)"] = svclb.NewServiceReconciler(ctx)
-		reconcilers["ServiceLB(Node)"] = svclb.NewNodeReconciler(ctx)
+		reconcilers["ServiceLB(Service)"] = svclb.NewServiceReconciler(cctx)
+		reconcilers["ServiceLB(Node)"] = svclb.NewNodeReconciler(cctx)
 	}
 
 	if mc.IsFLBEnabled() {
-		settingManager := flb.NewSettingManager(ctx)
-		reconcilers["FLB(Service)"] = flb.NewServiceReconciler(ctx, settingManager)
-		reconcilers["FLB(TLSSecret)"] = flb.NewSecretReconciler(ctx, settingManager)
+		settingManager := flb.NewSettingManager(cctx)
+		reconcilers["FLB(Service)"] = flb.NewServiceReconciler(cctx, settingManager)
+		reconcilers["FLB(TLSSecret)"] = flb.NewSecretReconciler(cctx, settingManager)
 	}
 
 	for name, r := range reconcilers {
-		if err := r.SetupWithManager(ctx.Manager); err != nil {
+		if err := r.SetupWithManager(cctx.Manager); err != nil {
 			log.Error().Msgf("Failed to setup reconciler %s: %s", name, err)
 			return err
 		}

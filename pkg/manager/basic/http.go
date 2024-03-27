@@ -25,14 +25,21 @@
 package basic
 
 import (
+	"context"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
 // SetupHTTP sets up HTTP of ingress controller
-func SetupHTTP(ctx *fctx.ControllerContext) error {
+func SetupHTTP(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Setting up HTTP ...")
 
-	return utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config, nil)
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return utils.UpdateIngressHTTPConfig(constants.DefaultIngressBasePath, cctx.RepoClient, cctx.Configurator, nil)
 }

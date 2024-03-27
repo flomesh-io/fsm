@@ -77,28 +77,33 @@ import (
 )
 
 // RegisterWebHooks registers all webhooks based on the configuration
-func RegisterWebHooks(ctx *fctx.ControllerContext) error {
+func RegisterWebHooks(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Registering Webhooks ...")
 
-	registers, err := webhookRegisters(ctx)
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	registers, err := webhookRegisters(cctx)
 
 	if err != nil {
 		return err
 	}
 
-	if err := createWebhookConfigurations(ctx, registers); err != nil {
+	if err := createWebhookConfigurations(cctx, registers); err != nil {
 		return err
 	}
 
-	registerWebhookHandlers(ctx, registers)
+	registerWebhookHandlers(cctx, registers)
 
 	return nil
 }
 
 func webhookRegisters(ctx *fctx.ControllerContext) ([]webhook.Register, error) {
-	mc := ctx.Config
+	mc := ctx.Configurator
 
-	cert, err := issueCertForWebhook(ctx.CertificateManager, mc)
+	cert, err := issueCertForWebhook(ctx.CertManager, mc)
 	if err != nil {
 		return nil, err
 	}

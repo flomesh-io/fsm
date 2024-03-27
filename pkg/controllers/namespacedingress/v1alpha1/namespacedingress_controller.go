@@ -93,7 +93,7 @@ type namespacedIngressValues struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	log.Debug().Msgf("[NSIG] Ingress Enabled = %t, Namespaced Ingress = %t", mc.IsIngressEnabled(), mc.IsNamespacedIngressEnabled())
 	if !mc.IsNamespacedIngressEnabled() {
@@ -206,7 +206,7 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 
 		if nsig.Spec.TLS.Enabled {
 			// TLS offload
-			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertificateManager, mc, nsig)
+			err := mgrutils.IssueCertForIngress(basepath, repoClient, r.fctx.CertManager, mc, nsig)
 			if err != nil {
 				return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 			}

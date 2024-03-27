@@ -63,7 +63,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	httpRoute := &gwv1.HTTPRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, httpRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1.HTTPRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +72,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if httpRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(httpRoute)
+		r.fctx.GatewayEventHandler.OnDelete(httpRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +88,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(httpRoute, false)
+	r.fctx.GatewayEventHandler.OnAdd(httpRoute, false)
 
 	return ctrl.Result{}, nil
 }
