@@ -407,15 +407,15 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-    background.Client = mgr.GetClient()
-    background.Manager = mgr
-    background.Scheme = mgr.GetScheme()
-    background.KubeClient = kubeClient
-    background.RepoClient = repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
-    background.InformerCollection = informerCollection
-    background.MeshName = meshName
-    background.FSMVersion = fsmVersion
-    background.TrustDomain = trustDomain
+	background.Client = mgr.GetClient()
+	background.Manager = mgr
+	background.Scheme = mgr.GetScheme()
+	background.KubeClient = kubeClient
+	background.RepoClient = repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
+	background.InformerCollection = informerCollection
+	background.MeshName = meshName
+	background.FSMVersion = fsmVersion
+	background.TrustDomain = trustDomain
 
 	for _, f := range []func(context.Context) error{
 		mrepo.InitRepo,

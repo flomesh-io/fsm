@@ -53,5 +53,6 @@ type ControllerContext struct {
 	GatewayEventHandler gateway.Controller
 	StatusUpdater       status.Updater
 	MeshName            string
+	TrustDomain         string
 	FSMVersion          string
 }

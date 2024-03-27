@@ -86,11 +86,11 @@ func RegisterReconcilers(ctx context.Context) error {
 		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(cctx)
 	}
 
-	reconcilers["Connector(ConsulConnector)"] = ctv1.NewConsulConnectorReconciler(ctx)
-	reconcilers["Connector(EurekaConnector)"] = ctv1.NewEurekaConnectorReconciler(ctx)
-	reconcilers["Connector(NacosConnector)"] = ctv1.NewNacosConnectorReconciler(ctx)
-	reconcilers["Connector(MachineConnector)"] = ctv1.NewMachineConnectorReconciler(ctx)
-	reconcilers["Connector(GatewayConnector)"] = ctv1.NewGatewayConnectorReconciler(ctx)
+	reconcilers["Connector(ConsulConnector)"] = ctv1.NewConsulConnectorReconciler(cctx)
+	reconcilers["Connector(EurekaConnector)"] = ctv1.NewEurekaConnectorReconciler(cctx)
+	reconcilers["Connector(NacosConnector)"] = ctv1.NewNacosConnectorReconciler(cctx)
+	reconcilers["Connector(MachineConnector)"] = ctv1.NewMachineConnectorReconciler(cctx)
+	reconcilers["Connector(GatewayConnector)"] = ctv1.NewGatewayConnectorReconciler(cctx)
 
 	if mc.IsNamespacedIngressEnabled() {
 		reconcilers["NamespacedIngress"] = nsigv1alpha1.NewReconciler(cctx)
