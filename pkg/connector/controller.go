@@ -74,6 +74,7 @@ type ConnectController interface {
 	GetDenyK8SNamespaceSet() mapset.Set
 
 	GetK2CWithGateway() bool
+	GetK2CWithGatewayMode() ctv1.WithGatewayMode
 
 	GetConsulNodeName() string
 	GetConsulEnableNamespaces() bool

@@ -139,6 +139,10 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	WithGateway bool `json:"withGateway,omitempty"`
 
+	// +kubebuilder:default=forward
+	// +optional
+	WithGatewayMode WithGatewayMode `json:"withGatewayMode,omitempty"`
+
 	// +optional
 	ConsulNodeName string `json:"consulNodeName,omitempty"`
 

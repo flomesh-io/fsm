@@ -192,6 +192,12 @@ spec:
                   withGateway:
                     default: false
                     type: boolean
+                  withGatewayMode:
+                    default: forward
+                    enum:
+                    - proxy
+                    - forward
+                    type: string
                 required:
                 - enable
                 type: object
