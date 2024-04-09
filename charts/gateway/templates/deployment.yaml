@@ -50,7 +50,7 @@ spec:
           - --retry-delay
           - "5"
         resources:
-          {{- toYaml .Values.fsm.fsmGateway.initResource | nindent 10 }}
+          {{- toYaml .Values.fsm.fsmGateway.initResources | nindent 10 }}
         {{- with .Values.fsm.fsmGateway.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}

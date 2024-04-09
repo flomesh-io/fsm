@@ -209,7 +209,7 @@
                     "description": "The details of the fsmController.",
                     "required": [
                         "resource",
-                        "initResource"
+                        "initResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -224,7 +224,7 @@
                         "resource": {
                             "$ref": "#/definitions/containerResources"
                         },
-                        "initResource": {
+                        "initResources": {
                           "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
@@ -1532,7 +1532,7 @@
                     "required": [
                         "replicaCount",
                         "resource",
-                        "initResource"
+                        "initResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -1547,7 +1547,7 @@
                         "resource": {
                             "$ref": "#/definitions/containerResources"
                         },
-                        "initResource": {
+                        "initResources": {
                           "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {

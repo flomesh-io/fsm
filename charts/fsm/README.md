@@ -181,7 +181,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.fsmController.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.fsmController.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
-| fsm.fsmController.initResource | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
+| fsm.fsmController.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.podLabels | object | `{}` | FSM controller's pod labels |
 | fsm.fsmController.replicaCount | int | `1` | FSM controller's replica count (ignored when autoscale.enable is true) |
 | fsm.fsmController.resource | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
@@ -219,7 +219,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.http.enabled | bool | `true` |  |
 | fsm.fsmIngress.http.nodePort | int | `30508` |  |
 | fsm.fsmIngress.http.port | int | `80` |  |
-| fsm.fsmIngress.initResource | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM ingress's init-container resource parameters. |
+| fsm.fsmIngress.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM ingress's init-container resource parameters. |
 | fsm.fsmIngress.logLevel | string | `"info"` |  |
 | fsm.fsmIngress.namespaced | bool | `false` |  |
 | fsm.fsmIngress.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
@@ -339,7 +339,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.injector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.injector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.injector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
-| fsm.injector.initResource | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM sidecar injector's init-container resource parameters. |
+| fsm.injector.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM sidecar injector's init-container resource parameters. |
 | fsm.injector.nodeSelector | object | `{}` |  |
 | fsm.injector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.injector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |

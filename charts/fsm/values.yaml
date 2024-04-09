@@ -223,7 +223,7 @@ fsm:
     tolerations: [ ]
 
     # -- FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details.
-    initResource:
+    initResources:
       limits:
         cpu: "500m"
         memory: "512M"
@@ -685,7 +685,7 @@ fsm:
     tolerations: [ ]
 
     # -- FSM sidecar injector's init-container resource parameters.
-    initResource:
+    initResources:
       limits:
         cpu: "500m"
         memory: "512M"
@@ -892,7 +892,7 @@ fsm:
     nodeSelector: { }
 
     # -- FSM ingress's init-container resource parameters.
-    initResource:
+    initResources:
       limits:
         cpu: "500m"
         memory: "512M"

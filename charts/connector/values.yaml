@@ -108,7 +108,7 @@ fsm:
     tolerations: [ ]
 
     # -- initContainer resource parameters
-    initResource:
+    initResources:
       limits:
         cpu: "500m"
         memory: "512M"
