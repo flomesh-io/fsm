@@ -73,7 +73,7 @@ spec:
             - --enforce-single-mesh={{ .Values.fsm.enforceSingleMesh }}
             - --namespace={{ include "fsm.namespace" . }}
           resources:
-            {{ toYaml .Values.fsm.preinstall.resources | indent 12 }}
+            {{- toYaml .Values.fsm.preinstall.resources | nindent 12 }}
 {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}
