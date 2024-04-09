@@ -317,7 +317,8 @@
                     "connectorProvider",
                     "connectorName",
                     "replicaCount",
-                    "resource"
+                    "resource",
+                    "initResource"
                   ],
                   "properties": {
                     "enable": {
@@ -348,6 +349,9 @@
                       ]
                     },
                     "resource": {
+                      "$ref": "#/definitions/containerResources"
+                    },
+                    "initResource": {
                       "$ref": "#/definitions/containerResources"
                     },
                     "podLabels": {

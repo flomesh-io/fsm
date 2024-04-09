@@ -115,3 +115,12 @@ fsm:
 
     # -- Node selector applied to control plane pods.
     nodeSelector: {}
+
+    # -- initContainer resource parameters
+    initResource:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"

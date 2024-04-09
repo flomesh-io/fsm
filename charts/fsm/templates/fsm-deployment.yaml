@@ -42,6 +42,8 @@ spec:
         - name: init-fsm-controller
           image: "{{ include "fsmCurl.image" . }}"
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+          resources:
+            {{- toYaml .Values.fsm.fsmController.initResource | nindent 12 }}
         - name: init-untar
           image: "{{ include "fsmCurl.image" . }}"
           imagePullPolicy: IfNotPresent
@@ -56,6 +58,8 @@ spec:
             subPath: scripts.tar.gz
           - mountPath: /repo
             name: shared-repo
+          resources:
+            {{- toYaml .Values.fsm.fsmController.initResource | nindent 12 }}
       containers:
         {{- if not .Values.fsm.repoServer.standalone }}
         - name: fsm-pipy-repo
