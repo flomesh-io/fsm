@@ -39,6 +39,8 @@ spec:
         - name: init-fsm-injector
           image: "{{ include "fsmCurl.image" . }}"
           command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+          resources:
+            {{- toYaml .Values.fsm.injector.initResources | nindent 12 }}
       containers:
         - name: fsm-injector
           image: "{{ include "fsmInjector.image" . }}"

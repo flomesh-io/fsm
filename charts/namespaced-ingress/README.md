@@ -67,6 +67,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.http.enabled | bool | `true` |  |
 | fsm.fsmIngress.http.nodePort | int | `30508` |  |
 | fsm.fsmIngress.http.port | int | `80` |  |
+| fsm.fsmIngress.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource parameters |
 | fsm.fsmIngress.logLevel | string | `"info"` |  |
 | fsm.fsmIngress.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
 | fsm.fsmIngress.podAnnotations | object | `{}` |  |

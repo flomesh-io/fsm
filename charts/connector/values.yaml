@@ -106,3 +106,12 @@ fsm:
     # -- Node tolerations applied to control plane pods.
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
+
+    # -- initContainer resource parameters
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"

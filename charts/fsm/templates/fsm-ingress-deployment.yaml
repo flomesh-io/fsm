@@ -52,6 +52,8 @@ spec:
           - --retry-connrefused
           - --retry-delay
           - "5"
+        resources:
+          {{- toYaml .Values.fsm.fsmIngress.initResources | nindent 10 }}
       containers:
       - name: ingress
         image: {{ include "fsmIngress.image" . }}
