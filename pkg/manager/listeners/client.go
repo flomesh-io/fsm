@@ -136,6 +136,17 @@ func (c *client) IsLocalDNSProxyEnabled() bool {
 	//TODO implement me
 	panic("implement me")
 }
+
+func (c *client) IsSearchesWithNamespace() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) IsSearchesWithTrustDomain() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) IsWildcardDNSProxyEnabled() bool {
 	//TODO implement me
 	panic("implement me")
