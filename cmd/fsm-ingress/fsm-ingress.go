@@ -91,7 +91,7 @@ func main() {
 	kubeClient := kubernetes.NewForConfigOrDie(kubeconfig)
 	configClient := configClientset.NewForConfigOrDie(kubeconfig)
 
-	if !version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
+	if !version.IsSupportedK8sVersion(kubeClient) {
 		log.Error().Msgf("kubernetes server version %s is not supported, requires at least %s",
 			version.ServerVersion.String(), version.MinK8sVersionForGatewayAPI.String())
 		os.Exit(1)
