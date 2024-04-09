@@ -81,6 +81,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmGateway.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.fsmGateway.env[0].name | string | `"GIN_MODE"` |  |
 | fsm.fsmGateway.env[0].value | string | `"release"` |  |
+| fsm.fsmGateway.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource parameters |
 | fsm.fsmGateway.logLevel | string | `"info"` |  |
 | fsm.fsmGateway.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
 | fsm.fsmGateway.podAnnotations | object | `{}` |  |

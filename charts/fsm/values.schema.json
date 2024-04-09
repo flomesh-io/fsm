@@ -208,7 +208,8 @@
                     "title": "The fsmController schema",
                     "description": "The details of the fsmController.",
                     "required": [
-                        "resource"
+                        "resource",
+                        "initResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -222,6 +223,9 @@
                         },
                         "resource": {
                             "$ref": "#/definitions/containerResources"
+                        },
+                        "initResources": {
+                          "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
                             "$id": "#/properties/fsm/properties/fsmController/properties/podLabels",
@@ -1527,7 +1531,8 @@
                     "description": "Sidecar injector configurations",
                     "required": [
                         "replicaCount",
-                        "resource"
+                        "resource",
+                        "initResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -1541,6 +1546,9 @@
                         },
                         "resource": {
                             "$ref": "#/definitions/containerResources"
+                        },
+                        "initResources": {
+                          "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
                             "$id": "#/properties/fsm/properties/injector/properties/podLabels",
@@ -1636,6 +1644,7 @@
                         "replicaCount",
                         "service",
                         "resources",
+                        "initResources",
                         "podLabels",
                         "podAnnotations",
                         "podSecurityContext",
@@ -1781,6 +1790,11 @@
                             "type": "object",
                             "default": {},
                             "title": "The resources Schema"
+                        },
+                        "initResources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         },
                         "podLabels": {
                             "type": "object",
@@ -2729,6 +2743,11 @@
                         },
                         "tolerations": {
                             "type": "array"
+                        },
+                        "resources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         }
                     },
                     "additionalProperties": false
@@ -2748,6 +2767,11 @@
                         },
                         "tolerations": {
                             "type": "array"
+                        },
+                        "resources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         }
                     },
                     "additionalProperties": false

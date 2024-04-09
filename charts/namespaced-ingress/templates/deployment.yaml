@@ -49,6 +49,8 @@ spec:
           - --retry-connrefused
           - --retry-delay
           - "5"
+        resources:
+          {{- toYaml .Values.fsm.fsmIngress.initResources | nindent 10 }}
         {{- with .Values.nsig.spec.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}

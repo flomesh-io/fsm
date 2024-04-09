@@ -222,6 +222,15 @@ fsm:
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
 
+    # -- FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details.
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"
+
   #
   # -- FSM interceptor parameters
   fsmInterceptor:
@@ -675,6 +684,15 @@ fsm:
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
 
+    # -- FSM sidecar injector's init-container resource parameters.
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"
+
   # -- Run init container in privileged mode
   enablePrivilegedInitContainer: false
 
@@ -873,6 +891,15 @@ fsm:
     # -- Node selector applied to control plane pods.
     nodeSelector: { }
 
+    # -- FSM ingress's init-container resource parameters.
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"
+
   #
   # -- FSM GatewayAPI parameters
   fsmGateway:
@@ -920,9 +947,9 @@ fsm:
   egressGateway:
     enabled: false
     name: fsm-egress-gateway
-    # -- FSM Operator Manager's replica count (ignored when autoscale.enable is true)
+    # -- FSM Egress Gateway's replica count (ignored when autoscale.enable is true)
     replicaCount: 1
-    # -- FSM Operator Manager's container resource parameters.
+    # -- FSM Egress Gateway's container resource parameters.
     resources:
       limits:
         cpu: 1000m
@@ -971,6 +998,15 @@ fsm:
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
 
+    # -- FSM preinstall hook's container resource parameters.
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512M
+      requests:
+        cpu: 200m
+        memory: 128M
+
   cleanup:
     ## Node labels for pod assignment
     ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -996,6 +1032,15 @@ fsm:
     # -- Node tolerations applied to control plane pods.
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
+
+    # -- FSM cleanup hook's container resource parameters.
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512M
+      requests:
+        cpu: 200m
+        memory: 128M
 
 #
 # -- SMI configuration
