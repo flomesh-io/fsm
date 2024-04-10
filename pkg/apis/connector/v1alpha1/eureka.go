@@ -122,6 +122,10 @@ type EurekaSyncFromK8SSpec struct {
 	// +kubebuilder:default=false
 	// +optional
 	WithGateway bool `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=forward
+	// +optional
+	WithGatewayMode WithGatewayMode `json:"withGatewayMode,omitempty"`
 }
 
 // EurekaSpec is the type used to represent the Eureka Connector specification.

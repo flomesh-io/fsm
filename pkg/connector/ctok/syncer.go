@@ -368,6 +368,13 @@ func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service
 	}
 	sort.Ints(ports)
 	createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = svcMeta.ClusterId
+	if len(svcMeta.ViaGateway) > 0 {
+		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceViaGateway] = svcMeta.ViaGateway
+	}
+	if len(svcMeta.ViaGateway) > 0 && !strings.EqualFold(svcMeta.ClusterSet, s.controller.GetClusterSet()) {
+		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceClusterSet] = svcMeta.ClusterSet
+		delete(createSvc.ObjectMeta.Annotations, connector.AnnotationMeshServiceInternalSync)
+	}
 	for addr := range svcMeta.Addresses {
 		createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
 	}

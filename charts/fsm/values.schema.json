@@ -1180,6 +1180,8 @@
                   "description": "Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers.",
                   "required": [
                     "enable",
+                    "searchesWithNamespace",
+                    "searchesWithTrustDomain",
                     "wildcard"
                   ],
                   "properties": {
@@ -1188,6 +1190,24 @@
                       "type": "boolean",
                       "title": "The enable schema for local DNS Proxy",
                       "description": "Indicates whether local DNS Proxy is enabled or not",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "searchesWithNamespace": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/searchesWithNamespace",
+                      "type": "boolean",
+                      "title": "The enable schema for searches with Namespace",
+                      "description": "Indicates whether dns searches contains namespace or not",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "searchesWithTrustDomain": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/searchesWithTrustDomain",
+                      "type": "boolean",
+                      "title": "The enable schema for searches with trust domain",
+                      "description": "Indicates whether dns searches contains trust domain or not",
                       "examples": [
                         true
                       ]

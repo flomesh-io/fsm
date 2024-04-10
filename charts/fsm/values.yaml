@@ -497,6 +497,8 @@ fsm:
   # -- Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers
   localDNSProxy:
     enable: false
+    searchesWithNamespace: true
+    searchesWithTrustDomain: true
     wildcard:
       enable: false
       ipv4:

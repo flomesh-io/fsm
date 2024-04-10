@@ -30,6 +30,14 @@ const (
 	ClusterIP  AddrSelector = "ClusterIP"
 )
 
+// +kubebuilder:validation:Enum=proxy;forward
+type WithGatewayMode string
+
+const (
+	Proxy   WithGatewayMode = "proxy"
+	Forward WithGatewayMode = "forward"
+)
+
 type Connector interface {
 	runtime.Object
 	metav1.Object

@@ -14,6 +14,7 @@ var (
 	CloudK8SRefValue = "fsm.connector.service.k8s.ref.name"
 	CloudK8SNodeName = "fsm.connector.service.k8s.node.name"
 	CloudK8SPort     = "fsm.connector.service.k8s.port"
+	CloudK8SVia      = "fsm.connector.service.via.gateway"
 )
 
 const (
@@ -28,6 +29,12 @@ const (
 
 	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
 	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
+
+	// AnnotationCloudServiceViaGateway defines cloud service via gateway annotation
+	AnnotationCloudServiceViaGateway = "flomesh.io/cloud-service-via-gateway"
+
+	// AnnotationCloudServiceClusterSet defines cloud service cluster set annotation
+	AnnotationCloudServiceClusterSet = "flomesh.io/cloud-service-cluster-set"
 
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
