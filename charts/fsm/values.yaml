@@ -230,6 +230,14 @@ fsm:
       requests:
         cpu: "200m"
         memory: "128M"
+    # -- FSM pipy repo's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details.
+    repoResources:
+      limits:
+        cpu: "2"
+        memory: "2G"
+      requests:
+        cpu: "0.5"
+        memory: "256M"
 
   #
   # -- FSM interceptor parameters
