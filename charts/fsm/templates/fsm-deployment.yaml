@@ -72,6 +72,13 @@ spec:
           args: [
               "--admin-port={{ .Values.fsm.repoServer.port }}",
           ]
+          resources:
+            limits:
+              cpu: "{{.Values.fsm.fsmController.repoResources.limits.cpu}}"
+              memory: "{{.Values.fsm.fsmController.repoResources.limits.memory}}"
+            requests:
+              cpu: "{{.Values.fsm.fsmController.repoResources.requests.cpu}}"
+              memory: "{{.Values.fsm.fsmController.repoResources.requests.memory}}"
           readinessProbe:
             initialDelaySeconds: 1
             timeoutSeconds: 5
