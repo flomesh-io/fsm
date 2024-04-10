@@ -209,7 +209,8 @@
                     "description": "The details of the fsmController.",
                     "required": [
                         "resource",
-                        "initResources"
+                        "initResources",
+                        "repoResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -225,6 +226,9 @@
                             "$ref": "#/definitions/containerResources"
                         },
                         "initResources": {
+                          "$ref": "#/definitions/containerResources"
+                        },
+                        "repoResources": {
                           "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
