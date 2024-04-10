@@ -122,6 +122,8 @@ type config struct {
 
 		withGateway bool
 
+		withGatewayMode ctv1.WithGatewayMode
+
 		consulCfg struct {
 			// The Consul node name to register services with.
 			consulNodeName string
@@ -371,6 +373,12 @@ func (c *config) GetK2CWithGateway() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.k2cCfg.withGateway
+}
+
+func (c *config) GetK2CWithGatewayMode() ctv1.WithGatewayMode {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.withGatewayMode
 }
 
 func (c *config) GetConsulNodeName() string {
@@ -664,6 +672,7 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
 
 	c.k2cCfg.nacosCfg.clusterId = spec.SyncFromK8S.ClusterId
 	c.k2cCfg.nacosCfg.groupId = spec.SyncFromK8S.GroupId
@@ -704,6 +713,7 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))
@@ -746,6 +756,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
 
 	c.k2cCfg.consulCfg.consulNodeName = spec.SyncFromK8S.ConsulNodeName
 	c.k2cCfg.consulCfg.consulEnableNamespaces = spec.SyncFromK8S.ConsulEnableNamespaces

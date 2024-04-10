@@ -2028,6 +2028,12 @@ spec:
                         description: PrimaryUpstreamDNSServerIPAddr defines a primary
                           upstream DNS server for local DNS Proxy.
                         type: string
+                      searchesWithNamespace:
+                        default: true
+                        type: boolean
+                      searchesWithTrustDomain:
+                        default: true
+                        type: boolean
                       secondaryUpstreamDNSServerIPAddr:
                         description: SecondaryUpstreamDNSServerIPAddr defines a secondary
                           upstream DNS server for local DNS Proxy.

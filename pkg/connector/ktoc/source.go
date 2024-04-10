@@ -219,6 +219,12 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
+	if clusterSet, ok := svc.Annotations[connector.AnnotationCloudServiceClusterSet]; ok {
+		if len(clusterSet) > 0 && !strings.EqualFold(clusterSet, t.controller.GetClusterSet()) {
+			return false
+		}
+	}
+
 	raw, ok := svc.Annotations[connector.AnnotationServiceSyncK8sToCloud]
 	if !ok {
 		// If there is no explicit value, then set it to our current default.
@@ -659,13 +665,13 @@ func (t *KtoCSource) registerServiceInstance(
 				if httpPort == 0 &&
 					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
 					p.AppProtocol != nil &&
-					strings.EqualFold(string(*p.AppProtocol), strings.ToUpper(constants.ProtocolHTTP)) {
+					strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					httpPort = int(p.Port)
 				}
 				if grpcPort == 0 &&
 					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
 					p.AppProtocol != nil &&
-					strings.EqualFold(string(*p.AppProtocol), strings.ToUpper(constants.ProtocolGRPC)) {
+					strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
 					grpcPort = int(p.Port)
 				}
 				if httpPort > 0 && grpcPort > 0 {
@@ -675,14 +681,22 @@ func (t *KtoCSource) registerServiceInstance(
 		}
 		for _, subsetAddr := range subset.Addresses {
 			var addr string
+			var viaAddr string
+			var viaPort int
 			addr, httpPort = t.chooseServiceAddrPort(key, httpPort, subsetAddr, useHostname)
 			if len(addr) == 0 {
 				continue
 			}
 
 			if t.controller.GetK2CWithGateway() {
-				addr = t.controller.GetViaIngressAddr()
-				httpPort = int(t.controller.GetViaIngressHTTPPort())
+				if t.controller.GetK2CWithGatewayMode() == ctv1.Forward {
+					viaAddr = t.controller.GetViaIngressAddr()
+					viaPort = int(t.controller.GetViaIngressHTTPPort())
+				}
+				if t.controller.GetK2CWithGatewayMode() == ctv1.Proxy {
+					addr = t.controller.GetViaIngressAddr()
+					httpPort = int(t.controller.GetViaIngressHTTPPort())
+				}
 			}
 
 			// Its not clear whether K8S guarantees ready addresses to
@@ -694,7 +708,7 @@ func (t *KtoCSource) registerServiceInstance(
 			seen[addr] = struct{}{}
 
 			r := baseNode
-			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort)
+			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaPort)
 			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
 			// between all nodes of a service
 			for k, v := range baseService.Meta {
@@ -745,13 +759,20 @@ func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr core
 	return addr, httpPort
 }
 
-func (t *KtoCSource) bindService(baseService connector.AgentService, service, addr string, httpPort, grpcPort int) *connector.AgentService {
+func (t *KtoCSource) bindService(baseService connector.AgentService,
+	service, addr string, httpPort, grpcPort int,
+	viaAddr string, viaPort int) *connector.AgentService {
 	rs := baseService
 	rs.ID = t.controller.GetServiceInstanceID(service, addr, httpPort, grpcPort)
 	rs.Address = addr
 	rs.HTTPPort = httpPort
 	rs.GRPCPort = grpcPort
+	rs.ViaAddress = viaAddr
+	rs.ViaPort = viaPort
 	rs.Meta = make(map[string]interface{})
+	if len(viaAddr) > 0 && viaPort > 0 {
+		rs.Meta[connector.CloudK8SVia] = fmt.Sprintf("%s:%d", viaAddr, viaPort)
+	}
 	return &rs
 }
 
