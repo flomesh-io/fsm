@@ -184,6 +184,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.podLabels | object | `{}` | FSM controller's pod labels |
 | fsm.fsmController.replicaCount | int | `1` | FSM controller's replica count (ignored when autoscale.enable is true) |
+| fsm.fsmController.repoResources | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM pipy repo's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.resource | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmGateway.enabled | bool | `false` |  |
