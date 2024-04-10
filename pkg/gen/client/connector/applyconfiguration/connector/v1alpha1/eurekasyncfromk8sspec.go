@@ -35,6 +35,7 @@ type EurekaSyncFromK8SSpecApplyConfiguration struct {
 	AllowK8sNamespaces             []string                     `json:"allowK8sNamespaces,omitempty"`
 	DenyK8sNamespaces              []string                     `json:"denyK8sNamespaces,omitempty"`
 	WithGateway                    *bool                        `json:"withGateway,omitempty"`
+	WithGatewayMode                *v1alpha1.WithGatewayMode    `json:"withGatewayMode,omitempty"`
 }
 
 // EurekaSyncFromK8SSpecApplyConfiguration constructs an declarative configuration of the EurekaSyncFromK8SSpec type for use with
@@ -153,5 +154,13 @@ func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithDenyK8sNamespaces(values .
 // If called multiple times, the WithGateway field is set to the value of the last call.
 func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithWithGateway(value bool) *EurekaSyncFromK8SSpecApplyConfiguration {
 	b.WithGateway = &value
+	return b
+}
+
+// WithWithGatewayMode sets the WithGatewayMode field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the WithGatewayMode field is set to the value of the last call.
+func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithWithGatewayMode(value v1alpha1.WithGatewayMode) *EurekaSyncFromK8SSpecApplyConfiguration {
+	b.WithGatewayMode = &value
 	return b
 }

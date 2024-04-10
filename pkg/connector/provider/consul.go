@@ -329,6 +329,7 @@ func GetConsulDiscoveryClient(connectController connector.ConnectController) (*C
 	connector.CloudK8SRefValue = "fsm_connector_service_k8s_ref_name"
 	connector.CloudK8SNodeName = "fsm_connector_service_k8s_node_name"
 	connector.CloudK8SPort = "fsm_connector_service_k8s_port"
+	connector.CloudK8SVia = "fsm_connector_service_via_gateway"
 
 	return consulDiscoveryClient, nil
 }
