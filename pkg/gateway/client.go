@@ -76,6 +76,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 	for _, informerKey := range []fsminformers.InformerKey{
 		fsminformers.InformerKeyService,
 		fsminformers.InformerKeyServiceImport,
+		fsminformers.InformerKeyEndpoints,
 		fsminformers.InformerKeyEndpointSlices,
 		fsminformers.InformerKeySecret,
 		fsminformers.InformerKeyGatewayAPIGatewayClass,
@@ -202,6 +203,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyService)
 	case *mcsv1alpha1.ServiceImport:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyServiceImport)
+	case *corev1.Endpoints:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpoints)
 	case *discoveryv1.EndpointSlice:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpointSlices)
 	case *corev1.Secret:
@@ -266,6 +269,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.EndpointSlicesAdded,
 			Update: announcements.EndpointSlicesUpdated,
 			Delete: announcements.EndpointSlicesDeleted,
+		}
+	case fsminformers.InformerKeyEndpoints:
+		return &k8s.EventTypes{
+			Add:    announcements.EndpointAdded,
+			Update: announcements.EndpointUpdated,
+			Delete: announcements.EndpointDeleted,
 		}
 	case fsminformers.InformerKeySecret:
 		return &k8s.EventTypes{

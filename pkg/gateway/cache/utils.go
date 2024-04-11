@@ -507,10 +507,10 @@ func ignoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.S
 	}
 
 	// ignore endpoint slices that don't have a matching port.
-	return findEndpointSlicePort(endpointSlice.Ports, port) == 0
+	return findPort(endpointSlice.Ports, port) == 0
 }
 
-func findEndpointSlicePort(ports []discoveryv1.EndpointPort, svcPort corev1.ServicePort) int32 {
+func findPort(ports []discoveryv1.EndpointPort, svcPort corev1.ServicePort) int32 {
 	portName := svcPort.Name
 	for _, p := range ports {
 		if p.Port == nil {
@@ -519,25 +519,6 @@ func findEndpointSlicePort(ports []discoveryv1.EndpointPort, svcPort corev1.Serv
 
 		if p.Name != nil && *p.Name == portName {
 			return *p.Port
-		}
-	}
-
-	return 0
-}
-
-func findEndpointPort(ports []corev1.EndpointPort, svcPort corev1.ServicePort) int32 {
-	for i, epPort := range ports {
-		if svcPort.Name == "" {
-			// port.Name is optional if there is only one port
-			return epPort.Port
-		}
-
-		if svcPort.Name == epPort.Name {
-			return epPort.Port
-		}
-
-		if i == len(ports)-1 && svcPort.TargetPort.Type == intstr.Int {
-			return svcPort.TargetPort.IntVal
 		}
 	}
 

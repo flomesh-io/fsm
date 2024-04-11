@@ -19,6 +19,8 @@ package v1alpha3
 // with apply.
 type LocalDNSProxyApplyConfiguration struct {
 	Enable                           *bool                         `json:"enable,omitempty"`
+	SearchesWithNamespace            *bool                         `json:"searchesWithNamespace,omitempty"`
+	SearchesWithTrustDomain          *bool                         `json:"searchesWithTrustDomain,omitempty"`
 	PrimaryUpstreamDNSServerIPAddr   *string                       `json:"primaryUpstreamDNSServerIPAddr,omitempty"`
 	SecondaryUpstreamDNSServerIPAddr *string                       `json:"secondaryUpstreamDNSServerIPAddr,omitempty"`
 	Wildcard                         *WildcardDNApplyConfiguration `json:"wildcard,omitempty"`
@@ -36,6 +38,22 @@ func LocalDNSProxy() *LocalDNSProxyApplyConfiguration {
 // If called multiple times, the Enable field is set to the value of the last call.
 func (b *LocalDNSProxyApplyConfiguration) WithEnable(value bool) *LocalDNSProxyApplyConfiguration {
 	b.Enable = &value
+	return b
+}
+
+// WithSearchesWithNamespace sets the SearchesWithNamespace field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SearchesWithNamespace field is set to the value of the last call.
+func (b *LocalDNSProxyApplyConfiguration) WithSearchesWithNamespace(value bool) *LocalDNSProxyApplyConfiguration {
+	b.SearchesWithNamespace = &value
+	return b
+}
+
+// WithSearchesWithTrustDomain sets the SearchesWithTrustDomain field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SearchesWithTrustDomain field is set to the value of the last call.
+func (b *LocalDNSProxyApplyConfiguration) WithSearchesWithTrustDomain(value bool) *LocalDNSProxyApplyConfiguration {
+	b.SearchesWithTrustDomain = &value
 	return b
 }
 

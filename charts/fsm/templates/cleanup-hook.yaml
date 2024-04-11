@@ -117,6 +117,8 @@ spec:
              kubectl delete deploy fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
              kubectl delete svc fsm-egress-gateway -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
              kubectl delete cm fsm-egress-gateway-pjs -n '{{ include "fsm.namespace" . }}' --ignore-not-found;
+          resources:
+            {{- toYaml .Values.fsm.cleanup.resources | nindent 12 }}
 {{- if .Values.fsm.imagePullSecrets }}
       imagePullSecrets:
 {{ toYaml .Values.fsm.imagePullSecrets | indent 8 }}

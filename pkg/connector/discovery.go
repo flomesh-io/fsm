@@ -91,6 +91,8 @@ type AgentService struct {
 	Address     string
 	HTTPPort    int
 	GRPCPort    int
+	ViaAddress  string
+	ViaPort     int
 	Weights     AgentWeights
 	Tags        []string
 	Meta        map[string]interface{}

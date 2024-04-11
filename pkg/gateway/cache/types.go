@@ -129,10 +129,10 @@ type serviceInfo struct {
 	//filters     []routecfg.Filter
 }
 
-//type endpointInfo struct {
-//	address string
-//	port    int32
-//}
+type endpointInfo struct {
+	address string
+	port    int32
+}
 
 type globalPolicyAttachments struct {
 	rateLimits      map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy

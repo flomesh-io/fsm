@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.3.0-alpha.3](https://img.shields.io/badge/Version-1.3.0--alpha.3-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.3.0-alpha.3](https://img.shields.io/badge/AppVersion-v1.3.0--alpha.3-informational?style=flat-square)
+![Version: 1.3.0-alpha.4](https://img.shields.io/badge/Version-1.3.0--alpha.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.3.0-alpha.4](https://img.shields.io/badge/AppVersion-v1.3.0--alpha.4-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -80,6 +80,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cleanup.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
 | fsm.cleanup.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
 | fsm.cleanup.nodeSelector | object | `{}` |  |
+| fsm.cleanup.resources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM cleanup hook's container resource parameters. |
 | fsm.cleanup.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
@@ -95,8 +96,8 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.egressGateway.podAnnotations | object | `{}` |  |
 | fsm.egressGateway.podLabels | object | `{}` |  |
 | fsm.egressGateway.port | int | `1080` |  |
-| fsm.egressGateway.replicaCount | int | `1` | FSM Operator Manager's replica count (ignored when autoscale.enable is true) |
-| fsm.egressGateway.resources | object | `{"limits":{"cpu":"1000m","memory":"512M"},"requests":{"cpu":"300m","memory":"128M"}}` | FSM Operator Manager's container resource parameters. |
+| fsm.egressGateway.replicaCount | int | `1` | FSM Egress Gateway's replica count (ignored when autoscale.enable is true) |
+| fsm.egressGateway.resources | object | `{"limits":{"cpu":"1000m","memory":"512M"},"requests":{"cpu":"300m","memory":"128M"}}` | FSM Egress Gateway's container resource parameters. |
 | fsm.enableDebugServer | bool | `false` | Enable the debug HTTP server on FSM controller |
 | fsm.enableEgress | bool | `true` | Enable egress in the mesh |
 | fsm.enableFluentbit | bool | `false` | Enable Fluent Bit sidecar deployment on FSM controller's pod |
@@ -180,8 +181,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.fsmController.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.fsmController.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
+| fsm.fsmController.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM controller's init-container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.podLabels | object | `{}` | FSM controller's pod labels |
 | fsm.fsmController.replicaCount | int | `1` | FSM controller's replica count (ignored when autoscale.enable is true) |
+| fsm.fsmController.repoResources | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM pipy repo's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.resource | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmGateway.enabled | bool | `false` |  |
@@ -217,6 +220,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.http.enabled | bool | `true` |  |
 | fsm.fsmIngress.http.nodePort | int | `30508` |  |
 | fsm.fsmIngress.http.port | int | `80` |  |
+| fsm.fsmIngress.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM ingress's init-container resource parameters. |
 | fsm.fsmIngress.logLevel | string | `"info"` |  |
 | fsm.fsmIngress.namespaced | bool | `false` |  |
 | fsm.fsmIngress.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
@@ -314,7 +318,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmSidecarInit | string | `"fsm-sidecar-init"` | Sidecar init container's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.3.0-alpha.3"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.3.0-alpha.4"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
@@ -336,13 +340,14 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.injector.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
 | fsm.injector.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
 | fsm.injector.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
+| fsm.injector.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM sidecar injector's init-container resource parameters. |
 | fsm.injector.nodeSelector | object | `{}` |  |
 | fsm.injector.podLabels | object | `{}` | Sidecar injector's pod labels |
 | fsm.injector.replicaCount | int | `1` | Sidecar injector's replica count (ignored when autoscale.enable is true) |
 | fsm.injector.resource | object | `{"limits":{"cpu":"1","memory":"512M"},"requests":{"cpu":"0.5","memory":"128M"}}` | Sidecar injector's container resource parameters |
 | fsm.injector.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.injector.webhookTimeoutSeconds | int | `20` | Mutating webhook timeout |
-| fsm.localDNSProxy | object | `{"enable":false,"wildcard":{"enable":false,"ipv4":["127.0.0.2"]}}` | Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
+| fsm.localDNSProxy | object | `{"enable":false,"searchesWithNamespace":true,"searchesWithTrustDomain":true,"wildcard":{"enable":false,"ipv4":["127.0.0.2"]}}` | Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers |
 | fsm.localProxyMode | string | `"Localhost"` | Proxy mode for the proxy sidecar. Acceptable values are ['Localhost', 'PodIP'] |
 | fsm.maxDataPlaneConnections | int | `0` | Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |
@@ -408,6 +413,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.preinstall.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
 | fsm.preinstall.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
 | fsm.preinstall.nodeSelector | object | `{}` |  |
+| fsm.preinstall.resources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM preinstall hook's container resource parameters. |
 | fsm.preinstall.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.prometheus.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.prometheus.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |

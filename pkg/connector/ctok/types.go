@@ -31,6 +31,8 @@ type MicroSvcMeta struct {
 	Ports       map[MicroSvcPort]MicroSvcAppProtocol
 	Addresses   map[MicroEndpointAddr]int
 	ClusterId   string
+	ViaGateway  string
+	ClusterSet  string
 	HealthCheck bool
 }
 

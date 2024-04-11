@@ -208,7 +208,9 @@
                     "title": "The fsmController schema",
                     "description": "The details of the fsmController.",
                     "required": [
-                        "resource"
+                        "resource",
+                        "initResources",
+                        "repoResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -222,6 +224,12 @@
                         },
                         "resource": {
                             "$ref": "#/definitions/containerResources"
+                        },
+                        "initResources": {
+                          "$ref": "#/definitions/containerResources"
+                        },
+                        "repoResources": {
+                          "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
                             "$id": "#/properties/fsm/properties/fsmController/properties/podLabels",
@@ -834,7 +842,7 @@
                         "title": "The codebase schema for pipy repo server",
                         "description": "Codebase is the folder used by fsmController.",
                         "examples": [
-                          "/fsm1.2.0"
+                          "/fsm1.3.0-alpha.4"
                         ]
                       }
                     }
@@ -1176,6 +1184,8 @@
                   "description": "Local DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers.",
                   "required": [
                     "enable",
+                    "searchesWithNamespace",
+                    "searchesWithTrustDomain",
                     "wildcard"
                   ],
                   "properties": {
@@ -1184,6 +1194,24 @@
                       "type": "boolean",
                       "title": "The enable schema for local DNS Proxy",
                       "description": "Indicates whether local DNS Proxy is enabled or not",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "searchesWithNamespace": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/searchesWithNamespace",
+                      "type": "boolean",
+                      "title": "The enable schema for searches with Namespace",
+                      "description": "Indicates whether dns searches contains namespace or not",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "searchesWithTrustDomain": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/searchesWithTrustDomain",
+                      "type": "boolean",
+                      "title": "The enable schema for searches with trust domain",
+                      "description": "Indicates whether dns searches contains trust domain or not",
                       "examples": [
                         true
                       ]
@@ -1527,7 +1555,8 @@
                     "description": "Sidecar injector configurations",
                     "required": [
                         "replicaCount",
-                        "resource"
+                        "resource",
+                        "initResources"
                     ],
                     "properties": {
                         "replicaCount": {
@@ -1541,6 +1570,9 @@
                         },
                         "resource": {
                             "$ref": "#/definitions/containerResources"
+                        },
+                        "initResources": {
+                          "$ref": "#/definitions/containerResources"
                         },
                         "podLabels": {
                             "$id": "#/properties/fsm/properties/injector/properties/podLabels",
@@ -1636,6 +1668,7 @@
                         "replicaCount",
                         "service",
                         "resources",
+                        "initResources",
                         "podLabels",
                         "podAnnotations",
                         "podSecurityContext",
@@ -1781,6 +1814,11 @@
                             "type": "object",
                             "default": {},
                             "title": "The resources Schema"
+                        },
+                        "initResources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         },
                         "podLabels": {
                             "type": "object",
@@ -2729,6 +2767,11 @@
                         },
                         "tolerations": {
                             "type": "array"
+                        },
+                        "resources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         }
                     },
                     "additionalProperties": false
@@ -2748,6 +2791,11 @@
                         },
                         "tolerations": {
                             "type": "array"
+                        },
+                        "resources": {
+                          "type": "object",
+                          "default": {},
+                          "title": "The resources Schema"
                         }
                     },
                     "additionalProperties": false

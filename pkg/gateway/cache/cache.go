@@ -43,7 +43,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		cfg:        cfg,
 
 		triggers: map[ResourceType]Trigger{
-			//EndpointsResourceType:      &EndpointsTrigger{},
+			EndpointsResourceType:               &EndpointsTrigger{},
 			ServicesResourceType:                &ServicesTrigger{},
 			ServiceImportsResourceType:          &ServiceImportsTrigger{},
 			EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
@@ -94,8 +94,8 @@ func (c *GatewayCache) Delete(obj interface{}) bool {
 
 func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 	switch obj.(type) {
-	//case *corev1.Endpoints:
-	//	return c.triggers[EndpointsResourceType]
+	case *corev1.Endpoints:
+		return c.triggers[EndpointsResourceType]
 	case *corev1.Service:
 		return c.triggers[ServicesResourceType]
 	case *mcsv1alpha1.ServiceImport:

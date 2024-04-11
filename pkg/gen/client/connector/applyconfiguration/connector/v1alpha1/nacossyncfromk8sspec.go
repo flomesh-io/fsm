@@ -37,6 +37,7 @@ type NacosSyncFromK8SSpecApplyConfiguration struct {
 	AllowK8sNamespaces             []string                     `json:"allowK8sNamespaces,omitempty"`
 	DenyK8sNamespaces              []string                     `json:"denyK8sNamespaces,omitempty"`
 	WithGateway                    *bool                        `json:"withGateway,omitempty"`
+	WithGatewayMode                *v1alpha1.WithGatewayMode    `json:"withGatewayMode,omitempty"`
 }
 
 // NacosSyncFromK8SSpecApplyConfiguration constructs an declarative configuration of the NacosSyncFromK8SSpec type for use with
@@ -171,5 +172,13 @@ func (b *NacosSyncFromK8SSpecApplyConfiguration) WithDenyK8sNamespaces(values ..
 // If called multiple times, the WithGateway field is set to the value of the last call.
 func (b *NacosSyncFromK8SSpecApplyConfiguration) WithWithGateway(value bool) *NacosSyncFromK8SSpecApplyConfiguration {
 	b.WithGateway = &value
+	return b
+}
+
+// WithWithGatewayMode sets the WithGatewayMode field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the WithGatewayMode field is set to the value of the last call.
+func (b *NacosSyncFromK8SSpecApplyConfiguration) WithWithGatewayMode(value v1alpha1.WithGatewayMode) *NacosSyncFromK8SSpecApplyConfiguration {
+	b.WithGatewayMode = &value
 	return b
 }

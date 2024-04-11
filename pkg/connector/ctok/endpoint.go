@@ -78,6 +78,12 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 			if clusterId, clusterIDExists := service.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; clusterIDExists {
 				endpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = clusterId
 			}
+			if clusterSet, clusterSetyExists := service.Annotations[connector.AnnotationCloudServiceClusterSet]; clusterSetyExists {
+				endpoints.Annotations[connector.AnnotationCloudServiceClusterSet] = clusterSet
+			}
+			if viaGateway, viaGatewayExists := service.Annotations[connector.AnnotationCloudServiceViaGateway]; viaGatewayExists {
+				endpoints.Annotations[connector.AnnotationCloudServiceViaGateway] = viaGateway
+			}
 			if t.controller.GetC2KWithGateway() {
 				if syncer.discClient.IsInternalServices() {
 					endpoints.Annotations[connector.AnnotationMeshServiceInternalSync] = True
@@ -164,15 +170,34 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 		}
 		var ports []discoveryv1.EndpointPort
 		var epts []discoveryv1.Endpoint
+		var viaAddr string
+		var viaPort int32
+		if viaGateway, viaGatewayExists := endpointsDup.Annotations[connector.AnnotationCloudServiceViaGateway]; viaGatewayExists {
+			if segs := strings.Split(viaGateway, ":"); len(segs) == 2 {
+				if port, convErr := strconv.Atoi(segs[1]); convErr == nil {
+					viaPort = int32(port & 0xFFFF)
+					viaAddr = segs[0]
+				}
+			}
+		}
 		for _, subsets := range endpointsDup.Subsets {
 			for _, port := range subsets.Ports {
 				shadow := port
-				ports = append(ports, discoveryv1.EndpointPort{
-					Name:        &shadow.Name,
-					Protocol:    &shadow.Protocol,
-					Port:        &shadow.Port,
-					AppProtocol: shadow.AppProtocol,
-				})
+				if viaPort > 0 {
+					ports = append(ports, discoveryv1.EndpointPort{
+						Name:        &shadow.Name,
+						Protocol:    &shadow.Protocol,
+						Port:        &viaPort,
+						AppProtocol: shadow.AppProtocol,
+					})
+				} else {
+					ports = append(ports, discoveryv1.EndpointPort{
+						Name:        &shadow.Name,
+						Protocol:    &shadow.Protocol,
+						Port:        &shadow.Port,
+						AppProtocol: shadow.AppProtocol,
+					})
+				}
 			}
 			if len(subsets.Addresses) > 0 {
 				var ready = true
@@ -182,9 +207,14 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 						Ready: &ready,
 					},
 				}
-				for _, addr := range subsets.Addresses {
-					addrs = append(addrs, addr.IP)
+				if len(viaAddr) > 0 {
+					addrs = append(addrs, viaAddr)
+				} else {
+					for _, addr := range subsets.Addresses {
+						addrs = append(addrs, addr.IP)
+					}
 				}
+
 				ept.Addresses = addrs
 				epts = append(epts, ept)
 			}

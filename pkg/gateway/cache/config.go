@@ -3,8 +3,6 @@ package cache
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"k8s.io/utils/pointer"
@@ -295,23 +293,60 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			continue
 		}
 
-		if svc.Spec.Type == corev1.ServiceTypeExternalName {
-			log.Warn().Msgf("Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
+			},
+		})
+		if err != nil {
+			log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
 			continue
 		}
 
-		upstreams := c.upstreams(svcInfo, svc)
-
-		if len(upstreams) == 0 {
+		endpointSliceList, err := c.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
+		if err != nil {
+			log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
 			continue
+		}
+
+		if len(endpointSliceList) == 0 {
+			continue
+		}
+
+		svcPort, err := getServicePort(svc, svcInfo.svcPortName.Port)
+		if err != nil {
+			log.Error().Msgf("Failed to get ServicePort: %s", err)
+			continue
+		}
+
+		filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
+		if len(filteredSlices) == 0 {
+			log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
+			continue
+		}
+
+		endpointSet := make(map[endpointInfo]struct{})
+		for _, eps := range filteredSlices {
+			for _, endpoint := range eps.Endpoints {
+				if !isEndpointReady(endpoint) {
+					continue
+				}
+				endpointPort := findPort(eps.Ports, svcPort)
+
+				for _, address := range endpoint.Addresses {
+					ep := endpointInfo{address: address, port: endpointPort}
+					endpointSet[ep] = struct{}{}
+				}
+			}
 		}
 
 		svcCfg := &fgw.ServiceConfig{
-			//Filters:   referredSvcInfo.filters,
+			//Filters:   svcInfo.filters,
 			Endpoints: make(map[string]fgw.Endpoint),
 		}
 
-		for _, hostport := range upstreams {
+		for ep := range endpointSet {
+			hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
 			svcCfg.Endpoints[hostport] = fgw.Endpoint{
 				Weight: 1,
 			}
@@ -325,96 +360,6 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 	}
 
 	return configs
-}
-
-func (c *GatewayCache) upstreams(referredSvcInfo serviceInfo, svc *corev1.Service) []string {
-	if svc.Spec.ClusterIP == corev1.ClusterIPNone && len(svc.Spec.Selector) == 0 {
-		return c.getEndpointsOfHeadlessServiceWithoutSelector(referredSvcInfo, svc)
-	}
-
-	return c.upstreamsBySelector(referredSvcInfo, svc)
-}
-
-func (c *GatewayCache) getEndpointsOfHeadlessServiceWithoutSelector(referredSvcInfo serviceInfo, svc *corev1.Service) []string {
-	endpoints, err := c.informers.GetListers().Endpoints.Endpoints(svc.Namespace).Get(svc.Name)
-	if err != nil {
-		log.Error().Msgf("Failed to get Endpoints of Service %s: %s", svc.Name, err)
-		return nil
-	}
-
-	if len(endpoints.Subsets) == 0 {
-		return nil
-	}
-
-	svcPort, err := getServicePort(svc, referredSvcInfo.svcPortName.Port)
-	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
-		return nil
-	}
-
-	endpointSet := sets.New[string]()
-	for _, subset := range endpoints.Subsets {
-		if endpointPort := findEndpointPort(subset.Ports, svcPort); endpointPort > 0 && endpointPort <= 65535 {
-			for _, address := range subset.Addresses {
-				endpointSet.Insert(fmt.Sprintf("%s:%d", address.IP, endpointPort))
-			}
-		}
-	}
-
-	return sets.List(endpointSet)
-}
-
-func (c *GatewayCache) upstreamsBySelector(referredSvcInfo serviceInfo, svc *corev1.Service) []string {
-	svcKey := referredSvcInfo.svcPortName.NamespacedName
-
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
-		},
-	})
-	if err != nil {
-		log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
-		return nil
-	}
-
-	endpointSliceList, err := c.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
-	if err != nil {
-		log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
-		return nil
-	}
-
-	if len(endpointSliceList) == 0 {
-		return nil
-	}
-
-	svcPort, err := getServicePort(svc, referredSvcInfo.svcPortName.Port)
-	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
-		return nil
-	}
-
-	filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
-	if len(filteredSlices) == 0 {
-		log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
-		return nil
-	}
-
-	endpointSet := sets.New[string]()
-	for _, eps := range filteredSlices {
-		for _, endpoint := range eps.Endpoints {
-			if !isEndpointReady(endpoint) {
-				continue
-			}
-
-			if endpointPort := findEndpointSlicePort(eps.Ports, svcPort); endpointPort > 0 && endpointPort <= 65535 {
-				for _, address := range endpoint.Addresses {
-					endpointSet.Insert(fmt.Sprintf("%s:%d", address, endpointPort))
-				}
-			}
-		}
-	}
-
-	return sets.List(endpointSet)
 }
 
 func (c *GatewayCache) chains() fgw.Chains {
