@@ -78,9 +78,9 @@ type ConsulSyncToK8SSpec struct {
 	// +optional
 	SuffixMetadata string `json:"suffixMetadata,omitempty"`
 
-	// +kubebuilder:default=false
+	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
-	WithGateway bool `json:"withGateway,omitempty"`
+	WithGateway C2KGateway `json:"withGateway,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
@@ -135,13 +135,9 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
-	// +kubebuilder:default=false
+	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
-	WithGateway bool `json:"withGateway,omitempty"`
-
-	// +kubebuilder:default=forward
-	// +optional
-	WithGatewayMode WithGatewayMode `json:"withGatewayMode,omitempty"`
+	WithGateway K2CGateway `json:"withGateway,omitempty"`
 
 	// +optional
 	ConsulNodeName string `json:"consulNodeName,omitempty"`
