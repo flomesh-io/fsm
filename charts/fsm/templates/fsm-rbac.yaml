@@ -19,7 +19,7 @@ rules:
     verbs: ["list", "get", "watch"]
   - apiGroups: [ "" ]
     resources: [ "namespaces" ]
-    verbs: [ "list", "get", "watch" ]
+    verbs: [ "list", "get", "watch", "create" ]
   - apiGroups: [ "" ]
     resources: [ "endpoints", "pods", "services", "secrets", "configmaps", "volumes", "serviceaccounts" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
