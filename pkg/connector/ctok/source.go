@@ -129,6 +129,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[Mi
 			}
 			svcMeta.Addresses[MicroEndpointAddr(instance.Address)] = 1
 			svcMeta.ClusterId = instance.ClusterId
+			svcMeta.WithGateway = s.controller.GetC2KWithGateway()
 			svcMeta.HealthCheck = instance.HealthCheck
 			if viaGateway, ok := instance.Meta[connector.CloudK8SVia]; ok {
 				if viaGateway, str := viaGateway.(string); str {

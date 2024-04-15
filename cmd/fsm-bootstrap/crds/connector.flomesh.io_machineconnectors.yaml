@@ -138,8 +138,17 @@ spec:
                     default: ""
                     type: string
                   withGateway:
-                    default: false
-                    type: boolean
+                    default:
+                      enable: false
+                      multiGateways: true
+                    properties:
+                      enable:
+                        default: false
+                        type: boolean
+                      multiGateways:
+                        default: true
+                        type: boolean
+                    type: object
                 required:
                 - enable
                 type: object

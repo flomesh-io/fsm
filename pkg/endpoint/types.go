@@ -50,6 +50,15 @@ type Endpoint struct {
 
 	// ClusterID belongs to cluster.
 	ClusterID string `json:"clusterId,omitempty"`
+
+	// WithGateway with gateway.
+	WithGateway bool `json:"withGateway,omitempty"`
+
+	// WithMultiGateways with multi gateways.
+	WithMultiGateways bool `json:"withMultiGateways,omitempty"`
+
+	// ViaGateway via gateway.
+	ViaGateway string `json:"viaGateway,omitempty"`
 }
 
 func (ep Endpoint) String() string {

@@ -22,27 +22,26 @@ import (
 // ConsulSyncFromK8SSpecApplyConfiguration represents an declarative configuration of the ConsulSyncFromK8SSpec type for use
 // with apply.
 type ConsulSyncFromK8SSpecApplyConfiguration struct {
-	Enable                         *bool                        `json:"enable,omitempty"`
-	DefaultSync                    *bool                        `json:"defaultSync,omitempty"`
-	SyncClusterIPServices          *bool                        `json:"syncClusterIPServices,omitempty"`
-	SyncLoadBalancerEndpoints      *bool                        `json:"syncLoadBalancerEndpoints,omitempty"`
-	NodePortSyncType               *v1alpha1.NodePortSyncType   `json:"nodePortSyncType,omitempty"`
-	SyncIngress                    *bool                        `json:"syncIngress,omitempty"`
-	SyncIngressLoadBalancerIPs     *bool                        `json:"syncIngressLoadBalancerIPs,omitempty"`
-	AddServicePrefix               *string                      `json:"addServicePrefix,omitempty"`
-	AddK8SNamespaceAsServiceSuffix *bool                        `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
-	AppendTags                     []string                     `json:"appendTags,omitempty"`
-	AppendMetadatas                []MetadataApplyConfiguration `json:"appendMetadatas,omitempty"`
-	AllowK8sNamespaces             []string                     `json:"allowK8sNamespaces,omitempty"`
-	DenyK8sNamespaces              []string                     `json:"denyK8sNamespaces,omitempty"`
-	WithGateway                    *bool                        `json:"withGateway,omitempty"`
-	WithGatewayMode                *v1alpha1.WithGatewayMode    `json:"withGatewayMode,omitempty"`
-	ConsulNodeName                 *string                      `json:"consulNodeName,omitempty"`
-	ConsulEnableNamespaces         *bool                        `json:"consulEnableNamespaces,omitempty"`
-	ConsulDestinationNamespace     *string                      `json:"consulDestinationNamespace,omitempty"`
-	ConsulEnableK8SNSMirroring     *bool                        `json:"consulEnableK8SNSMirroring,omitempty"`
-	ConsulK8SNSMirroringPrefix     *string                      `json:"consulK8SNSMirroringPrefix,omitempty"`
-	ConsulCrossNamespaceACLPolicy  *string                      `json:"consulCrossNamespaceACLPolicy,omitempty"`
+	Enable                         *bool                         `json:"enable,omitempty"`
+	DefaultSync                    *bool                         `json:"defaultSync,omitempty"`
+	SyncClusterIPServices          *bool                         `json:"syncClusterIPServices,omitempty"`
+	SyncLoadBalancerEndpoints      *bool                         `json:"syncLoadBalancerEndpoints,omitempty"`
+	NodePortSyncType               *v1alpha1.NodePortSyncType    `json:"nodePortSyncType,omitempty"`
+	SyncIngress                    *bool                         `json:"syncIngress,omitempty"`
+	SyncIngressLoadBalancerIPs     *bool                         `json:"syncIngressLoadBalancerIPs,omitempty"`
+	AddServicePrefix               *string                       `json:"addServicePrefix,omitempty"`
+	AddK8SNamespaceAsServiceSuffix *bool                         `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
+	AppendTags                     []string                      `json:"appendTags,omitempty"`
+	AppendMetadatas                []MetadataApplyConfiguration  `json:"appendMetadatas,omitempty"`
+	AllowK8sNamespaces             []string                      `json:"allowK8sNamespaces,omitempty"`
+	DenyK8sNamespaces              []string                      `json:"denyK8sNamespaces,omitempty"`
+	WithGateway                    *K2CGatewayApplyConfiguration `json:"withGateway,omitempty"`
+	ConsulNodeName                 *string                       `json:"consulNodeName,omitempty"`
+	ConsulEnableNamespaces         *bool                         `json:"consulEnableNamespaces,omitempty"`
+	ConsulDestinationNamespace     *string                       `json:"consulDestinationNamespace,omitempty"`
+	ConsulEnableK8SNSMirroring     *bool                         `json:"consulEnableK8SNSMirroring,omitempty"`
+	ConsulK8SNSMirroringPrefix     *string                       `json:"consulK8SNSMirroringPrefix,omitempty"`
+	ConsulCrossNamespaceACLPolicy  *string                       `json:"consulCrossNamespaceACLPolicy,omitempty"`
 }
 
 // ConsulSyncFromK8SSpecApplyConfiguration constructs an declarative configuration of the ConsulSyncFromK8SSpec type for use with
@@ -169,16 +168,8 @@ func (b *ConsulSyncFromK8SSpecApplyConfiguration) WithDenyK8sNamespaces(values .
 // WithWithGateway sets the WithGateway field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WithGateway field is set to the value of the last call.
-func (b *ConsulSyncFromK8SSpecApplyConfiguration) WithWithGateway(value bool) *ConsulSyncFromK8SSpecApplyConfiguration {
-	b.WithGateway = &value
-	return b
-}
-
-// WithWithGatewayMode sets the WithGatewayMode field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the WithGatewayMode field is set to the value of the last call.
-func (b *ConsulSyncFromK8SSpecApplyConfiguration) WithWithGatewayMode(value v1alpha1.WithGatewayMode) *ConsulSyncFromK8SSpecApplyConfiguration {
-	b.WithGatewayMode = &value
+func (b *ConsulSyncFromK8SSpecApplyConfiguration) WithWithGateway(value *K2CGatewayApplyConfiguration) *ConsulSyncFromK8SSpecApplyConfiguration {
+	b.WithGateway = value
 	return b
 }
 

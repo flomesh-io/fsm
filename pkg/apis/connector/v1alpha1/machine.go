@@ -69,9 +69,9 @@ type MachineSyncToK8SSpec struct {
 	// +optional
 	SuffixLabel string `json:"suffixLabel,omitempty"`
 
-	// +kubebuilder:default=false
+	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
-	WithGateway bool `json:"withGateway,omitempty"`
+	WithGateway C2KGateway `json:"withGateway,omitempty"`
 }
 
 // MachineSpec is the type used to represent the Machine Connector specification.

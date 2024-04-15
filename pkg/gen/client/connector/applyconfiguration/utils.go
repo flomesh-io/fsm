@@ -26,6 +26,8 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=connector.flomesh.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithKind("C2KGateway"):
+		return &connectorv1alpha1.C2KGatewayApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ConsulConnector"):
 		return &connectorv1alpha1.ConsulConnectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ConsulSpec"):
@@ -54,6 +56,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &connectorv1alpha1.GatewayStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("IngressSelectorSpec"):
 		return &connectorv1alpha1.IngressSelectorSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("K2CGateway"):
+		return &connectorv1alpha1.K2CGatewayApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Limiter"):
 		return &connectorv1alpha1.LimiterApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("MachineConnector"):

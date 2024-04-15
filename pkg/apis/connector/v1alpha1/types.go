@@ -38,6 +38,26 @@ const (
 	Forward WithGatewayMode = "forward"
 )
 
+type K2CGateway struct {
+	// +kubebuilder:default=false
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+
+	// +kubebuilder:default=forward
+	// +optional
+	GatewayMode WithGatewayMode `json:"gatewayMode,omitempty"`
+}
+
+type C2KGateway struct {
+	// +kubebuilder:default=false
+	// +optional
+	Enable bool `json:"enable,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	MultiGateways bool `json:"multiGateways,omitempty"`
+}
+
 type Connector interface {
 	runtime.Object
 	metav1.Object

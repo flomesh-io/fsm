@@ -60,7 +60,8 @@ type config struct {
 		prefixMetadata string
 		suffixMetadata string
 
-		withGateway bool
+		withGateway   bool
+		multiGateways bool
 
 		nacos2kCfg struct {
 			clusterSet []string
@@ -489,6 +490,12 @@ func (c *config) GetC2KWithGateway() bool {
 	return c.c2kCfg.withGateway
 }
 
+func (c *config) GetC2KMultiGateways() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.multiGateways
+}
+
 func (c *config) GetNacos2KClusterSet() []string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -620,7 +627,8 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
+	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 }
 
 func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
@@ -647,7 +655,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
+	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 	if len(spec.SyncToK8S.ClusterSet) == 0 {
 		c.config.c2kCfg.nacos2kCfg.clusterSet = []string{connector.NACOS_DEFAULT_CLUSTER}
 	} else {
@@ -671,8 +680,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
-	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
-	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
+	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
 	c.k2cCfg.nacosCfg.clusterId = spec.SyncFromK8S.ClusterId
 	c.k2cCfg.nacosCfg.groupId = spec.SyncFromK8S.GroupId
@@ -698,7 +707,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
+	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -712,8 +722,8 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
-	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
-	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
+	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))
@@ -740,7 +750,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
-	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway
+	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
 	c.k2cCfg.enable = spec.SyncFromK8S.Enable
 	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
@@ -755,8 +766,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
-	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway
-	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGatewayMode
+	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
 	c.k2cCfg.consulCfg.consulNodeName = spec.SyncFromK8S.ConsulNodeName
 	c.k2cCfg.consulCfg.consulEnableNamespaces = spec.SyncFromK8S.ConsulEnableNamespaces
