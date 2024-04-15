@@ -231,14 +231,20 @@ spec:
                     default: false
                     type: boolean
                   withGateway:
-                    default: false
-                    type: boolean
-                  withGatewayMode:
-                    default: forward
-                    enum:
-                    - proxy
-                    - forward
-                    type: string
+                    default:
+                      enable: false
+                      gatewayMode: forward
+                    properties:
+                      enable:
+                        default: false
+                        type: boolean
+                      gatewayMode:
+                        default: forward
+                        enum:
+                        - proxy
+                        - forward
+                        type: string
+                    type: object
                 required:
                 - enable
                 type: object
@@ -281,8 +287,17 @@ spec:
                   suffixTag:
                     type: string
                   withGateway:
-                    default: false
-                    type: boolean
+                    default:
+                      enable: false
+                      multiGateways: true
+                    properties:
+                      enable:
+                        default: false
+                        type: boolean
+                      multiGateways:
+                        default: true
+                        type: boolean
+                    type: object
                 required:
                 - enable
                 type: object
