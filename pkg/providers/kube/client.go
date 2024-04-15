@@ -3,6 +3,7 @@ package kube
 
 import (
 	"net"
+	"strconv"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
@@ -81,6 +82,9 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 				}
 				if len(kubernetesEndpoints.Annotations) > 0 {
 					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
+					ept.ViaGateway = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceViaGateway]
+					ept.WithGateway, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithGateway])
+					ept.WithMultiGateways, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways])
 				}
 				endpoints = append(endpoints, ept)
 			}

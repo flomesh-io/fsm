@@ -79,9 +79,9 @@ type NacosSyncToK8SSpec struct {
 	// +optional
 	GroupSet []string `json:"groupSet,omitempty"`
 
-	// +kubebuilder:default=false
+	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
-	WithGateway bool `json:"withGateway,omitempty"`
+	WithGateway C2KGateway `json:"withGateway,omitempty"`
 }
 
 // NacosSyncFromK8SSpec is the type used to represent the sync from K8S to Nacos specification.
@@ -141,13 +141,9 @@ type NacosSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
-	// +kubebuilder:default=false
+	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
-	WithGateway bool `json:"withGateway,omitempty"`
-
-	// +kubebuilder:default=forward
-	// +optional
-	WithGatewayMode WithGatewayMode `json:"withGatewayMode,omitempty"`
+	WithGateway K2CGateway `json:"withGateway,omitempty"`
 }
 
 // NacosSpec is the type used to represent the Nacos Connector specification.

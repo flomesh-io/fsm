@@ -30,6 +30,12 @@ const (
 	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
 	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
 
+	// AnnotationCloudServiceWithGateway defines cloud service with gateway annotation
+	AnnotationCloudServiceWithGateway = "flomesh.io/cloud-service-with-gateway"
+
+	// AnnotationCloudServiceWithMultiGateways defines cloud service with multi gateways annotation
+	AnnotationCloudServiceWithMultiGateways = "flomesh.io/cloud-service-with-multi-gateways"
+
 	// AnnotationCloudServiceViaGateway defines cloud service via gateway annotation
 	AnnotationCloudServiceViaGateway = "flomesh.io/cloud-service-via-gateway"
 

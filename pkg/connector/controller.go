@@ -50,6 +50,7 @@ type ConnectController interface {
 	GetSuffixMetadata() string
 
 	GetC2KWithGateway() bool
+	GetC2KMultiGateways() bool
 
 	GetNacos2KClusterSet() []string
 	GetNacos2KGroupSet() []string

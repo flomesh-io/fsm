@@ -85,6 +85,8 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 				endpoints.Annotations[connector.AnnotationCloudServiceViaGateway] = viaGateway
 			}
 			if t.controller.GetC2KWithGateway() {
+				endpoints.Annotations[connector.AnnotationCloudServiceWithGateway] = "true"
+				endpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways] = fmt.Sprintf("%t", t.controller.GetC2KMultiGateways())
 				if syncer.discClient.IsInternalServices() {
 					endpoints.Annotations[connector.AnnotationMeshServiceInternalSync] = True
 				}
