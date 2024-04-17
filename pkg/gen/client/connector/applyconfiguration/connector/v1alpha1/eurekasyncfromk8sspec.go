@@ -22,20 +22,19 @@ import (
 // EurekaSyncFromK8SSpecApplyConfiguration represents an declarative configuration of the EurekaSyncFromK8SSpec type for use
 // with apply.
 type EurekaSyncFromK8SSpecApplyConfiguration struct {
-	Enable                         *bool                        `json:"enable,omitempty"`
-	DefaultSync                    *bool                        `json:"defaultSync,omitempty"`
-	SyncClusterIPServices          *bool                        `json:"syncClusterIPServices,omitempty"`
-	SyncLoadBalancerEndpoints      *bool                        `json:"syncLoadBalancerEndpoints,omitempty"`
-	NodePortSyncType               *v1alpha1.NodePortSyncType   `json:"nodePortSyncType,omitempty"`
-	SyncIngress                    *bool                        `json:"syncIngress,omitempty"`
-	SyncIngressLoadBalancerIPs     *bool                        `json:"syncIngressLoadBalancerIPs,omitempty"`
-	AddServicePrefix               *string                      `json:"addServicePrefix,omitempty"`
-	AddK8SNamespaceAsServiceSuffix *bool                        `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
-	AppendMetadatas                []MetadataApplyConfiguration `json:"appendMetadatas,omitempty"`
-	AllowK8sNamespaces             []string                     `json:"allowK8sNamespaces,omitempty"`
-	DenyK8sNamespaces              []string                     `json:"denyK8sNamespaces,omitempty"`
-	WithGateway                    *bool                        `json:"withGateway,omitempty"`
-	WithGatewayMode                *v1alpha1.WithGatewayMode    `json:"withGatewayMode,omitempty"`
+	Enable                         *bool                         `json:"enable,omitempty"`
+	DefaultSync                    *bool                         `json:"defaultSync,omitempty"`
+	SyncClusterIPServices          *bool                         `json:"syncClusterIPServices,omitempty"`
+	SyncLoadBalancerEndpoints      *bool                         `json:"syncLoadBalancerEndpoints,omitempty"`
+	NodePortSyncType               *v1alpha1.NodePortSyncType    `json:"nodePortSyncType,omitempty"`
+	SyncIngress                    *bool                         `json:"syncIngress,omitempty"`
+	SyncIngressLoadBalancerIPs     *bool                         `json:"syncIngressLoadBalancerIPs,omitempty"`
+	AddServicePrefix               *string                       `json:"addServicePrefix,omitempty"`
+	AddK8SNamespaceAsServiceSuffix *bool                         `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
+	AppendMetadatas                []MetadataApplyConfiguration  `json:"appendMetadatas,omitempty"`
+	AllowK8sNamespaces             []string                      `json:"allowK8sNamespaces,omitempty"`
+	DenyK8sNamespaces              []string                      `json:"denyK8sNamespaces,omitempty"`
+	WithGateway                    *K2CGatewayApplyConfiguration `json:"withGateway,omitempty"`
 }
 
 // EurekaSyncFromK8SSpecApplyConfiguration constructs an declarative configuration of the EurekaSyncFromK8SSpec type for use with
@@ -152,15 +151,7 @@ func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithDenyK8sNamespaces(values .
 // WithWithGateway sets the WithGateway field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WithGateway field is set to the value of the last call.
-func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithWithGateway(value bool) *EurekaSyncFromK8SSpecApplyConfiguration {
-	b.WithGateway = &value
-	return b
-}
-
-// WithWithGatewayMode sets the WithGatewayMode field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the WithGatewayMode field is set to the value of the last call.
-func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithWithGatewayMode(value v1alpha1.WithGatewayMode) *EurekaSyncFromK8SSpecApplyConfiguration {
-	b.WithGatewayMode = &value
+func (b *EurekaSyncFromK8SSpecApplyConfiguration) WithWithGateway(value *K2CGatewayApplyConfiguration) *EurekaSyncFromK8SSpecApplyConfiguration {
+	b.WithGateway = value
 	return b
 }

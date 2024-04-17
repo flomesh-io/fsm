@@ -18,12 +18,12 @@ package v1alpha1
 // EurekaSyncToK8SSpecApplyConfiguration represents an declarative configuration of the EurekaSyncToK8SSpec type for use
 // with apply.
 type EurekaSyncToK8SSpecApplyConfiguration struct {
-	Enable          *bool                        `json:"enable,omitempty"`
-	ClusterId       *string                      `json:"clusterId,omitempty"`
-	FilterMetadatas []MetadataApplyConfiguration `json:"filterMetadatas,omitempty"`
-	PrefixMetadata  *string                      `json:"prefixMetadata,omitempty"`
-	SuffixMetadata  *string                      `json:"suffixMetadata,omitempty"`
-	WithGateway     *bool                        `json:"withGateway,omitempty"`
+	Enable          *bool                         `json:"enable,omitempty"`
+	ClusterId       *string                       `json:"clusterId,omitempty"`
+	FilterMetadatas []MetadataApplyConfiguration  `json:"filterMetadatas,omitempty"`
+	PrefixMetadata  *string                       `json:"prefixMetadata,omitempty"`
+	SuffixMetadata  *string                       `json:"suffixMetadata,omitempty"`
+	WithGateway     *C2KGatewayApplyConfiguration `json:"withGateway,omitempty"`
 }
 
 // EurekaSyncToK8SSpecApplyConfiguration constructs an declarative configuration of the EurekaSyncToK8SSpec type for use with
@@ -80,7 +80,7 @@ func (b *EurekaSyncToK8SSpecApplyConfiguration) WithSuffixMetadata(value string)
 // WithWithGateway sets the WithGateway field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WithGateway field is set to the value of the last call.
-func (b *EurekaSyncToK8SSpecApplyConfiguration) WithWithGateway(value bool) *EurekaSyncToK8SSpecApplyConfiguration {
-	b.WithGateway = &value
+func (b *EurekaSyncToK8SSpecApplyConfiguration) WithWithGateway(value *C2KGatewayApplyConfiguration) *EurekaSyncToK8SSpecApplyConfiguration {
+	b.WithGateway = value
 	return b
 }

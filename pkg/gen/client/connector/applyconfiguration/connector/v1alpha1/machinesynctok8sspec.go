@@ -18,13 +18,13 @@ package v1alpha1
 // MachineSyncToK8SSpecApplyConfiguration represents an declarative configuration of the MachineSyncToK8SSpec type for use
 // with apply.
 type MachineSyncToK8SSpecApplyConfiguration struct {
-	Enable      *bool   `json:"enable,omitempty"`
-	ClusterId   *string `json:"clusterId,omitempty"`
-	PassingOnly *bool   `json:"passingOnly,omitempty"`
-	FilterLabel *string `json:"filterLabel,omitempty"`
-	PrefixLabel *string `json:"prefixLabel,omitempty"`
-	SuffixLabel *string `json:"suffixLabel,omitempty"`
-	WithGateway *bool   `json:"withGateway,omitempty"`
+	Enable      *bool                         `json:"enable,omitempty"`
+	ClusterId   *string                       `json:"clusterId,omitempty"`
+	PassingOnly *bool                         `json:"passingOnly,omitempty"`
+	FilterLabel *string                       `json:"filterLabel,omitempty"`
+	PrefixLabel *string                       `json:"prefixLabel,omitempty"`
+	SuffixLabel *string                       `json:"suffixLabel,omitempty"`
+	WithGateway *C2KGatewayApplyConfiguration `json:"withGateway,omitempty"`
 }
 
 // MachineSyncToK8SSpecApplyConfiguration constructs an declarative configuration of the MachineSyncToK8SSpec type for use with
@@ -84,7 +84,7 @@ func (b *MachineSyncToK8SSpecApplyConfiguration) WithSuffixLabel(value string) *
 // WithWithGateway sets the WithGateway field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the WithGateway field is set to the value of the last call.
-func (b *MachineSyncToK8SSpecApplyConfiguration) WithWithGateway(value bool) *MachineSyncToK8SSpecApplyConfiguration {
-	b.WithGateway = &value
+func (b *MachineSyncToK8SSpecApplyConfiguration) WithWithGateway(value *C2KGatewayApplyConfiguration) *MachineSyncToK8SSpecApplyConfiguration {
+	b.WithGateway = value
 	return b
 }

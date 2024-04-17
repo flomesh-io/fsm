@@ -30,9 +30,10 @@ type MicroSvcAppProtocol string
 type MicroSvcMeta struct {
 	Ports       map[MicroSvcPort]MicroSvcAppProtocol
 	Addresses   map[MicroEndpointAddr]int
-	ClusterId   string
-	ViaGateway  string
 	ClusterSet  string
+	ClusterId   string
+	WithGateway bool
+	ViaGateway  string
 	HealthCheck bool
 }
 
