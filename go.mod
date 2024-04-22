@@ -65,9 +65,9 @@ require (
 	github.com/hashicorp/vault/sdk v0.6.1-0.20221010215534-6545e24b6023
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/net v0.17.0
+	golang.org/x/net v0.23.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.15.0
+	golang.org/x/sys v0.18.0
 	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
 	honnef.co/go/tools v0.1.1 // indirect
 )
@@ -419,10 +419,10 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/api v0.126.0 // indirect
