@@ -92,8 +92,8 @@ func (s *CtoKSyncer) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	defer s.lock.Unlock()
 
 	lowercasedSvcs := make(map[string]string)
-	for serviceName, serviceDNS := range svcs {
-		lowercasedSvcs[strings.ToLower(string(serviceName))] = strings.ToLower(string(serviceDNS))
+	for serviceName := range svcs {
+		lowercasedSvcs[strings.ToLower(string(serviceName))] = string(serviceName)
 	}
 
 	s.controller.GetC2KContext().SourceServices = lowercasedSvcs
@@ -246,8 +246,8 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	extendServices := make(map[string]string, 0)
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
-	for cloudName, cloudDNS := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(cloudName))
+	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(k8sSvcName))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
@@ -255,13 +255,13 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			if len(svcMeta.Addresses) == 0 {
 				continue
 			}
-			if !strings.EqualFold(string(microSvcName), cloudName) {
-				extendServices[string(microSvcName)] = cloudDNS
+			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
+				extendServices[string(microSvcName)] = cloudSvcName
 			}
 			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
-				if svc.Spec.ExternalName == cloudDNS {
+				if svc.Spec.ExternalName == cloudSvcName {
 					// Matching service, no update required.
 					continue
 				}
@@ -269,7 +269,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				svc.ObjectMeta.Annotations = map[string]string{
 					// Ensure we don't sync the service back to cloud
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-					connector.AnnotationCloudServiceInheritedFrom: cloudName,
+					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
 				}
 				if s.controller.GetC2KWithGateway() {
 					if s.discClient.IsInternalServices() {
@@ -297,7 +297,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
-						connector.AnnotationCloudServiceInheritedFrom: cloudName,
+						connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
 					},
 				},
 
