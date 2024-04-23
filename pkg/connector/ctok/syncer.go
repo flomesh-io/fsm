@@ -80,6 +80,14 @@ func NewCtoKSyncer(
 	return &syncer
 }
 
+func (s *CtoKSyncer) toLegalServiceName(serviceName string) string {
+	serviceName = strings.ReplaceAll(serviceName, "_", "-")
+	serviceName = strings.ReplaceAll(serviceName, ".", "-")
+	serviceName = strings.ReplaceAll(serviceName, " ", "-")
+	serviceName = strings.ToLower(serviceName)
+	return serviceName
+}
+
 func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 	s.microAggregator = microAggregator
 }
@@ -91,13 +99,13 @@ func (s *CtoKSyncer) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	lowercasedSvcs := make(map[string]string)
+	legalSvcNames := make(map[string]string)
 	for serviceName := range svcs {
-		lowercasedSvcs[strings.ToLower(string(serviceName))] = string(serviceName)
+		legalSvcNames[s.toLegalServiceName(string(serviceName))] = string(serviceName)
 	}
 
-	s.controller.GetC2KContext().SourceServices = lowercasedSvcs
-	s.controller.GetC2KContext().RawServices = maps.Clone(lowercasedSvcs)
+	s.controller.GetC2KContext().SourceServices = legalSvcNames
+	s.controller.GetC2KContext().RawServices = maps.Clone(legalSvcNames)
 	s.trigger() // Any service change probably requires syncing
 }
 
