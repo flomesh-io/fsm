@@ -39,11 +39,12 @@ jobs:
         run: scripts/release-notes.sh $VERSION > release-notes.md
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
-          body_path: release-notes.md
+          allowUpdates: true
+          tag: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          bodyFile: "release-notes.md"
           prerelease: ${{ contains(env.VERSION, '-alpha.') || contains(env.VERSION, '-beta.') || contains(env.VERSION, '-rc.') || contains(env.VERSION, '-nightly.') }}
       - name: Upload macOS (amd64).zip
         uses: actions/upload-release-asset@v1
