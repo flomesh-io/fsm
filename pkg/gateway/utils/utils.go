@@ -30,9 +30,15 @@ import (
 	"strings"
 	"time"
 
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
 	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
+
+	v1 "k8s.io/client-go/listers/core/v1"
+
+	"k8s.io/apimachinery/pkg/labels"
+
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -45,6 +51,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+)
+
+var (
+	log = logger.New("fsm-gateway/utils")
 )
 
 // Namespace returns the namespace if it is not nil, otherwise returns the default namespace
@@ -187,16 +197,21 @@ func GetValidListenersFromGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 	return validListeners
 }
 
-// GetAllowedListenersAndSetStatus returns the allowed listeners and set status
-func GetAllowedListenersAndSetStatus(
+// GetAllowedListeners returns the allowed listeners
+func GetAllowedListeners(
+	nsLister v1.NamespaceLister,
+	gw *gwv1.Gateway,
 	parentRef gwv1.ParentReference,
-	routeNs string,
-	routeGvk schema.GroupVersionKind,
-	routeGeneration int64,
+	params *gwtypes.RouteContext,
 	validListeners []gwtypes.Listener,
-	routeParentStatus gwv1.RouteParentStatus,
-) []gwtypes.Listener {
-	var selectedListeners []gwtypes.Listener
+) ([]gwtypes.Listener, []metav1.Condition) {
+	routeGvk := params.GVK
+	routeGeneration := params.Generation
+	routeNs := params.Namespace
+
+	selectedListeners := make([]gwtypes.Listener, 0)
+	invalidListenerConditions := make([]metav1.Condition, 0)
+
 	for _, validListener := range validListeners {
 		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
 			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
@@ -205,7 +220,7 @@ func GetAllowedListenersAndSetStatus(
 	}
 
 	if len(selectedListeners) == 0 {
-		metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
+		invalidListenerConditions = append(invalidListenerConditions, metav1.Condition{
 			Type:               string(gwv1.RouteConditionAccepted),
 			Status:             metav1.ConditionFalse,
 			ObservedGeneration: routeGeneration,
@@ -213,13 +228,17 @@ func GetAllowedListenersAndSetStatus(
 			Reason:             string(gwv1.RouteReasonNoMatchingParent),
 			Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
-
-		return nil
+		return nil, invalidListenerConditions
 	}
 
-	var allowedListeners []gwtypes.Listener
+	allowedListeners := make([]gwtypes.Listener, 0)
 	for _, selectedListener := range selectedListeners {
 		if !selectedListener.AllowsKind(routeGvk) {
+			continue
+		}
+
+		// Check if the route is in a namespace that the listener allows.
+		if !NamespaceMatches(nsLister, selectedListener.AllowedRoutes.Namespaces, gw.Namespace, routeNs) {
 			continue
 		}
 
@@ -227,7 +246,7 @@ func GetAllowedListenersAndSetStatus(
 	}
 
 	if len(allowedListeners) == 0 {
-		metautil.SetStatusCondition(&routeParentStatus.Conditions, metav1.Condition{
+		invalidListenerConditions = append(invalidListenerConditions, metav1.Condition{
 			Type:               string(gwv1.RouteConditionAccepted),
 			Status:             metav1.ConditionFalse,
 			ObservedGeneration: routeGeneration,
@@ -235,46 +254,10 @@ func GetAllowedListenersAndSetStatus(
 			Reason:             string(gwv1.RouteReasonNotAllowedByListeners),
 			Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
-
-		return nil
+		return nil, invalidListenerConditions
 	}
 
-	return allowedListeners
-}
-
-// GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(
-	parentRef gwv1.ParentReference,
-	routeGvk schema.GroupVersionKind,
-	routeGeneration int64,
-	validListeners []gwtypes.Listener,
-) []gwtypes.Listener {
-	var selectedListeners []gwtypes.Listener
-	for _, validListener := range validListeners {
-		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
-			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
-		}
-	}
-
-	if len(selectedListeners) == 0 {
-		return nil
-	}
-
-	var allowedListeners []gwtypes.Listener
-	for _, selectedListener := range selectedListeners {
-		if !selectedListener.AllowsKind(routeGvk) {
-			continue
-		}
-
-		allowedListeners = append(allowedListeners, selectedListener)
-	}
-
-	if len(allowedListeners) == 0 {
-		return nil
-	}
-
-	return allowedListeners
+	return allowedListeners, invalidListenerConditions
 }
 
 // GetValidHostnames returns the valid hostnames
@@ -321,4 +304,92 @@ func GetValidHostnames(listenerHostname *gwv1.Hostname, routeHostnames []gwv1.Ho
 func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	g := glob.MustCompile(wildcardHostname, '.')
 	return g.Match(hostname)
+}
+
+// NamespaceMatches returns true if the namespace matches
+func NamespaceMatches(nsLister v1.NamespaceLister, namespaces *gwv1.RouteNamespaces, gatewayNamespace, routeNamespace string) bool {
+	if namespaces == nil || namespaces.From == nil {
+		return true
+	}
+
+	switch *namespaces.From {
+	case gwv1.NamespacesFromAll:
+		return true
+	case gwv1.NamespacesFromSame:
+		return gatewayNamespace == routeNamespace
+	case gwv1.NamespacesFromSelector:
+		namespaceSelector, err := metav1.LabelSelectorAsSelector(namespaces.Selector)
+		if err != nil {
+			log.Error().Msgf("failed to convert namespace selector: %v", err)
+			return false
+		}
+
+		ns, err := nsLister.Get(routeNamespace)
+		if err != nil {
+			log.Error().Msgf("failed to get namespace %s: %v", routeNamespace, err)
+			return false
+		}
+
+		return namespaceSelector.Matches(labels.Set(ns.Labels))
+	}
+
+	return true
+}
+
+func ToRouteContext(route client.Object) *gwtypes.RouteContext {
+	switch route := route.(type) {
+	case *gwv1.HTTPRoute:
+		return &gwtypes.RouteContext{
+			Meta:         route.GetObjectMeta(),
+			ParentRefs:   route.Spec.ParentRefs,
+			GVK:          route.GroupVersionKind(),
+			Generation:   route.GetGeneration(),
+			Hostnames:    route.Spec.Hostnames,
+			Namespace:    route.GetNamespace(),
+			ParentStatus: route.Status.Parents,
+		}
+	case *gwv1alpha2.GRPCRoute:
+		return &gwtypes.RouteContext{
+			Meta:         route.GetObjectMeta(),
+			ParentRefs:   route.Spec.ParentRefs,
+			GVK:          route.GroupVersionKind(),
+			Generation:   route.GetGeneration(),
+			Hostnames:    route.Spec.Hostnames,
+			Namespace:    route.GetNamespace(),
+			ParentStatus: route.Status.Parents,
+		}
+	case *gwv1alpha2.TLSRoute:
+		return &gwtypes.RouteContext{
+			Meta:         route.GetObjectMeta(),
+			ParentRefs:   route.Spec.ParentRefs,
+			GVK:          route.GroupVersionKind(),
+			Generation:   route.GetGeneration(),
+			Hostnames:    route.Spec.Hostnames,
+			Namespace:    route.GetNamespace(),
+			ParentStatus: route.Status.Parents,
+		}
+	case *gwv1alpha2.TCPRoute:
+		return &gwtypes.RouteContext{
+			Meta:         route.GetObjectMeta(),
+			ParentRefs:   route.Spec.ParentRefs,
+			GVK:          route.GroupVersionKind(),
+			Generation:   route.GetGeneration(),
+			Hostnames:    nil,
+			Namespace:    route.GetNamespace(),
+			ParentStatus: route.Status.Parents,
+		}
+	case *gwv1alpha2.UDPRoute:
+		return &gwtypes.RouteContext{
+			Meta:         route.GetObjectMeta(),
+			ParentRefs:   route.Spec.ParentRefs,
+			GVK:          route.GroupVersionKind(),
+			Generation:   route.GetGeneration(),
+			Hostnames:    nil,
+			Namespace:    route.GetNamespace(),
+			ParentStatus: route.Status.Parents,
+		}
+	default:
+		log.Warn().Msgf("Unsupported route type: %T", route)
+		return nil
+	}
 }

@@ -23,7 +23,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
 func isRefToService(ref gwv1.BackendObjectReference, service client.ObjectKey, ns string) bool {
@@ -77,40 +76,6 @@ func isRefToSecret(ref gwv1.SecretObjectReference, secret client.ObjectKey, ns s
 	}
 
 	return false
-}
-
-func allowedListeners(
-	parentRef gwv1.ParentReference,
-	routeGvk schema.GroupVersionKind,
-	validListeners []gwtypes.Listener,
-) []gwtypes.Listener {
-	var selectedListeners []gwtypes.Listener
-	for _, validListener := range validListeners {
-		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
-			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
-		}
-	}
-	log.Debug().Msgf("[GW-CACHE] selectedListeners: %v", selectedListeners)
-
-	if len(selectedListeners) == 0 {
-		return nil
-	}
-
-	allowedListeners := make([]gwtypes.Listener, 0)
-	for _, selectedListener := range selectedListeners {
-		if !selectedListener.AllowsKind(routeGvk) {
-			continue
-		}
-
-		allowedListeners = append(allowedListeners, selectedListener)
-	}
-
-	if len(allowedListeners) == 0 {
-		return nil
-	}
-
-	return allowedListeners
 }
 
 func httpPathMatchType(matchType *gwv1.PathMatchType) fgw.MatchType {

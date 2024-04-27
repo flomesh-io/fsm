@@ -402,10 +402,11 @@ func (r *gatewayReconciler) updateListenerStatus(ctx context.Context, gateway *g
 				}
 			} else {
 				// create new status
-				status = gwv1.ListenerStatus{
-					Name:           listener.Name,
-					SupportedKinds: supportedRouteGroupKindsByProtocol(listener.Protocol),
-					Conditions: []metav1.Condition{
+				status = gwv1.ListenerStatus{Name: listener.Name}
+				kinds, conditions := supportedRouteGroupKinds(gateway, listener)
+
+				if len(conditions) == 0 {
+					status.Conditions = []metav1.Condition{
 						{
 							Type:               string(gwv1.ListenerConditionAccepted),
 							Status:             metav1.ConditionTrue,
@@ -422,8 +423,12 @@ func (r *gatewayReconciler) updateListenerStatus(ctx context.Context, gateway *g
 							Reason:             string(gwv1.ListenerReasonProgrammed),
 							Message:            fmt.Sprintf("Valid listener %q[:%d]", listener.Name, listener.Port),
 						},
-					},
+					}
+				} else {
+					status.Conditions = conditions
 				}
+
+				status.SupportedKinds = kinds
 			}
 
 			listenerStatus = append(listenerStatus, status)
@@ -440,47 +445,147 @@ func (r *gatewayReconciler) updateListenerStatus(ctx context.Context, gateway *g
 	return ctrl.Result{}, nil
 }
 
-func supportedRouteGroupKindsByProtocol(protocol gwv1.ProtocolType) []gwv1.RouteGroupKind {
-	switch protocol {
-	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType:
-		return []gwv1.RouteGroupKind{
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPIHTTPRouteKind,
-			},
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPIGRPCRouteKind,
-			},
-		}
-	case gwv1.TLSProtocolType:
-		return []gwv1.RouteGroupKind{
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPITLSRouteKind,
-			},
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPITCPRouteKind,
-			},
-		}
-	case gwv1.TCPProtocolType:
-		return []gwv1.RouteGroupKind{
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPITCPRouteKind,
-			},
-		}
-	case gwv1.UDPProtocolType:
-		return []gwv1.RouteGroupKind{
-			{
-				Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
-				Kind:  constants.GatewayAPIUDPRouteKind,
-			},
+func supportedRouteGroupKinds(gateway *gwv1.Gateway, listener gwv1.Listener) ([]gwv1.RouteGroupKind, []metav1.Condition) {
+	if len(listener.AllowedRoutes.Kinds) == 0 {
+		switch listener.Protocol {
+		case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType:
+			return []gwv1.RouteGroupKind{
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPIHTTPRouteKind,
+				},
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPIGRPCRouteKind,
+				},
+			}, nil
+		case gwv1.TLSProtocolType:
+			return []gwv1.RouteGroupKind{
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPITLSRouteKind,
+				},
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPITCPRouteKind,
+				},
+			}, nil
+		case gwv1.TCPProtocolType:
+			return []gwv1.RouteGroupKind{
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPITCPRouteKind,
+				},
+			}, nil
+		case gwv1.UDPProtocolType:
+			return []gwv1.RouteGroupKind{
+				{
+					Group: gwutils.GroupPointer(constants.GatewayAPIGroup),
+					Kind:  constants.GatewayAPIUDPRouteKind,
+				},
+			}, nil
 		}
 	}
 
-	return nil
+	kinds := make([]gwv1.RouteGroupKind, 0)
+	conditions := make([]metav1.Condition, 0)
+
+	for _, routeKind := range listener.AllowedRoutes.Kinds {
+		if routeKind.Group != nil && *routeKind.Group != constants.GatewayAPIGroup {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("Group %q is not supported, group must be %q", *routeKind.Group, gwv1.GroupName),
+			})
+			continue
+		}
+
+		if routeKind.Kind != constants.GatewayAPIHTTPRouteKind &&
+			routeKind.Kind != constants.GatewayAPITLSRouteKind &&
+			routeKind.Kind != constants.GatewayAPIGRPCRouteKind &&
+			routeKind.Kind != constants.GatewayAPITCPRouteKind &&
+			routeKind.Kind != constants.GatewayAPIUDPRouteKind {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("Kind %q is not supported, kind must be %q, %q, %q, %q or %q", routeKind.Kind, constants.GatewayAPIHTTPRouteKind, constants.GatewayAPIGRPCRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPITCPRouteKind, constants.GatewayAPIUDPRouteKind),
+			})
+			continue
+		}
+
+		if routeKind.Kind == constants.GatewayAPIHTTPRouteKind && listener.Protocol != gwv1.HTTPProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("HTTPRoutes are incompatible with listener protocol %q", listener.Protocol),
+			})
+			continue
+		}
+
+		if routeKind.Kind == constants.GatewayAPIGRPCRouteKind && listener.Protocol != gwv1.HTTPProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("GRPCRoutes are incompatible with listener protocol %q", listener.Protocol),
+			})
+			continue
+		}
+
+		if routeKind.Kind == constants.GatewayAPITLSRouteKind && listener.Protocol != gwv1.TLSProtocolType {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("TLSRoutes are incompatible with listener protocol %q", listener.Protocol),
+			})
+			continue
+		}
+
+		if routeKind.Kind == constants.GatewayAPITCPRouteKind && listener.Protocol != gwv1.TCPProtocolType && listener.Protocol != gwv1.TLSProtocolType {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("TCPRoutes are incompatible with listener protocol %q", listener.Protocol),
+			})
+			continue
+		}
+
+		if routeKind.Kind == constants.GatewayAPIUDPRouteKind && listener.Protocol != gwv1.UDPProtocolType {
+			conditions = append(conditions, metav1.Condition{
+				Type:               string(gwv1.ListenerConditionResolvedRefs),
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: gateway.Generation,
+				LastTransitionTime: metav1.Time{Time: time.Now()},
+				Reason:             string(gwv1.ListenerReasonInvalidRouteKinds),
+				Message:            fmt.Sprintf("UDPRoutes are incompatible with listener protocol %q", listener.Protocol),
+			})
+			continue
+		}
+
+		kinds = append(kinds, gwv1.RouteGroupKind{
+			Group: routeKind.Group,
+			Kind:  routeKind.Kind,
+		})
+	}
+
+	return kinds, conditions
 }
 
 func gatewayAddresses(activeGateway *gwv1.Gateway, lbSvc *corev1.Service) []gwv1.GatewayStatusAddress {

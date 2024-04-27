@@ -195,4 +195,5 @@ type Lister struct {
 	RetryPolicy           gwpav1alpha1.RetryPolicyLister
 	GatewayTLSPolicy      gwpav1alpha1.GatewayTLSPolicyLister
 	ReferenceGrant        gwv1beta1.ReferenceGrantLister
+	Namespace             v1.NamespaceLister
 }

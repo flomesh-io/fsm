@@ -54,7 +54,7 @@ func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tlsRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
 	}
 }
 

@@ -39,6 +39,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -168,14 +169,14 @@ func (r *faultInjectionPolicyReconciler) getFaultInjections(policy client.Object
 	return policies, nil
 }
 
-func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route status.RouteInfo, faultInjectionPolicy client.Object, hostnamesFaultInjections []client.Object) *types.NamespacedName {
+func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route *gwtypes.RouteContext, faultInjectionPolicy client.Object, hostnamesFaultInjections []client.Object) *types.NamespacedName {
 	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
 
 	if len(currentPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
-	for _, parent := range route.Parents {
+	for _, parent := range route.ParentStatus {
 		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1.RouteConditionAccepted)) {
 			key := getRouteParentKey(route.Meta, parent)
 
@@ -186,7 +187,7 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 
 			validListeners := gwutils.GetValidListenersFromGateway(gateway)
 
-			allowedListeners := gwutils.GetAllowedListeners(parent.ParentRef, route.GVK, route.Generation, validListeners)
+			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {
 				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {

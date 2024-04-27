@@ -54,7 +54,7 @@ func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
 	}
 }
 

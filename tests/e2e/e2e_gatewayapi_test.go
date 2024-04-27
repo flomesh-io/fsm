@@ -20,10 +20,7 @@ import (
 )
 
 const (
-	nsHttpbin  = "httpbin"
-	nsGrpcbin  = "grpcbin"
-	nsTcproute = "tcproute"
-	nsUdproute = "udproute"
+	nsGateway = "test"
 )
 
 var _ = FSMDescribe("Test traffic among FSM Gateway",
@@ -62,10 +59,10 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 
 func testDeployFSMGateway() {
 	// Create namespaces
-	Expect(Td.CreateNs(nsHttpbin, nil)).To(Succeed())
-	Expect(Td.CreateNs(nsGrpcbin, nil)).To(Succeed())
-	Expect(Td.CreateNs(nsTcproute, nil)).To(Succeed())
-	Expect(Td.CreateNs(nsUdproute, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
+	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
+	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
+	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
 
 	By("Generating CA private key")
 	stdout, stderr, err := Td.RunLocal("openssl", "genrsa", "-out", "ca.key", "2048")
@@ -92,7 +89,7 @@ func testDeployFSMGateway() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating secret for HTTPS")
-	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsHttpbin, "create", "secret", "generic", "https-cert", "--from-file=ca.crt=./ca.crt", "--from-file=tls.crt=./https.crt", "--from-file=tls.key=./https.key")
+	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "secret", "generic", "https-cert", "--from-file=ca.crt=./ca.crt", "--from-file=tls.crt=./https.crt", "--from-file=tls.key=./https.key")
 	Td.T.Log(stdout.String())
 	if stderr != nil {
 		Td.T.Log("stderr:\n" + stderr.String())
@@ -108,7 +105,7 @@ func testDeployFSMGateway() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating secret for gRPC")
-	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGrpcbin, "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
+	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
 	Td.T.Log(stdout.String())
 	if stderr != nil {
 		Td.T.Log("stderr:\n" + stderr.String())
@@ -118,7 +115,8 @@ func testDeployFSMGateway() {
 	By("Deploy Gateway")
 	gateway := gwv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-gw-1",
+			Namespace: nsGateway,
+			Name:      "test-gw-1",
 			Annotations: map[string]string{
 				"gateway.flomesh.io/replicas":     "2",
 				"gateway.flomesh.io/cpu":          "100m",
@@ -153,12 +151,10 @@ func testDeployFSMGateway() {
 					TLS: &gwv1.GatewayTLSConfig{
 						CertificateRefs: []gwv1.SecretObjectReference{
 							{
-								Name:      "https-cert",
-								Namespace: namespacePtr(nsHttpbin),
+								Name: "https-cert",
 							},
 							{
-								Name:      "grpc-cert",
-								Namespace: namespacePtr(nsGrpcbin),
+								Name: "grpc-cert",
 							},
 						},
 					},
@@ -181,12 +177,10 @@ func testDeployFSMGateway() {
 						Mode: tlsModePtr(gwv1.TLSModeTerminate),
 						CertificateRefs: []gwv1.SecretObjectReference{
 							{
-								Name:      "https-cert",
-								Namespace: namespacePtr(nsHttpbin),
+								Name: "https-cert",
 							},
 							{
-								Name:      "grpc-cert",
-								Namespace: namespacePtr(nsGrpcbin),
+								Name: "grpc-cert",
 							},
 						},
 					},
@@ -198,10 +192,10 @@ func testDeployFSMGateway() {
 			},
 		},
 	}
-	_, err = Td.CreateGateway(corev1.NamespaceDefault, gateway)
+	_, err = Td.CreateGateway(nsGateway, gateway)
 	Expect(err).NotTo(HaveOccurred())
 	// Expect it to be up and running in default namespace
-	Expect(Td.WaitForPodsRunningReady(corev1.NamespaceDefault, 2, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(nsGateway, 2, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: constants.FSMGatewayName},
 	})).To(Succeed())
 }
@@ -210,7 +204,7 @@ func testFSMGatewayHTTPTraffic() {
 	By("Deploying app in namespace httpbin")
 	httpbinDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsHttpbin,
+			Namespace: nsGateway,
 			Name:      "httpbin",
 		},
 		Spec: appv1.DeploymentSpec{
@@ -241,16 +235,16 @@ func testFSMGatewayHTTPTraffic() {
 		},
 	}
 
-	_, err := Td.CreateDeployment(nsHttpbin, httpbinDeploy)
+	_, err := Td.CreateDeployment(nsGateway, httpbinDeploy)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(Td.WaitForPodsRunningReady(nsHttpbin, 1, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(nsGateway, 1, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: "pipy"},
 	})).To(Succeed())
 
 	By("Creating svc for httpbin")
 	httpbinSvc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsHttpbin,
+			Namespace: nsGateway,
 			Name:      "httpbin",
 		},
 		Spec: corev1.ServiceSpec{
@@ -265,22 +259,21 @@ func testFSMGatewayHTTPTraffic() {
 			Selector: map[string]string{"app": "pipy"},
 		},
 	}
-	_, err = Td.CreateService(nsHttpbin, httpbinSvc)
+	_, err = Td.CreateService(nsGateway, httpbinSvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating HTTPRoute for testing HTTP protocol")
 	httpRoute := gwv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsHttpbin,
+			Namespace: nsGateway,
 			Name:      "http-app-1",
 		},
 		Spec: gwv1.HTTPRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(8090),
+						Name: "test-gw-1",
+						Port: portPtr(8090),
 					},
 				},
 			},
@@ -309,7 +302,7 @@ func testFSMGatewayHTTPTraffic() {
 			},
 		},
 	}
-	_, err = Td.CreateGatewayAPIHTTPRoute(nsHttpbin, httpRoute)
+	_, err = Td.CreateGatewayAPIHTTPRoute(nsGateway, httpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing HTTPRoute")
@@ -337,7 +330,7 @@ func testFSMGatewayGRPCTraffic() {
 	By("Deploying app in namespace grpcbin")
 	grpcDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsGrpcbin,
+			Namespace: nsGateway,
 			Name:      "grpcbin",
 		},
 		Spec: appv1.DeploymentSpec{
@@ -377,16 +370,16 @@ func testFSMGatewayGRPCTraffic() {
 		},
 	}
 
-	_, err := Td.CreateDeployment(nsGrpcbin, grpcDeploy)
+	_, err := Td.CreateDeployment(nsGateway, grpcDeploy)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(Td.WaitForPodsRunningReady(nsGrpcbin, 1, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(nsGateway, 1, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: "grpcbin"},
 	})).To(Succeed())
 
 	By("Creating svc for grpcbin")
 	grpcbinSvc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsGrpcbin,
+			Namespace: nsGateway,
 			Name:      "grpcbin",
 		},
 		Spec: corev1.ServiceSpec{
@@ -401,22 +394,21 @@ func testFSMGatewayGRPCTraffic() {
 			Selector: map[string]string{"app": "grpcbin"},
 		},
 	}
-	_, err = Td.CreateService(nsGrpcbin, grpcbinSvc)
+	_, err = Td.CreateService(nsGateway, grpcbinSvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating GRPCRoute for testing GRPC protocol")
 	grpcRoute := gwv1alpha2.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsGrpcbin,
+			Namespace: nsGateway,
 			Name:      "grpc-app-1",
 		},
 		Spec: gwv1alpha2.GRPCRouteSpec{
 			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
 				ParentRefs: []gwv1alpha2.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(8090),
+						Name: "test-gw-1",
+						Port: portPtr(8090),
 					},
 				},
 			},
@@ -446,7 +438,7 @@ func testFSMGatewayGRPCTraffic() {
 			},
 		},
 	}
-	_, err = Td.CreateGatewayAPIGRPCRoute(nsGrpcbin, grpcRoute)
+	_, err = Td.CreateGatewayAPIGRPCRoute(nsGateway, grpcRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing GRPCRoute")
@@ -477,7 +469,7 @@ func testFSMGatewayTCPTraffic() {
 	By("Deploying app in namespace tcproute")
 	tcpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsTcproute,
+			Namespace: nsGateway,
 			Name:      "tcp-echo",
 		},
 		Spec: appv1.DeploymentSpec{
@@ -508,16 +500,16 @@ func testFSMGatewayTCPTraffic() {
 		},
 	}
 
-	_, err := Td.CreateDeployment(nsTcproute, tcpDeploy)
+	_, err := Td.CreateDeployment(nsGateway, tcpDeploy)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(Td.WaitForPodsRunningReady(nsTcproute, 1, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(nsGateway, 1, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: "tcp-echo"},
 	})).To(Succeed())
 
 	By("Creating svc for tcproute")
 	tcpSvc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsTcproute,
+			Namespace: nsGateway,
 			Name:      "tcp-echo",
 		},
 		Spec: corev1.ServiceSpec{
@@ -532,22 +524,21 @@ func testFSMGatewayTCPTraffic() {
 			Selector: map[string]string{constants.AppLabel: "tcp-echo"},
 		},
 	}
-	_, err = Td.CreateService(nsTcproute, tcpSvc)
+	_, err = Td.CreateService(nsGateway, tcpSvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating TCPRoute for testing TCP protocol")
 	tcpRoute := gwv1alpha2.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsTcproute,
+			Namespace: nsGateway,
 			Name:      "tcp-app-1",
 		},
 		Spec: gwv1alpha2.TCPRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(3000),
+						Name: "test-gw-1",
+						Port: portPtr(3000),
 					},
 				},
 			},
@@ -565,7 +556,7 @@ func testFSMGatewayTCPTraffic() {
 			},
 		},
 	}
-	_, err = Td.CreateGatewayAPITCPRoute(nsTcproute, tcpRoute)
+	_, err = Td.CreateGatewayAPITCPRoute(nsGateway, tcpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing TCPRoute")
@@ -595,7 +586,7 @@ func testFSMGatewayUDPTraffic() {
 	By("Deploying app in namespace udproute")
 	udpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsUdproute,
+			Namespace: nsGateway,
 			Name:      "udp-echo",
 		},
 		Spec: appv1.DeploymentSpec{
@@ -626,16 +617,16 @@ func testFSMGatewayUDPTraffic() {
 		},
 	}
 
-	_, err := Td.CreateDeployment(nsUdproute, udpDeploy)
+	_, err := Td.CreateDeployment(nsGateway, udpDeploy)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(Td.WaitForPodsRunningReady(nsUdproute, 1, &metav1.LabelSelector{
+	Expect(Td.WaitForPodsRunningReady(nsGateway, 1, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: "udp-echo"},
 	})).To(Succeed())
 
 	By("Creating svc for UDPRoute")
 	udpSvc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsUdproute,
+			Namespace: nsGateway,
 			Name:      "udp-echo",
 		},
 		Spec: corev1.ServiceSpec{
@@ -650,22 +641,21 @@ func testFSMGatewayUDPTraffic() {
 			Selector: map[string]string{constants.AppLabel: "udp-echo"},
 		},
 	}
-	_, err = Td.CreateService(nsUdproute, udpSvc)
+	_, err = Td.CreateService(nsGateway, udpSvc)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating UDPRoute for testing UDP protocol")
 	udpRoute := gwv1alpha2.UDPRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsUdproute,
+			Namespace: nsGateway,
 			Name:      "udp-app-1",
 		},
 		Spec: gwv1alpha2.UDPRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(4000),
+						Name: "test-gw-1",
+						Port: portPtr(4000),
 					},
 				},
 			},
@@ -683,7 +673,7 @@ func testFSMGatewayUDPTraffic() {
 			},
 		},
 	}
-	_, err = Td.CreateGatewayAPIUDPRoute(nsUdproute, udpRoute)
+	_, err = Td.CreateGatewayAPIUDPRoute(nsGateway, udpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing UDPRoute")
@@ -713,16 +703,15 @@ func testFSMGatewayHTTPSTraffic() {
 	By("Creating HTTPRoute for testing HTTPs protocol")
 	httpRoute := gwv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsHttpbin,
+			Namespace: nsGateway,
 			Name:      "https-app-1",
 		},
 		Spec: gwv1.HTTPRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(7443),
+						Name: "test-gw-1",
+						Port: portPtr(7443),
 					},
 				},
 			},
@@ -751,7 +740,7 @@ func testFSMGatewayHTTPSTraffic() {
 			},
 		},
 	}
-	_, err := Td.CreateGatewayAPIHTTPRoute(nsHttpbin, httpRoute)
+	_, err := Td.CreateGatewayAPIHTTPRoute(nsGateway, httpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing HTTPRoute(HTTPS)")
@@ -781,16 +770,15 @@ func testFSMGatewayGRPCSTraffic() {
 	By("Creating GRPCRoute for testing GRPCs protocol")
 	grpcRoute := gwv1alpha2.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsGrpcbin,
+			Namespace: nsGateway,
 			Name:      "grpcs-app-1",
 		},
 		Spec: gwv1alpha2.GRPCRouteSpec{
 			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
 				ParentRefs: []gwv1alpha2.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(7443),
+						Name: "test-gw-1",
+						Port: portPtr(7443),
 					},
 				},
 			},
@@ -820,7 +808,7 @@ func testFSMGatewayGRPCSTraffic() {
 			},
 		},
 	}
-	_, err := Td.CreateGatewayAPIGRPCRoute(nsGrpcbin, grpcRoute)
+	_, err := Td.CreateGatewayAPIGRPCRoute(nsGateway, grpcRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing GRPCRoute(GRPCs)")
@@ -854,16 +842,15 @@ func testFSMGatewayTLSPassthrough() {
 	By("Creating TLSRoute for testing TLS passthrough")
 	tlsRoute := gwv1alpha2.TLSRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsTcproute,
+			Namespace: nsGateway,
 			Name:      "tlsp-app-1",
 		},
 		Spec: gwv1alpha2.TLSRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(8443),
+						Name: "test-gw-1",
+						Port: portPtr(8443),
 					},
 				},
 			},
@@ -881,7 +868,7 @@ func testFSMGatewayTLSPassthrough() {
 			},
 		},
 	}
-	_, err := Td.CreateGatewayAPITLSRoute(nsTcproute, tlsRoute)
+	_, err := Td.CreateGatewayAPITLSRoute(nsGateway, tlsRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing TLS Passthrough")
@@ -913,16 +900,15 @@ func testFSMGatewayTLSTerminate() {
 	By("Creating TCPRoute for testing TLS terminate")
 	tcpRoute := gwv1alpha2.TCPRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsTcproute,
+			Namespace: nsGateway,
 			Name:      "tlst-app-1",
 		},
 		Spec: gwv1alpha2.TCPRouteSpec{
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Namespace: namespacePtr(corev1.NamespaceDefault),
-						Name:      "test-gw-1",
-						Port:      portPtr(9443),
+						Name: "test-gw-1",
+						Port: portPtr(9443),
 					},
 				},
 			},
@@ -931,9 +917,8 @@ func testFSMGatewayTLSTerminate() {
 					BackendRefs: []gwv1alpha2.BackendRef{
 						{
 							BackendObjectReference: gwv1.BackendObjectReference{
-								Namespace: namespacePtr(nsHttpbin),
-								Name:      "httpbin",
-								Port:      portPtr(8080),
+								Name: "httpbin",
+								Port: portPtr(8080),
 							},
 						},
 					},
@@ -941,7 +926,7 @@ func testFSMGatewayTLSTerminate() {
 			},
 		},
 	}
-	_, err := Td.CreateGatewayAPITCPRoute(nsTcproute, tcpRoute)
+	_, err := Td.CreateGatewayAPITCPRoute(nsGateway, tcpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing TLS Terminate")

@@ -100,6 +100,7 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
+		ic.listers.Namespace = v1api.Namespaces().Lister()
 
 		if version.IsEndpointSliceEnabled(kubeClient) {
 			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()

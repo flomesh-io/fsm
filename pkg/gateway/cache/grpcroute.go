@@ -9,7 +9,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
+func (c *GatewayCache) processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
 	routePolicies := filterPoliciesByRoute(policies, grpcRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
@@ -18,7 +18,7 @@ func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcR
 			continue
 		}
 
-		allowedListeners := allowedListeners(ref, grpcRoute.GroupVersionKind(), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(grpcRoute), validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}

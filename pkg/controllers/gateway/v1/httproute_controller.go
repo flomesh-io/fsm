@@ -54,7 +54,7 @@ func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
 	}
 }
 

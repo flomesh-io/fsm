@@ -251,29 +251,29 @@ func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Lis
 
 	for _, httpRoute := range c.getResourcesFromCache(HTTPRoutesResourceType, true) {
 		httpRoute := httpRoute.(*gwv1.HTTPRoute)
-		processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
+		c.processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
 	for _, grpcRoute := range c.getResourcesFromCache(GRPCRoutesResourceType, true) {
 		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
-		processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
+		c.processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
 	for _, tlsRoute := range c.getResourcesFromCache(TLSRoutesResourceType, true) {
 		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
-		processTLSRoute(gw, validListeners, tlsRoute, rules)
+		c.processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
 	for _, tcpRoute := range c.getResourcesFromCache(TCPRoutesResourceType, true) {
 		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
-		processTCPRoute(gw, validListeners, tcpRoute, rules)
+		c.processTCPRoute(gw, validListeners, tcpRoute, rules)
 		processTCPBackends(tcpRoute, services)
 	}
 
 	for _, udpRoute := range c.getResourcesFromCache(UDPRoutesResourceType, true) {
 		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
-		processUDPRoute(gw, validListeners, udpRoute, rules)
+		c.processUDPRoute(gw, validListeners, udpRoute, rules)
 		processUDPBackends(udpRoute, services)
 	}
 
