@@ -201,7 +201,7 @@ func testDeployFSMGateway() {
 }
 
 func testFSMGatewayHTTPTraffic() {
-	By("Deploying app in namespace httpbin")
+	By("Deploying app for testing HTTP traffic")
 	httpbinDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -210,17 +210,17 @@ func testFSMGatewayHTTPTraffic() {
 		Spec: appv1.DeploymentSpec{
 			Replicas: pointer.Int32(1),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+				MatchLabels: map[string]string{constants.AppLabel: "httpbin"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{constants.AppLabel: "pipy"},
+					Labels: map[string]string{constants.AppLabel: "httpbin"},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Name:  "pipy",
-							Image: "flomesh/pipy:latest",
+							Image: "flomesh/pipy:0.99.1-1",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "pipy",
@@ -238,7 +238,7 @@ func testFSMGatewayHTTPTraffic() {
 	_, err := Td.CreateDeployment(nsGateway, httpbinDeploy)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(Td.WaitForPodsRunningReady(nsGateway, 1, &metav1.LabelSelector{
-		MatchLabels: map[string]string{constants.AppLabel: "pipy"},
+		MatchLabels: map[string]string{constants.AppLabel: "httpbin"},
 	})).To(Succeed())
 
 	By("Creating svc for httpbin")
@@ -256,7 +256,7 @@ func testFSMGatewayHTTPTraffic() {
 					TargetPort: intstr.FromInt32(8080),
 				},
 			},
-			Selector: map[string]string{"app": "pipy"},
+			Selector: map[string]string{"app": "httpbin"},
 		},
 	}
 	_, err = Td.CreateService(nsGateway, httpbinSvc)
@@ -327,7 +327,7 @@ func testFSMGatewayHTTPTraffic() {
 }
 
 func testFSMGatewayGRPCTraffic() {
-	By("Deploying app in namespace grpcbin")
+	By("Deploying app for testing gRPC traffic")
 	grpcDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -466,7 +466,7 @@ func testFSMGatewayGRPCTraffic() {
 }
 
 func testFSMGatewayTCPTraffic() {
-	By("Deploying app in namespace tcproute")
+	By("Deploying app for testing TCP traffic")
 	tcpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -583,7 +583,7 @@ func testFSMGatewayTCPTraffic() {
 }
 
 func testFSMGatewayUDPTraffic() {
-	By("Deploying app in namespace udproute")
+	By("Deploying app for testing UDP traffic")
 	udpDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
