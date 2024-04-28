@@ -938,6 +938,8 @@ func fnv32a(ruleName string) (string, bool) {
 		return ruleName, false
 	}
 	algorithm := fnv.New32a()
-	_, _ = algorithm.Write([]byte(ruleName))
-	return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName)), true
+	if _, err := algorithm.Write([]byte(ruleName)); err == nil {
+		return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName)), true
+	}
+	return ruleName, false
 }
