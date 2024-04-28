@@ -475,7 +475,6 @@ func passthroughTarget(ref gwv1.BackendRef) *string {
 func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
 	if ref.Group == nil {
 		return false
-
 	}
 
 	if ref.Kind == nil {
@@ -492,7 +491,6 @@ func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
 func isValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool {
 	if ref.Group == nil {
 		return false
-
 	}
 
 	if ref.Kind == nil {

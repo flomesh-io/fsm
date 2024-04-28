@@ -1,9 +1,10 @@
 package cache
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
 

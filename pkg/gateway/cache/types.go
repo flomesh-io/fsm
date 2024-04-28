@@ -26,11 +26,12 @@
 package cache
 
 import (
+	"k8s.io/apimachinery/pkg/labels"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Trigger is the interface for the functionality provided by the resources
