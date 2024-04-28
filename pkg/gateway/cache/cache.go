@@ -28,7 +28,7 @@ type GatewayCache struct {
 	informers    *informers.InformerCollection
 	kubeClient   kubernetes.Interface
 	cfg          configurator.Configurator
-	triggers     map[ResourceType]Trigger
+	triggers     map[informers.ResourceType]Trigger
 	gatewayclass *gwv1.GatewayClass
 	mutex        *sync.RWMutex
 }
@@ -42,30 +42,30 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 		kubeClient: kubeClient,
 		cfg:        cfg,
 
-		triggers: map[ResourceType]Trigger{
-			EndpointsResourceType:               &EndpointsTrigger{},
-			ServicesResourceType:                &ServicesTrigger{},
-			ServiceImportsResourceType:          &ServiceImportsTrigger{},
-			EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
-			SecretsResourceType:                 &SecretTrigger{},
-			GatewayClassesResourceType:          &GatewayClassesTrigger{},
-			GatewaysResourceType:                &GatewaysTrigger{},
-			HTTPRoutesResourceType:              &HTTPRoutesTrigger{},
-			GRPCRoutesResourceType:              &GRPCRoutesTrigger{},
-			TCPRoutesResourceType:               &TCPRoutesTrigger{},
-			TLSRoutesResourceType:               &TLSRoutesTrigger{},
-			UDPRoutesResourceType:               &UDPRoutesTrigger{},
-			ReferenceGrantResourceType:          &ReferenceGrantTrigger{},
-			RateLimitPoliciesResourceType:       &RateLimitPoliciesTrigger{},
-			SessionStickyPoliciesResourceType:   &SessionStickyPoliciesTrigger{},
-			LoadBalancerPoliciesResourceType:    &LoadBalancerPoliciesTrigger{},
-			CircuitBreakingPoliciesResourceType: &CircuitBreakingPoliciesTrigger{},
-			AccessControlPoliciesResourceType:   &AccessControlPoliciesTrigger{},
-			HealthCheckPoliciesResourceType:     &HealthCheckPoliciesTrigger{},
-			FaultInjectionPoliciesResourceType:  &FaultInjectionPoliciesTrigger{},
-			UpstreamTLSPoliciesResourceType:     &UpstreamTLSPoliciesTrigger{},
-			RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
-			GatewayTLSPoliciesResourceType:      &GatewayTLSPoliciesTrigger{},
+		triggers: map[informers.ResourceType]Trigger{
+			informers.EndpointsResourceType:               &EndpointsTrigger{},
+			informers.ServicesResourceType:                &ServicesTrigger{},
+			informers.ServiceImportsResourceType:          &ServiceImportsTrigger{},
+			informers.EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
+			informers.SecretsResourceType:                 &SecretTrigger{},
+			informers.GatewayClassesResourceType:          &GatewayClassesTrigger{},
+			informers.GatewaysResourceType:                &GatewaysTrigger{},
+			informers.HTTPRoutesResourceType:              &HTTPRoutesTrigger{},
+			informers.GRPCRoutesResourceType:              &GRPCRoutesTrigger{},
+			informers.TCPRoutesResourceType:               &TCPRoutesTrigger{},
+			informers.TLSRoutesResourceType:               &TLSRoutesTrigger{},
+			informers.UDPRoutesResourceType:               &UDPRoutesTrigger{},
+			informers.ReferenceGrantResourceType:          &ReferenceGrantTrigger{},
+			informers.RateLimitPoliciesResourceType:       &RateLimitPoliciesTrigger{},
+			informers.SessionStickyPoliciesResourceType:   &SessionStickyPoliciesTrigger{},
+			informers.LoadBalancerPoliciesResourceType:    &LoadBalancerPoliciesTrigger{},
+			informers.CircuitBreakingPoliciesResourceType: &CircuitBreakingPoliciesTrigger{},
+			informers.AccessControlPoliciesResourceType:   &AccessControlPoliciesTrigger{},
+			informers.HealthCheckPoliciesResourceType:     &HealthCheckPoliciesTrigger{},
+			informers.FaultInjectionPoliciesResourceType:  &FaultInjectionPoliciesTrigger{},
+			informers.UpstreamTLSPoliciesResourceType:     &UpstreamTLSPoliciesTrigger{},
+			informers.RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
+			informers.GatewayTLSPoliciesResourceType:      &GatewayTLSPoliciesTrigger{},
 		},
 
 		mutex: new(sync.RWMutex),
@@ -95,51 +95,51 @@ func (c *GatewayCache) Delete(obj interface{}) bool {
 func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 	switch obj.(type) {
 	case *corev1.Endpoints:
-		return c.triggers[EndpointsResourceType]
+		return c.triggers[informers.EndpointsResourceType]
 	case *corev1.Service:
-		return c.triggers[ServicesResourceType]
+		return c.triggers[informers.ServicesResourceType]
 	case *mcsv1alpha1.ServiceImport:
-		return c.triggers[ServiceImportsResourceType]
+		return c.triggers[informers.ServiceImportsResourceType]
 	case *discoveryv1.EndpointSlice:
-		return c.triggers[EndpointSlicesResourceType]
+		return c.triggers[informers.EndpointSlicesResourceType]
 	case *corev1.Secret:
-		return c.triggers[SecretsResourceType]
+		return c.triggers[informers.SecretsResourceType]
 	case *gwv1.GatewayClass:
-		return c.triggers[GatewayClassesResourceType]
+		return c.triggers[informers.GatewayClassesResourceType]
 	case *gwv1.Gateway:
-		return c.triggers[GatewaysResourceType]
+		return c.triggers[informers.GatewaysResourceType]
 	case *gwv1.HTTPRoute:
-		return c.triggers[HTTPRoutesResourceType]
+		return c.triggers[informers.HTTPRoutesResourceType]
 	case *gwv1alpha2.GRPCRoute:
-		return c.triggers[GRPCRoutesResourceType]
+		return c.triggers[informers.GRPCRoutesResourceType]
 	case *gwv1alpha2.TCPRoute:
-		return c.triggers[TCPRoutesResourceType]
+		return c.triggers[informers.TCPRoutesResourceType]
 	case *gwv1alpha2.TLSRoute:
-		return c.triggers[TLSRoutesResourceType]
+		return c.triggers[informers.TLSRoutesResourceType]
 	case *gwv1alpha2.UDPRoute:
-		return c.triggers[UDPRoutesResourceType]
+		return c.triggers[informers.UDPRoutesResourceType]
 	case *gwv1beta1.ReferenceGrant:
-		return c.triggers[ReferenceGrantResourceType]
+		return c.triggers[informers.ReferenceGrantResourceType]
 	case *gwpav1alpha1.RateLimitPolicy:
-		return c.triggers[RateLimitPoliciesResourceType]
+		return c.triggers[informers.RateLimitPoliciesResourceType]
 	case *gwpav1alpha1.SessionStickyPolicy:
-		return c.triggers[SessionStickyPoliciesResourceType]
+		return c.triggers[informers.SessionStickyPoliciesResourceType]
 	case *gwpav1alpha1.LoadBalancerPolicy:
-		return c.triggers[LoadBalancerPoliciesResourceType]
+		return c.triggers[informers.LoadBalancerPoliciesResourceType]
 	case *gwpav1alpha1.CircuitBreakingPolicy:
-		return c.triggers[CircuitBreakingPoliciesResourceType]
+		return c.triggers[informers.CircuitBreakingPoliciesResourceType]
 	case *gwpav1alpha1.AccessControlPolicy:
-		return c.triggers[AccessControlPoliciesResourceType]
+		return c.triggers[informers.AccessControlPoliciesResourceType]
 	case *gwpav1alpha1.HealthCheckPolicy:
-		return c.triggers[HealthCheckPoliciesResourceType]
+		return c.triggers[informers.HealthCheckPoliciesResourceType]
 	case *gwpav1alpha1.FaultInjectionPolicy:
-		return c.triggers[FaultInjectionPoliciesResourceType]
+		return c.triggers[informers.FaultInjectionPoliciesResourceType]
 	case *gwpav1alpha1.UpstreamTLSPolicy:
-		return c.triggers[UpstreamTLSPoliciesResourceType]
+		return c.triggers[informers.UpstreamTLSPoliciesResourceType]
 	case *gwpav1alpha1.RetryPolicy:
-		return c.triggers[RetryPoliciesResourceType]
+		return c.triggers[informers.RetryPoliciesResourceType]
 	case *gwpav1alpha1.GatewayTLSPolicy:
-		return c.triggers[GatewayTLSPoliciesResourceType]
+		return c.triggers[informers.GatewayTLSPoliciesResourceType]
 	}
 
 	return nil

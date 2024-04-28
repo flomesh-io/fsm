@@ -30,6 +30,7 @@ import (
 	"reflect"
 
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
@@ -137,6 +138,7 @@ func (r *accessControlPolicyReconciler) getAccessControls(policy client.Object, 
 	}
 
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, p := range accessControlPolicyList.Items {
 		p := p
@@ -146,19 +148,19 @@ func (r *accessControlPolicyReconciler) getAccessControls(policy client.Object, 
 
 			switch {
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
 				len(spec.Ports) > 0:
 				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
 			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
 				len(spec.Hostnames) > 0:
 				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
 				len(spec.HTTPAccessControls) > 0:
 				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
 				len(spec.GRPCAccessControls) > 0:
 				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
 			}

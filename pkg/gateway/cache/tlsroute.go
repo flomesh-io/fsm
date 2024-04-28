@@ -60,12 +60,12 @@ func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
 	// DO nothing for now
 }
 
-func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
+func (c *GatewayCache) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
 	backends := fgw.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(tcpRoute, bk.BackendObjectReference); svcPort != nil {
 				backends[svcPort.String()] = backendWeight(bk)
 			}
 		}

@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"github.com/gobwas/glob"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -133,7 +134,7 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bo
 }
 
 // IsRefToTarget returns true if the target reference is to the target object
-func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Object) bool {
+func IsRefToTarget(referenceGrants []client.Object, targetRef gwv1alpha2.PolicyTargetReference, object client.Object) bool {
 	gvk := object.GetObjectKind().GroupVersionKind()
 
 	if string(targetRef.Group) != gvk.Group {
@@ -144,11 +145,28 @@ func IsRefToTarget(targetRef gwv1alpha2.PolicyTargetReference, object client.Obj
 		return false
 	}
 
-	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.GetNamespace() {
+	if string(targetRef.Name) != object.GetName() {
 		return false
 	}
 
-	return string(targetRef.Name) == object.GetName()
+	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.GetNamespace() && !ValidCrossNamespaceRef(
+		referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     gvk.Group,
+			Kind:      gvk.Kind,
+			Namespace: object.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     string(targetRef.Group),
+			Kind:      string(targetRef.Kind),
+			Namespace: string(*targetRef.Namespace),
+			Name:      string(targetRef.Name),
+		},
+	) {
+		return false
+	}
+
+	return true
 }
 
 // IsTargetRefToGVK returns true if the target reference is to the given group version kind
@@ -392,4 +410,42 @@ func ToRouteContext(route client.Object) *gwtypes.RouteContext {
 		log.Warn().Msgf("Unsupported route type: %T", route)
 		return nil
 	}
+}
+
+func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo) bool {
+	for _, referenceGrant := range referenceGrants {
+		refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
+
+		if refGrant.Namespace != to.Namespace {
+			continue
+		}
+
+		var fromAllowed bool
+		for _, refGrantFrom := range refGrant.Spec.From {
+			if string(refGrantFrom.Namespace) == from.Namespace && string(refGrantFrom.Group) == from.Group && string(refGrantFrom.Kind) == from.Kind {
+				fromAllowed = true
+				break
+			}
+		}
+
+		if !fromAllowed {
+			continue
+		}
+
+		var toAllowed bool
+		for _, refGrantTo := range refGrant.Spec.To {
+			if string(refGrantTo.Group) == to.Group && string(refGrantTo.Kind) == to.Kind && (refGrantTo.Name == nil || *refGrantTo.Name == "" || string(*refGrantTo.Name) == to.Name) {
+				toAllowed = true
+				break
+			}
+		}
+
+		if !toAllowed {
+			continue
+		}
+
+		return true
+	}
+
+	return false
 }

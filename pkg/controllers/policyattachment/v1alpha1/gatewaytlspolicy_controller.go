@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
@@ -135,6 +137,7 @@ func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, 
 	}
 
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, p := range gatewayTLSPolicyList.Items {
 		p := p
@@ -144,7 +147,7 @@ func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, 
 
 			switch {
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
 				len(spec.Ports) > 0:
 				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
 			}

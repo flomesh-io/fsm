@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
@@ -110,10 +112,12 @@ func (r *sessionStickyPolicyReconciler) getAttachedSessionStickies(policy client
 	}
 
 	sessionStickies := make([]client.Object, 0)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+
 	for _, p := range sessionStickyPolicyList.Items {
 		p := p
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			gwutils.IsRefToTarget(referenceGrants, p.Spec.TargetRef, svc) {
 			sessionStickies = append(sessionStickies, &p)
 		}
 	}

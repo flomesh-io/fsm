@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"k8s.io/utils/pointer"
@@ -216,32 +218,55 @@ func (c *GatewayCache) tlsPassthroughCfg() *fgw.TLS {
 
 func (c *GatewayCache) certificates(gw *gwv1.Gateway, l gwtypes.Listener) []fgw.Certificate {
 	certs := make([]fgw.Certificate, 0)
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
+
 	for _, ref := range l.TLS.CertificateRefs {
-		if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
-			key := client.ObjectKey{
-				Namespace: gwutils.Namespace(ref.Namespace, gw.Namespace),
-				Name:      string(ref.Name),
-			}
-			secret, err := c.getSecretFromCache(key)
-
-			if err != nil {
-				log.Error().Msgf("Failed to get Secret %s: %s", key, err)
-				continue
-			}
-
-			cert := fgw.Certificate{
-				CertChain:  string(secret.Data[corev1.TLSCertKey]),
-				PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
-			}
-
-			ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
-			if len(ca) > 0 {
-				cert.IssuingCA = ca
-			}
-
-			certs = append(certs, cert)
+		if !isValidRefToGroupKindOfSecret(ref) {
+			continue
 		}
+
+		// If the secret is in a different namespace than the gateway, check ReferenceGrants
+		if ref.Namespace != nil && string(*ref.Namespace) != gw.Namespace && !gwutils.ValidCrossNamespaceRef(
+			referenceGrants,
+			gwtypes.CrossNamespaceFrom{
+				Group:     gwv1.GroupName,
+				Kind:      constants.GatewayAPIGatewayKind,
+				Namespace: gw.Namespace,
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     corev1.GroupName,
+				Kind:      constants.KubernetesSecretKind,
+				Namespace: string(*ref.Namespace),
+				Name:      string(ref.Name),
+			},
+		) {
+			continue
+		}
+
+		key := client.ObjectKey{
+			Namespace: gwutils.Namespace(ref.Namespace, gw.Namespace),
+			Name:      string(ref.Name),
+		}
+		secret, err := c.getSecretFromCache(key)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get Secret %s: %s", key, err)
+			continue
+		}
+
+		cert := fgw.Certificate{
+			CertChain:  string(secret.Data[corev1.TLSCertKey]),
+			PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
+		}
+
+		ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
+		if len(ca) > 0 {
+			cert.IssuingCA = ca
+		}
+
+		certs = append(certs, cert)
 	}
+
 	return certs
 }
 
@@ -249,32 +274,32 @@ func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Lis
 	rules := make(map[int32]fgw.RouteRule)
 	services := make(map[string]serviceInfo)
 
-	for _, httpRoute := range c.getResourcesFromCache(HTTPRoutesResourceType, true) {
+	for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
 		httpRoute := httpRoute.(*gwv1.HTTPRoute)
 		c.processHTTPRoute(gw, validListeners, httpRoute, policies, rules, services)
 	}
 
-	for _, grpcRoute := range c.getResourcesFromCache(GRPCRoutesResourceType, true) {
+	for _, grpcRoute := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, true) {
 		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
 		c.processGRPCRoute(gw, validListeners, grpcRoute, policies, rules, services)
 	}
 
-	for _, tlsRoute := range c.getResourcesFromCache(TLSRoutesResourceType, true) {
+	for _, tlsRoute := range c.getResourcesFromCache(informers.TLSRoutesResourceType, true) {
 		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
 		c.processTLSRoute(gw, validListeners, tlsRoute, rules)
 		processTLSBackends(tlsRoute, services)
 	}
 
-	for _, tcpRoute := range c.getResourcesFromCache(TCPRoutesResourceType, true) {
+	for _, tcpRoute := range c.getResourcesFromCache(informers.TCPRoutesResourceType, true) {
 		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
 		c.processTCPRoute(gw, validListeners, tcpRoute, rules)
-		processTCPBackends(tcpRoute, services)
+		c.processTCPBackends(tcpRoute, services)
 	}
 
-	for _, udpRoute := range c.getResourcesFromCache(UDPRoutesResourceType, true) {
+	for _, udpRoute := range c.getResourcesFromCache(informers.UDPRoutesResourceType, true) {
 		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
 		c.processUDPRoute(gw, validListeners, udpRoute, rules)
-		processUDPBackends(udpRoute, services)
+		c.processUDPBackends(udpRoute, services)
 	}
 
 	return rules, services

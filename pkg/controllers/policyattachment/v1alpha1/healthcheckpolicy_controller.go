@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/healthcheck"
@@ -109,11 +111,12 @@ func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(policy client.Obje
 		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicies: %s", err)))
 	}
 
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 	healthChecks := make([]client.Object, 0)
 	for _, p := range healthCheckPolicyList.Items {
 		p := p
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			gwutils.IsRefToTarget(referenceGrants, p.Spec.TargetRef, svc) {
 			healthChecks = append(healthChecks, &p)
 		}
 	}

@@ -23,16 +23,16 @@ func (c *GatewayCache) processUDPRoute(gw *gwv1.Gateway, validListeners []gwtype
 		for _, listener := range allowedListeners {
 			switch listener.Protocol {
 			case gwv1.UDPProtocolType:
-				rules[int32(listener.Port)] = generateUDPRouteCfg(udpRoute)
+				rules[int32(listener.Port)] = c.generateUDPRouteCfg(udpRoute)
 			}
 		}
 	}
 }
 
-func processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]serviceInfo) {
+func (c *GatewayCache) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]serviceInfo) {
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(backend.BackendObjectReference, udpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
 				services[svcPort.String()] = serviceInfo{
 					svcPortName: *svcPort,
 				}
@@ -41,12 +41,12 @@ func processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]servi
 	}
 }
 
-func generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
+func (c *GatewayCache) generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
 	backends := fgw.UDPRouteRule{}
 
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, udpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(udpRoute, bk.BackendObjectReference); svcPort != nil {
 				backends[svcPort.String()] = backendWeight(bk)
 			}
 		}

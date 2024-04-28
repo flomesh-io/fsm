@@ -44,21 +44,21 @@ func (c *GatewayCache) processTCPRoute(gw *gwv1.Gateway, validListeners []gwtype
 
 				tlsRule := fgw.TLSTerminateRouteRule{}
 				for _, hostname := range hostnames {
-					tlsRule[hostname] = generateTLSTerminateRouteCfg(tcpRoute)
+					tlsRule[hostname] = c.generateTLSTerminateRouteCfg(tcpRoute)
 				}
 
 				rules[int32(listener.Port)] = tlsRule
 			case gwv1.TCPProtocolType:
-				rules[int32(listener.Port)] = generateTCPRouteCfg(tcpRoute)
+				rules[int32(listener.Port)] = c.generateTCPRouteCfg(tcpRoute)
 			}
 		}
 	}
 }
 
-func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
+func (c *GatewayCache) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(backend.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference); svcPort != nil {
 				services[svcPort.String()] = serviceInfo{
 					svcPortName: *svcPort,
 				}
@@ -67,12 +67,12 @@ func processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]servi
 	}
 }
 
-func generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
+func (c *GatewayCache) generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
 	backends := fgw.TCPRouteRule{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(tcpRoute, bk.BackendObjectReference); svcPort != nil {
 				backends[svcPort.String()] = backendWeight(bk)
 			}
 		}

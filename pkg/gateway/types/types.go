@@ -63,3 +63,18 @@ type RouteContext struct {
 	Namespace    string
 	ParentStatus []gwv1.RouteParentStatus
 }
+
+// CrossNamespaceFrom is the type used to represent the from part of a cross-namespace reference
+type CrossNamespaceFrom struct {
+	Group     string
+	Kind      string
+	Namespace string
+}
+
+// CrossNamespaceTo is the type used to represent the to part of a cross-namespace reference
+type CrossNamespaceTo struct {
+	Group     string
+	Kind      string
+	Namespace string
+	Name      string
+}

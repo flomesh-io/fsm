@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
@@ -109,10 +111,12 @@ func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(policy client.Ob
 	}
 
 	loadBalancers := make([]client.Object, 0)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+
 	for _, p := range loadBalancerPolicyList.Items {
 		p := p
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			gwutils.IsRefToTarget(referenceGrants, p.Spec.TargetRef, svc) {
 			loadBalancers = append(loadBalancers, &p)
 		}
 	}
