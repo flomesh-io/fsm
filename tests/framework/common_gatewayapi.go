@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +31,16 @@ func (td *FsmTestData) CreateGatewayAPIHTTPRoute(ns string, r gwv1.HTTPRoute) (*
 	}
 
 	return hr, nil
+}
+
+// CreateGatewayAPIReferenceGrant Creates a ReferenceGrant
+func (td *FsmTestData) CreateGatewayAPIReferenceGrant(ns string, r gwv1beta1.ReferenceGrant) (*gwv1beta1.ReferenceGrant, error) {
+	rg, err := td.GatewayAPIClient.GatewayV1beta1().ReferenceGrants(ns).Create(context.Background(), &r, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ReferenceGrant: %w", err)
+	}
+
+	return rg, nil
 }
 
 // CreateGatewayAPIGRPCRoute Creates a GRPCRoute

@@ -3,6 +3,10 @@ package e2e
 import (
 	"fmt"
 
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"k8s.io/utils/ptr"
+
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -20,7 +24,10 @@ import (
 )
 
 const (
-	nsGateway = "test"
+	nsGateway   = "test"
+	nsHTTPRoute = "http-route"
+	nsHTTPSvc   = "http"
+	nsGRPC      = "grpc"
 )
 
 var _ = FSMDescribe("Test traffic among FSM Gateway",
@@ -43,7 +50,8 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 
 				testDeployFSMGateway()
 
-				testFSMGatewayHTTPTraffic()
+				testFSMGatewayHTTPTrafficSameNamespace()
+				testFSMGatewayHTTPTrafficCrossNamespace()
 				testFSMGatewayHTTPSTraffic()
 				testFSMGatewayTLSTerminate()
 				testFSMGatewayTLSPassthrough()
@@ -60,8 +68,9 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 func testDeployFSMGateway() {
 	// Create namespaces
 	Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
-	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
-	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsHTTPRoute, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsHTTPSvc, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsGRPC, nil)).To(Succeed())
 	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
 
 	By("Generating CA private key")
@@ -135,6 +144,16 @@ func testDeployFSMGateway() {
 					Protocol: gwv1.HTTPProtocolType,
 				},
 				{
+					Port:     9090,
+					Name:     "http-cross-ns",
+					Protocol: gwv1.HTTPProtocolType,
+					AllowedRoutes: &gwv1.AllowedRoutes{
+						Namespaces: &gwv1.RouteNamespaces{
+							From: ptr.To(gwv1.NamespacesFromAll),
+						},
+					},
+				},
+				{
 					Port:     3000,
 					Name:     "tcp",
 					Protocol: gwv1.TCPProtocolType,
@@ -200,8 +219,8 @@ func testDeployFSMGateway() {
 	})).To(Succeed())
 }
 
-func testFSMGatewayHTTPTraffic() {
-	By("Deploying app for testing HTTP traffic")
+func testFSMGatewayHTTPTrafficSameNamespace() {
+	By("Deploying app for testing HTTP traffic in the same namespace")
 	httpbinDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -308,6 +327,153 @@ func testFSMGatewayHTTPTraffic() {
 	By("Testing HTTPRoute")
 	httpReq := HTTPRequestDef{
 		Destination: "http://httptest.localhost:8090/bar",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalHTTPRequest(httpReq)
+
+		if result.Err != nil || result.StatusCode != 200 {
+			Td.T.Logf("> (%s) HTTP Req failed %d %v",
+				srcToDestStr, result.StatusCode, result.Err)
+			return false
+		}
+		Td.T.Logf("> (%s) HTTP Req succeeded: %d", srcToDestStr, result.StatusCode)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing HTTP traffic from curl(localhost) to destination %s", httpReq.Destination)
+}
+
+func testFSMGatewayHTTPTrafficCrossNamespace() {
+	By("Deploying app for testing HTTP traffic cross namespace")
+	httpbinDeploy := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsHTTPSvc,
+			Name:      "httpbin-cross",
+		},
+		Spec: appv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{constants.AppLabel: "httpbin-cross"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{constants.AppLabel: "httpbin-cross"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "pipy",
+							Image: "flomesh/pipy:0.99.1-1",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "pipy",
+									ContainerPort: 8080,
+								},
+							},
+							Command: []string{"pipy", "-e", "pipy().listen(8080).serveHTTP(new Message('Hi, I am HTTPRoute!'))"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := Td.CreateDeployment(nsHTTPSvc, httpbinDeploy)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Td.WaitForPodsRunningReady(nsHTTPSvc, 1, &metav1.LabelSelector{
+		MatchLabels: map[string]string{constants.AppLabel: "httpbin-cross"},
+	})).To(Succeed())
+
+	By("Creating svc for httpbin-cross")
+	httpbinSvc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsHTTPSvc,
+			Name:      "httpbin-cross",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "pipy",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       8080,
+					TargetPort: intstr.FromInt32(8080),
+				},
+			},
+			Selector: map[string]string{"app": "httpbin-cross"},
+		},
+	}
+	_, err = Td.CreateService(nsHTTPSvc, httpbinSvc)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating HTTPRoute for testing HTTP protocol cross namespace")
+	httpRoute := gwv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsHTTPRoute,
+			Name:      "http-app-cross-1",
+		},
+		Spec: gwv1.HTTPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(nsGateway),
+						Name:      "test-gw-1",
+						Port:      portPtr(9090),
+					},
+				},
+			},
+			Hostnames: []gwv1.Hostname{"httptest.localhost"},
+			Rules: []gwv1.HTTPRouteRule{
+				{
+					Matches: []gwv1.HTTPRouteMatch{
+						{
+							Path: &gwv1.HTTPPathMatch{
+								Type:  pathMatchTypePtr(gwv1.PathMatchPathPrefix),
+								Value: pointer.String("/cross"),
+							},
+						},
+					},
+					BackendRefs: []gwv1.HTTPBackendRef{
+						{
+							BackendRef: gwv1.BackendRef{
+								BackendObjectReference: gwv1.BackendObjectReference{
+									Namespace: namespacePtr(nsHTTPSvc),
+									Name:      "httpbin-cross",
+									Port:      portPtr(8080),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIHTTPRoute(nsHTTPRoute, httpRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating ReferenceGrant for testing HTTP traffic cross namespace")
+	referenceGrant := gwv1beta1.ReferenceGrant{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsHTTPSvc,
+			Name:      "http-cross-1",
+		},
+
+		Spec: gwv1beta1.ReferenceGrantSpec{
+			From: []gwv1beta1.ReferenceGrantFrom{
+				{Kind: "HTTPRoute", Namespace: nsHTTPRoute},
+			},
+			To: []gwv1beta1.ReferenceGrantTo{
+				{Kind: "Service"},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIReferenceGrant(nsHTTPSvc, referenceGrant)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing HTTPRoute")
+	httpReq := HTTPRequestDef{
+		Destination: "http://httptest.localhost:9090/cross",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s", "curl", httpReq.Destination)
 

@@ -253,6 +253,11 @@ nodeRegistration:
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
 						},
 						{
+							ContainerPort: 9090,
+							HostPort:      9090,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
 							ContainerPort: 7443,
 							HostPort:      7443,
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
