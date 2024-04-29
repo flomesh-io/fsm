@@ -11,7 +11,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
+func (c *GatewayCache) processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
 	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 	routePolicies := filterPoliciesByRoute(referenceGrants, policies, grpcRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
@@ -57,7 +57,7 @@ func (c *GatewayCache) processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtyp
 	}
 }
 
-func (c *GatewayCache) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.GRPCRouteRuleSpec {
+func (c *GatewayCache) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceContext) *fgw.GRPCRouteRuleSpec {
 	grpcSpec := &fgw.GRPCRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeGRPC,
 		Matches:   make([]fgw.GRPCTrafficMatch, 0),
@@ -79,7 +79,7 @@ func (c *GatewayCache) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, rou
 					Filters: svcLevelFilters,
 				}
 
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}

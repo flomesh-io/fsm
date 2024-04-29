@@ -126,7 +126,7 @@ func testDeployFSMGateway() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating secret for gRPC")
-	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
+	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGRPCSvc, "create", "secret", "tls", "grpc-cert", "--key", "grpc.key", "--cert", "grpc.crt")
 	Td.T.Log(stdout.String())
 	if stderr != nil {
 		Td.T.Log("stderr:\n" + stderr.String())
@@ -207,7 +207,8 @@ func testDeployFSMGateway() {
 								Name: "https-cert",
 							},
 							{
-								Name: "grpc-cert",
+								Namespace: namespacePtr(nsGRPCSvc),
+								Name:      "grpc-cert",
 							},
 						},
 					},
@@ -233,7 +234,8 @@ func testDeployFSMGateway() {
 								Name: "https-cert",
 							},
 							{
-								Name: "grpc-cert",
+								Namespace: namespacePtr(nsGRPCSvc),
+								Name:      "grpc-cert",
 							},
 						},
 					},
@@ -251,6 +253,25 @@ func testDeployFSMGateway() {
 	Expect(Td.WaitForPodsRunningReady(nsGateway, 2, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: constants.FSMGatewayName},
 	})).To(Succeed())
+
+	By("Creating ReferenceGrant for testing Secret reference cross namespace")
+	referenceGrant := gwv1beta1.ReferenceGrant{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCSvc,
+			Name:      "secret-cross-1",
+		},
+
+		Spec: gwv1beta1.ReferenceGrantSpec{
+			From: []gwv1beta1.ReferenceGrantFrom{
+				{Group: gwv1.GroupName, Kind: "Gateway", Namespace: nsGateway},
+			},
+			To: []gwv1beta1.ReferenceGrantTo{
+				{Group: corev1.GroupName, Kind: "Secret", Name: ptr.To(gwv1.ObjectName("grpc-cert"))},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIReferenceGrant(nsGRPCSvc, referenceGrant)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func testFSMGatewayHTTPTrafficSameNamespace() {

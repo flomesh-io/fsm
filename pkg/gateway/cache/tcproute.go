@@ -55,11 +55,11 @@ func (c *GatewayCache) processTCPRoute(gw *gwv1.Gateway, validListeners []gwtype
 	}
 }
 
-func (c *GatewayCache) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceInfo) {
+func (c *GatewayCache) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceContext) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference); svcPort != nil {
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}

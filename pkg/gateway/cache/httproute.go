@@ -8,7 +8,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
+func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
 	routePolicies := filterPoliciesByRoute(nil, policies, httpRoute)
 	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
@@ -56,7 +56,7 @@ func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtyp
 	}
 }
 
-func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.HTTPRouteRuleSpec {
+func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceContext) *fgw.HTTPRouteRuleSpec {
 	httpSpec := &fgw.HTTPRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeHTTP,
 		Matches:   make([]fgw.HTTPTrafficMatch, 0),
@@ -79,7 +79,7 @@ func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routeP
 					Filters: svcLevelFilters,
 				}
 
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}

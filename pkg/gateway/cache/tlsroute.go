@@ -56,7 +56,7 @@ func (c *GatewayCache) processTLSRoute(gw *gwv1.Gateway, validListeners []gwtype
 	}
 }
 
-func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
+func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceContext) {
 	// DO nothing for now
 }
 

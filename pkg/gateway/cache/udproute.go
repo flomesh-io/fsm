@@ -29,11 +29,11 @@ func (c *GatewayCache) processUDPRoute(gw *gwv1.Gateway, validListeners []gwtype
 	}
 }
 
-func (c *GatewayCache) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]serviceInfo) {
+func (c *GatewayCache) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]serviceContext) {
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}

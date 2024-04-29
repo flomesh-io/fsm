@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 
@@ -397,7 +399,7 @@ func (c *GatewayCache) targetRefToServicePortName(referer client.Object, ref gwv
 	}
 }
 
-func (c *GatewayCache) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.HTTPRouteFilter, services map[string]serviceInfo) fgw.Filter {
+func (c *GatewayCache) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.HTTPRouteFilter, services map[string]serviceContext) fgw.Filter {
 	result := fgw.HTTPRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -439,7 +441,7 @@ func (c *GatewayCache) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.H
 				BackendService: svcPort.String(),
 			}
 
-			services[svcPort.String()] = serviceInfo{
+			services[svcPort.String()] = serviceContext{
 				svcPortName: *svcPort,
 			}
 		}
@@ -453,7 +455,7 @@ func (c *GatewayCache) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.H
 	return result
 }
 
-func (c *GatewayCache) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter, services map[string]serviceInfo) fgw.Filter {
+func (c *GatewayCache) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter, services map[string]serviceContext) fgw.Filter {
 	result := fgw.GRPCRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -478,7 +480,7 @@ func (c *GatewayCache) toFSMGRPCRouteFilter(referer client.Object, filter gwv1al
 				BackendService: svcPort.String(),
 			}
 
-			services[svcPort.String()] = serviceInfo{
+			services[svcPort.String()] = serviceContext{
 				svcPortName: *svcPort,
 			}
 		}
@@ -565,4 +567,35 @@ func (c *GatewayCache) isRefToSecret(referer client.Object, ref gwv1.SecretObjec
 	}
 
 	return true
+}
+
+func (c *GatewayCache) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference, referenceGrants []client.Object) (*corev1.Secret, error) {
+	if !isValidRefToGroupKindOfSecret(ref) {
+		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
+	}
+
+	// If the secret is in a different namespace than the referer, check ReferenceGrants
+	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: referer.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     corev1.GroupName,
+			Kind:      constants.KubernetesSecretKind,
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
+		},
+	) {
+		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			string(*ref.Kind), string(*ref.Group), string(*ref.Namespace), ref.Name)
+	}
+
+	return c.getSecretFromCache(client.ObjectKey{
+		Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+		Name:      string(ref.Name),
+	})
 }

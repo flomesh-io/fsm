@@ -9,8 +9,6 @@ import (
 
 	"k8s.io/utils/pointer"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -221,36 +219,10 @@ func (c *GatewayCache) certificates(gw *gwv1.Gateway, l gwtypes.Listener) []fgw.
 	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, ref := range l.TLS.CertificateRefs {
-		if !isValidRefToGroupKindOfSecret(ref) {
-			continue
-		}
-
-		// If the secret is in a different namespace than the gateway, check ReferenceGrants
-		if ref.Namespace != nil && string(*ref.Namespace) != gw.Namespace && !gwutils.ValidCrossNamespaceRef(
-			referenceGrants,
-			gwtypes.CrossNamespaceFrom{
-				Group:     gwv1.GroupName,
-				Kind:      constants.GatewayAPIGatewayKind,
-				Namespace: gw.Namespace,
-			},
-			gwtypes.CrossNamespaceTo{
-				Group:     corev1.GroupName,
-				Kind:      constants.KubernetesSecretKind,
-				Namespace: string(*ref.Namespace),
-				Name:      string(ref.Name),
-			},
-		) {
-			continue
-		}
-
-		key := client.ObjectKey{
-			Namespace: gwutils.Namespace(ref.Namespace, gw.Namespace),
-			Name:      string(ref.Name),
-		}
-		secret, err := c.getSecretFromCache(key)
+		secret, err := c.secretRefToSecret(gw, ref, referenceGrants)
 
 		if err != nil {
-			log.Error().Msgf("Failed to get Secret %s: %s", key, err)
+			log.Error().Msgf("Failed to resolve Secret: %s", err)
 			continue
 		}
 
@@ -270,9 +242,9 @@ func (c *GatewayCache) certificates(gw *gwv1.Gateway, l gwtypes.Listener) []fgw.
 	return certs
 }
 
-func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]fgw.RouteRule, map[string]serviceInfo) {
+func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Listener, policies globalPolicyAttachments) (map[int32]fgw.RouteRule, map[string]serviceContext) {
 	rules := make(map[int32]fgw.RouteRule)
-	services := make(map[string]serviceInfo)
+	services := make(map[string]serviceContext)
 
 	for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
 		httpRoute := httpRoute.(*gwv1.HTTPRoute)
@@ -305,7 +277,7 @@ func (c *GatewayCache) routeRules(gw *gwv1.Gateway, validListeners []gwtypes.Lis
 	return rules, services
 }
 
-func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[string]fgw.ServiceConfig {
+func (c *GatewayCache) serviceConfigs(services map[string]serviceContext) map[string]fgw.ServiceConfig {
 	configs := make(map[string]fgw.ServiceConfig)
 	enrichers := c.getServicePolicyEnrichers()
 
@@ -350,7 +322,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 			continue
 		}
 
-		endpointSet := make(map[endpointInfo]struct{})
+		endpointSet := make(map[endpointContext]struct{})
 		for _, eps := range filteredSlices {
 			for _, endpoint := range eps.Endpoints {
 				if !isEndpointReady(endpoint) {
@@ -359,7 +331,7 @@ func (c *GatewayCache) serviceConfigs(services map[string]serviceInfo) map[strin
 				endpointPort := findPort(eps.Ports, svcPort)
 
 				for _, address := range endpoint.Addresses {
-					ep := endpointInfo{address: address, port: endpointPort}
+					ep := endpointContext{address: address, port: endpointPort}
 					endpointSet[ep] = struct{}{}
 				}
 			}

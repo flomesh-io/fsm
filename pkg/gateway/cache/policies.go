@@ -1,8 +1,6 @@
 package cache
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
@@ -24,7 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -435,36 +432,9 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 						continue
 					}
 
-					if !isValidRefToGroupKindOfSecret(cfg.CertificateRef) {
-						continue
-					}
-
-					// If the secret is in a different namespace than the gateway, check ReferenceGrants
-					if cfg.CertificateRef.Namespace != nil && string(*cfg.CertificateRef.Namespace) != upstreamTLS.Namespace && !gwutils.ValidCrossNamespaceRef(
-						referenceGrants,
-						gwtypes.CrossNamespaceFrom{
-							Group:     constants.FlomeshGatewayAPIGroup,
-							Kind:      constants.UpstreamTLSPolicyKind,
-							Namespace: upstreamTLS.Namespace,
-						},
-						gwtypes.CrossNamespaceTo{
-							Group:     corev1.GroupName,
-							Kind:      constants.KubernetesSecretKind,
-							Namespace: string(*cfg.CertificateRef.Namespace),
-							Name:      string(cfg.CertificateRef.Name),
-						},
-					) {
-						continue
-					}
-
-					secretKey := client.ObjectKey{
-						Namespace: gwutils.Namespace(cfg.CertificateRef.Namespace, upstreamTLS.Namespace),
-						Name:      string(cfg.CertificateRef.Name),
-					}
-
-					secret, err := c.getSecretFromCache(secretKey)
+					secret, err := c.secretRefToSecret(upstreamTLS, cfg.CertificateRef, referenceGrants)
 					if err != nil {
-						log.Error().Msgf("Failed to get Secret %s: %s", secretKey, err)
+						log.Error().Msgf("Failed to resolve Secret: %s", err)
 						continue
 					}
 

@@ -47,12 +47,12 @@ type Cache interface {
 	BuildConfigs()
 }
 
-type serviceInfo struct {
+type serviceContext struct {
 	svcPortName fgw.ServicePortName
 	//filters     []routecfg.Filter
 }
 
-type endpointInfo struct {
+type endpointContext struct {
 	address string
 	port    int32
 }
