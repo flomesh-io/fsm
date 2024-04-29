@@ -282,6 +282,16 @@ nodeRegistration:
 							HostPort:      4000,
 							Protocol:      v1alpha4.PortMappingProtocolUDP,
 						},
+						{
+							ContainerPort: 3001,
+							HostPort:      3001,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 4001,
+							HostPort:      4001,
+							Protocol:      v1alpha4.PortMappingProtocolUDP,
+						},
 					},
 				},
 			},
