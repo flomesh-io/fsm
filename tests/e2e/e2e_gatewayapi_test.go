@@ -1315,7 +1315,7 @@ func testFSMGatewayUDPTrafficCrossNamespace() {
 	By("Testing UDPRoute - cross namespace")
 	udpReq := UDPRequestDef{
 		DestinationHost: "udptest.localhost",
-		DestinationPort: 4000,
+		DestinationPort: 4001,
 		Message:         "Hi, I am UDP!",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", udpReq.DestinationHost, udpReq.DestinationPort)
