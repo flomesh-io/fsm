@@ -27,7 +27,12 @@ const (
 	nsGateway   = "test"
 	nsHTTPRoute = "http-route"
 	nsHTTPSvc   = "http"
-	nsGRPC      = "grpc"
+	nsGRPCRoute = "grpc-route"
+	nsGRPCSvc   = "grpc"
+	nsTCPRoute  = "tcp-route"
+	nsTCPSvc    = "tcp"
+	nsUDPRoute  = "udp-route"
+	nsUDPSvc    = "udp"
 )
 
 var _ = FSMDescribe("Test traffic among FSM Gateway",
@@ -56,7 +61,8 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				testFSMGatewayTLSTerminate()
 				testFSMGatewayTLSPassthrough()
 
-				testFSMGatewayGRPCTraffic()
+				testFSMGatewayGRPCTrafficSameNamespace()
+				testFSMGatewayGRPCTrafficCrossNamespace()
 				testFSMGatewayGRPCSTraffic()
 
 				testFSMGatewayTCPTraffic()
@@ -70,8 +76,12 @@ func testDeployFSMGateway() {
 	Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
 	Expect(Td.CreateNs(nsHTTPRoute, nil)).To(Succeed())
 	Expect(Td.CreateNs(nsHTTPSvc, nil)).To(Succeed())
-	Expect(Td.CreateNs(nsGRPC, nil)).To(Succeed())
-	//Expect(Td.CreateNs(nsGateway, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsGRPCRoute, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsGRPCSvc, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsTCPRoute, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsTCPSvc, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsUDPRoute, nil)).To(Succeed())
+	Expect(Td.CreateNs(nsUDPSvc, nil)).To(Succeed())
 
 	By("Generating CA private key")
 	stdout, stderr, err := Td.RunLocal("openssl", "genrsa", "-out", "ca.key", "2048")
@@ -324,7 +334,7 @@ func testFSMGatewayHTTPTrafficSameNamespace() {
 	_, err = Td.CreateGatewayAPIHTTPRoute(nsGateway, httpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Testing HTTPRoute")
+	By("Testing HTTPRoute - same namespace")
 	httpReq := HTTPRequestDef{
 		Destination: "http://httptest.localhost:8090/bar",
 	}
@@ -471,7 +481,7 @@ func testFSMGatewayHTTPTrafficCrossNamespace() {
 	_, err = Td.CreateGatewayAPIReferenceGrant(nsHTTPSvc, referenceGrant)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Testing HTTPRoute")
+	By("Testing HTTPRoute - cross namespace")
 	httpReq := HTTPRequestDef{
 		Destination: "http://httptest.localhost:9090/cross",
 	}
@@ -492,8 +502,8 @@ func testFSMGatewayHTTPTrafficCrossNamespace() {
 	Expect(cond).To(BeTrue(), "Failed testing HTTP traffic from curl(localhost) to destination %s", httpReq.Destination)
 }
 
-func testFSMGatewayGRPCTraffic() {
-	By("Deploying app for testing gRPC traffic")
+func testFSMGatewayGRPCTrafficSameNamespace() {
+	By("Deploying app for testing gRPC traffic in the same namespace")
 	grpcDeploy := appv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -563,7 +573,7 @@ func testFSMGatewayGRPCTraffic() {
 	_, err = Td.CreateService(nsGateway, grpcbinSvc)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Creating GRPCRoute for testing GRPC protocol")
+	By("Creating GRPCRoute for testing GRPC protocol in the same namespace")
 	grpcRoute := gwv1alpha2.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
@@ -607,9 +617,169 @@ func testFSMGatewayGRPCTraffic() {
 	_, err = Td.CreateGatewayAPIGRPCRoute(nsGateway, grpcRoute)
 	Expect(err).NotTo(HaveOccurred())
 
-	By("Testing GRPCRoute")
+	By("Testing GRPCRoute - same namespace")
 	grpcReq := GRPCRequestDef{
 		Destination: "grpctest.localhost:8090",
+		Symbol:      "hello.HelloService/SayHello",
+		JSONRequest: `{"greeting":"Flomesh"}`,
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalGRPCRequest(grpcReq)
+
+		if result.Err != nil {
+			Td.T.Logf("> (%s) gRPC req failed, response: %s, err: %s",
+				srcToDestStr, result.Response, result.Err)
+			return false
+		}
+
+		Td.T.Logf("> (%s) gRPC req succeeded, response: %s", srcToDestStr, result.Response)
+		return true
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing GRPC traffic from grpcurl(localhost) to destination %s/%s", grpcReq.Destination, grpcReq.Symbol)
+}
+
+func testFSMGatewayGRPCTrafficCrossNamespace() {
+	By("Deploying app for testing gRPC traffic cross namespace")
+	grpcDeploy := appv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCSvc,
+			Name:      "grpcbin-cross",
+		},
+		Spec: appv1.DeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{constants.AppLabel: "grpcbin-cross"},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{constants.AppLabel: "grpcbin-cross"},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "grpcbin",
+							Image: "flomesh/grpcbin",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "grpcbin",
+									ContainerPort: 9000,
+								},
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("50m"),
+									corev1.ResourceMemory: resource.MustParse("50Mi"),
+								},
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("100m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := Td.CreateDeployment(nsGRPCSvc, grpcDeploy)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(Td.WaitForPodsRunningReady(nsGRPCSvc, 1, &metav1.LabelSelector{
+		MatchLabels: map[string]string{constants.AppLabel: "grpcbin-cross"},
+	})).To(Succeed())
+
+	By("Creating svc for grpcbin")
+	grpcbinSvc := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCSvc,
+			Name:      "grpcbin-cross",
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "grpc",
+					Protocol:   corev1.ProtocolTCP,
+					Port:       9000,
+					TargetPort: intstr.FromInt32(9000),
+				},
+			},
+			Selector: map[string]string{"app": "grpcbin-cross"},
+		},
+	}
+	_, err = Td.CreateService(nsGRPCSvc, grpcbinSvc)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating GRPCRoute for testing GRPC protocol")
+	grpcRoute := gwv1alpha2.GRPCRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCRoute,
+			Name:      "grpc-cross-1",
+		},
+		Spec: gwv1alpha2.GRPCRouteSpec{
+			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
+				ParentRefs: []gwv1alpha2.ParentReference{
+					{
+						Namespace: namespacePtr(nsGateway),
+						Name:      "test-gw-1",
+						Port:      portPtr(9090),
+					},
+				},
+			},
+			Hostnames: []gwv1alpha2.Hostname{"grpctest.localhost"},
+			Rules: []gwv1alpha2.GRPCRouteRule{
+				{
+					Matches: []gwv1alpha2.GRPCRouteMatch{
+						{
+							Method: &gwv1alpha2.GRPCMethodMatch{
+								Type:    grpcMethodMatchTypePtr(gwv1alpha2.GRPCMethodMatchExact),
+								Service: pointer.String("hello.HelloService"),
+								Method:  pointer.String("SayHello"),
+							},
+						},
+					},
+					BackendRefs: []gwv1alpha2.GRPCBackendRef{
+						{
+							BackendRef: gwv1alpha2.BackendRef{
+								BackendObjectReference: gwv1alpha2.BackendObjectReference{
+									Namespace: namespacePtr(nsGRPCSvc),
+									Name:      "grpcbin-cross",
+									Port:      portPtr(9000),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIGRPCRoute(nsGRPCRoute, grpcRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating ReferenceGrant for testing GRPC traffic cross namespace")
+	referenceGrant := gwv1beta1.ReferenceGrant{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCSvc,
+			Name:      "grpc-cross-1",
+		},
+
+		Spec: gwv1beta1.ReferenceGrantSpec{
+			From: []gwv1beta1.ReferenceGrantFrom{
+				{Group: gwv1.GroupName, Kind: "GRPCRoute", Namespace: nsGRPCRoute},
+			},
+			To: []gwv1beta1.ReferenceGrantTo{
+				{Group: corev1.GroupName, Kind: "Service", Name: ptr.To(gwv1.ObjectName("grpcbin-cross"))},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIReferenceGrant(nsGRPCSvc, referenceGrant)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing GRPCRoute - cross namespace")
+	grpcReq := GRPCRequestDef{
+		Destination: "grpctest.localhost:9090",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
 	}
