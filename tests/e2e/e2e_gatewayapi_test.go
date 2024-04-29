@@ -136,7 +136,7 @@ func testDeployFSMGateway() {
 		},
 
 		Spec: gwv1.GatewaySpec{
-			GatewayClassName: "fsm-gateway-cls",
+			GatewayClassName: "fsm",
 			Listeners: []gwv1.Listener{
 				{
 					Port:     8090,
@@ -461,10 +461,10 @@ func testFSMGatewayHTTPTrafficCrossNamespace() {
 
 		Spec: gwv1beta1.ReferenceGrantSpec{
 			From: []gwv1beta1.ReferenceGrantFrom{
-				{Kind: "HTTPRoute", Namespace: nsHTTPRoute},
+				{Group: gwv1.GroupName, Kind: "HTTPRoute", Namespace: nsHTTPRoute},
 			},
 			To: []gwv1beta1.ReferenceGrantTo{
-				{Kind: "Service"},
+				{Group: corev1.GroupName, Kind: "Service", Name: ptr.To(gwv1.ObjectName("httpbin-cross"))},
 			},
 		},
 	}

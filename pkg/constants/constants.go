@@ -517,7 +517,7 @@ const (
 // Gateway API constants
 const (
 	// FSMGatewayClassName is the name of FSM GatewayClass
-	FSMGatewayClassName = "fsm-gateway-cls"
+	FSMGatewayClassName = "fsm"
 
 	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"

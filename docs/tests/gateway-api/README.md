@@ -63,6 +63,8 @@
 #### Create namespaces
 ```shell
 kubectl create ns test
+kubectl create ns http-route
+kubectl create ns http
 ```
 
 #### Deploy FSM GatewayClass
@@ -124,11 +126,17 @@ metadata:
     gateway.flomesh.io/memory: 256Mi
     gateway.flomesh.io/memory-limit: 1024Mi
 spec:
-  gatewayClassName: fsm-gateway-cls
+  gatewayClassName: fsm
   listeners:
     - protocol: HTTP
       port: 80
       name: http
+    - protocol: HTTP
+      port: 9090
+      name: http-cross
+      allowedRoutes:
+        namespaces:
+          from: All
     - protocol: TCP
       port: 3000
       name: tcp
@@ -169,7 +177,7 @@ spec:
 EOF
 ```
 
-### Test HTTPRoute
+### Test HTTPRoute - refer to svc in same namespace
 
 #### Deploy a HTTP Service
 ```shell
@@ -247,6 +255,123 @@ EOF
 #### Test it:
 ```shell
 ❯ curl -iv http://httptest.localhost:8090/bar
+*   Trying 127.0.0.1:8090...
+* Connected to localhost (127.0.0.1) port 8090 (#0)
+> GET /bar HTTP/1.1
+> Host: httptest.localhost
+> User-Agent: curl/7.88.1
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< content-length: 20
+content-length: 20
+< connection: keep-alive
+connection: keep-alive
+
+<
+Hi, I am HTTPRoute!
+* Connection #0 to host localhost left intact
+```
+
+### Test HTTPRoute - refer to svc cross namespace
+
+#### Deploy a HTTP Service
+```shell
+kubectl -n http apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin-cross
+spec:
+  ports:
+    - name: pipy
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: httpbin-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin-cross
+  labels:
+    app: httpbin-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin-cross
+  template:
+    metadata:
+      labels:
+        app: httpbin-cross
+    spec:
+      containers:
+        - name: pipy
+          image: flomesh/pipy:0.99.1-1
+          ports:
+            - name: pipy
+              containerPort: 8080
+          command:
+            - pipy
+            - -e
+            - |
+              pipy()
+              .listen(8080)
+              .serveHTTP(new Message('Hi, I am HTTPRoute!\n'))
+EOF
+```
+
+#### Create a HTTPRoute
+```shell
+kubectl -n http-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-cross-1
+spec:
+  parentRefs:
+  - name: test-gw-1
+    namespace: test
+    port: 9090
+  hostnames:
+  - "httptest.localhost"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /cross
+    backendRefs:
+    - name: httpbin-cross
+      namespace: http
+      port: 8080
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n http apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: http-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ curl -iv http://httptest.localhost:9090/cross
 *   Trying 127.0.0.1:8090...
 * Connected to localhost (127.0.0.1) port 8090 (#0)
 > GET /bar HTTP/1.1
