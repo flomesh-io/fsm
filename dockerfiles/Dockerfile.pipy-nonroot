@@ -6,7 +6,7 @@ ARG PIPY_VERSION
 FROM flomesh/pipy:${PIPY_VERSION}-debian AS builder
 
 # Build the final image
-FROM gcr.io/distroless/cc-debian11:$DISTROLESS_TAG
+FROM gcr.io/distroless/cc:$DISTROLESS_TAG
 WORKDIR /
 COPY --from=builder /usr/local/bin/pipy /usr/local/bin/pipy
 
