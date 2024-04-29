@@ -3,7 +3,6 @@ package cache
 import (
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
 
@@ -333,10 +332,6 @@ func (c *GatewayCache) backendRefToServicePortName(referer client.Object, ref gw
 		return nil
 	}
 
-	if string(ref.Name) != referer.GetName() {
-		return nil
-	}
-
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
 		c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
 		gwtypes.CrossNamespaceFrom{
@@ -369,10 +364,6 @@ func (c *GatewayCache) backendRefToServicePortName(referer client.Object, ref gw
 func (c *GatewayCache) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.PolicyTargetReference, port int32) *fgw.ServicePortName {
 	if !isValidTargetRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
-		return nil
-	}
-
-	if string(ref.Name) != referer.GetName() {
 		return nil
 	}
 
@@ -502,26 +493,28 @@ func (c *GatewayCache) toFSMGRPCRouteFilter(referer client.Object, filter gwv1al
 
 func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObjectReference, service client.ObjectKey) bool {
 	if !isValidBackendRefToGroupKindOfService(ref) {
+		log.Debug().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
 		return false
 	}
 
 	// fast-fail, not refer to the service with the same name
 	if string(ref.Name) != service.Name {
+		log.Debug().Msgf("Not refer to the service with the same name, ref.Name: %s, service.Name: %s", ref.Name, service.Name)
 		return false
 	}
 
-	// Not refer to the service with the same namespace
-	if ref.Namespace != nil && string(*ref.Namespace) != service.Namespace {
-		return false
-	}
-
-	// refer to a service in other namespace, check reference grant
 	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != service.Namespace {
+		log.Debug().Msgf("Not refer to the service with the same namespace, resolved namespace: %s, service.Namespace: %s", ns, service.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == service.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
+		gvk := referer.GetObjectKind().GroupVersionKind()
 		return gwutils.ValidCrossNamespaceRef(
 			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
 			gwtypes.CrossNamespaceFrom{
-				Group:     referer.GetObjectKind().GroupVersionKind().Group,
-				Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+				Group:     gvk.Group,
+				Kind:      gvk.Kind,
 				Namespace: referer.GetNamespace(),
 			},
 			gwtypes.CrossNamespaceTo{
@@ -533,6 +526,7 @@ func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObj
 		)
 	}
 
+	log.Debug().Msgf("Found a match, ref: %v, service: %v", ref, service)
 	return true
 }
 
@@ -543,16 +537,16 @@ func (c *GatewayCache) isRefToSecret(referer client.Object, ref gwv1.SecretObjec
 
 	// fast-fail, not refer to the secret with the same name
 	if string(ref.Name) != secret.Name {
+		log.Debug().Msgf("Not refer to the secret with the same name, ref.Name: %s, secret.Name: %s", ref.Name, secret.Name)
 		return false
 	}
 
-	// Not refer to the secret with the same namespace
-	if ref.Namespace != nil && string(*ref.Namespace) != secret.Namespace {
-		return false
-	}
-
-	// refer to a secret in other namespace, check reference grant
 	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != secret.Namespace {
+		log.Debug().Msgf("Not refer to the secret with the same namespace, resolved namespace: %s, secret.Namespace: %s", ns, secret.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == secret.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
 		return gwutils.ValidCrossNamespaceRef(
 			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
 			gwtypes.CrossNamespaceFrom{

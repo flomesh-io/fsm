@@ -62,10 +62,7 @@
 
 #### Create namespaces
 ```shell
-kubectl create ns httpbin
-kubectl create ns grpcbin
-kubectl create ns tcproute
-kubectl create ns udproute
+kubectl create ns test
 ```
 
 #### Deploy FSM GatewayClass
@@ -93,7 +90,7 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for HTTPS Gateway resource
 ```shell
-kubectl -n httpbin create secret generic https-cert \
+kubectl -n test create secret generic https-cert \
   --from-file=ca.crt=./ca.crt \
   --from-file=tls.crt=./https.crt \
   --from-file=tls.key=./https.key 
@@ -109,7 +106,7 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for gRPC Gateway resource
 ```shell
-kubectl -n grpcbin create secret tls grpc-cert --key grpc.key --cert grpc.crt
+kubectl -n test create secret tls grpc-cert --key grpc.key --cert grpc.crt
 ```
 
 #### Deploy Gateway
@@ -118,6 +115,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
+  namespace: test
   name: test-gw-1
   annotations:
     gateway.flomesh.io/replicas: "2"
@@ -140,9 +138,9 @@ spec:
       tls:
         certificateRefs:
           - name: https-cert
-            namespace: httpbin
+            namespace: test
           - name: grpc-cert
-            namespace: grpcbin
+            namespace: test
     - protocol: TLS
       port: 8443
       name: tlsp
@@ -157,9 +155,9 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: https-cert
-            namespace: httpbin
+            namespace: test
           - name: grpc-cert
-            namespace: grpcbin
+            namespace: test
     - protocol: UDP
       port: 4000
       name: udp
@@ -175,7 +173,7 @@ EOF
 
 #### Deploy a HTTP Service
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -187,23 +185,23 @@ spec:
       targetPort: 8080
       protocol: TCP
   selector:
-    app: pipy
+    app: httpbin
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: httpbin
   labels:
-    app: pipy
+    app: httpbin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pipy
+      app: httpbin
   template:
     metadata:
       labels:
-        app: pipy
+        app: httpbin
     spec:
       containers:
         - name: pipy
@@ -223,7 +221,7 @@ EOF
 
 #### Create a HTTPRoute
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -231,7 +229,7 @@ metadata:
 spec:
   parentRefs:
   - name: test-gw-1
-    namespace: default
+    namespace: test
     port: 80
   hostnames:
   - "httptest.localhost"
@@ -280,7 +278,7 @@ kind: Deployment
 metadata:
   labels:
     app: grpcbin
-  namespace: grpcbin
+  namespace: test
   name: grpcbin
 spec:
   replicas: 1
@@ -319,7 +317,7 @@ kind: Service
 metadata:
   labels:
     app: grpcbin
-  namespace: grpcbin
+  namespace: test
   name: grpcbin
 spec:
   ports:
@@ -340,11 +338,11 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GRPCRoute
 metadata:
   name: grpc-app-1
-  namespace: grpcbin
+  namespace: test
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 80  
   hostnames:
     - grpctest.localhost
@@ -390,7 +388,7 @@ Sent 1 request and received 1 response
 
 #### Deploy the TCPRoute app
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -434,7 +432,7 @@ EOF
 
 #### Create TCPRoute
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
@@ -442,7 +440,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 3000
   rules:
   - backendRefs:
@@ -461,7 +459,7 @@ Text to send to TCP
 
 #### Deploy the UDPRoute app
 ```shell
-kubectl -n udproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -505,7 +503,7 @@ EOF
 
 #### Create UDPRoute
 ```shell
-kubectl -n udproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: UDPRoute
 metadata:
@@ -513,7 +511,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 4000
   rules:
   - backendRefs:
@@ -530,7 +528,7 @@ echo -n "Text to send to UDP" | nc -4u -w1 localhost 4000
 ### Test HTTPS - HTTPRoute
 #### Create a HTTPRoute and attach to HTTPS port
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -538,7 +536,7 @@ metadata:
 spec:
   parentRefs:
   - name: test-gw-1
-    namespace: default
+    namespace: test
     port: 443
   hostnames:
   - "httptest.localhost"
@@ -608,11 +606,11 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GRPCRoute
 metadata:
   name: grpcs-app-1
-  namespace: grpcbin
+  namespace: test
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 443  
   hostnames:
     - grpctest.localhost
@@ -655,7 +653,7 @@ Sent 1 request and received 1 response
 ### Test TLS Terminate
 #### Create TCPRoute and attach to TLS port
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
@@ -663,7 +661,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 9443
   rules:
   - backendRefs:
@@ -721,7 +719,7 @@ Hi, I am TCPRoute!
 
 #### Create TLSRoute
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
@@ -729,7 +727,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 8443
   rules:
   - backendRefs:
@@ -834,7 +832,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
+    namespace: test
   ports:
     - port: 80
       bps: 100000
@@ -854,7 +852,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -877,7 +875,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   http:
   - match:
       path:
@@ -904,7 +902,7 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
   - port: 8080
     config:
@@ -926,7 +924,7 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
     - port: 8080
       type: HashingLoadBalancer
@@ -946,7 +944,7 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
     - port: 8080
       config: 
@@ -972,7 +970,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
+    namespace: test
   ports:
     - port: 80
       config: 
@@ -1000,7 +998,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -1027,7 +1025,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   http:
   - match:
       path:
@@ -1058,7 +1056,7 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
   - port: 8080
     config: 
@@ -1092,7 +1090,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -1115,7 +1113,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
+    namespace: test
   http:
   - match:
       path:
@@ -1144,12 +1142,12 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
   - port: 8080
     config:
       certificateRef:
-        namespace: httpbin
+        namespace: test
         name: https-cert
       mTLS: false
 EOF
@@ -1168,7 +1166,7 @@ spec:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
+    namespace: test
   ports:
   - port: 8080
     config:
@@ -1192,7 +1190,7 @@ spec:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
+    namespace: test
   ports:
   - port: 443
     config:

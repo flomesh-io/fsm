@@ -145,10 +145,6 @@ func IsRefToTarget(referenceGrants []client.Object, targetRef gwv1alpha2.PolicyT
 		return false
 	}
 
-	if string(targetRef.Name) != object.GetName() {
-		return false
-	}
-
 	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.GetNamespace() && !ValidCrossNamespaceRef(
 		referenceGrants,
 		gwtypes.CrossNamespaceFrom{
@@ -413,6 +409,10 @@ func ToRouteContext(route client.Object) *gwtypes.RouteContext {
 }
 
 func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo) bool {
+	if len(referenceGrants) == 0 {
+		return false
+	}
+
 	for _, referenceGrant := range referenceGrants {
 		refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
 

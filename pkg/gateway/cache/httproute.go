@@ -68,6 +68,7 @@ func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routeP
 
 		for _, bk := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+				log.Debug().Msgf("Found svcPort: %v", svcPort)
 				svcLevelFilters := make([]fgw.Filter, 0)
 				for _, filter := range bk.Filters {
 					svcLevelFilters = append(svcLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, filter, services))
