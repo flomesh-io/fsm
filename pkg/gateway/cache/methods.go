@@ -1,10 +1,11 @@
 package cache
 
 import (
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
+
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
