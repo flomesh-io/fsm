@@ -1306,19 +1306,19 @@ date: Thu, 06 Jul 2023 04:44:06 GMT
 
 ### Test RateLimitPolicy
 
-#### Test Port Based Rate Limit
+#### Test Port Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-port
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: test
   ports:
     - port: 80
       bps: 100000
@@ -1326,19 +1326,19 @@ EOF
 ```
 
 
-#### Test Hostname Based Rate Limit
+#### Test Hostname Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-hostname-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: test
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -1349,19 +1349,19 @@ spec:
 EOF
 ```
 
-#### Test Route Based Rate Limit
+#### Test Route Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-route-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: test
   http:
   - match:
       path:
@@ -1374,6 +1374,128 @@ spec:
       statTimeWindow: 60
 EOF
 ```
+
+#### Test Port Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-port-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: test
+    name: test-gw-1
+  ports:
+    - port: 9090
+      bps: 200000
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl -n test apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: ratelimit-port-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RateLimitPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: test-gw-1
+EOF
+```
+
+#### Test Hostname Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-hostname-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        mode: Local
+        backlog: 25
+        requests: 200
+        statTimeWindow: 19
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl -n http-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http-route
+  name: ratelimit-hostname-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RateLimitPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: http-cross-1
+EOF
+```
+
+#### Test Route Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-route-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /cross
+    config: 
+      mode: Local
+      backlog: 11
+      requests: 300
+      statTimeWindow: 20
+EOF
+```
+
+##### ReferenceGrant
+If you have created the ReferenceGrant in previous step, you can skip this step. 
+
+
 
 ### Test SessionStickyPolicy
 
