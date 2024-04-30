@@ -235,6 +235,9 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 		s.Lock()
 
 		for _, svc := range services {
+			if len(svc.ServiceID) == 0 {
+				continue
+			}
 			// Make sure the namespace exists before we run checks against it
 			if set, ok := s.controller.GetK2CContext().ServiceNames.Get(namespace); ok {
 				// If the service is valid and its info isn't nil, we don't deregister it
@@ -288,6 +291,9 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 
 	// Create deregistrations for all of these
 	for _, instance := range instances {
+		if len(instance.ServiceID) == 0 {
+			continue
+		}
 		deregistration := &connector.CatalogDeregistration{
 			Node:      instance.Node,
 			ServiceID: instance.ServiceID,
@@ -363,6 +369,9 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 	// Do all deregistrations first.
 	for item := range s.controller.GetK2CContext().Deregs.IterBuffered() {
 		service := item.Val
+		if len(service.ServiceID) == 0 {
+			continue
+		}
 		deregWg.Add(1)
 		deregCnt++
 		go func(r *connector.CatalogDeregistration) {
