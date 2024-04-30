@@ -101,6 +101,7 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyNamespaceAll] = v1api.Namespaces().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()

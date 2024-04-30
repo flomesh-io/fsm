@@ -32,6 +32,8 @@ type InformerKey string
 const (
 	// InformerKeyNamespace is the InformerKey for a Namespace informer
 	InformerKeyNamespace InformerKey = "Namespace"
+	// InformerKeyNamespaceAll is the InformerKey for all Namespaces informer
+	InformerKeyNamespaceAll InformerKey = "NamespaceAll"
 	// InformerKeyService is the InformerKey for a Service informer
 	InformerKeyService InformerKey = "Service"
 	// InformerKeyPod is the InformerKey for a Pod informer

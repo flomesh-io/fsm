@@ -176,6 +176,7 @@ func testDeployFSMGateway() {
 					Protocol: gwv1.TCPProtocolType,
 					AllowedRoutes: &gwv1.AllowedRoutes{
 						Namespaces: &gwv1.RouteNamespaces{
+							From: ptr.To(gwv1.NamespacesFromSelector),
 							Selector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{"app": "tcp-cross"},
 							},
