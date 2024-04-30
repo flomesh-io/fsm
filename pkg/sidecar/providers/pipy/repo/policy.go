@@ -365,7 +365,7 @@ func (srr *InboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterNa
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
 }
 
@@ -373,7 +373,7 @@ func (srr *OutboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterN
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
 }
 
@@ -390,15 +390,14 @@ func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, r
 		itm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
 
-	fnv32aRuleName, compressed := fnv32a(string(ruleName))
+	fnv32aRuleName := fnv32a(string(ruleName))
 	if preRuleName, exist := itm.HTTPHostPort2Service[hostPort]; exist {
-		preLen := len(preRuleName)
-		if compressed {
-			if idx := strings.Index(string(preRuleName), "|"); idx >= 0 {
-				preLen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
-			}
+		clen := len(ruleName)
+		plen := len(preRuleName)
+		if idx := strings.Index(string(preRuleName), "|"); idx > 0 {
+			plen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
 		}
-		if len(ruleName) < preLen {
+		if clen < plen {
 			itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
 		}
 	} else {
@@ -410,17 +409,21 @@ func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, 
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
-	fnv32aRuleName, compressed := fnv32a(string(ruleName))
+
+	fnv32aRuleName := fnv32a(string(ruleName))
 	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
-		preLen := len(preRuleName)
-		if compressed {
-			if idx := strings.Index(string(preRuleName), "|"); idx >= 0 {
-				preLen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
-			}
+		clen := len(ruleName)
+		plen := len(preRuleName)
+		if idx := strings.Index(string(preRuleName), "|"); idx >= 0 {
+			plen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
 		}
-		if len(desiredSuffix) > 0 && strings.HasSuffix(string(ruleName), desiredSuffix) {
-			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
-		} else if len(ruleName) < preLen {
+		if len(desiredSuffix) > 0 &&
+			strings.HasSuffix(string(ruleName), desiredSuffix) &&
+			strings.HasSuffix(string(preRuleName), desiredSuffix) {
+			if clen < plen {
+				otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+			}
+		} else if clen < plen {
 			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
 		}
 	} else {
@@ -436,7 +439,7 @@ func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPR
 		return nil
 	}
 
-	fnv32aRuleName, _ := fnv32a(string(httpRouteRuleName))
+	fnv32aRuleName := fnv32a(string(httpRouteRuleName))
 
 	rules, exist := itm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)]
 	if !exist || rules == nil {
@@ -455,7 +458,7 @@ func (otm *OutboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTP
 		return nil
 	}
 
-	fnv32aRuleName, _ := fnv32a(string(httpRouteRuleName))
+	fnv32aRuleName := fnv32a(string(httpRouteRuleName))
 
 	rules, exist := otm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)]
 	if !exist || rules == nil {
@@ -587,7 +590,7 @@ func (hrr *HTTPRouteRule) addWeightedCluster(clusterName ClusterName, weight Wei
 	if hrr.TargetClusters == nil {
 		hrr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	hrr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
 }
 
@@ -613,7 +616,7 @@ func (itp *InboundTrafficPolicy) newClusterConfigs(clusterName ClusterName) *Wei
 	if itp.ClustersConfigs == nil {
 		itp.ClustersConfigs = make(map[ClusterName]*WeightedEndpoint)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	cluster, exist := itp.ClustersConfigs[ClusterName(fnv32aClusterName)]
 	if !exist || cluster == nil {
 		newCluster := make(WeightedEndpoint, 0)
@@ -627,7 +630,7 @@ func (otp *OutboundTrafficPolicy) newClusterConfigs(clusterName ClusterName) *Cl
 	if otp.ClustersConfigs == nil {
 		otp.ClustersConfigs = make(map[ClusterName]*ClusterConfigs)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	cluster, exist := otp.ClustersConfigs[ClusterName(fnv32aClusterName)]
 	if !exist || cluster == nil {
 		newCluster := new(ClusterConfigs)
@@ -775,7 +778,7 @@ func (ftp *ForwardTrafficPolicy) newEgressGateway(clusterName ClusterName, mode 
 	if ftp.EgressGateways == nil {
 		ftp.EgressGateways = make(map[ClusterName]*EgressGatewayClusterConfigs)
 	}
-	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	fnv32aClusterName := fnv32a(string(clusterName))
 	cluster, exist := ftp.EgressGateways[ClusterName(fnv32aClusterName)]
 	if !exist || cluster == nil {
 		newCluster := new(EgressGatewayClusterConfigs)
@@ -933,13 +936,15 @@ func (ps *PluginSlice) Less(i, j int) bool {
 	return a.Priority > b.Priority
 }
 
-func fnv32a(ruleName string) (string, bool) {
+func fnv32a(ruleName string) string {
 	if prettyConfig() {
-		return ruleName, false
+		return ruleName
 	}
 	algorithm := fnv.New32a()
 	if _, err := algorithm.Write([]byte(ruleName)); err == nil {
-		return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName)), true
+		return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName))
+	} else {
+		log.Err(err).Msgf("fnv32a[%s]", ruleName)
 	}
-	return ruleName, false
+	return ruleName
 }
