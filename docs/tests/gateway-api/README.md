@@ -65,6 +65,17 @@
 kubectl create ns test
 kubectl create ns http-route
 kubectl create ns http
+kubectl create ns grpc-route
+kubectl create ns grpc
+kubectl create ns tcp-route
+kubectl create ns tcp
+kubectl create ns udp-route
+kubectl create ns udp
+
+kubectl label ns http-route app=http-cross
+kubectl label ns grpc-route app=grpc-cross
+kubectl label ns tcp-route app=tcp-cross
+kubectl label ns udp-route app=udp-cross
 ```
 
 #### Deploy FSM GatewayClass
@@ -108,7 +119,7 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for gRPC Gateway resource
 ```shell
-kubectl -n test create secret tls grpc-cert --key grpc.key --cert grpc.crt
+kubectl -n grpc create secret tls grpc-cert --key grpc.key --cert grpc.crt
 ```
 
 #### Deploy Gateway
@@ -140,15 +151,23 @@ spec:
     - protocol: TCP
       port: 3000
       name: tcp
+    - protocol: TCP
+      port: 3001
+      name: tcp-cross
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector: 
+            matchLabels:
+              app: tcp-cross
     - protocol: HTTPS
       port: 443
       name: https
       tls:
         certificateRefs:
           - name: https-cert
-            namespace: test
           - name: grpc-cert
-            namespace: test
+            namespace: grpc
     - protocol: TLS
       port: 8443
       name: tlsp
@@ -163,17 +182,44 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: https-cert
-            namespace: test
           - name: grpc-cert
-            namespace: test
+            namespace: grpc
     - protocol: UDP
       port: 4000
       name: udp
+    - protocol: UDP
+      port: 4001
+      name: udp-cross
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector: 
+            matchLabels:
+              app: udp-cross
   infrastructure:
     annotations:
       xyz: abc
     labels:
       test: demo
+EOF
+```
+
+#### Create a ReferenceGrant for the secret
+```shell
+kubectl -n grpc apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: secret-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: test
+  to:
+    - group: ""
+      kind: Secret
+      name: grpc-cert
 EOF
 ```
 
@@ -255,11 +301,11 @@ EOF
 #### Test it:
 ```shell
 ❯ curl -iv http://httptest.localhost:8090/bar
-*   Trying 127.0.0.1:8090...
-* Connected to localhost (127.0.0.1) port 8090 (#0)
+*   Trying [::1]:8090...
+* Connected to httptest.localhost (::1) port 8090
 > GET /bar HTTP/1.1
-> Host: httptest.localhost
-> User-Agent: curl/7.88.1
+> Host: httptest.localhost:8090
+> User-Agent: curl/8.4.0
 > Accept: */*
 >
 < HTTP/1.1 200 OK
@@ -271,7 +317,7 @@ connection: keep-alive
 
 <
 Hi, I am HTTPRoute!
-* Connection #0 to host localhost left intact
+* Connection #0 to host httptest.localhost left intact
 ```
 
 ### Test HTTPRoute - refer to svc cross namespace
@@ -372,11 +418,11 @@ EOF
 #### Test it:
 ```shell
 ❯ curl -iv http://httptest.localhost:9090/cross
-*   Trying 127.0.0.1:8090...
-* Connected to localhost (127.0.0.1) port 8090 (#0)
-> GET /bar HTTP/1.1
-> Host: httptest.localhost
-> User-Agent: curl/7.88.1
+*   Trying [::1]:9090...
+* Connected to httptest.localhost (::1) port 9090
+> GET /cross HTTP/1.1
+> Host: httptest.localhost:9090
+> User-Agent: curl/8.4.0
 > Accept: */*
 >
 < HTTP/1.1 200 OK
@@ -388,10 +434,10 @@ connection: keep-alive
 
 <
 Hi, I am HTTPRoute!
-* Connection #0 to host localhost left intact
+* Connection #0 to host httptest.localhost left intact
 ```
 
-### Test GRPCRoute
+### Test GRPCRoute - refer to svc in the same namespace
 #### Step 1: Create a Kubernetes `Deployment` for gRPC app
 
 - Deploy the gRPC app
@@ -507,9 +553,143 @@ Response trailers received:
 Sent 1 request and received 1 response
 ```
 
-### Test TCPRoute
+### Test GRPCRoute - refer to svc cross namespace
+#### Step 1: Create a Kubernetes `Deployment` for gRPC app
 
-#### Create the namespace
+- Deploy the gRPC app
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: grpcbin-cross
+  namespace: grpc
+  name: grpcbin-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpcbin-cross
+  template:
+    metadata:
+      labels:
+        app: grpcbin-cross
+    spec:
+      containers:
+        - image: flomesh/grpcbin
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          name: grpcbin
+          ports:
+            - name: grpc
+              containerPort: 9000
+EOF
+```    
+
+#### Step 2: Create the Kubernetes `Service` for the gRPC app
+
+- You can use the following example manifest to create a service of type ClusterIP.
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grpcbin
+  namespace: grpc
+  name: grpcbin-cross
+spec:
+  ports:
+  - name: grpc
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: grpcbin-cross
+  type: ClusterIP
+EOF
+```
+
+#### Create a GRPCRoute
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: grpc-cross-1
+  namespace: grpc-route
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 9090  
+  hostnames:
+    - grpctest.localhost
+  rules:
+  - matches:
+    - method:
+        service: hello.HelloService
+        method: SayHello
+    backendRefs:
+    - name: grpcbin-cross
+      namespace: grpc
+      port: 9000
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n grpc apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: grpc-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+      namespace: grpc-route
+  to:
+    - group: ""
+      kind: Service
+      name: grpcbin-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ grpcurl -vv -plaintext -d '{"greeting":"Flomesh"}' grpctest.localhost:9090 hello.HelloService/SayHello
+
+Resolved method descriptor:
+rpc SayHello ( .hello.HelloRequest ) returns ( .hello.HelloResponse );
+
+Request metadata to send:
+(empty)
+
+Response headers received:
+content-type: application/grpc
+
+Estimated response size: 15 bytes
+
+Response contents:
+{
+  "reply": "hello Flomesh"
+}
+
+Response trailers received:
+(empty)
+Sent 1 request and received 1 response
+```
+
+### Test TCPRoute - refer to svc in the same namespace
 
 #### Deploy the TCPRoute app
 ```shell
@@ -580,7 +760,98 @@ EOF
 Text to send to TCP
 ```
 
-### Test UDPRoute
+### Test TCPRoute - refer to svc cross namespace
+
+#### Deploy the TCPRoute app
+```shell
+kubectl -n tcp apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcproute-cross
+spec:
+  ports:
+    - name: tcp
+      port: 8078
+      targetPort: 8078
+      protocol: TCP
+  selector:
+    app: tcproute-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcproute-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcproute-cross
+  template:
+    metadata:
+      labels:
+        app: tcproute-cross
+    spec:
+      containers:
+        - name: tcp
+          image: fortio/fortio:latest
+          ports:
+            - name: tcp
+              containerPort: 8078
+          command:
+            - fortio
+            - tcp-echo
+            - -loglevel
+            - debug
+EOF
+```
+
+#### Create TCPRoute
+```shell
+kubectl -n tcp-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: tcp-cross-1
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 3001
+  rules:
+  - backendRefs:
+    - name: tcproute-cross
+      namespace: tcp
+      port: 8078
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n tcp apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: tcp-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: TCPRoute
+      namespace: tcp-route
+  to:
+    - group: ""
+      kind: Service
+      name: tcproute-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ echo "Text to send to TCP" | nc localhost 3001
+Text to send to TCP
+```
+
+### Test UDPRoute - refer to svc in the same namespace
 
 #### Deploy the UDPRoute app
 ```shell
@@ -648,6 +919,96 @@ EOF
 #### Test it:
 ```shell
 echo -n "Text to send to UDP" | nc -4u -w1 localhost 4000
+```
+
+### Test UDPRoute - refer to svc cross namespace
+
+#### Deploy the UDPRoute app
+```shell
+kubectl -n udp apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: udproute-cross
+spec:
+  ports:
+    - name: udp
+      port: 8078
+      targetPort: 8078
+      protocol: UDP
+  selector:
+    app: udproute-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udproute-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udproute-cross
+  template:
+    metadata:
+      labels:
+        app: udproute-cross
+    spec:
+      containers:
+        - name: udp
+          image: fortio/fortio:latest
+          ports:
+            - name: udp
+              containerPort: 8078
+          command:
+            - fortio
+            - udp-echo
+            - -loglevel
+            - debug
+EOF
+```
+
+#### Create UDPRoute
+```shell
+kubectl -n udp-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: udp-cross-1
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 4001
+  rules:
+  - backendRefs:
+    - name: udproute-cross
+      namespace: udp
+      port: 8078
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n udp apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: udp-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: UDPRoute
+      namespace: udp-route
+  to:
+    - group: ""
+      kind: Service
+      name: udproute-cross
+EOF
+```
+
+#### Test it:
+```shell
+echo -n "Text to send to UDP" | nc -4u -w1 localhost 4001
 ```
 
 ### Test HTTPS - HTTPRoute
