@@ -29,6 +29,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
@@ -90,6 +93,7 @@ func NewAccessControlPolicyReconciler(ctx *fctx.ControllerContext) controllers.R
 
 	r.statusProcessor = &status.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
+		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getAccessControls,
 		FindConflictPort:                   r.getConflictedPort,
 		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedAccessControlPolicy,
@@ -148,19 +152,19 @@ func (r *accessControlPolicyReconciler) getAccessControls(policy client.Object, 
 
 			switch {
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Ports) > 0:
 				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
 			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Hostnames) > 0:
 				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.HTTPAccessControls) > 0:
 				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.GRPCAccessControls) > 0:
 				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
 			}
@@ -350,5 +354,35 @@ func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway,
 func (r *accessControlPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.AccessControlPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
+}
+
+func (r *accessControlPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.AccessControlPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.AccessControlPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
@@ -60,6 +63,7 @@ func NewUpstreamTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Rec
 
 	r.statusProcessor = &status.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
+		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedUpstreamTLSPolices,
 		FindConflict:        r.findConflict,
 	}
@@ -102,6 +106,10 @@ func (r *upstreamTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *upstreamTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.UpstreamTLSPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
 }
 
@@ -117,7 +125,7 @@ func (r *upstreamTLSPolicyReconciler) getAttachedUpstreamTLSPolices(policy clien
 	for _, p := range upstreamTLSPolicyList.Items {
 		p := p
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(referenceGrants, p.Spec.TargetRef, svc) {
+			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
 			upstreamTLSPolicies = append(upstreamTLSPolicies, &p)
 		}
 	}
@@ -152,4 +160,30 @@ func (r *upstreamTLSPolicyReconciler) findConflict(upstreamTLSPolicy client.Obje
 	}
 
 	return nil
+}
+
+func (r *upstreamTLSPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.UpstreamTLSPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

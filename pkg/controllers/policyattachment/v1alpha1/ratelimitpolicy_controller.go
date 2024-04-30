@@ -29,6 +29,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
@@ -91,6 +94,7 @@ func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Recon
 
 	r.statusProcessor = &status.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
+		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getRateLimitPolices,
 		FindConflictPort:                   r.getConflictedPort,
 		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedRateLimitPolicy,
@@ -149,19 +153,19 @@ func (r *rateLimitPolicyReconciler) getRateLimitPolices(policy client.Object, ta
 
 			switch {
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Ports) > 0:
 				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
 			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Hostnames) > 0:
 				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.HTTPRateLimits) > 0:
 				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.GRPCRateLimits) > 0:
 				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
 			}
@@ -351,5 +355,35 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, rat
 func (r *rateLimitPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.RateLimitPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
+}
+
+func (r *rateLimitPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RateLimitPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.RateLimitPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

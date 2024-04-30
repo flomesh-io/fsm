@@ -25,6 +25,8 @@
 // Package v1alpha1 contains controller logic for the Policy Attachment v1alpha1.
 package v1alpha1
 
-//var (
-//	log = logger.New("gatewayapi/policyattachment")
-//)
+import "github.com/flomesh-io/fsm/pkg/logger"
+
+var (
+	log = logger.New("gatewayapi/policyattachment")
+)

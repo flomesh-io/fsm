@@ -29,6 +29,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -91,6 +94,7 @@ func NewFaultInjectionPolicyReconciler(ctx *fctx.ControllerContext) controllers.
 
 	r.statusProcessor = &status.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
+		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getFaultInjections,
 		FindConflictedHostnamesBasedPolicy: r.getConflictedHostnamesBasedFaultInjectionPolicy,
 		FindConflictedHTTPRouteBasedPolicy: r.getConflictedHTTPRouteBasedFaultInjectionPolicy,
@@ -154,15 +158,15 @@ func (r *faultInjectionPolicyReconciler) getFaultInjections(policy client.Object
 
 			switch {
 			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Hostnames) > 0:
 				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.HTTPFaultInjections) > 0:
 				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.GRPCFaultInjections) > 0:
 				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
 			}
@@ -314,5 +318,35 @@ func (r *faultInjectionPolicyReconciler) getConflictedGRPCRouteBasedRFaultInject
 func (r *faultInjectionPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.FaultInjectionPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
+}
+
+func (r *faultInjectionPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.FaultInjectionPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.FaultInjectionPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

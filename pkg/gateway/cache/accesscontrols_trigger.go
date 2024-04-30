@@ -20,7 +20,7 @@ func (p *AccessControlPoliciesTrigger) Insert(obj interface{}, cache *GatewayCac
 	//
 	//cache.accesscontrols[utils.ObjectKey(policy)] = struct{}{}
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
 // Delete removes a AccessControlPolicy from the cache and returns true if the policy was found
@@ -40,5 +40,5 @@ func (p *AccessControlPoliciesTrigger) Delete(obj interface{}, cache *GatewayCac
 	//
 	//return found
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }

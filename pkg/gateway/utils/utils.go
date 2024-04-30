@@ -133,35 +133,82 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bo
 	return string(parentRef.Name) == gateway.Name
 }
 
-// IsRefToTarget returns true if the target reference is to the target object
-func IsRefToTarget(referenceGrants []client.Object, targetRef gwv1alpha2.PolicyTargetReference, object client.Object) bool {
-	gvk := object.GetObjectKind().GroupVersionKind()
-
-	if string(targetRef.Group) != gvk.Group {
-		return false
-	}
-
-	if string(targetRef.Kind) != gvk.Kind {
-		return false
-	}
-
-	if targetRef.Namespace != nil && string(*targetRef.Namespace) != object.GetNamespace() && !ValidCrossNamespaceRef(
+func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.PolicyTargetReference, referenceGrants []client.Object) bool {
+	if ref.Namespace != nil && string(*ref.Namespace) != policy.GetNamespace() && !ValidCrossNamespaceRef(
 		referenceGrants,
 		gwtypes.CrossNamespaceFrom{
-			Group:     gvk.Group,
-			Kind:      gvk.Kind,
-			Namespace: object.GetNamespace(),
+			Group:     policy.GetObjectKind().GroupVersionKind().Group,
+			Kind:      policy.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: policy.GetNamespace(),
 		},
 		gwtypes.CrossNamespaceTo{
-			Group:     string(targetRef.Group),
-			Kind:      string(targetRef.Kind),
-			Namespace: string(*targetRef.Namespace),
-			Name:      string(targetRef.Name),
+			Group:     string(ref.Group),
+			Kind:      string(ref.Kind),
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
 		},
 	) {
 		return false
 	}
 
+	return true
+}
+
+// IsRefToTarget returns true if the target reference is to the target object
+func IsRefToTarget(referenceGrants []client.Object, policy client.Object, ref gwv1alpha2.PolicyTargetReference, target client.Object) bool {
+	targetGVK := target.GetObjectKind().GroupVersionKind()
+
+	log.Debug().Msgf("[TARGET] IsRefToTarget: policy: %s/%s, ref: %s/%s/%s/%s, target: %s/%s/%s/%s",
+		policy.GetNamespace(), policy.GetName(),
+		ref.Group, ref.Kind, Namespace(ref.Namespace, policy.GetNamespace()), ref.Name,
+		targetGVK.Group, targetGVK.Kind, target.GetNamespace(), target.GetName())
+
+	if string(ref.Group) != targetGVK.Group {
+		log.Debug().Msgf("[TARGET] Not refer to the target with the same group, ref.Group: %s, target.Group: %s", ref.Group, targetGVK.Group)
+		return false
+	}
+
+	if string(ref.Kind) != targetGVK.Kind {
+		log.Debug().Msgf("[TARGET] Not refer to the target with the same kind, ref.Kind: %s, target.Kind: %s", ref.Kind, targetGVK.Kind)
+		return false
+	}
+
+	// fast-fail, not refer to the target with the same name
+	if string(ref.Name) != target.GetName() {
+		log.Debug().Msgf("[TARGET] Not refer to the target with the same name, ref.Name: %s, target.Name: %s", ref.Name, target.GetName())
+		return false
+	}
+
+	if ns := Namespace(ref.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
+		log.Debug().Msgf("[TARGET] Not refer to the target with the same namespace, resolved namespace: %s, target.Namespace: %s", ns, target.GetNamespace())
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == target.GetNamespace() && string(*ref.Namespace) != policy.GetNamespace() {
+		log.Debug().Msgf("[TARGET] Found a cross-namespace reference, policy: %s/%s, ref: %s/%s, target: %s/%s",
+			policy.GetNamespace(), policy.GetName(), string(*ref.Namespace), ref.Name, target.GetNamespace(), target.GetName())
+
+		policyGVK := policy.GetObjectKind().GroupVersionKind()
+		result := ValidCrossNamespaceRef(
+			referenceGrants,
+			gwtypes.CrossNamespaceFrom{
+				Group:     policyGVK.Group,
+				Kind:      policyGVK.Kind,
+				Namespace: policy.GetNamespace(),
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     string(ref.Group),
+				Kind:      string(ref.Kind),
+				Namespace: target.GetNamespace(),
+				Name:      target.GetName(),
+			},
+		)
+
+		log.Debug().Msgf("[TARGET] Cross-namespace reference result: %v", result)
+		return result
+	}
+
+	log.Debug().Msgf("[TARGET] Found a match, ref: %s/%s, target: %s/%s", Namespace(ref.Namespace, policy.GetNamespace()), ref.Name, target.GetNamespace(), target.GetName())
 	return true
 }
 
@@ -415,8 +462,10 @@ func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossN
 
 	for _, referenceGrant := range referenceGrants {
 		refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
+		log.Debug().Msgf("Evaluating ReferenceGrant: %s/%s", refGrant.GetNamespace(), refGrant.GetName())
 
 		if refGrant.Namespace != to.Namespace {
+			log.Debug().Msgf("ReferenceGrant namespace %s does not match to namespace %s", refGrant.Namespace, to.Namespace)
 			continue
 		}
 
@@ -424,11 +473,13 @@ func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossN
 		for _, refGrantFrom := range refGrant.Spec.From {
 			if string(refGrantFrom.Namespace) == from.Namespace && string(refGrantFrom.Group) == from.Group && string(refGrantFrom.Kind) == from.Kind {
 				fromAllowed = true
+				log.Debug().Msgf("ReferenceGrant from %s/%s/%s is allowed", from.Group, from.Kind, from.Namespace)
 				break
 			}
 		}
 
 		if !fromAllowed {
+			log.Debug().Msgf("ReferenceGrant from %s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace)
 			continue
 		}
 
@@ -436,16 +487,20 @@ func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossN
 		for _, refGrantTo := range refGrant.Spec.To {
 			if string(refGrantTo.Group) == to.Group && string(refGrantTo.Kind) == to.Kind && (refGrantTo.Name == nil || *refGrantTo.Name == "" || string(*refGrantTo.Name) == to.Name) {
 				toAllowed = true
+				log.Debug().Msgf("ReferenceGrant to %s/%s/%s/%s is allowed", to.Group, to.Kind, to.Namespace, to.Name)
 				break
 			}
 		}
 
 		if !toAllowed {
+			log.Debug().Msgf("ReferenceGrant to %s/%s/%s/%s is NOT allowed", to.Group, to.Kind, to.Namespace, to.Name)
 			continue
 		}
 
+		log.Debug().Msgf("ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
 		return true
 	}
 
+	log.Debug().Msgf("ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
 	return false
 }

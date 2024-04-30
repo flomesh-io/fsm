@@ -187,7 +187,7 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool 
 }
 
 // no need to check ReferenceGrant here
-func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetReference) bool {
+func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
 	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
 	}
@@ -202,7 +202,7 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 		}
 
 		for _, gateway := range gateways {
-			if gwutils.IsRefToTarget(referenceGrants, targetRef, gateway) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, gateway) {
 				return true
 			}
 		}
@@ -213,7 +213,7 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 		}
 
 		for _, route := range httproutes {
-			if gwutils.IsRefToTarget(referenceGrants, targetRef, route) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, route) {
 				return true
 			}
 		}
@@ -224,7 +224,7 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 		}
 
 		for _, route := range grpcroutes {
-			if gwutils.IsRefToTarget(referenceGrants, targetRef, route) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, route) {
 				return true
 			}
 		}
@@ -529,7 +529,7 @@ func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObj
 		)
 	}
 
-	log.Debug().Msgf("Found a match, ref: %v, service: %v", ref, service)
+	log.Debug().Msgf("Found a match, ref: %s/%s, service: %s/%s", gwutils.Namespace(ref.Namespace, referer.GetNamespace()), ref.Name, service.Namespace, service.Name)
 	return true
 }
 

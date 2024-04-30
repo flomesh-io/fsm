@@ -34,7 +34,8 @@ func (e *RateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, l
 		}
 
 		for _, rateLimit := range e.Data {
-			if !gwutils.IsRefToTarget(e.ReferenceGrants, rateLimit.Spec.TargetRef, gw) {
+			rateLimit := rateLimit
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &rateLimit, rateLimit.Spec.TargetRef, gw) {
 				continue
 			}
 
@@ -68,15 +69,16 @@ func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumbe
 		}
 
 		for _, accessControl := range e.Data {
-			if !gwutils.IsRefToTarget(e.ReferenceGrants, accessControl.Spec.TargetRef, gw) {
+			ac := accessControl
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &ac, ac.Spec.TargetRef, gw) {
 				continue
 			}
 
-			if len(accessControl.Spec.Ports) == 0 {
+			if len(ac.Spec.Ports) == 0 {
 				continue
 			}
 
-			if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
+			if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, ac); c != nil && listenerCfg.AccessControlLists == nil {
 				listenerCfg.AccessControlLists = newAccessControlLists(c)
 				break
 			}
@@ -102,7 +104,8 @@ func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, 
 		}
 
 		for _, policy := range e.Data {
-			if !gwutils.IsRefToTarget(e.ReferenceGrants, policy.Spec.TargetRef, gw) {
+			policy := policy
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &policy, policy.Spec.TargetRef, gw) {
 				continue
 			}
 

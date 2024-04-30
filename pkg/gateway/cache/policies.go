@@ -227,7 +227,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(referenceGrants, rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.hostnamesRateLimits = append(result.hostnamesRateLimits, rateLimit)
 			}
 		}
@@ -235,7 +236,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.httpRouteRateLimits = append(result.httpRouteRateLimits, rateLimit)
 			}
 		}
@@ -243,7 +245,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.grpcRouteRateLimits = append(result.grpcRouteRateLimits, rateLimit)
 			}
 		}
@@ -251,7 +254,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(referenceGrants, ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.hostnamesAccessControls = append(result.hostnamesAccessControls, ac)
 			}
 		}
@@ -259,7 +263,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.httpRouteAccessControls = append(result.httpRouteAccessControls, ac)
 			}
 		}
@@ -267,7 +272,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.grpcRouteAccessControls = append(result.grpcRouteAccessControls, ac)
 			}
 		}
@@ -275,7 +281,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(referenceGrants, fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.hostnamesFaultInjections = append(result.hostnamesFaultInjections, fj)
 			}
 		}
@@ -283,7 +290,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.httpRouteFaultInjections = append(result.httpRouteFaultInjections, fj)
 			}
 		}
@@ -291,7 +299,8 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(referenceGrants, fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.grpcRouteFaultInjections = append(result.grpcRouteFaultInjections, fj)
 			}
 		}

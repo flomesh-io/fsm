@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	corev1 "k8s.io/api/core/v1"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -313,10 +315,7 @@ func (w *validator) validateSecrets(path *field.Path, ref gwv1.SecretObjectRefer
 	var errs field.ErrorList
 
 	if string(*ref.Kind) == constants.KubernetesSecretKind && string(*ref.Group) == constants.KubernetesCoreGroup {
-		ns := gwNamespace
-		if ref.Namespace != nil {
-			ns = string(*ref.Namespace)
-		}
+		ns := gwutils.Namespace(ref.Namespace, gwNamespace)
 		name := string(ref.Name)
 
 		secret, err := w.kubeClient.CoreV1().Secrets(ns).Get(context.TODO(), name, metav1.GetOptions{})

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -9,7 +10,8 @@ import (
 )
 
 func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
-	routePolicies := filterPoliciesByRoute(nil, policies, httpRoute)
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	routePolicies := filterPoliciesByRoute(referenceGrants, policies, httpRoute)
 	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 

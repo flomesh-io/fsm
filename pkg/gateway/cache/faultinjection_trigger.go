@@ -20,7 +20,7 @@ func (p *FaultInjectionPoliciesTrigger) Insert(obj interface{}, cache *GatewayCa
 	//
 	//cache.faultinjections[utils.ObjectKey(policy)] = struct{}{}
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
 // Delete removes a FaultInjectionPolicy from the cache and returns true if the policy was found
@@ -39,5 +39,5 @@ func (p *FaultInjectionPoliciesTrigger) Delete(obj interface{}, cache *GatewayCa
 	//delete(cache.faultinjections, key)
 	//
 	//return found
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
