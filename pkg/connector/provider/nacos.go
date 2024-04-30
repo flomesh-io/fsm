@@ -271,10 +271,13 @@ func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]c
 }
 
 func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistration) error {
-	ins := *dereg.ToNacos()
+	ins := dereg.ToNacos()
+	if ins == nil {
+		return nil
+	}
 	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
 	return dc.connectController.CacheDeregisterInstance(dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0), func() error {
-		_, err := dc.nacosClient().DeregisterInstance(ins)
+		_, err := dc.nacosClient().DeregisterInstance(*ins)
 		return err
 	})
 }

@@ -365,14 +365,16 @@ func (srr *InboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterNa
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	srr.TargetClusters[clusterName] = weight
+	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
 }
 
 func (srr *OutboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterName, weight Weight) {
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	srr.TargetClusters[clusterName] = weight
+	fnv32aClusterName, _ := fnv32a(string(clusterName))
+	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
 }
 
 func (srr *OutboundTCPServiceRouteRules) setAllowedEgressTraffic(allowedEgressTraffic bool) {
@@ -936,6 +938,8 @@ func fnv32a(ruleName string) (string, bool) {
 		return ruleName, false
 	}
 	algorithm := fnv.New32a()
-	_, _ = algorithm.Write([]byte(ruleName))
-	return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName)), true
+	if _, err := algorithm.Write([]byte(ruleName)); err == nil {
+		return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName)), true
+	}
+	return ruleName, false
 }
