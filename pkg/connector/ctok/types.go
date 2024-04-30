@@ -6,9 +6,9 @@ import "context"
 
 const (
 	// CloudSourcedServiceLabel defines cloud-sourced service label
-	CloudSourcedServiceLabel = "cloud-sourced-service"
+	CloudSourcedServiceLabel = "fsm-connector-cloud-sourced-service"
 	// CloudServiceLabel defines cloud service label
-	CloudServiceLabel = "cloud-service"
+	CloudServiceLabel = "fsm-connector-cloud-service"
 )
 
 // MicroSvcName defines string as microservice name

@@ -84,7 +84,8 @@ func (s *CtoKSource) Run(ctx context.Context) {
 
 // Aggregate micro services
 func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[MicroSvcName]*MicroSvcMeta {
-	if _, exists := s.syncer.controller.GetC2KContext().RawServices[string(svcName)]; !exists {
+	cloudSvcName, exists := s.syncer.controller.GetC2KContext().RawServices[string(svcName)]
+	if !exists {
 		return nil
 	}
 
@@ -94,7 +95,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[Mi
 		WaitTime:   5 * time.Second,
 	}).WithContext(ctx)
 
-	instanceEntries, err := s.discClient.CatalogInstances(string(svcName), opts)
+	instanceEntries, err := s.discClient.CatalogInstances(cloudSvcName, opts)
 	if err != nil {
 		return nil
 	}
@@ -106,6 +107,7 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName MicroSvcName) map[Mi
 	svcMetaMap := make(map[MicroSvcName]*MicroSvcMeta)
 
 	for _, instance := range instanceEntries {
+		instance.Service = strings.ToLower(instance.Service)
 		httpPort := instance.HTTPPort
 		grpcPort := instance.GRPCPort
 		svcNames := []MicroSvcName{MicroSvcName(instance.Service)}

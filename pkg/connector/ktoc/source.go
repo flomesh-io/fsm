@@ -314,6 +314,8 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	// If the name is explicitly annotated, adopt that name
 	if v, ok := svc.Annotations[connector.AnnotationServiceName]; ok {
 		baseService.Service = strings.TrimSpace(v)
+	} else if v, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
+		baseService.Service = strings.TrimSpace(v)
 	}
 
 	// Update the service namespace based on namespace settings
