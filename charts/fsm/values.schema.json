@@ -842,7 +842,7 @@
                         "title": "The codebase schema for pipy repo server",
                         "description": "Codebase is the folder used by fsmController.",
                         "examples": [
-                          "/fsm1.3.0-alpha.4"
+                          "/fsm1.3.0-alpha.5"
                         ]
                       }
                     }
