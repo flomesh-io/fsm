@@ -253,6 +253,11 @@ nodeRegistration:
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
 						},
 						{
+							ContainerPort: 9090,
+							HostPort:      9090,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
 							ContainerPort: 7443,
 							HostPort:      7443,
 							Protocol:      v1alpha4.PortMappingProtocolTCP,
@@ -275,6 +280,16 @@ nodeRegistration:
 						{
 							ContainerPort: 4000,
 							HostPort:      4000,
+							Protocol:      v1alpha4.PortMappingProtocolUDP,
+						},
+						{
+							ContainerPort: 3001,
+							HostPort:      3001,
+							Protocol:      v1alpha4.PortMappingProtocolTCP,
+						},
+						{
+							ContainerPort: 4001,
+							HostPort:      4001,
 							Protocol:      v1alpha4.PortMappingProtocolUDP,
 						},
 					},

@@ -2,6 +2,7 @@
 package types
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -50,4 +51,30 @@ func (l *Listener) AllowsKind(gvk schema.GroupVersionKind) bool {
 	}
 
 	return false
+}
+
+// RouteContext is a wrapper around the Gateway API Route object
+type RouteContext struct {
+	Meta         metav1.Object
+	ParentRefs   []gwv1.ParentReference
+	GVK          schema.GroupVersionKind
+	Generation   int64
+	Hostnames    []gwv1.Hostname
+	Namespace    string
+	ParentStatus []gwv1.RouteParentStatus
+}
+
+// CrossNamespaceFrom is the type used to represent the from part of a cross-namespace reference
+type CrossNamespaceFrom struct {
+	Group     string
+	Kind      string
+	Namespace string
+}
+
+// CrossNamespaceTo is the type used to represent the to part of a cross-namespace reference
+type CrossNamespaceTo struct {
+	Group     string
+	Kind      string
+	Namespace string
+	Name      string
 }

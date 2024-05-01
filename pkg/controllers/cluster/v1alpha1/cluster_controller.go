@@ -77,7 +77,7 @@ func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 		recorder: ctx.Manager.GetEventRecorderFor("Cluster"),
 		fctx:     ctx,
 		stopCh:   utils.RegisterOSExitHandlers(),
-		server:   cp.NewControlPlaneServer(ctx.Config, ctx.Broker),
+		server:   cp.NewControlPlaneServer(ctx.Configurator, ctx.MsgBroker),
 	}
 
 	go r.server.Run(r.stopCh)
@@ -120,7 +120,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.destroyConnector(cluster)
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	result, err := r.deriveCodebases(cluster, mc)
 	if err != nil {
@@ -213,7 +213,7 @@ func (r *reconciler) newConnector(ctx context.Context, cluster *mcsv1alpha1.Clus
 		return result, err
 	}
 
-	background, err := remote.NewBackground(cluster, kubeconfig, r.fctx.Config, r.fctx.Broker)
+	background, err := remote.NewBackground(cluster, kubeconfig, r.fctx.Configurator, r.fctx.MsgBroker)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

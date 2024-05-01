@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/gatewaytls"
@@ -21,7 +22,8 @@ type PortPolicyEnricher interface {
 
 // RateLimitPortEnricher is an enricher for rate limit policies at the port level
 type RateLimitPortEnricher struct {
-	Data []gwpav1alpha1.RateLimitPolicy
+	Data            []gwpav1alpha1.RateLimitPolicy
+	ReferenceGrants []client.Object
 }
 
 func (e *RateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
@@ -32,7 +34,8 @@ func (e *RateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, l
 		}
 
 		for _, rateLimit := range e.Data {
-			if !gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, gw) {
+			rateLimit := rateLimit
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &rateLimit, rateLimit.Spec.TargetRef, gw) {
 				continue
 			}
 
@@ -54,7 +57,8 @@ func (e *RateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, l
 
 // AccessControlPortEnricher is an enricher for access control policies at the port level
 type AccessControlPortEnricher struct {
-	Data []gwpav1alpha1.AccessControlPolicy
+	Data            []gwpav1alpha1.AccessControlPolicy
+	ReferenceGrants []client.Object
 }
 
 func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
@@ -65,15 +69,16 @@ func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumbe
 		}
 
 		for _, accessControl := range e.Data {
-			if !gwutils.IsRefToTarget(accessControl.Spec.TargetRef, gw) {
+			ac := accessControl
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &ac, ac.Spec.TargetRef, gw) {
 				continue
 			}
 
-			if len(accessControl.Spec.Ports) == 0 {
+			if len(ac.Spec.Ports) == 0 {
 				continue
 			}
 
-			if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, accessControl); c != nil && listenerCfg.AccessControlLists == nil {
+			if c := accesscontrol.GetAccessControlConfigIfPortMatchesPolicy(port, ac); c != nil && listenerCfg.AccessControlLists == nil {
 				listenerCfg.AccessControlLists = newAccessControlLists(c)
 				break
 			}
@@ -87,7 +92,8 @@ func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumbe
 
 // GatewayTLSPortEnricher is an enricher for access control policies at the port level
 type GatewayTLSPortEnricher struct {
-	Data []gwpav1alpha1.GatewayTLSPolicy
+	Data            []gwpav1alpha1.GatewayTLSPolicy
+	ReferenceGrants []client.Object
 }
 
 func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
@@ -98,7 +104,8 @@ func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, 
 		}
 
 		for _, policy := range e.Data {
-			if !gwutils.IsRefToTarget(policy.Spec.TargetRef, gw) {
+			policy := policy
+			if !gwutils.IsRefToTarget(e.ReferenceGrants, &policy, policy.Spec.TargetRef, gw) {
 				continue
 			}
 

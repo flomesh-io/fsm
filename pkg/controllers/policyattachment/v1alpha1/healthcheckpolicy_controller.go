@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/healthcheck"
@@ -58,6 +63,7 @@ func NewHealthCheckPolicyReconciler(ctx *fctx.ControllerContext) controllers.Rec
 
 	r.statusProcessor = &status.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
+		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedHealthChecks,
 		FindConflict:        r.findConflict,
 	}
@@ -70,7 +76,7 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	policy := &gwpav1alpha1.HealthCheckPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwpav1alpha1.HealthCheckPolicy{
+		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha1.HealthCheckPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -79,7 +85,7 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if policy.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(policy)
+		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
 
@@ -91,7 +97,7 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy, false)
+	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -100,6 +106,10 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *healthCheckPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.HealthCheckPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
 }
 
@@ -109,11 +119,12 @@ func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(policy client.Obje
 		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicies: %s", err)))
 	}
 
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 	healthChecks := make([]client.Object, 0)
 	for _, p := range healthCheckPolicyList.Items {
 		p := p
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(p.Spec.TargetRef, svc) {
+			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
 			healthChecks = append(healthChecks, &p)
 		}
 	}
@@ -148,4 +159,30 @@ func (r *healthCheckPolicyReconciler) findConflict(healthCheckPolicy client.Obje
 	}
 
 	return nil
+}
+
+func (r *healthCheckPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.HealthCheckPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.HealthCheckPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

@@ -20,7 +20,7 @@ func (p *GatewayTLSPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache)
 	//
 	//cache.gatewaytls[utils.ObjectKey(policy)] = struct{}{}
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
 // Delete removes a GatewayTLSPolicy from the cache and returns true if the policy was found
@@ -40,5 +40,5 @@ func (p *GatewayTLSPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache)
 	//
 	//return found
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }

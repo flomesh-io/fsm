@@ -88,7 +88,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/reconciler"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar"
-	"github.com/flomesh-io/fsm/pkg/sidecar/driver"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/smi"
 	"github.com/flomesh-io/fsm/pkg/validator"
@@ -230,7 +229,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InvalidCLIParameters, "Error validating CLI parameters")
 	}
 
-	background := driver.ControllerContext{
+	background := fctx.ControllerContext{
 		FsmNamespace:  fsmNamespace,
 		KubeConfig:    kubeConfig,
 		DebugHandlers: make(map[string]http.Handler),
@@ -408,24 +407,17 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
 	}
 
-	repoClient := repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
-	cctx := &fctx.ControllerContext{
-		Client:             mgr.GetClient(),
-		Manager:            mgr,
-		Scheme:             mgr.GetScheme(),
-		KubeClient:         kubeClient,
-		KubeConfig:         kubeConfig,
-		Config:             cfg,
-		InformerCollection: informerCollection,
-		CertificateManager: certManager,
-		RepoClient:         repoClient,
-		Broker:             msgBroker,
-		StopCh:             stop,
-		MeshName:           meshName,
-		TrustDomain:        trustDomain,
-		FSMVersion:         fsmVersion,
-	}
-	for _, f := range []func(*fctx.ControllerContext) error{
+	background.Client = mgr.GetClient()
+	background.Manager = mgr
+	background.Scheme = mgr.GetScheme()
+	background.KubeClient = kubeClient
+	background.RepoClient = repo.NewRepoClient(fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort()), cfg.GetFSMLogLevel())
+	background.InformerCollection = informerCollection
+	background.MeshName = meshName
+	background.FSMVersion = fsmVersion
+	background.TrustDomain = trustDomain
+
+	for _, f := range []func(context.Context) error{
 		mrepo.InitRepo,
 		basic.SetupHTTP,
 		basic.SetupTLS,
@@ -434,15 +426,15 @@ func main() {
 		recon.RegisterControllers,
 		recon.RegisterReconcilers,
 	} {
-		if err := f(cctx); err != nil {
+		if err := f(ctx); err != nil {
 			log.Error().Msgf("Failed to startup: %s", err)
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error setting up manager")
 		}
 	}
 
 	if cfg.IsIngressEnabled() {
-		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, cctx.RepoClient, stop)
-		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, cctx.RepoClient, stop)
+		go listeners.WatchAndUpdateIngressConfig(kubeClient, msgBroker, fsmNamespace, certManager, background.RepoClient, stop)
+		go listeners.WatchAndUpdateLoggingConfig(kubeClient, msgBroker, background.RepoClient, stop)
 	}
 
 	if err := mgr.Start(ctx); err != nil {

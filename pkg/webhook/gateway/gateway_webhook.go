@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"net/http"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -99,8 +101,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered of gateway
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Config, r.MeshName, r.FSMVersion)),
-		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Config)),
+		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Configurator, r.MeshName, r.FSMVersion)),
+		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
 	}
 }
 
@@ -258,12 +260,7 @@ func (w *validator) validateSecretsExistence(gateway *gwv1.Gateway, c gwv1.Liste
 
 	for j, ref := range c.TLS.CertificateRefs {
 		if string(*ref.Kind) == "Secret" && string(*ref.Group) == "" {
-			ns := ""
-			if ref.Namespace == nil {
-				ns = gateway.Namespace
-			} else {
-				ns = string(*ref.Namespace)
-			}
+			ns := gwutils.Namespace(ref.Namespace, gateway.Namespace)
 			name := string(ref.Name)
 
 			path := field.NewPath("spec").

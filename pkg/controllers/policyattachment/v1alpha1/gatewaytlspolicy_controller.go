@@ -29,6 +29,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
@@ -85,6 +90,7 @@ func NewGatewayTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reco
 
 	r.statusProcessor = &status.PolicyStatusProcessor{
 		Client:           r.fctx.Client,
+		Informer:         r.fctx.InformerCollection,
 		GetPolicies:      r.getGatewayTLSPolices,
 		FindConflictPort: r.getConflictedPort,
 		GroupKindObjectMapping: map[string]map[string]client.Object{
@@ -102,7 +108,7 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	policy := &gwpav1alpha1.GatewayTLSPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwpav1alpha1.GatewayTLSPolicy{
+		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha1.GatewayTLSPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -111,7 +117,7 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	if policy.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(policy)
+		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
 
@@ -123,7 +129,7 @@ func (r *gatewayTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	r.fctx.EventHandler.OnAdd(policy, false)
+	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
@@ -135,6 +141,7 @@ func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, 
 	}
 
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, p := range gatewayTLSPolicyList.Items {
 		p := p
@@ -144,7 +151,7 @@ func (r *gatewayTLSPolicyReconciler) getGatewayTLSPolices(policy client.Object, 
 
 			switch {
 			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(targetRef, target) &&
+				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
 				len(spec.Ports) > 0:
 				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
 			}
@@ -196,5 +203,35 @@ func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, ga
 func (r *gatewayTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.GatewayTLSPolicy{}).
+		Watches(
+			&gwv1beta1.ReferenceGrant{},
+			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
+		).
 		Complete(r)
+}
+
+func (r *gatewayTLSPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.GatewayTLSPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.GatewayTLSPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      policy.Name,
+					Namespace: policy.Namespace,
+				},
+			})
+		}
+	}
+
+	return requests
 }

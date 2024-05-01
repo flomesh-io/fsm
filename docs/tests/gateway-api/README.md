@@ -14,11 +14,14 @@
 
   Please note: it exposes 5 ports
   - `8090`: **HTTP**
+  - `9090`: **HTTP**, for cross namespace reference
   - `7443`: **HTTPS**
   - `8443`: **TLS Passthrough**
   - `9443`: **TLS Terminate**
   - `3000`: **TCP**
+  - `3001`: **TCP**, for cross namespace reference
   - `4000`: **UDP**
+  - `4001`: **UDP**, for cross namespace reference
   
 - Make docker images available to the cluster
   ```shell
@@ -62,10 +65,20 @@
 
 #### Create namespaces
 ```shell
-kubectl create ns httpbin
-kubectl create ns grpcbin
-kubectl create ns tcproute
-kubectl create ns udproute
+kubectl create ns test
+kubectl create ns http-route
+kubectl create ns http
+kubectl create ns grpc-route
+kubectl create ns grpc
+kubectl create ns tcp-route
+kubectl create ns tcp
+kubectl create ns udp-route
+kubectl create ns udp
+
+kubectl label ns http-route app=http-cross
+kubectl label ns grpc-route app=grpc-cross
+kubectl label ns tcp-route app=tcp-cross
+kubectl label ns udp-route app=udp-cross
 ```
 
 #### Deploy FSM GatewayClass
@@ -93,7 +106,7 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for HTTPS Gateway resource
 ```shell
-kubectl -n httpbin create secret generic https-cert \
+kubectl -n test create secret generic https-cert \
   --from-file=ca.crt=./ca.crt \
   --from-file=tls.crt=./https.crt \
   --from-file=tls.key=./https.key 
@@ -109,7 +122,7 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for gRPC Gateway resource
 ```shell
-kubectl -n grpcbin create secret tls grpc-cert --key grpc.key --cert grpc.crt
+kubectl -n grpc create secret tls grpc-cert --key grpc.key --cert grpc.crt
 ```
 
 #### Deploy Gateway
@@ -118,6 +131,7 @@ cat <<EOF | kubectl apply -f -
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
+  namespace: test
   name: test-gw-1
   annotations:
     gateway.flomesh.io/replicas: "2"
@@ -126,23 +140,37 @@ metadata:
     gateway.flomesh.io/memory: 256Mi
     gateway.flomesh.io/memory-limit: 1024Mi
 spec:
-  gatewayClassName: fsm-gateway-cls
+  gatewayClassName: fsm
   listeners:
     - protocol: HTTP
       port: 80
       name: http
+    - protocol: HTTP
+      port: 9090
+      name: http-cross
+      allowedRoutes:
+        namespaces:
+          from: All
     - protocol: TCP
       port: 3000
       name: tcp
+    - protocol: TCP
+      port: 3001
+      name: tcp-cross
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector: 
+            matchLabels:
+              app: tcp-cross
     - protocol: HTTPS
       port: 443
       name: https
       tls:
         certificateRefs:
           - name: https-cert
-            namespace: httpbin
           - name: grpc-cert
-            namespace: grpcbin
+            namespace: grpc
     - protocol: TLS
       port: 8443
       name: tlsp
@@ -157,12 +185,20 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: https-cert
-            namespace: httpbin
           - name: grpc-cert
-            namespace: grpcbin
+            namespace: grpc
     - protocol: UDP
       port: 4000
       name: udp
+    - protocol: UDP
+      port: 4001
+      name: udp-cross
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector: 
+            matchLabels:
+              app: udp-cross
   infrastructure:
     annotations:
       xyz: abc
@@ -171,11 +207,30 @@ spec:
 EOF
 ```
 
-### Test HTTPRoute
+#### Create a ReferenceGrant for the secret
+```shell
+kubectl -n grpc apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: secret-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: test
+  to:
+    - group: ""
+      kind: Secret
+      name: grpc-cert
+EOF
+```
+
+### Test HTTPRoute - refer to svc in same namespace
 
 #### Deploy a HTTP Service
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -187,27 +242,27 @@ spec:
       targetPort: 8080
       protocol: TCP
   selector:
-    app: pipy
+    app: httpbin
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: httpbin
   labels:
-    app: pipy
+    app: httpbin
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pipy
+      app: httpbin
   template:
     metadata:
       labels:
-        app: pipy
+        app: httpbin
     spec:
       containers:
         - name: pipy
-          image: flomesh/pipy:latest
+          image: flomesh/pipy:0.99.1-1
           ports:
             - name: pipy
               containerPort: 8080
@@ -223,7 +278,7 @@ EOF
 
 #### Create a HTTPRoute
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -231,7 +286,7 @@ metadata:
 spec:
   parentRefs:
   - name: test-gw-1
-    namespace: default
+    namespace: test
     port: 80
   hostnames:
   - "httptest.localhost"
@@ -249,11 +304,11 @@ EOF
 #### Test it:
 ```shell
 ❯ curl -iv http://httptest.localhost:8090/bar
-*   Trying 127.0.0.1:8090...
-* Connected to localhost (127.0.0.1) port 8090 (#0)
+*   Trying [::1]:8090...
+* Connected to httptest.localhost (::1) port 8090
 > GET /bar HTTP/1.1
-> Host: httptest.localhost
-> User-Agent: curl/7.88.1
+> Host: httptest.localhost:8090
+> User-Agent: curl/8.4.0
 > Accept: */*
 >
 < HTTP/1.1 200 OK
@@ -265,10 +320,127 @@ connection: keep-alive
 
 <
 Hi, I am HTTPRoute!
-* Connection #0 to host localhost left intact
+* Connection #0 to host httptest.localhost left intact
 ```
 
-### Test GRPCRoute
+### Test HTTPRoute - refer to svc cross namespace
+
+#### Deploy a HTTP Service
+```shell
+kubectl -n http apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin-cross
+spec:
+  ports:
+    - name: pipy
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: httpbin-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin-cross
+  labels:
+    app: httpbin-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: httpbin-cross
+  template:
+    metadata:
+      labels:
+        app: httpbin-cross
+    spec:
+      containers:
+        - name: pipy
+          image: flomesh/pipy:0.99.1-1
+          ports:
+            - name: pipy
+              containerPort: 8080
+          command:
+            - pipy
+            - -e
+            - |
+              pipy()
+              .listen(8080)
+              .serveHTTP(new Message('Hi, I am HTTPRoute!\n'))
+EOF
+```
+
+#### Create a HTTPRoute
+```shell
+kubectl -n http-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-cross-1
+spec:
+  parentRefs:
+  - name: test-gw-1
+    namespace: test
+    port: 9090
+  hostnames:
+  - "httptest.localhost"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /cross
+    backendRefs:
+    - name: httpbin-cross
+      namespace: http
+      port: 8080
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n http apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: http-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ curl -iv http://httptest.localhost:9090/cross
+*   Trying [::1]:9090...
+* Connected to httptest.localhost (::1) port 9090
+> GET /cross HTTP/1.1
+> Host: httptest.localhost:9090
+> User-Agent: curl/8.4.0
+> Accept: */*
+>
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< content-length: 20
+content-length: 20
+< connection: keep-alive
+connection: keep-alive
+
+<
+Hi, I am HTTPRoute!
+* Connection #0 to host httptest.localhost left intact
+```
+
+### Test GRPCRoute - refer to svc in the same namespace
 #### Step 1: Create a Kubernetes `Deployment` for gRPC app
 
 - Deploy the gRPC app
@@ -280,7 +452,7 @@ kind: Deployment
 metadata:
   labels:
     app: grpcbin
-  namespace: grpcbin
+  namespace: test
   name: grpcbin
 spec:
   replicas: 1
@@ -319,7 +491,7 @@ kind: Service
 metadata:
   labels:
     app: grpcbin
-  namespace: grpcbin
+  namespace: test
   name: grpcbin
 spec:
   ports:
@@ -340,11 +512,11 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GRPCRoute
 metadata:
   name: grpc-app-1
-  namespace: grpcbin
+  namespace: test
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 80  
   hostnames:
     - grpctest.localhost
@@ -384,13 +556,147 @@ Response trailers received:
 Sent 1 request and received 1 response
 ```
 
-### Test TCPRoute
+### Test GRPCRoute - refer to svc cross namespace
+#### Step 1: Create a Kubernetes `Deployment` for gRPC app
 
-#### Create the namespace
+- Deploy the gRPC app
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: grpcbin-cross
+  namespace: grpc
+  name: grpcbin-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpcbin-cross
+  template:
+    metadata:
+      labels:
+        app: grpcbin-cross
+    spec:
+      containers:
+        - image: flomesh/grpcbin
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          name: grpcbin
+          ports:
+            - name: grpc
+              containerPort: 9000
+EOF
+```    
+
+#### Step 2: Create the Kubernetes `Service` for the gRPC app
+
+- You can use the following example manifest to create a service of type ClusterIP.
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grpcbin
+  namespace: grpc
+  name: grpcbin-cross
+spec:
+  ports:
+  - name: grpc
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: grpcbin-cross
+  type: ClusterIP
+EOF
+```
+
+#### Create a GRPCRoute
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: grpc-cross-1
+  namespace: grpc-route
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 9090  
+  hostnames:
+    - grpctest.localhost
+  rules:
+  - matches:
+    - method:
+        service: hello.HelloService
+        method: SayHello
+    backendRefs:
+    - name: grpcbin-cross
+      namespace: grpc
+      port: 9000
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n grpc apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: grpc-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+      namespace: grpc-route
+  to:
+    - group: ""
+      kind: Service
+      name: grpcbin-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ grpcurl -vv -plaintext -d '{"greeting":"Flomesh"}' grpctest.localhost:9090 hello.HelloService/SayHello
+
+Resolved method descriptor:
+rpc SayHello ( .hello.HelloRequest ) returns ( .hello.HelloResponse );
+
+Request metadata to send:
+(empty)
+
+Response headers received:
+content-type: application/grpc
+
+Estimated response size: 15 bytes
+
+Response contents:
+{
+  "reply": "hello Flomesh"
+}
+
+Response trailers received:
+(empty)
+Sent 1 request and received 1 response
+```
+
+### Test TCPRoute - refer to svc in the same namespace
 
 #### Deploy the TCPRoute app
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -434,7 +740,7 @@ EOF
 
 #### Create TCPRoute
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
@@ -442,7 +748,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 3000
   rules:
   - backendRefs:
@@ -457,11 +763,102 @@ EOF
 Text to send to TCP
 ```
 
-### Test UDPRoute
+### Test TCPRoute - refer to svc cross namespace
+
+#### Deploy the TCPRoute app
+```shell
+kubectl -n tcp apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcproute-cross
+spec:
+  ports:
+    - name: tcp
+      port: 8078
+      targetPort: 8078
+      protocol: TCP
+  selector:
+    app: tcproute-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcproute-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tcproute-cross
+  template:
+    metadata:
+      labels:
+        app: tcproute-cross
+    spec:
+      containers:
+        - name: tcp
+          image: fortio/fortio:latest
+          ports:
+            - name: tcp
+              containerPort: 8078
+          command:
+            - fortio
+            - tcp-echo
+            - -loglevel
+            - debug
+EOF
+```
+
+#### Create TCPRoute
+```shell
+kubectl -n tcp-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: tcp-cross-1
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 3001
+  rules:
+  - backendRefs:
+    - name: tcproute-cross
+      namespace: tcp
+      port: 8078
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n tcp apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: tcp-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: TCPRoute
+      namespace: tcp-route
+  to:
+    - group: ""
+      kind: Service
+      name: tcproute-cross
+EOF
+```
+
+#### Test it:
+```shell
+❯ echo "Text to send to TCP" | nc localhost 3001
+Text to send to TCP
+```
+
+### Test UDPRoute - refer to svc in the same namespace
 
 #### Deploy the UDPRoute app
 ```shell
-kubectl -n udproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -505,7 +902,7 @@ EOF
 
 #### Create UDPRoute
 ```shell
-kubectl -n udproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: UDPRoute
 metadata:
@@ -513,7 +910,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 4000
   rules:
   - backendRefs:
@@ -527,10 +924,100 @@ EOF
 echo -n "Text to send to UDP" | nc -4u -w1 localhost 4000
 ```
 
+### Test UDPRoute - refer to svc cross namespace
+
+#### Deploy the UDPRoute app
+```shell
+kubectl -n udp apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: udproute-cross
+spec:
+  ports:
+    - name: udp
+      port: 8078
+      targetPort: 8078
+      protocol: UDP
+  selector:
+    app: udproute-cross
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udproute-cross
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: udproute-cross
+  template:
+    metadata:
+      labels:
+        app: udproute-cross
+    spec:
+      containers:
+        - name: udp
+          image: fortio/fortio:latest
+          ports:
+            - name: udp
+              containerPort: 8078
+          command:
+            - fortio
+            - udp-echo
+            - -loglevel
+            - debug
+EOF
+```
+
+#### Create UDPRoute
+```shell
+kubectl -n udp-route apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: udp-cross-1
+spec:
+  parentRefs:
+    - name: test-gw-1
+      namespace: test
+      port: 4001
+  rules:
+  - backendRefs:
+    - name: udproute-cross
+      namespace: udp
+      port: 8078
+EOF
+```
+
+#### Create a ReferenceGrant
+```shell
+kubectl -n udp apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: udp-cross-1
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: UDPRoute
+      namespace: udp-route
+  to:
+    - group: ""
+      kind: Service
+      name: udproute-cross
+EOF
+```
+
+#### Test it:
+```shell
+echo -n "Text to send to UDP" | nc -4u -w1 localhost 4001
+```
+
 ### Test HTTPS - HTTPRoute
 #### Create a HTTPRoute and attach to HTTPS port
 ```shell
-kubectl -n httpbin apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -538,7 +1025,7 @@ metadata:
 spec:
   parentRefs:
   - name: test-gw-1
-    namespace: default
+    namespace: test
     port: 443
   hostnames:
   - "httptest.localhost"
@@ -608,11 +1095,11 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: GRPCRoute
 metadata:
   name: grpcs-app-1
-  namespace: grpcbin
+  namespace: test
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 443  
   hostnames:
     - grpctest.localhost
@@ -655,7 +1142,7 @@ Sent 1 request and received 1 response
 ### Test TLS Terminate
 #### Create TCPRoute and attach to TLS port
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
@@ -663,7 +1150,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 9443
   rules:
   - backendRefs:
@@ -721,7 +1208,7 @@ Hi, I am TCPRoute!
 
 #### Create TLSRoute
 ```shell
-kubectl -n tcproute apply -f - <<EOF
+kubectl -n test apply -f - <<EOF
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
@@ -729,7 +1216,7 @@ metadata:
 spec:
   parentRefs:
     - name: test-gw-1
-      namespace: default
+      namespace: test
       port: 8443
   rules:
   - backendRefs:
@@ -822,19 +1309,19 @@ date: Thu, 06 Jul 2023 04:44:06 GMT
 
 ### Test RateLimitPolicy
 
-#### Test Port Based Rate Limit
+#### Test Port Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-port
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
   ports:
     - port: 80
       bps: 100000
@@ -842,19 +1329,19 @@ EOF
 ```
 
 
-#### Test Hostname Based Rate Limit
+#### Test Hostname Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-hostname-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -865,19 +1352,19 @@ spec:
 EOF
 ```
 
-#### Test Route Based Rate Limit
+#### Test Route Based Rate Limit - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RateLimitPolicy
 metadata:
+  namespace: test
   name: ratelimit-route-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   http:
   - match:
       path:
@@ -891,20 +1378,142 @@ spec:
 EOF
 ```
 
-### Test SessionStickyPolicy
+#### Test Port Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-port-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: test
+    name: test-gw-1
+  ports:
+    - port: 9090
+      bps: 200000
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: ratelimit-port-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RateLimitPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: test-gw-1
+EOF
+```
+
+#### Test Hostname Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-hostname-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        mode: Local
+        backlog: 25
+        requests: 200
+        statTimeWindow: 19
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http-route
+  name: ratelimit-hostname-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RateLimitPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: http-cross-1
+EOF
+```
+
+#### Test Route Based Rate Limit - refer to target cross namespace
+
+##### Create a RateLimitPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RateLimitPolicy
+metadata:
+  namespace: http
+  name: ratelimit-route-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /cross
+    config: 
+      mode: Local
+      backlog: 11
+      requests: 300
+      statTimeWindow: 20
+EOF
+```
+
+##### ReferenceGrant
+If you have created the ReferenceGrant in previous step, you can skip this step. 
+
+
+
+### Test SessionStickyPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: SessionStickyPolicy
 metadata:
+  namespace: test
   name: session-sticky-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
   ports:
   - port: 8080
     config:
@@ -913,40 +1522,126 @@ spec:
 EOF
 ```
 
-### Test LoadBalancerPolicy
+### Test SessionStickyPolicy - refer to target cross namespace
+
+#### Create a SessionStickyPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: SessionStickyPolicy
+metadata:
+  namespace: test
+  name: session-sticky-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      cookieName: yyy
+      expires: 666
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: session-sticky-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: SessionStickyPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+### Test LoadBalancerPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: LoadBalancerPolicy
 metadata:
+  namespace: test
   name: lb-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
   ports:
     - port: 8080
       type: HashingLoadBalancer
 EOF
 ```
 
-### Test CircuitBreakingPolicy
+### Test LoadBalancerPolicy - refer to target cross namespace
+
+#### Create a LoadBalancerPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: LoadBalancerPolicy
+metadata:
+  namespace: test
+  name: lb-policy-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+    - port: 8080
+      type: HashingLoadBalancer
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: lb-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: LoadBalancerPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+### Test CircuitBreakingPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: CircuitBreakingPolicy
 metadata:
+  namespace: test
   name: circuit-breaking-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
   ports:
     - port: 8080
       config: 
@@ -958,21 +1653,68 @@ spec:
 EOF
 ```
 
+### Test CircuitBreakingPolicy - refer to target cross namespace
+
+#### Create a CircuitBreakingPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: CircuitBreakingPolicy
+metadata:
+  namespace: test
+  name: circuit-breaking-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+    - port: 8080
+      config: 
+        minRequestAmount: 11
+        statTimeWindow: 61
+        degradedTimeWindow: 61
+        degradedStatusCode: 500
+        degradedResponseContent: "Service Unavailable"
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: circuit-breaking-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: CircuitBreakingPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
 ### Test AccessControlPolicy
 
-#### Test Port Based Access Control
+#### Test Port Based Access Control - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: AccessControlPolicy
 metadata:
+  namespace: test
   name: access-control-port
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
   ports:
     - port: 80
       config: 
@@ -988,19 +1730,19 @@ EOF
 ```
 
 
-#### Test Hostname Based Access Control
+#### Test Hostname Based Access Control - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: AccessControlPolicy
 metadata:
+  namespace: test
   name: access-control-hostname-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -1015,19 +1757,19 @@ spec:
 EOF
 ```
 
-#### Test Route Based Access Control
+#### Test Route Based Access Control - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: AccessControlPolicy
 metadata:
+  namespace: test
   name: access-control-route-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   http:
   - match:
       path:
@@ -1045,20 +1787,158 @@ spec:
 EOF
 ```
 
-### Test HealthCheckPolicy
+
+#### Test Port Based Access Control - refer to target cross namespace
+
+##### Create a AccessControlPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  namespace: http
+  name: access-control-port-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: test
+    name: test-gw-1
+  ports:
+    - port: 9090
+      config: 
+        blacklist:
+          - 10.0.0.2
+          - 192.168.1.0/24
+        whitelist:
+          - 192.168.66.1
+        enableXFF: true
+        statusCode: 403
+        message: "Forbidden"
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: access-control-port-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: AccessControlPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: test-gw-1
+EOF
+```
+
+#### Test Hostname Based Access Control - refer to target cross namespace
+
+##### Create a AccessControlPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  namespace: http
+  name: access-control-hostname-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        blacklist:
+          - 10.0.2.1
+          - 192.168.3.0/24
+        whitelist:
+          - 192.168.99.1
+        enableXFF: true
+        statusCode: 403
+        message: "Forbidden"
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http-route
+  name: access-control-hostname-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: AccessControlPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: http-cross-1
+EOF
+```
+
+#### Test Route Based Access Control - refer to target cross namespace
+
+##### Create a AccessControlPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: AccessControlPolicy
+metadata:
+  namespace: http
+  name: access-control-route-http-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /cross
+    config: 
+      blacklist:
+        - 10.0.7.1
+        - 192.168.7.0/24
+      whitelist:
+        - 192.168.55.1
+      enableXFF: true
+      statusCode: 403
+      message: "Forbidden"
+EOF
+```
+
+##### ReferenceGrant
+If you have created the ReferenceGrant in previous step, you can skip this step.
+
+
+### Test HealthCheckPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: HealthCheckPolicy
 metadata:
+  namespace: test
   name: health-check-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
   ports:
   - port: 8080
     config: 
@@ -1077,22 +1957,76 @@ spec:
 EOF
 ```
 
+### Test HealthCheckPolicy - refer to target cross namespace
+
+#### Create a HealthCheckPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: HealthCheckPolicy
+metadata:
+  namespace: test
+  name: health-check-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config: 
+      interval: 6
+      maxFails: 5
+      failTimeout: 10
+      path: /healthz
+      matches:
+      - statusCodes: 
+        - 400
+        - 501
+        body: "OK"
+        headers:
+          - name: Content-Type
+            value: application/text
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: health-check-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: HealthCheckPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
 ### Test FaultInjectionPolicy
 
 
-#### Test Hostname Based Fault Injection
+#### Test Hostname Based Fault Injection - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: FaultInjectionPolicy
 metadata:
+  namespace: test
   name: fault-injection-hostname-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   hostnames:
     - hostname: httptest.localhost
       config: 
@@ -1103,19 +2037,19 @@ spec:
 EOF
 ```
 
-#### Test Route Based Fault Injection
+#### Test Route Based Fault Injection - refer to target in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: FaultInjectionPolicy
 metadata:
+  namespace: test
   name: fault-injection-route-http
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: http-app-1
-    namespace: httpbin
   http:
   - match:
       path:
@@ -1131,44 +2065,287 @@ spec:
 EOF
 ```
 
+#### Test Hostname Based Fault Injection - refer to target cross namespace
+
+##### Create a FaultInjectionPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: FaultInjectionPolicy
+metadata:
+  namespace: http
+  name: fault-injection-hostname-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  hostnames:
+    - hostname: httptest.localhost
+      config: 
+        delay:
+          percent: 60
+          fixed: 15
+          unit: s
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http-route
+  name: fault-injection-hostname-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: FaultInjectionPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: http-cross-1
+EOF
+```
+
+#### Test Route Based Fault Injection - refer to target cross namespace
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: FaultInjectionPolicy
+metadata:
+  namespace: http
+  name: fault-injection-route-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: http-route
+    name: http-cross-1
+  http:
+  - match:
+      path:
+        type: PathPrefix
+        value: /cross
+    config: 
+      delay:
+        percent: 25
+        range: 
+          min: 2
+          max: 9
+        unit: ms
+EOF
+```
+
+##### ReferenceGrant
+If you have created the ReferenceGrant in previous step, you can skip this step.
+
+
 ### Test UpstreamTLSPolicy
+
+#### Test UpstreamTLSPolicy - refer to target and secret in the same namespace
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: test
+  name: upstream-tls-all-same-ns
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        name: https-cert
+      mTLS: true
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target in the same namespace, secret cross namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n test delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-all-same-ns
+```
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: UpstreamTLSPolicy
 metadata:
-  name: upstream-tls-policy
+  namespace: http
+  name: upstream-tls-ts-sc
 spec:
   targetRef:
     group: ""
     kind: Service
-    name: httpbin
-    namespace: httpbin
+    name: httpbin-cross
   ports:
   - port: 8080
     config:
       certificateRef:
-        namespace: httpbin
+        namespace: test
         name: https-cert
       mTLS: false
 EOF
 ```
 
-### Test RetryPolicy
+#### Create a ReferenceGrant for the secret
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: upstream-tls-secret-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http
+  to:
+    - group: ""
+      kind: Secret
+      name: https-cert
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target cross namespace, secret in the same namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n http delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-ts-sc
+```
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: test
+  name: upstream-tls-tc-ss
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        name: https-cert
+      mTLS: true
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: upstream-tls-tc-ss-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target and secret all cross namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n test delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-tc-ss
+```
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: http-route
+  name: upstream-tls-all-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        namespace: test
+        name: https-cert
+      mTLS: false
+EOF
+```
+
+##### Create ReferenceGrants
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: upstream-tls-all-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: upstream-tls-all-cross-2
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Secret
+      name: https-cert
+EOF
+```
+
+
+### Test RetryPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RetryPolicy
 metadata:
+  namespace: test
   name: retry-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: httpbin
   ports:
   - port: 8080
     config:
@@ -1179,23 +2356,112 @@ spec:
 EOF
 ```
 
-### Test GatewayTLSPolicy
+### Test RetryPolicy - refer to target cross namespace
+
+#### Create a RetryPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RetryPolicy
+metadata:
+  namespace: test
+  name: retry-policy-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      retryOn:
+        - "500"
+      numRetries: 7
+      backoffBaseInterval: 3
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: retry-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RetryPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+### Test GatewayTLSPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: GatewayTLSPolicy
 metadata:
+  namespace: test
   name: gateway-tls-policy
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: Gateway
     name: test-gw-1
-    namespace: default
   ports:
   - port: 443
     config:
       mTLS: true
+EOF
+```
+
+### Test GatewayTLSPolicy - refer to target cross namespace
+
+#### Create a GatewayTLSPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: GatewayTLSPolicy
+metadata:
+  namespace: http
+  name: gateway-tls-cross
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: test-gw-1
+    namespace: test
+  ports:
+  - port: 9443
+    config:
+      mTLS: true
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: gateway-tls-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: GatewayTLSPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: test-gw-1
 EOF
 ```

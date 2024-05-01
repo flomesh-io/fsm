@@ -9,13 +9,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processTLSRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
+func (c *GatewayCache) processTLSRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
 			continue
 		}
 
-		allowedListeners := allowedListeners(ref, tlsRoute.GroupVersionKind(), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(tlsRoute), validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -56,16 +56,16 @@ func processTLSRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tlsRou
 	}
 }
 
-func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceInfo) {
+func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceContext) {
 	// DO nothing for now
 }
 
-func generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
+func (c *GatewayCache) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
 	backends := fgw.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendObjectReference, tcpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(tcpRoute, bk.BackendObjectReference); svcPort != nil {
 				backends[svcPort.String()] = backendWeight(bk)
 			}
 		}

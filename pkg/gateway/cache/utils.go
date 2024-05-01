@@ -6,16 +6,10 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/utils"
 
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
 	"golang.org/x/exp/slices"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -23,95 +17,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
-
-func isRefToService(ref gwv1.BackendObjectReference, service client.ObjectKey, ns string) bool {
-	if ref.Group == nil {
-		return false
-	}
-
-	if ref.Kind == nil {
-		return false
-	}
-
-	if (string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesServiceKind) ||
-		(string(*ref.Group) == constants.FlomeshAPIGroup && string(*ref.Kind) == constants.FlomeshAPIServiceImportKind) {
-		if ref.Namespace == nil {
-			if ns != service.Namespace {
-				return false
-			}
-		} else {
-			if string(*ref.Namespace) != service.Namespace {
-				return false
-			}
-		}
-
-		return string(ref.Name) == service.Name
-	}
-
-	return false
-}
-
-func isRefToSecret(ref gwv1.SecretObjectReference, secret client.ObjectKey, ns string) bool {
-	if ref.Group == nil {
-		return false
-	}
-
-	if ref.Kind == nil {
-		return false
-	}
-
-	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
-		if ref.Namespace == nil {
-			if ns != secret.Namespace {
-				return false
-			}
-		} else {
-			if string(*ref.Namespace) != secret.Namespace {
-				return false
-			}
-		}
-
-		return string(ref.Name) == secret.Name
-	}
-
-	return false
-}
-
-func allowedListeners(
-	parentRef gwv1.ParentReference,
-	routeGvk schema.GroupVersionKind,
-	validListeners []gwtypes.Listener,
-) []gwtypes.Listener {
-	var selectedListeners []gwtypes.Listener
-	for _, validListener := range validListeners {
-		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
-			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
-			selectedListeners = append(selectedListeners, validListener)
-		}
-	}
-	log.Debug().Msgf("[GW-CACHE] selectedListeners: %v", selectedListeners)
-
-	if len(selectedListeners) == 0 {
-		return nil
-	}
-
-	allowedListeners := make([]gwtypes.Listener, 0)
-	for _, selectedListener := range selectedListeners {
-		if !selectedListener.AllowsKind(routeGvk) {
-			continue
-		}
-
-		allowedListeners = append(allowedListeners, selectedListener)
-	}
-
-	if len(allowedListeners) == 0 {
-		return nil
-	}
-
-	return allowedListeners
-}
 
 func httpPathMatchType(matchType *gwv1.PathMatchType) fgw.MatchType {
 	if matchType == nil {
@@ -243,54 +149,6 @@ func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[fgw.MatchType]map[string]
 	}
 
 	return headers
-}
-
-func backendRefToServicePortName(ref gwv1.BackendObjectReference, defaultNs string) *fgw.ServicePortName {
-	// ONLY supports Service and ServiceImport backend now
-	if (*ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup) ||
-		(*ref.Kind == constants.FlomeshAPIServiceImportKind && *ref.Group == constants.FlomeshAPIGroup) {
-		return &fgw.ServicePortName{
-			NamespacedName: types.NamespacedName{
-				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
-				Name:      string(ref.Name),
-			},
-			Port: pointer.Int32(int32(*ref.Port)),
-		}
-	}
-
-	return nil
-}
-
-func targetRefToServicePortName(ref gwv1alpha2.PolicyTargetReference, defaultNs string, port int32) *fgw.ServicePortName {
-	// ONLY supports Service and ServiceImport backend now
-	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
-		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
-		return &fgw.ServicePortName{
-			NamespacedName: types.NamespacedName{
-				Namespace: gwutils.Namespace(ref.Namespace, defaultNs),
-				Name:      string(ref.Name),
-			},
-			Port: pointer.Int32(port),
-		}
-	}
-
-	return nil
-}
-
-func passthroughTarget(ref gwv1.BackendRef) *string {
-	// ONLY supports service backend now
-	if *ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup {
-		port := int32(443)
-		if ref.Port != nil {
-			port = int32(*ref.Port)
-		}
-
-		target := fmt.Sprintf("%s:%d", ref.Name, port)
-
-		return &target
-	}
-
-	return nil
 }
 
 func backendWeight(bk gwv1.BackendRef) int32 {
@@ -536,101 +394,6 @@ func getDefaultPort(svcPort corev1.ServicePort) int32 {
 	return svcPort.Port
 }
 
-func toFSMHTTPRouteFilter(filter gwv1.HTTPRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
-	result := fgw.HTTPRouteFilter{Type: filter.Type}
-
-	if filter.RequestHeaderModifier != nil {
-		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
-			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
-			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
-			Remove: filter.RequestHeaderModifier.Remove,
-		}
-	}
-
-	if filter.ResponseHeaderModifier != nil {
-		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
-			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
-			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
-			Remove: filter.ResponseHeaderModifier.Remove,
-		}
-	}
-
-	if filter.RequestRedirect != nil {
-		result.RequestRedirect = &fgw.HTTPRequestRedirectFilter{
-			Scheme:     filter.RequestRedirect.Scheme,
-			Hostname:   toFSMHostname(filter.RequestRedirect.Hostname),
-			Path:       toFSMHTTPPathModifier(filter.RequestRedirect.Path),
-			Port:       toFSMPortNumber(filter.RequestRedirect.Port),
-			StatusCode: filter.RequestRedirect.StatusCode,
-		}
-	}
-
-	if filter.URLRewrite != nil {
-		result.URLRewrite = &fgw.HTTPURLRewriteFilter{
-			Hostname: toFSMHostname(filter.URLRewrite.Hostname),
-			Path:     toFSMHTTPPathModifier(filter.URLRewrite.Path),
-		}
-	}
-
-	if filter.RequestMirror != nil {
-		if svcPort := backendRefToServicePortName(filter.RequestMirror.BackendRef, defaultNs); svcPort != nil {
-			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
-				BackendService: svcPort.String(),
-			}
-
-			services[svcPort.String()] = serviceInfo{
-				svcPortName: *svcPort,
-			}
-		}
-	}
-
-	// TODO: implement it later
-	if filter.ExtensionRef != nil {
-		result.ExtensionRef = filter.ExtensionRef
-	}
-
-	return result
-}
-
-func toFSMGRPCRouteFilter(filter gwv1alpha2.GRPCRouteFilter, defaultNs string, services map[string]serviceInfo) fgw.Filter {
-	result := fgw.GRPCRouteFilter{Type: filter.Type}
-
-	if filter.RequestHeaderModifier != nil {
-		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
-			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
-			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
-			Remove: filter.RequestHeaderModifier.Remove,
-		}
-	}
-
-	if filter.ResponseHeaderModifier != nil {
-		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
-			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
-			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
-			Remove: filter.ResponseHeaderModifier.Remove,
-		}
-	}
-
-	if filter.RequestMirror != nil {
-		if svcPort := backendRefToServicePortName(filter.RequestMirror.BackendRef, defaultNs); svcPort != nil {
-			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
-				BackendService: svcPort.String(),
-			}
-
-			services[svcPort.String()] = serviceInfo{
-				svcPortName: *svcPort,
-			}
-		}
-	}
-
-	// TODO: implement it later
-	if filter.ExtensionRef != nil {
-		result.ExtensionRef = filter.ExtensionRef
-	}
-
-	return result
-}
-
 func toFSMHTTPPathModifier(path *gwv1.HTTPPathModifier) *fgw.HTTPPathModifier {
 	if path == nil {
 		return nil
@@ -693,14 +456,60 @@ func insertProxyTagScript(chains []string) []string {
 	return chains
 }
 
-func setGroupVersionKind[T GatewayAPIResource](objects []T, gvk schema.GroupVersionKind) []client.Object {
-	resources := make([]client.Object, 0)
+func passthroughTarget(ref gwv1.BackendRef) *string {
+	// ONLY supports service backend now
+	if *ref.Kind == constants.KubernetesServiceKind && *ref.Group == constants.KubernetesCoreGroup {
+		port := int32(443)
+		if ref.Port != nil {
+			port = int32(*ref.Port)
+		}
 
-	for _, obj := range objects {
-		obj := client.Object(obj)
-		obj.GetObjectKind().SetGroupVersionKind(gvk)
-		resources = append(resources, obj)
+		target := fmt.Sprintf("%s:%d", ref.Name, port)
+
+		return &target
 	}
 
-	return resources
+	return nil
+}
+
+func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
+	if ref.Group == nil {
+		return false
+	}
+
+	if ref.Kind == nil {
+		return false
+	}
+
+	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
+		return true
+	}
+
+	return false
+}
+
+func isValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool {
+	if ref.Group == nil {
+		return false
+	}
+
+	if ref.Kind == nil {
+		return false
+	}
+
+	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
+		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshAPIGroup) {
+		return true
+	}
+
+	return false
+}
+
+func isValidTargetRefToGroupKindOfService(ref gwv1alpha2.PolicyTargetReference) bool {
+	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
+		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
+		return true
+	}
+
+	return false
 }

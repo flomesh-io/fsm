@@ -85,7 +85,7 @@ type SettingManager struct {
 
 // NewSettingManager returns a new setting manager
 func NewSettingManager(ctx *fctx.ControllerContext) *SettingManager {
-	mc := ctx.Config
+	mc := ctx.Configurator
 	if !mc.IsFLBEnabled() {
 		panic("FLB is not enabled")
 	}
@@ -152,7 +152,7 @@ func (sm *SettingManager) GetDefaultSetting() *Setting {
 
 // CheckSetting checks the setting for the object in the namespace
 func (sm *SettingManager) CheckSetting(obj client.Object) (ctrl.Result, error) {
-	mc := sm.fctx.Config
+	mc := sm.fctx.Configurator
 
 	secrets, err := sm.fctx.KubeClient.CoreV1().
 		Secrets(obj.GetNamespace()).

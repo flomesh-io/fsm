@@ -2,6 +2,7 @@ package cache
 
 import (
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
 
@@ -33,10 +34,11 @@ func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
 }
 
 func (c *GatewayCache) getPortPolicyEnrichers(policies globalPolicyAttachments) []policy.PortPolicyEnricher {
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 	return []policy.PortPolicyEnricher{
-		&policy.RateLimitPortEnricher{Data: policies.rateLimits[gwpkg.PolicyMatchTypePort]},
-		&policy.AccessControlPortEnricher{Data: policies.accessControls[gwpkg.PolicyMatchTypePort]},
-		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS()},
+		&policy.RateLimitPortEnricher{Data: policies.rateLimits[gwpkg.PolicyMatchTypePort], ReferenceGrants: referenceGrants},
+		&policy.AccessControlPortEnricher{Data: policies.accessControls[gwpkg.PolicyMatchTypePort], ReferenceGrants: referenceGrants},
+		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS(), ReferenceGrants: referenceGrants},
 	}
 }
 
@@ -86,7 +88,7 @@ func (c *GatewayCache) rateLimits() map[gwpkg.PolicyMatchType][]gwpav1alpha1.Rat
 		rateLimits[matchType] = make([]gwpav1alpha1.RateLimitPolicy, 0)
 	}
 
-	for _, p := range c.getResourcesFromCache(RateLimitPoliciesResourceType, true) {
+	for _, p := range c.getResourcesFromCache(informers.RateLimitPoliciesResourceType, true) {
 		p := p.(*gwpav1alpha1.RateLimitPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
@@ -132,7 +134,7 @@ func (c *GatewayCache) accessControls() map[gwpkg.PolicyMatchType][]gwpav1alpha1
 		accessControls[matchType] = make([]gwpav1alpha1.AccessControlPolicy, 0)
 	}
 
-	for _, p := range c.getResourcesFromCache(AccessControlPoliciesResourceType, true) {
+	for _, p := range c.getResourcesFromCache(informers.AccessControlPoliciesResourceType, true) {
 		p := p.(*gwpav1alpha1.AccessControlPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
@@ -177,7 +179,7 @@ func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha
 		faultInjections[matchType] = make([]gwpav1alpha1.FaultInjectionPolicy, 0)
 	}
 
-	for _, p := range c.getResourcesFromCache(FaultInjectionPoliciesResourceType, true) {
+	for _, p := range c.getResourcesFromCache(informers.FaultInjectionPoliciesResourceType, true) {
 		p := p.(*gwpav1alpha1.FaultInjectionPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
@@ -210,7 +212,7 @@ func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha
 	return faultInjections
 }
 
-func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object) routePolicies {
+func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolicyAttachments, route client.Object) routePolicies {
 	result := routePolicies{
 		hostnamesRateLimits:      make([]gwpav1alpha1.RateLimitPolicy, 0),
 		httpRouteRateLimits:      make([]gwpav1alpha1.RateLimitPolicy, 0),
@@ -225,7 +227,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.hostnamesRateLimits = append(result.hostnamesRateLimits, rateLimit)
 			}
 		}
@@ -233,7 +236,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.httpRouteRateLimits = append(result.httpRouteRateLimits, rateLimit)
 			}
 		}
@@ -241,7 +245,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, rateLimit := range policies.rateLimits[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(rateLimit.Spec.TargetRef, route) {
+			rateLimit := rateLimit
+			if gwutils.IsRefToTarget(referenceGrants, &rateLimit, rateLimit.Spec.TargetRef, route) {
 				result.grpcRouteRateLimits = append(result.grpcRouteRateLimits, rateLimit)
 			}
 		}
@@ -249,7 +254,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.hostnamesAccessControls = append(result.hostnamesAccessControls, ac)
 			}
 		}
@@ -257,7 +263,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.httpRouteAccessControls = append(result.httpRouteAccessControls, ac)
 			}
 		}
@@ -265,7 +272,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, ac := range policies.accessControls[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(ac.Spec.TargetRef, route) {
+			ac := ac
+			if gwutils.IsRefToTarget(referenceGrants, &ac, ac.Spec.TargetRef, route) {
 				result.grpcRouteAccessControls = append(result.grpcRouteAccessControls, ac)
 			}
 		}
@@ -273,7 +281,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHostnames] {
-			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.hostnamesFaultInjections = append(result.hostnamesFaultInjections, fj)
 			}
 		}
@@ -281,7 +290,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeHTTPRoute] {
-			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.httpRouteFaultInjections = append(result.httpRouteFaultInjections, fj)
 			}
 		}
@@ -289,7 +299,8 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 
 	if len(policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 		for _, fj := range policies.faultInjections[gwpkg.PolicyMatchTypeGRPCRoute] {
-			if gwutils.IsRefToTarget(fj.Spec.TargetRef, route) {
+			fj := fj
+			if gwutils.IsRefToTarget(referenceGrants, &fj, fj.Spec.TargetRef, route) {
 				result.grpcRouteFaultInjections = append(result.grpcRouteFaultInjections, fj)
 			}
 		}
@@ -301,12 +312,12 @@ func filterPoliciesByRoute(policies globalPolicyAttachments, route client.Object
 func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
 	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyConfig)
 
-	for _, sessionSticky := range c.getResourcesFromCache(SessionStickyPoliciesResourceType, true) {
+	for _, sessionSticky := range c.getResourcesFromCache(informers.SessionStickyPoliciesResourceType, true) {
 		sessionSticky := sessionSticky.(*gwpav1alpha1.SessionStickyPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(sessionSticky.Status.Conditions) {
 			for _, p := range sessionSticky.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(sessionSticky.Spec.TargetRef, sessionSticky.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(sessionSticky, sessionSticky.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					cfg := sessionsticky.ComputeSessionStickyConfig(p.Config, sessionSticky.Spec.DefaultConfig)
 
 					if cfg == nil {
@@ -330,12 +341,12 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
 	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerType)
 
-	for _, lb := range c.getResourcesFromCache(LoadBalancerPoliciesResourceType, true) {
+	for _, lb := range c.getResourcesFromCache(informers.LoadBalancerPoliciesResourceType, true) {
 		lb := lb.(*gwpav1alpha1.LoadBalancerPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(lb.Status.Conditions) {
 			for _, p := range lb.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(lb.Spec.TargetRef, lb.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(lb, lb.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					t := loadbalancer.ComputeLoadBalancerType(p.Type, lb.Spec.DefaultType)
 
 					if t == nil {
@@ -359,12 +370,12 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
 	configs := make(map[string]*gwpav1alpha1.CircuitBreakingConfig)
 
-	for _, circuitBreaking := range c.getResourcesFromCache(CircuitBreakingPoliciesResourceType, true) {
+	for _, circuitBreaking := range c.getResourcesFromCache(informers.CircuitBreakingPoliciesResourceType, true) {
 		circuitBreaking := circuitBreaking.(*gwpav1alpha1.CircuitBreakingPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(circuitBreaking.Status.Conditions) {
 			for _, p := range circuitBreaking.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(circuitBreaking.Spec.TargetRef, circuitBreaking.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(circuitBreaking, circuitBreaking.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					cfg := circuitbreaking.ComputeCircuitBreakingConfig(p.Config, circuitBreaking.Spec.DefaultConfig)
 
 					if cfg == nil {
@@ -388,12 +399,12 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
 	configs := make(map[string]*gwpav1alpha1.HealthCheckConfig)
 
-	for _, healthCheck := range c.getResourcesFromCache(HealthCheckPoliciesResourceType, true) {
+	for _, healthCheck := range c.getResourcesFromCache(informers.HealthCheckPoliciesResourceType, true) {
 		healthCheck := healthCheck.(*gwpav1alpha1.HealthCheckPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(healthCheck.Status.Conditions) {
 			for _, p := range healthCheck.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(healthCheck.Spec.TargetRef, healthCheck.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(healthCheck, healthCheck.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					cfg := healthcheck.ComputeHealthCheckConfig(p.Config, healthCheck.Spec.DefaultConfig)
 
 					if cfg == nil {
@@ -416,35 +427,23 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 
 func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	configs := make(map[string]*policy.UpstreamTLSConfig)
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
-	for _, upstreamTLS := range c.getResourcesFromCache(UpstreamTLSPoliciesResourceType, true) {
+	for _, upstreamTLS := range c.getResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, true) {
 		upstreamTLS := upstreamTLS.(*gwpav1alpha1.UpstreamTLSPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(upstreamTLS.Status.Conditions) {
 			for _, p := range upstreamTLS.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(upstreamTLS.Spec.TargetRef, upstreamTLS.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(upstreamTLS, upstreamTLS.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					cfg := upstreamtls.ComputeUpstreamTLSConfig(p.Config, upstreamTLS.Spec.DefaultConfig)
 
 					if cfg == nil {
 						continue
 					}
 
-					if string(*cfg.CertificateRef.Group) != constants.KubernetesCoreGroup {
-						continue
-					}
-
-					if string(*cfg.CertificateRef.Kind) != constants.KubernetesSecretKind {
-						continue
-					}
-
-					secretKey := client.ObjectKey{
-						Namespace: gwutils.Namespace(cfg.CertificateRef.Namespace, upstreamTLS.Namespace),
-						Name:      string(cfg.CertificateRef.Name),
-					}
-
-					secret, err := c.getSecretFromCache(secretKey)
+					secret, err := c.secretRefToSecret(upstreamTLS, cfg.CertificateRef, referenceGrants)
 					if err != nil {
-						log.Error().Msgf("Failed to get Secret %s: %s", secretKey, err)
+						log.Error().Msgf("Failed to resolve Secret: %s", err)
 						continue
 					}
 
@@ -468,12 +467,12 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	configs := make(map[string]*gwpav1alpha1.RetryConfig)
 
-	for _, retryPolicy := range c.getResourcesFromCache(RetryPoliciesResourceType, true) {
+	for _, retryPolicy := range c.getResourcesFromCache(informers.RetryPoliciesResourceType, true) {
 		retryPolicy := retryPolicy.(*gwpav1alpha1.RetryPolicy)
 
 		if gwutils.IsAcceptedPolicyAttachment(retryPolicy.Status.Conditions) {
 			for _, p := range retryPolicy.Spec.Ports {
-				if svcPortName := targetRefToServicePortName(retryPolicy.Spec.TargetRef, retryPolicy.Namespace, int32(p.Port)); svcPortName != nil {
+				if svcPortName := c.targetRefToServicePortName(retryPolicy, retryPolicy.Spec.TargetRef, int32(p.Port)); svcPortName != nil {
 					cfg := retry.ComputeRetryConfig(p.Config, retryPolicy.Spec.DefaultConfig)
 
 					if cfg == nil {
@@ -497,7 +496,7 @@ func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 func (c *GatewayCache) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
 	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
 
-	for _, gatewayTLSPolicy := range c.getResourcesFromCache(GatewayTLSPoliciesResourceType, true) {
+	for _, gatewayTLSPolicy := range c.getResourcesFromCache(informers.GatewayTLSPoliciesResourceType, true) {
 		gatewayTLSPolicy := gatewayTLSPolicy.(*gwpav1alpha1.GatewayTLSPolicy)
 
 		if !gwutils.IsAcceptedPolicyAttachment(gatewayTLSPolicy.Status.Conditions) {

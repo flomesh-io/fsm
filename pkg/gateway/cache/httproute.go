@@ -3,13 +3,16 @@ package cache
 import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
-	routePolicies := filterPoliciesByRoute(policies, httpRoute)
+func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	routePolicies := filterPoliciesByRoute(referenceGrants, policies, httpRoute)
 	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
@@ -18,7 +21,7 @@ func processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpR
 			continue
 		}
 
-		allowedListeners := allowedListeners(ref, httpRoute.GroupVersionKind(), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(httpRoute), validListeners)
 		log.Debug().Msgf("allowedListeners: %v", allowedListeners)
 		if len(allowedListeners) == 0 {
 			continue
@@ -35,7 +38,7 @@ func processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpR
 
 			httpRule := fgw.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := generateHTTPRouteConfig(httpRoute, routePolicies, services)
+				r := c.generateHTTPRouteConfig(httpRoute, routePolicies, services)
 
 				for _, enricher := range hostnameEnrichers {
 					enricher.Enrich(hostname, r)
@@ -56,7 +59,7 @@ func processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpR
 	}
 }
 
-func generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.HTTPRouteRuleSpec {
+func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceContext) *fgw.HTTPRouteRuleSpec {
 	httpSpec := &fgw.HTTPRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeHTTP,
 		Matches:   make([]fgw.HTTPTrafficMatch, 0),
@@ -67,10 +70,11 @@ func generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolic
 		backends := map[string]fgw.BackendServiceConfig{}
 
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, httpRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+				log.Debug().Msgf("Found svcPort: %v", svcPort)
 				svcLevelFilters := make([]fgw.Filter, 0)
 				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMHTTPRouteFilter(filter, httpRoute.Namespace, services))
+					svcLevelFilters = append(svcLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, filter, services))
 				}
 
 				backends[svcPort.String()] = fgw.BackendServiceConfig{
@@ -78,7 +82,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolic
 					Filters: svcLevelFilters,
 				}
 
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}
@@ -86,7 +90,7 @@ func generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolic
 
 		ruleLevelFilters := make([]fgw.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMHTTPRouteFilter(ruleFilter, httpRoute.Namespace, services))
+			ruleLevelFilters = append(ruleLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, ruleFilter, services))
 		}
 
 		for _, m := range rule.Matches {

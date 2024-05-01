@@ -20,7 +20,7 @@ func (p *RateLimitPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) 
 	//
 	//cache.ratelimits[utils.ObjectKey(policy)] = struct{}{}
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
 // Delete removes a RateLimitPolicy from the cache and returns true if the policy was found
@@ -40,5 +40,5 @@ func (p *RateLimitPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) 
 	//
 	//return found
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }

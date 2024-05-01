@@ -22,21 +22,20 @@
  * SOFTWARE.
  */
 
-package httproute
+package referencegrant
 
 import (
 	"net/http"
 
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1validation "sigs.k8s.io/gateway-api/apis/v1/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
@@ -44,37 +43,37 @@ type register struct {
 	*webhook.RegisterConfig
 }
 
-// NewRegister creates a new HTTPRoute webhook register
+// NewRegister creates a new ReferenceGrant webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 	return &register{
 		RegisterConfig: cfg,
 	}
 }
 
-// GetWebhooks returns the webhooks to be registered for HTTPRoute
+// GetWebhooks returns the webhooks to be registered for ReferenceGrant
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
 		[]string{constants.GatewayAPIGroup},
-		[]string{"v1"},
-		[]string{"httproutes"},
+		[]string{"v1beta1"},
+		[]string{"referencegrants"},
 	)
 
 	return []admissionregv1.MutatingWebhook{flomeshadmission.NewMutatingWebhook(
-			"mhttproute.kb.flomesh.io",
+			"mreferencegrant.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.HTTPRouteMutatingWebhookPath,
+			constants.ReferenceGrantMutatingWebhookPath,
 			r.CaBundle,
 			nil,
 			nil,
 			admissionregv1.Ignore,
 			[]admissionregv1.RuleWithOperations{rule},
 		)}, []admissionregv1.ValidatingWebhook{flomeshadmission.NewValidatingWebhook(
-			"vhttproute.kb.flomesh.io",
+			"vreferencegrant.kb.flomesh.io",
 			r.WebhookSvcNs,
 			r.WebhookSvcName,
-			constants.HTTPRouteValidatingWebhookPath,
+			constants.ReferenceGrantValidatingWebhookPath,
 			r.CaBundle,
 			nil,
 			nil,
@@ -83,11 +82,11 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 		)}
 }
 
-// GetHandlers returns the handlers to be registered for HTTPRoute
+// GetHandlers returns the handlers to be registered for ReferenceGrant
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.HTTPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
-		constants.HTTPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
+		constants.ReferenceGrantMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.ReferenceGrantValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
 	}
 }
 
@@ -105,12 +104,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
-	return &gwv1.HTTPRoute{}
+	return &gwv1beta1.ReferenceGrant{}
 }
 
-// SetDefaults sets the default values for the HTTPRoute
+// SetDefaults sets the default values for the ReferenceGrant
 func (w *defaulter) SetDefaults(obj interface{}) {
-	route, ok := obj.(*gwv1.HTTPRoute)
+	route, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
 		return
 	}
@@ -134,20 +133,20 @@ type validator struct {
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
-	return &gwv1.HTTPRoute{}
+	return &gwv1beta1.ReferenceGrant{}
 }
 
-// ValidateCreate validates the creation of the HTTPRoute
+// ValidateCreate validates the creation of the ReferenceGrant
 func (w *validator) ValidateCreate(obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-// ValidateUpdate validates the update of the HTTPRoute
+// ValidateUpdate validates the update of the ReferenceGrant
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
 	return w.doValidation(obj)
 }
 
-// ValidateDelete validates the deletion of the HTTPRoute
+// ValidateDelete validates the deletion of the ReferenceGrant
 func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
@@ -160,18 +159,9 @@ func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator
 }
 
 func (w *validator) doValidation(obj interface{}) error {
-	route, ok := obj.(*gwv1.HTTPRoute)
+	_, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
 		return nil
-	}
-
-	errorList := gwv1validation.ValidateHTTPRoute(route)
-	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
-	if w.cfg.GetFeatureFlags().EnableValidateHTTPRouteHostnames {
-		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)
-	}
-	if len(errorList) > 0 {
-		return utils.ErrorListToError(errorList)
 	}
 
 	return nil

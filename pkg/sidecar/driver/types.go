@@ -2,18 +2,14 @@ package driver
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
-	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/health"
-	"github.com/flomesh-io/fsm/pkg/messaging"
 )
 
 // Driver is an interface that must be implemented by a sidecar driver.
@@ -43,25 +39,4 @@ type InjectorContext struct {
 	BootstrapCertificateCNPrefix string
 	BootstrapCertificate         *certificate.Certificate
 	DryRun                       bool
-}
-
-// ControllerCtxKey the pointer is the key that a ControllerContext returns itself for.
-var ControllerCtxKey int
-
-// ControllerContext carries the arguments for invoking ControllerDriver.Start
-type ControllerContext struct {
-	context.Context
-
-	ProxyServerPort  uint32
-	ProxyServiceCert *certificate.Certificate
-	FsmNamespace     string
-	KubeConfig       *rest.Config
-	Configurator     configurator.Configurator
-	MeshCatalog      catalog.MeshCataloger
-	CertManager      *certificate.Manager
-	MsgBroker        *messaging.Broker
-	DebugHandlers    map[string]http.Handler
-	CancelFunc       func()
-	Stop             chan struct {
-	}
 }

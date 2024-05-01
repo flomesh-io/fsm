@@ -423,6 +423,9 @@ const (
 	// GatewayAPIUDPRouteKind is the kind name of UDPRoute used in Gateway API
 	GatewayAPIUDPRouteKind = "UDPRoute"
 
+	// GatewayAPIReferenceGrantKind is the kind name of ReferenceGrant used in Gateway API
+	GatewayAPIReferenceGrantKind = "ReferenceGrant"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 
@@ -514,7 +517,7 @@ const (
 // Gateway API constants
 const (
 	// FSMGatewayClassName is the name of FSM GatewayClass
-	FSMGatewayClassName = "fsm-gateway-cls"
+	FSMGatewayClassName = "fsm"
 
 	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"
@@ -560,6 +563,12 @@ const (
 
 	// UDPRouteValidatingWebhookPath is the path at which the UDP route validating webhook is served
 	UDPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-udproute"
+
+	// ReferenceGrantMutatingWebhookPath is the path at which the ReferenceGrant mutating webhook is served
+	ReferenceGrantMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-referencegrant"
+
+	// ReferenceGrantValidatingWebhookPath is the path at which the ReferenceGrant validating webhook is served
+	ReferenceGrantValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-referencegrant"
 )
 
 // PolicyAttachment constants
@@ -928,6 +937,7 @@ var (
 	TCPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
 	UDPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
 	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
+	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
 	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
 	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
 	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RateLimitPolicyKind)

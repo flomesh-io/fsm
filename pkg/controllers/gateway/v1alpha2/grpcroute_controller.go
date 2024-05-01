@@ -54,7 +54,7 @@ func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &grpcRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("GRPCRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
 	}
 }
 
@@ -63,7 +63,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	grpcRoute := &gwv1alpha2.GRPCRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, grpcRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1alpha2.GRPCRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1alpha2.GRPCRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +72,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if grpcRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(grpcRoute)
+		r.fctx.GatewayEventHandler.OnDelete(grpcRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +88,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(grpcRoute, false)
+	r.fctx.GatewayEventHandler.OnAdd(grpcRoute, false)
 
 	return ctrl.Result{}, nil
 }

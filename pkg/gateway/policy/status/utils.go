@@ -56,6 +56,18 @@ func AcceptedCondition(policy client.Object) metav1.Condition {
 	}
 }
 
+// NoAccessCondition returns the no access condition with the given message for the policy
+func NoAccessCondition(policy client.Object, message string) metav1.Condition {
+	return metav1.Condition{
+		Type:               string(gwv1alpha2.PolicyConditionAccepted),
+		Status:             metav1.ConditionFalse,
+		ObservedGeneration: policy.GetGeneration(),
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Reason:             "NoAccessToTarget",
+		Message:            message,
+	}
+}
+
 // ConditionPointer returns the pointer of the given condition
 func ConditionPointer(condition metav1.Condition) *metav1.Condition {
 	return &condition

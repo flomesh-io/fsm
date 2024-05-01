@@ -4,13 +4,16 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceInfo) {
-	routePolicies := filterPoliciesByRoute(policies, grpcRoute)
+func (c *GatewayCache) processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcRoute *gwv1alpha2.GRPCRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	routePolicies := filterPoliciesByRoute(referenceGrants, policies, grpcRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {
@@ -18,7 +21,7 @@ func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcR
 			continue
 		}
 
-		allowedListeners := allowedListeners(ref, grpcRoute.GroupVersionKind(), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(grpcRoute), validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -33,7 +36,7 @@ func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcR
 
 			grpcRule := fgw.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := generateGRPCRouteCfg(grpcRoute, routePolicies, services)
+				r := c.generateGRPCRouteCfg(grpcRoute, routePolicies, services)
 
 				for _, enricher := range hostnameEnrichers {
 					enricher.Enrich(hostname, r)
@@ -54,7 +57,7 @@ func processGRPCRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, grpcR
 	}
 }
 
-func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceInfo) *fgw.GRPCRouteRuleSpec {
+func (c *GatewayCache) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies, services map[string]serviceContext) *fgw.GRPCRouteRuleSpec {
 	grpcSpec := &fgw.GRPCRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeGRPC,
 		Matches:   make([]fgw.GRPCTrafficMatch, 0),
@@ -65,10 +68,10 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 		backends := map[string]fgw.BackendServiceConfig{}
 
 		for _, bk := range rule.BackendRefs {
-			if svcPort := backendRefToServicePortName(bk.BackendRef.BackendObjectReference, grpcRoute.Namespace); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
 				svcLevelFilters := make([]fgw.Filter, 0)
 				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, toFSMGRPCRouteFilter(filter, grpcRoute.Namespace, services))
+					svcLevelFilters = append(svcLevelFilters, c.toFSMGRPCRouteFilter(grpcRoute, filter, services))
 				}
 
 				backends[svcPort.String()] = fgw.BackendServiceConfig{
@@ -76,7 +79,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 					Filters: svcLevelFilters,
 				}
 
-				services[svcPort.String()] = serviceInfo{
+				services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}
@@ -84,7 +87,7 @@ func generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePo
 
 		ruleLevelFilters := make([]fgw.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, toFSMGRPCRouteFilter(ruleFilter, grpcRoute.Namespace, services))
+			ruleLevelFilters = append(ruleLevelFilters, c.toFSMGRPCRouteFilter(grpcRoute, ruleFilter, services))
 		}
 
 		for _, m := range rule.Matches {
