@@ -5,17 +5,16 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processTLSRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tlsRoute *gwv1alpha2.TLSRoute, rules map[int32]fgw.RouteRule) {
+func (c *ConfigContext) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
+		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(tlsRoute), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(tlsRoute), c.validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -51,16 +50,18 @@ func (c *GatewayCache) processTLSRoute(gw *gwv1.Gateway, validListeners []gwtype
 				}
 			}
 
-			rules[int32(listener.Port)] = tlsRule
+			c.rules[int32(listener.Port)] = tlsRule
 		}
 	}
+
+	c.processTLSBackends(tlsRoute)
 }
 
-func processTLSBackends(_ *gwv1alpha2.TLSRoute, _ map[string]serviceContext) {
+func (c *ConfigContext) processTLSBackends(_ *gwv1alpha2.TLSRoute) {
 	// DO nothing for now
 }
 
-func (c *GatewayCache) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
+func (c *ConfigContext) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
 	backends := fgw.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {

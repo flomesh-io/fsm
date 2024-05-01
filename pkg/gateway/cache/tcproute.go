@@ -5,17 +5,16 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processTCPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, tcpRoute *gwv1alpha2.TCPRoute, rules map[int32]fgw.RouteRule) {
+func (c *ConfigContext) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
 	for _, ref := range tcpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
+		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(tcpRoute), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(tcpRoute), c.validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -47,19 +46,21 @@ func (c *GatewayCache) processTCPRoute(gw *gwv1.Gateway, validListeners []gwtype
 					tlsRule[hostname] = c.generateTLSTerminateRouteCfg(tcpRoute)
 				}
 
-				rules[int32(listener.Port)] = tlsRule
+				c.rules[int32(listener.Port)] = tlsRule
 			case gwv1.TCPProtocolType:
-				rules[int32(listener.Port)] = c.generateTCPRouteCfg(tcpRoute)
+				c.rules[int32(listener.Port)] = c.generateTCPRouteCfg(tcpRoute)
 			}
 		}
 	}
+
+	c.processTCPBackends(tcpRoute)
 }
 
-func (c *GatewayCache) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, services map[string]serviceContext) {
+func (c *ConfigContext) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference); svcPort != nil {
-				services[svcPort.String()] = serviceContext{
+				c.services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}
@@ -67,7 +68,7 @@ func (c *GatewayCache) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute, service
 	}
 }
 
-func (c *GatewayCache) generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
+func (c *ConfigContext) generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
 	backends := fgw.TCPRouteRule{}
 
 	for _, rule := range tcpRoute.Spec.Rules {
