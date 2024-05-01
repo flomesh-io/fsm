@@ -14,11 +14,14 @@
 
   Please note: it exposes 5 ports
   - `8090`: **HTTP**
+  - `9090`: **HTTP**, for cross namespace reference
   - `7443`: **HTTPS**
   - `8443`: **TLS Passthrough**
   - `9443`: **TLS Terminate**
   - `3000`: **TCP**
+  - `3001`: **TCP**, for cross namespace reference
   - `4000`: **UDP**
+  - `4001`: **UDP**, for cross namespace reference
   
 - Make docker images available to the cluster
   ```shell
@@ -2143,18 +2146,47 @@ If you have created the ReferenceGrant in previous step, you can skip this step.
 
 ### Test UpstreamTLSPolicy
 
+#### Test UpstreamTLSPolicy - refer to target and secret in the same namespace
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: UpstreamTLSPolicy
 metadata:
-  name: upstream-tls-policy
+  namespace: test
+  name: upstream-tls-all-same-ns
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: test
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        name: https-cert
+      mTLS: true
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target in the same namespace, secret cross namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n test delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-all-same-ns
+```
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: http
+  name: upstream-tls-ts-sc
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: httpbin-cross
   ports:
   - port: 8080
     config:
@@ -2165,20 +2197,155 @@ spec:
 EOF
 ```
 
-### Test RetryPolicy
+#### Create a ReferenceGrant for the secret
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: upstream-tls-secret-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http
+  to:
+    - group: ""
+      kind: Secret
+      name: https-cert
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target cross namespace, secret in the same namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n http delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-ts-sc
+```
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: test
+  name: upstream-tls-tc-ss
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        name: https-cert
+      mTLS: true
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: upstream-tls-tc-ss-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+#### Test UpstreamTLSPolicy - refer to target and secret all cross namespace
+
+Delete the previous UpstreamTLSPolicy for the same service port 8080, otherwise it will be conflicted with the new one.
+```shell
+kubectl -n test delete upstreamtlspolicies.gateway.flomesh.io upstream-tls-tc-ss
+```
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: UpstreamTLSPolicy
+metadata:
+  namespace: http-route
+  name: upstream-tls-all-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      certificateRef:
+        namespace: test
+        name: https-cert
+      mTLS: false
+EOF
+```
+
+##### Create ReferenceGrants
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: upstream-tls-all-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: upstream-tls-all-cross-2
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: UpstreamTLSPolicy
+      namespace: http-route
+  to:
+    - group: ""
+      kind: Secret
+      name: https-cert
+EOF
+```
+
+
+### Test RetryPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: RetryPolicy
 metadata:
+  namespace: test
   name: retry-policy
 spec:
   targetRef:
     group: ""
     kind: Service
     name: httpbin
-    namespace: test
   ports:
   - port: 8080
     config:
@@ -2189,14 +2356,83 @@ spec:
 EOF
 ```
 
-### Test GatewayTLSPolicy
+### Test RetryPolicy - refer to target cross namespace
+
+#### Create a RetryPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: RetryPolicy
+metadata:
+  namespace: test
+  name: retry-policy-cross
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    namespace: http
+    name: httpbin-cross
+  ports:
+  - port: 8080
+    config:
+      retryOn:
+        - "500"
+      numRetries: 7
+      backoffBaseInterval: 3
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: http
+  name: retry-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: RetryPolicy
+      namespace: test
+  to:
+    - group: ""
+      kind: Service
+      name: httpbin-cross
+EOF
+```
+
+### Test GatewayTLSPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
 apiVersion: gateway.flomesh.io/v1alpha1
 kind: GatewayTLSPolicy
 metadata:
+  namespace: test
   name: gateway-tls-policy
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: test-gw-1
+  ports:
+  - port: 443
+    config:
+      mTLS: true
+EOF
+```
+
+### Test GatewayTLSPolicy - refer to target cross namespace
+
+#### Create a GatewayTLSPolicy
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.flomesh.io/v1alpha1
+kind: GatewayTLSPolicy
+metadata:
+  namespace: http
+  name: gateway-tls-cross
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -2204,8 +2440,28 @@ spec:
     name: test-gw-1
     namespace: test
   ports:
-  - port: 443
+  - port: 9443
     config:
       mTLS: true
+EOF
+```
+
+##### Create a ReferenceGrant
+```shell
+kubectl apply -f - <<EOF
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  namespace: test
+  name: gateway-tls-cross-1
+spec:
+  from:
+    - group: gateway.flomesh.io
+      kind: GatewayTLSPolicy
+      namespace: http
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: test-gw-1
 EOF
 ```
