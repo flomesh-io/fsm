@@ -749,6 +749,15 @@ const (
 	// FLBHashAnnotation is the annotation used to indicate the hash of the service
 	FLBHashAnnotation = FLBPrefix + "/hash"
 
+	// FLBXForwardedForEnabledAnnotation is the annotation used to indicate the x-forwarded-for is enabled or not
+	FLBXForwardedForEnabledAnnotation = FLBPrefix + "/x-forwarded-for-enabled"
+
+	// FLBLimitSizeAnnotation is the annotation used to indicate the limit size
+	FLBLimitSizeAnnotation = FLBPrefix + "/limit-size"
+
+	// FLBLimitSyncRateAnnotation is the annotation used to indicate the limit sync rate
+	FLBLimitSyncRateAnnotation = FLBPrefix + "/limit-sync-rate"
+
 	// FLBConfigSecretLabel is the label used to indicate the secret
 	FLBConfigSecretLabel = FLBPrefix + "/config"
 

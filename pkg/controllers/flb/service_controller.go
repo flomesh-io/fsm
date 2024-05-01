@@ -413,14 +413,17 @@ func (r *serviceReconciler) getFLBParameters(svc *corev1.Service) map[string]str
 	}
 
 	params := map[string]string{
-		flbAddressPoolHeaderName:    r.getAddressPool(svc),
-		flbDesiredIPHeaderName:      svc.Annotations[constants.FLBDesiredIPAnnotation],
-		flbMaxConnectionsHeaderName: svc.Annotations[constants.FLBMaxConnectionsAnnotation],
-		flbReadTimeoutHeaderName:    svc.Annotations[constants.FLBReadTimeoutAnnotation],
-		flbWriteTimeoutHeaderName:   svc.Annotations[constants.FLBWriteTimeoutAnnotation],
-		flbIdleTimeoutHeaderName:    svc.Annotations[constants.FLBIdleTimeoutAnnotation],
-		flbAlgoHeaderName:           r.getAlgorithm(svc),
-		flbTagsHeaderName:           r.getTags(svc),
+		flbAddressPoolHeaderName:          r.getAddressPool(svc),
+		flbDesiredIPHeaderName:            svc.Annotations[constants.FLBDesiredIPAnnotation],
+		flbMaxConnectionsHeaderName:       svc.Annotations[constants.FLBMaxConnectionsAnnotation],
+		flbReadTimeoutHeaderName:          svc.Annotations[constants.FLBReadTimeoutAnnotation],
+		flbWriteTimeoutHeaderName:         svc.Annotations[constants.FLBWriteTimeoutAnnotation],
+		flbIdleTimeoutHeaderName:          svc.Annotations[constants.FLBIdleTimeoutAnnotation],
+		flbAlgoHeaderName:                 r.getAlgorithm(svc),
+		flbTagsHeaderName:                 r.getTags(svc),
+		flbXForwardedForEnabledHeaderName: svc.Annotations[constants.FLBXForwardedForEnabledAnnotation],
+		flbLimitSizeHeaderName:            svc.Annotations[constants.FLBLimitSizeAnnotation],
+		flbLimitSyncRateHeaderName:        svc.Annotations[constants.FLBLimitSyncRateAnnotation],
 	}
 
 	if flb.IsTLSEnabled(svc) {
