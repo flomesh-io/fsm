@@ -35,6 +35,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+	k8scache "k8s.io/client-go/tools/cache"
+
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
 	"github.com/ghodss/yaml"
@@ -91,12 +94,20 @@ type serviceTag struct {
 func NewServiceReconciler(ctx *fctx.ControllerContext, settingManager *SettingManager) controllers.Reconciler {
 	log.Info().Msgf("Creating FLB service reconciler ...")
 
-	return &serviceReconciler{
+	recon := &serviceReconciler{
 		recorder:   ctx.Manager.GetEventRecorderFor("FLB"),
 		fctx:       ctx,
 		settingMgr: settingManager,
 		cache:      make(map[types.NamespacedName]*corev1.Service),
 	}
+
+	ctx.InformerCollection.AddEventHandler(informers.InformerKeyService, k8scache.ResourceEventHandlerFuncs{
+		AddFunc:    recon.onSvcAdd,
+		UpdateFunc: recon.onSvcUpdate,
+		DeleteFunc: recon.onSvcDelete,
+	})
+
+	return recon
 }
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -177,29 +188,29 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *serviceReconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
-	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		log.Debug().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
+	//if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
+	log.Debug().Msgf("Service %s/%s is being deleted from FLB ...", svc.Namespace, svc.Name)
 
-		setting := r.settingMgr.GetSetting(svc.Namespace)
-		result := make(map[string][]string)
-		for _, port := range svc.Spec.Ports {
-			if !isSupportedProtocol(port.Protocol) {
-				continue
-			}
-
-			svcKey := serviceKey(setting, svc, port)
-			result[svcKey] = make([]string, 0)
+	setting := r.settingMgr.GetSetting(svc.Namespace)
+	result := make(map[string][]string)
+	for _, port := range svc.Spec.Ports {
+		if !isSupportedProtocol(port.Protocol) {
+			continue
 		}
 
-		params := r.getFLBParameters(svc)
-		if _, err := r.updateFLB(svc, params, result, true); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		if svc.DeletionTimestamp != nil {
-			return ctrl.Result{}, r.removeFinalizer(ctx, svc)
-		}
+		svcKey := serviceKey(setting, svc, port)
+		result[svcKey] = make([]string, 0)
 	}
+
+	params := r.getFLBParameters(svc)
+	if _, err := r.updateFLB(svc, params, result, true); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if svc.DeletionTimestamp != nil {
+		return ctrl.Result{}, r.removeFinalizer(ctx, svc)
+	}
+	//}
 
 	return ctrl.Result{}, nil
 }
