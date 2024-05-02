@@ -27,8 +27,6 @@ func (r *serviceReconciler) onSvcUpdate(oldObj, newObj interface{}) {
 
 	kubeClient := r.fctx.KubeClient
 	if flb.IsFLBEnabled(oldSvc, kubeClient) && !flb.IsFLBEnabled(newSvc, kubeClient) {
-		log.Debug().Msgf("[FLB] Service %s/%s is being deleted from FLB", newSvc.Namespace, newSvc.Name)
-
 		retriableFn := func(err error) bool {
 			return err != nil
 		}
