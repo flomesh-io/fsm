@@ -5,17 +5,16 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processUDPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, udpRoute *gwv1alpha2.UDPRoute, rules map[int32]fgw.RouteRule) {
+func (c *ConfigContext) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
 	for _, ref := range udpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
+		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(udpRoute), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(udpRoute), c.validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -23,17 +22,19 @@ func (c *GatewayCache) processUDPRoute(gw *gwv1.Gateway, validListeners []gwtype
 		for _, listener := range allowedListeners {
 			switch listener.Protocol {
 			case gwv1.UDPProtocolType:
-				rules[int32(listener.Port)] = c.generateUDPRouteCfg(udpRoute)
+				c.rules[int32(listener.Port)] = c.generateUDPRouteCfg(udpRoute)
 			}
 		}
 	}
+
+	c.processUDPBackends(udpRoute)
 }
 
-func (c *GatewayCache) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, services map[string]serviceContext) {
+func (c *ConfigContext) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute) {
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
-				services[svcPort.String()] = serviceContext{
+				c.services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}
@@ -41,7 +42,7 @@ func (c *GatewayCache) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute, service
 	}
 }
 
-func (c *GatewayCache) generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
+func (c *ConfigContext) generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
 	backends := fgw.UDPRouteRule{}
 
 	for _, rule := range udpRoute.Spec.Rules {

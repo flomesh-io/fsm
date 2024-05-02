@@ -1,0 +1,543 @@
+package cache
+
+import (
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/types"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
+	"github.com/flomesh-io/fsm/pkg/configurator"
+
+	v1 "k8s.io/client-go/listers/core/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+	"github.com/flomesh-io/fsm/pkg/utils"
+)
+
+type ConfigContext struct {
+	cache           *GatewayCache
+	gateway         *gwv1.Gateway
+	policies        globalPolicyAttachments
+	referenceGrants []client.Object
+	validListeners  []gwtypes.Listener
+	services        map[string]serviceContext
+	rules           map[int32]fgw.RouteRule
+}
+
+func (c *ConfigContext) build() *fgw.ConfigSpec {
+	// those three methods must run in order, as they depend on previous results
+	listeners := c.listeners()
+	rules := c.routeRules()
+	services := c.serviceConfigs()
+
+	configSpec := &fgw.ConfigSpec{
+		Defaults:   c.defaults(),
+		Listeners:  listeners,
+		RouteRules: rules,
+		Services:   services,
+		Chains:     c.chains(),
+	}
+	configSpec.Version = utils.SimpleHash(configSpec)
+
+	return configSpec
+}
+
+func (c *ConfigContext) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
+	return c.cache.getResourcesFromCache(resourceType, shouldSort)
+}
+
+func (c *ConfigContext) getNamespaceLister() v1.NamespaceLister {
+	return c.cache.informers.GetListers().Namespace
+}
+
+func (c *ConfigContext) getConfig() configurator.Configurator {
+	return c.cache.cfg
+}
+
+func (c *ConfigContext) isDebugEnabled() bool {
+	switch c.getConfig().GetFGWLogLevel() {
+	case "debug", "trace":
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *ConfigContext) listeners() []fgw.Listener {
+	listeners := make([]fgw.Listener, 0)
+	enrichers := c.getPortPolicyEnrichers()
+
+	for _, l := range c.validListeners {
+		listener := &fgw.Listener{
+			Protocol: l.Protocol,
+			Listen:   c.listenPort(l),
+			Port:     l.Port,
+		}
+
+		if tls := c.tls(l); tls != nil {
+			listener.TLS = tls
+		}
+
+		for _, enricher := range enrichers {
+			enricher.Enrich(c.gateway, l.Port, listener)
+		}
+
+		listeners = append(listeners, *listener)
+	}
+
+	return listeners
+}
+
+func (c *ConfigContext) listenPort(l gwtypes.Listener) gwv1.PortNumber {
+	if l.Port < 1024 {
+		return l.Port + 60000
+	}
+
+	return l.Port
+}
+
+func (c *ConfigContext) tls(l gwtypes.Listener) *fgw.TLS {
+	switch l.Protocol {
+	case gwv1.HTTPSProtocolType:
+		// Terminate
+		if l.TLS != nil {
+			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
+				return c.tlsTerminateCfg(l)
+			}
+		}
+	case gwv1.TLSProtocolType:
+		// Terminate & Passthrough
+		if l.TLS != nil {
+			if l.TLS.Mode == nil {
+				return c.tlsTerminateCfg(l)
+			}
+
+			switch *l.TLS.Mode {
+			case gwv1.TLSModeTerminate:
+				return c.tlsTerminateCfg(l)
+			case gwv1.TLSModePassthrough:
+				return c.tlsPassthroughCfg()
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *ConfigContext) tlsTerminateCfg(l gwtypes.Listener) *fgw.TLS {
+	return &fgw.TLS{
+		TLSModeType:  gwv1.TLSModeTerminate,
+		Certificates: c.certificates(l),
+	}
+}
+
+func (c *ConfigContext) tlsPassthroughCfg() *fgw.TLS {
+	return &fgw.TLS{
+		TLSModeType: gwv1.TLSModePassthrough,
+		// set to false and protect it from being overwritten by the user
+		MTLS: pointer.Bool(false),
+	}
+}
+
+func (c *ConfigContext) certificates(l gwtypes.Listener) []fgw.Certificate {
+	certs := make([]fgw.Certificate, 0)
+
+	for _, ref := range l.TLS.CertificateRefs {
+		secret, err := c.secretRefToSecret(c.gateway, ref)
+
+		if err != nil {
+			log.Error().Msgf("Failed to resolve Secret: %s", err)
+			continue
+		}
+
+		cert := fgw.Certificate{
+			CertChain:  string(secret.Data[corev1.TLSCertKey]),
+			PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
+		}
+
+		ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
+		if len(ca) > 0 {
+			cert.IssuingCA = ca
+		}
+
+		certs = append(certs, cert)
+	}
+
+	return certs
+}
+
+func (c *ConfigContext) routeRules() map[int32]fgw.RouteRule {
+	for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
+		httpRoute := httpRoute.(*gwv1.HTTPRoute)
+		c.processHTTPRoute(httpRoute)
+	}
+
+	for _, grpcRoute := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, true) {
+		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
+		c.processGRPCRoute(grpcRoute)
+	}
+
+	for _, tlsRoute := range c.getResourcesFromCache(informers.TLSRoutesResourceType, true) {
+		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
+		c.processTLSRoute(tlsRoute)
+	}
+
+	for _, tcpRoute := range c.getResourcesFromCache(informers.TCPRoutesResourceType, true) {
+		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
+		c.processTCPRoute(tcpRoute)
+	}
+
+	for _, udpRoute := range c.getResourcesFromCache(informers.UDPRoutesResourceType, true) {
+		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
+		c.processUDPRoute(udpRoute)
+	}
+
+	return c.rules
+}
+
+func (c *ConfigContext) serviceConfigs() map[string]fgw.ServiceConfig {
+	configs := make(map[string]fgw.ServiceConfig)
+	enrichers := c.getServicePolicyEnrichers()
+
+	for svcPortName, svcInfo := range c.services {
+		svcKey := svcInfo.svcPortName.NamespacedName
+		svc, err := c.cache.getServiceFromCache(svcKey)
+
+		if err != nil {
+			log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
+			continue
+		}
+
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				constants.KubernetesEndpointSliceServiceNameLabel: svc.Name,
+			},
+		})
+		if err != nil {
+			log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
+			continue
+		}
+
+		endpointSliceList, err := c.cache.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
+		if err != nil {
+			log.Error().Msgf("Failed to list EndpointSlice of Service %s: %s", svcKey, err)
+			continue
+		}
+
+		if len(endpointSliceList) == 0 {
+			continue
+		}
+
+		svcPort, err := getServicePort(svc, svcInfo.svcPortName.Port)
+		if err != nil {
+			log.Error().Msgf("Failed to get ServicePort: %s", err)
+			continue
+		}
+
+		filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
+		if len(filteredSlices) == 0 {
+			log.Error().Msgf("no valid endpoints found for Service %s and port %+v", svcKey, svcPort)
+			continue
+		}
+
+		endpointSet := make(map[endpointContext]struct{})
+		for _, eps := range filteredSlices {
+			for _, endpoint := range eps.Endpoints {
+				if !isEndpointReady(endpoint) {
+					continue
+				}
+				endpointPort := findPort(eps.Ports, svcPort)
+
+				for _, address := range endpoint.Addresses {
+					ep := endpointContext{address: address, port: endpointPort}
+					endpointSet[ep] = struct{}{}
+				}
+			}
+		}
+
+		svcCfg := &fgw.ServiceConfig{
+			//Filters:   svcInfo.filters,
+			Endpoints: make(map[string]fgw.Endpoint),
+		}
+
+		for ep := range endpointSet {
+			hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
+			svcCfg.Endpoints[hostport] = fgw.Endpoint{
+				Weight: 1,
+			}
+		}
+
+		for _, enricher := range enrichers {
+			enricher.Enrich(svcPortName, svcCfg)
+		}
+
+		configs[svcPortName] = *svcCfg
+	}
+
+	return configs
+}
+
+func (c *ConfigContext) defaults() fgw.Defaults {
+	cfg := c.getConfig()
+
+	ret := fgw.Defaults{
+		EnableDebug:                    c.isDebugEnabled(),
+		DefaultPassthroughUpstreamPort: cfg.GetFGWSSLPassthroughUpstreamPort(),
+		StripAnyHostPort:               cfg.IsFGWStripAnyHostPort(),
+		ProxyPreserveHost:              cfg.IsFGWProxyPreserveHost(),
+		HTTP1PerRequestLoadBalancing:   cfg.IsFGWHTTP1PerRequestLoadBalancingEnabled(),
+		HTTP2PerRequestLoadBalancing:   cfg.IsFGWHTTP2PerRequestLoadBalancingEnabled(),
+		SocketTimeout:                  pointer.Int32(60),
+	}
+
+	if cfg.GetFeatureFlags().EnableGatewayProxyTag {
+		ret.ProxyTag = &fgw.ProxyTag{
+			SrcHostHeader: cfg.GetFGWProxyTag().SrcHostHeader,
+			DstHostHeader: cfg.GetFGWProxyTag().DstHostHeader,
+		}
+	}
+
+	return ret
+}
+
+func (c *ConfigContext) chains() fgw.Chains {
+	featureFlags := c.getConfig().GetFeatureFlags()
+
+	if featureFlags.EnableGatewayAgentService {
+		return fgw.Chains{
+			HTTPRoute:      insertAgentServiceScript(defaultHTTPChains),
+			HTTPSRoute:     insertAgentServiceScript(defaultHTTPSChains),
+			TLSPassthrough: defaultTLSPassthroughChains,
+			TLSTerminate:   defaultTLSTerminateChains,
+			TCPRoute:       defaultTCPChains,
+			UDPRoute:       defaultUDPChains,
+		}
+	}
+
+	if featureFlags.EnableGatewayProxyTag {
+		return fgw.Chains{
+			HTTPRoute:      insertProxyTagScript(defaultHTTPChains),
+			HTTPSRoute:     insertProxyTagScript(defaultHTTPSChains),
+			TLSPassthrough: defaultTLSPassthroughChains,
+			TLSTerminate:   defaultTLSTerminateChains,
+			TCPRoute:       defaultTCPChains,
+			UDPRoute:       defaultUDPChains,
+		}
+	}
+
+	return fgw.Chains{
+		HTTPRoute:      defaultHTTPChains,
+		HTTPSRoute:     defaultHTTPSChains,
+		TLSPassthrough: defaultTLSPassthroughChains,
+		TLSTerminate:   defaultTLSTerminateChains,
+		TCPRoute:       defaultTCPChains,
+		UDPRoute:       defaultUDPChains,
+	}
+}
+
+func (c *ConfigContext) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *fgw.ServicePortName {
+	if !isValidBackendRefToGroupKindOfService(ref) {
+		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
+		return nil
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: referer.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     string(*ref.Group),
+			Kind:      string(*ref.Kind),
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
+		},
+	) {
+		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			string(*ref.Kind), string(*ref.Group), string(*ref.Namespace), ref.Name)
+		return nil
+	}
+
+	return &fgw.ServicePortName{
+		NamespacedName: types.NamespacedName{
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Name:      string(ref.Name),
+		},
+		Port: pointer.Int32(int32(*ref.Port)),
+	}
+}
+
+func (c *ConfigContext) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.PolicyTargetReference, port int32) *fgw.ServicePortName {
+	if !isValidTargetRefToGroupKindOfService(ref) {
+		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
+		return nil
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: referer.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     string(ref.Group),
+			Kind:      string(ref.Kind),
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
+		},
+	) {
+		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			string(ref.Kind), string(ref.Group), string(*ref.Namespace), ref.Name)
+		return nil
+	}
+
+	return &fgw.ServicePortName{
+		NamespacedName: types.NamespacedName{
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Name:      string(ref.Name),
+		},
+		Port: pointer.Int32(port),
+	}
+}
+
+func (c *ConfigContext) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.HTTPRouteFilter) fgw.Filter {
+	result := fgw.HTTPRouteFilter{Type: filter.Type}
+
+	if filter.RequestHeaderModifier != nil {
+		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
+			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
+			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
+			Remove: filter.RequestHeaderModifier.Remove,
+		}
+	}
+
+	if filter.ResponseHeaderModifier != nil {
+		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
+			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
+			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
+			Remove: filter.ResponseHeaderModifier.Remove,
+		}
+	}
+
+	if filter.RequestRedirect != nil {
+		result.RequestRedirect = &fgw.HTTPRequestRedirectFilter{
+			Scheme:     filter.RequestRedirect.Scheme,
+			Hostname:   toFSMHostname(filter.RequestRedirect.Hostname),
+			Path:       toFSMHTTPPathModifier(filter.RequestRedirect.Path),
+			Port:       toFSMPortNumber(filter.RequestRedirect.Port),
+			StatusCode: filter.RequestRedirect.StatusCode,
+		}
+	}
+
+	if filter.URLRewrite != nil {
+		result.URLRewrite = &fgw.HTTPURLRewriteFilter{
+			Hostname: toFSMHostname(filter.URLRewrite.Hostname),
+			Path:     toFSMHTTPPathModifier(filter.URLRewrite.Path),
+		}
+	}
+
+	if filter.RequestMirror != nil {
+		if svcPort := c.backendRefToServicePortName(referer, filter.RequestMirror.BackendRef); svcPort != nil {
+			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
+				BackendService: svcPort.String(),
+			}
+
+			c.services[svcPort.String()] = serviceContext{
+				svcPortName: *svcPort,
+			}
+		}
+	}
+
+	// TODO: implement it later
+	if filter.ExtensionRef != nil {
+		result.ExtensionRef = filter.ExtensionRef
+	}
+
+	return result
+}
+
+func (c *ConfigContext) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter) fgw.Filter {
+	result := fgw.GRPCRouteFilter{Type: filter.Type}
+
+	if filter.RequestHeaderModifier != nil {
+		result.RequestHeaderModifier = &fgw.HTTPHeaderFilter{
+			Set:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Set),
+			Add:    toFSMHTTPHeaders(filter.RequestHeaderModifier.Add),
+			Remove: filter.RequestHeaderModifier.Remove,
+		}
+	}
+
+	if filter.ResponseHeaderModifier != nil {
+		result.ResponseHeaderModifier = &fgw.HTTPHeaderFilter{
+			Set:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Set),
+			Add:    toFSMHTTPHeaders(filter.ResponseHeaderModifier.Add),
+			Remove: filter.ResponseHeaderModifier.Remove,
+		}
+	}
+
+	if filter.RequestMirror != nil {
+		if svcPort := c.backendRefToServicePortName(referer, filter.RequestMirror.BackendRef); svcPort != nil {
+			result.RequestMirror = &fgw.HTTPRequestMirrorFilter{
+				BackendService: svcPort.String(),
+			}
+
+			c.services[svcPort.String()] = serviceContext{
+				svcPortName: *svcPort,
+			}
+		}
+	}
+
+	// TODO: implement it later
+	if filter.ExtensionRef != nil {
+		result.ExtensionRef = filter.ExtensionRef
+	}
+
+	return result
+}
+
+func (c *ConfigContext) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
+	if !isValidRefToGroupKindOfSecret(ref) {
+		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
+	}
+
+	// If the secret is in a different namespace than the referer, check ReferenceGrants
+	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: referer.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     corev1.GroupName,
+			Kind:      constants.KubernetesSecretKind,
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
+		},
+	) {
+		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			string(*ref.Kind), string(*ref.Group), string(*ref.Namespace), ref.Name)
+	}
+
+	return c.cache.getSecretFromCache(client.ObjectKey{
+		Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+		Name:      string(ref.Name),
+	})
+}

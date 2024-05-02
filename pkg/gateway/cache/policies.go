@@ -33,12 +33,11 @@ func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
 	}
 }
 
-func (c *GatewayCache) getPortPolicyEnrichers(policies globalPolicyAttachments) []policy.PortPolicyEnricher {
-	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
+func (c *ConfigContext) getPortPolicyEnrichers() []policy.PortPolicyEnricher {
 	return []policy.PortPolicyEnricher{
-		&policy.RateLimitPortEnricher{Data: policies.rateLimits[gwpkg.PolicyMatchTypePort], ReferenceGrants: referenceGrants},
-		&policy.AccessControlPortEnricher{Data: policies.accessControls[gwpkg.PolicyMatchTypePort], ReferenceGrants: referenceGrants},
-		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS(), ReferenceGrants: referenceGrants},
+		&policy.RateLimitPortEnricher{Data: c.policies.rateLimits[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
+		&policy.AccessControlPortEnricher{Data: c.policies.accessControls[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
+		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS(), ReferenceGrants: c.referenceGrants},
 	}
 }
 
@@ -66,7 +65,7 @@ func getGRPCRoutePolicyEnrichers(routePolicies routePolicies) []policy.GRPCRoute
 	}
 }
 
-func (c *GatewayCache) getServicePolicyEnrichers() []policy.ServicePolicyEnricher {
+func (c *ConfigContext) getServicePolicyEnrichers() []policy.ServicePolicyEnricher {
 	return []policy.ServicePolicyEnricher{
 		&policy.SessionStickyPolicyEnricher{Data: c.sessionStickies()},
 		&policy.LoadBalancerPolicyEnricher{Data: c.loadBalancers()},
@@ -309,7 +308,7 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 	return result
 }
 
-func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
+func (c *ConfigContext) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
 	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyConfig)
 
 	for _, sessionSticky := range c.getResourcesFromCache(informers.SessionStickyPoliciesResourceType, true) {
@@ -338,7 +337,7 @@ func (c *GatewayCache) sessionStickies() map[string]*gwpav1alpha1.SessionStickyC
 	return sessionStickies
 }
 
-func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
+func (c *ConfigContext) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
 	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerType)
 
 	for _, lb := range c.getResourcesFromCache(informers.LoadBalancerPoliciesResourceType, true) {
@@ -367,7 +366,7 @@ func (c *GatewayCache) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType
 	return loadBalancers
 }
 
-func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
+func (c *ConfigContext) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
 	configs := make(map[string]*gwpav1alpha1.CircuitBreakingConfig)
 
 	for _, circuitBreaking := range c.getResourcesFromCache(informers.CircuitBreakingPoliciesResourceType, true) {
@@ -396,7 +395,7 @@ func (c *GatewayCache) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreaki
 	return configs
 }
 
-func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
+func (c *ConfigContext) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
 	configs := make(map[string]*gwpav1alpha1.HealthCheckConfig)
 
 	for _, healthCheck := range c.getResourcesFromCache(informers.HealthCheckPoliciesResourceType, true) {
@@ -425,9 +424,8 @@ func (c *GatewayCache) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig
 	return configs
 }
 
-func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
+func (c *ConfigContext) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	configs := make(map[string]*policy.UpstreamTLSConfig)
-	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, upstreamTLS := range c.getResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, true) {
 		upstreamTLS := upstreamTLS.(*gwpav1alpha1.UpstreamTLSPolicy)
@@ -441,7 +439,7 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 						continue
 					}
 
-					secret, err := c.secretRefToSecret(upstreamTLS, cfg.CertificateRef, referenceGrants)
+					secret, err := c.secretRefToSecret(upstreamTLS, cfg.CertificateRef)
 					if err != nil {
 						log.Error().Msgf("Failed to resolve Secret: %s", err)
 						continue
@@ -464,7 +462,7 @@ func (c *GatewayCache) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	return configs
 }
 
-func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
+func (c *ConfigContext) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	configs := make(map[string]*gwpav1alpha1.RetryConfig)
 
 	for _, retryPolicy := range c.getResourcesFromCache(informers.RetryPoliciesResourceType, true) {
@@ -493,7 +491,7 @@ func (c *GatewayCache) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	return configs
 }
 
-func (c *GatewayCache) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
+func (c *ConfigContext) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
 	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
 
 	for _, gatewayTLSPolicy := range c.getResourcesFromCache(informers.GatewayTLSPoliciesResourceType, true) {

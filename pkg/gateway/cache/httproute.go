@@ -3,25 +3,20 @@ package cache
 import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtypes.Listener, httpRoute *gwv1.HTTPRoute, policies globalPolicyAttachments, rules map[int32]fgw.RouteRule, services map[string]serviceContext) {
-	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	routePolicies := filterPoliciesByRoute(referenceGrants, policies, httpRoute)
-	log.Debug().Msgf("[GW-CACHE] routePolicies: %v", routePolicies)
+func (c *ConfigContext) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
+	routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, httpRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
 	for _, ref := range httpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(gw)) {
+		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.informers.GetListers().Namespace, gw, ref, gwutils.ToRouteContext(httpRoute), validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(httpRoute), c.validListeners)
 		log.Debug().Msgf("allowedListeners: %v", allowedListeners)
 		if len(allowedListeners) == 0 {
 			continue
@@ -38,7 +33,7 @@ func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtyp
 
 			httpRule := fgw.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := c.generateHTTPRouteConfig(httpRoute, routePolicies, services)
+				r := c.generateHTTPRouteConfig(httpRoute, routePolicies)
 
 				for _, enricher := range hostnameEnrichers {
 					enricher.Enrich(hostname, r)
@@ -48,18 +43,18 @@ func (c *GatewayCache) processHTTPRoute(gw *gwv1.Gateway, validListeners []gwtyp
 			}
 
 			port := int32(listener.Port)
-			if rule, exists := rules[port]; exists {
+			if rule, exists := c.rules[port]; exists {
 				if l7Rule, ok := rule.(fgw.L7RouteRule); ok {
-					rules[port] = mergeL7RouteRule(l7Rule, httpRule)
+					c.rules[port] = mergeL7RouteRule(l7Rule, httpRule)
 				}
 			} else {
-				rules[port] = httpRule
+				c.rules[port] = httpRule
 			}
 		}
 	}
 }
 
-func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies, services map[string]serviceContext) *fgw.HTTPRouteRuleSpec {
+func (c *ConfigContext) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies) *fgw.HTTPRouteRuleSpec {
 	httpSpec := &fgw.HTTPRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeHTTP,
 		Matches:   make([]fgw.HTTPTrafficMatch, 0),
@@ -74,7 +69,7 @@ func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routeP
 				log.Debug().Msgf("Found svcPort: %v", svcPort)
 				svcLevelFilters := make([]fgw.Filter, 0)
 				for _, filter := range bk.Filters {
-					svcLevelFilters = append(svcLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, filter, services))
+					svcLevelFilters = append(svcLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, filter))
 				}
 
 				backends[svcPort.String()] = fgw.BackendServiceConfig{
@@ -82,7 +77,7 @@ func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routeP
 					Filters: svcLevelFilters,
 				}
 
-				services[svcPort.String()] = serviceContext{
+				c.services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
 			}
@@ -90,7 +85,7 @@ func (c *GatewayCache) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routeP
 
 		ruleLevelFilters := make([]fgw.Filter, 0)
 		for _, ruleFilter := range rule.Filters {
-			ruleLevelFilters = append(ruleLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, ruleFilter, services))
+			ruleLevelFilters = append(ruleLevelFilters, c.toFSMHTTPRouteFilter(httpRoute, ruleFilter))
 		}
 
 		for _, m := range rule.Matches {
