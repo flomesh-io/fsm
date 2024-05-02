@@ -5,9 +5,10 @@ import (
 
 	"k8s.io/client-go/util/retry"
 
-	"github.com/flomesh-io/fsm/pkg/flb"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/flb"
 )
 
 func (r *serviceReconciler) onSvcAdd(_ interface{}) {}
