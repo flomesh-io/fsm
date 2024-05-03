@@ -40,6 +40,7 @@ func (r *serviceReconciler) onSvcUpdate(oldObj, newObj interface{}) {
 		err := retry.OnError(retry.DefaultBackoff, retriableFn, delFn)
 		if err != nil {
 			log.Error().Msgf("Failed to delete entry from FLB: %v", err)
+			return
 		}
 
 		// Remove the service from the cache if it was deleted from FLB
