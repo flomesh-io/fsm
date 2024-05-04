@@ -3,9 +3,7 @@ package cache
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
@@ -23,6 +21,38 @@ func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	syncConfig := func(gateway *gwv1.Gateway, config *fgw.ConfigSpec) {
+		gatewayPath := utils.GatewayCodebasePath(gateway.Namespace)
+		if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
+			return
+		}
+
+		jsonVersion, err := c.getVersionOfConfigJSON(gatewayPath)
+		if err != nil {
+			return
+		}
+
+		if jsonVersion == config.Version {
+			// config not changed, ignore updating
+			log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
+			return
+		}
+
+		batches := []repo.Batch{
+			{
+				Basepath: gatewayPath,
+				Items: []repo.BatchItem{
+					{Path: "", Filename: "config.json", Content: config},
+				},
+			},
+		}
+
+		if err := c.repoClient.Batch(batches); err != nil {
+			log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+			return
+		}
+	}
+
 	policies := c.policyAttachments()
 	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
@@ -39,37 +69,7 @@ func (c *GatewayCache) BuildConfigs() {
 
 		cfg := processor.build()
 
-		go func(gateway types.NamespacedName, config *fgw.ConfigSpec) {
-			gatewayPath := utils.GatewayCodebasePath(gateway.Namespace)
-			if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
-				return
-			}
-
-			jsonVersion, err := c.getVersionOfConfigJSON(gatewayPath)
-			if err != nil {
-				return
-			}
-
-			if jsonVersion == cfg.Version {
-				// config not changed, ignore updating
-				log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
-				return
-			}
-
-			batches := []repo.Batch{
-				{
-					Basepath: gatewayPath,
-					Items: []repo.BatchItem{
-						{Path: "", Filename: "config.json", Content: config},
-					},
-				},
-			}
-
-			if err := c.repoClient.Batch(batches); err != nil {
-				log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
-				return
-			}
-		}(client.ObjectKeyFromObject(gw), cfg)
+		go syncConfig(gw, cfg)
 	}
 }
 
