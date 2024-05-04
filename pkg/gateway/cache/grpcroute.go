@@ -7,7 +7,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigContext) processGRPCRoute(grpcRoute *gwv1alpha2.GRPCRoute) {
+func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1alpha2.GRPCRoute) {
 	routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, grpcRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
@@ -52,7 +52,7 @@ func (c *ConfigContext) processGRPCRoute(grpcRoute *gwv1alpha2.GRPCRoute) {
 	}
 }
 
-func (c *ConfigContext) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies) *fgw.GRPCRouteRuleSpec {
+func (c *GatewayProcessor) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies) *fgw.GRPCRouteRuleSpec {
 	grpcSpec := &fgw.GRPCRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeGRPC,
 		Matches:   make([]fgw.GRPCTrafficMatch, 0),

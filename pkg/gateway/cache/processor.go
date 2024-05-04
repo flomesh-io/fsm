@@ -25,7 +25,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-type ConfigContext struct {
+type GatewayProcessor struct {
 	cache           *GatewayCache
 	gateway         *gwv1.Gateway
 	policies        globalPolicyAttachments
@@ -35,7 +35,7 @@ type ConfigContext struct {
 	rules           map[int32]fgw.RouteRule
 }
 
-func (c *ConfigContext) build() *fgw.ConfigSpec {
+func (c *GatewayProcessor) build() *fgw.ConfigSpec {
 	// those three methods must run in order, as they depend on previous results
 	listeners := c.listeners()
 	rules := c.routeRules()
@@ -53,19 +53,19 @@ func (c *ConfigContext) build() *fgw.ConfigSpec {
 	return configSpec
 }
 
-func (c *ConfigContext) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
+func (c *GatewayProcessor) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
 	return c.cache.getResourcesFromCache(resourceType, shouldSort)
 }
 
-func (c *ConfigContext) getNamespaceLister() v1.NamespaceLister {
+func (c *GatewayProcessor) getNamespaceLister() v1.NamespaceLister {
 	return c.cache.informers.GetListers().Namespace
 }
 
-func (c *ConfigContext) getConfig() configurator.Configurator {
+func (c *GatewayProcessor) getConfig() configurator.Configurator {
 	return c.cache.cfg
 }
 
-func (c *ConfigContext) isDebugEnabled() bool {
+func (c *GatewayProcessor) isDebugEnabled() bool {
 	switch c.getConfig().GetFGWLogLevel() {
 	case "debug", "trace":
 		return true
@@ -74,7 +74,7 @@ func (c *ConfigContext) isDebugEnabled() bool {
 	}
 }
 
-func (c *ConfigContext) listeners() []fgw.Listener {
+func (c *GatewayProcessor) listeners() []fgw.Listener {
 	listeners := make([]fgw.Listener, 0)
 	enrichers := c.getPortPolicyEnrichers()
 
@@ -99,7 +99,7 @@ func (c *ConfigContext) listeners() []fgw.Listener {
 	return listeners
 }
 
-func (c *ConfigContext) listenPort(l gwtypes.Listener) gwv1.PortNumber {
+func (c *GatewayProcessor) listenPort(l gwtypes.Listener) gwv1.PortNumber {
 	if l.Port < 1024 {
 		return l.Port + 60000
 	}
@@ -107,7 +107,7 @@ func (c *ConfigContext) listenPort(l gwtypes.Listener) gwv1.PortNumber {
 	return l.Port
 }
 
-func (c *ConfigContext) tls(l gwtypes.Listener) *fgw.TLS {
+func (c *GatewayProcessor) tls(l gwtypes.Listener) *fgw.TLS {
 	switch l.Protocol {
 	case gwv1.HTTPSProtocolType:
 		// Terminate
@@ -135,14 +135,14 @@ func (c *ConfigContext) tls(l gwtypes.Listener) *fgw.TLS {
 	return nil
 }
 
-func (c *ConfigContext) tlsTerminateCfg(l gwtypes.Listener) *fgw.TLS {
+func (c *GatewayProcessor) tlsTerminateCfg(l gwtypes.Listener) *fgw.TLS {
 	return &fgw.TLS{
 		TLSModeType:  gwv1.TLSModeTerminate,
 		Certificates: c.certificates(l),
 	}
 }
 
-func (c *ConfigContext) tlsPassthroughCfg() *fgw.TLS {
+func (c *GatewayProcessor) tlsPassthroughCfg() *fgw.TLS {
 	return &fgw.TLS{
 		TLSModeType: gwv1.TLSModePassthrough,
 		// set to false and protect it from being overwritten by the user
@@ -150,7 +150,7 @@ func (c *ConfigContext) tlsPassthroughCfg() *fgw.TLS {
 	}
 }
 
-func (c *ConfigContext) certificates(l gwtypes.Listener) []fgw.Certificate {
+func (c *GatewayProcessor) certificates(l gwtypes.Listener) []fgw.Certificate {
 	certs := make([]fgw.Certificate, 0)
 
 	for _, ref := range l.TLS.CertificateRefs {
@@ -177,7 +177,7 @@ func (c *ConfigContext) certificates(l gwtypes.Listener) []fgw.Certificate {
 	return certs
 }
 
-func (c *ConfigContext) routeRules() map[int32]fgw.RouteRule {
+func (c *GatewayProcessor) routeRules() map[int32]fgw.RouteRule {
 	for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
 		httpRoute := httpRoute.(*gwv1.HTTPRoute)
 		c.processHTTPRoute(httpRoute)
@@ -206,7 +206,7 @@ func (c *ConfigContext) routeRules() map[int32]fgw.RouteRule {
 	return c.rules
 }
 
-func (c *ConfigContext) serviceConfigs() map[string]fgw.ServiceConfig {
+func (c *GatewayProcessor) serviceConfigs() map[string]fgw.ServiceConfig {
 	configs := make(map[string]fgw.ServiceConfig)
 	enrichers := c.getServicePolicyEnrichers()
 
@@ -288,7 +288,7 @@ func (c *ConfigContext) serviceConfigs() map[string]fgw.ServiceConfig {
 	return configs
 }
 
-func (c *ConfigContext) defaults() fgw.Defaults {
+func (c *GatewayProcessor) defaults() fgw.Defaults {
 	cfg := c.getConfig()
 
 	ret := fgw.Defaults{
@@ -311,7 +311,7 @@ func (c *ConfigContext) defaults() fgw.Defaults {
 	return ret
 }
 
-func (c *ConfigContext) chains() fgw.Chains {
+func (c *GatewayProcessor) chains() fgw.Chains {
 	featureFlags := c.getConfig().GetFeatureFlags()
 
 	if featureFlags.EnableGatewayAgentService {
@@ -346,7 +346,7 @@ func (c *ConfigContext) chains() fgw.Chains {
 	}
 }
 
-func (c *ConfigContext) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *fgw.ServicePortName {
+func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *fgw.ServicePortName {
 	if !isValidBackendRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
 		return nil
@@ -381,7 +381,7 @@ func (c *ConfigContext) backendRefToServicePortName(referer client.Object, ref g
 	}
 }
 
-func (c *ConfigContext) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.PolicyTargetReference, port int32) *fgw.ServicePortName {
+func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.PolicyTargetReference, port int32) *fgw.ServicePortName {
 	if !isValidTargetRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
 		return nil
@@ -416,7 +416,7 @@ func (c *ConfigContext) targetRefToServicePortName(referer client.Object, ref gw
 	}
 }
 
-func (c *ConfigContext) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.HTTPRouteFilter) fgw.Filter {
+func (c *GatewayProcessor) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.HTTPRouteFilter) fgw.Filter {
 	result := fgw.HTTPRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -472,7 +472,7 @@ func (c *ConfigContext) toFSMHTTPRouteFilter(referer client.Object, filter gwv1.
 	return result
 }
 
-func (c *ConfigContext) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter) fgw.Filter {
+func (c *GatewayProcessor) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter) fgw.Filter {
 	result := fgw.GRPCRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {
@@ -511,7 +511,7 @@ func (c *ConfigContext) toFSMGRPCRouteFilter(referer client.Object, filter gwv1a
 	return result
 }
 
-func (c *ConfigContext) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
+func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
 	if !isValidRefToGroupKindOfSecret(ref) {
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
 	}

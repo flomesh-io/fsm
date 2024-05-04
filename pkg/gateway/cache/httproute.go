@@ -7,7 +7,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigContext) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
+func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 	routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, httpRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
@@ -54,7 +54,7 @@ func (c *ConfigContext) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 	}
 }
 
-func (c *ConfigContext) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies) *fgw.HTTPRouteRuleSpec {
+func (c *GatewayProcessor) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute, routePolicies routePolicies) *fgw.HTTPRouteRuleSpec {
 	httpSpec := &fgw.HTTPRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeHTTP,
 		Matches:   make([]fgw.HTTPTrafficMatch, 0),

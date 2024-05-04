@@ -8,7 +8,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigContext) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
+func (c *GatewayProcessor) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
 	for _, ref := range udpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
@@ -30,7 +30,7 @@ func (c *ConfigContext) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
 	c.processUDPBackends(udpRoute)
 }
 
-func (c *ConfigContext) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute) {
+func (c *GatewayProcessor) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute) {
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
@@ -42,7 +42,7 @@ func (c *ConfigContext) processUDPBackends(udpRoute *gwv1alpha2.UDPRoute) {
 	}
 }
 
-func (c *ConfigContext) generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
+func (c *GatewayProcessor) generateUDPRouteCfg(udpRoute *gwv1alpha2.UDPRoute) fgw.RouteRule {
 	backends := fgw.UDPRouteRule{}
 
 	for _, rule := range udpRoute.Spec.Rules {
