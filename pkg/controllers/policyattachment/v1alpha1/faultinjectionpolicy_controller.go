@@ -192,7 +192,7 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 				continue
 			}
 
-			validListeners := gwutils.GetValidListenersFromGateway(gateway)
+			validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {

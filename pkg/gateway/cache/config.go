@@ -5,8 +5,6 @@ import (
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/tidwall/gjson"
@@ -57,17 +55,7 @@ func (c *GatewayCache) BuildConfigs() {
 	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	for _, gw := range c.getActiveGateways() {
-		processor := &GatewayProcessor{
-			cache:           c,
-			gateway:         gw,
-			policies:        policies,
-			referenceGrants: referenceGrants,
-			validListeners:  gwutils.GetValidListenersFromGateway(gw),
-			services:        make(map[string]serviceContext),
-			rules:           make(map[int32]fgw.RouteRule),
-		}
-
-		cfg := processor.build()
+		cfg := NewGatewayProcessor(c, gw, policies, referenceGrants).build()
 
 		go syncConfig(gw, cfg)
 	}

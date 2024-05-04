@@ -35,6 +35,18 @@ type GatewayProcessor struct {
 	rules           map[int32]fgw.RouteRule
 }
 
+func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway, policies globalPolicyAttachments, referenceGrants []client.Object) *GatewayProcessor {
+	return &GatewayProcessor{
+		cache:           cache,
+		gateway:         gateway,
+		policies:        policies,
+		referenceGrants: referenceGrants,
+		validListeners:  gwutils.GetValidListenersForGateway(gateway),
+		services:        make(map[string]serviceContext),
+		rules:           make(map[int32]fgw.RouteRule),
+	}
+}
+
 func (c *GatewayProcessor) build() *fgw.ConfigSpec {
 	// those three methods must run in order, as they depend on previous results
 	listeners := c.listeners()

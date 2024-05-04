@@ -168,7 +168,7 @@ func (r *gatewayTLSPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, ga
 		return nil
 	}
 
-	validListeners := gwutils.GetValidListenersFromGateway(gateway)
+	validListeners := gwutils.GetValidListenersForGateway(gateway)
 	for _, pr := range allGatewayTLSPolicies {
 		pr := pr.(*gwpav1alpha1.GatewayTLSPolicy)
 

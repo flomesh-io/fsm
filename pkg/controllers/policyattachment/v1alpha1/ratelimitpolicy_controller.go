@@ -191,7 +191,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 				continue
 			}
 
-			validListeners := gwutils.GetValidListenersFromGateway(gateway)
+			validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {
@@ -320,7 +320,7 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, rat
 		return nil
 	}
 
-	validListeners := gwutils.GetValidListenersFromGateway(gateway)
+	validListeners := gwutils.GetValidListenersForGateway(gateway)
 	for _, pr := range allRateLimitPolicies {
 		pr := pr.(*gwpav1alpha1.RateLimitPolicy)
 

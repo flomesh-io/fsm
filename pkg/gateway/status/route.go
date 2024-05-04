@@ -82,7 +82,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 	status := make([]gwv1.RouteParentStatus, 0)
 
 	for _, gw := range activeGateways {
-		validListeners := gwutils.GetValidListenersFromGateway(gw)
+		validListeners := gwutils.GetValidListenersForGateway(gw)
 
 		for _, parentRef := range params.ParentRefs {
 			if !gwutils.IsRefToGateway(parentRef, gwutils.ObjectKey(gw)) {

@@ -787,7 +787,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 
 	gwBytes, err := ghodssyaml.Marshal(&gatewayValues{
 		Gateway:   gateway,
-		Listeners: gwutils.GetValidListenersFromGateway(gateway),
+		Listeners: gwutils.GetValidListenersForGateway(gateway),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)

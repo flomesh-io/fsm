@@ -234,8 +234,8 @@ func GroupPointer(group string) *gwv1.Group {
 	return &result
 }
 
-// GetValidListenersFromGateway returns the valid listeners from the gateway
-func GetValidListenersFromGateway(gw *gwv1.Gateway) []gwtypes.Listener {
+// GetValidListenersForGateway returns the valid listeners from the gateway
+func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 	listeners := make(map[gwv1.SectionName]gwv1.Listener)
 	for _, listener := range gw.Spec.Listeners {
 		listeners[listener.Name] = listener
