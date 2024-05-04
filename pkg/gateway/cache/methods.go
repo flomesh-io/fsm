@@ -22,14 +22,9 @@ func (c *GatewayCache) getResourcesFromCache(resourceType informers.ResourceType
 func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
-	allGateways, err := c.informers.GetListers().Gateway.Gateways(corev1.NamespaceAll).List(selectAll)
-	if err != nil {
-		return nil
-	}
-
-	for _, gw := range allGateways {
+	for _, gw := range c.getResourcesFromCache(informers.GatewaysResourceType, false) {
+		gw := gw.(*gwv1.Gateway)
 		if gwutils.IsActiveGateway(gw) {
-			gw.GetObjectKind().SetGroupVersionKind(constants.GatewayGVK)
 			gateways = append(gateways, gw)
 		}
 	}

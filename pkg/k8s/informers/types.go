@@ -283,7 +283,8 @@ const (
 
 // GatewayAPIResource is the type used to represent the Gateway API resource
 type GatewayAPIResource interface {
-	*gwv1.HTTPRoute | *gwv1alpha2.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
+	*gwv1.GatewayClass | *gwv1.Gateway |
+		*gwv1.HTTPRoute | *gwv1alpha2.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
 		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
 		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
 		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy | *gwpav1alpha1.GatewayTLSPolicy
