@@ -3,6 +3,10 @@ package cache
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -35,8 +39,8 @@ func (c *GatewayCache) BuildConfigs() {
 
 		cfg := processor.build()
 
-		go func(config *fgw.ConfigSpec) {
-			gatewayPath := utils.GatewayCodebasePath(gw.Namespace)
+		go func(gateway types.NamespacedName, config *fgw.ConfigSpec) {
+			gatewayPath := utils.GatewayCodebasePath(gateway.Namespace)
 			if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
 				return
 			}
@@ -62,10 +66,10 @@ func (c *GatewayCache) BuildConfigs() {
 			}
 
 			if err := c.repoClient.Batch(batches); err != nil {
-				log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gw.Namespace, gw.Name, err)
+				log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 				return
 			}
-		}(cfg)
+		}(client.ObjectKeyFromObject(gw), cfg)
 	}
 }
 
