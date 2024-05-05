@@ -423,6 +423,20 @@ func (ic *InformerCollection) GetGatewayResourcesFromCache(resourceType Resource
 	resources := make([]client.Object, 0)
 
 	switch resourceType {
+	case GatewayClassesResourceType:
+		classes, err := ic.listers.GatewayClass.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get GatewayClasses: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(classes, constants.GatewayClassGVK)
+	case GatewaysResourceType:
+		gateways, err := ic.listers.Gateway.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get Gateways: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(gateways, constants.GatewayGVK)
 	case HTTPRoutesResourceType:
 		routes, err := ic.listers.HTTPRoute.List(selectAll)
 		if err != nil {

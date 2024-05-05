@@ -8,7 +8,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigContext) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
+func (c *GatewayProcessor) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
 	for _, ref := range tcpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
@@ -56,7 +56,7 @@ func (c *ConfigContext) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
 	c.processTCPBackends(tcpRoute)
 }
 
-func (c *ConfigContext) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute) {
+func (c *GatewayProcessor) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute) {
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference); svcPort != nil {
@@ -68,7 +68,7 @@ func (c *ConfigContext) processTCPBackends(tcpRoute *gwv1alpha2.TCPRoute) {
 	}
 }
 
-func (c *ConfigContext) generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
+func (c *GatewayProcessor) generateTCPRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.RouteRule {
 	backends := fgw.TCPRouteRule{}
 
 	for _, rule := range tcpRoute.Spec.Rules {

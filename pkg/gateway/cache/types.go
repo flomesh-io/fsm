@@ -26,8 +26,6 @@
 package cache
 
 import (
-	"k8s.io/apimachinery/pkg/labels"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -168,8 +166,4 @@ const (
 	httpCodecScript    = "http/codec.js"
 	agentServiceScript = "extension/agent-service.js"
 	proxyTagScript     = "extension/proxy-tag.js"
-)
-
-var (
-	selectAll = labels.Set{}.AsSelector()
 )

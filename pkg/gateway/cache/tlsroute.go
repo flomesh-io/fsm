@@ -8,7 +8,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigContext) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
+func (c *GatewayProcessor) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
@@ -57,11 +57,11 @@ func (c *ConfigContext) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
 	c.processTLSBackends(tlsRoute)
 }
 
-func (c *ConfigContext) processTLSBackends(_ *gwv1alpha2.TLSRoute) {
+func (c *GatewayProcessor) processTLSBackends(_ *gwv1alpha2.TLSRoute) {
 	// DO nothing for now
 }
 
-func (c *ConfigContext) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
+func (c *GatewayProcessor) generateTLSTerminateRouteCfg(tcpRoute *gwv1alpha2.TCPRoute) fgw.TLSBackendService {
 	backends := fgw.TLSBackendService{}
 
 	for _, rule := range tcpRoute.Spec.Rules {

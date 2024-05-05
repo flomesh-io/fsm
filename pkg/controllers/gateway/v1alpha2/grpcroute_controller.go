@@ -54,7 +54,7 @@ func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &grpcRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("GRPCRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 

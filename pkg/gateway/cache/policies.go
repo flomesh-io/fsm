@@ -33,7 +33,7 @@ func (c *GatewayCache) policyAttachments() globalPolicyAttachments {
 	}
 }
 
-func (c *ConfigContext) getPortPolicyEnrichers() []policy.PortPolicyEnricher {
+func (c *GatewayProcessor) getPortPolicyEnrichers() []policy.PortPolicyEnricher {
 	return []policy.PortPolicyEnricher{
 		&policy.RateLimitPortEnricher{Data: c.policies.rateLimits[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
 		&policy.AccessControlPortEnricher{Data: c.policies.accessControls[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
@@ -65,7 +65,7 @@ func getGRPCRoutePolicyEnrichers(routePolicies routePolicies) []policy.GRPCRoute
 	}
 }
 
-func (c *ConfigContext) getServicePolicyEnrichers() []policy.ServicePolicyEnricher {
+func (c *GatewayProcessor) getServicePolicyEnrichers() []policy.ServicePolicyEnricher {
 	return []policy.ServicePolicyEnricher{
 		&policy.SessionStickyPolicyEnricher{Data: c.sessionStickies()},
 		&policy.LoadBalancerPolicyEnricher{Data: c.loadBalancers()},
@@ -308,7 +308,7 @@ func filterPoliciesByRoute(referenceGrants []client.Object, policies globalPolic
 	return result
 }
 
-func (c *ConfigContext) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
+func (c *GatewayProcessor) sessionStickies() map[string]*gwpav1alpha1.SessionStickyConfig {
 	sessionStickies := make(map[string]*gwpav1alpha1.SessionStickyConfig)
 
 	for _, sessionSticky := range c.getResourcesFromCache(informers.SessionStickyPoliciesResourceType, true) {
@@ -337,7 +337,7 @@ func (c *ConfigContext) sessionStickies() map[string]*gwpav1alpha1.SessionSticky
 	return sessionStickies
 }
 
-func (c *ConfigContext) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
+func (c *GatewayProcessor) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerType {
 	loadBalancers := make(map[string]*gwpav1alpha1.LoadBalancerType)
 
 	for _, lb := range c.getResourcesFromCache(informers.LoadBalancerPoliciesResourceType, true) {
@@ -366,7 +366,7 @@ func (c *ConfigContext) loadBalancers() map[string]*gwpav1alpha1.LoadBalancerTyp
 	return loadBalancers
 }
 
-func (c *ConfigContext) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
+func (c *GatewayProcessor) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreakingConfig {
 	configs := make(map[string]*gwpav1alpha1.CircuitBreakingConfig)
 
 	for _, circuitBreaking := range c.getResourcesFromCache(informers.CircuitBreakingPoliciesResourceType, true) {
@@ -395,7 +395,7 @@ func (c *ConfigContext) circuitBreakings() map[string]*gwpav1alpha1.CircuitBreak
 	return configs
 }
 
-func (c *ConfigContext) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
+func (c *GatewayProcessor) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfig {
 	configs := make(map[string]*gwpav1alpha1.HealthCheckConfig)
 
 	for _, healthCheck := range c.getResourcesFromCache(informers.HealthCheckPoliciesResourceType, true) {
@@ -424,7 +424,7 @@ func (c *ConfigContext) healthChecks() map[string]*gwpav1alpha1.HealthCheckConfi
 	return configs
 }
 
-func (c *ConfigContext) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
+func (c *GatewayProcessor) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	configs := make(map[string]*policy.UpstreamTLSConfig)
 
 	for _, upstreamTLS := range c.getResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, true) {
@@ -462,7 +462,7 @@ func (c *ConfigContext) upstreamTLS() map[string]*policy.UpstreamTLSConfig {
 	return configs
 }
 
-func (c *ConfigContext) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
+func (c *GatewayProcessor) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	configs := make(map[string]*gwpav1alpha1.RetryConfig)
 
 	for _, retryPolicy := range c.getResourcesFromCache(informers.RetryPoliciesResourceType, true) {
@@ -491,7 +491,7 @@ func (c *ConfigContext) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	return configs
 }
 
-func (c *ConfigContext) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
+func (c *GatewayProcessor) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
 	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
 
 	for _, gatewayTLSPolicy := range c.getResourcesFromCache(informers.GatewayTLSPoliciesResourceType, true) {

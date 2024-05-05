@@ -54,7 +54,7 @@ func NewUDPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &udpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("UDPRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Listers: ctx.InformerCollection.GetListers()},
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 

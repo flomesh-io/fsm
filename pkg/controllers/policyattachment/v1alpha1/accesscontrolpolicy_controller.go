@@ -190,7 +190,7 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 				continue
 			}
 
-			validListeners := gwutils.GetValidListenersFromGateway(gateway)
+			validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {
@@ -319,7 +319,7 @@ func (r *accessControlPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway,
 		return nil
 	}
 
-	validListeners := gwutils.GetValidListenersFromGateway(gateway)
+	validListeners := gwutils.GetValidListenersForGateway(gateway)
 	for _, accessControl := range allAccessControls {
 		accessControl := accessControl.(*gwpav1alpha1.AccessControlPolicy)
 

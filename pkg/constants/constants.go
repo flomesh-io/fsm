@@ -405,6 +405,9 @@ const (
 	// KubernetesCoreGroup is the group name used in Kubernetes Core API
 	KubernetesCoreGroup = ""
 
+	// GatewayClassAPIGatewayKind is the kind name of Gateway used in Gateway API
+	GatewayClassAPIGatewayKind = "GatewayClass"
+
 	// GatewayAPIGatewayKind is the kind name of Gateway used in Gateway API
 	GatewayAPIGatewayKind = "Gateway"
 
@@ -940,6 +943,7 @@ var (
 
 // GroupVersionKind variables
 var (
+	GatewayClassGVK          = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
 	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
 	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
 	TLSRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)

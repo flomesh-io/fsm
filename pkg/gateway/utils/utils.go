@@ -234,8 +234,8 @@ func GroupPointer(group string) *gwv1.Group {
 	return &result
 }
 
-// GetValidListenersFromGateway returns the valid listeners from the gateway
-func GetValidListenersFromGateway(gw *gwv1.Gateway) []gwtypes.Listener {
+// GetValidListenersForGateway returns the valid listeners from the gateway
+func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 	listeners := make(map[gwv1.SectionName]gwv1.Listener)
 	for _, listener := range gw.Spec.Listeners {
 		listeners[listener.Name] = listener
@@ -503,4 +503,17 @@ func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossN
 
 	log.Debug().Msgf("ReferenceGrant from %s/%s/%s to %s/%s/%s/%s is NOT allowed", from.Group, from.Kind, from.Namespace, to.Group, to.Kind, to.Namespace, to.Name)
 	return false
+}
+
+func GetActiveGateways(allGateways []client.Object) []*gwv1.Gateway {
+	gateways := make([]*gwv1.Gateway, 0)
+
+	for _, gw := range allGateways {
+		gw := gw.(*gwv1.Gateway)
+		if IsActiveGateway(gw) {
+			gateways = append(gateways, gw)
+		}
+	}
+
+	return gateways
 }
