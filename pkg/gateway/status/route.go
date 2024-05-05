@@ -29,9 +29,6 @@ import (
 	"fmt"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -46,22 +43,12 @@ import (
 
 // RouteStatusProcessor is responsible for computing the status of a Route
 type RouteStatusProcessor struct {
-	Listers *informers.Lister
+	Informers *informers.InformerCollection
 }
 
 // ProcessRouteStatus computes the status of a Route
 func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route client.Object) ([]gwv1.RouteParentStatus, error) {
-	gateways, err := p.Listers.Gateway.Gateways(corev1.NamespaceAll).List(labels.Set{}.AsSelector())
-	if err != nil {
-		return nil, err
-	}
-
-	activeGateways := make([]*gwv1.Gateway, 0)
-	for _, gw := range gateways {
-		if gwutils.IsActiveGateway(gw) {
-			activeGateways = append(activeGateways, gw)
-		}
-	}
+	activeGateways := gwutils.GetActiveGateways(p.Informers.GetGatewayResourcesFromCache(informers.GatewaysResourceType, false))
 
 	if len(activeGateways) > 0 {
 		params := gwutils.ToRouteContext(route)
@@ -96,7 +83,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 			}
 
 			//allowedListeners := p.getAllowedListenersAndSetStatus(gw, parentRef, params, validListeners, routeParentStatus)
-			allowedListeners, conditions := gwutils.GetAllowedListeners(p.Listers.Namespace, gw, parentRef, params, validListeners)
+			allowedListeners, conditions := gwutils.GetAllowedListeners(p.Informers.GetListers().Namespace, gw, parentRef, params, validListeners)
 			//if len(allowedListeners) == 0 {
 			//
 			//}

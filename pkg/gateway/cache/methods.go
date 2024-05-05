@@ -20,16 +20,18 @@ func (c *GatewayCache) getResourcesFromCache(resourceType informers.ResourceType
 }
 
 func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
-	gateways := make([]*gwv1.Gateway, 0)
+	//gateways := make([]*gwv1.Gateway, 0)
+	//
+	//for _, gw := range c.getResourcesFromCache(informers.GatewaysResourceType, false) {
+	//	gw := gw.(*gwv1.Gateway)
+	//	if gwutils.IsActiveGateway(gw) {
+	//		gateways = append(gateways, gw)
+	//	}
+	//}
+	//
+	//return gateways
 
-	for _, gw := range c.getResourcesFromCache(informers.GatewaysResourceType, false) {
-		gw := gw.(*gwv1.Gateway)
-		if gwutils.IsActiveGateway(gw) {
-			gateways = append(gateways, gw)
-		}
-	}
-
-	return gateways
+	return gwutils.GetActiveGateways(c.getResourcesFromCache(informers.GatewaysResourceType, false))
 }
 
 // no need to check ReferenceGrant here
