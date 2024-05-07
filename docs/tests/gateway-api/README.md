@@ -273,6 +273,7 @@ spec:
               pipy()
               .listen(8080)
               .serveHTTP(new Message('Hi, I am HTTPRoute!\n'))
+          workingDir: /tmp
 EOF
 ```
 
@@ -370,6 +371,7 @@ spec:
               pipy()
               .listen(8080)
               .serveHTTP(new Message('Hi, I am HTTPRoute!\n'))
+          workingDir: /tmp
 EOF
 ```
 
