@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/zerologr"
+
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
@@ -396,6 +398,7 @@ func main() {
 		}
 	}
 
+	ctrl.SetLogger(zerologr.New(&log))
 	mgr, err := ctrl.NewManager(kubeConfig, ctrl.Options{
 		Scheme:                  scheme,
 		LeaderElection:          true,
