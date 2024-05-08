@@ -53,7 +53,7 @@ require (
 	k8s.io/client-go v0.29.2
 	k8s.io/code-generator v0.29.2
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
-	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/controller-runtime v0.17.5
 	sigs.k8s.io/gateway-api v1.0.0
 	sigs.k8s.io/kind v0.17.0
 )
