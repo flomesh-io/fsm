@@ -33,8 +33,17 @@ func (r *serviceReconciler) onSvcUpdate(oldObj, newObj interface{}) {
 		}
 
 		delFn := func() error {
-			_, err := r.deleteEntryFromFLB(context.Background(), newSvc)
-			return err
+			svc := newSvc.DeepCopy()
+
+			if err := r.removeServiceHash(context.Background(), svc); err != nil {
+				return err
+			}
+
+			if _, err := r.deleteEntryFromFLB(context.Background(), svc); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		err := retry.OnError(retry.DefaultBackoff, retriableFn, delFn)
