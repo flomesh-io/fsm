@@ -250,17 +250,30 @@ func (r *serviceReconciler) createOrUpdateFLBEntry(ctx context.Context, svc *cor
 			return ctrl.Result{}, err
 		}
 
-		if len(svc.Annotations) == 0 {
-			svc.Annotations = make(map[string]string)
-		}
-
-		svc.Annotations[constants.FLBHashAnnotation] = hash
-		if err := r.fctx.Update(ctx, svc); err != nil {
-			return ctrl.Result{}, err
-		}
+		return r.updateServiceHash(ctx, svc, hash)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *serviceReconciler) updateServiceHash(ctx context.Context, svc *corev1.Service, hash string) (ctrl.Result, error) {
+	if len(svc.Annotations) == 0 {
+		svc.Annotations = make(map[string]string)
+	}
+
+	svc.Annotations[constants.FLBHashAnnotation] = hash
+
+	return ctrl.Result{}, r.fctx.Update(ctx, svc)
+}
+
+func (r *serviceReconciler) removeServiceHash(ctx context.Context, svc *corev1.Service) error {
+	if len(svc.Annotations) == 0 {
+		return nil
+	}
+
+	delete(svc.Annotations, constants.FLBHashAnnotation)
+
+	return r.fctx.Update(ctx, svc)
 }
 
 func (r *serviceReconciler) computeServiceHash(svc *corev1.Service, endpoints map[string][]string, params map[string]string) string {
