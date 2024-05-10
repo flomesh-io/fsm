@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,7 +27,7 @@ type PortForwarder struct {
 func NewPortForwarder(dialer httpstream.Dialer, portSpec string) (*PortForwarder, error) {
 	stopChan := make(chan struct{})
 	readyChan := make(chan struct{})
-	forwarder, err := portforward.New(dialer, []string{portSpec}, stopChan, readyChan, ioutil.Discard, os.Stderr)
+	forwarder, err := portforward.New(dialer, []string{portSpec}, stopChan, readyChan, io.Discard, os.Stderr)
 	if err != nil {
 		return nil, fmt.Errorf("Error setting up port forwarding: %w", err)
 	}
