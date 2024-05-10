@@ -292,7 +292,7 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1().GatewayClasses().Informer()
 		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1().Gateways().Informer()
 		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1().HTTPRoutes().Informer()
-		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1().GRPCRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIUDPRoute] = informerFactory.Gateway().V1alpha2().UDPRoutes().Informer()
