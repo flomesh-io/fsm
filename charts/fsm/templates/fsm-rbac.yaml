@@ -88,15 +88,15 @@ rules:
     verbs: ["update"]
 
   # FSM's MultiCluster resource API
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters", "serviceimports", "serviceexports", "globaltrafficpolicies"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters/finalizers", "serviceimports/finalizers", "serviceexports/finalizers", "globaltrafficpolicies/finalizers"]
     verbs: ["update"]
 
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters/status", "serviceimports/status", "serviceexports/status", "globaltrafficpolicies/status"]
     verbs: ["get", "patch", "update"]
 
@@ -125,13 +125,13 @@ rules:
     verbs: ["update"]
 
   # FSM's NamespacedIngress API
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses/finalizers" ]
     verbs: [ "update" ]
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses/status" ]
     verbs: [ "get", "patch", "update" ]
 

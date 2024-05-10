@@ -80,7 +80,7 @@ generate_client "policy" "v1alpha1"
 echo "##### Generating networking.k8s.io client ######"
 generate_client "networking" "v1"
 
-echo "##### Generating flomesh.io multi cluster service client ######"
+echo "##### Generating multicluster.flomesh.io client ######"
 generate_client "multicluster" "v1alpha1"
 
 echo "##### Generating flomesh.io plugin client ######"
@@ -92,7 +92,7 @@ generate_client "machine" "v1alpha1"
 echo "##### Generating flomesh.io connector client ######"
 generate_client "connector" "v1alpha1"
 
-echo "##### Generating flomesh.io NamespacedIngress client ######"
+echo "##### Generating networking.flomesh.io client ######"
 generate_client "namespacedingress" "v1alpha1"
 
 echo "##### Generating gateway.flomesh.io PolicyAttachment client ######"
