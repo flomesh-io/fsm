@@ -42,7 +42,7 @@ func (dc *NacosDiscoveryClient) nacosClient() naming_client.INamingClient {
 		dc.namingClient = nil
 	}
 	if password := dc.connectController.GetAuthNacosPassword(); !strings.EqualFold(dc.clientConfig.Password, password) {
-		dc.clientConfig.Username = password
+		dc.clientConfig.Password = password
 		dc.namingClient = nil
 	}
 	if accessKey := dc.connectController.GetAuthNacosAccessKey(); !strings.EqualFold(dc.clientConfig.AccessKey, accessKey) {
