@@ -9,7 +9,7 @@ import (
 // SessionStickyPolicySpec defines the desired state of SessionStickyPolicy
 type SessionStickyPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +listType=map
 	// +listMapKey=port
@@ -64,7 +64,7 @@ type SessionStickyPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // SessionStickyPolicy is the Schema for the SessionStickyPolicy API
 type SessionStickyPolicy struct {

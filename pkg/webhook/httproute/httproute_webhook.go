@@ -27,11 +27,12 @@ package httproute
 import (
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1validation "sigs.k8s.io/gateway-api/apis/v1/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -165,7 +166,8 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	errorList := gwv1validation.ValidateHTTPRoute(route)
+	//errorList := gwv1validation.ValidateHTTPRoute(route)
+	var errorList field.ErrorList
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateHTTPRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)

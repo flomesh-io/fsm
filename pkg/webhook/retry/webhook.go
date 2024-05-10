@@ -106,7 +106,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 
 	//targetRef := policy.Spec.TargetRef
 	//if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-	//	(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+	//	(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 	//	if len(policy.Spec.Ports) > 0 {
 	//		for i, p := range policy.Spec.Ports {
 	//			if p.Config != nil {
@@ -172,16 +172,16 @@ func doValidation(obj interface{}) error {
 	return nil
 }
 
-func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
+func validateTargetRef(ref gwv1alpha2.NamespacedPolicyTargetReference) field.ErrorList {
 	var errs field.ErrorList
 
-	if ref.Group != constants.KubernetesCoreGroup && ref.Group != constants.FlomeshAPIGroup {
+	if ref.Group != constants.KubernetesCoreGroup && ref.Group != constants.FlomeshMCSAPIGroup {
 		path := field.NewPath("spec").Child("targetRef").Child("group")
 		errs = append(errs, field.Invalid(path, ref.Group, "group must be set to flomesh.io or core"))
 	}
 
 	if (ref.Group == constants.KubernetesCoreGroup && ref.Kind == constants.KubernetesServiceKind) ||
-		(ref.Group == constants.FlomeshAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind) {
+		(ref.Group == constants.FlomeshMCSAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind) {
 		// do nothing
 	} else {
 		path := field.NewPath("spec").Child("targetRef").Child("kind")
@@ -193,7 +193,7 @@ func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
 	//
 	//}
 	//
-	//if ref.Group == constants.FlomeshAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind {
+	//if ref.Group == constants.FlomeshMCSAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind {
 	//
 	//}
 

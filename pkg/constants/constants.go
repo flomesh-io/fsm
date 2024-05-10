@@ -396,8 +396,8 @@ const (
 	// GatewayAPIGroup is the group name used in Gateway API
 	GatewayAPIGroup = "gateway.networking.k8s.io"
 
-	// FlomeshAPIGroup is the group name used in Flomesh API
-	FlomeshAPIGroup = "flomesh.io"
+	// FlomeshMCSAPIGroup is the group name used in Flomesh Multi Cluster Service API
+	FlomeshMCSAPIGroup = "multicluster.flomesh.io"
 
 	// FlomeshGatewayAPIGroup is the group name used in Flomesh Gateway API
 	FlomeshGatewayAPIGroup = "gateway.flomesh.io"
@@ -544,10 +544,10 @@ const (
 	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-httproute"
 
 	// GRPCRouteMutatingWebhookPath is the path at which the gRPC route mutating webhook is served
-	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-grpcroute"
 
 	// GRPCRouteValidatingWebhookPath is the path at which the gRPC route validating webhook is served
-	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-grpcroute"
 
 	// TCPRouteMutatingWebhookPath is the path at which the TCP route mutating webhook is served
 	TCPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"

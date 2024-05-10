@@ -9,7 +9,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
@@ -73,7 +72,7 @@ func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMat
 }
 
 // GetAccessControlConfigIfGRPCRouteMatchesPolicy returns the access control config if the GRPC route matches the policy
-func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
 		return nil
 	}

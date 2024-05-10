@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeSessionStickyPolicies) DeleteCollection(ctx context.Context, opts v
 func (c *FakeSessionStickyPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SessionStickyPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(sessionstickypoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.SessionStickyPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SessionStickyPolicy), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied sessionStickyPolicy.
-func (c *FakeSessionStickyPolicies) Apply(ctx context.Context, sessionStickyPolicy *policyattachmentv1alpha1.SessionStickyPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.SessionStickyPolicy, err error) {
-	if sessionStickyPolicy == nil {
-		return nil, fmt.Errorf("sessionStickyPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(sessionStickyPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := sessionStickyPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("sessionStickyPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sessionstickypoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.SessionStickyPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SessionStickyPolicy), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeSessionStickyPolicies) ApplyStatus(ctx context.Context, sessionStickyPolicy *policyattachmentv1alpha1.SessionStickyPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.SessionStickyPolicy, err error) {
-	if sessionStickyPolicy == nil {
-		return nil, fmt.Errorf("sessionStickyPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(sessionStickyPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := sessionStickyPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("sessionStickyPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sessionstickypoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.SessionStickyPolicy{})
 
 	if obj == nil {
 		return nil, err

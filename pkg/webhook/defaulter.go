@@ -39,7 +39,7 @@ import (
 
 type mutatingHandler struct {
 	defaulter Defaulter
-	decoder   *admission.Decoder
+	decoder   admission.Decoder
 }
 
 //var _ admission.DecoderInjector = &mutatingHandler{}

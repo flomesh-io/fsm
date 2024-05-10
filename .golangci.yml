@@ -1,10 +1,6 @@
 run:
   tests: false
   timeout: 20m
-  skip-dirs:
-    - pkg/gen
-  skip-files:
-    - "zz_generated.deepcopy.go$"
 
 linters:
   enable:
@@ -28,6 +24,10 @@ linters-settings:
         disabled: true
 
 issues:
+  exclude-dirs:
+    - pkg/gen
+  exclude-files:
+    - "zz_generated.deepcopy.go$"
   exclude-rules:
     # Ignore error for ginkgo and gomega dot imports
     - linters:
@@ -59,7 +59,8 @@ output:
   # Example: "checkstyle:report.xml,json:stdout,colored-line-number"
   #
   # Default: colored-line-number
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   # Print lines of code with issue.
   # Default: true
   print-issued-lines: true

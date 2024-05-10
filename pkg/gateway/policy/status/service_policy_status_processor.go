@@ -41,7 +41,7 @@ type GetAttachedPoliciesFunc func(policy client.Object, svc client.Object) ([]cl
 type FindConflictFunc func(policy client.Object, allPolicies []client.Object, port int32) *types.NamespacedName
 
 // Process processes the service level policy status
-func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.PolicyTargetReference) metav1.Condition {
+func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) metav1.Condition {
 	_, ok := p.getServiceGroupKindObjectMapping()[string(targetRef.Group)]
 	if !ok {
 		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference group %q, only %q is/are supported", targetRef.Group, strings.Join(p.supportedGroups(), ",")))

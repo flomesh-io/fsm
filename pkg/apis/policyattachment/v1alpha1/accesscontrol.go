@@ -9,7 +9,7 @@ import (
 // AccessControlPolicySpec defines the desired state of AccessControlPolicy
 type AccessControlPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +optional
 	// +listType=map
@@ -73,7 +73,7 @@ type HTTPAccessControl struct {
 // GRPCAccessControl defines the access control configuration for a GRPC route
 type GRPCAccessControl struct {
 	// Match is the match condition for the GRPC route
-	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+	Match gwv1.GRPCRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the GRPC route
@@ -128,8 +128,10 @@ type AccessControlPolicyStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:resource:scope=Namespaced,categories=gateway-api,shortName=actlpolicy
+// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // AccessControlPolicy is the Schema for the AccessControlPolicy API
 type AccessControlPolicy struct {

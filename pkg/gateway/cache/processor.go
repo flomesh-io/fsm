@@ -196,7 +196,7 @@ func (c *GatewayProcessor) routeRules() map[int32]fgw.RouteRule {
 	}
 
 	for _, grpcRoute := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, true) {
-		grpcRoute := grpcRoute.(*gwv1alpha2.GRPCRoute)
+		grpcRoute := grpcRoute.(*gwv1.GRPCRoute)
 		c.processGRPCRoute(grpcRoute)
 	}
 
@@ -393,7 +393,7 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 	}
 }
 
-func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.PolicyTargetReference, port int32) *fgw.ServicePortName {
+func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, port int32) *fgw.ServicePortName {
 	if !isValidTargetRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
 		return nil
@@ -484,7 +484,7 @@ func (c *GatewayProcessor) toFSMHTTPRouteFilter(referer client.Object, filter gw
 	return result
 }
 
-func (c *GatewayProcessor) toFSMGRPCRouteFilter(referer client.Object, filter gwv1alpha2.GRPCRouteFilter) fgw.Filter {
+func (c *GatewayProcessor) toFSMGRPCRouteFilter(referer client.Object, filter gwv1.GRPCRouteFilter) fgw.Filter {
 	result := fgw.GRPCRouteFilter{Type: filter.Type}
 
 	if filter.RequestHeaderModifier != nil {

@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type HealthCheckPolicyInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.HealthCheckPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HealthCheckPolicy, err error)
-	Apply(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error)
-	ApplyStatus(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error)
 	HealthCheckPolicyExpansion
 }
 
@@ -190,62 +185,6 @@ func (c *healthCheckPolicies) Patch(ctx context.Context, name string, pt types.P
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied healthCheckPolicy.
-func (c *healthCheckPolicies) Apply(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error) {
-	if healthCheckPolicy == nil {
-		return nil, fmt.Errorf("healthCheckPolicy provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(healthCheckPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := healthCheckPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("healthCheckPolicy.Name must be provided to Apply")
-	}
-	result = &v1alpha1.HealthCheckPolicy{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *healthCheckPolicies) ApplyStatus(ctx context.Context, healthCheckPolicy *policyattachmentv1alpha1.HealthCheckPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.HealthCheckPolicy, err error) {
-	if healthCheckPolicy == nil {
-		return nil, fmt.Errorf("healthCheckPolicy provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(healthCheckPolicy)
-	if err != nil {
-		return nil, err
-	}
-
-	name := healthCheckPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("healthCheckPolicy.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.HealthCheckPolicy{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

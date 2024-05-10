@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeIngressBackends) DeleteCollection(ctx context.Context, opts v1.Dele
 func (c *FakeIngressBackends) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.IngressBackend, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(ingressbackendsResource, c.ns, name, pt, data, subresources...), &v1alpha1.IngressBackend{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.IngressBackend), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied ingressBackend.
-func (c *FakeIngressBackends) Apply(ctx context.Context, ingressBackend *policyv1alpha1.IngressBackendApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.IngressBackend, err error) {
-	if ingressBackend == nil {
-		return nil, fmt.Errorf("ingressBackend provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(ingressBackend)
-	if err != nil {
-		return nil, err
-	}
-	name := ingressBackend.Name
-	if name == nil {
-		return nil, fmt.Errorf("ingressBackend.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ingressbackendsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.IngressBackend{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.IngressBackend), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeIngressBackends) ApplyStatus(ctx context.Context, ingressBackend *policyv1alpha1.IngressBackendApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.IngressBackend, err error) {
-	if ingressBackend == nil {
-		return nil, fmt.Errorf("ingressBackend provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(ingressBackend)
-	if err != nil {
-		return nil, err
-	}
-	name := ingressBackend.Name
-	if name == nil {
-		return nil, fmt.Errorf("ingressBackend.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ingressbackendsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.IngressBackend{})
 
 	if obj == nil {
 		return nil, err

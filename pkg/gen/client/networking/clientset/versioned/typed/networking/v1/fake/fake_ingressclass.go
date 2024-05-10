@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1 "github.com/flomesh-io/fsm/pkg/apis/networking/v1"
-	networkingv1 "github.com/flomesh-io/fsm/pkg/gen/client/networking/applyconfiguration/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -114,27 +111,6 @@ func (c *FakeIngressClasses) DeleteCollection(ctx context.Context, opts metav1.D
 func (c *FakeIngressClasses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.IngressClass, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(ingressclassesResource, name, pt, data, subresources...), &v1.IngressClass{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1.IngressClass), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied ingressClass.
-func (c *FakeIngressClasses) Apply(ctx context.Context, ingressClass *networkingv1.IngressClassApplyConfiguration, opts metav1.ApplyOptions) (result *v1.IngressClass, err error) {
-	if ingressClass == nil {
-		return nil, fmt.Errorf("ingressClass provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(ingressClass)
-	if err != nil {
-		return nil, err
-	}
-	name := ingressClass.Name
-	if name == nil {
-		return nil, fmt.Errorf("ingressClass.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(ingressclassesResource, *name, types.ApplyPatchType, data), &v1.IngressClass{})
 	if obj == nil {
 		return nil, err
 	}

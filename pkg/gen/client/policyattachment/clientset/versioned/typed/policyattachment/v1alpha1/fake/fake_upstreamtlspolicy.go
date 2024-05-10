@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeUpstreamTLSPolicies) DeleteCollection(ctx context.Context, opts v1.
 func (c *FakeUpstreamTLSPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.UpstreamTLSPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(upstreamtlspoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.UpstreamTLSPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.UpstreamTLSPolicy), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied upstreamTLSPolicy.
-func (c *FakeUpstreamTLSPolicies) Apply(ctx context.Context, upstreamTLSPolicy *policyattachmentv1alpha1.UpstreamTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTLSPolicy, err error) {
-	if upstreamTLSPolicy == nil {
-		return nil, fmt.Errorf("upstreamTLSPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(upstreamTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := upstreamTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("upstreamTLSPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(upstreamtlspoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.UpstreamTLSPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.UpstreamTLSPolicy), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeUpstreamTLSPolicies) ApplyStatus(ctx context.Context, upstreamTLSPolicy *policyattachmentv1alpha1.UpstreamTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTLSPolicy, err error) {
-	if upstreamTLSPolicy == nil {
-		return nil, fmt.Errorf("upstreamTLSPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(upstreamTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := upstreamTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("upstreamTLSPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(upstreamtlspoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.UpstreamTLSPolicy{})
 
 	if obj == nil {
 		return nil, err

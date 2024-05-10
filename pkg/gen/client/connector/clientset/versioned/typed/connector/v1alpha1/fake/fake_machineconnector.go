@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/applyconfiguration/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -125,49 +122,6 @@ func (c *FakeMachineConnectors) DeleteCollection(ctx context.Context, opts v1.De
 func (c *FakeMachineConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MachineConnector, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(machineconnectorsResource, name, pt, data, subresources...), &v1alpha1.MachineConnector{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied machineConnector.
-func (c *FakeMachineConnectors) Apply(ctx context.Context, machineConnector *connectorv1alpha1.MachineConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MachineConnector, err error) {
-	if machineConnector == nil {
-		return nil, fmt.Errorf("machineConnector provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(machineConnector)
-	if err != nil {
-		return nil, err
-	}
-	name := machineConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("machineConnector.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(machineconnectorsResource, *name, types.ApplyPatchType, data), &v1alpha1.MachineConnector{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MachineConnector), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeMachineConnectors) ApplyStatus(ctx context.Context, machineConnector *connectorv1alpha1.MachineConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MachineConnector, err error) {
-	if machineConnector == nil {
-		return nil, fmt.Errorf("machineConnector provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(machineConnector)
-	if err != nil {
-		return nil, err
-	}
-	name := machineConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("machineConnector.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(machineconnectorsResource, *name, types.ApplyPatchType, data, "status"), &v1alpha1.MachineConnector{})
 	if obj == nil {
 		return nil, err
 	}

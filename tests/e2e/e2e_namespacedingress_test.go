@@ -72,9 +72,9 @@ func deployNamespacedIngress() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(Td.WaitForPodsRunningReady(nsIngress, 1, &metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.AppLabel:              constants.FSMIngressName,
-			"ingress.flomesh.io/namespaced": "true",
-			"ingress.flomesh.io/ns":         nsIngress,
+			constants.AppLabel:                 constants.FSMIngressName,
+			"networking.flomesh.io/namespaced": "true",
+			"networking.flomesh.io/ns":         nsIngress,
 		},
 	})).To(Succeed())
 }

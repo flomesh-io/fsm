@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/applyconfiguration/multicluster/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type ClusterInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ClusterList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Cluster, err error)
-	Apply(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error)
-	ApplyStatus(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error)
 	ClusterExpansion
 }
 
@@ -58,7 +53,7 @@ type clusters struct {
 }
 
 // newClusters returns a Clusters
-func newClusters(c *FlomeshV1alpha1Client) *clusters {
+func newClusters(c *MulticlusterV1alpha1Client) *clusters {
 	return &clusters{
 		client: c.RESTClient(),
 	}
@@ -179,60 +174,6 @@ func (c *clusters) Patch(ctx context.Context, name string, pt types.PatchType, d
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied cluster.
-func (c *clusters) Apply(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error) {
-	if cluster == nil {
-		return nil, fmt.Errorf("cluster provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(cluster)
-	if err != nil {
-		return nil, err
-	}
-	name := cluster.Name
-	if name == nil {
-		return nil, fmt.Errorf("cluster.Name must be provided to Apply")
-	}
-	result = &v1alpha1.Cluster{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("clusters").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *clusters) ApplyStatus(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error) {
-	if cluster == nil {
-		return nil, fmt.Errorf("cluster provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	name := cluster.Name
-	if name == nil {
-		return nil, fmt.Errorf("cluster.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.Cluster{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("clusters").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

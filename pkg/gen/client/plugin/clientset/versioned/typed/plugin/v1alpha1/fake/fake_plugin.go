@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/plugin/applyconfiguration/plugin/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -125,49 +122,6 @@ func (c *FakePlugins) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 func (c *FakePlugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(pluginsResource, name, pt, data, subresources...), &v1alpha1.Plugin{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied plugin.
-func (c *FakePlugins) Apply(ctx context.Context, plugin *pluginv1alpha1.PluginApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Plugin, err error) {
-	if plugin == nil {
-		return nil, fmt.Errorf("plugin provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(plugin)
-	if err != nil {
-		return nil, err
-	}
-	name := plugin.Name
-	if name == nil {
-		return nil, fmt.Errorf("plugin.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(pluginsResource, *name, types.ApplyPatchType, data), &v1alpha1.Plugin{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Plugin), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakePlugins) ApplyStatus(ctx context.Context, plugin *pluginv1alpha1.PluginApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Plugin, err error) {
-	if plugin == nil {
-		return nil, fmt.Errorf("plugin provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(plugin)
-	if err != nil {
-		return nil, err
-	}
-	name := plugin.Name
-	if name == nil {
-		return nil, fmt.Errorf("plugin.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(pluginsResource, *name, types.ApplyPatchType, data, "status"), &v1alpha1.Plugin{})
 	if obj == nil {
 		return nil, err
 	}

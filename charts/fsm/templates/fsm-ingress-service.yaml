@@ -9,7 +9,7 @@ metadata:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
     meshName: {{ .Values.fsm.meshName }}
-    ingress.flomesh.io/namespaced: "false"
+    networking.flomesh.io/namespaced: "false"
   {{- with .Values.fsm.fsmIngress.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -38,6 +38,6 @@ spec:
   {{- end }}
   selector:
     app: fsm-ingress
-    ingress.flomesh.io/namespaced: "false"
+    networking.flomesh.io/namespaced: "false"
 {{- end }}
 {{- end }}

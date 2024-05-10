@@ -133,7 +133,7 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bo
 	return string(parentRef.Name) == gateway.Name
 }
 
-func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.PolicyTargetReference, referenceGrants []client.Object) bool {
+func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, referenceGrants []client.Object) bool {
 	if ref.Namespace != nil && string(*ref.Namespace) != policy.GetNamespace() && !ValidCrossNamespaceRef(
 		referenceGrants,
 		gwtypes.CrossNamespaceFrom{
@@ -155,7 +155,7 @@ func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.PolicyTargetRefer
 }
 
 // IsRefToTarget returns true if the target reference is to the target object
-func IsRefToTarget(referenceGrants []client.Object, policy client.Object, ref gwv1alpha2.PolicyTargetReference, target client.Object) bool {
+func IsRefToTarget(referenceGrants []client.Object, policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
 	targetGVK := target.GetObjectKind().GroupVersionKind()
 
 	log.Debug().Msgf("[TARGET] IsRefToTarget: policy: %s/%s, ref: %s/%s/%s/%s, target: %s/%s/%s/%s",
@@ -213,7 +213,7 @@ func IsRefToTarget(referenceGrants []client.Object, policy client.Object, ref gw
 }
 
 // IsTargetRefToGVK returns true if the target reference is to the given group version kind
-func IsTargetRefToGVK(targetRef gwv1alpha2.PolicyTargetReference, gvk schema.GroupVersionKind) bool {
+func IsTargetRefToGVK(targetRef gwv1alpha2.NamespacedPolicyTargetReference, gvk schema.GroupVersionKind) bool {
 	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
 }
 
@@ -409,7 +409,7 @@ func ToRouteContext(route client.Object) *gwtypes.RouteContext {
 			Namespace:    route.GetNamespace(),
 			ParentStatus: route.Status.Parents,
 		}
-	case *gwv1alpha2.GRPCRoute:
+	case *gwv1.GRPCRoute:
 		return &gwtypes.RouteContext{
 			Meta:         route.GetObjectMeta(),
 			ParentRefs:   route.Spec.ParentRefs,

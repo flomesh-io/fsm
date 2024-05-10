@@ -220,11 +220,11 @@ func WithMultiClusterClient(multiclusterClient multiclusterClientset.Interface) 
 	return func(ic *InformerCollection) {
 		informerFactory := multiclusterInformers.NewSharedInformerFactory(multiclusterClient, DefaultKubeEventResyncInterval)
 
-		ic.informers[InformerKeyServiceExport] = informerFactory.Flomesh().V1alpha1().ServiceExports().Informer()
-		ic.informers[InformerKeyServiceImport] = informerFactory.Flomesh().V1alpha1().ServiceImports().Informer()
-		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Flomesh().V1alpha1().GlobalTrafficPolicies().Informer()
+		ic.informers[InformerKeyServiceExport] = informerFactory.Multicluster().V1alpha1().ServiceExports().Informer()
+		ic.informers[InformerKeyServiceImport] = informerFactory.Multicluster().V1alpha1().ServiceImports().Informer()
+		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Multicluster().V1alpha1().GlobalTrafficPolicies().Informer()
 
-		ic.listers.ServiceImport = informerFactory.Flomesh().V1alpha1().ServiceImports().Lister()
+		ic.listers.ServiceImport = informerFactory.Multicluster().V1alpha1().ServiceImports().Lister()
 	}
 }
 
@@ -249,9 +249,9 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 		ic.listers.K8sIngress = informerFactory.Networking().V1().Ingresses().Lister()
 
 		nsigInformerFactory := nsigInformers.NewSharedInformerFactory(nsigClient, DefaultKubeEventResyncInterval)
-		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Informer()
+		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Informer()
 
-		ic.listers.NamespacedIngress = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Lister()
+		ic.listers.NamespacedIngress = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Lister()
 	}
 }
 
@@ -292,7 +292,7 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1().GatewayClasses().Informer()
 		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1().Gateways().Informer()
 		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1().HTTPRoutes().Informer()
-		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1().GRPCRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIUDPRoute] = informerFactory.Gateway().V1alpha2().UDPRoutes().Informer()
@@ -301,7 +301,7 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.listers.GatewayClass = informerFactory.Gateway().V1().GatewayClasses().Lister()
 		ic.listers.Gateway = informerFactory.Gateway().V1().Gateways().Lister()
 		ic.listers.HTTPRoute = informerFactory.Gateway().V1().HTTPRoutes().Lister()
-		ic.listers.GRPCRoute = informerFactory.Gateway().V1alpha2().GRPCRoutes().Lister()
+		ic.listers.GRPCRoute = informerFactory.Gateway().V1().GRPCRoutes().Lister()
 		ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
 		ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
 		ic.listers.UDPRoute = informerFactory.Gateway().V1alpha2().UDPRoutes().Lister()

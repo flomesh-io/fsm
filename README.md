@@ -87,16 +87,16 @@ FSM is under active development and is ready for production workloads.
 | TrafficMetrics  | \*.metrics.smi-spec.io | [v1alpha1](https://github.com/servicemeshinterface/smi-spec/blob/v0.6.0/apis/traffic-metrics/v1alpha1/traffic-metrics.md) | 🚧 **In Progress** 🚧 |
 
 ### GatewayAPI Specification Support
-|   Kind    |        Supported Version          |          Comments          |
-| :---------------------------- | :--------------------------------: |  :--------------------------------: |
-| GatewayClass | v1 | |
-| Gateway      | v1 | |
-| HTTPRoute | v1 | |
-| GRPCRoute | v1alpha2 | |
-| TLSRoute | v1alpha2 | |
-| TCPRoute | v1alpha2 | |
-| UDPRoute | v1alpha2 | |
-| ReferenceGrant | v1beta1 | |
+|   Kind    |      Supported Version      |          Comments          |
+| :---------------------------- |:---------------------------:|  :--------------------------------: |
+| GatewayClass |             v1              | |
+| Gateway      |             v1              | |
+| HTTPRoute |             v1              | |
+| GRPCRoute |             v1              | |
+| TLSRoute |          v1alpha2           | |
+| TCPRoute |          v1alpha2           | |
+| UDPRoute |          v1alpha2           | |
+| ReferenceGrant |           v1beta1           | |
 
 ## FSM Design
 

@@ -134,7 +134,7 @@ func (c *Client) GetNamespace(ns string) *corev1.Namespace {
 		if strings.EqualFold(importedService.Namespace, ns) {
 			namespace := new(corev1.Namespace)
 			namespace.Name = importedService.Namespace
-			namespace.Spec.Finalizers = append(namespace.Spec.Finalizers, "flomesh.io")
+			namespace.Spec.Finalizers = append(namespace.Spec.Finalizers, "multicluster.flomesh.io")
 			return namespace
 		}
 	}

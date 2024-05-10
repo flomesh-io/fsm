@@ -622,12 +622,12 @@ func testFSMGatewayGRPCTrafficSameNamespace() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating GRPCRoute for testing GRPC protocol in the same namespace")
-	grpcRoute := gwv1alpha2.GRPCRoute{
+	grpcRoute := gwv1.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
 			Name:      "grpc-app-1",
 		},
-		Spec: gwv1alpha2.GRPCRouteSpec{
+		Spec: gwv1.GRPCRouteSpec{
 			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
 				ParentRefs: []gwv1alpha2.ParentReference{
 					{
@@ -637,18 +637,18 @@ func testFSMGatewayGRPCTrafficSameNamespace() {
 				},
 			},
 			Hostnames: []gwv1alpha2.Hostname{"grpctest.localhost"},
-			Rules: []gwv1alpha2.GRPCRouteRule{
+			Rules: []gwv1.GRPCRouteRule{
 				{
-					Matches: []gwv1alpha2.GRPCRouteMatch{
+					Matches: []gwv1.GRPCRouteMatch{
 						{
-							Method: &gwv1alpha2.GRPCMethodMatch{
-								Type:    grpcMethodMatchTypePtr(gwv1alpha2.GRPCMethodMatchExact),
+							Method: &gwv1.GRPCMethodMatch{
+								Type:    grpcMethodMatchTypePtr(gwv1.GRPCMethodMatchExact),
 								Service: pointer.String("hello.HelloService"),
 								Method:  pointer.String("SayHello"),
 							},
 						},
 					},
-					BackendRefs: []gwv1alpha2.GRPCBackendRef{
+					BackendRefs: []gwv1.GRPCBackendRef{
 						{
 							BackendRef: gwv1alpha2.BackendRef{
 								BackendObjectReference: gwv1alpha2.BackendObjectReference{
@@ -761,12 +761,12 @@ func testFSMGatewayGRPCTrafficCrossNamespace() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating GRPCRoute for testing GRPC protocol cross namespace")
-	grpcRoute := gwv1alpha2.GRPCRoute{
+	grpcRoute := gwv1.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGRPCRoute,
 			Name:      "grpc-cross-1",
 		},
-		Spec: gwv1alpha2.GRPCRouteSpec{
+		Spec: gwv1.GRPCRouteSpec{
 			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
 				ParentRefs: []gwv1alpha2.ParentReference{
 					{
@@ -777,18 +777,18 @@ func testFSMGatewayGRPCTrafficCrossNamespace() {
 				},
 			},
 			Hostnames: []gwv1alpha2.Hostname{"grpctest.localhost"},
-			Rules: []gwv1alpha2.GRPCRouteRule{
+			Rules: []gwv1.GRPCRouteRule{
 				{
-					Matches: []gwv1alpha2.GRPCRouteMatch{
+					Matches: []gwv1.GRPCRouteMatch{
 						{
-							Method: &gwv1alpha2.GRPCMethodMatch{
-								Type:    grpcMethodMatchTypePtr(gwv1alpha2.GRPCMethodMatchExact),
+							Method: &gwv1.GRPCMethodMatch{
+								Type:    grpcMethodMatchTypePtr(gwv1.GRPCMethodMatchExact),
 								Service: pointer.String("hello.HelloService"),
 								Method:  pointer.String("SayHello"),
 							},
 						},
 					},
-					BackendRefs: []gwv1alpha2.GRPCBackendRef{
+					BackendRefs: []gwv1.GRPCBackendRef{
 						{
 							BackendRef: gwv1alpha2.BackendRef{
 								BackendObjectReference: gwv1alpha2.BackendObjectReference{
@@ -1428,12 +1428,12 @@ func testFSMGatewayHTTPSTraffic() {
 
 func testFSMGatewayGRPCSTraffic() {
 	By("Creating GRPCRoute for testing GRPCs protocol")
-	grpcRoute := gwv1alpha2.GRPCRoute{
+	grpcRoute := gwv1.GRPCRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
 			Name:      "grpcs-app-1",
 		},
-		Spec: gwv1alpha2.GRPCRouteSpec{
+		Spec: gwv1.GRPCRouteSpec{
 			CommonRouteSpec: gwv1alpha2.CommonRouteSpec{
 				ParentRefs: []gwv1alpha2.ParentReference{
 					{
@@ -1443,18 +1443,18 @@ func testFSMGatewayGRPCSTraffic() {
 				},
 			},
 			Hostnames: []gwv1alpha2.Hostname{"grpctest.localhost"},
-			Rules: []gwv1alpha2.GRPCRouteRule{
+			Rules: []gwv1.GRPCRouteRule{
 				{
-					Matches: []gwv1alpha2.GRPCRouteMatch{
+					Matches: []gwv1.GRPCRouteMatch{
 						{
-							Method: &gwv1alpha2.GRPCMethodMatch{
-								Type:    grpcMethodMatchTypePtr(gwv1alpha2.GRPCMethodMatchExact),
+							Method: &gwv1.GRPCMethodMatch{
+								Type:    grpcMethodMatchTypePtr(gwv1.GRPCMethodMatchExact),
 								Service: pointer.String("hello.HelloService"),
 								Method:  pointer.String("SayHello"),
 							},
 						},
 					},
-					BackendRefs: []gwv1alpha2.GRPCBackendRef{
+					BackendRefs: []gwv1.GRPCBackendRef{
 						{
 							BackendRef: gwv1alpha2.BackendRef{
 								BackendObjectReference: gwv1alpha2.BackendObjectReference{
@@ -1637,7 +1637,7 @@ func pathMatchTypePtr(pathMatch gwv1.PathMatchType) *gwv1.PathMatchType {
 	return &ret
 }
 
-func grpcMethodMatchTypePtr(grpcMatch gwv1alpha2.GRPCMethodMatchType) *gwv1alpha2.GRPCMethodMatchType {
+func grpcMethodMatchTypePtr(grpcMatch gwv1.GRPCMethodMatchType) *gwv1.GRPCMethodMatchType {
 	ret := grpcMatch
 	return &ret
 }

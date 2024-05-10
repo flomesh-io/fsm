@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/applyconfiguration/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -31,7 +28,7 @@ import (
 
 // FakeServiceImports implements ServiceImportInterface
 type FakeServiceImports struct {
-	Fake *FakeFlomeshV1alpha1
+	Fake *FakeMulticlusterV1alpha1
 	ns   string
 }
 
@@ -133,51 +130,6 @@ func (c *FakeServiceImports) DeleteCollection(ctx context.Context, opts v1.Delet
 func (c *FakeServiceImports) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceImport, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(serviceimportsResource, c.ns, name, pt, data, subresources...), &v1alpha1.ServiceImport{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceImport), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied serviceImport.
-func (c *FakeServiceImports) Apply(ctx context.Context, serviceImport *multiclusterv1alpha1.ServiceImportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceImport, err error) {
-	if serviceImport == nil {
-		return nil, fmt.Errorf("serviceImport provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(serviceImport)
-	if err != nil {
-		return nil, err
-	}
-	name := serviceImport.Name
-	if name == nil {
-		return nil, fmt.Errorf("serviceImport.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceimportsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.ServiceImport{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceImport), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeServiceImports) ApplyStatus(ctx context.Context, serviceImport *multiclusterv1alpha1.ServiceImportApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.ServiceImport, err error) {
-	if serviceImport == nil {
-		return nil, fmt.Errorf("serviceImport provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(serviceImport)
-	if err != nil {
-		return nil, err
-	}
-	name := serviceImport.Name
-	if name == nil {
-		return nil, fmt.Errorf("serviceImport.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceimportsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.ServiceImport{})
 
 	if obj == nil {
 		return nil, err

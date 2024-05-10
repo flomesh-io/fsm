@@ -36,7 +36,7 @@ rules:
   - apiGroups: [ "gateway.networking.k8s.io" ]
     resources: [ "gatewayclasses", "gateways" ]
     verbs: [ "get", "list", "create", "update", "patch", "delete" ]
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]
     verbs: [ "get", "list", "create", "update", "patch", "delete" ]
 ---

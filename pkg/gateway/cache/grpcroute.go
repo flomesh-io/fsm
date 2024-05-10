@@ -1,13 +1,13 @@
 package cache
 
 import (
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1alpha2.GRPCRoute) {
+func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
 	routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, grpcRoute)
 	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
 
@@ -52,7 +52,7 @@ func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1alpha2.GRPCRoute) {
 	}
 }
 
-func (c *GatewayProcessor) generateGRPCRouteCfg(grpcRoute *gwv1alpha2.GRPCRoute, routePolicies routePolicies) *fgw.GRPCRouteRuleSpec {
+func (c *GatewayProcessor) generateGRPCRouteCfg(grpcRoute *gwv1.GRPCRoute, routePolicies routePolicies) *fgw.GRPCRouteRuleSpec {
 	grpcSpec := &fgw.GRPCRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeGRPC,
 		Matches:   make([]fgw.GRPCTrafficMatch, 0),

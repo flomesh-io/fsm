@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha1"
-	configv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/config/applyconfiguration/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -121,28 +118,6 @@ func (c *FakeMeshConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOp
 func (c *FakeMeshConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MeshConfig, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(meshconfigsResource, c.ns, name, pt, data, subresources...), &v1alpha1.MeshConfig{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MeshConfig), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied meshConfig.
-func (c *FakeMeshConfigs) Apply(ctx context.Context, meshConfig *configv1alpha1.MeshConfigApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MeshConfig, err error) {
-	if meshConfig == nil {
-		return nil, fmt.Errorf("meshConfig provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(meshConfig)
-	if err != nil {
-		return nil, err
-	}
-	name := meshConfig.Name
-	if name == nil {
-		return nil, fmt.Errorf("meshConfig.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(meshconfigsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.MeshConfig{})
 
 	if obj == nil {
 		return nil, err

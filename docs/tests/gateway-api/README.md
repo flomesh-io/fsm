@@ -510,7 +510,7 @@ EOF
 #### Create a GRPCRoute
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: grpc-app-1
@@ -626,7 +626,7 @@ EOF
 #### Create a GRPCRoute
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: grpc-cross-1

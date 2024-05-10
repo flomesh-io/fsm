@@ -14,8 +14,8 @@ spec:
   selector:
     matchLabels:
       app: fsm-ingress
-      ingress.flomesh.io/namespaced: "true"
-      ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+      networking.flomesh.io/namespaced: "true"
+      networking.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -25,8 +25,8 @@ spec:
     metadata:
       labels:
         app: fsm-ingress
-        ingress.flomesh.io/namespaced: "true"
-        ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+        networking.flomesh.io/namespaced: "true"
+        networking.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
         {{- with .Values.nsig.spec.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -154,11 +154,11 @@ spec:
                       operator: In
                       values:
                         - fsm-ingress
-                    - key: ingress.flomesh.io/namespaced
+                    - key: networking.flomesh.io/namespaced
                       operator: In
                       values:
                         - "true"
-                    - key: ingress.flomesh.io/ns
+                    - key: networking.flomesh.io/ns
                       operator: In
                       values:
                         - {{ .Values.nsig.metadata.namespace }}

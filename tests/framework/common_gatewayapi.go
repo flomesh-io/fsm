@@ -44,8 +44,8 @@ func (td *FsmTestData) CreateGatewayAPIReferenceGrant(ns string, r gwv1beta1.Ref
 }
 
 // CreateGatewayAPIGRPCRoute Creates a GRPCRoute
-func (td *FsmTestData) CreateGatewayAPIGRPCRoute(ns string, r gwv1alpha2.GRPCRoute) (*gwv1alpha2.GRPCRoute, error) {
-	hr, err := td.GatewayAPIClient.GatewayV1alpha2().GRPCRoutes(ns).Create(context.Background(), &r, metav1.CreateOptions{})
+func (td *FsmTestData) CreateGatewayAPIGRPCRoute(ns string, r gwv1.GRPCRoute) (*gwv1.GRPCRoute, error) {
+	hr, err := td.GatewayAPIClient.GatewayV1().GRPCRoutes(ns).Create(context.Background(), &r, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GRPCRoute: %w", err)
 	}

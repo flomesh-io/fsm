@@ -40,8 +40,8 @@ var _ = FSMDescribe("Test traffic among FSM Ingress",
 				// Wait for FSM Ingress to be ready
 				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 1, &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						constants.AppLabel:              constants.FSMIngressName,
-						"ingress.flomesh.io/namespaced": "false",
+						constants.AppLabel:                 constants.FSMIngressName,
+						"networking.flomesh.io/namespaced": "false",
 					},
 				})).To(Succeed())
 

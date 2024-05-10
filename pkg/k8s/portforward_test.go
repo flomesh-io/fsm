@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/client-go/tools/portforward"
+
 	"k8s.io/apimachinery/pkg/util/httpstream"
 )
 
@@ -17,7 +19,7 @@ type fakeDialer struct {
 }
 
 func (d *fakeDialer) Dial(protocols ...string) (httpstream.Connection, string, error) {
-	return d.conn, "", d.dialErr
+	return d.conn, portforward.PortForwardProtocolV1Name, d.dialErr
 }
 
 type noopConnection struct{}

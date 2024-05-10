@@ -52,8 +52,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
@@ -272,7 +270,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHTTPRouteBasedRateLimitPolicy(r
 	return nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedGRPCRouteBasedRateLimitPolicy(route *gwv1alpha2.GRPCRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
+func (r *rateLimitPolicyReconciler) getConflictedGRPCRouteBasedRateLimitPolicy(route *gwv1.GRPCRoute, rateLimitPolicy client.Object, routeRateLimits []client.Object) *types.NamespacedName {
 	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
 
 	if len(currentPolicy.Spec.GRPCRateLimits) == 0 {

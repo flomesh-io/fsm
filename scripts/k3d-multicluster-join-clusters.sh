@@ -25,7 +25,7 @@ do
   echo "Joining cluster $K3D_CLUSTER_NAME to control-plane cluster ..."
 
 kubectl apply -f - <<EOF
-apiVersion: flomesh.io/v1alpha1
+apiVersion: multicluster.flomesh.io/v1alpha1
 kind: Cluster
 metadata:
   name: ${K3D_CLUSTER_NAME}

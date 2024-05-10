@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type UpstreamTrafficSettingInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.UpstreamTrafficSettingList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.UpstreamTrafficSetting, err error)
-	Apply(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error)
-	ApplyStatus(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error)
 	UpstreamTrafficSettingExpansion
 }
 
@@ -190,62 +185,6 @@ func (c *upstreamTrafficSettings) Patch(ctx context.Context, name string, pt typ
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied upstreamTrafficSetting.
-func (c *upstreamTrafficSettings) Apply(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {
-	if upstreamTrafficSetting == nil {
-		return nil, fmt.Errorf("upstreamTrafficSetting provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(upstreamTrafficSetting)
-	if err != nil {
-		return nil, err
-	}
-	name := upstreamTrafficSetting.Name
-	if name == nil {
-		return nil, fmt.Errorf("upstreamTrafficSetting.Name must be provided to Apply")
-	}
-	result = &v1alpha1.UpstreamTrafficSetting{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("upstreamtrafficsettings").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *upstreamTrafficSettings) ApplyStatus(ctx context.Context, upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSettingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {
-	if upstreamTrafficSetting == nil {
-		return nil, fmt.Errorf("upstreamTrafficSetting provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(upstreamTrafficSetting)
-	if err != nil {
-		return nil, err
-	}
-
-	name := upstreamTrafficSetting.Name
-	if name == nil {
-		return nil, fmt.Errorf("upstreamTrafficSetting.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.UpstreamTrafficSetting{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("upstreamtrafficsettings").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

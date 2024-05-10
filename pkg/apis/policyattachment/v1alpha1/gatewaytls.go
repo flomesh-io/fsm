@@ -9,7 +9,7 @@ import (
 // GatewayTLSPolicySpec defines the desired state of GatewayTLSPolicy
 type GatewayTLSPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +listType=map
 	// +listMapKey=port
@@ -58,7 +58,7 @@ type GatewayTLSPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // GatewayTLSPolicy is the Schema for the GatewayTLSPolicy API
 type GatewayTLSPolicy struct {
