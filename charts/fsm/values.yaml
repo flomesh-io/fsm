@@ -887,7 +887,7 @@ fsm:
                     operator: In
                     values:
                       - fsm-ingress
-                  - key: ingress.flomesh.io/namespaced
+                  - key: networking.flomesh.io/namespaced
                     operator: In
                     values:
                       - "false"

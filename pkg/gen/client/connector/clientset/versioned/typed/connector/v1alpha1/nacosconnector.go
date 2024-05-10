@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/applyconfiguration/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type NacosConnectorInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.NacosConnectorList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NacosConnector, err error)
-	Apply(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NacosConnector, err error)
-	ApplyStatus(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NacosConnector, err error)
 	NacosConnectorExpansion
 }
 
@@ -179,60 +174,6 @@ func (c *nacosConnectors) Patch(ctx context.Context, name string, pt types.Patch
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied nacosConnector.
-func (c *nacosConnectors) Apply(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NacosConnector, err error) {
-	if nacosConnector == nil {
-		return nil, fmt.Errorf("nacosConnector provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(nacosConnector)
-	if err != nil {
-		return nil, err
-	}
-	name := nacosConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("nacosConnector.Name must be provided to Apply")
-	}
-	result = &v1alpha1.NacosConnector{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("nacosconnectors").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *nacosConnectors) ApplyStatus(ctx context.Context, nacosConnector *connectorv1alpha1.NacosConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.NacosConnector, err error) {
-	if nacosConnector == nil {
-		return nil, fmt.Errorf("nacosConnector provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(nacosConnector)
-	if err != nil {
-		return nil, err
-	}
-
-	name := nacosConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("nacosConnector.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.NacosConnector{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Resource("nacosconnectors").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

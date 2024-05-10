@@ -9,13 +9,13 @@ metadata:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
     meshName: {{ .Values.fsm.meshName }}
-    ingress.flomesh.io/namespaced: "false"
+    networking.flomesh.io/namespaced: "false"
 spec:
   replicas: {{ .Values.fsm.fsmIngress.replicaCount }}
   selector:
     matchLabels:
       app: fsm-ingress
-      ingress.flomesh.io/namespaced: "false"
+      networking.flomesh.io/namespaced: "false"
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -29,7 +29,7 @@ spec:
       {{- end }}
       labels:
         app: fsm-ingress
-        ingress.flomesh.io/namespaced: "false"
+        networking.flomesh.io/namespaced: "false"
         {{- with .Values.fsm.fsmIngress.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

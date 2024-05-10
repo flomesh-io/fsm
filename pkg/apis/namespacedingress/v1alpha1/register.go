@@ -33,7 +33,7 @@ import (
 var (
 	// SchemeGroupVersion is group version used to register MeshConfig
 	SchemeGroupVersion = schema.GroupVersion{
-		Group:   "flomesh.io",
+		Group:   "networking.flomesh.io",
 		Version: "v1alpha1",
 	}
 

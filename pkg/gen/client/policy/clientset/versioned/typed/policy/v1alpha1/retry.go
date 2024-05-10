@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -46,7 +43,6 @@ type RetryInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RetryList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Retry, err error)
-	Apply(ctx context.Context, retry *policyv1alpha1.RetryApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Retry, err error)
 	RetryExpansion
 }
 
@@ -172,32 +168,6 @@ func (c *retries) Patch(ctx context.Context, name string, pt types.PatchType, da
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied retry.
-func (c *retries) Apply(ctx context.Context, retry *policyv1alpha1.RetryApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Retry, err error) {
-	if retry == nil {
-		return nil, fmt.Errorf("retry provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(retry)
-	if err != nil {
-		return nil, err
-	}
-	name := retry.Name
-	if name == nil {
-		return nil, fmt.Errorf("retry.Name must be provided to Apply")
-	}
-	result = &v1alpha1.Retry{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("retries").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeRateLimitPolicies) DeleteCollection(ctx context.Context, opts v1.De
 func (c *FakeRateLimitPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RateLimitPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(ratelimitpoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.RateLimitPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.RateLimitPolicy), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied rateLimitPolicy.
-func (c *FakeRateLimitPolicies) Apply(ctx context.Context, rateLimitPolicy *policyattachmentv1alpha1.RateLimitPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RateLimitPolicy, err error) {
-	if rateLimitPolicy == nil {
-		return nil, fmt.Errorf("rateLimitPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(rateLimitPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := rateLimitPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("rateLimitPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ratelimitpoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.RateLimitPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.RateLimitPolicy), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeRateLimitPolicies) ApplyStatus(ctx context.Context, rateLimitPolicy *policyattachmentv1alpha1.RateLimitPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RateLimitPolicy, err error) {
-	if rateLimitPolicy == nil {
-		return nil, fmt.Errorf("rateLimitPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(rateLimitPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := rateLimitPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("rateLimitPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ratelimitpoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.RateLimitPolicy{})
 
 	if obj == nil {
 		return nil, err

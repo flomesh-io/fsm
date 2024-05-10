@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/machine/applyconfiguration/machine/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type VirtualMachineInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.VirtualMachineList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.VirtualMachine, err error)
-	Apply(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error)
-	ApplyStatus(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error)
 	VirtualMachineExpansion
 }
 
@@ -190,62 +185,6 @@ func (c *virtualMachines) Patch(ctx context.Context, name string, pt types.Patch
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied virtualMachine.
-func (c *virtualMachines) Apply(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error) {
-	if virtualMachine == nil {
-		return nil, fmt.Errorf("virtualMachine provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(virtualMachine)
-	if err != nil {
-		return nil, err
-	}
-	name := virtualMachine.Name
-	if name == nil {
-		return nil, fmt.Errorf("virtualMachine.Name must be provided to Apply")
-	}
-	result = &v1alpha1.VirtualMachine{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("virtualmachines").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *virtualMachines) ApplyStatus(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error) {
-	if virtualMachine == nil {
-		return nil, fmt.Errorf("virtualMachine provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(virtualMachine)
-	if err != nil {
-		return nil, err
-	}
-
-	name := virtualMachine.Name
-	if name == nil {
-		return nil, fmt.Errorf("virtualMachine.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.VirtualMachine{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("virtualmachines").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

@@ -61,7 +61,7 @@ func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-		[]string{"flomesh.io"},
+		[]string{"networking.flomesh.io"},
 		[]string{"v1alpha1"},
 		[]string{"namespacedingresses"},
 	)
@@ -226,7 +226,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 		return nil
 	}
 
-	list, err := w.nsigClient.FlomeshV1alpha1().
+	list, err := w.nsigClient.NetworkingV1alpha1().
 		NamespacedIngresses(namespacedingress.Namespace).
 		List(context.TODO(), metav1.ListOptions{})
 

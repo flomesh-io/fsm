@@ -69,7 +69,7 @@ func RegisterReconcilers(ctx context.Context) error {
 		reconcilers["GatewayAPI(GatewayClass)"] = gatewayv1.NewGatewayClassReconciler(cctx)
 		reconcilers["GatewayAPI(Gateway)"] = gatewayv1.NewGatewayReconciler(cctx)
 		reconcilers["GatewayAPI(HTTPRoute)"] = gatewayv1.NewHTTPRouteReconciler(cctx)
-		reconcilers["GatewayAPI(GRPCRoute)"] = gatewayv1alpha2.NewGRPCRouteReconciler(cctx)
+		reconcilers["GatewayAPI(GRPCRoute)"] = gatewayv1.NewGRPCRouteReconciler(cctx)
 		reconcilers["GatewayAPI(TCPRoute)"] = gatewayv1alpha2.NewTCPRouteReconciler(cctx)
 		reconcilers["GatewayAPI(TLSRoute)"] = gatewayv1alpha2.NewTLSRouteReconciler(cctx)
 		reconcilers["GatewayAPI(UDPRoute)"] = gatewayv1alpha2.NewUDPRouteReconciler(cctx)

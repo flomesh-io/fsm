@@ -8,7 +8,7 @@ metadata:
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-ingress
-    ingress.flomesh.io/namespaced: "true"
+    networking.flomesh.io/namespaced: "true"
     {{- with .Values.nsig.spec.serviceLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -40,7 +40,7 @@ spec:
   {{- end }}
   selector:
     app: fsm-ingress
-    ingress.flomesh.io/namespaced: "true"
-    ingress.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
+    networking.flomesh.io/namespaced: "true"
+    networking.flomesh.io/ns: {{ .Values.nsig.metadata.namespace }}
 {{- end }}
 {{- end }}

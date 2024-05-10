@@ -396,8 +396,8 @@ const (
 	// GatewayAPIGroup is the group name used in Gateway API
 	GatewayAPIGroup = "gateway.networking.k8s.io"
 
-	// FlomeshAPIGroup is the group name used in Flomesh API
-	FlomeshAPIGroup = "flomesh.io"
+	// FlomeshMCSAPIGroup is the group name used in Flomesh Multi Cluster Service API
+	FlomeshMCSAPIGroup = "multicluster.flomesh.io"
 
 	// FlomeshGatewayAPIGroup is the group name used in Flomesh Gateway API
 	FlomeshGatewayAPIGroup = "gateway.flomesh.io"

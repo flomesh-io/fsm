@@ -39,7 +39,7 @@ import (
 
 type validatingHandler struct {
 	validator Validator
-	decoder   *admission.Decoder
+	decoder   admission.Decoder
 }
 
 //var _ admission.DecoderInjector = &validatingHandler{}

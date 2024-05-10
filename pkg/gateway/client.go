@@ -215,7 +215,7 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGateway)
 	case *gwv1.HTTPRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIHTTPRoute)
-	case *gwv1alpha2.GRPCRoute:
+	case *gwv1.GRPCRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGRPCRoute)
 	case *gwv1alpha2.TLSRoute:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITLSRoute)

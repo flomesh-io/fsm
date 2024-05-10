@@ -583,7 +583,7 @@ var _ Filter = &HTTPRouteFilter{}
 type GRPCRouteFilter struct {
 	// Type identifies the type of filter to apply. As with other API fields,
 	// types are classified into three conformance levels:
-	Type gwv1alpha2.GRPCRouteFilterType `json:"Type"`
+	Type gwv1.GRPCRouteFilterType `json:"Type"`
 
 	// RequestHeaderModifier defines a schema for a filter that modifies request
 	// headers.

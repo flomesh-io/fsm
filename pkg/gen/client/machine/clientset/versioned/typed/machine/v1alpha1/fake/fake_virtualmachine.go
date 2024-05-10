@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
-	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/machine/applyconfiguration/machine/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeVirtualMachines) DeleteCollection(ctx context.Context, opts v1.Dele
 func (c *FakeVirtualMachines) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.VirtualMachine, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(virtualmachinesResource, c.ns, name, pt, data, subresources...), &v1alpha1.VirtualMachine{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied virtualMachine.
-func (c *FakeVirtualMachines) Apply(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error) {
-	if virtualMachine == nil {
-		return nil, fmt.Errorf("virtualMachine provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(virtualMachine)
-	if err != nil {
-		return nil, err
-	}
-	name := virtualMachine.Name
-	if name == nil {
-		return nil, fmt.Errorf("virtualMachine.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(virtualmachinesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.VirtualMachine{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.VirtualMachine), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeVirtualMachines) ApplyStatus(ctx context.Context, virtualMachine *machinev1alpha1.VirtualMachineApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.VirtualMachine, err error) {
-	if virtualMachine == nil {
-		return nil, fmt.Errorf("virtualMachine provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(virtualMachine)
-	if err != nil {
-		return nil, err
-	}
-	name := virtualMachine.Name
-	if name == nil {
-		return nil, fmt.Errorf("virtualMachine.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(virtualmachinesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.VirtualMachine{})
 
 	if obj == nil {
 		return nil, err

@@ -84,7 +84,7 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 
 func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 	for _, r := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, false) {
-		r := r.(*gwv1alpha2.GRPCRoute)
+		r := r.(*gwv1.GRPCRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
 				if c.isRefToService(r, backend.BackendObjectReference, service) {
@@ -92,7 +92,7 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 				}
 
 				for _, filter := range backend.Filters {
-					if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
+					if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
 						if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 							return true
 						}
@@ -101,7 +101,7 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 			}
 
 			for _, filter := range rule.Filters {
-				if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
+				if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
 					if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 						return true
 					}
@@ -177,7 +177,7 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool 
 }
 
 // no need to check ReferenceGrant here
-func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
+func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
 	}
@@ -224,9 +224,9 @@ func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1
 }
 
 // no need to check ReferenceGrant here
-func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
+func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+		(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 		return c.isRoutableService(client.ObjectKey{
 			Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
 			Name:      string(targetRef.Name),

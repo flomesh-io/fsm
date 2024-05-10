@@ -9,7 +9,7 @@ import (
 // FaultInjectionPolicySpec defines the desired state of FaultInjectionPolicy
 type FaultInjectionPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +optional
 	// +listType=map
@@ -62,7 +62,7 @@ type HTTPFaultInjection struct {
 // GRPCFaultInjection defines the access control configuration for a GRPC route
 type GRPCFaultInjection struct {
 	// Match is the match condition for the GRPC route
-	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+	Match gwv1.GRPCRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the GRPC route
@@ -148,7 +148,7 @@ type FaultInjectionPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // FaultInjectionPolicy is the Schema for the FaultInjectionPolicy API
 type FaultInjectionPolicy struct {

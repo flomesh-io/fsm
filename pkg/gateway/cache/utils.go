@@ -105,22 +105,22 @@ func httpMatchQueryParams(m gwv1.HTTPRouteMatch) map[fgw.MatchType]map[string]st
 	return params
 }
 
-func grpcMethodMatchType(matchType *gwv1alpha2.GRPCMethodMatchType) fgw.MatchType {
+func grpcMethodMatchType(matchType *gwv1.GRPCMethodMatchType) fgw.MatchType {
 	if matchType == nil {
 		return fgw.MatchTypeExact
 	}
 
 	switch *matchType {
-	case gwv1alpha2.GRPCMethodMatchExact:
+	case gwv1.GRPCMethodMatchExact:
 		return fgw.MatchTypeExact
-	case gwv1alpha2.GRPCMethodMatchRegularExpression:
+	case gwv1.GRPCMethodMatchRegularExpression:
 		return fgw.MatchTypeRegex
 	default:
 		return fgw.MatchTypeExact
 	}
 }
 
-func grpcMatchHeaders(m gwv1alpha2.GRPCRouteMatch) map[fgw.MatchType]map[string]string {
+func grpcMatchHeaders(m gwv1.GRPCRouteMatch) map[fgw.MatchType]map[string]string {
 	exact := make(map[string]string)
 	regex := make(map[string]string)
 
@@ -498,16 +498,16 @@ func isValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool
 	}
 
 	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
-		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshAPIGroup) {
+		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshMCSAPIGroup) {
 		return true
 	}
 
 	return false
 }
 
-func isValidTargetRefToGroupKindOfService(ref gwv1alpha2.PolicyTargetReference) bool {
+func isValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
-		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshAPIGroup) {
+		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshMCSAPIGroup) {
 		return true
 	}
 

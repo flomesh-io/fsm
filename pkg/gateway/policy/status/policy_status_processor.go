@@ -52,10 +52,10 @@ type FindConflictedHostnamesBasedPolicyFunc func(route *gwtypes.RouteContext, po
 type FindConflictedHTTPRouteBasedPolicyFunc func(route *gwv1.HTTPRoute, policy client.Object, allRouteBasedPolicies []client.Object) *types.NamespacedName
 
 // FindConflictedGRPCRouteBasedPolicyFunc finds the conflicted GRPCRoute based policy
-type FindConflictedGRPCRouteBasedPolicyFunc func(route *gwv1alpha2.GRPCRoute, policy client.Object, allRouteBasedPolicies []client.Object) *types.NamespacedName
+type FindConflictedGRPCRouteBasedPolicyFunc func(route *gwv1.GRPCRoute, policy client.Object, allRouteBasedPolicies []client.Object) *types.NamespacedName
 
 // Process processes the policy status of port, hostnames and route level
-func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.PolicyTargetReference) metav1.Condition {
+func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) metav1.Condition {
 	_, ok := p.getGatewayAPIGroupKindObjectMapping()[string(targetRef.Group)]
 	if !ok {
 		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference group, only %q is/are supported", strings.Join(p.supportedGroups(), ",")))
@@ -110,7 +110,7 @@ func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Objec
 				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
 			}
 		}
-	case *gwv1alpha2.GRPCRoute:
+	case *gwv1.GRPCRoute:
 		if p.FindConflictedHostnamesBasedPolicy != nil && len(policies[gwpkg.PolicyMatchTypeHostnames]) > 0 {
 			info := gwutils.ToRouteContext(obj)
 

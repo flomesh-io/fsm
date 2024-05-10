@@ -250,9 +250,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	Flomesh() multicluster.Interface
+	Multicluster() multicluster.Interface
 }
 
-func (f *sharedInformerFactory) Flomesh() multicluster.Interface {
+func (f *sharedInformerFactory) Multicluster() multicluster.Interface {
 	return multicluster.New(f, f.namespace, f.tweakListOptions)
 }

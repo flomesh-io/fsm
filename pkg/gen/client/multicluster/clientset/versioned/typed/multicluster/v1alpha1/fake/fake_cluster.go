@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/applyconfiguration/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -31,7 +28,7 @@ import (
 
 // FakeClusters implements ClusterInterface
 type FakeClusters struct {
-	Fake *FakeFlomeshV1alpha1
+	Fake *FakeMulticlusterV1alpha1
 }
 
 var clustersResource = v1alpha1.SchemeGroupVersion.WithResource("clusters")
@@ -125,49 +122,6 @@ func (c *FakeClusters) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 func (c *FakeClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Cluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(clustersResource, name, pt, data, subresources...), &v1alpha1.Cluster{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Cluster), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied cluster.
-func (c *FakeClusters) Apply(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error) {
-	if cluster == nil {
-		return nil, fmt.Errorf("cluster provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(cluster)
-	if err != nil {
-		return nil, err
-	}
-	name := cluster.Name
-	if name == nil {
-		return nil, fmt.Errorf("cluster.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clustersResource, *name, types.ApplyPatchType, data), &v1alpha1.Cluster{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Cluster), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeClusters) ApplyStatus(ctx context.Context, cluster *multiclusterv1alpha1.ClusterApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Cluster, err error) {
-	if cluster == nil {
-		return nil, fmt.Errorf("cluster provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(cluster)
-	if err != nil {
-		return nil, err
-	}
-	name := cluster.Name
-	if name == nil {
-		return nil, fmt.Errorf("cluster.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(clustersResource, *name, types.ApplyPatchType, data, "status"), &v1alpha1.Cluster{})
 	if obj == nil {
 		return nil, err
 	}

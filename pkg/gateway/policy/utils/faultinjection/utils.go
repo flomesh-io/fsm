@@ -9,7 +9,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
@@ -58,7 +57,7 @@ func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMa
 }
 
 // GetFaultInjectionConfigIfGRPCRouteMatchesPolicy returns the fault injection config if the GRPC route matches the policy
-func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
 	if len(faultInjectionPolicy.Spec.GRPCFaultInjections) == 0 {
 		return nil
 	}

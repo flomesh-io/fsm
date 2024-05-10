@@ -19,7 +19,7 @@ const (
 // RateLimitPolicySpec defines the desired state of RateLimitPolicy
 type RateLimitPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +optional
 	// +listType=map
@@ -89,7 +89,7 @@ type HTTPRateLimit struct {
 // GRPCRateLimit defines the rate limit configuration for a GRPC route
 type GRPCRateLimit struct {
 	// Match is the match condition for the GRPC route
-	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+	Match gwv1.GRPCRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the rate limit configuration for the GRPC route
@@ -155,7 +155,7 @@ type RateLimitPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // RateLimitPolicy is the Schema for the RateLimitPolicy API
 type RateLimitPolicy struct {

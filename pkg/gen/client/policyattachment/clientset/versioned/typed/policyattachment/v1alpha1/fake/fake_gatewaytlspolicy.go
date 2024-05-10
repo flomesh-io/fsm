@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeGatewayTLSPolicies) DeleteCollection(ctx context.Context, opts v1.D
 func (c *FakeGatewayTLSPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GatewayTLSPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(gatewaytlspoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.GatewayTLSPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.GatewayTLSPolicy), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied gatewayTLSPolicy.
-func (c *FakeGatewayTLSPolicies) Apply(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error) {
-	if gatewayTLSPolicy == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(gatewayTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := gatewayTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(gatewaytlspoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.GatewayTLSPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.GatewayTLSPolicy), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeGatewayTLSPolicies) ApplyStatus(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error) {
-	if gatewayTLSPolicy == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(gatewayTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := gatewayTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(gatewaytlspoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.GatewayTLSPolicy{})
 
 	if obj == nil {
 		return nil, err

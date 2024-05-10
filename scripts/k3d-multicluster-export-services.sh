@@ -17,7 +17,7 @@ do
   echo "------------------------------------------------------------"
 
   kubectl apply -f - <<EOF
-apiVersion: flomesh.io/v1alpha1
+apiVersion: multicluster.flomesh.io/v1alpha1
 kind: ServiceExport
 metadata:
   namespace: ${HTTPBIN_NAMESPACE}
@@ -29,7 +29,7 @@ spec:
       path: "/${K3D_CLUSTER_NAME}/httpbin-mesh"
       pathType: Prefix
 ---
-apiVersion: flomesh.io/v1alpha1
+apiVersion: multicluster.flomesh.io/v1alpha1
 kind: ServiceExport
 metadata:
   namespace: ${HTTPBIN_NAMESPACE}
@@ -59,7 +59,7 @@ do
   echo "------------------------------------------------------------"
   echo "Getting service exported in cluster ${k3D_CLUSTER_NAME}"
   echo "------------------------------------------------------------"
-  kubectl get serviceexports.flomesh.io -A
+  kubectl get serviceexports.multicluster.flomesh.io -A
   echo "------------------------------------------------------------"
   curl -s "http://${K3D_HOST_IP}:${PORT}/${k3D_CLUSTER_NAME}/httpbin-mesh"
   curl -s "http://${K3D_HOST_IP}:${PORT}/${k3D_CLUSTER_NAME}/httpbin-mesh-${k3D_CLUSTER_NAME}"

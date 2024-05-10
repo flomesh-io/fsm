@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	connectorv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/connector/applyconfiguration/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -125,49 +122,6 @@ func (c *FakeGatewayConnectors) DeleteCollection(ctx context.Context, opts v1.De
 func (c *FakeGatewayConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GatewayConnector, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(gatewayconnectorsResource, name, pt, data, subresources...), &v1alpha1.GatewayConnector{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.GatewayConnector), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied gatewayConnector.
-func (c *FakeGatewayConnectors) Apply(ctx context.Context, gatewayConnector *connectorv1alpha1.GatewayConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayConnector, err error) {
-	if gatewayConnector == nil {
-		return nil, fmt.Errorf("gatewayConnector provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(gatewayConnector)
-	if err != nil {
-		return nil, err
-	}
-	name := gatewayConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayConnector.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(gatewayconnectorsResource, *name, types.ApplyPatchType, data), &v1alpha1.GatewayConnector{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.GatewayConnector), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeGatewayConnectors) ApplyStatus(ctx context.Context, gatewayConnector *connectorv1alpha1.GatewayConnectorApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayConnector, err error) {
-	if gatewayConnector == nil {
-		return nil, fmt.Errorf("gatewayConnector provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(gatewayConnector)
-	if err != nil {
-		return nil, err
-	}
-	name := gatewayConnector.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayConnector.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(gatewayconnectorsResource, *name, types.ApplyPatchType, data, "status"), &v1alpha1.GatewayConnector{})
 	if obj == nil {
 		return nil, err
 	}

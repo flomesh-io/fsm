@@ -23,7 +23,7 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type FlomeshV1alpha1Interface interface {
+type MulticlusterV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ClustersGetter
 	GlobalTrafficPoliciesGetter
@@ -31,31 +31,31 @@ type FlomeshV1alpha1Interface interface {
 	ServiceImportsGetter
 }
 
-// FlomeshV1alpha1Client is used to interact with features provided by the flomesh.io group.
-type FlomeshV1alpha1Client struct {
+// MulticlusterV1alpha1Client is used to interact with features provided by the multicluster.flomesh.io group.
+type MulticlusterV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *FlomeshV1alpha1Client) Clusters() ClusterInterface {
+func (c *MulticlusterV1alpha1Client) Clusters() ClusterInterface {
 	return newClusters(c)
 }
 
-func (c *FlomeshV1alpha1Client) GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyInterface {
+func (c *MulticlusterV1alpha1Client) GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyInterface {
 	return newGlobalTrafficPolicies(c, namespace)
 }
 
-func (c *FlomeshV1alpha1Client) ServiceExports(namespace string) ServiceExportInterface {
+func (c *MulticlusterV1alpha1Client) ServiceExports(namespace string) ServiceExportInterface {
 	return newServiceExports(c, namespace)
 }
 
-func (c *FlomeshV1alpha1Client) ServiceImports(namespace string) ServiceImportInterface {
+func (c *MulticlusterV1alpha1Client) ServiceImports(namespace string) ServiceImportInterface {
 	return newServiceImports(c, namespace)
 }
 
-// NewForConfig creates a new FlomeshV1alpha1Client for the given config.
+// NewForConfig creates a new MulticlusterV1alpha1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*FlomeshV1alpha1Client, error) {
+func NewForConfig(c *rest.Config) (*MulticlusterV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -67,9 +67,9 @@ func NewForConfig(c *rest.Config) (*FlomeshV1alpha1Client, error) {
 	return NewForConfigAndClient(&config, httpClient)
 }
 
-// NewForConfigAndClient creates a new FlomeshV1alpha1Client for the given config and http client.
+// NewForConfigAndClient creates a new MulticlusterV1alpha1Client for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
-func NewForConfigAndClient(c *rest.Config, h *http.Client) (*FlomeshV1alpha1Client, error) {
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*MulticlusterV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -78,12 +78,12 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*FlomeshV1alpha1Clie
 	if err != nil {
 		return nil, err
 	}
-	return &FlomeshV1alpha1Client{client}, nil
+	return &MulticlusterV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new FlomeshV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new MulticlusterV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *FlomeshV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *MulticlusterV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -91,9 +91,9 @@ func NewForConfigOrDie(c *rest.Config) *FlomeshV1alpha1Client {
 	return client
 }
 
-// New creates a new FlomeshV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *FlomeshV1alpha1Client {
-	return &FlomeshV1alpha1Client{c}
+// New creates a new MulticlusterV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *MulticlusterV1alpha1Client {
+	return &MulticlusterV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -111,7 +111,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FlomeshV1alpha1Client) RESTClient() rest.Interface {
+func (c *MulticlusterV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

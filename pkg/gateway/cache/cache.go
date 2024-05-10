@@ -110,7 +110,7 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[informers.GatewaysResourceType]
 	case *gwv1.HTTPRoute:
 		return c.triggers[informers.HTTPRoutesResourceType]
-	case *gwv1alpha2.GRPCRoute:
+	case *gwv1.GRPCRoute:
 		return c.triggers[informers.GRPCRoutesResourceType]
 	case *gwv1alpha2.TCPRoute:
 		return c.triggers[informers.TCPRoutesResourceType]

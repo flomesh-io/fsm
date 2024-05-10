@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -46,7 +43,6 @@ type EgressGatewayInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.EgressGatewayList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EgressGateway, err error)
-	Apply(ctx context.Context, egressGateway *policyv1alpha1.EgressGatewayApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.EgressGateway, err error)
 	EgressGatewayExpansion
 }
 
@@ -172,32 +168,6 @@ func (c *egressGateways) Patch(ctx context.Context, name string, pt types.PatchT
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied egressGateway.
-func (c *egressGateways) Apply(ctx context.Context, egressGateway *policyv1alpha1.EgressGatewayApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.EgressGateway, err error) {
-	if egressGateway == nil {
-		return nil, fmt.Errorf("egressGateway provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(egressGateway)
-	if err != nil {
-		return nil, err
-	}
-	name := egressGateway.Name
-	if name == nil {
-		return nil, fmt.Errorf("egressGateway.Name must be provided to Apply")
-	}
-	result = &v1alpha1.EgressGateway{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("egressgateways").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

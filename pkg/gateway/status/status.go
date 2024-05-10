@@ -202,8 +202,8 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gwv1alpha2.GRPCRoute:
-		if b, ok := objB.(*gwv1alpha2.GRPCRoute); ok {
+	case *gwv1.GRPCRoute:
+		if b, ok := objB.(*gwv1.GRPCRoute); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}

@@ -484,9 +484,9 @@ func updatePresetMeshConfigMap(ctx context.Context, kubeClient kubernetes.Interf
 func deleteIngressResources(ctx context.Context, kubeClient kubernetes.Interface, fsmNamespace, meshName string) error {
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			constants.AppLabel:              constants.FSMIngressName,
-			"meshName":                      meshName,
-			"ingress.flomesh.io/namespaced": "false",
+			constants.AppLabel:                 constants.FSMIngressName,
+			"meshName":                         meshName,
+			"networking.flomesh.io/namespaced": "false",
 		},
 	}
 	listOptions := metav1.ListOptions{
@@ -527,13 +527,13 @@ func deleteIngressResources(ctx context.Context, kubeClient kubernetes.Interface
 }
 
 func deleteNamespacedIngressResources(ctx context.Context, nsigClient nsigClientset.Interface) error {
-	nsigList, err := nsigClient.FlomeshV1alpha1().NamespacedIngresses(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
+	nsigList, err := nsigClient.NetworkingV1alpha1().NamespacedIngresses(corev1.NamespaceAll).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
 	for _, nsig := range nsigList.Items {
-		if err := nsigClient.FlomeshV1alpha1().NamespacedIngresses(nsig.GetNamespace()).Delete(ctx, nsig.GetName(), metav1.DeleteOptions{}); err != nil {
+		if err := nsigClient.NetworkingV1alpha1().NamespacedIngresses(nsig.GetNamespace()).Delete(ctx, nsig.GetName(), metav1.DeleteOptions{}); err != nil {
 			if !errors.IsNotFound(err) {
 				return err
 			}

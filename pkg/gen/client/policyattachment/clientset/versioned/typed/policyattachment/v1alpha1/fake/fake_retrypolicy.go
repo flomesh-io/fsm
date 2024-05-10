@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -133,51 +130,6 @@ func (c *FakeRetryPolicies) DeleteCollection(ctx context.Context, opts v1.Delete
 func (c *FakeRetryPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RetryPolicy, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(retrypoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.RetryPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.RetryPolicy), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied retryPolicy.
-func (c *FakeRetryPolicies) Apply(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error) {
-	if retryPolicy == nil {
-		return nil, fmt.Errorf("retryPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(retryPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := retryPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("retryPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(retrypoliciesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.RetryPolicy{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.RetryPolicy), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeRetryPolicies) ApplyStatus(ctx context.Context, retryPolicy *policyattachmentv1alpha1.RetryPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.RetryPolicy, err error) {
-	if retryPolicy == nil {
-		return nil, fmt.Errorf("retryPolicy provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(retryPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := retryPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("retryPolicy.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(retrypoliciesResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.RetryPolicy{})
 
 	if obj == nil {
 		return nil, err

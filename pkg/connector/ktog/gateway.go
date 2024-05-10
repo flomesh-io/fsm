@@ -232,12 +232,12 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 }
 
 func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
-	var newRt *gwv1alpha2.GRPCRoute
+	var newRt *gwv1.GRPCRoute
 	var exists bool
 	svcResource := gw.serviceResource
-	grpcRouteClient := svcResource.gatewayClient.GatewayV1alpha2().GRPCRoutes(k8sSvc.Namespace)
+	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(k8sSvc.Namespace)
 	if existRt, err := grpcRouteClient.Get(svcResource.ctx, k8sSvc.Name, metav1.GetOptions{}); err != nil {
-		newRt = &gwv1alpha2.GRPCRoute{
+		newRt = &gwv1.GRPCRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: k8sSvc.Namespace,
 				Name:      k8sSvc.Name,
@@ -247,20 +247,20 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 		newRt = existRt.DeepCopy()
 		exists = true
 	}
-	grpMethodType := gwv1alpha2.GRPCMethodMatchExact
+	grpMethodType := gwv1.GRPCMethodMatchExact
 	grpMethodSvc := "grpc.GrpcService"
 	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
 	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
-	newRt.Spec.Rules = []gwv1alpha2.GRPCRouteRule{{
-		Matches: []gwv1alpha2.GRPCRouteMatch{{
-			Method: &gwv1alpha2.GRPCMethodMatch{
+	newRt.Spec.Rules = []gwv1.GRPCRouteRule{{
+		Matches: []gwv1.GRPCRouteMatch{{
+			Method: &gwv1.GRPCMethodMatch{
 				Type:    &grpMethodType,
 				Service: &grpMethodSvc,
 			},
 		}},
-		BackendRefs: []gwv1alpha2.GRPCBackendRef{
+		BackendRefs: []gwv1.GRPCBackendRef{
 			{
 				BackendRef: gwv1.BackendRef{
 					BackendObjectReference: gwv1.BackendObjectReference{
@@ -335,7 +335,7 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(namespace)
 	_ = httpRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
 
-	grpcRouteClient := svcResource.gatewayClient.GatewayV1alpha2().GRPCRoutes(namespace)
+	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(namespace)
 	_ = grpcRouteClient.Delete(svcResource.ctx, name, metav1.DeleteOptions{})
 
 	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(namespace)

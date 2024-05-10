@@ -6,7 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -26,7 +25,7 @@ var (
 		constants.GatewayAPIGroup: {
 			constants.GatewayAPIGatewayKind:   &gwv1.Gateway{},
 			constants.GatewayAPIHTTPRouteKind: &gwv1.HTTPRoute{},
-			constants.GatewayAPIGRPCRouteKind: &gwv1alpha2.GRPCRoute{},
+			constants.GatewayAPIGRPCRouteKind: &gwv1.GRPCRoute{},
 		},
 	}
 
@@ -34,7 +33,7 @@ var (
 		constants.KubernetesCoreGroup: {
 			constants.KubernetesServiceKind: &corev1.Service{},
 		},
-		constants.FlomeshAPIGroup: {
+		constants.FlomeshMCSAPIGroup: {
 			constants.FlomeshAPIServiceImportKind: &mcsv1alpha1.ServiceImport{},
 		},
 	}

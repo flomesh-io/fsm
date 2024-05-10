@@ -9,7 +9,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
@@ -58,7 +57,7 @@ func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, rateLi
 }
 
 // GetRateLimitIfGRPCRouteMatchesPolicy returns the rate limit config if the GRPC route matches the policy
-func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
 		return nil
 	}

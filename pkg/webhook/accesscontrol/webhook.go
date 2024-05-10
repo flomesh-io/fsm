@@ -286,7 +286,7 @@ func (w *validator) doValidation(obj interface{}) error {
 	return nil
 }
 
-func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
+func validateTargetRef(ref gwv1alpha2.NamespacedPolicyTargetReference) field.ErrorList {
 	var errs field.ErrorList
 
 	if ref.Group != constants.GatewayAPIGroup {

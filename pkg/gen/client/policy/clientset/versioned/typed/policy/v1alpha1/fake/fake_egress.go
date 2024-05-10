@@ -17,11 +17,8 @@ package fake
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policy/applyconfiguration/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"
@@ -121,28 +118,6 @@ func (c *FakeEgresses) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 func (c *FakeEgresses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Egress, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(egressesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Egress{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Egress), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied egress.
-func (c *FakeEgresses) Apply(ctx context.Context, egress *policyv1alpha1.EgressApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Egress, err error) {
-	if egress == nil {
-		return nil, fmt.Errorf("egress provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(egress)
-	if err != nil {
-		return nil, err
-	}
-	name := egress.Name
-	if name == nil {
-		return nil, fmt.Errorf("egress.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(egressesResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.Egress{})
 
 	if obj == nil {
 		return nil, err

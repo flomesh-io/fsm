@@ -60,7 +60,7 @@ func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-		[]string{"flomesh.io"},
+		[]string{"multicluster.flomesh.io"},
 		[]string{"v1alpha1"},
 		[]string{"clusters"},
 	)

@@ -40,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/kubernetes"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1validation "sigs.k8s.io/gateway-api/apis/v1/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -203,7 +202,8 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	errorList := gwv1validation.ValidateGateway(gateway)
+	//errorList := gwv1validation.ValidateGateway(gateway)
+	var errorList field.ErrorList
 	errorList = append(errorList, w.validateListenerPort(gateway)...)
 	errorList = append(errorList, w.validateCertificateSecret(gateway)...)
 	if w.cfg.GetFeatureFlags().EnableValidateGatewayListenerHostname {

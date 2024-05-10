@@ -17,12 +17,9 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
 	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	policyattachmentv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/applyconfiguration/policyattachment/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,8 +44,6 @@ type GatewayTLSPolicyInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.GatewayTLSPolicyList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GatewayTLSPolicy, err error)
-	Apply(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error)
-	ApplyStatus(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error)
 	GatewayTLSPolicyExpansion
 }
 
@@ -190,62 +185,6 @@ func (c *gatewayTLSPolicies) Patch(ctx context.Context, name string, pt types.Pa
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied gatewayTLSPolicy.
-func (c *gatewayTLSPolicies) Apply(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error) {
-	if gatewayTLSPolicy == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(gatewayTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-	name := gatewayTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy.Name must be provided to Apply")
-	}
-	result = &v1alpha1.GatewayTLSPolicy{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("gatewaytlspolicies").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *gatewayTLSPolicies) ApplyStatus(ctx context.Context, gatewayTLSPolicy *policyattachmentv1alpha1.GatewayTLSPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.GatewayTLSPolicy, err error) {
-	if gatewayTLSPolicy == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(gatewayTLSPolicy)
-	if err != nil {
-		return nil, err
-	}
-
-	name := gatewayTLSPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("gatewayTLSPolicy.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.GatewayTLSPolicy{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("gatewaytlspolicies").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)

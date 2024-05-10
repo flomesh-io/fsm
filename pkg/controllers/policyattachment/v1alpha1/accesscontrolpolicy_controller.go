@@ -51,8 +51,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
@@ -271,7 +269,7 @@ func (r *accessControlPolicyReconciler) getConflictedHTTPRouteBasedAccessControl
 	return nil
 }
 
-func (r *accessControlPolicyReconciler) getConflictedGRPCRouteBasedAccessControlPolicy(route *gwv1alpha2.GRPCRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
+func (r *accessControlPolicyReconciler) getConflictedGRPCRouteBasedAccessControlPolicy(route *gwv1.GRPCRoute, accessControlPolicy client.Object, routeAccessControls []client.Object) *types.NamespacedName {
 	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
 
 	if len(currentPolicy.Spec.GRPCAccessControls) == 0 {
