@@ -30,7 +30,7 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-# shellcheck disable=SC2006,SC2046,SC2116,SC2086
+# shellcheck disable=SC2006,SC2046,SC2116,SC2086,SC1091
 
 set -o errexit
 set -o nounset
