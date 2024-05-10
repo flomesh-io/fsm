@@ -1,10 +1,11 @@
 package policy
 
 import (
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"

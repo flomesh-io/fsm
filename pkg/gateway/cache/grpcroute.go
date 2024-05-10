@@ -1,9 +1,10 @@
 package cache
 
 import (
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
