@@ -13,3 +13,12 @@ const (
 	TLSSecretModeLocal  TLSSecretMode = "local"
 	TLSSecretModeRemote TLSSecretMode = "remote"
 )
+
+// FLB API paths
+const (
+	AuthAPIPath          = "/api/auth/local"
+	UpdateServiceAPIPath = "/api/l-4-lbs/updateservice"
+	DeleteServiceAPIPath = "/api/l-4-lbs/updateservice/delete"
+	CertAPIPath          = "/api/updatecertificate"
+	DeleteCertAPIPath    = "/api/deleteCertificates"
+)
