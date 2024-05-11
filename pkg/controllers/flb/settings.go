@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/flb"
+
 	"k8s.io/client-go/tools/record"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -57,7 +59,7 @@ func (s *Setting) login(force bool) error {
 			SetHeader("Content-Type", "application/json").
 			SetBody(AuthRequest{Identifier: s.flbUser, Password: s.flbPassword}).
 			SetResult(&AuthResponse{}).
-			Post(flbAuthAPIPath)
+			Post(flb.AuthAPIPath)
 
 		if err != nil {
 			log.Error().Msgf("error happened while trying to login FLB, %s", err.Error())
