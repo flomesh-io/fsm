@@ -610,9 +610,9 @@ func (r *serviceReconciler) invokeFLBAPI(namespace string, params map[string]str
 	var resp *resty.Response
 	var err error
 	if del {
-		resp, err = request.Post(flbDeleteServiceAPIPath)
+		resp, err = request.Post(flb.DeleteServiceAPIPath)
 	} else {
-		resp, err = request.Post(flbUpdateServiceAPIPath)
+		resp, err = request.Post(flb.UpdateServiceAPIPath)
 	}
 
 	if err != nil {
