@@ -232,9 +232,9 @@ func (r *secretReconciler) invokeFLBAPI(namespace string, body interface{}, del 
 	var resp *resty.Response
 	var err error
 	if del {
-		resp, err = request.Post(flbDeleteCertAPIPath)
+		resp, err = request.Post(flb.DeleteCertAPIPath)
 	} else {
-		resp, err = request.Post(flbCertAPIPath)
+		resp, err = request.Post(flb.CertAPIPath)
 	}
 
 	if err != nil {

@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/flb"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,11 +15,11 @@ func main() {
 	r := gin.Default()
 	r.Use(RequestLogger())
 
-	r.POST("/api/auth/local", auth)
-	r.POST("/api/l-4-lbs/updateservice", updateService)
-	r.POST("/api/l-4-lbs/updateservice/delete", deleteService)
-	r.POST("/api/updatecertificate", updateCertificate)
-	r.POST("/api/deleteCertificates", deleteCertificates)
+	r.POST(flb.AuthAPIPath, auth)
+	r.POST(flb.UpdateServiceAPIPath, updateService)
+	r.POST(flb.DeleteServiceAPIPath, deleteService)
+	r.POST(flb.CertAPIPath, updateCertificate)
+	r.POST(flb.DeleteCertAPIPath, deleteCertificates)
 
 	if err := r.Run(":1337"); err != nil {
 		panic(err)
