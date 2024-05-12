@@ -467,9 +467,6 @@ const (
 
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
-
-	// GatewayTLSPolicyKind is the kind name of GatewayTLSPolicy used in Flomesh API
-	GatewayTLSPolicyKind = "GatewayTLSPolicy"
 )
 
 // Gateway API Annotations and Labels
@@ -638,12 +635,6 @@ const (
 
 	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
 	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
-
-	// GatewayTLSPolicyMutatingWebhookPath is the path at which the GatewayTLSPolicy mutating webhook is served
-	GatewayTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
-
-	// GatewayTLSPolicyValidatingWebhookPath is the path at which the GatewayTLSPolicy validating webhook is served
-	GatewayTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
 )
 
 // PIPY Repo constants
@@ -972,5 +963,4 @@ var (
 	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), FaultInjectionPolicyKind)
 	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), UpstreamTLSPolicyKind)
 	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RetryPolicyKind)
-	GatewayTLSPolicyGVK      = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), GatewayTLSPolicyKind)
 )

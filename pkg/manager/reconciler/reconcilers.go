@@ -83,7 +83,6 @@ func RegisterReconcilers(ctx context.Context) error {
 		reconcilers["PolicyAttachment(FaultInjection)"] = pav1alpha1.NewFaultInjectionPolicyReconciler(cctx)
 		reconcilers["PolicyAttachment(UpstreamTLS)"] = pav1alpha1.NewUpstreamTLSPolicyReconciler(cctx)
 		reconcilers["PolicyAttachment(Retry)"] = pav1alpha1.NewRetryPolicyReconciler(cctx)
-		reconcilers["PolicyAttachment(GatewayTLS)"] = pav1alpha1.NewGatewayTLSPolicyReconciler(cctx)
 	}
 
 	reconcilers["Connector(ConsulConnector)"] = ctv1.NewConsulConnectorReconciler(cctx)

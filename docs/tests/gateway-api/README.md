@@ -199,6 +199,8 @@ spec:
             - group: ""
               kind: ConfigMap
               name: https-ca
+#        options:
+#          gateway.flomesh.io/mtls: "true"
     - protocol: UDP
       port: 4000
       name: udp
@@ -2413,69 +2415,5 @@ spec:
     - group: ""
       kind: Service
       name: httpbin-cross
-EOF
-```
-
-### Test GatewayTLSPolicy - refer to target in the same namespace
-
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
-kind: GatewayTLSPolicy
-metadata:
-  namespace: test
-  name: gateway-tls-policy
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: test-gw-1
-  ports:
-  - port: 443
-    config:
-      mTLS: true
-EOF
-```
-
-### Test GatewayTLSPolicy - refer to target cross namespace
-
-#### Create a GatewayTLSPolicy
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
-kind: GatewayTLSPolicy
-metadata:
-  namespace: http
-  name: gateway-tls-cross
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: test-gw-1
-    namespace: test
-  ports:
-  - port: 9443
-    config:
-      mTLS: true
-EOF
-```
-
-##### Create a ReferenceGrant
-```shell
-kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: ReferenceGrant
-metadata:
-  namespace: test
-  name: gateway-tls-cross-1
-spec:
-  from:
-    - group: gateway.flomesh.io
-      kind: GatewayTLSPolicy
-      namespace: http
-  to:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: test-gw-1
 EOF
 ```

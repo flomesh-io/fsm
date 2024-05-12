@@ -1115,8 +1115,6 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
 		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
-		// GatewayTLSPolicy event
-		announcements.GatewayTLSPolicyAdded, announcements.GatewayTLSPolicyDeleted, announcements.GatewayTLSPolicyUpdated,
 		// ReferenceGrant event
 		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 

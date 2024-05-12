@@ -66,7 +66,6 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			informers.FaultInjectionPoliciesResourceType:  &FaultInjectionPoliciesTrigger{},
 			informers.UpstreamTLSPoliciesResourceType:     &UpstreamTLSPoliciesTrigger{},
 			informers.RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
-			informers.GatewayTLSPoliciesResourceType:      &GatewayTLSPoliciesTrigger{},
 		},
 
 		mutex: new(sync.RWMutex),
@@ -141,8 +140,6 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[informers.UpstreamTLSPoliciesResourceType]
 	case *gwpav1alpha1.RetryPolicy:
 		return c.triggers[informers.RetryPoliciesResourceType]
-	case *gwpav1alpha1.GatewayTLSPolicy:
-		return c.triggers[informers.GatewayTLSPoliciesResourceType]
 	}
 
 	return nil

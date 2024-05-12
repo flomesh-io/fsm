@@ -273,7 +273,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
 		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
 		ic.informers[InformerKeyRetryPolicy] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
-		ic.informers[InformerKeyGatewayTLSPolicy] = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
@@ -284,7 +283,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
 		ic.listers.UpstreamTLSPolicy = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Lister()
 		ic.listers.RetryPolicy = informerFactory.Gateway().V1alpha1().RetryPolicies().Lister()
-		ic.listers.GatewayTLSPolicy = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Lister()
 	}
 }
 
@@ -546,13 +544,6 @@ func (ic *InformerCollection) GetGatewayResourcesFromCache(resourceType Resource
 			return resources
 		}
 		resources = setGroupVersionKind(policies, constants.RetryPolicyGVK)
-	case GatewayTLSPoliciesResourceType:
-		policies, err := ic.listers.GatewayTLSPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get GatewayTLSPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.GatewayTLSPolicyGVK)
 	default:
 		log.Error().Msgf("Unknown resource type: %s", resourceType)
 		return nil

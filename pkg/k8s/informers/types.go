@@ -153,8 +153,6 @@ const (
 	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
 	// InformerKeyRetryPolicy is the InformerKey for a RetryPolicy informer
 	InformerKeyRetryPolicy InformerKey = "RetryPolicy"
-	// InformerKeyGatewayTLSPolicy is the InformerKey for a GatewayTLSPolicy informer
-	InformerKeyGatewayTLSPolicy InformerKey = "GatewayTLSPolicy"
 )
 
 const (
@@ -205,7 +203,6 @@ type Lister struct {
 	FaultInjectionPolicy  gwpav1alpha1lister.FaultInjectionPolicyLister
 	UpstreamTLSPolicy     gwpav1alpha1lister.UpstreamTLSPolicyLister
 	RetryPolicy           gwpav1alpha1lister.RetryPolicyLister
-	GatewayTLSPolicy      gwpav1alpha1lister.GatewayTLSPolicyLister
 	ReferenceGrant        gwv1beta1lister.ReferenceGrantLister
 	Namespace             v1.NamespaceLister
 }
@@ -282,9 +279,6 @@ const (
 
 	// RetryPoliciesResourceType is the type used to represent the retry policies resource
 	RetryPoliciesResourceType ResourceType = "retries"
-
-	// GatewayTLSPoliciesResourceType is the type used to represent the gateway tls policies resource
-	GatewayTLSPoliciesResourceType ResourceType = "gatewaytls"
 )
 
 // GatewayAPIResource is the type used to represent the Gateway API resource
@@ -293,7 +287,7 @@ type GatewayAPIResource interface {
 		*gwv1.HTTPRoute | *gwv1.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
 		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
 		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
-		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy | *gwpav1alpha1.GatewayTLSPolicy
+		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
 }
 
 var (
