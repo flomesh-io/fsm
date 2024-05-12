@@ -153,6 +153,7 @@ func (c *GatewayProcessor) tlsTerminateCfg(l gwtypes.Listener) *fgw.TLS {
 	cfg := &fgw.TLS{
 		TLSModeType:  gwv1.TLSModeTerminate,
 		Certificates: c.certificates(l),
+		CACerts:      c.caCertificates(l),
 	}
 
 	// keep it nil if not mTLS to reduce the size of the generated config
@@ -202,6 +203,12 @@ func (c *GatewayProcessor) certificates(l gwtypes.Listener) []fgw.Certificate {
 		certs = append(certs, cert)
 	}
 
+	return certs
+}
+
+func (c *GatewayProcessor) caCertificates(l gwtypes.Listener) []string {
+	certs := make([]string, 0)
+
 	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
 		for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
 			ca, err := c.objectRefToCACertificate(c.gateway, ref)
@@ -211,9 +218,7 @@ func (c *GatewayProcessor) certificates(l gwtypes.Listener) []fgw.Certificate {
 				continue
 			}
 
-			certs = append(certs, fgw.Certificate{
-				IssuingCA: string(ca),
-			})
+			certs = append(certs, string(ca))
 		}
 	}
 

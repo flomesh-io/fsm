@@ -153,6 +153,7 @@ type TLS struct {
 	TLSModeType  gwv1.TLSModeType `json:"TLSModeType"`
 	MTLS         *bool            `json:"MTLS,omitempty"`
 	Certificates []Certificate    `json:"Certificates,omitempty" hash:"set"`
+	CACerts      []string         `json:"CACerts,omitempty" hash:"set"`
 }
 
 // Certificate is the certificate configuration
