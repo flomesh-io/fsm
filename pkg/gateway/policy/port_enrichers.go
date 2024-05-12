@@ -4,8 +4,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/gatewaytls"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
@@ -85,44 +83,5 @@ func (e *AccessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumbe
 		}
 	default:
 		log.Warn().Msgf("AccessControlPortEnricher: unsupported protocol %s", listenerCfg.Protocol)
-	}
-}
-
-// ---
-
-// GatewayTLSPortEnricher is an enricher for access control policies at the port level
-type GatewayTLSPortEnricher struct {
-	Data            []gwpav1alpha1.GatewayTLSPolicy
-	ReferenceGrants []client.Object
-}
-
-func (e *GatewayTLSPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, listenerCfg *fgw.Listener) {
-	switch listenerCfg.Protocol {
-	case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-		if len(e.Data) == 0 {
-			return
-		}
-
-		for _, policy := range e.Data {
-			policy := policy
-			if !gwutils.IsRefToTarget(e.ReferenceGrants, &policy, policy.Spec.TargetRef, gw) {
-				continue
-			}
-
-			if len(policy.Spec.Ports) == 0 {
-				continue
-			}
-
-			if c := gatewaytls.GetGatewayTLSConfigIfPortMatchesPolicy(port, policy); c != nil &&
-				listenerCfg.TLS != nil &&
-				listenerCfg.TLS.TLSModeType == gwv1.TLSModeTerminate &&
-				listenerCfg.TLS.MTLS == nil {
-				// only set if TLS Mode is set to terminate
-				listenerCfg.TLS.MTLS = c.MTLS
-				break
-			}
-		}
-	default:
-		log.Warn().Msgf("GatewayTLSPortEnricher: unsupported protocol %s", listenerCfg.Protocol)
 	}
 }

@@ -3,16 +3,16 @@
 
   uniqueCA = {},
   unionCA = (config?.Listeners || []).filter(
-    o => o?.TLS?.Certificates
+    o => o?.TLS?.CACerts
   ).map(
-    o => o.TLS.Certificates.map(
-      c => c.IssuingCA && (
+    o => o.TLS.CACerts.map(
+      c => c && (
         (
-          md5 = algo.hash(c.IssuingCA)
+          md5 = algo.hash(c)
         ) => (
           !uniqueCA[md5] && (
             uniqueCA[md5] = true,
-            new crypto.Certificate(c.IssuingCA)
+            new crypto.Certificate(c)
           )
         )
       )()

@@ -37,7 +37,6 @@ func (c *GatewayProcessor) getPortPolicyEnrichers() []policy.PortPolicyEnricher 
 	return []policy.PortPolicyEnricher{
 		&policy.RateLimitPortEnricher{Data: c.policies.rateLimits[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
 		&policy.AccessControlPortEnricher{Data: c.policies.accessControls[gwpkg.PolicyMatchTypePort], ReferenceGrants: c.referenceGrants},
-		&policy.GatewayTLSPortEnricher{Data: c.gatewayTLS(), ReferenceGrants: c.referenceGrants},
 	}
 }
 
@@ -489,28 +488,4 @@ func (c *GatewayProcessor) retryConfigs() map[string]*gwpav1alpha1.RetryConfig {
 	}
 
 	return configs
-}
-
-func (c *GatewayProcessor) gatewayTLS() []gwpav1alpha1.GatewayTLSPolicy {
-	policies := make([]gwpav1alpha1.GatewayTLSPolicy, 0)
-
-	for _, gatewayTLSPolicy := range c.getResourcesFromCache(informers.GatewayTLSPoliciesResourceType, true) {
-		gatewayTLSPolicy := gatewayTLSPolicy.(*gwpav1alpha1.GatewayTLSPolicy)
-
-		if !gwutils.IsAcceptedPolicyAttachment(gatewayTLSPolicy.Status.Conditions) {
-			continue
-		}
-
-		if !gwutils.IsTargetRefToGVK(gatewayTLSPolicy.Spec.TargetRef, constants.GatewayGVK) {
-			continue
-		}
-
-		if len(gatewayTLSPolicy.Spec.Ports) == 0 {
-			continue
-		}
-
-		policies = append(policies, *gatewayTLSPolicy)
-	}
-
-	return policies
 }

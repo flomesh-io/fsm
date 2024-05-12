@@ -435,6 +435,9 @@ const (
 	// KubernetesSecretKind is the kind name of Secret used in Kubernetes Core API
 	KubernetesSecretKind = "Secret"
 
+	// KubernetesConfigMapKind is the kind name of ConfigMap used in Kubernetes Core API
+	KubernetesConfigMapKind = "ConfigMap"
+
 	// FlomeshAPIServiceImportKind is the kind name of ServiceImport used in Flomesh API
 	FlomeshAPIServiceImportKind = "ServiceImport"
 
@@ -464,9 +467,6 @@ const (
 
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
-
-	// GatewayTLSPolicyKind is the kind name of GatewayTLSPolicy used in Flomesh API
-	GatewayTLSPolicyKind = "GatewayTLSPolicy"
 )
 
 // Gateway API Annotations and Labels
@@ -515,6 +515,12 @@ const (
 
 	// GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation is the annotation used to indicate the target memory utilization percentage for auto scaling
 	GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation = GatewayAnnotationPrefix + "/auto-scaling-target-memory-utilization-percentage"
+)
+
+// Gateway TLS  Annotations and Labels
+const (
+	// GatewayMTLSAnnotation is the annotation used to indicate if the mTLS is enabled
+	GatewayMTLSAnnotation gwv1.AnnotationKey = GatewayAnnotationPrefix + "/mtls"
 )
 
 // Gateway API constants
@@ -629,12 +635,6 @@ const (
 
 	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
 	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
-
-	// GatewayTLSPolicyMutatingWebhookPath is the path at which the GatewayTLSPolicy mutating webhook is served
-	GatewayTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
-
-	// GatewayTLSPolicyValidatingWebhookPath is the path at which the GatewayTLSPolicy validating webhook is served
-	GatewayTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
 )
 
 // PIPY Repo constants
@@ -952,6 +952,7 @@ var (
 	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
 	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
 	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
+	ConfigMapGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
 	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
 	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RateLimitPolicyKind)
 	SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), SessionStickyPolicyKind)
@@ -962,5 +963,4 @@ var (
 	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), FaultInjectionPolicyKind)
 	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), UpstreamTLSPolicyKind)
 	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RetryPolicyKind)
-	GatewayTLSPolicyGVK      = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), GatewayTLSPolicyKind)
 )

@@ -106,10 +106,12 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 
 - Create Secret for HTTPS Gateway resource
 ```shell
-kubectl -n test create secret generic https-cert \
-  --from-file=ca.crt=./ca.crt \
-  --from-file=tls.crt=./https.crt \
-  --from-file=tls.key=./https.key 
+kubectl -n test create secret tls https-cert --key https.key --cert https.crt
+```
+
+- Create ConfigMap for HTTPS Gateway resource(CA certificates)
+```shell
+kubectl -n test create configmap https-ca --from-file=ca.crt=./ca.crt
 ```
 
 - Create Cert for gRPC
@@ -171,6 +173,11 @@ spec:
           - name: https-cert
           - name: grpc-cert
             namespace: grpc
+        frontendValidation:
+          caCertificateRefs:
+            - group: ""
+              kind: ConfigMap
+              name: https-ca
     - protocol: TLS
       port: 8443
       name: tlsp
@@ -187,6 +194,13 @@ spec:
           - name: https-cert
           - name: grpc-cert
             namespace: grpc
+        frontendValidation:
+          caCertificateRefs:
+            - group: ""
+              kind: ConfigMap
+              name: https-ca
+#        options:
+#          gateway.flomesh.io/mtls: "true"
     - protocol: UDP
       port: 4000
       name: udp
@@ -1093,7 +1107,7 @@ Hi, I am HTTPRoute!
 #### Create a GRPCRoute and attach to HTTPS port
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
   name: grpcs-app-1
@@ -2401,69 +2415,5 @@ spec:
     - group: ""
       kind: Service
       name: httpbin-cross
-EOF
-```
-
-### Test GatewayTLSPolicy - refer to target in the same namespace
-
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
-kind: GatewayTLSPolicy
-metadata:
-  namespace: test
-  name: gateway-tls-policy
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: test-gw-1
-  ports:
-  - port: 443
-    config:
-      mTLS: true
-EOF
-```
-
-### Test GatewayTLSPolicy - refer to target cross namespace
-
-#### Create a GatewayTLSPolicy
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
-kind: GatewayTLSPolicy
-metadata:
-  namespace: http
-  name: gateway-tls-cross
-spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: test-gw-1
-    namespace: test
-  ports:
-  - port: 9443
-    config:
-      mTLS: true
-EOF
-```
-
-##### Create a ReferenceGrant
-```shell
-kubectl apply -f - <<EOF
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: ReferenceGrant
-metadata:
-  namespace: test
-  name: gateway-tls-cross-1
-spec:
-  from:
-    - group: gateway.flomesh.io
-      kind: GatewayTLSPolicy
-      namespace: http
-  to:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: test-gw-1
 EOF
 ```

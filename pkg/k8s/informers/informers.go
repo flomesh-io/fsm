@@ -101,10 +101,12 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 		ic.informers[InformerKeyNamespaceAll] = v1api.Namespaces().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
 		ic.listers.Namespace = v1api.Namespaces().Lister()
 
@@ -127,9 +129,11 @@ func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCol
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
 
 		if version.IsEndpointSliceEnabled(kubeClient) {
@@ -269,7 +273,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
 		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
 		ic.informers[InformerKeyRetryPolicy] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
-		ic.informers[InformerKeyGatewayTLSPolicy] = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
@@ -280,7 +283,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
 		ic.listers.UpstreamTLSPolicy = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Lister()
 		ic.listers.RetryPolicy = informerFactory.Gateway().V1alpha1().RetryPolicies().Lister()
-		ic.listers.GatewayTLSPolicy = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Lister()
 	}
 }
 
@@ -542,13 +544,6 @@ func (ic *InformerCollection) GetGatewayResourcesFromCache(resourceType Resource
 			return resources
 		}
 		resources = setGroupVersionKind(policies, constants.RetryPolicyGVK)
-	case GatewayTLSPoliciesResourceType:
-		policies, err := ic.listers.GatewayTLSPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get GatewayTLSPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.GatewayTLSPolicyGVK)
 	default:
 		log.Error().Msgf("Unknown resource type: %s", resourceType)
 		return nil

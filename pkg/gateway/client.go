@@ -79,6 +79,7 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyEndpoints,
 		fsminformers.InformerKeyEndpointSlices,
 		fsminformers.InformerKeySecret,
+		fsminformers.InformerKeyConfigMap,
 		fsminformers.InformerKeyGatewayAPIGatewayClass,
 		fsminformers.InformerKeyGatewayAPIGateway,
 		fsminformers.InformerKeyGatewayAPIHTTPRoute,
@@ -96,7 +97,6 @@ func newClient(informerCollection *informers.InformerCollection, kubeClient kube
 		fsminformers.InformerKeyFaultInjectionPolicy,
 		fsminformers.InformerKeyUpstreamTLSPolicy,
 		fsminformers.InformerKeyRetryPolicy,
-		fsminformers.InformerKeyGatewayTLSPolicy,
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
 			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
@@ -209,6 +209,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpointSlices)
 	case *corev1.Secret:
 		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
+	case *corev1.ConfigMap:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyConfigMap)
 	case *gwv1.GatewayClass:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGatewayClass)
 	case *gwv1.Gateway:
@@ -243,8 +245,6 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyUpstreamTLSPolicy)
 	case *gwpav1alpha1.RetryPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRetryPolicy)
-	case *gwpav1alpha1.GatewayTLSPolicy:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayTLSPolicy)
 	}
 
 	return nil
@@ -281,6 +281,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.SecretAdded,
 			Update: announcements.SecretUpdated,
 			Delete: announcements.SecretDeleted,
+		}
+	case fsminformers.InformerKeyConfigMap:
+		return &k8s.EventTypes{
+			Add:    announcements.ConfigMapAdded,
+			Update: announcements.ConfigMapUpdated,
+			Delete: announcements.ConfigMapDeleted,
 		}
 	case fsminformers.InformerKeyGatewayAPIGatewayClass:
 		return &k8s.EventTypes{
@@ -383,12 +389,6 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.RetryPolicyAttachmentAdded,
 			Update: announcements.RetryPolicyAttachmentUpdated,
 			Delete: announcements.RetryPolicyAttachmentDeleted,
-		}
-	case fsminformers.InformerKeyGatewayTLSPolicy:
-		return &k8s.EventTypes{
-			Add:    announcements.GatewayTLSPolicyAdded,
-			Update: announcements.GatewayTLSPolicyUpdated,
-			Delete: announcements.GatewayTLSPolicyDeleted,
 		}
 	}
 

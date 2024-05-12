@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"k8s.io/utils/ptr"
+
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
@@ -248,13 +250,26 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 				}
 
 				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
-					if len(l.TLS.CertificateRefs) == 0 {
-						continue
+					if len(l.TLS.CertificateRefs) > 0 {
+						for _, ref := range l.TLS.CertificateRefs {
+							if c.isRefToSecret(gw, ref, secret) {
+								return true
+							}
+						}
 					}
 
-					for _, ref := range l.TLS.CertificateRefs {
-						if c.isRefToSecret(gw, ref, secret) {
-							return true
+					if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
+						for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
+							ref := gwv1.SecretObjectReference{
+								Group:     ptr.To(ref.Group),
+								Kind:      ptr.To(ref.Kind),
+								Name:      ref.Name,
+								Namespace: ref.Namespace,
+							}
+
+							if c.isRefToSecret(gw, ref, secret) {
+								return true
+							}
 						}
 					}
 				}
@@ -287,6 +302,39 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 	return false
 }
 
+// no need to check ReferenceGrant here
+func (c *GatewayCache) isConfigMapReferred(cm client.ObjectKey) bool {
+	//ctx := context.TODO()
+	for _, gw := range c.getActiveGateways() {
+		for _, l := range gw.Spec.Listeners {
+			switch l.Protocol {
+			case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+				if l.TLS == nil {
+					continue
+				}
+
+				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
+					if l.TLS.FrontendValidation == nil {
+						continue
+					}
+
+					if len(l.TLS.FrontendValidation.CACertificateRefs) == 0 {
+						continue
+					}
+
+					for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
+						if c.isRefToConfigMap(gw, ref, cm) {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret, error) {
 	obj, err := c.informers.GetListers().Secret.Secrets(key.Namespace).Get(key.Name)
 	if err != nil {
@@ -294,6 +342,17 @@ func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret,
 	}
 
 	obj.GetObjectKind().SetGroupVersionKind(constants.SecretGVK)
+
+	return obj, nil
+}
+
+func (c *GatewayCache) getConfigMapFromCache(key client.ObjectKey) (*corev1.ConfigMap, error) {
+	obj, err := c.informers.GetListers().ConfigMap.ConfigMaps(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(constants.ConfigMapGVK)
 
 	return obj, nil
 }
@@ -387,6 +446,42 @@ func (c *GatewayCache) isRefToSecret(referer client.Object, ref gwv1.SecretObjec
 				Kind:      constants.KubernetesSecretKind,
 				Namespace: secret.Namespace,
 				Name:      secret.Name,
+			},
+		)
+	}
+
+	return true
+}
+
+func (c *GatewayCache) isRefToConfigMap(referer client.Object, ref gwv1.ObjectReference, cm client.ObjectKey) bool {
+	if !isValidRefToGroupKindOfConfigMap(ref) {
+		return false
+	}
+
+	// fast-fail, not refer to the cm with the same name
+	if string(ref.Name) != cm.Name {
+		log.Debug().Msgf("Not refer to the cm with the same name, ref.Name: %s, cm.Name: %s", ref.Name, cm.Name)
+		return false
+	}
+
+	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != cm.Namespace {
+		log.Debug().Msgf("Not refer to the cm with the same namespace, resolved namespace: %s, cm.Namespace: %s", ns, cm.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == cm.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
+		return gwutils.ValidCrossNamespaceRef(
+			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
+			gwtypes.CrossNamespaceFrom{
+				Group:     referer.GetObjectKind().GroupVersionKind().Group,
+				Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+				Namespace: referer.GetNamespace(),
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     corev1.GroupName,
+				Kind:      constants.KubernetesConfigMapKind,
+				Namespace: cm.Namespace,
+				Name:      cm.Name,
 			},
 		)
 	}

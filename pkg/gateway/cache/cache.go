@@ -48,6 +48,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			informers.ServiceImportsResourceType:          &ServiceImportsTrigger{},
 			informers.EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
 			informers.SecretsResourceType:                 &SecretTrigger{},
+			informers.ConfigMapsResourceType:              &ConfigMapTrigger{},
 			informers.GatewayClassesResourceType:          &GatewayClassesTrigger{},
 			informers.GatewaysResourceType:                &GatewaysTrigger{},
 			informers.HTTPRoutesResourceType:              &HTTPRoutesTrigger{},
@@ -65,7 +66,6 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			informers.FaultInjectionPoliciesResourceType:  &FaultInjectionPoliciesTrigger{},
 			informers.UpstreamTLSPoliciesResourceType:     &UpstreamTLSPoliciesTrigger{},
 			informers.RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
-			informers.GatewayTLSPoliciesResourceType:      &GatewayTLSPoliciesTrigger{},
 		},
 
 		mutex: new(sync.RWMutex),
@@ -104,6 +104,8 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[informers.EndpointSlicesResourceType]
 	case *corev1.Secret:
 		return c.triggers[informers.SecretsResourceType]
+	case *corev1.ConfigMap:
+		return c.triggers[informers.ConfigMapsResourceType]
 	case *gwv1.GatewayClass:
 		return c.triggers[informers.GatewayClassesResourceType]
 	case *gwv1.Gateway:
@@ -138,8 +140,6 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[informers.UpstreamTLSPoliciesResourceType]
 	case *gwpav1alpha1.RetryPolicy:
 		return c.triggers[informers.RetryPoliciesResourceType]
-	case *gwpav1alpha1.GatewayTLSPolicy:
-		return c.triggers[informers.GatewayTLSPoliciesResourceType]
 	}
 
 	return nil
