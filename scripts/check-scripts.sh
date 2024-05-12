@@ -4,7 +4,7 @@ TEMP_DIR=$(mktemp -d)
 tar -C "${TEMP_DIR}" -zxf "${SCRIPTS_TAR}"
 
 RET=0
-diff -qr "${TEMP_DIR}/scripts" "${CHART_COMPONENTS_DIR}/scripts" || RET=$?
+diff -qr --exclude="._*" "${TEMP_DIR}/scripts" "${CHART_COMPONENTS_DIR}/scripts" || RET=$?
 
 if [[ ${RET} -eq 0 ]]
 then
