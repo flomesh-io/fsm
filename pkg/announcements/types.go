@@ -385,6 +385,17 @@ const (
 
 	// ---
 
+	// ConfigMapAdded is the type of announcement emitted when we observe an addition of a Kubernetes ConfigMap
+	ConfigMapAdded Kind = "configmap-added"
+
+	// ConfigMapDeleted the type of announcement emitted when we observe the deletion of a Kubernetes ConfigMap
+	ConfigMapDeleted Kind = "configmap-deleted"
+
+	// ConfigMapUpdated is the type of announcement emitted when we observe an update to a Kubernetes ConfigMap
+	ConfigMapUpdated Kind = "configmap-updated"
+
+	// ---
+
 	// GatewayAPIGatewayClassAdded is the type of announcement emitted when we observe an addition of gatewayclasses.gateway.networking.k8s.io
 	GatewayAPIGatewayClassAdded Kind = "gwapi-gatewayclass-added"
 

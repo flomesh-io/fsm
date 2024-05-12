@@ -435,6 +435,9 @@ const (
 	// KubernetesSecretKind is the kind name of Secret used in Kubernetes Core API
 	KubernetesSecretKind = "Secret"
 
+	// KubernetesConfigMapKind is the kind name of ConfigMap used in Kubernetes Core API
+	KubernetesConfigMapKind = "ConfigMap"
+
 	// FlomeshAPIServiceImportKind is the kind name of ServiceImport used in Flomesh API
 	FlomeshAPIServiceImportKind = "ServiceImport"
 
@@ -515,6 +518,12 @@ const (
 
 	// GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation is the annotation used to indicate the target memory utilization percentage for auto scaling
 	GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation = GatewayAnnotationPrefix + "/auto-scaling-target-memory-utilization-percentage"
+)
+
+// Gateway TLS  Annotations and Labels
+const (
+	// GatewayMTLSAnnotation is the annotation used to indicate if the mTLS is enabled
+	GatewayMTLSAnnotation gwv1.AnnotationKey = GatewayAnnotationPrefix + "/mtls"
 )
 
 // Gateway API constants
@@ -952,6 +961,7 @@ var (
 	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
 	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
 	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
+	ConfigMapGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
 	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
 	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RateLimitPolicyKind)
 	SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), SessionStickyPolicyKind)

@@ -110,7 +110,15 @@ func testDeployFSMGateway() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Creating secret for HTTPS")
-	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "secret", "generic", "https-cert", "--from-file=ca.crt=./ca.crt", "--from-file=tls.crt=./https.crt", "--from-file=tls.key=./https.key")
+	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "secret", "tls", "https-cert", "--key", "https.key", "--cert", "https.crt")
+	Td.T.Log(stdout.String())
+	if stderr != nil {
+		Td.T.Log("stderr:\n" + stderr.String())
+	}
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating ConfigMap for HTTPS CA Certificate")
+	stdout, stderr, err = Td.RunLocal("kubectl", "-n", nsGateway, "create", "cm", "https-ca", "--from-file=ca.crt=./ca.crt")
 	Td.T.Log(stdout.String())
 	if stderr != nil {
 		Td.T.Log("stderr:\n" + stderr.String())
@@ -212,6 +220,12 @@ func testDeployFSMGateway() {
 								Name:      "grpc-cert",
 							},
 						},
+						FrontendValidation: &gwv1.FrontendTLSValidation{
+							CACertificateRefs: []gwv1.ObjectReference{
+								{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
+							},
+						},
+						Options: map[gwv1.AnnotationKey]gwv1.AnnotationValue{},
 					},
 				},
 				{
@@ -239,6 +253,12 @@ func testDeployFSMGateway() {
 								Name:      "grpc-cert",
 							},
 						},
+						FrontendValidation: &gwv1.FrontendTLSValidation{
+							CACertificateRefs: []gwv1.ObjectReference{
+								{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
+							},
+						},
+						Options: map[gwv1.AnnotationKey]gwv1.AnnotationValue{},
 					},
 				},
 			},

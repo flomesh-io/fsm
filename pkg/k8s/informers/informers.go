@@ -101,10 +101,12 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 		ic.informers[InformerKeyNamespaceAll] = v1api.Namespaces().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
 		ic.listers.Namespace = v1api.Namespaces().Lister()
 
@@ -127,9 +129,11 @@ func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCol
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
 
 		if version.IsEndpointSliceEnabled(kubeClient) {

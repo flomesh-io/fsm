@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	"k8s.io/utils/ptr"
+
 	"k8s.io/apimachinery/pkg/types"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -148,10 +150,17 @@ func (c *GatewayProcessor) tls(l gwtypes.Listener) *fgw.TLS {
 }
 
 func (c *GatewayProcessor) tlsTerminateCfg(l gwtypes.Listener) *fgw.TLS {
-	return &fgw.TLS{
+	cfg := &fgw.TLS{
 		TLSModeType:  gwv1.TLSModeTerminate,
 		Certificates: c.certificates(l),
 	}
+
+	// keep it nil if not mTLS to reduce the size of the generated config
+	if isMTLS(l) {
+		cfg.MTLS = ptr.To(true)
+	}
+
+	return cfg
 }
 
 func (c *GatewayProcessor) tlsPassthroughCfg() *fgw.TLS {
@@ -173,17 +182,39 @@ func (c *GatewayProcessor) certificates(l gwtypes.Listener) []fgw.Certificate {
 			continue
 		}
 
+		if secret.Type != corev1.SecretTypeTLS {
+			log.Warn().Msgf("Secret %s/%s is not of type %s, will be ignored for port %d of Gateway %s/%s",
+				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
+				l.Port, c.gateway.Namespace, c.gateway.Name)
+			continue
+		}
+
 		cert := fgw.Certificate{
 			CertChain:  string(secret.Data[corev1.TLSCertKey]),
 			PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
 		}
 
-		ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
-		if len(ca) > 0 {
-			cert.IssuingCA = ca
-		}
+		//ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
+		//if len(ca) > 0 {
+		//	cert.IssuingCA = ca
+		//}
 
 		certs = append(certs, cert)
+	}
+
+	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
+		for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
+			ca, err := c.objectRefToCACertificate(c.gateway, ref)
+
+			if err != nil {
+				log.Error().Msgf("Failed to resolve CA Certificate: %s", err)
+				continue
+			}
+
+			certs = append(certs, fgw.Certificate{
+				IssuingCA: string(ca),
+			})
+		}
 	}
 
 	return certs
@@ -552,4 +583,67 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 		Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 		Name:      string(ref.Name),
 	})
+}
+
+func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) ([]byte, error) {
+	if !isValidRefToGroupKindOfCA(ref) {
+		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", ref.Group, ref.Kind)
+	}
+
+	// If the secret is in a different namespace than the referer, check ReferenceGrants
+	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
+		gwtypes.CrossNamespaceFrom{
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: referer.GetNamespace(),
+		},
+		gwtypes.CrossNamespaceTo{
+			Group:     corev1.GroupName,
+			Kind:      constants.KubernetesSecretKind,
+			Namespace: string(*ref.Namespace),
+			Name:      string(ref.Name),
+		},
+	) {
+		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			string(ref.Kind), string(ref.Group), string(*ref.Namespace), ref.Name)
+	}
+
+	ca := make([]byte, 0)
+
+	switch ref.Kind {
+	case constants.KubernetesSecretKind:
+		secret, err := c.cache.getSecretFromCache(client.ObjectKey{
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Name:      string(ref.Name),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		caBytes, ok := secret.Data[corev1.ServiceAccountRootCAKey]
+		if ok {
+			ca = append(ca, caBytes...)
+		}
+	case constants.KubernetesConfigMapKind:
+		cm, err := c.cache.getConfigMapFromCache(client.ObjectKey{
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Name:      string(ref.Name),
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		caBytes, ok := cm.Data[corev1.ServiceAccountRootCAKey]
+		if ok {
+			ca = append(ca, []byte(caBytes)...)
+		}
+	}
+
+	if len(ca) == 0 {
+		return nil, fmt.Errorf("no CA certificate found in %s %s/%s", ref.Kind, gwutils.Namespace(ref.Namespace, referer.GetNamespace()), ref.Name)
+	}
+
+	return ca, nil
 }

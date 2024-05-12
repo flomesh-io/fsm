@@ -48,6 +48,7 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			informers.ServiceImportsResourceType:          &ServiceImportsTrigger{},
 			informers.EndpointSlicesResourceType:          &EndpointSlicesTrigger{},
 			informers.SecretsResourceType:                 &SecretTrigger{},
+			informers.ConfigMapsResourceType:              &ConfigMapTrigger{},
 			informers.GatewayClassesResourceType:          &GatewayClassesTrigger{},
 			informers.GatewaysResourceType:                &GatewaysTrigger{},
 			informers.HTTPRoutesResourceType:              &HTTPRoutesTrigger{},
@@ -104,6 +105,8 @@ func (c *GatewayCache) getTrigger(obj interface{}) Trigger {
 		return c.triggers[informers.EndpointSlicesResourceType]
 	case *corev1.Secret:
 		return c.triggers[informers.SecretsResourceType]
+	case *corev1.ConfigMap:
+		return c.triggers[informers.ConfigMapsResourceType]
 	case *gwv1.GatewayClass:
 		return c.triggers[informers.GatewayClassesResourceType]
 	case *gwv1.Gateway:

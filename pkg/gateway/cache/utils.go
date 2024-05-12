@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+
 	"github.com/flomesh-io/fsm/pkg/utils"
 
 	"golang.org/x/exp/slices"
@@ -18,6 +20,23 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 )
+
+func isMTLS(l gwtypes.Listener) bool {
+	if l.TLS == nil {
+		return false
+	}
+
+	if len(l.TLS.Options) == 0 {
+		return false
+	}
+
+	enabled, ok := l.TLS.Options[constants.GatewayMTLSAnnotation]
+	if !ok {
+		return false
+	}
+
+	return enabled == "true"
+}
 
 func httpPathMatchType(matchType *gwv1.PathMatchType) fgw.MatchType {
 	if matchType == nil {
@@ -482,6 +501,26 @@ func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
 	}
 
 	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
+		return true
+	}
+
+	return false
+}
+
+func isValidRefToGroupKindOfConfigMap(ref gwv1.ObjectReference) bool {
+	if ref.Group == corev1.GroupName && ref.Kind == constants.KubernetesConfigMapKind {
+		return true
+	}
+
+	return false
+}
+
+func isValidRefToGroupKindOfCA(ref gwv1.ObjectReference) bool {
+	if ref.Group != corev1.GroupName {
+		return false
+	}
+
+	if ref.Kind == constants.KubernetesSecretKind || ref.Kind == constants.KubernetesConfigMapKind {
 		return true
 	}
 

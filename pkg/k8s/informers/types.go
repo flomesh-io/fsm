@@ -46,6 +46,8 @@ const (
 	InformerKeyServiceAccount InformerKey = "ServiceAccount"
 	// InformerKeySecret is the InformerKey for a Secret informer
 	InformerKeySecret InformerKey = "Secret"
+	// InformerKeyConfigMap is the InformerKey for a ConfigMap informer
+	InformerKeyConfigMap InformerKey = "ConfigMap"
 
 	// InformerKeyTrafficSplit is the InformerKey for a TrafficSplit informer
 	InformerKeyTrafficSplit InformerKey = "TrafficSplit"
@@ -183,6 +185,7 @@ type Lister struct {
 	Endpoints             v1.EndpointsLister
 	EndpointSlice         discoveryv1.EndpointSliceLister
 	Secret                v1.SecretLister
+	ConfigMap             v1.ConfigMapLister
 	GatewayClass          gwv1lister.GatewayClassLister
 	Gateway               gwv1lister.GatewayLister
 	HTTPRoute             gwv1lister.HTTPRouteLister
@@ -225,6 +228,9 @@ const (
 
 	// SecretsResourceType is the type used to represent the secrets resource
 	SecretsResourceType ResourceType = "secrets"
+
+	// ConfigMapsResourceType is the type used to represent the config maps resource
+	ConfigMapsResourceType ResourceType = "configmaps"
 
 	// GatewayClassesResourceType is the type used to represent the gateway classes resource
 	GatewayClassesResourceType ResourceType = "gatewayclasses"

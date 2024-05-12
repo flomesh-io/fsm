@@ -1077,6 +1077,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated,
 		// Secret event
 		announcements.SecretAdded, announcements.SecretUpdated, announcements.SecretDeleted,
+		// ConfigMap event
+		announcements.ConfigMapAdded, announcements.ConfigMapUpdated, announcements.ConfigMapDeleted,
 
 		//
 		// GatewayAPI events
