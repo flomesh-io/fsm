@@ -482,39 +482,6 @@ const (
 
 	// GatewayListenersHashAnnotation is the annotation used to indicate the hash value of gateway listener spec
 	GatewayListenersHashAnnotation = GatewayAnnotationPrefix + "/listeners-hash"
-
-	// GatewayCPUAnnotation is the annotation used to indicate the requested cpu
-	GatewayCPUAnnotation = GatewayAnnotationPrefix + "/cpu"
-
-	// GatewayCPULimitAnnotation is the annotation used to indicate the cpu limit
-	GatewayCPULimitAnnotation = GatewayAnnotationPrefix + "/cpu-limit"
-
-	// GatewayMemoryAnnotation is the annotation used to indicate the requested memory
-	GatewayMemoryAnnotation = GatewayAnnotationPrefix + "/memory"
-
-	// GatewayMemoryLimitAnnotation is the annotation used to indicate the memory limit
-	GatewayMemoryLimitAnnotation = GatewayAnnotationPrefix + "/memory-limit"
-
-	// GatewayReplicasAnnotation is the annotation used to indicate the number of replicas
-	GatewayReplicasAnnotation = GatewayAnnotationPrefix + "/replicas"
-
-	// GatewayPodDisruptionBudgetAnnotation is the annotation used to indicate if the pod disruption budget is enabled
-	GatewayPodDisruptionBudgetAnnotation = GatewayAnnotationPrefix + "/enable-pod-disruption-budget"
-
-	// GatewayAutoScalingAnnotation is the annotation used to indicate if the auto scaling is enabled
-	GatewayAutoScalingAnnotation = GatewayAnnotationPrefix + "/auto-scaling"
-
-	// GatewayAutoScalingMinReplicasAnnotation is the annotation used to indicate the minimum number of replicas for auto scaling
-	GatewayAutoScalingMinReplicasAnnotation = GatewayAnnotationPrefix + "/auto-scaling-min-replicas"
-
-	// GatewayAutoScalingMaxReplicasAnnotation is the annotation used to indicate the maximum number of replicas for auto scaling
-	GatewayAutoScalingMaxReplicasAnnotation = GatewayAnnotationPrefix + "/auto-scaling-max-replicas"
-
-	// GatewayAutoScalingTargetCPUUtilizationPercentageAnnotation is the annotation used to indicate the target CPU utilization percentage for auto scaling
-	GatewayAutoScalingTargetCPUUtilizationPercentageAnnotation = GatewayAnnotationPrefix + "/auto-scaling-target-cpu-utilization-percentage"
-
-	// GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation is the annotation used to indicate the target memory utilization percentage for auto scaling
-	GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation = GatewayAnnotationPrefix + "/auto-scaling-target-memory-utilization-percentage"
 )
 
 // Gateway TLS  Annotations and Labels

@@ -141,18 +141,35 @@ func testDeployFSMGateway() {
 	}
 	Expect(err).NotTo(HaveOccurred())
 
+	By("Creating ConfigMap for configuring Gateway")
+	cm := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGateway,
+			Name:      "gateway-config",
+		},
+		Data: map[string]string{
+			"values.yaml": `
+fsm:
+  fsmGateway:
+    replicas: 2
+    resources:
+      requests:
+        cpu: 123m
+        memory: 257Mi
+      limits:
+        cpu: 1314m
+        memory: 2048Mi
+`,
+		},
+	}
+	_, err = Td.CreateConfigMap(nsGateway, cm)
+	Expect(err).NotTo(HaveOccurred())
+
 	By("Deploy Gateway")
 	gateway := gwv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nsGateway,
 			Name:      "test-gw-1",
-			Annotations: map[string]string{
-				"gateway.flomesh.io/replicas":     "2",
-				"gateway.flomesh.io/cpu":          "100m",
-				"gateway.flomesh.io/cpu-limit":    "1000m",
-				"gateway.flomesh.io/memory":       "256Mi",
-				"gateway.flomesh.io/memory-limit": "1024Mi",
-			},
 		},
 
 		Spec: gwv1.GatewaySpec{
@@ -265,6 +282,11 @@ func testDeployFSMGateway() {
 			Infrastructure: &gwv1.GatewayInfrastructure{
 				Annotations: map[gwv1.AnnotationKey]gwv1.AnnotationValue{"xyz": "abc"},
 				Labels:      map[gwv1.AnnotationKey]gwv1.AnnotationValue{"test": "demo"},
+				ParametersRef: &gwv1.LocalParametersReference{
+					Group: corev1.GroupName,
+					Kind:  constants.KubernetesConfigMapKind,
+					Name:  "gateway-config",
+				},
 			},
 		},
 	}
