@@ -29,6 +29,8 @@
     }
   ) : null,
 
+  globalCAs = config?.Certificate?.IssuingCA && unionCA.push(new crypto.Certificate(config.Certificate.IssuingCA)),
+
   tlsCache = new algo.Cache(
     portCfg => (
       (
