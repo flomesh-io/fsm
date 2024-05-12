@@ -127,6 +127,29 @@ openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
 kubectl -n grpc create secret tls grpc-cert --key grpc.key --cert grpc.crt
 ```
 
+- Create ConfigMap for customizing the Gateway
+```shell
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: test
+  name: gateway-config
+data:
+  values.yaml: |
+    fsm:
+      fsmGateway:
+        replicas: 2
+        resources:
+          requests:
+            cpu: 123m
+            memory: 257Mi
+          limits:
+            cpu: 1314m
+            memory: 2048Mi
+EOF
+```
+
 #### Deploy Gateway
 ```shell
 cat <<EOF | kubectl apply -f -
@@ -135,12 +158,6 @@ kind: Gateway
 metadata:
   namespace: test
   name: test-gw-1
-  annotations:
-    gateway.flomesh.io/replicas: "2"
-    gateway.flomesh.io/cpu: 100m
-    gateway.flomesh.io/cpu-limit: 1000m
-    gateway.flomesh.io/memory: 256Mi
-    gateway.flomesh.io/memory-limit: 1024Mi
 spec:
   gatewayClassName: fsm
   listeners:
@@ -218,6 +235,10 @@ spec:
       xyz: abc
     labels:
       test: demo
+    parametersRef:
+      group: ""
+      kind: ConfigMap
+      name: gateway-config
 EOF
 ```
 

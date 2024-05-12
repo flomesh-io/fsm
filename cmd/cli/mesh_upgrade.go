@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	helmutil "github.com/flomesh-io/fsm/pkg/helm"
+
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -116,7 +118,7 @@ func (u *meshUpgradeCmd) run(config *helm.Configuration) error {
 	debug("fileValues: %s", fileValues)
 
 	// --set takes precedence over --values/-f
-	values := mergeMaps(fileValues, setValues)
+	values := helmutil.MergeMaps(fileValues, setValues)
 	debug("values: %s", values)
 
 	// Add the overlay values to be updated to the current release's values map
@@ -154,7 +156,7 @@ func (u *meshUpgradeCmd) resoleValuesFromFiles() (map[string]interface{}, error)
 	for _, filePath := range u.valueFiles {
 		currentMap := map[string]interface{}{}
 
-		valueBytes, err := readFile(filePath)
+		valueBytes, err := helmutil.ReadFile(filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +165,7 @@ func (u *meshUpgradeCmd) resoleValuesFromFiles() (map[string]interface{}, error)
 			return nil, errors.Wrapf(err, "failed to parse %s", filePath)
 		}
 		// Merge with the previous map
-		base = mergeMaps(base, currentMap)
+		base = helmutil.MergeMaps(base, currentMap)
 	}
 
 	return base, nil

@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/yaml"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -60,9 +60,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	"github.com/flomesh-io/fsm/pkg/helm"
 	"github.com/flomesh-io/fsm/pkg/utils"
 
+	helmutil "github.com/flomesh-io/fsm/pkg/helm"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
@@ -810,17 +812,6 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
 		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
-		fmt.Sprintf("fsm.fsmGateway.replicas=%d", replicas(gateway, constants.GatewayReplicasAnnotation, 1)),
-		fmt.Sprintf("fsm.fsmGateway.resources.requests.cpu=%s", resources(gateway, constants.GatewayCPUAnnotation, resource.MustParse("0.5")).String()),
-		fmt.Sprintf("fsm.fsmGateway.resources.requests.memory=%s", resources(gateway, constants.GatewayMemoryAnnotation, resource.MustParse("128M")).String()),
-		fmt.Sprintf("fsm.fsmGateway.resources.limits.cpu=%s", resources(gateway, constants.GatewayCPULimitAnnotation, resource.MustParse("2")).String()),
-		fmt.Sprintf("fsm.fsmGateway.resources.limits.memory=%s", resources(gateway, constants.GatewayMemoryLimitAnnotation, resource.MustParse("1G")).String()),
-		fmt.Sprintf("fsm.fsmGateway.enablePodDisruptionBudget=%t", enabled(gateway, constants.GatewayPodDisruptionBudgetAnnotation, false)),
-		fmt.Sprintf("fsm.fsmGateway.autoScale.enable=%t", enabled(gateway, constants.GatewayAutoScalingAnnotation, false)),
-		fmt.Sprintf("fsm.fsmGateway.autoScale.minReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMinReplicasAnnotation, 1)),
-		fmt.Sprintf("fsm.fsmGateway.autoScale.maxReplicas=%d", replicas(gateway, constants.GatewayAutoScalingMaxReplicasAnnotation, 5)),
-		fmt.Sprintf("fsm.fsmGateway.autoScale.cpu.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetCPUUtilizationPercentageAnnotation, 80)),
-		fmt.Sprintf("fsm.fsmGateway.autoScale.memory.targetAverageUtilization=%d", percentage(gateway, constants.GatewayAutoScalingTargetMemoryUtilizationPercentageAnnotation, 80)),
 	}
 
 	for _, ov := range overrides {
@@ -829,7 +820,58 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		}
 	}
 
-	return finalValues, nil
+	parameterValues, err := r.resolveParameterValues(gateway)
+	if err != nil {
+		log.Error().Msgf("Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
+		return finalValues, nil
+	}
+
+	return helmutil.MergeMaps(finalValues, parameterValues), nil
+}
+
+func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway) (map[string]interface{}, error) {
+	if gateway.Spec.Infrastructure == nil {
+		return nil, nil
+	}
+
+	if gateway.Spec.Infrastructure.ParametersRef == nil {
+		return nil, nil
+	}
+
+	paramRef := gateway.Spec.Infrastructure.ParametersRef
+	if paramRef.Group != corev1.GroupName {
+		return nil, nil
+	}
+
+	if paramRef.Kind != constants.KubernetesConfigMapKind {
+		return nil, nil
+	}
+
+	cm := &corev1.ConfigMap{}
+	key := types.NamespacedName{
+		Namespace: gateway.Namespace,
+		Name:      paramRef.Name,
+	}
+
+	if err := r.fctx.Get(context.TODO(), key, cm); err != nil {
+		return nil, fmt.Errorf("failed to get Configmap %s: %s", key, err)
+	}
+
+	if len(cm.Data) == 0 {
+		return nil, fmt.Errorf("configmap %q has no data", key)
+	}
+
+	valuesYaml, ok := cm.Data["values.yaml"]
+	if !ok {
+		return nil, fmt.Errorf("configmap %q has no values.yaml", key)
+	}
+
+	paramsMap := map[string]interface{}{}
+	if err := yaml.Unmarshal([]byte(valuesYaml), &paramsMap); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal values.yaml of Configmap %s: %s", key, err)
+	}
+
+	return paramsMap, nil
 }
 
 func (r *gatewayReconciler) setAccepted(gateway *gwv1.Gateway) {
@@ -893,6 +935,10 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return gatewayClass.Spec.ControllerName == constants.GatewayController
 			})),
 		).
+		Watches(
+			&corev1.ConfigMap{},
+			handler.EnqueueRequestsFromMapFunc(r.configMapToGateways),
+		).
 		Complete(r)
 }
 
@@ -926,4 +972,46 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 	}
 
 	return nil
+}
+
+func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object client.Object) []reconcile.Request {
+	cm, ok := object.(*corev1.ConfigMap)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", object)
+		return nil
+	}
+
+	gateways := &gwv1.GatewayList{}
+	err := r.fctx.List(ctx, gateways, client.InNamespace(cm.Namespace))
+	if err != nil {
+		log.Error().Msgf("error listing gateways: %s", err)
+		return nil
+	}
+
+	if len(gateways.Items) == 0 {
+		return nil
+	}
+
+	reconciles := make([]reconcile.Request, 0)
+	for _, gw := range gateways.Items {
+		if gw.Spec.Infrastructure == nil {
+			continue
+		}
+
+		if gw.Spec.Infrastructure.ParametersRef == nil {
+			continue
+		}
+
+		paramRef := gw.Spec.Infrastructure.ParametersRef
+		if paramRef.Name == cm.Name && paramRef.Group == corev1.GroupName && paramRef.Kind == constants.KubernetesConfigMapKind {
+			reconciles = append(reconciles, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: gw.Namespace,
+					Name:      gw.Name,
+				},
+			})
+		}
+	}
+
+	return reconciles
 }

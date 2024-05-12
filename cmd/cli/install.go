@@ -3,10 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
-
 	_ "embed" // required to embed resources
 	"fmt"
 	"io"
@@ -24,6 +20,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
+	helmutil "github.com/flomesh-io/fsm/pkg/helm"
 )
 
 const installDesc = `
@@ -141,7 +138,7 @@ func (i *installCmd) run(config *helm.Configuration) error {
 	debug("fileValues: %s", fileValues)
 
 	// --set takes precedence over --values/-f
-	values := mergeMaps(fileValues, setValues)
+	values := helmutil.MergeMaps(fileValues, setValues)
 	debug("values: %s", values)
 
 	installClient := helm.NewInstall(config)
@@ -247,7 +244,7 @@ func (i *installCmd) resoleValuesFromFiles() (map[string]interface{}, error) {
 	for _, filePath := range i.valueFiles {
 		currentMap := map[string]interface{}{}
 
-		valueBytes, err := readFile(filePath)
+		valueBytes, err := helmutil.ReadFile(filePath)
 		if err != nil {
 			return nil, err
 		}
@@ -256,36 +253,8 @@ func (i *installCmd) resoleValuesFromFiles() (map[string]interface{}, error) {
 			return nil, errors.Wrapf(err, "failed to parse %s", filePath)
 		}
 		// Merge with the previous map
-		base = mergeMaps(base, currentMap)
+		base = helmutil.MergeMaps(base, currentMap)
 	}
 
 	return base, nil
-}
-
-// readFile load a file from stdin, the local directory, or a remote file with a url.
-func readFile(filePath string) ([]byte, error) {
-	if strings.TrimSpace(filePath) == "-" {
-		return io.ReadAll(os.Stdin)
-	}
-
-	return os.ReadFile(filepath.Clean(filePath))
-}
-
-func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
-	out := make(map[string]interface{}, len(a))
-	for k, v := range a {
-		out[k] = v
-	}
-	for k, v := range b {
-		if v, ok := v.(map[string]interface{}); ok {
-			if bv, ok := out[k]; ok {
-				if bv, ok := bv.(map[string]interface{}); ok {
-					out[k] = mergeMaps(bv, v)
-					continue
-				}
-			}
-		}
-		out[k] = v
-	}
-	return out
 }

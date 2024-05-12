@@ -162,6 +162,16 @@ func (td *FsmTestData) CreateService(ns string, svc corev1.Service) (*corev1.Ser
 	return sv, nil
 }
 
+// CreateConfigMap is a wrapper to create a config map
+func (td *FsmTestData) CreateConfigMap(ns string, cm corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	cmRet, err := td.Client.CoreV1().ConfigMaps(ns).Create(context.Background(), &cm, metav1.CreateOptions{})
+	if err != nil {
+		err := fmt.Errorf("Could not create ConfigMap: %w", err)
+		return nil, err
+	}
+	return cmRet, nil
+}
+
 // CreateMutatingWebhook is a wrapper to create a mutating webhook configuration
 func (td *FsmTestData) CreateMutatingWebhook(mwhc *admissionregv1.MutatingWebhookConfiguration) (*admissionregv1.MutatingWebhookConfiguration, error) {
 	mw, err := td.Client.AdmissionregistrationV1().MutatingWebhookConfigurations().Create(context.Background(), mwhc, metav1.CreateOptions{})
