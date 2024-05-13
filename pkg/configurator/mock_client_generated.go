@@ -375,9 +375,11 @@ func (mr *MockConfiguratorMockRecorder) GetInitContainerImage() *gomock.Call {
 }
 
 // GetInjectedHealthcheckResources mocks base method.
-func (m *MockConfigurator) GetInjectedHealthcheckResources() {
+func (m *MockConfigurator) GetInjectedHealthcheckResources() v1.ResourceRequirements {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetInjectedHealthcheckResources")
+	ret := m.ctrl.Call(m, "GetInjectedHealthcheckResources")
+	ret0, _ := ret[0].(v1.ResourceRequirements)
+	return ret0
 }
 
 // GetInjectedHealthcheckResources indicates an expected call of GetInjectedHealthcheckResources.
