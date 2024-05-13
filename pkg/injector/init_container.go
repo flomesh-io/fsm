@@ -30,7 +30,8 @@ func GetInitContainerSpec(containerName string, cfg configurator.Configurator, o
 			// User ID 0 corresponds to root
 			RunAsUser: pointer.Int64Ptr(0),
 		},
-		Command: []string{"/bin/sh"},
+		Resources: getInjectedInitResources(cfg),
+		Command:   []string{"/bin/sh"},
 		Args: []string{
 			"-c",
 			iptablesInitCommand,
@@ -47,4 +48,22 @@ func GetInitContainerSpec(containerName string, cfg configurator.Configurator, o
 			},
 		},
 	}
+}
+
+func getInjectedInitResources(cfg configurator.Configurator) corev1.ResourceRequirements {
+	cfgResources := cfg.GetInjectedInitResources()
+	resources := corev1.ResourceRequirements{}
+	if cfgResources.Limits != nil {
+		resources.Limits = make(corev1.ResourceList)
+		for k, v := range cfgResources.Limits {
+			resources.Limits[k] = v
+		}
+	}
+	if cfgResources.Requests != nil {
+		resources.Requests = make(corev1.ResourceList)
+		for k, v := range cfgResources.Requests {
+			resources.Requests[k] = v
+		}
+	}
+	return resources
 }

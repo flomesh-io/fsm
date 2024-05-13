@@ -80,7 +80,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 			ReadOnly:  true,
 			MountPath: bootstrap.PipyProxyConfigPath,
 		}},
-		Resources: getPipySidecarResourceSpec(injCtx, pod, cfg),
+		Resources: getPipySidecarResource(injCtx, pod, cfg),
 		Args: []string{
 			"pipy",
 			fmt.Sprintf("--log-level=%s", injCtx.Configurator.GetSidecarLogLevel()),
@@ -255,7 +255,7 @@ func getFSMControllerSvc(kubeClient kubernetes.Interface, fsmNamespace string) (
 	return svc, nil
 }
 
-func getPipySidecarResourceSpec(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg configurator.Configurator) corev1.ResourceRequirements {
+func getPipySidecarResource(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg configurator.Configurator) corev1.ResourceRequirements {
 	cfgResources := cfg.GetProxyResources()
 	resources := corev1.ResourceRequirements{}
 	if cfgResources.Limits != nil {
