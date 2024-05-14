@@ -161,6 +161,12 @@ type Configurator interface {
 	// GetProxyResources returns the `Resources` configured for proxies, if any
 	GetProxyResources() corev1.ResourceRequirements
 
+	// GetInjectedInitResources returns the `Resources` configured for proxies, if any
+	GetInjectedInitResources() corev1.ResourceRequirements
+
+	// GetInjectedHealthcheckResources returns the `Resources` configured for proxies, if any
+	GetInjectedHealthcheckResources() corev1.ResourceRequirements
+
 	// GetInboundExternalAuthConfig returns the External Authentication configuration for incoming traffic, if any
 	GetInboundExternalAuthConfig() auth.ExtAuthConfig
 
