@@ -826,6 +826,10 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		return gatewayValues, nil
 	}
 
+	if parameterValues == nil {
+		return gatewayValues, nil
+	}
+
 	// gateway values take precedence over parameter values, means the values from MeshConfig override the values from ParametersRef
 	// see the overrides variables for a complete list of values
 	return helmutil.MergeMaps(parameterValues, gatewayValues), nil
