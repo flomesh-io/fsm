@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/injector"
@@ -121,6 +122,7 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 			Name:            "fsm-healthcheck",
 			Image:           os.Getenv("FSM_DEFAULT_HEALTHCHECK_CONTAINER_IMAGE"),
 			ImagePullPolicy: fsmContainerPullPolicy,
+			Resources:       getInjectedHealthcheckResources(configurator),
 			Args: []string{
 				"--verbosity", log.GetLevel().String(),
 			},
@@ -141,4 +143,22 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 	pod.Spec.Containers = append(pod.Spec.Containers, sidecar)
 
 	return nil
+}
+
+func getInjectedHealthcheckResources(cfg configurator.Configurator) corev1.ResourceRequirements {
+	cfgResources := cfg.GetInjectedHealthcheckResources()
+	resources := corev1.ResourceRequirements{}
+	if cfgResources.Limits != nil {
+		resources.Limits = make(corev1.ResourceList)
+		for k, v := range cfgResources.Limits {
+			resources.Limits[k] = v
+		}
+	}
+	if cfgResources.Requests != nil {
+		resources.Requests = make(corev1.ResourceList)
+		for k, v := range cfgResources.Requests {
+			resources.Requests[k] = v
+		}
+	}
+	return resources
 }

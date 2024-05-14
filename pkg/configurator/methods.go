@@ -372,6 +372,16 @@ func (c *Client) GetProxyResources() corev1.ResourceRequirements {
 	return c.getMeshConfig().Spec.Sidecar.Resources
 }
 
+// GetInjectedInitResources returns the `Resources` configured for proxies, if any
+func (c *Client) GetInjectedInitResources() corev1.ResourceRequirements {
+	return c.getMeshConfig().Spec.Sidecar.InitResources
+}
+
+// GetInjectedHealthcheckResources returns the `Resources` configured for proxies, if any
+func (c *Client) GetInjectedHealthcheckResources() corev1.ResourceRequirements {
+	return c.getMeshConfig().Spec.Sidecar.HealthcheckResources
+}
+
 // GetInboundExternalAuthConfig returns the External Authentication configuration for incoming traffic, if any
 func (c *Client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
 	extAuthConfig := auth.ExtAuthConfig{}
