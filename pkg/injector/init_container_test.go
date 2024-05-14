@@ -37,6 +37,8 @@ var _ = Describe("Test functions creating Sidecar bootstrap configuration", func
 			}).Times(1)
 			mockConfigurator.EXPECT().IsLocalDNSProxyEnabled().Return(false).AnyTimes()
 			mockConfigurator.EXPECT().IsWildcardDNSProxyEnabled().Return(false).AnyTimes()
+			mockConfigurator.EXPECT().GetInjectedInitResources().Return(corev1.ResourceRequirements{}).AnyTimes()
+			mockConfigurator.EXPECT().GetInjectedHealthcheckResources().Return(corev1.ResourceRequirements{}).AnyTimes()
 			privileged := privilegedFalse
 			actual := GetInitContainerSpec(containerName, mockConfigurator, nil, nil, nil, nil, privileged, corev1.PullAlways, nil)
 
@@ -115,6 +117,8 @@ EOF
 			}).Times(1)
 			mockConfigurator.EXPECT().IsLocalDNSProxyEnabled().Return(false).AnyTimes()
 			mockConfigurator.EXPECT().IsWildcardDNSProxyEnabled().Return(false).AnyTimes()
+			mockConfigurator.EXPECT().GetInjectedInitResources().Return(corev1.ResourceRequirements{}).AnyTimes()
+			mockConfigurator.EXPECT().GetInjectedHealthcheckResources().Return(corev1.ResourceRequirements{}).AnyTimes()
 			privileged := privilegedFalse
 			actual := GetInitContainerSpec(containerName, mockConfigurator, nil, nil, nil, nil, privileged, corev1.PullAlways, nil)
 

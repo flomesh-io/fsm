@@ -374,6 +374,34 @@ func (mr *MockConfiguratorMockRecorder) GetInitContainerImage() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitContainerImage", reflect.TypeOf((*MockConfigurator)(nil).GetInitContainerImage))
 }
 
+// GetInjectedHealthcheckResources mocks base method.
+func (m *MockConfigurator) GetInjectedHealthcheckResources() v1.ResourceRequirements {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInjectedHealthcheckResources")
+	ret0, _ := ret[0].(v1.ResourceRequirements)
+	return ret0
+}
+
+// GetInjectedHealthcheckResources indicates an expected call of GetInjectedHealthcheckResources.
+func (mr *MockConfiguratorMockRecorder) GetInjectedHealthcheckResources() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInjectedHealthcheckResources", reflect.TypeOf((*MockConfigurator)(nil).GetInjectedHealthcheckResources))
+}
+
+// GetInjectedInitResources mocks base method.
+func (m *MockConfigurator) GetInjectedInitResources() v1.ResourceRequirements {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInjectedInitResources")
+	ret0, _ := ret[0].(v1.ResourceRequirements)
+	return ret0
+}
+
+// GetInjectedInitResources indicates an expected call of GetInjectedInitResources.
+func (mr *MockConfiguratorMockRecorder) GetInjectedInitResources() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInjectedInitResources", reflect.TypeOf((*MockConfigurator)(nil).GetInjectedInitResources))
+}
+
 // GetLocalDNSProxyPrimaryUpstream mocks base method.
 func (m *MockConfigurator) GetLocalDNSProxyPrimaryUpstream() string {
 	m.ctrl.T.Helper()
