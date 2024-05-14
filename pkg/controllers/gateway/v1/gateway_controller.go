@@ -800,7 +800,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		return nil, err
 	}
 
-	finalValues := gwValues.AsMap()
+	gatewayValues := gwValues.AsMap()
 
 	overrides := []string{
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
@@ -815,7 +815,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	}
 
 	for _, ov := range overrides {
-		if err := strvals.ParseInto(ov, finalValues); err != nil {
+		if err := strvals.ParseInto(ov, gatewayValues); err != nil {
 			return nil, err
 		}
 	}
@@ -823,10 +823,12 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 	parameterValues, err := r.resolveParameterValues(gateway)
 	if err != nil {
 		log.Error().Msgf("Failed to resolve parameter values from ParametersRef: %s, it doesn't take effect", err)
-		return finalValues, nil
+		return gatewayValues, nil
 	}
 
-	return helmutil.MergeMaps(finalValues, parameterValues), nil
+	// gateway values take precedence over parameter values, means the values from MeshConfig override the values from ParametersRef
+	// see the overrides variables for a complete list of values
+	return helmutil.MergeMaps(parameterValues, gatewayValues), nil
 }
 
 func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway) (map[string]interface{}, error) {
