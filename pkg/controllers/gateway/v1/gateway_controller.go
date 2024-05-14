@@ -802,6 +802,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 
 	gatewayValues := gwValues.AsMap()
 
+	// these values are from MeshConfig, it will not be overridden by values from ParametersRef
 	overrides := []string{
 		fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
 		fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
