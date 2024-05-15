@@ -648,6 +648,15 @@
                       "examples": [
                         "60"
                       ]
+                    },
+                    "resource": {
+                      "$ref": "#/definitions/containerResources"
+                    },
+                    "initResources": {
+                      "$ref": "#/definitions/containerResources"
+                    },
+                    "healthcheckResources": {
+                      "$ref": "#/definitions/containerResources"
                     }
                   },
                   "additionalProperties": false

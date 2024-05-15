@@ -159,6 +159,12 @@ type SidecarSpec struct {
 	// Resources defines the compute resources for the sidecar.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// InitResources defines the compute resources for init container.
+	InitResources corev1.ResourceRequirements `json:"initResources,omitempty"`
+
+	// HealthcheckResources defines the compute resources for init container.
+	HealthcheckResources corev1.ResourceRequirements `json:"healthcheckResources,omitempty"`
+
 	// TLSMinProtocolVersion defines the minimum TLS protocol version that the sidecar supports. Valid TLS protocol versions are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
 	TLSMinProtocolVersion string `json:"tlsMinProtocolVersion,omitempty"`
 

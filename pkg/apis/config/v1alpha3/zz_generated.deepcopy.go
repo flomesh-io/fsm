@@ -782,6 +782,8 @@ func (in *ServiceLBSpec) DeepCopy() *ServiceLBSpec {
 func (in *SidecarSpec) DeepCopyInto(out *SidecarSpec) {
 	*out = *in
 	in.Resources.DeepCopyInto(&out.Resources)
+	in.InitResources.DeepCopyInto(&out.InitResources)
+	in.HealthcheckResources.DeepCopyInto(&out.HealthcheckResources)
 	if in.CipherSuites != nil {
 		in, out := &in.CipherSuites, &out.CipherSuites
 		*out = make([]string, len(*in))

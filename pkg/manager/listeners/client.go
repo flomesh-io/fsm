@@ -295,6 +295,16 @@ func (c *client) GetProxyResources() corev1.ResourceRequirements {
 	panic("implement me")
 }
 
+func (c *client) GetInjectedInitResources() corev1.ResourceRequirements {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) GetInjectedHealthcheckResources() corev1.ResourceRequirements {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
 	//TODO implement me
 	panic("implement me")

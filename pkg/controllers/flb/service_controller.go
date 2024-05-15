@@ -231,6 +231,7 @@ func (r *serviceReconciler) createOrUpdateFLBEntry(ctx context.Context, svc *cor
 
 	oldHash := getServiceHash(svc)
 	hash := r.computeServiceHash(svc, endpoints, params)
+	log.Debug().Msgf("Hash of Service %s/%s: old -> %s, new -> %s", svc.Namespace, svc.Name, oldHash, hash)
 	if oldHash != hash {
 		resp, err := r.updateFLB(svc, params, endpoints, false)
 		if err != nil {
@@ -275,20 +276,8 @@ func (r *serviceReconciler) removeServiceHash(ctx context.Context, svc *corev1.S
 	return r.fctx.Update(ctx, svc)
 }
 
-func (r *serviceReconciler) computeServiceHash(svc *corev1.Service, endpoints map[string][]string, params map[string]string) string {
-	return utils.SimpleHash(
-		struct {
-			isFLB       bool
-			serviceType corev1.ServiceType
-			endpoints   map[string][]string
-			params      map[string]string
-		}{
-			isFLB:       flb.IsFLBEnabled(svc, r.fctx.KubeClient),
-			serviceType: svc.Spec.Type,
-			endpoints:   endpoints,
-			params:      params,
-		},
-	)
+func (r *serviceReconciler) computeServiceHash(_ *corev1.Service, endpoints map[string][]string, params map[string]string) string {
+	return fmt.Sprintf("%s-%s", utils.SimpleHash(endpoints), utils.SimpleHash(params))
 }
 
 func (r *serviceReconciler) getUpstreams(ctx context.Context, svc *corev1.Service, mc configurator.Configurator) (map[string][]string, error) {
@@ -621,9 +610,9 @@ func (r *serviceReconciler) invokeFLBAPI(namespace string, params map[string]str
 	var resp *resty.Response
 	var err error
 	if del {
-		resp, err = request.Post(flbDeleteServiceAPIPath)
+		resp, err = request.Post(flb.DeleteServiceAPIPath)
 	} else {
-		resp, err = request.Post(flbUpdateServiceAPIPath)
+		resp, err = request.Post(flb.UpdateServiceAPIPath)
 	}
 
 	if err != nil {
