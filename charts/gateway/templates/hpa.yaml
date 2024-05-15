@@ -12,28 +12,14 @@ spec:
     name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
   minReplicas: {{.Values.fsm.fsmGateway.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.fsmGateway.autoScale.maxReplicas}}
+  {{- with .Values.fsm.fsmGateway.autoScale.metrics }}
   metrics:
-    - type:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.fsm.fsmGateway.autoScale.behavior }}
   behavior:
-    scaleUp:
-      stabilizationWindowSeconds: {{.Values.fsm.fsmGateway.autoScale.stabilizationWindowSeconds}}
-      policies:
-        - type: Pods
-          value: {{.Values.fsm.fsmGateway.autoScale.pods.value}}
-          periodSeconds: {{.Values.fsm.fsmGateway.autoScale.pods.periodSeconds}}
-        - type: Percent
-          value: {{.Values.fsm.fsmGateway.autoScale.percent.value}}
-          periodSeconds: {{.Values.fsm.fsmGateway.autoScale.percent.periodSeconds}}
-    scaleDown:
-      stabilizationWindowSeconds: {{.Values.fsm.fsmGateway.autoScale.stabilizationWindowSeconds}}
-      policies:
-        - type: Pods
-          value: {{.Values.fsm.fsmGateway.autoScale.pods.value}}
-          periodSeconds: {{.Values.fsm.fsmGateway.autoScale.pods.periodSeconds}}
-        - type: Percent
-          value: {{.Values.fsm.fsmGateway.autoScale.percent.value}}
-          periodSeconds: {{.Values.fsm.fsmGateway.autoScale.percent.periodSeconds}}
-
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- else }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler

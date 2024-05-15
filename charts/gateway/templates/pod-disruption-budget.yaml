@@ -8,12 +8,7 @@ metadata:
     app: fsm-gateway
     gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
 spec:
-  {{- if not empty .Values.fsm.fsmGateway.podDisruptionBudget.minAvailable }}
   minAvailable: {{ .Values.fsm.fsmGateway.podDisruptionBudget.minAvailable }}
-  {{- end }}
-  {{- if not empty .Values.fsm.fsmGateway.podDisruptionBudget.maxUnavailable }}
-  maxUnavailable: {{ .Values.fsm.fsmGateway.podDisruptionBudget.maxUnavailable }}
-  {{- end }}
   selector:
     matchLabels:
       app: fsm-gateway
