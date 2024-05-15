@@ -1,5 +1,5 @@
-{{- if .Values.fsm.fsmGateway.enablePodDisruptionBudget }}
-apiVersion: policy/v1beta1
+{{- if and .Values.fsm.fsmGateway.podDisruptionBudget.enabled  (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ printf "fsm-gateway-%s-pdb" .Values.gwy.metadata.namespace }}
@@ -8,7 +8,12 @@ metadata:
     app: fsm-gateway
     gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
 spec:
-  minAvailable: 1
+  {{- if not empty .Values.fsm.fsmGateway.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.fsm.fsmGateway.podDisruptionBudget.minAvailable }}
+  {{- end }}
+  {{- if not empty .Values.fsm.fsmGateway.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.fsm.fsmGateway.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
   selector:
     matchLabels:
       app: fsm-gateway
