@@ -106,7 +106,9 @@ fsm:
         value: release
     # -- FSM Gateway Controller's pod labels
     podLabels: {}
+    # -- FSM Gateway Controller's pod annotations
     podAnnotations: {}
+    # -- FSM Gateway Controller's pod security context
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 65532
@@ -117,6 +119,7 @@ fsm:
       #        - name: net.ipv4.ip_unprivileged_port_start
       #          value: "0"
       # fsGroup: 2000
+    # -- FSM Gateway Controller's container security context
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -160,7 +163,7 @@ fsm:
     # -- Node selector applied to control plane pods.
     nodeSelector: {}
 
-    # -- initContainer resource parameters
+    # -- initContainer resource configuration
     initResources:
       limits:
         cpu: "500m"
