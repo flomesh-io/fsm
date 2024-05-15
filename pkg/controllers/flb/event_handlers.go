@@ -39,6 +39,11 @@ func (r *serviceReconciler) onSvcUpdate(oldObj, newObj interface{}) {
 				return err
 			}
 
+			svc.Status.LoadBalancer.Ingress = nil
+			if err := r.fctx.Status().Update(context.Background(), svc); err != nil {
+				return err
+			}
+
 			if _, err := r.deleteEntryFromFLB(context.Background(), svc); err != nil {
 				return err
 			}
