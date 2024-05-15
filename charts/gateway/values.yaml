@@ -40,8 +40,14 @@ fsm:
       requests:
         cpu: "0.5"
         memory: "128M"
-    # -- Enable Pod Disruption Budget
-    enablePodDisruptionBudget: false
+
+    # -- Pod disruption budget configuration
+    podDisruptionBudget:
+      # -- Enable Pod Disruption Budget
+      enabled: false
+      # -- Minimum number of pods that must be available
+      minAvailable: 1
+
     # -- Auto scale configuration
     autoScale:
       # -- Enable Autoscale
@@ -49,20 +55,60 @@ fsm:
       # -- Minimum replicas for autoscale
       minReplicas: 1
       # -- Maximum replicas for autoscale
-      maxReplicas: 5
+      maxReplicas: 10
+      # -- Auto scale cpu metrics, for v2beta2 API
       cpu:
         # -- Average target CPU utilization (%)
         targetAverageUtilization: 80
+      # -- Auto scale memory metrics, for v2beta2 API
       memory:
         # -- Average target memory utilization (%)
         targetAverageUtilization: 80
+      # -- Auto scale metrics, for v2 API
+      metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 80
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 80
+      # -- Auto scale behavior, for v2 API
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+          - type: Pods
+            value: 1
+            periodSeconds: 60
+          - type: Percent
+            value: 10
+            periodSeconds: 60
+          selectPolicy: Min
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+            - type: Pods
+              value: 2
+              periodSeconds: 15
+          selectPolicy: Max
     # Extra env variables those will be appended to gateway container
     env:
       - name: GIN_MODE
         value: release
     # -- FSM Gateway Controller's pod labels
     podLabels: {}
+    # -- FSM Gateway Controller's pod annotations
     podAnnotations: {}
+    # -- FSM Gateway Controller's pod security context
     podSecurityContext:
       runAsNonRoot: true
       runAsUser: 65532
@@ -73,6 +119,7 @@ fsm:
       #        - name: net.ipv4.ip_unprivileged_port_start
       #          value: "0"
       # fsGroup: 2000
+    # -- FSM Gateway Controller's container security context
     securityContext:
       allowPrivilegeEscalation: false
       capabilities:
@@ -116,7 +163,7 @@ fsm:
     # -- Node selector applied to control plane pods.
     nodeSelector: {}
 
-    # -- initContainer resource parameters
+    # -- initContainer resource configuration
     initResources:
       limits:
         cpu: "500m"

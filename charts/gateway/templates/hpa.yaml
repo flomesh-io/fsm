@@ -1,4 +1,26 @@
 {{- if .Values.fsm.fsmGateway.autoScale.enable }}
+{{- if (semverCompare ">=1.23-0" .Capabilities.KubeVersion.GitVersion) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ printf "fsm-gateway-%s-hpa" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
+  minReplicas: {{.Values.fsm.fsmGateway.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.fsmGateway.autoScale.maxReplicas}}
+  {{- with .Values.fsm.fsmGateway.autoScale.metrics }}
+  metrics:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.fsm.fsmGateway.autoScale.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- else }}
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -24,4 +46,5 @@ spec:
       target:
         type: Utilization
         averageUtilization: {{.Values.fsm.fsmGateway.autoScale.memory.targetAverageUtilization}}
+{{- end }}
 {{- end }}
