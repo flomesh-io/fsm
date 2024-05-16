@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.3.0-alpha.6](https://img.shields.io/badge/Version-1.3.0--alpha.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.3.0-alpha.6](https://img.shields.io/badge/AppVersion-1.3.0--alpha.6-informational?style=flat-square)
+![Version: 1.3.0-rc.1](https://img.shields.io/badge/Version-1.3.0--rc.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.3.0-rc.1](https://img.shields.io/badge/AppVersion-1.3.0--rc.1-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -95,7 +95,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.3.0-alpha.6"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.3.0-rc.1"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |
 
