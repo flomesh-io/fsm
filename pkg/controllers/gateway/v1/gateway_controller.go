@@ -771,7 +771,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 		actionConfig,
 		fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
 		gw.Namespace,
-		constants.KubeVersion119,
+		r.kubeVersionForTemplate(),
 	)
 	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
