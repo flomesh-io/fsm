@@ -42,7 +42,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 		OS:     OSCrossPlatform,
 	},
 	func() {
-		Context("FSMGateway", func() {
+		Context("Test traffic from client to backend service routing by FSM Gateway", func() {
 			It("allow traffic of multiple protocols through Gateway", func() {
 				// Install FSM
 				installOpts := Td.GetFSMInstallOpts()
