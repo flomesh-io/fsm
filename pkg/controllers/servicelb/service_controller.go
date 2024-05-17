@@ -31,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	appv1 "k8s.io/api/apps/v1"
@@ -318,6 +320,13 @@ func (r *serviceReconciler) updateService(ctx context.Context, svc *corev1.Servi
 	expectedIPs, err := r.podIPs(ctx, pods.Items, svc)
 	if err != nil {
 		return err
+	}
+
+	if version.IsDualStackEnabled(r.fctx.KubeClient) {
+		expectedIPs, err = utils.FilterByIPFamily(expectedIPs, svc)
+		if err != nil {
+			return err
+		}
 	}
 
 	sort.Strings(expectedIPs)
