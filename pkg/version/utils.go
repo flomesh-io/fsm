@@ -20,7 +20,7 @@ var (
 	MinEndpointSliceVersion = semver.Version{Major: 1, Minor: 21, Patch: 0}
 
 	// MinK8sVersionForGatewayAPI is the minimum version of Kubernetes that supports Gateway API.
-	MinK8sVersionForGatewayAPI = MinEndpointSliceVersion
+	MinK8sVersionForGatewayAPI = MinK8sVersion
 )
 
 func getServerVersion(kubeClient kubernetes.Interface) (semver.Version, error) {
