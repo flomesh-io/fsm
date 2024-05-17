@@ -64,5 +64,5 @@ func IsEndpointSliceEnabled(kubeClient kubernetes.Interface) bool {
 
 // IsSupportedK8sVersionForGatewayAPI returns true if the Kubernetes cluster version is supported by the operator.
 func IsSupportedK8sVersionForGatewayAPI(kubeClient kubernetes.Interface) bool {
-	return IsEndpointSliceEnabled(kubeClient)
+	return IsSupportedK8sVersion(kubeClient)
 }

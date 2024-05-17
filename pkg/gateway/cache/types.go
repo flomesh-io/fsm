@@ -30,6 +30,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // Trigger is the interface for the functionality provided by the resources
@@ -54,6 +55,8 @@ type endpointContext struct {
 	address string
 	port    int32
 }
+
+type calculateEndpointsFunc func(svc *corev1.Service, port *int32) map[string]fgw.Endpoint
 
 type globalPolicyAttachments struct {
 	rateLimits      map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy

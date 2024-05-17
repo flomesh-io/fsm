@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/flomesh-io/fsm/pkg/k8s"
 	"k8s.io/utils/ptr"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -375,7 +376,7 @@ func (c *GatewayCache) isHeadlessServiceWithoutSelector(key client.ObjectKey) bo
 		return false
 	}
 
-	return service.Spec.ClusterIP == corev1.ClusterIPNone && len(service.Spec.Selector) == 0
+	return k8s.IsHeadlessService(*service)
 }
 
 func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObjectReference, service client.ObjectKey) bool {
