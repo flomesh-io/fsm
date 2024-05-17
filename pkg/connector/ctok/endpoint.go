@@ -16,7 +16,6 @@ import (
 	"k8s.io/client-go/util/retry"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
@@ -156,7 +155,7 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 	_ = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		eptSliceClient := syncer.kubeClient.DiscoveryV1().EndpointSlices(endpointsDup.Namespace)
 		labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{
-			constants.KubernetesEndpointSliceServiceNameLabel: endpointsDup.Name,
+			discoveryv1.LabelServiceName: endpointsDup.Name,
 		}}
 		listOptions := metav1.ListOptions{LabelSelector: labels.Set(labelSelector.MatchLabels).String()}
 		eptSliceList, err := eptSliceClient.List(ctx, listOptions)

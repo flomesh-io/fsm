@@ -26,6 +26,8 @@
 package cache
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -54,6 +56,8 @@ type endpointContext struct {
 	address string
 	port    int32
 }
+
+type calculateEndpointsFunc func(svc *corev1.Service, port *int32) map[string]fgw.Endpoint
 
 type globalPolicyAttachments struct {
 	rateLimits      map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy

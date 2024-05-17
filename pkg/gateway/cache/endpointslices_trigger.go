@@ -4,8 +4,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // EndpointSlicesTrigger is responsible for processing EndpointSlices
@@ -23,7 +21,7 @@ func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
-	svcName := eps.Labels[constants.KubernetesEndpointSliceServiceNameLabel]
+	svcName := eps.Labels[discoveryv1.LabelServiceName]
 	if len(svcName) == 0 {
 		return false
 	}

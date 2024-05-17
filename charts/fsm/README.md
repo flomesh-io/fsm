@@ -123,6 +123,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateHTTPRouteHostnames | bool | `true` | Enable validate HTTP route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateTLSRouteHostnames | bool | `true` | Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address |
+| fsm.featureFlags.useEndpointSlicesForGateway | bool | `true` | Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later |
 | fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
 | fsm.flb.defaultAddressPool | string | `"default"` |  |
 | fsm.flb.defaultAlgo | string | `"rr"` | Default algorithm for load balancing, default value is `"rr"`(Round Robin). Available optiosn are `"ch"`(Consistency Hash) and `"lc"`(Least Connections)  |

@@ -2150,7 +2150,8 @@
                         "enableValidateGRPCRouteHostnames",
                         "enableValidateTLSRouteHostnames",
                         "enableGatewayAgentService",
-                        "enableGatewayProxyTag"
+                        "enableGatewayProxyTag",
+                        "useEndpointSlicesForGateway"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2313,6 +2314,15 @@
                           "description": "Enable proxy-tag header for gateway",
                           "examples": [
                             false
+                          ]
+                        },
+                        "useEndpointSlicesForGateway": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/useEndpointSlicesForGateway",
+                          "type": "boolean",
+                          "title": "UseEndpointSlicesForGateway",
+                          "description": "Use EndpointSlices for calculating Gateway routes",
+                          "examples": [
+                            true
                           ]
                         }
                     },

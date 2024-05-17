@@ -191,6 +191,19 @@ jobs:
           - k8s_version: v1.27.11
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+          - k8s_version: v1.19.16
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.20.15
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.21.14
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.23.17
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework

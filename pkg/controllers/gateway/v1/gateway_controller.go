@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	"sigs.k8s.io/yaml"
 
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
@@ -764,11 +766,12 @@ func (r *gatewayReconciler) updateConfig(_ *gwv1.Gateway, _ configurator.Configu
 
 func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Configurator) (ctrl.Result, error) {
 	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
+
 	templateClient := helm.TemplateClient(
 		actionConfig,
 		fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
 		gw.Namespace,
-		constants.KubeVersion121,
+		r.kubeVersionForTemplate(),
 	)
 	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, r.resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
@@ -777,6 +780,14 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Deploy", "Deploy gateway successfully")
 
 	return ctrl.Result{}, nil
+}
+
+func (r *gatewayReconciler) kubeVersionForTemplate() *chartutil.KubeVersion {
+	if version.IsEndpointSliceEnabled(r.fctx.KubeClient) {
+		return constants.KubeVersion121
+	}
+
+	return constants.KubeVersion119
 }
 
 func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {

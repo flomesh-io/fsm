@@ -1,5 +1,9 @@
-{{- if and .Values.fsm.fsmGateway.podDisruptionBudget.enabled  (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
+{{- if and .Values.fsm.fsmGateway.podDisruptionBudget.enabled}}
+{{- if  (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion) }}
 apiVersion: policy/v1
+{{- else }}
+apiVersion: policy/v1beta1
+{{- end }}
 kind: PodDisruptionBudget
 metadata:
   name: {{ printf "fsm-gateway-%s-pdb" .Values.gwy.metadata.namespace }}

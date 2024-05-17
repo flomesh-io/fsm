@@ -35,6 +35,14 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
 
+  - apiGroups: [ "policy" ]
+    resources: [ "poddisruptionbudgets" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete"]
+
+  - apiGroups: [ "autoscaling" ]
+    resources: [ "horizontalpodautoscalers" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete"]
+
   # Port forwarding is needed for the FSM pod to be able to connect
   # to participating Sidecars and fetch their configuration.
   # This is used by the FSM debugging system.

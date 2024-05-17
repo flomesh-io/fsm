@@ -748,6 +748,8 @@ fsm:
     enableGatewayAgentService: false
     # -- Enable Gateway proxy-tag header for remote host
     enableGatewayProxyTag: false
+    # -- Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later
+    useEndpointSlicesForGateway: true
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.
