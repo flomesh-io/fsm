@@ -411,10 +411,10 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 		ips = keys(intIPs)
 	}
 
-	ips, err := utils.FilterByIPFamily(ips, svc)
-	if err != nil {
-		return nil, err
-	}
+	//ips, err := utils.FilterByIPFamily(ips, svc)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	//if len(ips) > 0 && h.rootless {
 	//    return []string{"127.0.0.1"}, nil
