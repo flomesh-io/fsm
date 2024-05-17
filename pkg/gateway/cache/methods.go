@@ -1,8 +1,9 @@
 package cache
 
 import (
-	"github.com/flomesh-io/fsm/pkg/k8s"
 	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/k8s"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
