@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -24,18 +26,20 @@ import (
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway
 type GatewayCache struct {
-	repoClient   *repo.PipyRepoClient
-	informers    *informers.InformerCollection
-	kubeClient   kubernetes.Interface
-	cfg          configurator.Configurator
-	triggers     map[informers.ResourceType]Trigger
-	gatewayclass *gwv1.GatewayClass
-	mutex        *sync.RWMutex
+	repoClient        *repo.PipyRepoClient
+	informers         *informers.InformerCollection
+	kubeClient        kubernetes.Interface
+	cfg               configurator.Configurator
+	triggers          map[informers.ResourceType]Trigger
+	gatewayclass      *gwv1.GatewayClass
+	mutex             *sync.RWMutex
+	useEndpointSlices bool
 }
 
 // NewGatewayCache creates a new gateway cache
 func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
 	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
+	useEndpointSlices := cfg.GetFeatureFlags().UseEndpointSlicesForGateway && version.IsEndpointSliceEnabled(kubeClient)
 	return &GatewayCache{
 		repoClient: repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
 		informers:  informerCollection,
@@ -68,7 +72,8 @@ func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClien
 			informers.RetryPoliciesResourceType:           &RetryPoliciesTrigger{},
 		},
 
-		mutex: new(sync.RWMutex),
+		mutex:             new(sync.RWMutex),
+		useEndpointSlices: useEndpointSlices,
 	}
 }
 

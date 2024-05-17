@@ -5,8 +5,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/k8s"
 
-	"github.com/flomesh-io/fsm/pkg/version"
-
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/utils/ptr"
 
@@ -54,7 +52,7 @@ func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway, policies gl
 		rules:           make(map[int32]fgw.RouteRule),
 	}
 
-	if cache.cfg.GetFeatureFlags().UseEndpointSlicesForGateway && version.IsEndpointSliceEnabled(cache.kubeClient) {
+	if cache.useEndpointSlices {
 		p.upstreams = p.upstreamsByEndpointSlices
 	} else {
 		p.upstreams = p.upstreamsByEndpoints

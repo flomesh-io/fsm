@@ -17,13 +17,13 @@ func (p *EndpointsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-
 	key := utils.ObjectKey(ep)
-	//cache.endpoints[key] = struct{}{}
 
-	return cache.isHeadlessServiceWithoutSelector(key) && cache.isRoutableService(key)
+	if cache.useEndpointSlices {
+		return cache.isHeadlessService(key) && cache.isRoutableService(key)
+	} else {
+		return cache.isRoutableService(key)
+	}
 }
 
 // Delete removes the Endpoints object from the cache and returns true if the cache was modified
@@ -33,15 +33,12 @@ func (p *EndpointsTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	key := utils.ObjectKey(ep)
-	//_, found := cache.endpoints[key]
-	//delete(cache.endpoints, key)
-	//
-	//return found
 
-	return cache.isHeadlessServiceWithoutSelector(key) && cache.isRoutableService(key)
+	key := utils.ObjectKey(ep)
+
+	if cache.useEndpointSlices {
+		return cache.isHeadlessService(key) && cache.isRoutableService(key)
+	} else {
+		return cache.isRoutableService(key)
+	}
 }

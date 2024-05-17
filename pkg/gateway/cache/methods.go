@@ -370,7 +370,7 @@ func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Servic
 	return obj, nil
 }
 
-func (c *GatewayCache) isHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
+func (c *GatewayCache) isHeadlessService(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
 		log.Error().Msgf("failed to get service from cache: %v", err)
