@@ -35,6 +35,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	k8scache "k8s.io/client-go/tools/cache"
 
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -348,9 +350,13 @@ func (r *serviceReconciler) getNodePorts(ctx context.Context, svc *corev1.Servic
 		nodeIPs = intIPs.UnsortedList()
 	}
 
-	nodeIPs, err := utils.FilterByIPFamily(nodeIPs, svc)
-	if err != nil {
-		return nil, err
+	if version.IsDualStackEnabled(r.fctx.KubeClient) {
+		ips, err := utils.FilterByIPFamily(nodeIPs, svc)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeIPs = ips
 	}
 
 	setting := r.settingMgr.GetSetting(svc.Namespace)
