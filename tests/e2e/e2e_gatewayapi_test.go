@@ -230,9 +230,13 @@ fsm:
 					TLS: &gwv1.GatewayTLSConfig{
 						CertificateRefs: []gwv1.SecretObjectReference{
 							{
-								Name: "https-cert",
+								Group: ptr.To(gwv1.Group(corev1.GroupName)),
+								Kind:  ptr.To(gwv1.Kind("Secret")),
+								Name:  "https-cert",
 							},
 							{
+								Group:     ptr.To(gwv1.Group(corev1.GroupName)),
+								Kind:      ptr.To(gwv1.Kind("Secret")),
 								Namespace: namespacePtr(nsGRPCSvc),
 								Name:      "grpc-cert",
 							},
@@ -263,9 +267,13 @@ fsm:
 						Mode: tlsModePtr(gwv1.TLSModeTerminate),
 						CertificateRefs: []gwv1.SecretObjectReference{
 							{
-								Name: "https-cert",
+								Group: ptr.To(gwv1.Group(corev1.GroupName)),
+								Kind:  ptr.To(gwv1.Kind("Secret")),
+								Name:  "https-cert",
 							},
 							{
+								Group:     ptr.To(gwv1.Group(corev1.GroupName)),
+								Kind:      ptr.To(gwv1.Kind("Secret")),
 								Namespace: namespacePtr(nsGRPCSvc),
 								Name:      "grpc-cert",
 							},
