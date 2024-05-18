@@ -207,11 +207,6 @@ func (c *GatewayProcessor) certificates(l gwtypes.Listener) []fgw.Certificate {
 			PrivateKey: string(secret.Data[corev1.TLSPrivateKeyKey]),
 		}
 
-		//ca := string(secret.Data[corev1.ServiceAccountRootCAKey])
-		//if len(ca) > 0 {
-		//	cert.IssuingCA = ca
-		//}
-
 		certs = append(certs, cert)
 	}
 
@@ -285,7 +280,6 @@ func (c *GatewayProcessor) serviceConfigs() map[string]fgw.ServiceConfig {
 		}
 
 		svcCfg := &fgw.ServiceConfig{
-			//Filters:   svcInfo.filters,
 			Endpoints: c.calculateEndpoints(svc, svcInfo.svcPortName.Port),
 		}
 
@@ -311,7 +305,7 @@ func (c *GatewayProcessor) calculateEndpoints(svc *corev1.Service, port *int32) 
 func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
 	eps, err := c.cache.informers.GetListers().Endpoints.Endpoints(svc.Namespace).Get(svc.Name)
 	if err != nil {
-		log.Error().Msgf("Failed to get Endpoints of Service %s: %s", svc.Name, err)
+		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
 
@@ -335,15 +329,7 @@ func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32
 		}
 	}
 
-	endpoints := make(map[string]fgw.Endpoint)
-	for ep := range endpointSet {
-		hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
-		endpoints[hostport] = fgw.Endpoint{
-			Weight: 1,
-		}
-	}
-
-	return endpoints
+	return toFGWEndpoints(endpointSet)
 }
 
 func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
@@ -385,24 +371,17 @@ func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *
 			if !isEndpointReady(endpoint) {
 				continue
 			}
-			endpointPort := findEndpointSlicePort(eps.Ports, svcPort)
 
-			for _, address := range endpoint.Addresses {
-				ep := endpointContext{address: address, port: endpointPort}
-				endpointSet[ep] = struct{}{}
+			if endpointPort := findEndpointSlicePort(eps.Ports, svcPort); endpointPort > 0 && endpointPort <= 65535 {
+				for _, address := range endpoint.Addresses {
+					ep := endpointContext{address: address, port: endpointPort}
+					endpointSet[ep] = struct{}{}
+				}
 			}
 		}
 	}
 
-	endpoints := make(map[string]fgw.Endpoint)
-	for ep := range endpointSet {
-		hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
-		endpoints[hostport] = fgw.Endpoint{
-			Weight: 1,
-		}
-	}
-
-	return endpoints
+	return toFGWEndpoints(endpointSet)
 }
 
 func (c *GatewayProcessor) defaults() fgw.Defaults {

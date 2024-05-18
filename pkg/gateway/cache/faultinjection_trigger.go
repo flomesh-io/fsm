@@ -15,11 +15,6 @@ func (p *FaultInjectionPoliciesTrigger) Insert(obj interface{}, cache *GatewayCa
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.faultinjections[utils.ObjectKey(policy)] = struct{}{}
-
 	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
@@ -30,14 +25,6 @@ func (p *FaultInjectionPoliciesTrigger) Delete(obj interface{}, cache *GatewayCa
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.faultinjections[key]
-	//delete(cache.faultinjections, key)
-	//
-	//return found
+
 	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }

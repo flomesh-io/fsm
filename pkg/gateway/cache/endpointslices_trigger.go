@@ -26,15 +26,7 @@ func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: svcName}
-	//_, found := cache.endpointslices[svcKey]
-	//if !found {
-	//	cache.endpointslices[svcKey] = make(map[client.ObjectKey]struct{})
-	//}
-	//cache.endpointslices[svcKey][utils.ObjectKey(eps)] = struct{}{}
 
 	return cache.isRoutableService(svcKey)
 }
@@ -52,24 +44,7 @@ func (p *EndpointSlicesTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
-	//slices, found := cache.endpointslices[svcKey]
-	//if !found {
-	//	return false
-	//}
-	//
-	//sliceKey := utils.ObjectKey(eps)
-	//_, found = slices[sliceKey]
-	//delete(cache.endpointslices[svcKey], sliceKey)
-	//
-	//if len(cache.endpointslices[svcKey]) == 0 {
-	//	delete(cache.endpointslices, svcKey)
-	//}
-	//
-	//return found
 
 	return cache.isRoutableService(svcKey)
 }

@@ -15,11 +15,6 @@ func (p *TLSRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.tlsroutes[utils.ObjectKey(route)] = struct{}{}
-
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
 
@@ -30,15 +25,6 @@ func (p *TLSRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(route)
-	//_, found := cache.tlsroutes[key]
-	//delete(cache.tlsroutes, key)
-	//
-	//return found
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

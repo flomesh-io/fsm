@@ -106,18 +106,6 @@ func (c *GatewayCache) rateLimits() map[gwpkg.PolicyMatchType][]gwpav1alpha1.Rat
 		}
 	}
 
-	// sort each type of rate limits by creation timestamp
-	//for matchType, policies := range rateLimits {
-	//	sort.Slice(policies, func(i, j int) bool {
-	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-	//		}
-	//
-	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-	//	})
-	//	rateLimits[matchType] = policies
-	//}
-
 	return rateLimits
 }
 
@@ -152,18 +140,6 @@ func (c *GatewayCache) accessControls() map[gwpkg.PolicyMatchType][]gwpav1alpha1
 		}
 	}
 
-	// sort each type of access controls by creation timestamp
-	//for matchType, policies := range accessControls {
-	//	sort.Slice(policies, func(i, j int) bool {
-	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-	//		}
-	//
-	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-	//	})
-	//	accessControls[matchType] = policies
-	//}
-
 	return accessControls
 }
 
@@ -194,18 +170,6 @@ func (c *GatewayCache) faultInjections() map[gwpkg.PolicyMatchType][]gwpav1alpha
 			}
 		}
 	}
-
-	// sort each type of fault injections by creation timestamp
-	//for matchType, policies := range faultInjections {
-	//	sort.Slice(policies, func(i, j int) bool {
-	//		if policies[i].CreationTimestamp.Time.Equal(policies[j].CreationTimestamp.Time) {
-	//			return client.ObjectKeyFromObject(&policies[i]).String() < client.ObjectKeyFromObject(&policies[j]).String()
-	//		}
-	//
-	//		return policies[i].CreationTimestamp.Time.Before(policies[j].CreationTimestamp.Time)
-	//	})
-	//	faultInjections[matchType] = policies
-	//}
 
 	return faultInjections
 }

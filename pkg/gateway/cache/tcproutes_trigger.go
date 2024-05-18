@@ -15,11 +15,6 @@ func (p *TCPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.tcproutes[utils.ObjectKey(route)] = struct{}{}
-
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
 
@@ -30,15 +25,6 @@ func (p *TCPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(route)
-	//_, found := cache.tcproutes[key]
-	//delete(cache.tcproutes, key)
-	//
-	//return found
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

@@ -15,11 +15,6 @@ func (p *SessionStickyPoliciesTrigger) Insert(obj interface{}, cache *GatewayCac
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.sessionstickies[utils.ObjectKey(policy)] = struct{}{}
-
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
@@ -30,15 +25,6 @@ func (p *SessionStickyPoliciesTrigger) Delete(obj interface{}, cache *GatewayCac
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.sessionstickies[key]
-	//delete(cache.sessionstickies, key)
-	//
-	//return found
 
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }

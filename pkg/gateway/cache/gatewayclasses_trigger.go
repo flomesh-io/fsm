@@ -18,22 +18,13 @@ func (p *GatewayClassesTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 	}
 
 	key := class.GetName()
-	//if err := cache.client.Get(context.TODO(), key, class); err != nil {
-	//	log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
-	//	return false
-	//}
+
 	class, err := cache.informers.GetListers().GatewayClass.Get(key)
-	//obj, exists, err := cache.informers.GetByKey(informers.InformerKeyGatewayAPIGatewayClass, key)
 	if err != nil {
 		log.Error().Msgf("Failed to get GatewayClass %s: %s", key, err)
 		return false
 	}
-	//if !exists {
-	//	log.Error().Msgf("GatewayClass %s doesn't exist", key)
-	//	return false
-	//}
 
-	//class = obj.(*gwv1.GatewayClass)
 	if utils.IsEffectiveGatewayClass(class) {
 		cache.mutex.Lock()
 		defer cache.mutex.Unlock()

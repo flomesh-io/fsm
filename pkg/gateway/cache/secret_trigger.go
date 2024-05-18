@@ -41,11 +41,7 @@ func (p *SecretTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-
 	key := utils.ObjectKey(secret)
-	//cache.secrets[key] = struct{}{}
 
 	return cache.isSecretReferred(key)
 }
@@ -57,15 +53,8 @@ func (p *SecretTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
+
 	key := utils.ObjectKey(secret)
-	//_, found := cache.secrets[key]
-	//delete(cache.secrets, key)
-	//
-	//return found
 
 	return cache.isSecretReferred(key)
 }

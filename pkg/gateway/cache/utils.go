@@ -571,3 +571,15 @@ func isValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetR
 
 	return false
 }
+
+func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.Endpoint {
+	endpoints := make(map[string]fgw.Endpoint)
+	for ep := range endpointSet {
+		hostport := fmt.Sprintf("%s:%d", ep.address, ep.port)
+		endpoints[hostport] = fgw.Endpoint{
+			Weight: 1,
+		}
+	}
+
+	return endpoints
+}

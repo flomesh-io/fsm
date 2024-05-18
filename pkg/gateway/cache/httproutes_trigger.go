@@ -15,11 +15,6 @@ func (p *HTTPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.httproutes[utils.ObjectKey(route)] = struct{}{}
-
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
 
@@ -30,15 +25,6 @@ func (p *HTTPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(route)
-	//_, found := cache.httproutes[key]
-	//delete(cache.httproutes, key)
-	//
-	//return found
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }

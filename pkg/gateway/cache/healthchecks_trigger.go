@@ -15,11 +15,6 @@ func (p *HealthCheckPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.healthchecks[utils.ObjectKey(policy)] = struct{}{}
-
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
@@ -30,15 +25,6 @@ func (p *HealthCheckPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.healthchecks[key]
-	//delete(cache.healthchecks, key)
-	//
-	//return found
 
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }

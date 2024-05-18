@@ -15,11 +15,6 @@ func (p *UDPRoutesTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.udproutes[utils.ObjectKey(route)] = struct{}{}
-
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
 
@@ -30,15 +25,6 @@ func (p *UDPRoutesTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(route)
-	//_, found := cache.udproutes[key]
-	//delete(cache.udproutes, key)
-	//
-	//return found
 
 	return cache.isEffectiveRoute(route.Spec.ParentRefs)
 }
