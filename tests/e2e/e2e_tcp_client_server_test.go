@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("Test TCP traffic from 1 pod client -> 1 pod server",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 8,
+		Bucket: 4,
 		OS:     OSCrossPlatform,
 	},
 	func() {

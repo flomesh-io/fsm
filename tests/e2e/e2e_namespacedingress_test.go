@@ -14,11 +14,11 @@ import (
 var _ = FSMDescribe("Test traffic among FSM NamespacedIngress",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 14,
+		Bucket: 7,
 		OS:     OSCrossPlatform,
 	},
 	func() {
-		Context("NamespacedIngress", func() {
+		Context("Test traffic from client to backend service routing by FSM NamespacedIngress", func() {
 			It("allow traffic through NamespacedIngress", func() {
 				// Install FSM
 				installOpts := Td.GetFSMInstallOpts()

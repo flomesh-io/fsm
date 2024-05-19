@@ -15,7 +15,7 @@ import (
 var _ = FSMDescribe("Test proxy resource setting",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 8,
+		Bucket: 4,
 	},
 	func() {
 		Context("proxy resources", func() {

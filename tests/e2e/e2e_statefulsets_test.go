@@ -22,7 +22,7 @@ import (
 var _ = FSMDescribe("Test traffic among Statefulset members",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 10,
+		Bucket: 8,
 		OS:     OSCrossPlatform,
 	},
 	func() {

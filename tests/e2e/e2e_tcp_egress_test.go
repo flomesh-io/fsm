@@ -14,7 +14,7 @@ import (
 var _ = FSMDescribe("Test TCP traffic from 1 pod client -> egress server",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 9,
+		Bucket: 4,
 		// TODO(#1610): This test assumes that the user can create a pod that is not part of the mesh.
 		OS: constants.OSLinux,
 	},

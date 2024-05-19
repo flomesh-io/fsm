@@ -25,7 +25,7 @@ const (
 var _ = FSMDescribe("Ingress using IngressBackend API",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 6,
+		Bucket: 3,
 	},
 	func() {
 		Context("HTTP ingress with IngressBackend", func() {

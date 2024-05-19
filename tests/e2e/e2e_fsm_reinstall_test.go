@@ -12,7 +12,7 @@ import (
 var _ = FSMDescribe("Test reinstalling FSM in the same namespace with the same mesh name",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 4,
+		Bucket: 3,
 	},
 	func() {
 		It("Becomes ready after being reinstalled", func() {

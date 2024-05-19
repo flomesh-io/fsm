@@ -20,7 +20,7 @@ import (
 var _ = FSMDescribe("Upgrade from latest",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 10,
+		Bucket: 5,
 	},
 	func() {
 		const ns = "upgrade-test"

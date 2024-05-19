@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("Basic traffic split scenarios",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 5,
+		Bucket: 2,
 	},
 	func() {
 		Context("HTTP traffic splitting with SMI", func() {
