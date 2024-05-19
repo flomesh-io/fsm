@@ -4,17 +4,17 @@ This document describes which Gateway API resources FSM supports and the extent 
 
 ## Summary
 
-| Resource                            | Support Status       |
-|-------------------------------------|----------------------|
-| [GatewayClass](#gatewayclass)       | Partially supported  |
-| [Gateway](#gateway)                 | Partially supported  |
-| [HTTPRoute](#httproute)             | Partially supported  |
-| [TLSRoute](#tlsroute)               | Partially supported  |
-| [GRPCRoute](#grpcroute)             | Partially supported  |
-| [TCPRoute](#tcproute)               | Partially supported  |
-| [UDPRoute](#udproute)               | Partially supported  |
-| [ReferenceGrant](#referencegrant)   | Not supported        |
-| [Custom policies](#custom-policies) | Partially supported  |
+| Resource                            | Support Status      |
+|-------------------------------------|---------------------|
+| [GatewayClass](#gatewayclass)       | Partially supported |
+| [Gateway](#gateway)                 | Partially supported |
+| [HTTPRoute](#httproute)             | Partially supported |
+| [TLSRoute](#tlsroute)               | Partially supported |
+| [GRPCRoute](#grpcroute)             | Partially supported |
+| [TCPRoute](#tcproute)               | Partially supported |
+| [UDPRoute](#udproute)               | Partially supported |
+| [ReferenceGrant](#referencegrant)   | Supported           |
+| [Custom policies](#custom-policies) | Partially supported |
 
 ## Terminology
 
@@ -63,17 +63,22 @@ Fields:
 		* `protocol` - supported. Allowed values: `HTTP`, `HTTPS`, `TLS`, `TCP`, `UDP`.
 		* `tls`
 		  * `mode` - supported. Allowed value: `Terminate`, `Passthrough`.
-		  * `certificateRefs` - partially supported. The TLS certificate and key must be stored in a Secret. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is **supported**.
-		  * `options` - not supported.
-		* `allowedRoutes` - not supported. 
+		  * `certificateRefs` - partially supported. The TLS certificate and key must be stored in a Secret of type `kubernetes.io/tls`. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is **supported**.
+		  * `options` - partially supported, only ONE annotation for enable/disable mTLS.
+      * `frontendValidation` - supported. Core: ConfigMap and Implementation-specific: Secret are supported. A single reference to a Kubernetes ConfigMap/Secret with the CA certificate in a key named `ca.crt`.
+    * `allowedRoutes` - supported. 
 	* `addresses` - not supported.
+  * `infrastructure` - supported.
+    * `labels` - supported. All labels are propagated to the created Deployment/Service.
+    * `annotations` - supported. All annotations are propagated to the created Deployment/Service.
+    * `parametersRef` - supported. Gateway configuration parameters are stored in a ConfigMap whose name must be `values.yaml` and in Helm value format defined in FSM gateway chart. Multiple references are NOT supported. You must deploy the ConfigMaps before the Gateway resource. ConfigMap rotation (watching for updates) is **supported**.
 * `status`
   * `addresses` - supported.
   * `conditions` - supported, `Accepted` type for active Gateway.
   * `listeners`
 	  * `name` - supported.
     * `supportedKinds` - supported.
-	  * `attachedRoutes` - not supported.
+	  * `attachedRoutes` - supported.
 	  * `conditions` - partially supported.
 
 ### HTTPRoute
@@ -186,7 +191,7 @@ Fields:
  
 ### ReferenceGrant
 
-> Status: Not supported.
+> Status: supported.
 
 ### Custom Policies
 
