@@ -10,7 +10,7 @@ import (
 var _ = FSMDescribe("Test fsm control plane installation with Helm",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 4,
+		Bucket: 3,
 	},
 	func() {
 		Context("Helm install using default values", func() {

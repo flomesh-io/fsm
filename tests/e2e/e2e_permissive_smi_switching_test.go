@@ -18,7 +18,7 @@ import (
 var _ = FSMDescribe("Test HTTP traffic from N deployment client -> 1 deployment server, permissive to SMI switching",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 2,
+		Bucket: 1,
 	},
 	func() {
 		Context("PermissiveToSmiSwitching", func() {

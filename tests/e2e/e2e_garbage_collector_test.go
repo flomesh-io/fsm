@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("Test garbage collection for unused sidecar bootstrap config secrets",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 2,
+		Bucket: 1,
 	},
 	func() {
 		Context("Garbage Collection", func() {

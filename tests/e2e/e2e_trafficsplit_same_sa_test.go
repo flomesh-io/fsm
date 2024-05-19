@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("TrafficSplit where each backend has the same ServiceAccount",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 9,
+		Bucket: 4,
 	},
 	func() {
 		Context("ClientServerTrafficSplitSameSA", func() {

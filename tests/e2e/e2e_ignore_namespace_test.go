@@ -15,7 +15,7 @@ import (
 var _ = FSMDescribe("Ignore Namespaces",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 2,
+		Bucket: 1,
 	},
 	func() {
 		Context("Ignore Label", func() {

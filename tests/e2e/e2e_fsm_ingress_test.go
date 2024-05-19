@@ -3,8 +3,6 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	. "github.com/flomesh-io/fsm/tests/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appv1 "k8s.io/api/apps/v1"
@@ -13,6 +11,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	. "github.com/flomesh-io/fsm/tests/framework"
 )
 
 const nsIngress = "test"
@@ -20,7 +21,7 @@ const nsIngress = "test"
 var _ = FSMDescribe("Test traffic among FSM Ingress",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 14,
+		Bucket: 6,
 		OS:     OSCrossPlatform,
 	},
 	func() {

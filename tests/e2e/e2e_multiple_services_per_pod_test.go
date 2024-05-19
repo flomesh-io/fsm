@@ -13,7 +13,7 @@ import (
 var _ = FSMDescribe("Test access via multiple services matching the same pod",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 6,
+		Bucket: 3,
 	},
 	func() {
 		Context("Multiple services matching same pod", func() {

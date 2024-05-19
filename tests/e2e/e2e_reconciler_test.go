@@ -15,7 +15,7 @@ import (
 var _ = FSMDescribe("Test FSM Reconciler",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 9,
+		Bucket: 4,
 	},
 	func() {
 		Context("Enable Reconciler", func() {

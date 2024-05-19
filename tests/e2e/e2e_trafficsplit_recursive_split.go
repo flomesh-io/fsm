@@ -19,7 +19,7 @@ import (
 var _ = FSMDescribe("Traffic split where root service is same as backend service",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 9,
+		Bucket: 4,
 	},
 	func() {
 		Context("HTTP recursive traffic splitting with SMI", func() {

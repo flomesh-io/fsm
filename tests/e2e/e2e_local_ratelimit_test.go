@@ -16,7 +16,7 @@ import (
 var _ = FSMDescribe("Test local rate limiting",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 3,
+		Bucket: 2,
 		OS:     OSCrossPlatform,
 	},
 	func() {

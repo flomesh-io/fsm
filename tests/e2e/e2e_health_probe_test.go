@@ -16,7 +16,7 @@ import (
 var _ = FSMDescribe("Test health probes can succeed",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 4,
+		Bucket: 3,
 	},
 	func() {
 		tls := &corev1.Secret{

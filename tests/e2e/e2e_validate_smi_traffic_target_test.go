@@ -11,7 +11,7 @@ import (
 var _ = FSMDescribe("Test SMI TrafficTarget Validation",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 8,
+		Bucket: 4,
 	},
 	func() {
 		Context("With SMI Traffic Target validation enabled", func() {

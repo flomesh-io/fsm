@@ -17,7 +17,7 @@ import (
 var _ = FSMDescribe("Test deployment of Fluent Bit sidecar",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 2,
+		Bucket: 1,
 	},
 	func() {
 		Context("Fluent Bit deployment", func() {

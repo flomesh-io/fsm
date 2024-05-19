@@ -10,7 +10,7 @@ import (
 var _ = FSMDescribe("Test fsm-mesh-config functionalities",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 5,
+		Bucket: 1,
 	},
 	func() {
 		Context("When FSM is Installed", func() {

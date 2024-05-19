@@ -13,7 +13,7 @@ import (
 var _ = FSMDescribe("Test multiple service ports",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 6,
+		Bucket: 3,
 	},
 	func() {
 		Context("Multiple service ports", func() {

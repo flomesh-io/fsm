@@ -11,8 +11,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	. "github.com/flomesh-io/fsm/tests/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appv1 "k8s.io/api/apps/v1"
@@ -21,6 +19,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	. "github.com/flomesh-io/fsm/tests/framework"
 )
 
 const (
@@ -38,7 +39,7 @@ const (
 var _ = FSMDescribe("Test traffic among FSM Gateway",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 13,
+		Bucket: 6,
 		OS:     OSCrossPlatform,
 	},
 	func() {
