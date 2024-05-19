@@ -13,7 +13,7 @@ import (
 var _ = FSMDescribe("HTTP and HTTPS Egress",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 2,
+		Bucket: 3,
 		OS:     OSCrossPlatform,
 	},
 	func() {

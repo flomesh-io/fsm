@@ -14,7 +14,7 @@ import (
 var _ = FSMDescribe("1 Client pod -> 1 Server pod test using Vault",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 4,
+		Bucket: 3,
 	},
 	func() {
 		Context("HashivaultSimpleClientServer", func() {

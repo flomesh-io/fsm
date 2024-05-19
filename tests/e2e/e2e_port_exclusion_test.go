@@ -13,7 +13,7 @@ import (
 var _ = FSMDescribe("Tests traffic via port exclusion",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 7,
+		Bucket: 5,
 	},
 	func() {
 		Context("Test global port exclusion", func() {

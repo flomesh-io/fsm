@@ -22,7 +22,7 @@ const grpcbinSecurePort = 9001
 var _ = FSMDescribe("gRPC secure traffic origination for client pod -> server pod usint TCP routes",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 3,
+		Bucket: 2,
 	},
 	func() {
 		Context("gRPC secure traffic origination over HTTP2 with SMI TCP routes", func() {

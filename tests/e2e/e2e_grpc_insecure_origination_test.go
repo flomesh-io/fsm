@@ -21,7 +21,7 @@ import (
 var _ = FSMDescribe("gRPC insecure traffic origination for client pod -> server pod usint HTTP routes",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 3,
+		Bucket: 2,
 	},
 	func() {
 		Context("gRPC insecure traffic origination over HTTP2 with SMI HTTP routes", func() {

@@ -13,7 +13,7 @@ import (
 var _ = FSMDescribe("Tests traffic via IP range exclusion",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 5,
+		Bucket: 2,
 	},
 	func() {
 		Context("Test IP range exclusion", func() {

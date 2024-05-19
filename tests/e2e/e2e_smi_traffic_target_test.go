@@ -20,7 +20,7 @@ import (
 var _ = FSMDescribe("Test HTTP traffic with SMI TrafficTarget",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 8,
+		Bucket: 4,
 	},
 	func() {
 		Context("SMI TrafficTarget is set up properly", func() {

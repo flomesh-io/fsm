@@ -14,7 +14,7 @@ import (
 var _ = FSMDescribe("Permissive Traffic Policy Mode",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 7,
+		Bucket: 5,
 	},
 	func() {
 		Context("Permissive mode HTTP test with a Kubernetes Service for the Source", func() {

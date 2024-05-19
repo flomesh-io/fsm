@@ -29,7 +29,7 @@ const (
 var _ = FSMDescribe("Tests external traffic using egress policy",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 3,
+		Bucket: 2,
 	},
 	func() {
 		Context("HTTP egress policy without route matches", func() {
