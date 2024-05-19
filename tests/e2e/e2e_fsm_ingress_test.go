@@ -21,7 +21,7 @@ const nsIngress = "test"
 var _ = FSMDescribe("Test traffic among FSM Ingress",
 	FSMDescribeInfo{
 		Tier:   1,
-		Bucket: 6,
+		Bucket: 7,
 		OS:     OSCrossPlatform,
 	},
 	func() {

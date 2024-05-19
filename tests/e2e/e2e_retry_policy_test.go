@@ -30,7 +30,7 @@ var thresholdUintVal uint32 = 5
 var _ = FSMDescribe("Test Retry Policy",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 7,
+		Bucket: 8,
 	},
 	func() {
 		Context("Retry policy enabled", func() {
