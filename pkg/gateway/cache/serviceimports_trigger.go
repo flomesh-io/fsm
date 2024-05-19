@@ -16,11 +16,7 @@ func (p *ServiceImportsTrigger) Insert(obj interface{}, cache *GatewayCache) boo
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-
 	key := utils.ObjectKey(svcimp)
-	//cache.serviceimports[key] = struct{}{}
 
 	return cache.isRoutableService(key)
 }
@@ -32,15 +28,8 @@ func (p *ServiceImportsTrigger) Delete(obj interface{}, cache *GatewayCache) boo
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
+
 	key := utils.ObjectKey(svcimp)
-	//_, found := cache.serviceimports[key]
-	//delete(cache.serviceimports, key)
-	//
-	//return found
 
 	return cache.isRoutableService(key)
 }

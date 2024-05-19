@@ -21,7 +21,6 @@ import (
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeMeshConfigs struct {
 	ns   string
 }
 
-var meshconfigsResource = schema.GroupVersionResource{Group: "config.flomesh.io", Version: "v1alpha3", Resource: "meshconfigs"}
+var meshconfigsResource = v1alpha3.SchemeGroupVersion.WithResource("meshconfigs")
 
-var meshconfigsKind = schema.GroupVersionKind{Group: "config.flomesh.io", Version: "v1alpha3", Kind: "MeshConfig"}
+var meshconfigsKind = v1alpha3.SchemeGroupVersion.WithKind("MeshConfig")
 
 // Get takes name of the meshConfig, and returns the corresponding meshConfig object, and an error if there is any.
 func (c *FakeMeshConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha3.MeshConfig, err error) {

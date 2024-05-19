@@ -9,8 +9,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
@@ -396,14 +396,17 @@ const (
 	// GatewayAPIGroup is the group name used in Gateway API
 	GatewayAPIGroup = "gateway.networking.k8s.io"
 
-	// FlomeshAPIGroup is the group name used in Flomesh API
-	FlomeshAPIGroup = "flomesh.io"
+	// FlomeshMCSAPIGroup is the group name used in Flomesh Multi Cluster Service API
+	FlomeshMCSAPIGroup = "multicluster.flomesh.io"
 
 	// FlomeshGatewayAPIGroup is the group name used in Flomesh Gateway API
 	FlomeshGatewayAPIGroup = "gateway.flomesh.io"
 
 	// KubernetesCoreGroup is the group name used in Kubernetes Core API
 	KubernetesCoreGroup = ""
+
+	// GatewayClassAPIGatewayKind is the kind name of Gateway used in Gateway API
+	GatewayClassAPIGatewayKind = "GatewayClass"
 
 	// GatewayAPIGatewayKind is the kind name of Gateway used in Gateway API
 	GatewayAPIGatewayKind = "Gateway"
@@ -423,11 +426,17 @@ const (
 	// GatewayAPIUDPRouteKind is the kind name of UDPRoute used in Gateway API
 	GatewayAPIUDPRouteKind = "UDPRoute"
 
+	// GatewayAPIReferenceGrantKind is the kind name of ReferenceGrant used in Gateway API
+	GatewayAPIReferenceGrantKind = "ReferenceGrant"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 
 	// KubernetesSecretKind is the kind name of Secret used in Kubernetes Core API
 	KubernetesSecretKind = "Secret"
+
+	// KubernetesConfigMapKind is the kind name of ConfigMap used in Kubernetes Core API
+	KubernetesConfigMapKind = "ConfigMap"
 
 	// FlomeshAPIServiceImportKind is the kind name of ServiceImport used in Flomesh API
 	FlomeshAPIServiceImportKind = "ServiceImport"
@@ -458,9 +467,27 @@ const (
 
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
+)
 
-	// GatewayTLSPolicyKind is the kind name of GatewayTLSPolicy used in Flomesh API
-	GatewayTLSPolicyKind = "GatewayTLSPolicy"
+// Gateway API Annotations and Labels
+const (
+	// GatewayAnnotationPrefix is the prefix for all gateway annotations
+	GatewayAnnotationPrefix = FlomeshGatewayAPIGroup
+
+	// GatewayLabelPrefix is the prefix for all gateway labels
+	GatewayLabelPrefix = FlomeshGatewayAPIGroup
+
+	// GatewayNamespaceLabel is the label used to indicate the namespace of the gateway
+	GatewayNamespaceLabel = GatewayLabelPrefix + "/ns"
+
+	// GatewayListenersHashAnnotation is the annotation used to indicate the hash value of gateway listener spec
+	GatewayListenersHashAnnotation = GatewayAnnotationPrefix + "/listeners-hash"
+)
+
+// Gateway TLS  Annotations and Labels
+const (
+	// GatewayMTLSAnnotation is the annotation used to indicate if the mTLS is enabled
+	GatewayMTLSAnnotation gwv1.AnnotationKey = GatewayAnnotationPrefix + "/mtls"
 )
 
 // Gateway API Annotations and Labels
@@ -514,34 +541,34 @@ const (
 // Gateway API constants
 const (
 	// FSMGatewayClassName is the name of FSM GatewayClass
-	FSMGatewayClassName = "fsm-gateway-cls"
+	FSMGatewayClassName = "fsm"
 
 	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"
 
 	// GatewayMutatingWebhookPath is the path at which the gateway mutating webhook is served
-	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gateway"
 
 	// GatewayValidatingWebhookPath is the path at which the gateway validating webhook is served
-	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gateway"
+	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gateway"
 
 	// GatewayClassMutatingWebhookPath is the path at which the gateway class mutating webhook is served
-	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gatewayclass"
 
 	// GatewayClassValidatingWebhookPath is the path at which the gateway class validating webhook is served
-	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-gatewayclass"
+	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gatewayclass"
 
 	// HTTPRouteMutatingWebhookPath is the path at which the HTTP route mutating webhook is served
-	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-httproute"
+	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-httproute"
 
 	// HTTPRouteValidatingWebhookPath is the path at which the HTTP route validating webhook is served
-	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-httproute"
+	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-httproute"
 
 	// GRPCRouteMutatingWebhookPath is the path at which the gRPC route mutating webhook is served
-	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-grpcroute"
 
 	// GRPCRouteValidatingWebhookPath is the path at which the gRPC route validating webhook is served
-	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-grpcroute"
+	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-grpcroute"
 
 	// TCPRouteMutatingWebhookPath is the path at which the TCP route mutating webhook is served
 	TCPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"
@@ -560,6 +587,12 @@ const (
 
 	// UDPRouteValidatingWebhookPath is the path at which the UDP route validating webhook is served
 	UDPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-udproute"
+
+	// ReferenceGrantMutatingWebhookPath is the path at which the ReferenceGrant mutating webhook is served
+	ReferenceGrantMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-referencegrant"
+
+	// ReferenceGrantValidatingWebhookPath is the path at which the ReferenceGrant validating webhook is served
+	ReferenceGrantValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-referencegrant"
 )
 
 // PolicyAttachment constants
@@ -617,12 +650,6 @@ const (
 
 	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
 	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
-
-	// GatewayTLSPolicyMutatingWebhookPath is the path at which the GatewayTLSPolicy mutating webhook is served
-	GatewayTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
-
-	// GatewayTLSPolicyValidatingWebhookPath is the path at which the GatewayTLSPolicy validating webhook is served
-	GatewayTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-gatewaytlspolicy"
 )
 
 // PIPY Repo constants
@@ -931,13 +958,16 @@ var (
 
 // GroupVersionKind variables
 var (
-	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), GatewayAPIGatewayKind)
-	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1beta1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
+	GatewayClassGVK          = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
+	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
+	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
 	TLSRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
 	TCPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
 	UDPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
 	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
+	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
 	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
+	ConfigMapGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
 	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
 	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RateLimitPolicyKind)
 	SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), SessionStickyPolicyKind)
@@ -948,5 +978,4 @@ var (
 	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), FaultInjectionPolicyKind)
 	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), UpstreamTLSPolicyKind)
 	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RetryPolicyKind)
-	GatewayTLSPolicyGVK      = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), GatewayTLSPolicyKind)
 )

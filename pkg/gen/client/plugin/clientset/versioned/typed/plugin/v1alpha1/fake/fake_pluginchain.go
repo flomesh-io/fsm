@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakePluginChains struct {
 	ns   string
 }
 
-var pluginchainsResource = schema.GroupVersionResource{Group: "plugin.flomesh.io", Version: "v1alpha1", Resource: "pluginchains"}
+var pluginchainsResource = v1alpha1.SchemeGroupVersion.WithResource("pluginchains")
 
-var pluginchainsKind = schema.GroupVersionKind{Group: "plugin.flomesh.io", Version: "v1alpha1", Kind: "PluginChain"}
+var pluginchainsKind = v1alpha1.SchemeGroupVersion.WithKind("PluginChain")
 
 // Get takes name of the pluginChain, and returns the corresponding pluginChain object, and an error if there is any.
 func (c *FakePluginChains) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PluginChain, err error) {

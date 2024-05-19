@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package v1beta1
+package v1
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -60,10 +60,10 @@ func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 
 // Reconcile reads that state of the cluster for a HTTPRoute object and makes changes based on the state read
 func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	httpRoute := &gwv1beta1.HTTPRoute{}
+	httpRoute := &gwv1.HTTPRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, httpRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1beta1.HTTPRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1.HTTPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +72,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if httpRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(httpRoute)
+		r.fctx.GatewayEventHandler.OnDelete(httpRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +88,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(httpRoute)
+	r.fctx.GatewayEventHandler.OnAdd(httpRoute, false)
 
 	return ctrl.Result{}, nil
 }
@@ -96,6 +96,6 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gwv1beta1.HTTPRoute{}).
+		For(&gwv1.HTTPRoute{}).
 		Complete(r)
 }

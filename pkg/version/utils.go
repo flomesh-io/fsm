@@ -17,10 +17,17 @@ var (
 	MinK8sVersion = semver.Version{Major: 1, Minor: 19, Patch: 0}
 
 	// MinEndpointSliceVersion is the minimum version of Kubernetes that supports EndpointSlice.
+	// stable since Kubernetes v1.21
+	// https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/
 	MinEndpointSliceVersion = semver.Version{Major: 1, Minor: 21, Patch: 0}
 
+	// MinDualStackSliceVersion is the minimum version of Kubernetes that supports IPv4/IPv6 dual-stack.
+	// IPv4/IPv6 dual-stack networking is enabled by default for your Kubernetes cluster starting in 1.21
+	// https://kubernetes.io/docs/concepts/services-networking/dual-stack/
+	MinDualStackSliceVersion = semver.Version{Major: 1, Minor: 21, Patch: 0}
+
 	// MinK8sVersionForGatewayAPI is the minimum version of Kubernetes that supports Gateway API.
-	MinK8sVersionForGatewayAPI = MinEndpointSliceVersion
+	MinK8sVersionForGatewayAPI = MinK8sVersion
 )
 
 func getServerVersion(kubeClient kubernetes.Interface) (semver.Version, error) {
@@ -62,7 +69,13 @@ func IsEndpointSliceEnabled(kubeClient kubernetes.Interface) bool {
 	return ServerVersion.GTE(MinEndpointSliceVersion)
 }
 
+// IsDualStackEnabled returns true if IPv4/IPv6 dual-stack is enabled in the Kubernetes cluster.
+func IsDualStackEnabled(kubeClient kubernetes.Interface) bool {
+	detectServerVersion(kubeClient)
+	return ServerVersion.GTE(MinDualStackSliceVersion)
+}
+
 // IsSupportedK8sVersionForGatewayAPI returns true if the Kubernetes cluster version is supported by the operator.
 func IsSupportedK8sVersionForGatewayAPI(kubeClient kubernetes.Interface) bool {
-	return IsEndpointSliceEnabled(kubeClient)
+	return IsSupportedK8sVersion(kubeClient)
 }

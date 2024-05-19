@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeAccessCerts struct {
 	ns   string
 }
 
-var accesscertsResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "accesscerts"}
+var accesscertsResource = v1alpha1.SchemeGroupVersion.WithResource("accesscerts")
 
-var accesscertsKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "AccessCert"}
+var accesscertsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessCert")
 
 // Get takes name of the accessCert, and returns the corresponding accessCert object, and an error if there is any.
 func (c *FakeAccessCerts) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessCert, err error) {

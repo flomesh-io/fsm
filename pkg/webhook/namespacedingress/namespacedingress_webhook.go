@@ -61,7 +61,7 @@ func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
 func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionregv1.ValidatingWebhook) {
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
-		[]string{"flomesh.io"},
+		[]string{"networking.flomesh.io"},
 		[]string{"v1alpha1"},
 		[]string{"namespacedingresses"},
 	)
@@ -92,8 +92,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers for the namespacedingress resources
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config, r.MeshName, r.FSMVersion)),
-		constants.NamespacedIngressValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.nsigClient)),
+		constants.NamespacedIngressMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator, r.MeshName, r.FSMVersion)),
+		constants.NamespacedIngressValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.nsigClient)),
 	}
 }
 
@@ -226,7 +226,7 @@ func (w *validator) ValidateCreate(obj interface{}) error {
 		return nil
 	}
 
-	list, err := w.nsigClient.FlomeshV1alpha1().
+	list, err := w.nsigClient.NetworkingV1alpha1().
 		NamespacedIngresses(namespacedingress.Namespace).
 		List(context.TODO(), metav1.ListOptions{})
 

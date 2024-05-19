@@ -6,7 +6,12 @@ package informers
 
 import (
 	"errors"
+	"sort"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/version"
 
@@ -96,10 +101,14 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
+		ic.informers[InformerKeyNamespaceAll] = v1api.Namespaces().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
+		ic.listers.Namespace = v1api.Namespaces().Lister()
 
 		if version.IsEndpointSliceEnabled(kubeClient) {
 			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
@@ -120,9 +129,11 @@ func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCol
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
+		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 
 		ic.listers.Service = v1api.Services().Lister()
 		ic.listers.Secret = v1api.Secrets().Lister()
+		ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
 		ic.listers.Endpoints = v1api.Endpoints().Lister()
 
 		if version.IsEndpointSliceEnabled(kubeClient) {
@@ -213,11 +224,11 @@ func WithMultiClusterClient(multiclusterClient multiclusterClientset.Interface) 
 	return func(ic *InformerCollection) {
 		informerFactory := multiclusterInformers.NewSharedInformerFactory(multiclusterClient, DefaultKubeEventResyncInterval)
 
-		ic.informers[InformerKeyServiceExport] = informerFactory.Flomesh().V1alpha1().ServiceExports().Informer()
-		ic.informers[InformerKeyServiceImport] = informerFactory.Flomesh().V1alpha1().ServiceImports().Informer()
-		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Flomesh().V1alpha1().GlobalTrafficPolicies().Informer()
+		ic.informers[InformerKeyServiceExport] = informerFactory.Multicluster().V1alpha1().ServiceExports().Informer()
+		ic.informers[InformerKeyServiceImport] = informerFactory.Multicluster().V1alpha1().ServiceImports().Informer()
+		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Multicluster().V1alpha1().GlobalTrafficPolicies().Informer()
 
-		ic.listers.ServiceImport = informerFactory.Flomesh().V1alpha1().ServiceImports().Lister()
+		ic.listers.ServiceImport = informerFactory.Multicluster().V1alpha1().ServiceImports().Lister()
 	}
 }
 
@@ -242,9 +253,9 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 		ic.listers.K8sIngress = informerFactory.Networking().V1().Ingresses().Lister()
 
 		nsigInformerFactory := nsigInformers.NewSharedInformerFactory(nsigClient, DefaultKubeEventResyncInterval)
-		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Informer()
+		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Informer()
 
-		ic.listers.NamespacedIngress = nsigInformerFactory.Flomesh().V1alpha1().NamespacedIngresses().Lister()
+		ic.listers.NamespacedIngress = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Lister()
 	}
 }
 
@@ -262,7 +273,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
 		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
 		ic.informers[InformerKeyRetryPolicy] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
-		ic.informers[InformerKeyGatewayTLSPolicy] = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Informer()
 
 		ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
 		ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
@@ -273,7 +283,6 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
 		ic.listers.UpstreamTLSPolicy = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Lister()
 		ic.listers.RetryPolicy = informerFactory.Gateway().V1alpha1().RetryPolicies().Lister()
-		ic.listers.GatewayTLSPolicy = informerFactory.Gateway().V1alpha1().GatewayTLSPolicies().Lister()
 	}
 }
 
@@ -282,21 +291,23 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 	return func(ic *InformerCollection) {
 		informerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
 
-		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1beta1().GatewayClasses().Informer()
-		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1beta1().Gateways().Informer()
-		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1beta1().HTTPRoutes().Informer()
-		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1alpha2().GRPCRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGatewayClass] = informerFactory.Gateway().V1().GatewayClasses().Informer()
+		ic.informers[InformerKeyGatewayAPIGateway] = informerFactory.Gateway().V1().Gateways().Informer()
+		ic.informers[InformerKeyGatewayAPIHTTPRoute] = informerFactory.Gateway().V1().HTTPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIGRPCRoute] = informerFactory.Gateway().V1().GRPCRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITCPRoute] = informerFactory.Gateway().V1alpha2().TCPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIUDPRoute] = informerFactory.Gateway().V1alpha2().UDPRoutes().Informer()
+		ic.informers[InformerKeyGatewayAPIReferenceGrant] = informerFactory.Gateway().V1beta1().ReferenceGrants().Informer()
 
-		ic.listers.GatewayClass = informerFactory.Gateway().V1beta1().GatewayClasses().Lister()
-		ic.listers.Gateway = informerFactory.Gateway().V1beta1().Gateways().Lister()
-		ic.listers.HTTPRoute = informerFactory.Gateway().V1beta1().HTTPRoutes().Lister()
-		ic.listers.GRPCRoute = informerFactory.Gateway().V1alpha2().GRPCRoutes().Lister()
+		ic.listers.GatewayClass = informerFactory.Gateway().V1().GatewayClasses().Lister()
+		ic.listers.Gateway = informerFactory.Gateway().V1().Gateways().Lister()
+		ic.listers.HTTPRoute = informerFactory.Gateway().V1().HTTPRoutes().Lister()
+		ic.listers.GRPCRoute = informerFactory.Gateway().V1().GRPCRoutes().Lister()
 		ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
 		ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
 		ic.listers.UDPRoute = informerFactory.Gateway().V1alpha2().UDPRoutes().Lister()
+		ic.listers.ReferenceGrant = informerFactory.Gateway().V1beta1().ReferenceGrants().Lister()
 	}
 }
 
@@ -407,4 +418,158 @@ func (ic *InformerCollection) IsMonitoredNamespace(namespace string) bool {
 // GetListers returns the listers for the informers
 func (ic *InformerCollection) GetListers() *Lister {
 	return ic.listers
+}
+
+//gocyclo:ignore
+func (ic *InformerCollection) GetGatewayResourcesFromCache(resourceType ResourceType, shouldSort bool) []client.Object {
+	resources := make([]client.Object, 0)
+
+	switch resourceType {
+	case GatewayClassesResourceType:
+		classes, err := ic.listers.GatewayClass.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get GatewayClasses: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(classes, constants.GatewayClassGVK)
+	case GatewaysResourceType:
+		gateways, err := ic.listers.Gateway.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get Gateways: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(gateways, constants.GatewayGVK)
+	case HTTPRoutesResourceType:
+		routes, err := ic.listers.HTTPRoute.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get HTTPRoutes: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(routes, constants.HTTPRouteGVK)
+	case GRPCRoutesResourceType:
+		routes, err := ic.listers.GRPCRoute.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get GRPCRouts: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(routes, constants.GRPCRouteGVK)
+	case TLSRoutesResourceType:
+		routes, err := ic.listers.TLSRoute.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get TLSRoutes: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(routes, constants.TLSRouteGVK)
+	case TCPRoutesResourceType:
+		routes, err := ic.listers.TCPRoute.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get TCPRoutes: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(routes, constants.TCPRouteGVK)
+	case UDPRoutesResourceType:
+		routes, err := ic.listers.UDPRoute.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get UDPRoutes: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(routes, constants.UDPRouteGVK)
+	case ReferenceGrantResourceType:
+		grants, err := ic.listers.ReferenceGrant.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get ReferenceGrants: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(grants, constants.ReferenceGrantGVK)
+	case UpstreamTLSPoliciesResourceType:
+		policies, err := ic.listers.UpstreamTLSPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get UpstreamTLSPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.UpstreamTLSPolicyGVK)
+	case RateLimitPoliciesResourceType:
+		policies, err := ic.listers.RateLimitPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get RateLimitPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.RateLimitPolicyGVK)
+	case AccessControlPoliciesResourceType:
+		policies, err := ic.listers.AccessControlPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get AccessControlPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.AccessControlPolicyGVK)
+	case FaultInjectionPoliciesResourceType:
+		policies, err := ic.listers.FaultInjectionPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get FaultInjectionPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.FaultInjectionPolicyGVK)
+	case SessionStickyPoliciesResourceType:
+		policies, err := ic.listers.SessionStickyPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get SessionStickyPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.SessionStickyPolicyGVK)
+	case LoadBalancerPoliciesResourceType:
+		policies, err := ic.listers.LoadBalancerPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get LoadBalancerPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.LoadBalancerPolicyGVK)
+	case CircuitBreakingPoliciesResourceType:
+		policies, err := ic.listers.CircuitBreakingPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get CircuitBreakingPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.CircuitBreakingPolicyGVK)
+	case HealthCheckPoliciesResourceType:
+		policies, err := ic.listers.HealthCheckPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get HealthCheckPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.HealthCheckPolicyGVK)
+	case RetryPoliciesResourceType:
+		policies, err := ic.listers.RetryPolicy.List(selectAll)
+		if err != nil {
+			log.Error().Msgf("Failed to get RetryPolicies: %s", err)
+			return resources
+		}
+		resources = setGroupVersionKind(policies, constants.RetryPolicyGVK)
+	default:
+		log.Error().Msgf("Unknown resource type: %s", resourceType)
+		return nil
+	}
+
+	if shouldSort {
+		sort.Slice(resources, func(i, j int) bool {
+			if resources[i].GetCreationTimestamp().Time.Equal(resources[j].GetCreationTimestamp().Time) {
+				return client.ObjectKeyFromObject(resources[i]).String() < client.ObjectKeyFromObject(resources[j]).String()
+			}
+
+			return resources[i].GetCreationTimestamp().Time.Before(resources[j].GetCreationTimestamp().Time)
+		})
+	}
+
+	return resources
+}
+
+func setGroupVersionKind[T GatewayAPIResource](objects []T, gvk schema.GroupVersionKind) []client.Object {
+	resources := make([]client.Object, 0)
+
+	for _, obj := range objects {
+		obj := client.Object(obj)
+		obj.GetObjectKind().SetGroupVersionKind(gvk)
+		resources = append(resources, obj)
+	}
+
+	return resources
 }

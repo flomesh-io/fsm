@@ -35,6 +35,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	k8scache "k8s.io/client-go/tools/cache"
 
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -58,7 +60,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -219,7 +220,7 @@ func (r *serviceReconciler) deleteEntryFromFLB(ctx context.Context, svc *corev1.
 func (r *serviceReconciler) createOrUpdateFLBEntry(ctx context.Context, svc *corev1.Service) (ctrl.Result, error) {
 	log.Debug().Msgf("Service %s/%s is being created/updated in FLB ...", svc.Namespace, svc.Name)
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	endpoints, err := r.getUpstreams(ctx, svc, mc)
 	if err != nil {
@@ -349,9 +350,13 @@ func (r *serviceReconciler) getNodePorts(ctx context.Context, svc *corev1.Servic
 		nodeIPs = intIPs.UnsortedList()
 	}
 
-	nodeIPs, err := utils.FilterByIPFamily(nodeIPs, svc)
-	if err != nil {
-		return nil, err
+	if version.IsDualStackEnabled(r.fctx.KubeClient) {
+		ips, err := utils.FilterByIPFamily(nodeIPs, svc)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeIPs = ips
 	}
 
 	setting := r.settingMgr.GetSetting(svc.Namespace)
@@ -707,7 +712,7 @@ func (r *serviceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			builder.WithPredicates(predicate.NewPredicateFuncs(r.isInterestedService)),
 		).
 		Watches(
-			&source.Kind{Type: &corev1.Namespace{}},
+			&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
 			builder.WithPredicates(
 				predicate.Or(
@@ -717,15 +722,15 @@ func (r *serviceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			),
 		)
 
-	switch r.fctx.Config.GetFLBUpstreamMode() {
+	switch r.fctx.Configurator.GetFLBUpstreamMode() {
 	case configv1alpha3.FLBUpstreamModeNodePort:
 		bd = bd.Watches(
-			&source.Kind{Type: &corev1.Pod{}},
+			&corev1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(r.podToService),
 		)
 	case configv1alpha3.FLBUpstreamModeEndpoint:
 		bd = bd.Watches(
-			&source.Kind{Type: &corev1.Endpoints{}},
+			&corev1.Endpoints{},
 			handler.EnqueueRequestsFromMapFunc(r.endpointsToService),
 		)
 	}
@@ -743,10 +748,10 @@ func (r *serviceReconciler) isInterestedService(obj client.Object) bool {
 	return flb.IsFLBEnabled(svc, r.fctx.KubeClient)
 }
 
-func (r *serviceReconciler) podToService(pod client.Object) []reconcile.Request {
+func (r *serviceReconciler) podToService(ctx context.Context, pod client.Object) []reconcile.Request {
 	allServices := &corev1.ServiceList{}
 	if err := r.fctx.List(
-		context.TODO(),
+		ctx,
 		allServices,
 		client.InNamespace(pod.GetNamespace()),
 	); err != nil {
@@ -789,10 +794,10 @@ func (r *serviceReconciler) podToService(pod client.Object) []reconcile.Request 
 	return requests
 }
 
-func (r *serviceReconciler) endpointsToService(ep client.Object) []reconcile.Request {
+func (r *serviceReconciler) endpointsToService(ctx context.Context, ep client.Object) []reconcile.Request {
 	svc := &corev1.Service{}
 	if err := r.fctx.Get(
-		context.TODO(),
+		ctx,
 		client.ObjectKeyFromObject(ep),
 		svc,
 	); err != nil {
@@ -815,10 +820,10 @@ func (r *serviceReconciler) endpointsToService(ep client.Object) []reconcile.Req
 	return nil
 }
 
-func (r *serviceReconciler) servicesByNamespace(ns client.Object) []reconcile.Request {
+func (r *serviceReconciler) servicesByNamespace(ctx context.Context, ns client.Object) []reconcile.Request {
 	services, err := r.fctx.KubeClient.CoreV1().
 		Services(ns.GetName()).
-		List(context.TODO(), metav1.ListOptions{})
+		List(ctx, metav1.ListOptions{})
 
 	if err != nil {
 		log.Warn().Msgf("failed to list services in ns %s: %s", ns.GetName(), err)

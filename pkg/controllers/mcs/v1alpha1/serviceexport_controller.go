@@ -40,7 +40,7 @@ import (
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -126,7 +126,7 @@ func (r *serviceExportReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return r.unsupportedServiceType(ctx, req, export)
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 	if mc.IsIngressEnabled() {
 		// Find and compare path from ingress
 		ingList := &networkingv1.IngressList{}
@@ -414,7 +414,7 @@ func (r *serviceExportReconciler) successExport(ctx context.Context, req ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	if mc.IsIngressEnabled() {
 		return ctrl.NewControllerManagedBy(mgr).
@@ -426,7 +426,7 @@ func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(r.fctx.KubeClient) {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&mcsv1alpha1.ServiceExport{}).
-			Owns(&gwv1beta1.HTTPRoute{}).
+			Owns(&gwv1.HTTPRoute{}).
 			Complete(r)
 	}
 

@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeUpstreamTLSPolicies struct {
 	ns   string
 }
 
-var upstreamtlspoliciesResource = schema.GroupVersionResource{Group: "gateway.flomesh.io", Version: "v1alpha1", Resource: "upstreamtlspolicies"}
+var upstreamtlspoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("upstreamtlspolicies")
 
-var upstreamtlspoliciesKind = schema.GroupVersionKind{Group: "gateway.flomesh.io", Version: "v1alpha1", Kind: "UpstreamTLSPolicy"}
+var upstreamtlspoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("UpstreamTLSPolicy")
 
 // Get takes name of the upstreamTLSPolicy, and returns the corresponding upstreamTLSPolicy object, and an error if there is any.
 func (c *FakeUpstreamTLSPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.UpstreamTLSPolicy, err error) {

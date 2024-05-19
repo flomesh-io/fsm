@@ -76,8 +76,8 @@ func WatchAndUpdateIngressConfig(kubeClient *kubernetes.Clientset, msgBroker *me
 func updateIngressControllerSpec(kubeClient *kubernetes.Clientset, fsmNamespace string, _, newCfg *configv1alpha3.MeshConfig) {
 	selector := labels.SelectorFromSet(
 		map[string]string{
-			"app":                           "fsm-ingress",
-			"ingress.flomesh.io/namespaced": "false",
+			"app":                              "fsm-ingress",
+			"networking.flomesh.io/namespaced": "false",
 		},
 	)
 	svcList, err := kubeClient.CoreV1().

@@ -67,7 +67,7 @@ func TestMetricsHandler(t *testing.T) {
 				EnableRetryPolicy: true,
 			},
 		},
-	})
+	}, false)
 	a.True(metricsstore.DefaultMetricsStore.Contains(`fsm_feature_flag_enabled{feature_flag="enableRetryPolicy"} 1` + "\n"))
 	a.True(metricsstore.DefaultMetricsStore.Contains(`fsm_feature_flag_enabled{feature_flag="enableSnapshotCacheMode"} 0` + "\n"))
 

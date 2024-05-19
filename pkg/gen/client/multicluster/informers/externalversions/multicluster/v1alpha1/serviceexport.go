@@ -59,13 +59,13 @@ func NewFilteredServiceExportInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.FlomeshV1alpha1().ServiceExports(namespace).List(context.TODO(), options)
+				return client.MulticlusterV1alpha1().ServiceExports(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.FlomeshV1alpha1().ServiceExports(namespace).Watch(context.TODO(), options)
+				return client.MulticlusterV1alpha1().ServiceExports(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&multiclusterv1alpha1.ServiceExport{},

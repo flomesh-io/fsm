@@ -7,7 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/utils/pointer"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -24,7 +24,7 @@ func newRateLimitConfig(rateLimit *gwpav1alpha1.L7RateLimit) *fgw.RateLimit {
 	}
 
 	if len(rateLimit.ResponseHeadersToAdd) > 0 {
-		r.ResponseHeadersToAdd = make(map[gwv1beta1.HTTPHeaderName]string)
+		r.ResponseHeadersToAdd = make(map[gwv1.HTTPHeaderName]string)
 		for _, header := range rateLimit.ResponseHeadersToAdd {
 			r.ResponseHeadersToAdd[header.Name] = header.Value
 		}
@@ -75,7 +75,7 @@ func newHealthCheck(hc *gwpav1alpha1.HealthCheckConfig) *fgw.HealthCheck {
 			}
 
 			if len(m.Headers) > 0 {
-				match.Headers = make(map[gwv1beta1.HTTPHeaderName]string)
+				match.Headers = make(map[gwv1.HTTPHeaderName]string)
 				for _, header := range m.Headers {
 					match.Headers[header.Name] = header.Value
 				}

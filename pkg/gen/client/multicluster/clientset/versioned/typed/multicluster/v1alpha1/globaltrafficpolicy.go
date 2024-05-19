@@ -54,7 +54,7 @@ type globalTrafficPolicies struct {
 }
 
 // newGlobalTrafficPolicies returns a GlobalTrafficPolicies
-func newGlobalTrafficPolicies(c *FlomeshV1alpha1Client, namespace string) *globalTrafficPolicies {
+func newGlobalTrafficPolicies(c *MulticlusterV1alpha1Client, namespace string) *globalTrafficPolicies {
 	return &globalTrafficPolicies{
 		client: c.RESTClient(),
 		ns:     namespace,

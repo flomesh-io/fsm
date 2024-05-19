@@ -8,14 +8,13 @@ import (
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
 
 // GetAccessControlConfigIfPortMatchesPolicy returns true if the port matches the access control policy
-func GetAccessControlConfigIfPortMatchesPolicy(port gwv1beta1.PortNumber, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfPortMatchesPolicy(port gwv1.PortNumber, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.Ports) == 0 {
 		return nil
 	}
@@ -58,7 +57,7 @@ func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, ac
 }
 
 // GetAccessControlConfigIfHTTPRouteMatchesPolicy returns the access control config if the HTTP route matches the policy
-func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.HTTPAccessControls) == 0 {
 		return nil
 	}
@@ -73,7 +72,7 @@ func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1beta1.HTTPRou
 }
 
 // GetAccessControlConfigIfGRPCRouteMatchesPolicy returns the access control config if the GRPC route matches the policy
-func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1alpha2.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
 		return nil
 	}

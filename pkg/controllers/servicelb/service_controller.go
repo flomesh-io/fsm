@@ -31,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	appv1 "k8s.io/api/apps/v1"
@@ -97,7 +99,7 @@ func (r *serviceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	mc := r.fctx.Config
+	mc := r.fctx.Configurator
 
 	if err := r.deployDaemonSet(ctx, svc, mc); err != nil {
 		return ctrl.Result{}, err
@@ -320,6 +322,13 @@ func (r *serviceReconciler) updateService(ctx context.Context, svc *corev1.Servi
 		return err
 	}
 
+	if version.IsDualStackEnabled(r.fctx.KubeClient) {
+		expectedIPs, err = utils.FilterByIPFamily(expectedIPs, svc)
+		if err != nil {
+			return err
+		}
+	}
+
 	sort.Strings(expectedIPs)
 	sort.Strings(existingIPs)
 
@@ -402,10 +411,10 @@ func (r *serviceReconciler) podIPs(ctx context.Context, pods []corev1.Pod, svc *
 		ips = keys(intIPs)
 	}
 
-	ips, err := utils.FilterByIPFamily(ips, svc)
-	if err != nil {
-		return nil, err
-	}
+	//ips, err := utils.FilterByIPFamily(ips, svc)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	//if len(ips) > 0 && h.rootless {
 	//    return []string{"127.0.0.1"}, nil

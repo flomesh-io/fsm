@@ -22,17 +22,18 @@
  * SOFTWARE.
  */
 
-package v1alpha2
+package v1
 
 import (
 	"context"
+
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -60,10 +61,10 @@ func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 
 // Reconcile reads that state of the cluster for a GRPCRoute object and makes changes based on the state read
 func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	grpcRoute := &gwv1alpha2.GRPCRoute{}
+	grpcRoute := &gwv1.GRPCRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, grpcRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1alpha2.GRPCRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1.GRPCRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +73,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if grpcRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(grpcRoute)
+		r.fctx.GatewayEventHandler.OnDelete(grpcRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +89,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(grpcRoute)
+	r.fctx.GatewayEventHandler.OnAdd(grpcRoute, false)
 
 	return ctrl.Result{}, nil
 }
@@ -96,6 +97,6 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 // SetupWithManager sets up the controller with the Manager.
 func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&gwv1alpha2.GRPCRoute{}).
+		For(&gwv1.GRPCRoute{}).
 		Complete(r)
 }

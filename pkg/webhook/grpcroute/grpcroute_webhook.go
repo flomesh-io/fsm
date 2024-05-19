@@ -27,11 +27,13 @@ package grpcroute
 import (
 	"net/http"
 
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1alpha2validation "sigs.k8s.io/gateway-api/apis/v1alpha2/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -86,8 +88,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for GRPCRoute
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.GRPCRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.GRPCRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.Config)),
+		constants.GRPCRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.GRPCRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
 	}
 }
 
@@ -105,12 +107,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
-	return &gwv1alpha2.GRPCRoute{}
+	return &gwv1.GRPCRoute{}
 }
 
 // SetDefaults sets the default values for the GRPCRoute
 func (w *defaulter) SetDefaults(obj interface{}) {
-	route, ok := obj.(*gwv1alpha2.GRPCRoute)
+	route, ok := obj.(*gwv1.GRPCRoute)
 	if !ok {
 		return
 	}
@@ -134,7 +136,7 @@ type validator struct {
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
-	return &gwv1alpha2.GRPCRoute{}
+	return &gwv1.GRPCRoute{}
 }
 
 // ValidateCreate validates the creation of the GRPCRoute
@@ -160,12 +162,13 @@ func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator
 }
 
 func (w *validator) doValidation(obj interface{}) error {
-	route, ok := obj.(*gwv1alpha2.GRPCRoute)
+	route, ok := obj.(*gwv1.GRPCRoute)
 	if !ok {
 		return nil
 	}
 
-	errorList := gwv1alpha2validation.ValidateGRPCRoute(route)
+	//errorList := gwv1alpha2validation.ValidateGRPCRoute(route)
+	var errorList field.ErrorList
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateGRPCRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)

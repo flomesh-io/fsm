@@ -2,14 +2,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // CircuitBreakingPolicySpec defines the desired state of CircuitBreakingPolicy
 type CircuitBreakingPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +listType=map
 	// +listMapKey=port
@@ -25,7 +25,7 @@ type CircuitBreakingPolicySpec struct {
 
 type PortCircuitBreaking struct {
 	// Port is the port number of the target service
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the circuit breaking configuration for the port
@@ -100,7 +100,7 @@ type CircuitBreakingPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // CircuitBreakingPolicy is the Schema for the CircuitBreakingPolicy API
 type CircuitBreakingPolicy struct {

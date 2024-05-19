@@ -3,6 +3,10 @@ package framework
 import (
 	"time"
 
+	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	"github.com/onsi/ginkgo"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
@@ -81,8 +85,10 @@ type FsmTestData struct {
 	SmiClients *smiClients
 
 	// FSM's API clients
-	PolicyClient *versioned.Clientset
-	ConfigClient *versioned2.Clientset
+	PolicyClient     *versioned.Clientset
+	ConfigClient     *versioned2.Clientset
+	GatewayAPIClient gatewayApiClientset.Interface
+	NsigClient       nsigClientset.Interface
 
 	ClusterProvider *cluster.Provider // provider, used when kindCluster is used
 
@@ -104,6 +110,10 @@ type InstallFSMOpts struct {
 	DeployFluentbit         bool
 	EnableReconciler        bool
 	EnableIngress           bool
+	IngressHTTPPort         int32
+	EnableIngressTLS        bool
+	IngressTLSPort          int32
+	EnableNamespacedIngress bool
 	EnableGateway           bool
 	EnableFLB               bool
 	EnableServiceLB         bool

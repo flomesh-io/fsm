@@ -851,7 +851,7 @@
                         "title": "The codebase schema for pipy repo server",
                         "description": "Codebase is the folder used by fsmController.",
                         "examples": [
-                          "/fsm1.2.5"
+                          "/fsm1.3.0-rc.2"
                         ]
                       }
                     }
@@ -2150,7 +2150,8 @@
                         "enableValidateGRPCRouteHostnames",
                         "enableValidateTLSRouteHostnames",
                         "enableGatewayAgentService",
-                        "enableGatewayProxyTag"
+                        "enableGatewayProxyTag",
+                        "useEndpointSlicesForGateway"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2313,6 +2314,15 @@
                           "description": "Enable proxy-tag header for gateway",
                           "examples": [
                             false
+                          ]
+                        },
+                        "useEndpointSlicesForGateway": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/useEndpointSlicesForGateway",
+                          "type": "boolean",
+                          "title": "UseEndpointSlicesForGateway",
+                          "description": "Use EndpointSlices for calculating Gateway routes",
+                          "examples": [
+                            true
                           ]
                         }
                     },

@@ -2,14 +2,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // UpstreamTLSPolicySpec defines the desired state of UpstreamTLSPolicy
 type UpstreamTLSPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +listType=map
 	// +listMapKey=port
@@ -26,7 +26,7 @@ type UpstreamTLSPolicySpec struct {
 // PortUpstreamTLS defines the session sticky configuration for a port
 type PortUpstreamTLS struct {
 	// Port is the port number of the target service
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the session sticky configuration for the port
@@ -36,7 +36,7 @@ type PortUpstreamTLS struct {
 // UpstreamTLSConfig defines the session sticky configuration
 type UpstreamTLSConfig struct {
 	// CertificateRef is the reference to the certificate used for TLS connection to upstream
-	CertificateRef gwv1beta1.SecretObjectReference `json:"certificateRef"`
+	CertificateRef gwv1.SecretObjectReference `json:"certificateRef"`
 
 	// +optional
 	// +kubebuilder:default=false
@@ -61,7 +61,7 @@ type UpstreamTLSPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // UpstreamTLSPolicy is the Schema for the UpstreamTLSPolicy API
 type UpstreamTLSPolicy struct {

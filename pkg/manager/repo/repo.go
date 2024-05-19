@@ -33,9 +33,11 @@ import (
 	"strings"
 	"time"
 
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -45,7 +47,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -60,10 +61,16 @@ var (
 )
 
 // InitRepo initializes the pipy repo
-func InitRepo(ctx *fctx.ControllerContext) error {
+func InitRepo(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Initializing PIPY Repo ...")
+
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	// wait until pipy repo is up or timeout after 5 minutes
-	repoClient := ctx.RepoClient
+	repoClient := cctx.RepoClient
 
 	if err := wait.PollImmediate(5*time.Second, 60*5*time.Second, func() (bool, error) {
 		if repoClient.IsRepoUp() {
@@ -78,7 +85,7 @@ func InitRepo(ctx *fctx.ControllerContext) error {
 		return err
 	}
 
-	mc := ctx.Config
+	mc := cctx.Configurator
 	// initialize the repo
 	if err := repoClient.Batch(getBatches(mc)); err != nil {
 		return err
@@ -276,7 +283,7 @@ func (r *rebuilder) rebuildRepoJob() error {
 			return err
 		}
 
-		gatewayList := &gwv1beta1.GatewayList{}
+		gatewayList := &gwv1.GatewayList{}
 		if err := r.client.List(
 			context.TODO(),
 			gatewayList,

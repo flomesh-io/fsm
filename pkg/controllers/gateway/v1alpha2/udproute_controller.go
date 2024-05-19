@@ -63,7 +63,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	udpRoute := &gwv1alpha2.UDPRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, udpRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1alpha2.UDPRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1alpha2.UDPRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +72,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if udpRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(udpRoute)
+		r.fctx.GatewayEventHandler.OnDelete(udpRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +88,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(udpRoute)
+	r.fctx.GatewayEventHandler.OnAdd(udpRoute, false)
 
 	return ctrl.Result{}, nil
 }

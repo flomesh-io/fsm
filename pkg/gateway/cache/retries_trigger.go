@@ -15,11 +15,6 @@ func (p *RetryPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) bool
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.retries[utils.ObjectKey(policy)] = struct{}{}
-
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
@@ -30,14 +25,6 @@ func (p *RetryPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) bool
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.retries[key]
-	//delete(cache.retries, key)
-	//
-	//return found
+
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }

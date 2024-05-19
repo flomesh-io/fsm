@@ -28,7 +28,6 @@ type GatewayV1alpha1Interface interface {
 	AccessControlPoliciesGetter
 	CircuitBreakingPoliciesGetter
 	FaultInjectionPoliciesGetter
-	GatewayTLSPoliciesGetter
 	HealthCheckPoliciesGetter
 	LoadBalancerPoliciesGetter
 	RateLimitPoliciesGetter
@@ -52,10 +51,6 @@ func (c *GatewayV1alpha1Client) CircuitBreakingPolicies(namespace string) Circui
 
 func (c *GatewayV1alpha1Client) FaultInjectionPolicies(namespace string) FaultInjectionPolicyInterface {
 	return newFaultInjectionPolicies(c, namespace)
-}
-
-func (c *GatewayV1alpha1Client) GatewayTLSPolicies(namespace string) GatewayTLSPolicyInterface {
-	return newGatewayTLSPolicies(c, namespace)
 }
 
 func (c *GatewayV1alpha1Client) HealthCheckPolicies(namespace string) HealthCheckPolicyInterface {

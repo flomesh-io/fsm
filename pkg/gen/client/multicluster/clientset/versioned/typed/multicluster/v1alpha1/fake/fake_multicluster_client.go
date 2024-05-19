@@ -21,29 +21,29 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeFlomeshV1alpha1 struct {
+type FakeMulticlusterV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeFlomeshV1alpha1) Clusters() v1alpha1.ClusterInterface {
+func (c *FakeMulticlusterV1alpha1) Clusters() v1alpha1.ClusterInterface {
 	return &FakeClusters{c}
 }
 
-func (c *FakeFlomeshV1alpha1) GlobalTrafficPolicies(namespace string) v1alpha1.GlobalTrafficPolicyInterface {
+func (c *FakeMulticlusterV1alpha1) GlobalTrafficPolicies(namespace string) v1alpha1.GlobalTrafficPolicyInterface {
 	return &FakeGlobalTrafficPolicies{c, namespace}
 }
 
-func (c *FakeFlomeshV1alpha1) ServiceExports(namespace string) v1alpha1.ServiceExportInterface {
+func (c *FakeMulticlusterV1alpha1) ServiceExports(namespace string) v1alpha1.ServiceExportInterface {
 	return &FakeServiceExports{c, namespace}
 }
 
-func (c *FakeFlomeshV1alpha1) ServiceImports(namespace string) v1alpha1.ServiceImportInterface {
+func (c *FakeMulticlusterV1alpha1) ServiceImports(namespace string) v1alpha1.ServiceImportInterface {
 	return &FakeServiceImports{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeFlomeshV1alpha1) RESTClient() rest.Interface {
+func (c *FakeMulticlusterV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeEgressGateways struct {
 	ns   string
 }
 
-var egressgatewaysResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "egressgateways"}
+var egressgatewaysResource = v1alpha1.SchemeGroupVersion.WithResource("egressgateways")
 
-var egressgatewaysKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "EgressGateway"}
+var egressgatewaysKind = v1alpha1.SchemeGroupVersion.WithKind("EgressGateway")
 
 // Get takes name of the egressGateway, and returns the corresponding egressGateway object, and an error if there is any.
 func (c *FakeEgressGateways) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.EgressGateway, err error) {

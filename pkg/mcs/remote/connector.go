@@ -182,7 +182,7 @@ func (c *Connector) processEvent(stopCh <-chan struct{}) {
 func (c *Connector) ServiceImportExists(svcExp *mcsv1alpha1.ServiceExport) bool {
 	ctx := c.context.(*conn.ConnectorContext)
 
-	if _, err := c.mcsClient.FlomeshV1alpha1().
+	if _, err := c.mcsClient.MulticlusterV1alpha1().
 		ServiceImports(svcExp.Namespace).
 		Get(context.TODO(), svcExp.Name, metav1.GetOptions{}); err != nil {
 		if errors.IsNotFound(err) {
@@ -281,7 +281,7 @@ func (c *Connector) upsertServiceImport(export *mcsevent.ServiceExportEvent) err
 	log.Debug().Msgf("[%s] After merging, ServiceImport %s/%s: %v", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, imp)
 
 	log.Debug().Msgf("[%s] updating ServiceImport %s/%s ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
-	if _, err := c.mcsClient.FlomeshV1alpha1().
+	if _, err := c.mcsClient.MulticlusterV1alpha1().
 		ServiceImports(svcExp.Namespace).
 		Update(context.TODO(), imp, metav1.UpdateOptions{}); err != nil {
 		log.Error().Msgf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
@@ -320,13 +320,13 @@ func (c *Connector) getOrCreateServiceImport(export *mcsevent.ServiceExportEvent
 		return nil, fmt.Errorf("[%s] Failed to new instance of ServiceImport %s/%s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	}
 
-	imp, err := c.mcsClient.FlomeshV1alpha1().
+	imp, err := c.mcsClient.MulticlusterV1alpha1().
 		ServiceImports(svcExp.Namespace).
 		Create(context.TODO(), imp, metav1.CreateOptions{})
 	if err != nil {
 		if errors.IsAlreadyExists(err) {
 			log.Debug().Msgf("[%s] ServiceImport %s/%s already exists, getting it ...", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
-			imp, err = c.mcsClient.FlomeshV1alpha1().
+			imp, err = c.mcsClient.MulticlusterV1alpha1().
 				ServiceImports(svcExp.Namespace).
 				Get(context.TODO(), svcExp.Name, metav1.GetOptions{})
 			if err != nil {
@@ -372,7 +372,7 @@ func (c *Connector) newServiceImport(export *mcsevent.ServiceExportEvent) *mcsv1
 			Namespace: svcExp.Namespace,
 		},
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "flomesh.io/v1alpha1",
+			APIVersion: "multicluster.flomesh.io/v1alpha1",
 			Kind:       "ServiceImport",
 		},
 		Spec: mcsv1alpha1.ServiceImportSpec{
@@ -407,7 +407,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 		return nil
 	}
 
-	imp, err := c.mcsClient.FlomeshV1alpha1().
+	imp, err := c.mcsClient.MulticlusterV1alpha1().
 		ServiceImports(svcExp.Namespace).
 		Get(context.TODO(), svcExp.Name, metav1.GetOptions{})
 
@@ -449,7 +449,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 
 	if len(ports) > 0 {
 		imp.Spec.Ports = ports
-		if _, err := c.mcsClient.FlomeshV1alpha1().
+		if _, err := c.mcsClient.MulticlusterV1alpha1().
 			ServiceImports(svcExp.Namespace).
 			Update(context.TODO(), imp, metav1.UpdateOptions{}); err != nil {
 			log.Error().Msgf("[%s] Failed to update ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
@@ -457,7 +457,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 		}
 		log.Debug().Msgf("[%s] ServiceImport %s/%s is updated successfully", ctx.ClusterKey, svcExp.Namespace, svcExp.Name)
 	} else {
-		if err := c.mcsClient.FlomeshV1alpha1().
+		if err := c.mcsClient.MulticlusterV1alpha1().
 			ServiceImports(svcExp.Namespace).
 			Delete(context.TODO(), svcExp.Name, metav1.DeleteOptions{}); err != nil {
 			log.Error().Msgf("[%s] Failed to delete ServiceImport %s/%s: %s", ctx.ClusterKey, svcExp.Namespace, svcExp.Name, err)
@@ -476,7 +476,7 @@ func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEven
 	reason := svcExportEvt.Error
 
 	if ctx.ClusterKey == svcExportEvt.ClusterKey() {
-		exp, err := c.mcsClient.FlomeshV1alpha1().
+		exp, err := c.mcsClient.MulticlusterV1alpha1().
 			ServiceExports(export.Namespace).
 			Get(context.TODO(), export.Name, metav1.GetOptions{})
 		if err != nil {
@@ -495,7 +495,7 @@ func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEven
 			Message:            fmt.Sprintf("ServiceExport %s/%s conflicts, %s", exp.Namespace, exp.Name, reason),
 		})
 
-		if _, err := c.mcsClient.FlomeshV1alpha1().
+		if _, err := c.mcsClient.MulticlusterV1alpha1().
 			ServiceExports(export.Namespace).
 			UpdateStatus(context.TODO(), exp, metav1.UpdateOptions{}); err != nil {
 			log.Error().Msgf("[%s] Failed to update status of ServiceExport %s/%s: %s", ctx.ClusterKey, exp.Namespace, exp.Name, err)

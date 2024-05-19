@@ -71,8 +71,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for FaultInjectionPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.FaultInjectionPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.FaultInjectionPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.FaultInjectionPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.FaultInjectionPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }
 
@@ -166,7 +166,7 @@ func doValidation(obj interface{}) error {
 	return nil
 }
 
-func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
+func validateTargetRef(ref gwv1alpha2.NamespacedPolicyTargetReference) field.ErrorList {
 	var errs field.ErrorList
 
 	if ref.Group != constants.GatewayAPIGroup {

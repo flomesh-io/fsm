@@ -3,6 +3,7 @@ package framework
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,11 +28,26 @@ type HTTPRequestDef struct {
 	// The entire destination URL processed by curl, including host name and
 	// optionally protocol, port, and path
 	Destination string
+
+	// UseTLS indicates if the request should be encrypted with TLS
+	UseTLS bool
+
+	// CertFile is the path to the certificate file
+	CertFile string
+
+	// IsTLSPassthrough indicates if the request should be TLS passthrough
+	IsTLSPassthrough bool
+
+	// PassthroughHost is the host to passthrough
+	PassthroughHost string
+
+	// PassthroughPort is the port to passthrough
+	PassthroughPort int
 }
 
 // TCPRequestDef defines a remote TCP request intent
 type TCPRequestDef struct {
-	// Source pod where to run the HTTP request from
+	// Source pod where to run the TCP request from
 	SourceNs        string
 	SourcePod       string
 	SourceContainer string
@@ -46,7 +62,7 @@ type TCPRequestDef struct {
 
 // GRPCRequestDef defines a remote GRPC request intent
 type GRPCRequestDef struct {
-	// Source pod where to run the HTTP request from
+	// Source pod where to run the GRPC request from
 	SourceNs        string
 	SourcePod       string
 	SourceContainer string
@@ -63,6 +79,24 @@ type GRPCRequestDef struct {
 
 	// UseTLS indicates if the request should be encrypted with TLS
 	UseTLS bool
+
+	// CertFile is the path to the certificate file
+	CertFile string
+}
+
+// UDPRequestDef defines a remote UDP request intent
+type UDPRequestDef struct {
+	// Source pod where to run the UDP request from
+	SourceNs        string
+	SourcePod       string
+	SourceContainer string
+
+	// The destination server host (FQDN or IP address) and port the request is directed to
+	DestinationHost string
+	DestinationPort int
+
+	// Message to send as a part of the request
+	Message string
 }
 
 // HTTPRequestResult represents results of an HTTPRequest call
@@ -80,6 +114,12 @@ type TCPRequestResult struct {
 
 // GRPCRequestResult represents the result of a GRPCRequest call
 type GRPCRequestResult struct {
+	Response string
+	Err      error
+}
+
+// UDPRequestResult represents the result of a UDPRequest call
+type UDPRequestResult struct {
 	Response string
 	Err      error
 }
@@ -125,6 +165,74 @@ func (td *FsmTestData) HTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
 	}
 }
 
+// LocalHTTPRequest runs a synchronous call to run the HTTPRequestDef and return a HTTPRequestResult
+func (td *FsmTestData) LocalHTTPRequest(ht HTTPRequestDef) HTTPRequestResult {
+	// -s silent progress, -o output to devnull, '-D -' dump headers to "-" (stdout), -i Status code
+	// -I skip body download, '-w StatusCode:%{http_code}' prints Status code label-like for easy parsing
+	// -L follow redirects
+	var argStr string
+	if ht.UseTLS {
+		if ht.IsTLSPassthrough {
+			u, err := url.Parse(ht.Destination)
+			if err != nil {
+				return HTTPRequestResult{
+					0,
+					nil,
+					fmt.Errorf("parse URL err: %w", err),
+				}
+			}
+			port := u.Port()
+			if len(port) == 0 {
+				switch u.Scheme {
+				case "http":
+					port = "80"
+				case "https":
+					port = "443"
+				}
+			}
+			argStr = fmt.Sprintf("--connect-to %s:%d:%s:%s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.PassthroughHost, ht.PassthroughPort, u.Hostname(), port, StatusCodeWord, ht.Destination)
+		} else {
+			argStr = fmt.Sprintf("--cacert %s -s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", ht.CertFile, StatusCodeWord, ht.Destination)
+		}
+	} else {
+		argStr = fmt.Sprintf("-s -o /dev/null -D -i -I -w %s:%%{http_code} -L %s", StatusCodeWord, ht.Destination)
+	}
+	args := strings.Fields(argStr)
+	stdout, stderr, err := td.RunLocal("curl", args...)
+	if err != nil {
+		// Error codes from the execution come through err
+		// Curl 'Connection refused' err code = 7
+		return HTTPRequestResult{
+			0,
+			nil,
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr),
+		}
+	}
+
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Log("[warn] Stderr:\n" + stderr.String())
+	}
+
+	// Expect predictable output at this point from the curl we executed
+	curlMappedReturn := mapCurlOuput(strings.TrimSpace(stdout.String()))
+	statusCode, err := strconv.Atoi(curlMappedReturn[StatusCodeWord])
+	if err != nil {
+		return HTTPRequestResult{
+			0,
+			nil,
+			fmt.Errorf("could not read status code as integer: %w", err),
+		}
+	}
+	delete(curlMappedReturn, StatusCodeWord)
+
+	return HTTPRequestResult{
+		statusCode,
+		curlMappedReturn,
+		nil,
+	}
+}
+
 // TCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
 func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 	var command []string
@@ -146,6 +254,27 @@ func (td *FsmTestData) TCPRequest(req TCPRequestDef) TCPRequestResult {
 
 	return TCPRequestResult{
 		stdout,
+		nil,
+	}
+}
+
+// LocalTCPRequest runs a synchronous TCP request to run the TCPRequestDef and return a TCPRequestResult
+func (td *FsmTestData) LocalTCPRequest(req TCPRequestDef) TCPRequestResult {
+	stdout, stderr, err := td.RunLocal("echo", fmt.Sprintf(`"%s"`, req.Message), "|", "nc", req.DestinationHost, strconv.Itoa(req.DestinationPort))
+	if err != nil {
+		// Error codes from the execution come through err
+		return TCPRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr.String()),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr.String())
+	}
+
+	return TCPRequestResult{
+		stdout.String(),
 		nil,
 	}
 }
@@ -178,6 +307,57 @@ func (td *FsmTestData) GRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 
 	return GRPCRequestResult{
 		stdout,
+		nil,
+	}
+}
+
+// LocalGRPCRequest runs a GRPC request to run the GRPCRequestDef and return a GRPCRequestResult
+func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
+	var args []string
+
+	if req.UseTLS {
+		args = []string{"-d", req.JSONRequest, "-cacert", req.CertFile, req.Destination, req.Symbol}
+	} else {
+		// '-plaintext' is to indicate to the grpcurl to send plaintext requests; not encrypted with TLS
+		args = []string{"-d", req.JSONRequest, "-plaintext", req.Destination, req.Symbol}
+	}
+
+	stdout, stderr, err := td.RunLocal("grpcurl", args...)
+	if err != nil {
+		// Error codes from the execution come through err
+		return GRPCRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s | cmd: %s", err, stderr, args),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr)
+	}
+
+	return GRPCRequestResult{
+		stdout.String(),
+		nil,
+	}
+}
+
+// LocalUDPRequest runs a synchronous UDP request to run the UDPRequestDef and return a UDPRequestResult
+func (td *FsmTestData) LocalUDPRequest(req UDPRequestDef) UDPRequestResult {
+	stdout, stderr, err := td.RunLocal("echo", fmt.Sprintf(`"%s"`, req.Message), "|", "nc", "-4u", "-w1", req.DestinationHost, strconv.Itoa(req.DestinationPort))
+	if err != nil {
+		// Error codes from the execution come through err
+		return UDPRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr.String()),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr.String())
+	}
+
+	return UDPRequestResult{
+		stdout.String(),
 		nil,
 	}
 }

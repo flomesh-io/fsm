@@ -17,8 +17,8 @@ package fake
 
 import (
 	clientset "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned"
-	flomeshv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/typed/multicluster/v1alpha1"
-	fakeflomeshv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/typed/multicluster/v1alpha1/fake"
+	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/typed/multicluster/v1alpha1"
+	fakemulticlusterv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/typed/multicluster/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -76,7 +76,7 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// FlomeshV1alpha1 retrieves the FlomeshV1alpha1Client
-func (c *Clientset) FlomeshV1alpha1() flomeshv1alpha1.FlomeshV1alpha1Interface {
-	return &fakeflomeshv1alpha1.FakeFlomeshV1alpha1{Fake: &c.Fake}
+// MulticlusterV1alpha1 retrieves the MulticlusterV1alpha1Client
+func (c *Clientset) MulticlusterV1alpha1() multiclusterv1alpha1.MulticlusterV1alpha1Interface {
+	return &fakemulticlusterv1alpha1.FakeMulticlusterV1alpha1{Fake: &c.Fake}
 }

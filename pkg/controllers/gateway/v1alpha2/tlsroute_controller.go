@@ -63,7 +63,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	tlsRoute := &gwv1alpha2.TLSRoute{}
 	err := r.fctx.Get(ctx, req.NamespacedName, tlsRoute)
 	if errors.IsNotFound(err) {
-		r.fctx.EventHandler.OnDelete(&gwv1alpha2.TLSRoute{
+		r.fctx.GatewayEventHandler.OnDelete(&gwv1alpha2.TLSRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -72,7 +72,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if tlsRoute.DeletionTimestamp != nil {
-		r.fctx.EventHandler.OnDelete(tlsRoute)
+		r.fctx.GatewayEventHandler.OnDelete(tlsRoute)
 		return ctrl.Result{}, nil
 	}
 
@@ -88,7 +88,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	r.fctx.EventHandler.OnAdd(tlsRoute)
+	r.fctx.GatewayEventHandler.OnAdd(tlsRoute, false)
 
 	return ctrl.Result{}, nil
 }

@@ -35,6 +35,14 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
 
+  - apiGroups: [ "policy" ]
+    resources: [ "poddisruptionbudgets" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete"]
+
+  - apiGroups: [ "autoscaling" ]
+    resources: [ "horizontalpodautoscalers" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete"]
+
   # Port forwarding is needed for the FSM pod to be able to connect
   # to participating Sidecars and fetch their configuration.
   # This is used by the FSM debugging system.
@@ -88,15 +96,15 @@ rules:
     verbs: ["update"]
 
   # FSM's MultiCluster resource API
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters", "serviceimports", "serviceexports", "globaltrafficpolicies"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters/finalizers", "serviceimports/finalizers", "serviceexports/finalizers", "globaltrafficpolicies/finalizers"]
     verbs: ["update"]
 
-  - apiGroups: ["flomesh.io"]
+  - apiGroups: ["multicluster.flomesh.io"]
     resources: ["clusters/status", "serviceimports/status", "serviceexports/status", "globaltrafficpolicies/status"]
     verbs: ["get", "patch", "update"]
 
@@ -125,13 +133,13 @@ rules:
     verbs: ["update"]
 
   # FSM's NamespacedIngress API
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses/finalizers" ]
     verbs: [ "update" ]
-  - apiGroups: [ "flomesh.io" ]
+  - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses/status" ]
     verbs: [ "get", "patch", "update" ]
 
@@ -148,13 +156,13 @@ rules:
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies", "gatewaytlspolicies" ]
+    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers", "circuitbreakingpolicies/finalizers", "accesscontrolpolicies/finalizers", "healthcheckpolicies/finalizers", "faultinjectionpolicies/finalizers", "upstreamtlspolicies/finalizers", "retrypolicies/finalizers", "gatewaytlspolicies/finalizers"]
+    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers", "circuitbreakingpolicies/finalizers", "accesscontrolpolicies/finalizers", "healthcheckpolicies/finalizers", "faultinjectionpolicies/finalizers", "upstreamtlspolicies/finalizers", "retrypolicies/finalizers"]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status", "circuitbreakingpolicies/status", "accesscontrolpolicies/status", "healthcheckpolicies/status", "faultinjectionpolicies/status", "upstreamtlspolicies/status", "retrypolicies/status", "gatewaytlspolicies/status"]
+    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status", "circuitbreakingpolicies/status", "accesscontrolpolicies/status", "healthcheckpolicies/status", "faultinjectionpolicies/status", "upstreamtlspolicies/status", "retrypolicies/status"]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

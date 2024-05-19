@@ -400,6 +400,9 @@ type FeatureFlags struct {
 
 	// EnableGatewayProxyTag defines if gateway proxy-tag header is enabled.
 	EnableGatewayProxyTag bool `json:"enableGatewayProxyTag"`
+
+	// UseEndpointSlicesForGateway defines if endpoint slices are enabled for calculating gateway routes.
+	UseEndpointSlicesForGateway bool `json:"useEndpointSlicesForGateway"`
 }
 
 // RepoServerSpec is the type to represent repo server.

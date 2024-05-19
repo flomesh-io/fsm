@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -32,9 +31,9 @@ type FakeConsulConnectors struct {
 	Fake *FakeConnectorV1alpha1
 }
 
-var consulconnectorsResource = schema.GroupVersionResource{Group: "connector.flomesh.io", Version: "v1alpha1", Resource: "consulconnectors"}
+var consulconnectorsResource = v1alpha1.SchemeGroupVersion.WithResource("consulconnectors")
 
-var consulconnectorsKind = schema.GroupVersionKind{Group: "connector.flomesh.io", Version: "v1alpha1", Kind: "ConsulConnector"}
+var consulconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("ConsulConnector")
 
 // Get takes name of the consulConnector, and returns the corresponding consulConnector object, and an error if there is any.
 func (c *FakeConsulConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ConsulConnector, err error) {

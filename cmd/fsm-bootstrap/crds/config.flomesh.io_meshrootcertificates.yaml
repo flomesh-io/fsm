@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
   name: meshrootcertificates.config.flomesh.io
@@ -22,18 +22,24 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: MeshRootCertificate defines the configuration for certificate
-          issuing by the mesh control plane
+        description: |-
+          MeshRootCertificate defines the configuration for certificate issuing
+          by the mesh control plane
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -105,8 +111,9 @@ spec:
                           mesh control plane
                         type: string
                       token:
-                        description: Token specifies the configuration of the token
-                          to be used by mesh control plane to connect to Vault
+                        description: |-
+                          Token specifies the configuration of the token to be used by mesh control plane
+                          to connect to Vault
                         properties:
                           secretKeyRef:
                             description: SecretKeyRef specifies the secret in which
@@ -152,7 +159,8 @@ spec:
             description: Status of the MeshRootCertificate resource
             properties:
               state:
-                description: State specifies the state of the certificate provider
+                description: |-
+                  State specifies the state of the certificate provider
                   All states are specified in constants.go
                 type: string
             required:
@@ -164,18 +172,24 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
-        description: MeshRootCertificate defines the configuration for certificate
-          issuing by the mesh control plane
+        description: |-
+          MeshRootCertificate defines the configuration for certificate issuing
+          by the mesh control plane
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -247,8 +261,9 @@ spec:
                           mesh control plane
                         type: string
                       token:
-                        description: Token specifies the configuration of the token
-                          to be used by mesh control plane to connect to Vault
+                        description: |-
+                          Token specifies the configuration of the token to be used by mesh control plane
+                          to connect to Vault
                         properties:
                           secretKeyRef:
                             description: SecretKeyRef specifies the secret in which
@@ -294,7 +309,8 @@ spec:
             description: Status of the MeshRootCertificate resource
             properties:
               state:
-                description: State specifies the state of the certificate provider
+                description: |-
+                  State specifies the state of the certificate provider
                   All states are specified in constants.go
                 type: string
             required:

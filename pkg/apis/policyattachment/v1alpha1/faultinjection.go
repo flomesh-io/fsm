@@ -2,14 +2,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // FaultInjectionPolicySpec defines the desired state of FaultInjectionPolicy
 type FaultInjectionPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +optional
 	// +listType=map
@@ -42,7 +42,7 @@ type FaultInjectionPolicySpec struct {
 // HostnameFaultInjection defines the access control configuration for a hostname
 type HostnameFaultInjection struct {
 	// Hostname is the hostname for matching the access control
-	Hostname gwv1beta1.Hostname `json:"hostname"`
+	Hostname gwv1.Hostname `json:"hostname"`
 
 	// +optional
 	// Config is the access control configuration for the hostname
@@ -52,7 +52,7 @@ type HostnameFaultInjection struct {
 // HTTPFaultInjection defines the access control configuration for a HTTP route
 type HTTPFaultInjection struct {
 	// Match is the match condition for the HTTP route
-	Match gwv1beta1.HTTPRouteMatch `json:"match"`
+	Match gwv1.HTTPRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the HTTP route
@@ -62,7 +62,7 @@ type HTTPFaultInjection struct {
 // GRPCFaultInjection defines the access control configuration for a GRPC route
 type GRPCFaultInjection struct {
 	// Match is the match condition for the GRPC route
-	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+	Match gwv1.GRPCRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the GRPC route
@@ -148,7 +148,7 @@ type FaultInjectionPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // FaultInjectionPolicy is the Schema for the FaultInjectionPolicy API
 type FaultInjectionPolicy struct {

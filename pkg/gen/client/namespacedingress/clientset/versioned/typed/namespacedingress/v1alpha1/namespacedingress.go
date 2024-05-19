@@ -54,7 +54,7 @@ type namespacedIngresses struct {
 }
 
 // newNamespacedIngresses returns a NamespacedIngresses
-func newNamespacedIngresses(c *FlomeshV1alpha1Client, namespace string) *namespacedIngresses {
+func newNamespacedIngresses(c *NetworkingV1alpha1Client, namespace string) *namespacedIngresses {
 	return &namespacedIngresses{
 		client: c.RESTClient(),
 		ns:     namespace,

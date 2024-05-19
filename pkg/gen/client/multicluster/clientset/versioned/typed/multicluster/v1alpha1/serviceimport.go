@@ -54,7 +54,7 @@ type serviceImports struct {
 }
 
 // newServiceImports returns a ServiceImports
-func newServiceImports(c *FlomeshV1alpha1Client, namespace string) *serviceImports {
+func newServiceImports(c *MulticlusterV1alpha1Client, namespace string) *serviceImports {
 	return &serviceImports{
 		client: c.RESTClient(),
 		ns:     namespace,

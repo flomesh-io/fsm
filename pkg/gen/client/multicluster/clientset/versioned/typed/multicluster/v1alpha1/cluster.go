@@ -53,7 +53,7 @@ type clusters struct {
 }
 
 // newClusters returns a Clusters
-func newClusters(c *FlomeshV1alpha1Client) *clusters {
+func newClusters(c *MulticlusterV1alpha1Client) *clusters {
 	return &clusters{
 		client: c.RESTClient(),
 	}

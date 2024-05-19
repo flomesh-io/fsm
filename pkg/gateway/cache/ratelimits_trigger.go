@@ -15,12 +15,7 @@ func (p *RateLimitPoliciesTrigger) Insert(obj interface{}, cache *GatewayCache) 
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.ratelimits[utils.ObjectKey(policy)] = struct{}{}
-
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }
 
 // Delete removes a RateLimitPolicy from the cache and returns true if the policy was found
@@ -30,15 +25,6 @@ func (p *RateLimitPoliciesTrigger) Delete(obj interface{}, cache *GatewayCache) 
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.ratelimits[key]
-	//delete(cache.ratelimits, key)
-	//
-	//return found
 
-	return cache.isEffectiveTargetRef(policy.Spec.TargetRef)
+	return cache.isEffectiveTargetRef(policy, policy.Spec.TargetRef)
 }

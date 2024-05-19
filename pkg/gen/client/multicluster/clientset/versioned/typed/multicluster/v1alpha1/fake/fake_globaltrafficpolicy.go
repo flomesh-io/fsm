@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -29,13 +28,13 @@ import (
 
 // FakeGlobalTrafficPolicies implements GlobalTrafficPolicyInterface
 type FakeGlobalTrafficPolicies struct {
-	Fake *FakeFlomeshV1alpha1
+	Fake *FakeMulticlusterV1alpha1
 	ns   string
 }
 
-var globaltrafficpoliciesResource = schema.GroupVersionResource{Group: "flomesh.io", Version: "v1alpha1", Resource: "globaltrafficpolicies"}
+var globaltrafficpoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("globaltrafficpolicies")
 
-var globaltrafficpoliciesKind = schema.GroupVersionKind{Group: "flomesh.io", Version: "v1alpha1", Kind: "GlobalTrafficPolicy"}
+var globaltrafficpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("GlobalTrafficPolicy")
 
 // Get takes name of the globalTrafficPolicy, and returns the corresponding globalTrafficPolicy object, and an error if there is any.
 func (c *FakeGlobalTrafficPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.GlobalTrafficPolicy, err error) {

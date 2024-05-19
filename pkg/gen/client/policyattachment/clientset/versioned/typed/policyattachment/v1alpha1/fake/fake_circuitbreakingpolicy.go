@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeCircuitBreakingPolicies struct {
 	ns   string
 }
 
-var circuitbreakingpoliciesResource = schema.GroupVersionResource{Group: "gateway.flomesh.io", Version: "v1alpha1", Resource: "circuitbreakingpolicies"}
+var circuitbreakingpoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("circuitbreakingpolicies")
 
-var circuitbreakingpoliciesKind = schema.GroupVersionKind{Group: "gateway.flomesh.io", Version: "v1alpha1", Kind: "CircuitBreakingPolicy"}
+var circuitbreakingpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("CircuitBreakingPolicy")
 
 // Get takes name of the circuitBreakingPolicy, and returns the corresponding circuitBreakingPolicy object, and an error if there is any.
 func (c *FakeCircuitBreakingPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.CircuitBreakingPolicy, err error) {

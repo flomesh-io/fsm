@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeFaultInjectionPolicies struct {
 	ns   string
 }
 
-var faultinjectionpoliciesResource = schema.GroupVersionResource{Group: "gateway.flomesh.io", Version: "v1alpha1", Resource: "faultinjectionpolicies"}
+var faultinjectionpoliciesResource = v1alpha1.SchemeGroupVersion.WithResource("faultinjectionpolicies")
 
-var faultinjectionpoliciesKind = schema.GroupVersionKind{Group: "gateway.flomesh.io", Version: "v1alpha1", Kind: "FaultInjectionPolicy"}
+var faultinjectionpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("FaultInjectionPolicy")
 
 // Get takes name of the faultInjectionPolicy, and returns the corresponding faultInjectionPolicy object, and an error if there is any.
 func (c *FakeFaultInjectionPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FaultInjectionPolicy, err error) {

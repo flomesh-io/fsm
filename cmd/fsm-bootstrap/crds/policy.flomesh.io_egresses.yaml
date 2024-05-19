@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
   name: egresses.policy.flomesh.io
@@ -21,19 +21,26 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Egress is the type used to represent an Egress traffic policy.
-          An Egress policy allows applications to access endpoints external to the
-          service mesh or cluster based on the specified rules in the policy.
+        description: |-
+          Egress is the type used to represent an Egress traffic policy.
+          An Egress policy allows applications to access endpoints
+          external to the service mesh or cluster based on the specified
+          rules in the policy.
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -41,21 +48,28 @@ spec:
             description: Spec is the Egress policy specification
             properties:
               hosts:
-                description: "Hosts defines the list of external hosts the Egress
-                  policy will allow access to. \n - For HTTP traffic, the HTTP Host/Authority
-                  header is matched against the list of Hosts specified. \n - For
-                  HTTPS traffic, the Server Name Indication (SNI) indicated by the
-                  client in the TLS handshake is matched against the list of Hosts
-                  specified. \n - For non-HTTP(s) based protocols, the Hosts field
-                  is ignored."
+                description: |-
+                  Hosts defines the list of external hosts the Egress policy will allow
+                  access to.
+
+
+                  - For HTTP traffic, the HTTP Host/Authority header is matched against the
+                  list of Hosts specified.
+
+
+                  - For HTTPS traffic, the Server Name Indication (SNI) indicated by the client
+                  in the TLS handshake is matched against the list of Hosts specified.
+
+
+                  - For non-HTTP(s) based protocols, the Hosts field is ignored.
                 items:
                   type: string
                 type: array
               ipAddresses:
-                description: IPAddresses defines the list of external IP address ranges
-                  the Egress policy applies to. The destination IP address of the
-                  traffic is matched against the list of IPAddresses specified as
-                  a CIDR range.
+                description: |-
+                  IPAddresses defines the list of external IP address ranges the Egress policy
+                  applies to. The destination IP address of the traffic is matched against the
+                  list of IPAddresses specified as a CIDR range.
                 items:
                   type: string
                 type: array
@@ -63,15 +77,15 @@ spec:
                 description: Matches defines the list of object references the Egress
                   policy should match on.
                 items:
-                  description: TypedLocalObjectReference contains enough information
-                    to let you locate the typed referenced object inside the same
-                    namespace.
+                  description: |-
+                    TypedLocalObjectReference contains enough information to let you locate the
+                    typed referenced object inside the same namespace.
                   properties:
                     apiGroup:
-                      description: APIGroup is the group for the resource being referenced.
-                        If APIGroup is not specified, the specified Kind must be in
-                        the core API group. For any other third-party types, APIGroup
-                        is required.
+                      description: |-
+                        APIGroup is the group for the resource being referenced.
+                        If APIGroup is not specified, the specified Kind must be in the core API group.
+                        For any other third-party types, APIGroup is required.
                       type: string
                     kind:
                       description: Kind is the type of resource being referenced
@@ -86,9 +100,9 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               ports:
-                description: Ports defines the list of ports the Egress policy is
-                  applies to. The destination port of the traffic is matched against
-                  the list of Ports specified.
+                description: |-
+                  Ports defines the list of ports the Egress policy is applies to.
+                  The destination port of the traffic is matched against the list of Ports specified.
                 items:
                   description: PortSpec is the type used to represent the Port in
                     the list of Ports specified in an Egress policy specification.

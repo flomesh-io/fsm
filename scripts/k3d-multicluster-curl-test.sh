@@ -9,7 +9,7 @@ curl_client="$(kubectl get pod -n curl -l app=curl -o jsonpath='{.items[0].metad
 
 echo "Creating GlobalTrafficPolicy(ActiveActive) for httpbin service ..."
 kubectl apply -n httpbin -f  - <<EOF
-apiVersion: flomesh.io/v1alpha1
+apiVersion: multicluster.flomesh.io/v1alpha1
 kind: GlobalTrafficPolicy
 metadata:
   name: httpbin

@@ -1070,13 +1070,15 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		// K8s native resource events
 		//
 		// Endpoint event
-		//announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
+		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
 		// EndpointSlices event
 		announcements.EndpointSlicesAdded, announcements.EndpointSlicesDeleted, announcements.EndpointSlicesUpdated,
 		// Service event
 		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated,
 		// Secret event
 		announcements.SecretAdded, announcements.SecretUpdated, announcements.SecretDeleted,
+		// ConfigMap event
+		announcements.ConfigMapAdded, announcements.ConfigMapUpdated, announcements.ConfigMapDeleted,
 
 		//
 		// GatewayAPI events
@@ -1113,8 +1115,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
 		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
-		// GatewayTLSPolicy event
-		announcements.GatewayTLSPolicyAdded, announcements.GatewayTLSPolicyDeleted, announcements.GatewayTLSPolicyUpdated,
+		// ReferenceGrant event
+		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 
 		//
 		// MultiCluster events

@@ -21,8 +21,6 @@ type CircuitBreakingPolicyExpansion interface{}
 
 type FaultInjectionPolicyExpansion interface{}
 
-type GatewayTLSPolicyExpansion interface{}
-
 type HealthCheckPolicyExpansion interface{}
 
 type LoadBalancerPolicyExpansion interface{}

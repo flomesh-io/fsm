@@ -21,7 +21,6 @@ import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeUpstreamTrafficSettings struct {
 	ns   string
 }
 
-var upstreamtrafficsettingsResource = schema.GroupVersionResource{Group: "policy.flomesh.io", Version: "v1alpha1", Resource: "upstreamtrafficsettings"}
+var upstreamtrafficsettingsResource = v1alpha1.SchemeGroupVersion.WithResource("upstreamtrafficsettings")
 
-var upstreamtrafficsettingsKind = schema.GroupVersionKind{Group: "policy.flomesh.io", Version: "v1alpha1", Kind: "UpstreamTrafficSetting"}
+var upstreamtrafficsettingsKind = v1alpha1.SchemeGroupVersion.WithKind("UpstreamTrafficSetting")
 
 // Get takes name of the upstreamTrafficSetting, and returns the corresponding upstreamTrafficSetting object, and an error if there is any.
 func (c *FakeUpstreamTrafficSettings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.UpstreamTrafficSetting, err error) {

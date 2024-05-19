@@ -3,10 +3,10 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.1
+    controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
-    gateway.networking.k8s.io/policy: "true"
+    gateway.networking.k8s.io/policy: Direct
   name: faultinjectionpolicies.gateway.flomesh.io
 spec:
   group: gateway.flomesh.io
@@ -24,14 +24,19 @@ spec:
           API
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
@@ -195,21 +200,25 @@ spec:
                       description: Match is the match condition for the GRPC route
                       properties:
                         headers:
-                          description: Headers specifies gRPC request header matchers.
-                            Multiple match values are ANDed together, meaning, a request
-                            MUST match all the specified headers to select the route.
+                          description: |-
+                            Headers specifies gRPC request header matchers. Multiple match values are
+                            ANDed together, meaning, a request MUST match all the specified headers
+                            to select the route.
                           items:
-                            description: GRPCHeaderMatch describes how to select a
-                              gRPC route by matching gRPC request headers.
+                            description: |-
+                              GRPCHeaderMatch describes how to select a gRPC route by matching gRPC request
+                              headers.
                             properties:
                               name:
-                                description: "Name is the name of the gRPC Header
-                                  to be matched. \n If multiple entries specify equivalent
-                                  header names, only the first entry with an equivalent
-                                  name MUST be considered for a match. Subsequent
-                                  entries with an equivalent header name MUST be ignored.
-                                  Due to the case-insensitivity of header names, \"foo\"
-                                  and \"Foo\" are considered equivalent."
+                                description: |-
+                                  Name is the name of the gRPC Header to be matched.
+
+
+                                  If multiple entries specify equivalent header names, only the first
+                                  entry with an equivalent name MUST be considered for a match. Subsequent
+                                  entries with an equivalent header name MUST be ignored. Due to the
+                                  case-insensitivity of header names, "foo" and "Foo" are considered
+                                  equivalent.
                                 maxLength: 256
                                 minLength: 1
                                 pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
@@ -238,36 +247,59 @@ spec:
                           - name
                           x-kubernetes-list-type: map
                         method:
-                          description: Method specifies a gRPC request service/method
-                            matcher. If this field is not specified, all services
-                            and methods will match.
+                          description: |-
+                            Method specifies a gRPC request service/method matcher. If this field is
+                            not specified, all services and methods will match.
                           properties:
                             method:
-                              description: "Value of the method to match against.
-                                If left empty or omitted, will match all services.
-                                \n At least one of Service and Method MUST be a non-empty
-                                string."
+                              description: |-
+                                Value of the method to match against. If left empty or omitted, will
+                                match all services.
+
+
+                                At least one of Service and Method MUST be a non-empty string.
                               maxLength: 1024
                               type: string
                             service:
-                              description: "Value of the service to match against.
-                                If left empty or omitted, will match any service.
-                                \n At least one of Service and Method MUST be a non-empty
-                                string."
+                              description: |-
+                                Value of the service to match against. If left empty or omitted, will
+                                match any service.
+
+
+                                At least one of Service and Method MUST be a non-empty string.
                               maxLength: 1024
                               type: string
                             type:
                               default: Exact
-                              description: "Type specifies how to match against the
-                                service and/or method. Support: Core (Exact with service
-                                and method specified) \n Support: Implementation-specific
-                                (Exact with method specified but no service specified)
-                                \n Support: Implementation-specific (RegularExpression)"
+                              description: |-
+                                Type specifies how to match against the service and/or method.
+                                Support: Core (Exact with service and method specified)
+
+
+                                Support: Implementation-specific (Exact with method specified but no service specified)
+
+
+                                Support: Implementation-specific (RegularExpression)
                               enum:
                               - Exact
                               - RegularExpression
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: One or both of 'service' or 'method' must be
+                              specified
+                            rule: 'has(self.type) ? has(self.service) || has(self.method)
+                              : true'
+                          - message: service must only contain valid characters (matching
+                              ^(?i)\.?[a-z_][a-z_0-9]*(\.[a-z_][a-z_0-9]*)*$)
+                            rule: '(!has(self.type) || self.type == ''Exact'') &&
+                              has(self.service) ? self.service.matches(r"""^(?i)\.?[a-z_][a-z_0-9]*(\.[a-z_][a-z_0-9]*)*$"""):
+                              true'
+                          - message: method must only contain valid characters (matching
+                              ^[A-Za-z_][A-Za-z_0-9]*$)
+                            rule: '(!has(self.type) || self.type == ''Exact'') &&
+                              has(self.method) ? self.method.matches(r"""^[A-Za-z_][A-Za-z_0-9]*$"""):
+                              true'
                       type: object
                   required:
                   - match
@@ -454,43 +486,53 @@ spec:
                       description: Match is the match condition for the HTTP route
                       properties:
                         headers:
-                          description: Headers specifies HTTP request header matchers.
-                            Multiple match values are ANDed together, meaning, a request
-                            must match all the specified headers to select the route.
+                          description: |-
+                            Headers specifies HTTP request header matchers. Multiple match values are
+                            ANDed together, meaning, a request must match all the specified headers
+                            to select the route.
                           items:
-                            description: HTTPHeaderMatch describes how to select a
-                              HTTP route by matching HTTP request headers.
+                            description: |-
+                              HTTPHeaderMatch describes how to select a HTTP route by matching HTTP request
+                              headers.
                             properties:
                               name:
-                                description: "Name is the name of the HTTP Header
-                                  to be matched. Name matching MUST be case insensitive.
-                                  (See https://tools.ietf.org/html/rfc7230#section-3.2).
-                                  \n If multiple entries specify equivalent header
-                                  names, only the first entry with an equivalent name
-                                  MUST be considered for a match. Subsequent entries
-                                  with an equivalent header name MUST be ignored.
-                                  Due to the case-insensitivity of header names, \"foo\"
-                                  and \"Foo\" are considered equivalent. \n When a
-                                  header is repeated in an HTTP request, it is implementation-specific
-                                  behavior as to how this is represented. Generally,
-                                  proxies should follow the guidance from the RFC:
-                                  https://www.rfc-editor.org/rfc/rfc7230.html#section-3.2.2
-                                  regarding processing a repeated header, with special
-                                  handling for \"Set-Cookie\"."
+                                description: |-
+                                  Name is the name of the HTTP Header to be matched. Name matching MUST be
+                                  case insensitive. (See https://tools.ietf.org/html/rfc7230#section-3.2).
+
+
+                                  If multiple entries specify equivalent header names, only the first
+                                  entry with an equivalent name MUST be considered for a match. Subsequent
+                                  entries with an equivalent header name MUST be ignored. Due to the
+                                  case-insensitivity of header names, "foo" and "Foo" are considered
+                                  equivalent.
+
+
+                                  When a header is repeated in an HTTP request, it is
+                                  implementation-specific behavior as to how this is represented.
+                                  Generally, proxies should follow the guidance from the RFC:
+                                  https://www.rfc-editor.org/rfc/rfc7230.html#section-3.2.2 regarding
+                                  processing a repeated header, with special handling for "Set-Cookie".
                                 maxLength: 256
                                 minLength: 1
                                 pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
                                 type: string
                               type:
                                 default: Exact
-                                description: "Type specifies how to match against
-                                  the value of the header. \n Support: Core (Exact)
-                                  \n Support: Implementation-specific (RegularExpression)
-                                  \n Since RegularExpression HeaderMatchType has implementation-specific
-                                  conformance, implementations can support POSIX,
-                                  PCRE or any other dialects of regular expressions.
-                                  Please read the implementation's documentation to
-                                  determine the supported dialect."
+                                description: |-
+                                  Type specifies how to match against the value of the header.
+
+
+                                  Support: Core (Exact)
+
+
+                                  Support: Implementation-specific (RegularExpression)
+
+
+                                  Since RegularExpression HeaderMatchType has implementation-specific
+                                  conformance, implementations can support POSIX, PCRE or any other dialects
+                                  of regular expressions. Please read the implementation's documentation to
+                                  determine the supported dialect.
                                 enum:
                                 - Exact
                                 - RegularExpression
@@ -511,9 +553,13 @@ spec:
                           - name
                           x-kubernetes-list-type: map
                         method:
-                          description: "Method specifies HTTP method matcher. When
-                            specified, this route will be matched only if the request
-                            has the specified method. \n Support: Extended"
+                          description: |-
+                            Method specifies HTTP method matcher.
+                            When specified, this route will be matched only if the request has the
+                            specified method.
+
+
+                            Support: Extended
                           enum:
                           - GET
                           - HEAD
@@ -529,15 +575,20 @@ spec:
                           default:
                             type: PathPrefix
                             value: /
-                          description: Path specifies a HTTP request path matcher.
-                            If this field is not specified, a default prefix match
-                            on the "/" path is provided.
+                          description: |-
+                            Path specifies a HTTP request path matcher. If this field is not
+                            specified, a default prefix match on the "/" path is provided.
                           properties:
                             type:
                               default: PathPrefix
-                              description: "Type specifies how to match against the
-                                path Value. \n Support: Core (Exact, PathPrefix) \n
-                                Support: Implementation-specific (RegularExpression)"
+                              description: |-
+                                Type specifies how to match against the path Value.
+
+
+                                Support: Core (Exact, PathPrefix)
+
+
+                                Support: Implementation-specific (RegularExpression)
                               enum:
                               - Exact
                               - PathPrefix
@@ -549,47 +600,106 @@ spec:
                               maxLength: 1024
                               type: string
                           type: object
+                          x-kubernetes-validations:
+                          - message: value must be an absolute path and start with
+                              '/' when type one of ['Exact', 'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? self.value.startsWith(''/'')
+                              : true'
+                          - message: must not contain '//' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''//'')
+                              : true'
+                          - message: must not contain '/./' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''/./'')
+                              : true'
+                          - message: must not contain '/../' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''/../'')
+                              : true'
+                          - message: must not contain '%2f' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''%2f'')
+                              : true'
+                          - message: must not contain '%2F' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''%2F'')
+                              : true'
+                          - message: must not contain '#' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.contains(''#'')
+                              : true'
+                          - message: must not end with '/..' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.endsWith(''/..'')
+                              : true'
+                          - message: must not end with '/.' when type one of ['Exact',
+                              'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? !self.value.endsWith(''/.'')
+                              : true'
+                          - message: type must be one of ['Exact', 'PathPrefix', 'RegularExpression']
+                            rule: self.type in ['Exact','PathPrefix'] || self.type
+                              == 'RegularExpression'
+                          - message: must only contain valid characters (matching
+                              ^(?:[-A-Za-z0-9/._~!$&'()*+,;=:@]|[%][0-9a-fA-F]{2})+$)
+                              for types ['Exact', 'PathPrefix']
+                            rule: '(self.type in [''Exact'',''PathPrefix'']) ? self.value.matches(r"""^(?:[-A-Za-z0-9/._~!$&''()*+,;=:@]|[%][0-9a-fA-F]{2})+$""")
+                              : true'
                         queryParams:
-                          description: "QueryParams specifies HTTP query parameter
-                            matchers. Multiple match values are ANDed together, meaning,
-                            a request must match all the specified query parameters
-                            to select the route. \n Support: Extended"
+                          description: |-
+                            QueryParams specifies HTTP query parameter matchers. Multiple match
+                            values are ANDed together, meaning, a request must match all the
+                            specified query parameters to select the route.
+
+
+                            Support: Extended
                           items:
-                            description: HTTPQueryParamMatch describes how to select
-                              a HTTP route by matching HTTP query parameters.
+                            description: |-
+                              HTTPQueryParamMatch describes how to select a HTTP route by matching HTTP
+                              query parameters.
                             properties:
                               name:
-                                description: "Name is the name of the HTTP query param
-                                  to be matched. This must be an exact string match.
-                                  (See https://tools.ietf.org/html/rfc7230#section-2.7.3).
-                                  \n If multiple entries specify equivalent query
-                                  param names, only the first entry with an equivalent
-                                  name MUST be considered for a match. Subsequent
-                                  entries with an equivalent query param name MUST
-                                  be ignored. \n If a query param is repeated in an
-                                  HTTP request, the behavior is purposely left undefined,
-                                  since different data planes have different capabilities.
-                                  However, it is *recommended* that implementations
-                                  should match against the first value of the param
-                                  if the data plane supports it, as this behavior
-                                  is expected in other load balancing contexts outside
-                                  of the Gateway API. \n Users SHOULD NOT route traffic
-                                  based on repeated query params to guard themselves
-                                  against potential differences in the implementations."
+                                description: |-
+                                  Name is the name of the HTTP query param to be matched. This must be an
+                                  exact string match. (See
+                                  https://tools.ietf.org/html/rfc7230#section-2.7.3).
+
+
+                                  If multiple entries specify equivalent query param names, only the first
+                                  entry with an equivalent name MUST be considered for a match. Subsequent
+                                  entries with an equivalent query param name MUST be ignored.
+
+
+                                  If a query param is repeated in an HTTP request, the behavior is
+                                  purposely left undefined, since different data planes have different
+                                  capabilities. However, it is *recommended* that implementations should
+                                  match against the first value of the param if the data plane supports it,
+                                  as this behavior is expected in other load balancing contexts outside of
+                                  the Gateway API.
+
+
+                                  Users SHOULD NOT route traffic based on repeated query params to guard
+                                  themselves against potential differences in the implementations.
                                 maxLength: 256
                                 minLength: 1
                                 pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
                                 type: string
                               type:
                                 default: Exact
-                                description: "Type specifies how to match against
-                                  the value of the query parameter. \n Support: Extended
-                                  (Exact) \n Support: Implementation-specific (RegularExpression)
-                                  \n Since RegularExpression QueryParamMatchType has
-                                  Implementation-specific conformance, implementations
-                                  can support POSIX, PCRE or any other dialects of
-                                  regular expressions. Please read the implementation's
-                                  documentation to determine the supported dialect."
+                                description: |-
+                                  Type specifies how to match against the value of the query parameter.
+
+
+                                  Support: Extended (Exact)
+
+
+                                  Support: Implementation-specific (RegularExpression)
+
+
+                                  Since RegularExpression QueryParamMatchType has Implementation-specific
+                                  conformance, implementations can support POSIX, PCRE or any other
+                                  dialects of regular expressions. Please read the implementation's
+                                  documentation to determine the supported dialect.
                                 enum:
                                 - Exact
                                 - RegularExpression
@@ -636,10 +746,11 @@ spec:
                     minLength: 1
                     type: string
                   namespace:
-                    description: Namespace is the namespace of the referent. When
-                      unspecified, the local namespace is inferred. Even when policy
-                      targets a resource in a different namespace, it MUST only apply
-                      to traffic originating from the same namespace as the policy.
+                    description: |-
+                      Namespace is the namespace of the referent. When unspecified, the local
+                      namespace is inferred. Even when policy targets a resource in a different
+                      namespace, it MUST only apply to traffic originating from the same
+                      namespace as the policy.
                     maxLength: 63
                     minLength: 1
                     pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
@@ -670,42 +781,42 @@ spec:
                 description: Conditions describe the current conditions of the FaultInjectionPolicy.
                 items:
                   description: "Condition contains details for one aspect of the current
-                    state of this API Resource. --- This struct is intended for direct
-                    use as an array at the field path .status.conditions.  For example,
-                    \n type FooStatus struct{ // Represents the observations of a
-                    foo's current state. // Known .status.conditions.type are: \"Available\",
-                    \"Progressing\", and \"Degraded\" // +patchMergeKey=type // +patchStrategy=merge
-                    // +listType=map // +listMapKey=type Conditions []metav1.Condition
-                    `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\"
-                    protobuf:\"bytes,1,rep,name=conditions\"` \n // other fields }"
+                    state of this API Resource.\n---\nThis struct is intended for
+                    direct use as an array at the field path .status.conditions.  For
+                    example,\n\n\n\ttype FooStatus struct{\n\t    // Represents the
+                    observations of a foo's current state.\n\t    // Known .status.conditions.type
+                    are: \"Available\", \"Progressing\", and \"Degraded\"\n\t    //
+                    +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t    // +listType=map\n\t
+                    \   // +listMapKey=type\n\t    Conditions []metav1.Condition `json:\"conditions,omitempty\"
+                    patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                    \   // other fields\n\t}"
                   properties:
                     lastTransitionTime:
-                      description: lastTransitionTime is the last time the condition
-                        transitioned from one status to another. This should be when
-                        the underlying condition changed.  If that is not known, then
-                        using the time when the API field changed is acceptable.
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
                       format: date-time
                       type: string
                     message:
-                      description: message is a human readable message indicating
-                        details about the transition. This may be an empty string.
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
                       maxLength: 32768
                       type: string
                     observedGeneration:
-                      description: observedGeneration represents the .metadata.generation
-                        that the condition was set based upon. For instance, if .metadata.generation
-                        is currently 12, but the .status.conditions[x].observedGeneration
-                        is 9, the condition is out of date with respect to the current
-                        state of the instance.
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
                       format: int64
                       minimum: 0
                       type: integer
                     reason:
-                      description: reason contains a programmatic identifier indicating
-                        the reason for the condition's last transition. Producers
-                        of specific condition types may define expected values and
-                        meanings for this field, and whether the values are considered
-                        a guaranteed API. The value should be a CamelCase string.
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
                         This field may not be empty.
                       maxLength: 1024
                       minLength: 1
@@ -719,11 +830,12 @@ spec:
                       - Unknown
                       type: string
                     type:
-                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
-                        --- Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important. The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                      description: |-
+                        type of condition in CamelCase or in foo.example.com/CamelCase.
+                        ---
+                        Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                        useful (see .node.status.conditions), the ability to deconflict is important.
+                        The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
                       maxLength: 316
                       pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
                       type: string

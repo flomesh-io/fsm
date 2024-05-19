@@ -2,14 +2,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // AccessControlPolicySpec defines the desired state of AccessControlPolicy
 type AccessControlPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +optional
 	// +listType=map
@@ -43,7 +43,7 @@ type AccessControlPolicySpec struct {
 // PortAccessControl defines the access control configuration for a port
 type PortAccessControl struct {
 	// Port is the port number for matching the access control
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the access control configuration for the port
@@ -53,7 +53,7 @@ type PortAccessControl struct {
 // HostnameAccessControl defines the access control configuration for a hostname
 type HostnameAccessControl struct {
 	// Hostname is the hostname for matching the access control
-	Hostname gwv1beta1.Hostname `json:"hostname"`
+	Hostname gwv1.Hostname `json:"hostname"`
 
 	// +optional
 	// Config is the access control configuration for the hostname
@@ -63,7 +63,7 @@ type HostnameAccessControl struct {
 // HTTPAccessControl defines the access control configuration for a HTTP route
 type HTTPAccessControl struct {
 	// Match is the match condition for the HTTP route
-	Match gwv1beta1.HTTPRouteMatch `json:"match"`
+	Match gwv1.HTTPRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the HTTP route
@@ -73,7 +73,7 @@ type HTTPAccessControl struct {
 // GRPCAccessControl defines the access control configuration for a GRPC route
 type GRPCAccessControl struct {
 	// Match is the match condition for the GRPC route
-	Match gwv1alpha2.GRPCRouteMatch `json:"match"`
+	Match gwv1.GRPCRouteMatch `json:"match"`
 
 	// +optional
 	// Config is the access control configuration for the GRPC route
@@ -128,8 +128,10 @@ type AccessControlPolicyStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:resource:scope=Namespaced,categories=gateway-api,shortName=actlpolicy
+// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // AccessControlPolicy is the Schema for the AccessControlPolicy API
 type AccessControlPolicy struct {

@@ -103,6 +103,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
       - name: chart checks
         run: make chart-checks
 
@@ -153,6 +158,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
       - name: Build docker images
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
@@ -170,14 +180,30 @@ jobs:
       matrix:
         k8s_version: [""]
         focus: [""]
-        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        bucket: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14]
         include:
-          - k8s_version: v1.19.11
+          - k8s_version: v1.19.16
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-          - k8s_version: v1.25.1
+          - k8s_version: v1.25.16
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+          - k8s_version: v1.27.11
+            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+            bucket: ".*"
+          - k8s_version: v1.19.16
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.20.15
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.21.14
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+          - k8s_version: v1.23.17
+            focus: "Test traffic from client to backend service routing by FSM Gateway"
+            bucket: ".*"
+
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
@@ -193,6 +219,15 @@ jobs:
         env:
           DOCKER_BUILDX_OUTPUT: type=docker
         run: make docker-build-e2e build-fsm
+      - name: Add hosts to /etc/hosts
+        run: |
+          sudo echo "127.0.0.1 httptest.localhost" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 grpctest.localhost" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 tcptest.localhost" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 udptest.localhost" | sudo tee -a /etc/hosts
+      - name: Install gRPCurl
+        run: |
+          go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
       - name: Run tests
         id: test
         env:

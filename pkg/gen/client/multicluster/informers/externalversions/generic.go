@@ -49,15 +49,15 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=flomesh.io, Version=v1alpha1
+	// Group=multicluster.flomesh.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("clusters"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Flomesh().V1alpha1().Clusters().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Multicluster().V1alpha1().Clusters().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("globaltrafficpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Flomesh().V1alpha1().GlobalTrafficPolicies().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Multicluster().V1alpha1().GlobalTrafficPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("serviceexports"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Flomesh().V1alpha1().ServiceExports().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Multicluster().V1alpha1().ServiceExports().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("serviceimports"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Flomesh().V1alpha1().ServiceImports().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Multicluster().V1alpha1().ServiceImports().Informer()}, nil
 
 	}
 

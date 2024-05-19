@@ -25,14 +25,21 @@
 package logging
 
 import (
+	"context"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/manager/utils"
 )
 
 // SetupLogging sets up Logging of ingress controller
-func SetupLogging(ctx *fctx.ControllerContext) error {
+func SetupLogging(ctx context.Context) error {
 	log.Info().Msgf("[MGR] Setting up Logging ...")
 
-	return utils.UpdateLoggingConfig(ctx.KubeClient, constants.DefaultIngressBasePath, ctx.RepoClient, ctx.Config)
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return utils.UpdateLoggingConfig(cctx.KubeClient, constants.DefaultIngressBasePath, cctx.RepoClient, cctx.Configurator)
 }

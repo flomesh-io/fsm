@@ -39,14 +39,6 @@ type FaultInjectionPolicyListerExpansion interface{}
 // FaultInjectionPolicyNamespaceLister.
 type FaultInjectionPolicyNamespaceListerExpansion interface{}
 
-// GatewayTLSPolicyListerExpansion allows custom methods to be added to
-// GatewayTLSPolicyLister.
-type GatewayTLSPolicyListerExpansion interface{}
-
-// GatewayTLSPolicyNamespaceListerExpansion allows custom methods to be added to
-// GatewayTLSPolicyNamespaceLister.
-type GatewayTLSPolicyNamespaceListerExpansion interface{}
-
 // HealthCheckPolicyListerExpansion allows custom methods to be added to
 // HealthCheckPolicyLister.
 type HealthCheckPolicyListerExpansion interface{}

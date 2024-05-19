@@ -21,7 +21,6 @@ import (
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -33,9 +32,9 @@ type FakeMeshRootCertificates struct {
 	ns   string
 }
 
-var meshrootcertificatesResource = schema.GroupVersionResource{Group: "config.flomesh.io", Version: "v1alpha3", Resource: "meshrootcertificates"}
+var meshrootcertificatesResource = v1alpha3.SchemeGroupVersion.WithResource("meshrootcertificates")
 
-var meshrootcertificatesKind = schema.GroupVersionKind{Group: "config.flomesh.io", Version: "v1alpha3", Kind: "MeshRootCertificate"}
+var meshrootcertificatesKind = v1alpha3.SchemeGroupVersion.WithKind("MeshRootCertificate")
 
 // Get takes name of the meshRootCertificate, and returns the corresponding meshRootCertificate object, and an error if there is any.
 func (c *FakeMeshRootCertificates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha3.MeshRootCertificate, err error) {

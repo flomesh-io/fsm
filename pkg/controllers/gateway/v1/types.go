@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-// Package v1beta1 contains controller logic for the Gateway API v1beta1.
-package v1beta1
+// Package v1 contains controller logic for the Gateway API v1.
+package v1
 
 import "github.com/flomesh-io/fsm/pkg/logger"
 
 var (
-	log = logger.New("gatewayapi-controller/v1beta1")
+	log = logger.New("gatewayapi-controller/v1")
 )

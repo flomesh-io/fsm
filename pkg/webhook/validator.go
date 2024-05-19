@@ -29,6 +29,8 @@ import (
 	goerrors "errors"
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,19 +39,23 @@ import (
 
 type validatingHandler struct {
 	validator Validator
-	decoder   *admission.Decoder
+	decoder   admission.Decoder
 }
 
-var _ admission.DecoderInjector = &validatingHandler{}
-
-// InjectDecoder injects the decoder into a validatingHandler.
-func (h *validatingHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
-}
+//var _ admission.DecoderInjector = &validatingHandler{}
+//
+//// InjectDecoder injects the decoder into a validatingHandler.
+//func (h *validatingHandler) InjectDecoder(d *admission.Decoder) error {
+//	h.decoder = d
+//	return nil
+//}
 
 // Handle handles admission requests.
 func (h *validatingHandler) Handle(_ context.Context, req admission.Request) admission.Response {
+	if h.decoder == nil {
+		panic("decoder should never be nil")
+	}
+
 	if h.validator == nil {
 		panic("validator should never be nil")
 	}
@@ -65,6 +71,8 @@ func (h *validatingHandler) Handle(_ context.Context, req admission.Request) adm
 	}
 
 	switch req.Operation {
+	case admissionv1.Connect:
+		// No validation for connect requests.
 	case admissionv1.Create:
 		err := h.decoder.Decode(req, obj)
 		if err != nil {
@@ -129,8 +137,8 @@ func validationResponseFromStatus(allowed bool, status metav1.Status) admission.
 }
 
 // ValidatingWebhookFor returns a new validating webhook for the given validator.
-func ValidatingWebhookFor(validator Validator) *admission.Webhook {
+func ValidatingWebhookFor(scheme *runtime.Scheme, validator Validator) *admission.Webhook {
 	return &admission.Webhook{
-		Handler: &validatingHandler{validator: validator},
+		Handler: &validatingHandler{validator: validator, decoder: admission.NewDecoder(scheme)},
 	}
 }

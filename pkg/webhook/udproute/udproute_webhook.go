@@ -27,11 +27,12 @@ package udproute
 import (
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1alpha2validation "sigs.k8s.io/gateway-api/apis/v1alpha2/validation"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -86,8 +87,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for UDPRoute
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.UDPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.UDPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient)),
+		constants.UDPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.UDPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient)),
 	}
 }
 
@@ -163,7 +164,8 @@ func doValidation(obj interface{}) error {
 		return nil
 	}
 
-	errorList := gwv1alpha2validation.ValidateUDPRoute(route)
+	//errorList := gwv1alpha2validation.ValidateUDPRoute(route)
+	var errorList field.ErrorList
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)

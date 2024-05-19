@@ -2,14 +2,14 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 )
 
 // HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
 type HealthCheckPolicySpec struct {
 	// TargetRef is the reference to the target resource to which the policy is applied
-	TargetRef gwv1alpha2.PolicyTargetReference `json:"targetRef"`
+	TargetRef gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
 	// +listType=map
 	// +listMapKey=port
@@ -25,7 +25,7 @@ type HealthCheckPolicySpec struct {
 
 type PortHealthCheck struct {
 	// Port is the port number of the target service
-	Port gwv1beta1.PortNumber `json:"port"`
+	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
 	// Config is the health check configuration for the port
@@ -72,7 +72,7 @@ type HealthCheckMatch struct {
 	// +listMapKey=name
 	// +kubebuilder:validation:MaxItems=16
 	// Headers is the list of response headers to match
-	Headers []gwv1beta1.HTTPHeader `json:"headers,omitempty"`
+	Headers []gwv1.HTTPHeader `json:"headers,omitempty"`
 }
 
 //type HealthCheckMatchType string
@@ -100,7 +100,7 @@ type HealthCheckPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=true}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.networking.k8s.io/policy=Direct}
 
 // HealthCheckPolicy is the Schema for the HealthCheckPolicy API
 type HealthCheckPolicy struct {

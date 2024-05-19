@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"net/http"
 
-	flomeshv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1"
+	networkingv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/typed/namespacedingress/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -27,18 +27,18 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	FlomeshV1alpha1() flomeshv1alpha1.FlomeshV1alpha1Interface
+	NetworkingV1alpha1() networkingv1alpha1.NetworkingV1alpha1Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	flomeshV1alpha1 *flomeshv1alpha1.FlomeshV1alpha1Client
+	networkingV1alpha1 *networkingv1alpha1.NetworkingV1alpha1Client
 }
 
-// FlomeshV1alpha1 retrieves the FlomeshV1alpha1Client
-func (c *Clientset) FlomeshV1alpha1() flomeshv1alpha1.FlomeshV1alpha1Interface {
-	return c.flomeshV1alpha1
+// NetworkingV1alpha1 retrieves the NetworkingV1alpha1Client
+func (c *Clientset) NetworkingV1alpha1() networkingv1alpha1.NetworkingV1alpha1Interface {
+	return c.networkingV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -85,7 +85,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.flomeshV1alpha1, err = flomeshv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	cs.networkingV1alpha1, err = networkingv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.flomeshV1alpha1 = flomeshv1alpha1.New(c)
+	cs.networkingV1alpha1 = networkingv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

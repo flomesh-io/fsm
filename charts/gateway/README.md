@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.2.5](https://img.shields.io/badge/Version-1.2.5-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.5](https://img.shields.io/badge/AppVersion-1.2.5-informational?style=flat-square)
+![Version: 1.3.0-rc.2](https://img.shields.io/badge/Version-1.3.0--rc.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.3.0-rc.2](https://img.shields.io/badge/AppVersion-1.3.0--rc.2-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -72,28 +72,30 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-gateway"` |  |
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmGateway.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
-| fsm.fsmGateway.autoScale | object | `{"cpu":{"targetAverageUtilization":80},"enable":false,"maxReplicas":5,"memory":{"targetAverageUtilization":80},"minReplicas":1}` | Auto scale configuration |
+| fsm.fsmGateway.autoScale | object | `{"behavior":{"scaleDown":{"policies":[{"periodSeconds":60,"type":"Pods","value":1},{"periodSeconds":60,"type":"Percent","value":10}],"selectPolicy":"Min","stabilizationWindowSeconds":300},"scaleUp":{"policies":[{"periodSeconds":15,"type":"Percent","value":100},{"periodSeconds":15,"type":"Pods","value":2}],"selectPolicy":"Max","stabilizationWindowSeconds":0}},"cpu":{"targetAverageUtilization":80},"enable":false,"maxReplicas":10,"memory":{"targetAverageUtilization":80},"metrics":[{"resource":{"name":"cpu","target":{"averageUtilization":80,"type":"Utilization"}},"type":"Resource"},{"resource":{"name":"memory","target":{"averageUtilization":80,"type":"Utilization"}},"type":"Resource"}],"minReplicas":1}` | Auto scale configuration |
+| fsm.fsmGateway.autoScale.behavior | object | `{"scaleDown":{"policies":[{"periodSeconds":60,"type":"Pods","value":1},{"periodSeconds":60,"type":"Percent","value":10}],"selectPolicy":"Min","stabilizationWindowSeconds":300},"scaleUp":{"policies":[{"periodSeconds":15,"type":"Percent","value":100},{"periodSeconds":15,"type":"Pods","value":2}],"selectPolicy":"Max","stabilizationWindowSeconds":0}}` | Auto scale behavior, for v2 API |
+| fsm.fsmGateway.autoScale.cpu | object | `{"targetAverageUtilization":80}` | Auto scale cpu metrics, for v2beta2 API |
 | fsm.fsmGateway.autoScale.cpu.targetAverageUtilization | int | `80` | Average target CPU utilization (%) |
 | fsm.fsmGateway.autoScale.enable | bool | `false` | Enable Autoscale |
-| fsm.fsmGateway.autoScale.maxReplicas | int | `5` | Maximum replicas for autoscale |
+| fsm.fsmGateway.autoScale.maxReplicas | int | `10` | Maximum replicas for autoscale |
+| fsm.fsmGateway.autoScale.memory | object | `{"targetAverageUtilization":80}` | Auto scale memory metrics, for v2beta2 API |
 | fsm.fsmGateway.autoScale.memory.targetAverageUtilization | int | `80` | Average target memory utilization (%) |
+| fsm.fsmGateway.autoScale.metrics | list | `[{"resource":{"name":"cpu","target":{"averageUtilization":80,"type":"Utilization"}},"type":"Resource"},{"resource":{"name":"memory","target":{"averageUtilization":80,"type":"Utilization"}},"type":"Resource"}]` | Auto scale metrics, for v2 API |
 | fsm.fsmGateway.autoScale.minReplicas | int | `1` | Minimum replicas for autoscale |
-| fsm.fsmGateway.enablePodDisruptionBudget | bool | `false` | Enable Pod Disruption Budget |
 | fsm.fsmGateway.env[0].name | string | `"GIN_MODE"` |  |
 | fsm.fsmGateway.env[0].value | string | `"release"` |  |
-| fsm.fsmGateway.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource parameters |
+| fsm.fsmGateway.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource configuration |
 | fsm.fsmGateway.logLevel | string | `"info"` |  |
 | fsm.fsmGateway.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
-| fsm.fsmGateway.podAnnotations | object | `{}` |  |
+| fsm.fsmGateway.podAnnotations | object | `{}` | FSM Gateway Controller's pod annotations |
+| fsm.fsmGateway.podDisruptionBudget | object | `{"enabled":false,"minAvailable":1}` | Pod disruption budget configuration |
+| fsm.fsmGateway.podDisruptionBudget.enabled | bool | `false` | Enable Pod Disruption Budget |
+| fsm.fsmGateway.podDisruptionBudget.minAvailable | int | `1` | Minimum number of pods that must be available |
 | fsm.fsmGateway.podLabels | object | `{}` | FSM Gateway Controller's pod labels |
-| fsm.fsmGateway.podSecurityContext.runAsGroup | int | `65532` |  |
-| fsm.fsmGateway.podSecurityContext.runAsNonRoot | bool | `true` |  |
-| fsm.fsmGateway.podSecurityContext.runAsUser | int | `65532` |  |
-| fsm.fsmGateway.podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| fsm.fsmGateway.podSecurityContext | object | `{"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | FSM Gateway Controller's pod security context |
 | fsm.fsmGateway.replicas | int | `1` |  |
 | fsm.fsmGateway.resources | object | `{"limits":{"cpu":"2","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM Gateway's container resource parameters. |
-| fsm.fsmGateway.securityContext.allowPrivilegeEscalation | bool | `false` |  |
-| fsm.fsmGateway.securityContext.capabilities.drop[0] | string | `"ALL"` |  |
+| fsm.fsmGateway.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}` | FSM Gateway Controller's container security context |
 | fsm.fsmGateway.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |
 | fsm.image.digest | object | `{"fsmGateway":""}` | Image digest (defaults to latest compatible tag) |
@@ -102,7 +104,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmGateway | string | `"fsm-gateway"` | fsm-gateway's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.2.5"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.3.0-rc.2"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-gateway` image pull secret |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |
 

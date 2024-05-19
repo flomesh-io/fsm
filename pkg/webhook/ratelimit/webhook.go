@@ -7,7 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
@@ -80,8 +80,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for RateLimitPolicy
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.RateLimitPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.RateLimitPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.gatewayAPIClient)),
+		constants.RateLimitPolicyMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.RateLimitPolicyValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.gatewayAPIClient)),
 	}
 }
 
@@ -205,7 +205,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 //	}
 //
 //	if len(config.ResponseHeadersToAdd) == 0 && len(defaultConfig.ResponseHeadersToAdd) > 0 {
-//		cfgCopy.ResponseHeadersToAdd = make([]gwv1beta1.HTTPHeader, 0)
+//		cfgCopy.ResponseHeadersToAdd = make([]gwv1.HTTPHeader, 0)
 //		cfgCopy.ResponseHeadersToAdd = append(cfgCopy.ResponseHeadersToAdd, defaultConfig.ResponseHeadersToAdd...)
 //	}
 //
@@ -289,7 +289,7 @@ func (w *validator) doValidation(obj interface{}) error {
 	return nil
 }
 
-func validateTargetRef(ref gwv1alpha2.PolicyTargetReference) field.ErrorList {
+func validateTargetRef(ref gwv1alpha2.NamespacedPolicyTargetReference) field.ErrorList {
 	var errs field.ErrorList
 
 	if ref.Group != constants.GatewayAPIGroup {
@@ -361,7 +361,7 @@ func (w *validator) validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) f
 				gwNs = string(*policy.Spec.TargetRef.Namespace)
 			}
 
-			gateway, err := w.gatewayAPIClient.GatewayV1beta1().Gateways(gwNs).Get(context.TODO(), gwName, metav1.GetOptions{})
+			gateway, err := w.gatewayAPIClient.GatewayV1().Gateways(gwNs).Get(context.TODO(), gwName, metav1.GetOptions{})
 			if err != nil {
 				path := field.NewPath("spec").Child("targetRef")
 				if errors.IsNotFound(err) {
@@ -381,10 +381,10 @@ func (w *validator) validateL4RateLimits(policy *gwpav1alpha1.RateLimitPolicy) f
 					continue
 				}
 
-				if listener.Protocol != gwv1beta1.HTTPSProtocolType &&
-					listener.Protocol != gwv1beta1.TLSProtocolType &&
-					listener.Protocol != gwv1beta1.TCPProtocolType &&
-					listener.Protocol != gwv1beta1.HTTPProtocolType {
+				if listener.Protocol != gwv1.HTTPSProtocolType &&
+					listener.Protocol != gwv1.TLSProtocolType &&
+					listener.Protocol != gwv1.TCPProtocolType &&
+					listener.Protocol != gwv1.HTTPProtocolType {
 					path := field.NewPath("spec").Child("ports").Index(i).Child("port")
 					errs = append(errs, field.Invalid(path, p.Port, fmt.Sprintf("Protocol of port %d is %s, it must be HTTP, HTTPS, TLS or TCP in Gateway %s/%s", p.Port, listener.Protocol, gwNs, gwName)))
 					continue

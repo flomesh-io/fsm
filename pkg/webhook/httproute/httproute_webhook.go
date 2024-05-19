@@ -27,11 +27,12 @@ package httproute
 import (
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-	gwv1beta1validation "sigs.k8s.io/gateway-api/apis/v1beta1/validation"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -56,7 +57,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 	rule := flomeshadmission.NewRule(
 		[]admissionregv1.OperationType{admissionregv1.Create, admissionregv1.Update},
 		[]string{constants.GatewayAPIGroup},
-		[]string{"v1beta1"},
+		[]string{"v1"},
 		[]string{"httproutes"},
 	)
 
@@ -86,8 +87,8 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 // GetHandlers returns the handlers to be registered for HTTPRoute
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
-		constants.HTTPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(newDefaulter(r.KubeClient, r.Config)),
-		constants.HTTPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(newValidator(r.KubeClient, r.Config)),
+		constants.HTTPRouteMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.Configurator)),
+		constants.HTTPRouteValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
 	}
 }
 
@@ -105,12 +106,12 @@ func newDefaulter(kubeClient kubernetes.Interface, cfg configurator.Configurator
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *defaulter) RuntimeObject() runtime.Object {
-	return &gwv1beta1.HTTPRoute{}
+	return &gwv1.HTTPRoute{}
 }
 
 // SetDefaults sets the default values for the HTTPRoute
 func (w *defaulter) SetDefaults(obj interface{}) {
-	route, ok := obj.(*gwv1beta1.HTTPRoute)
+	route, ok := obj.(*gwv1.HTTPRoute)
 	if !ok {
 		return
 	}
@@ -134,7 +135,7 @@ type validator struct {
 
 // RuntimeObject returns the runtime object for the webhook
 func (w *validator) RuntimeObject() runtime.Object {
-	return &gwv1beta1.HTTPRoute{}
+	return &gwv1.HTTPRoute{}
 }
 
 // ValidateCreate validates the creation of the HTTPRoute
@@ -160,12 +161,13 @@ func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator
 }
 
 func (w *validator) doValidation(obj interface{}) error {
-	route, ok := obj.(*gwv1beta1.HTTPRoute)
+	route, ok := obj.(*gwv1.HTTPRoute)
 	if !ok {
 		return nil
 	}
 
-	errorList := gwv1beta1validation.ValidateHTTPRoute(route)
+	//errorList := gwv1validation.ValidateHTTPRoute(route)
+	var errorList field.ErrorList
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateHTTPRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)

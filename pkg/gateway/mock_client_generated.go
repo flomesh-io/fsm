@@ -49,15 +49,15 @@ func (mr *MockControllerMockRecorder) NeedLeaderElection() *gomock.Call {
 }
 
 // OnAdd mocks base method.
-func (m *MockController) OnAdd(arg0 interface{}) {
+func (m *MockController) OnAdd(arg0 interface{}, arg1 bool) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "OnAdd", arg0)
+	m.ctrl.Call(m, "OnAdd", arg0, arg1)
 }
 
 // OnAdd indicates an expected call of OnAdd.
-func (mr *MockControllerMockRecorder) OnAdd(arg0 interface{}) *gomock.Call {
+func (mr *MockControllerMockRecorder) OnAdd(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnAdd", reflect.TypeOf((*MockController)(nil).OnAdd), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnAdd", reflect.TypeOf((*MockController)(nil).OnAdd), arg0, arg1)
 }
 
 // OnDelete mocks base method.

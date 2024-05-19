@@ -11,7 +11,7 @@ import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/types"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // ServicePortName is a combination of a service name, namespace, and port
@@ -110,12 +110,12 @@ type ProxyTag struct {
 
 // Listener is the listener configuration
 type Listener struct {
-	Protocol           gwv1beta1.ProtocolType `json:"Protocol"`
-	Port               gwv1beta1.PortNumber   `json:"Port"`
-	Listen             gwv1beta1.PortNumber   `json:"Listen"`
-	TLS                *TLS                   `json:"TLS,omitempty"`
-	AccessControlLists *AccessControlLists    `json:"AccessControlLists,omitempty"`
-	BpsLimit           *int64                 `json:"BpsLimit,omitempty"`
+	Protocol           gwv1.ProtocolType   `json:"Protocol"`
+	Port               gwv1.PortNumber     `json:"Port"`
+	Listen             gwv1.PortNumber     `json:"Listen"`
+	TLS                *TLS                `json:"TLS,omitempty"`
+	AccessControlLists *AccessControlLists `json:"AccessControlLists,omitempty"`
+	BpsLimit           *int64              `json:"BpsLimit,omitempty"`
 }
 
 // AccessControlLists is the access control lists configuration
@@ -150,9 +150,10 @@ type FaultInjectionAbort struct {
 
 // TLS is the TLS configuration
 type TLS struct {
-	TLSModeType  gwv1beta1.TLSModeType `json:"TLSModeType"`
-	MTLS         *bool                 `json:"MTLS,omitempty"`
-	Certificates []Certificate         `json:"Certificates,omitempty" hash:"set"`
+	TLSModeType  gwv1.TLSModeType `json:"TLSModeType"`
+	MTLS         *bool            `json:"MTLS,omitempty"`
+	Certificates []Certificate    `json:"Certificates,omitempty" hash:"set"`
+	CACerts      []string         `json:"CACerts,omitempty" hash:"set"`
 }
 
 // Certificate is the certificate configuration
@@ -459,13 +460,13 @@ type GRPCMethod struct {
 
 // RateLimit is the rate limit configuration
 type RateLimit struct {
-	Mode                 gwpav1alpha1.RateLimitPolicyMode    `json:"Mode"`
-	Backlog              int32                               `json:"Backlog"`
-	Requests             int32                               `json:"Requests"`
-	Burst                int32                               `json:"Burst"`
-	StatTimeWindow       int32                               `json:"StatTimeWindow"`
-	ResponseStatusCode   int32                               `json:"ResponseStatusCode"`
-	ResponseHeadersToAdd map[gwv1beta1.HTTPHeaderName]string `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
+	Mode                 gwpav1alpha1.RateLimitPolicyMode `json:"Mode"`
+	Backlog              int32                            `json:"Backlog"`
+	Requests             int32                            `json:"Requests"`
+	Burst                int32                            `json:"Burst"`
+	StatTimeWindow       int32                            `json:"StatTimeWindow"`
+	ResponseStatusCode   int32                            `json:"ResponseStatusCode"`
+	ResponseHeadersToAdd map[gwv1.HTTPHeaderName]string   `json:"ResponseHeadersToAdd,omitempty" hash:"set"`
 }
 
 // PassthroughRouteMapping is the passthrough route mapping configuration
@@ -514,9 +515,9 @@ type HTTPRequestMirrorFilter struct {
 
 // HTTPPathModifier defines configuration for path modifiers.
 type HTTPPathModifier struct {
-	Type               gwv1beta1.HTTPPathModifierType `json:"Type"`
-	ReplaceFullPath    *string                        `json:"ReplaceFullPath,omitempty"`
-	ReplacePrefixMatch *string                        `json:"ReplacePrefixMatch,omitempty"`
+	Type               gwv1.HTTPPathModifierType `json:"Type"`
+	ReplaceFullPath    *string                   `json:"ReplaceFullPath,omitempty"`
+	ReplacePrefixMatch *string                   `json:"ReplacePrefixMatch,omitempty"`
 }
 
 // HTTPURLRewriteFilter defines a filter that modifies a request during
@@ -545,7 +546,7 @@ type HTTPRequestRedirectFilter struct {
 type HTTPRouteFilter struct {
 	// Type identifies the type of filter to apply. As with other API fields,
 	// types are classified into three conformance levels:
-	Type gwv1beta1.HTTPRouteFilterType `json:"Type"`
+	Type gwv1.HTTPRouteFilterType `json:"Type"`
 
 	// RequestHeaderModifier defines a schema for a filter that modifies request
 	RequestHeaderModifier *HTTPHeaderFilter `json:"RequestHeaderModifier,omitempty"`
@@ -569,7 +570,7 @@ type HTTPRouteFilter struct {
 	// "filter" behavior.  For example, resource "myroutefilter" in group
 	// "networking.example.net"). ExtensionRef MUST NOT be used for core and
 	// extended filters.
-	ExtensionRef *gwv1beta1.LocalObjectReference `json:"ExtensionRef,omitempty"`
+	ExtensionRef *gwv1.LocalObjectReference `json:"ExtensionRef,omitempty"`
 }
 
 var _ Filter = &HTTPRouteFilter{}
@@ -583,7 +584,7 @@ var _ Filter = &HTTPRouteFilter{}
 type GRPCRouteFilter struct {
 	// Type identifies the type of filter to apply. As with other API fields,
 	// types are classified into three conformance levels:
-	Type gwv1alpha2.GRPCRouteFilterType `json:"Type"`
+	Type gwv1.GRPCRouteFilterType `json:"Type"`
 
 	// RequestHeaderModifier defines a schema for a filter that modifies request
 	// headers.
@@ -632,9 +633,9 @@ type HealthCheck struct {
 
 // HealthCheckMatch is the health check match configuration
 type HealthCheckMatch struct {
-	StatusCodes []int32                             `json:"StatusCodes,omitempty" hash:"set"`
-	Body        *string                             `json:"Body,omitempty"`
-	Headers     map[gwv1beta1.HTTPHeaderName]string `json:"Headers,omitempty"`
+	StatusCodes []int32                        `json:"StatusCodes,omitempty" hash:"set"`
+	Body        *string                        `json:"Body,omitempty"`
+	Headers     map[gwv1.HTTPHeaderName]string `json:"Headers,omitempty"`
 }
 
 // UpstreamCert is the upstream certificate configuration

@@ -4,14 +4,22 @@ import (
 	"errors"
 	"time"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha1"
+	"k8s.io/apimachinery/pkg/labels"
+
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	gwpav1alpha1lister "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha1"
 
 	v1 "k8s.io/client-go/listers/core/v1"
 	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
 	networkingv1 "k8s.io/client-go/listers/networking/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
+	gwv1lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1"
+	gwv1alpha2lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
+	gwv1beta1lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
 
@@ -24,6 +32,8 @@ type InformerKey string
 const (
 	// InformerKeyNamespace is the InformerKey for a Namespace informer
 	InformerKeyNamespace InformerKey = "Namespace"
+	// InformerKeyNamespaceAll is the InformerKey for all Namespaces informer
+	InformerKeyNamespaceAll InformerKey = "NamespaceAll"
 	// InformerKeyService is the InformerKey for a Service informer
 	InformerKeyService InformerKey = "Service"
 	// InformerKeyPod is the InformerKey for a Pod informer
@@ -36,6 +46,8 @@ const (
 	InformerKeyServiceAccount InformerKey = "ServiceAccount"
 	// InformerKeySecret is the InformerKey for a Secret informer
 	InformerKeySecret InformerKey = "Secret"
+	// InformerKeyConfigMap is the InformerKey for a ConfigMap informer
+	InformerKeyConfigMap InformerKey = "ConfigMap"
 
 	// InformerKeyTrafficSplit is the InformerKey for a TrafficSplit informer
 	InformerKeyTrafficSplit InformerKey = "TrafficSplit"
@@ -121,6 +133,8 @@ const (
 	InformerKeyGatewayAPITCPRoute InformerKey = "TCPRoute-gwapi"
 	// InformerKeyGatewayAPIUDPRoute is the InformerKey for a UDPRoute informer
 	InformerKeyGatewayAPIUDPRoute InformerKey = "UDPRoute-gwapi"
+	// InformerKeyGatewayAPIReferenceGrant is the InformerKey for a ReferenceGrant informer
+	InformerKeyGatewayAPIReferenceGrant InformerKey = "ReferenceGrant-gwapi"
 	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
 	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
 	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
@@ -139,8 +153,6 @@ const (
 	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
 	// InformerKeyRetryPolicy is the InformerKey for a RetryPolicy informer
 	InformerKeyRetryPolicy InformerKey = "RetryPolicy"
-	// InformerKeyGatewayTLSPolicy is the InformerKey for a GatewayTLSPolicy informer
-	InformerKeyGatewayTLSPolicy InformerKey = "GatewayTLSPolicy"
 )
 
 const (
@@ -171,24 +183,113 @@ type Lister struct {
 	Endpoints             v1.EndpointsLister
 	EndpointSlice         discoveryv1.EndpointSliceLister
 	Secret                v1.SecretLister
-	GatewayClass          gwv1beta1.GatewayClassLister
-	Gateway               gwv1beta1.GatewayLister
-	HTTPRoute             gwv1beta1.HTTPRouteLister
-	GRPCRoute             gwv1alpha2.GRPCRouteLister
-	TLSRoute              gwv1alpha2.TLSRouteLister
-	TCPRoute              gwv1alpha2.TCPRouteLister
-	UDPRoute              gwv1alpha2.UDPRouteLister
+	ConfigMap             v1.ConfigMapLister
+	GatewayClass          gwv1lister.GatewayClassLister
+	Gateway               gwv1lister.GatewayLister
+	HTTPRoute             gwv1lister.HTTPRouteLister
+	GRPCRoute             gwv1lister.GRPCRouteLister
+	TLSRoute              gwv1alpha2lister.TLSRouteLister
+	TCPRoute              gwv1alpha2lister.TCPRouteLister
+	UDPRoute              gwv1alpha2lister.UDPRouteLister
 	K8sIngressClass       networkingv1.IngressClassLister
 	K8sIngress            networkingv1.IngressLister
 	NamespacedIngress     nsigv1alpha1.NamespacedIngressLister
-	RateLimitPolicy       gwpav1alpha1.RateLimitPolicyLister
-	SessionStickyPolicy   gwpav1alpha1.SessionStickyPolicyLister
-	LoadBalancerPolicy    gwpav1alpha1.LoadBalancerPolicyLister
-	CircuitBreakingPolicy gwpav1alpha1.CircuitBreakingPolicyLister
-	AccessControlPolicy   gwpav1alpha1.AccessControlPolicyLister
-	HealthCheckPolicy     gwpav1alpha1.HealthCheckPolicyLister
-	FaultInjectionPolicy  gwpav1alpha1.FaultInjectionPolicyLister
-	UpstreamTLSPolicy     gwpav1alpha1.UpstreamTLSPolicyLister
-	RetryPolicy           gwpav1alpha1.RetryPolicyLister
-	GatewayTLSPolicy      gwpav1alpha1.GatewayTLSPolicyLister
+	RateLimitPolicy       gwpav1alpha1lister.RateLimitPolicyLister
+	SessionStickyPolicy   gwpav1alpha1lister.SessionStickyPolicyLister
+	LoadBalancerPolicy    gwpav1alpha1lister.LoadBalancerPolicyLister
+	CircuitBreakingPolicy gwpav1alpha1lister.CircuitBreakingPolicyLister
+	AccessControlPolicy   gwpav1alpha1lister.AccessControlPolicyLister
+	HealthCheckPolicy     gwpav1alpha1lister.HealthCheckPolicyLister
+	FaultInjectionPolicy  gwpav1alpha1lister.FaultInjectionPolicyLister
+	UpstreamTLSPolicy     gwpav1alpha1lister.UpstreamTLSPolicyLister
+	RetryPolicy           gwpav1alpha1lister.RetryPolicyLister
+	ReferenceGrant        gwv1beta1lister.ReferenceGrantLister
+	Namespace             v1.NamespaceLister
 }
+
+// ResourceType is the type used to represent the type of resource
+type ResourceType string
+
+const (
+	// ServicesResourceType is the type used to represent the services resource
+	ServicesResourceType ResourceType = "services"
+
+	// EndpointSlicesResourceType is the type used to represent the endpoint slices resource
+	EndpointSlicesResourceType ResourceType = "endpointslices"
+
+	// EndpointsResourceType is the type used to represent the endpoints resource
+	EndpointsResourceType ResourceType = "endpoints"
+
+	// ServiceImportsResourceType is the type used to represent the service imports resource
+	ServiceImportsResourceType ResourceType = "serviceimports"
+
+	// SecretsResourceType is the type used to represent the secrets resource
+	SecretsResourceType ResourceType = "secrets"
+
+	// ConfigMapsResourceType is the type used to represent the config maps resource
+	ConfigMapsResourceType ResourceType = "configmaps"
+
+	// GatewayClassesResourceType is the type used to represent the gateway classes resource
+	GatewayClassesResourceType ResourceType = "gatewayclasses"
+
+	// GatewaysResourceType is the type used to represent the gateways resource
+	GatewaysResourceType ResourceType = "gateways"
+
+	// HTTPRoutesResourceType is the type used to represent the HTTP routes resource
+	HTTPRoutesResourceType ResourceType = "httproutes"
+
+	// GRPCRoutesResourceType is the type used to represent the gRPC routes resource
+	GRPCRoutesResourceType ResourceType = "grpcroutes"
+
+	// TCPRoutesResourceType is the type used to represent the TCP routes resource
+	TCPRoutesResourceType ResourceType = "tcproutes"
+
+	// TLSRoutesResourceType is the type used to represent the TLS routes resource
+	TLSRoutesResourceType ResourceType = "tlsroutes"
+
+	// UDPRoutesResourceType is the type used to represent the UDP routes resource
+	UDPRoutesResourceType ResourceType = "udproutes"
+
+	// ReferenceGrantResourceType is the type used to represent the reference grants resource
+	ReferenceGrantResourceType ResourceType = "referencegrants"
+
+	// RateLimitPoliciesResourceType is the type used to represent the rate limit policies resource
+	RateLimitPoliciesResourceType ResourceType = "ratelimits"
+
+	// SessionStickyPoliciesResourceType is the type used to represent the session sticky policies resource
+	SessionStickyPoliciesResourceType ResourceType = "sessionstickies"
+
+	// LoadBalancerPoliciesResourceType is the type used to represent the load balancer policies resource
+	LoadBalancerPoliciesResourceType ResourceType = "loadbalancers"
+
+	// CircuitBreakingPoliciesResourceType is the type used to represent the circuit breaking policies resource
+	CircuitBreakingPoliciesResourceType ResourceType = "circuitbreakings"
+
+	// AccessControlPoliciesResourceType is the type used to represent the access control policies resource
+	AccessControlPoliciesResourceType ResourceType = "accesscontrols"
+
+	// HealthCheckPoliciesResourceType is the type used to represent the health check policies resource
+	HealthCheckPoliciesResourceType ResourceType = "healthchecks"
+
+	// FaultInjectionPoliciesResourceType is the type used to represent the fault injection policies resource
+	FaultInjectionPoliciesResourceType ResourceType = "faultinjections"
+
+	// UpstreamTLSPoliciesResourceType is the type used to represent the upstream tls policies resource
+	UpstreamTLSPoliciesResourceType ResourceType = "upstreamtls"
+
+	// RetryPoliciesResourceType is the type used to represent the retry policies resource
+	RetryPoliciesResourceType ResourceType = "retries"
+)
+
+// GatewayAPIResource is the type used to represent the Gateway API resource
+type GatewayAPIResource interface {
+	*gwv1.GatewayClass | *gwv1.Gateway |
+		*gwv1.HTTPRoute | *gwv1.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
+		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
+		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
+		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
+}
+
+var (
+	selectAll = labels.Set{}.AsSelector()
+)

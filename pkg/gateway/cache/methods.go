@@ -1,12 +1,17 @@
 package cache
 
 import (
-	"sort"
+	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/k8s"
+
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -14,152 +19,26 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayCache) getActiveGateways() []*gwv1beta1.Gateway {
-	gateways := make([]*gwv1beta1.Gateway, 0)
-
-	allGateways, err := c.informers.GetListers().Gateway.Gateways(corev1.NamespaceAll).List(selectAll)
-	if err != nil {
-		return nil
-	}
-
-	for _, gw := range allGateways {
-		if gwutils.IsActiveGateway(gw) {
-			gw.GetObjectKind().SetGroupVersionKind(constants.GatewayGVK)
-			gateways = append(gateways, gw)
-		}
-	}
-
-	return gateways
+func (c *GatewayCache) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
+	return c.informers.GetGatewayResourcesFromCache(resourceType, shouldSort)
 }
 
-//gocyclo:ignore
-func (c *GatewayCache) getResourcesFromCache(resourceType ResourceType, shouldSort bool) []client.Object {
-	resources := make([]client.Object, 0)
+func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
+	//gateways := make([]*gwv1.Gateway, 0)
+	//
+	//for _, gw := range c.getResourcesFromCache(informers.GatewaysResourceType, false) {
+	//	gw := gw.(*gwv1.Gateway)
+	//	if gwutils.IsActiveGateway(gw) {
+	//		gateways = append(gateways, gw)
+	//	}
+	//}
+	//
+	//return gateways
 
-	switch resourceType {
-	case HTTPRoutesResourceType:
-		routes, err := c.informers.GetListers().HTTPRoute.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get HTTPRoutes: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(routes, constants.HTTPRouteGVK)
-	case GRPCRoutesResourceType:
-		routes, err := c.informers.GetListers().GRPCRoute.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get GRPCRouts: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(routes, constants.GRPCRouteGVK)
-	case TLSRoutesResourceType:
-		routes, err := c.informers.GetListers().TLSRoute.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get TLSRoutes: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(routes, constants.TLSRouteGVK)
-	case TCPRoutesResourceType:
-		routes, err := c.informers.GetListers().TCPRoute.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get TCPRoutes: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(routes, constants.TCPRouteGVK)
-	case UDPRoutesResourceType:
-		routes, err := c.informers.GetListers().UDPRoute.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get UDPRoutes: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(routes, constants.UDPRouteGVK)
-	case UpstreamTLSPoliciesResourceType:
-		policies, err := c.informers.GetListers().UpstreamTLSPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get UpstreamTLSPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.UpstreamTLSPolicyGVK)
-	case RateLimitPoliciesResourceType:
-		policies, err := c.informers.GetListers().RateLimitPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get RateLimitPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.RateLimitPolicyGVK)
-	case AccessControlPoliciesResourceType:
-		policies, err := c.informers.GetListers().AccessControlPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get AccessControlPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.AccessControlPolicyGVK)
-	case FaultInjectionPoliciesResourceType:
-		policies, err := c.informers.GetListers().FaultInjectionPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get FaultInjectionPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.FaultInjectionPolicyGVK)
-	case SessionStickyPoliciesResourceType:
-		policies, err := c.informers.GetListers().SessionStickyPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get SessionStickyPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.SessionStickyPolicyGVK)
-	case LoadBalancerPoliciesResourceType:
-		policies, err := c.informers.GetListers().LoadBalancerPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get LoadBalancerPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.LoadBalancerPolicyGVK)
-	case CircuitBreakingPoliciesResourceType:
-		policies, err := c.informers.GetListers().CircuitBreakingPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get CircuitBreakingPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.CircuitBreakingPolicyGVK)
-	case HealthCheckPoliciesResourceType:
-		policies, err := c.informers.GetListers().HealthCheckPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get HealthCheckPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.HealthCheckPolicyGVK)
-	case RetryPoliciesResourceType:
-		policies, err := c.informers.GetListers().RetryPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get RetryPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.RetryPolicyGVK)
-	case GatewayTLSPoliciesResourceType:
-		policies, err := c.informers.GetListers().GatewayTLSPolicy.List(selectAll)
-		if err != nil {
-			log.Error().Msgf("Failed to get GatewayTLSPolicies: %s", err)
-			return resources
-		}
-		resources = setGroupVersionKind(policies, constants.GatewayTLSPolicyGVK)
-	default:
-		log.Error().Msgf("Unknown resource type: %s", resourceType)
-		return nil
-	}
-
-	if shouldSort {
-		sort.Slice(resources, func(i, j int) bool {
-			if resources[i].GetCreationTimestamp().Time.Equal(resources[j].GetCreationTimestamp().Time) {
-				return client.ObjectKeyFromObject(resources[i]).String() < client.ObjectKeyFromObject(resources[j]).String()
-			}
-
-			return resources[i].GetCreationTimestamp().Time.Before(resources[j].GetCreationTimestamp().Time)
-		})
-	}
-
-	return resources
+	return gwutils.GetActiveGateways(c.getResourcesFromCache(informers.GatewaysResourceType, false))
 }
 
+// no need to check ReferenceGrant here
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 	for _, checkRoutableFunc := range []func(client.ObjectKey) bool{
 		c.isRoutableHTTPService,
@@ -177,17 +56,17 @@ func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
 }
 
 func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
-	for _, r := range c.getResourcesFromCache(HTTPRoutesResourceType, false) {
-		r := r.(*gwv1beta1.HTTPRoute)
+	for _, r := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, false) {
+		r := r.(*gwv1.HTTPRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
-				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+				if c.isRefToService(r, backend.BackendObjectReference, service) {
 					return true
 				}
 
 				for _, filter := range backend.Filters {
-					if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
-						if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+					if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
+						if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 							return true
 						}
 					}
@@ -195,8 +74,8 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 			}
 
 			for _, filter := range rule.Filters {
-				if filter.Type == gwv1beta1.HTTPRouteFilterRequestMirror {
-					if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+				if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
+					if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 						return true
 					}
 				}
@@ -208,17 +87,17 @@ func (c *GatewayCache) isRoutableHTTPService(service client.ObjectKey) bool {
 }
 
 func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
-	for _, r := range c.getResourcesFromCache(GRPCRoutesResourceType, false) {
-		r := r.(*gwv1alpha2.GRPCRoute)
+	for _, r := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, false) {
+		r := r.(*gwv1.GRPCRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
-				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+				if c.isRefToService(r, backend.BackendObjectReference, service) {
 					return true
 				}
 
 				for _, filter := range backend.Filters {
-					if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
-						if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+					if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
+						if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 							return true
 						}
 					}
@@ -226,8 +105,8 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 			}
 
 			for _, filter := range rule.Filters {
-				if filter.Type == gwv1alpha2.GRPCRouteFilterRequestMirror {
-					if isRefToService(filter.RequestMirror.BackendRef, service, r.Namespace) {
+				if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
+					if c.isRefToService(r, filter.RequestMirror.BackendRef, service) {
 						return true
 					}
 				}
@@ -239,11 +118,11 @@ func (c *GatewayCache) isRoutableGRPCService(service client.ObjectKey) bool {
 }
 
 func (c *GatewayCache) isRoutableTLSService(service client.ObjectKey) bool {
-	for _, r := range c.getResourcesFromCache(TLSRoutesResourceType, false) {
+	for _, r := range c.getResourcesFromCache(informers.TLSRoutesResourceType, false) {
 		r := r.(*gwv1alpha2.TLSRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
-				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+				if c.isRefToService(r, backend.BackendObjectReference, service) {
 					return true
 				}
 			}
@@ -254,11 +133,11 @@ func (c *GatewayCache) isRoutableTLSService(service client.ObjectKey) bool {
 }
 
 func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
-	for _, r := range c.getResourcesFromCache(TCPRoutesResourceType, false) {
+	for _, r := range c.getResourcesFromCache(informers.TCPRoutesResourceType, false) {
 		r := r.(*gwv1alpha2.TCPRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
-				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+				if c.isRefToService(r, backend.BackendObjectReference, service) {
 					return true
 				}
 			}
@@ -269,11 +148,11 @@ func (c *GatewayCache) isRoutableTCPService(service client.ObjectKey) bool {
 }
 
 func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
-	for _, r := range c.getResourcesFromCache(UDPRoutesResourceType, false) {
+	for _, r := range c.getResourcesFromCache(informers.UDPRoutesResourceType, false) {
 		r := r.(*gwv1alpha2.UDPRoute)
 		for _, rule := range r.Spec.Rules {
 			for _, backend := range rule.BackendRefs {
-				if isRefToService(backend.BackendObjectReference, service, r.Namespace) {
+				if c.isRefToService(r, backend.BackendObjectReference, service) {
 					return true
 				}
 			}
@@ -283,7 +162,7 @@ func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
 	return false
 }
 
-func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) bool {
+func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool {
 	gateways := c.getActiveGateways()
 
 	if len(gateways) == 0 {
@@ -301,10 +180,13 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1beta1.ParentReference) 
 	return false
 }
 
-func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetReference) bool {
+// no need to check ReferenceGrant here
+func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
 	}
+
+	referenceGrants := c.getResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
 	switch targetRef.Kind {
 	case constants.GatewayAPIGatewayKind:
@@ -314,29 +196,29 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 		}
 
 		for _, gateway := range gateways {
-			if gwutils.IsRefToTarget(targetRef, gateway) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, gateway) {
 				return true
 			}
 		}
 	case constants.GatewayAPIHTTPRouteKind:
-		httproutes := c.getResourcesFromCache(HTTPRoutesResourceType, false)
+		httproutes := c.getResourcesFromCache(informers.HTTPRoutesResourceType, false)
 		if len(httproutes) == 0 {
 			return false
 		}
 
 		for _, route := range httproutes {
-			if gwutils.IsRefToTarget(targetRef, route) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, route) {
 				return true
 			}
 		}
 	case constants.GatewayAPIGRPCRouteKind:
-		grpcroutes := c.getResourcesFromCache(GRPCRoutesResourceType, false)
+		grpcroutes := c.getResourcesFromCache(informers.GRPCRoutesResourceType, false)
 		if len(grpcroutes) == 0 {
 			return false
 		}
 
 		for _, route := range grpcroutes {
-			if gwutils.IsRefToTarget(targetRef, route) {
+			if gwutils.IsRefToTarget(referenceGrants, policy, targetRef, route) {
 				return true
 			}
 		}
@@ -345,38 +227,51 @@ func (c *GatewayCache) isEffectiveTargetRef(targetRef gwv1alpha2.PolicyTargetRef
 	return false
 }
 
-func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.PolicyTargetReference) bool {
-	key := client.ObjectKey{
-		Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
-		Name:      string(targetRef.Name),
-	}
-
+// no need to check ReferenceGrant here
+func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
-		(targetRef.Group == constants.FlomeshAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-		return c.isRoutableService(key)
+		(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+		return c.isRoutableService(client.ObjectKey{
+			Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
+			Name:      string(targetRef.Name),
+		})
 	}
 
 	return false
 }
 
+// no need to check ReferenceGrant here
 func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 	//ctx := context.TODO()
 	for _, gw := range c.getActiveGateways() {
 		for _, l := range gw.Spec.Listeners {
 			switch l.Protocol {
-			case gwv1beta1.HTTPSProtocolType, gwv1beta1.TLSProtocolType:
+			case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
 				if l.TLS == nil {
 					continue
 				}
 
-				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1beta1.TLSModeTerminate {
-					if len(l.TLS.CertificateRefs) == 0 {
-						continue
+				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
+					if len(l.TLS.CertificateRefs) > 0 {
+						for _, ref := range l.TLS.CertificateRefs {
+							if c.isRefToSecret(gw, ref, secret) {
+								return true
+							}
+						}
 					}
 
-					for _, ref := range l.TLS.CertificateRefs {
-						if isRefToSecret(ref, secret, gw.Namespace) {
-							return true
+					if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
+						for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
+							ref := gwv1.SecretObjectReference{
+								Group:     ptr.To(ref.Group),
+								Kind:      ptr.To(ref.Kind),
+								Name:      ref.Name,
+								Namespace: ref.Namespace,
+							}
+
+							if c.isRefToSecret(gw, ref, secret) {
+								return true
+							}
 						}
 					}
 				}
@@ -384,11 +279,11 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 		}
 	}
 
-	for _, ut := range c.getResourcesFromCache(UpstreamTLSPoliciesResourceType, false) {
+	for _, ut := range c.getResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, false) {
 		ut := ut.(*gwpav1alpha1.UpstreamTLSPolicy)
 
 		if ut.Spec.DefaultConfig != nil {
-			if isRefToSecret(ut.Spec.DefaultConfig.CertificateRef, secret, ut.Namespace) {
+			if c.isRefToSecret(ut, ut.Spec.DefaultConfig.CertificateRef, secret) {
 				return true
 			}
 		}
@@ -399,8 +294,41 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 					continue
 				}
 
-				if isRefToSecret(port.Config.CertificateRef, secret, ut.Namespace) {
+				if c.isRefToSecret(ut, port.Config.CertificateRef, secret) {
 					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// no need to check ReferenceGrant here
+func (c *GatewayCache) isConfigMapReferred(cm client.ObjectKey) bool {
+	//ctx := context.TODO()
+	for _, gw := range c.getActiveGateways() {
+		for _, l := range gw.Spec.Listeners {
+			switch l.Protocol {
+			case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+				if l.TLS == nil {
+					continue
+				}
+
+				if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
+					if l.TLS.FrontendValidation == nil {
+						continue
+					}
+
+					if len(l.TLS.FrontendValidation.CACertificateRefs) == 0 {
+						continue
+					}
+
+					for _, ref := range l.TLS.FrontendValidation.CACertificateRefs {
+						if c.isRefToConfigMap(gw, ref, cm) {
+							return true
+						}
+					}
 				}
 			}
 		}
@@ -420,6 +348,17 @@ func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret,
 	return obj, nil
 }
 
+func (c *GatewayCache) getConfigMapFromCache(key client.ObjectKey) (*corev1.ConfigMap, error) {
+	obj, err := c.informers.GetListers().ConfigMap.ConfigMaps(key.Namespace).Get(key.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(constants.ConfigMapGVK)
+
+	return obj, nil
+}
+
 func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Service, error) {
 	obj, err := c.informers.GetListers().Service.Services(key.Namespace).Get(key.Name)
 	if err != nil {
@@ -431,12 +370,123 @@ func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Servic
 	return obj, nil
 }
 
-func (c *GatewayCache) isHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
+func (c *GatewayCache) isHeadlessService(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
 		log.Error().Msgf("failed to get service from cache: %v", err)
 		return false
 	}
 
-	return service.Spec.ClusterIP == corev1.ClusterIPNone && len(service.Spec.Selector) == 0
+	return k8s.IsHeadlessService(*service)
+}
+
+func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObjectReference, service client.ObjectKey) bool {
+	if !isValidBackendRefToGroupKindOfService(ref) {
+		log.Debug().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
+		return false
+	}
+
+	// fast-fail, not refer to the service with the same name
+	if string(ref.Name) != service.Name {
+		log.Debug().Msgf("Not refer to the service with the same name, ref.Name: %s, service.Name: %s", ref.Name, service.Name)
+		return false
+	}
+
+	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != service.Namespace {
+		log.Debug().Msgf("Not refer to the service with the same namespace, resolved namespace: %s, service.Namespace: %s", ns, service.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == service.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
+		gvk := referer.GetObjectKind().GroupVersionKind()
+		return gwutils.ValidCrossNamespaceRef(
+			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
+			gwtypes.CrossNamespaceFrom{
+				Group:     gvk.Group,
+				Kind:      gvk.Kind,
+				Namespace: referer.GetNamespace(),
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     string(*ref.Group),
+				Kind:      string(*ref.Kind),
+				Namespace: service.Namespace,
+				Name:      service.Name,
+			},
+		)
+	}
+
+	log.Debug().Msgf("Found a match, ref: %s/%s, service: %s/%s", gwutils.Namespace(ref.Namespace, referer.GetNamespace()), ref.Name, service.Namespace, service.Name)
+	return true
+}
+
+func (c *GatewayCache) isRefToSecret(referer client.Object, ref gwv1.SecretObjectReference, secret client.ObjectKey) bool {
+	if !isValidRefToGroupKindOfSecret(ref) {
+		return false
+	}
+
+	// fast-fail, not refer to the secret with the same name
+	if string(ref.Name) != secret.Name {
+		log.Debug().Msgf("Not refer to the secret with the same name, ref.Name: %s, secret.Name: %s", ref.Name, secret.Name)
+		return false
+	}
+
+	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != secret.Namespace {
+		log.Debug().Msgf("Not refer to the secret with the same namespace, resolved namespace: %s, secret.Namespace: %s", ns, secret.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == secret.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
+		return gwutils.ValidCrossNamespaceRef(
+			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
+			gwtypes.CrossNamespaceFrom{
+				Group:     referer.GetObjectKind().GroupVersionKind().Group,
+				Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+				Namespace: referer.GetNamespace(),
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     corev1.GroupName,
+				Kind:      constants.KubernetesSecretKind,
+				Namespace: secret.Namespace,
+				Name:      secret.Name,
+			},
+		)
+	}
+
+	return true
+}
+
+func (c *GatewayCache) isRefToConfigMap(referer client.Object, ref gwv1.ObjectReference, cm client.ObjectKey) bool {
+	if !isValidRefToGroupKindOfConfigMap(ref) {
+		return false
+	}
+
+	// fast-fail, not refer to the cm with the same name
+	if string(ref.Name) != cm.Name {
+		log.Debug().Msgf("Not refer to the cm with the same name, ref.Name: %s, cm.Name: %s", ref.Name, cm.Name)
+		return false
+	}
+
+	if ns := gwutils.Namespace(ref.Namespace, referer.GetNamespace()); ns != cm.Namespace {
+		log.Debug().Msgf("Not refer to the cm with the same namespace, resolved namespace: %s, cm.Namespace: %s", ns, cm.Namespace)
+		return false
+	}
+
+	if ref.Namespace != nil && string(*ref.Namespace) == cm.Namespace && string(*ref.Namespace) != referer.GetNamespace() {
+		return gwutils.ValidCrossNamespaceRef(
+			c.getResourcesFromCache(informers.ReferenceGrantResourceType, false),
+			gwtypes.CrossNamespaceFrom{
+				Group:     referer.GetObjectKind().GroupVersionKind().Group,
+				Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+				Namespace: referer.GetNamespace(),
+			},
+			gwtypes.CrossNamespaceTo{
+				Group:     corev1.GroupName,
+				Kind:      constants.KubernetesConfigMapKind,
+				Namespace: cm.Namespace,
+				Name:      cm.Name,
+			},
+		)
+	}
+
+	return true
 }

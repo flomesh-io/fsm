@@ -15,11 +15,6 @@ func (p *CircuitBreakingPoliciesTrigger) Insert(obj interface{}, cache *GatewayC
 		return false
 	}
 
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//cache.circuitbreakings[utils.ObjectKey(policy)] = struct{}{}
-
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }
 
@@ -30,15 +25,6 @@ func (p *CircuitBreakingPoliciesTrigger) Delete(obj interface{}, cache *GatewayC
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
-	//
-	//cache.mutex.Lock()
-	//defer cache.mutex.Unlock()
-	//
-	//key := utils.ObjectKey(policy)
-	//_, found := cache.circuitbreakings[key]
-	//delete(cache.circuitbreakings, key)
-	//
-	//return found
 
 	return cache.isRoutableTargetService(policy, policy.Spec.TargetRef)
 }

@@ -1,7 +1,11 @@
 package reconciler
 
 import (
+	"context"
+
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/gateway"
@@ -11,33 +15,49 @@ import (
 	"github.com/flomesh-io/fsm/pkg/version"
 )
 
-func RegisterControllers(ctx *fctx.ControllerContext) error {
-	if ctx.Config.IsIngressEnabled() {
-		ingressController := pipy.NewIngressController(ctx.InformerCollection, ctx.KubeClient, ctx.Broker, ctx.Config, ctx.CertificateManager)
-		if err := ctx.Manager.Add(ingressController); err != nil {
+func RegisterControllers(ctx context.Context) error {
+	cctx, err := fctx.ToControllerContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	mc := cctx.Configurator
+	mgr := cctx.Manager
+	kubeClient := cctx.KubeClient
+
+	if mc.IsIngressEnabled() {
+		ingressController := pipy.NewIngressController(cctx.InformerCollection, kubeClient, cctx.MsgBroker, mc, cctx.CertManager)
+		if err := mgr.Add(ingressController); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Ingress Controller to manager")
 
 			return err
 		}
 	}
 
-	if ctx.Config.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(ctx.KubeClient) {
-		gatewayAPIClient, err := gatewayApiClientset.NewForConfig(ctx.KubeConfig)
+	if mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient) {
+		statusHandler := status.NewUpdateHandler(log, cctx.Client)
+		cctx.StatusUpdater = statusHandler.Writer()
+		if err := mgr.Add(statusHandler); err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Gateway Controller to manager")
+			return err
+		}
+
+		gatewayAPIClient, err := gatewayApiClientset.NewForConfig(cctx.KubeConfig)
 		if err != nil {
 			return err
 		}
 
-		gatewayController := gateway.NewGatewayAPIController(ctx.InformerCollection, ctx.KubeClient, gatewayAPIClient, ctx.Broker, ctx.Config, ctx.MeshName, ctx.FSMVersion)
-		ctx.EventHandler = gatewayController
-		if err := ctx.Manager.Add(gatewayController); err != nil {
+		gatewayController := gateway.NewGatewayAPIController(cctx.InformerCollection, kubeClient, gatewayAPIClient, cctx.MsgBroker, mc, cctx.MeshName, cctx.FSMVersion)
+		cctx.GatewayEventHandler = gatewayController
+		if err := mgr.Add(gatewayController); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Gateway Controller to manager")
 			return err
 		}
 	}
 
-	if ctx.Config.IsIngressEnabled() || (ctx.Config.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(ctx.KubeClient)) {
-		rebuilder := mrepo.NewRebuilder(ctx.RepoClient, ctx.Manager.GetClient(), ctx.Config)
-		if err := ctx.Manager.Add(rebuilder); err != nil {
+	if mc.IsIngressEnabled() || (mc.IsGatewayAPIEnabled() && version.IsSupportedK8sVersionForGatewayAPI(kubeClient)) {
+		rebuilder := mrepo.NewRebuilder(cctx.RepoClient, cctx.Client, mc)
+		if err := mgr.Add(rebuilder); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Repo Rebuilder to manager")
 			return err
 		}
