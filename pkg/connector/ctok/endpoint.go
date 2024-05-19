@@ -38,10 +38,18 @@ func (t *endpointsResource) Informer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).List(syncer.ctx, options)
+				endpointsList, err := syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).List(syncer.ctx, options)
+				if err != nil {
+					log.Error().Msgf("cache.NewSharedIndexInformer Endpoints ListFunc:%v", err)
+				}
+				return endpointsList, err
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).Watch(syncer.ctx, options)
+				endpoints, err := syncer.kubeClient.CoreV1().Endpoints(syncer.namespace()).Watch(syncer.ctx, options)
+				if err != nil {
+					log.Error().Msgf("cache.NewSharedIndexInformer Endpoints WatchFunc:%v", err)
+				}
+				return endpoints, err
 			},
 		},
 		&apiv1.Endpoints{},

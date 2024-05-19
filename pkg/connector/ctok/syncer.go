@@ -20,16 +20,17 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 const (
 	// K8SQuietPeriod is the time to wait for no service changes before syncing.
-	K8SQuietPeriod = 1 * time.Second
+	K8SQuietPeriod = messaging.ConnectorUpdateMaxWindow
 
 	// K8SMaxPeriod is the maximum time to wait before forcing a sync, even
 	// if there are active changes going on.
-	K8SMaxPeriod = 5 * time.Second
+	K8SMaxPeriod = messaging.ConnectorUpdateMaxWindow
 
 	True  = "true"
 	False = "false"
@@ -114,6 +115,10 @@ func (s *CtoKSyncer) Ready() {
 	for {
 		if ns, err := s.kubeClient.CoreV1().Namespaces().Get(s.ctx, s.namespace(), metav1.GetOptions{}); err == nil && ns != nil {
 			break
+		} else if err != nil {
+			log.Error().Msgf("get namespace:%s error:%v", s.namespace(), err)
+		} else if ns == nil {
+			log.Error().Msgf("can't get namespace:%s", s.namespace())
 		}
 		time.Sleep(5 * time.Second)
 	}
@@ -125,10 +130,18 @@ func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				return s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
+				serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
+				if err != nil {
+					log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
+				}
+				return serviceList, err
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				return s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
+				service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
+				if err != nil {
+					log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
+				}
+				return service, err
 			},
 		},
 		&apiv1.Service{},
@@ -231,7 +244,6 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		if len(creates) > 0 || len(deletes) > 0 {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
 		}
-
 		svcClient := s.kubeClient.CoreV1().Services(s.namespace())
 		for _, name := range deletes {
 			if err := svcClient.Delete(s.ctx, name, metav1.DeleteOptions{}); err != nil {

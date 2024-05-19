@@ -95,7 +95,6 @@ func main() {
 	msgBroker := messaging.NewBroker(stop)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 	informerCollection, err := informers.NewInformerCollection(cli.Cfg.MeshName, stop,
-		informers.WithKubeClient(kubeClient),
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),

@@ -49,12 +49,12 @@ const (
 	// the max amount of time a service update event can be held for batching before being dispatched.
 	serviceUpdateMaxWindow = 5 * time.Second
 
-	// connectorUpdateSlidingWindow is the sliding window duration used to batch connector update events
-	connectorUpdateSlidingWindow = 2 * time.Second
+	// ConnectorUpdateSlidingWindow is the sliding window duration used to batch connector update events
+	ConnectorUpdateSlidingWindow = 2 * time.Second
 
-	// connectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
+	// ConnectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
 	// the max amount of time a connector update event can be held for batching before being dispatched.
-	connectorUpdateMaxWindow = 5 * time.Second
+	ConnectorUpdateMaxWindow = 5 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
@@ -651,15 +651,15 @@ func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
 
 	// dispatchPending indicates whether a connector update event is pending
 	// from being published on the pub-sub. A connector update event will
-	// be held for 'connectorUpdateSlidingWindow' duration to be able to
+	// be held for 'ConnectorUpdateSlidingWindow' duration to be able to
 	// coalesce multiple connector update events within that duration, before
-	// it is dispatched on the pub-sub. The 'connectorUpdateSlidingWindow' duration
+	// it is dispatched on the pub-sub. The 'ConnectorUpdateSlidingWindow' duration
 	// is a sliding window, which means each event received within a window
-	// slides the window further ahead in time, up to a max of 'connectorUpdateMaxWindow'.
+	// slides the window further ahead in time, up to a max of 'ConnectorUpdateMaxWindow'.
 	//
 	// This mechanism is necessary to avoid triggering connector update pub-sub events in
 	// a hot loop, which would otherwise result in CPU spikes on the controller.
-	// We want to coalesce as many connector update events within the 'connectorUpdateMaxWindow'
+	// We want to coalesce as many connector update events within the 'ConnectorUpdateMaxWindow'
 	// duration.
 	dispatchPending := false
 	batchCount := 0 // number of connector update events batched per dispatch
@@ -681,11 +681,11 @@ func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
 				if !slidingTimer.Stop() {
 					<-slidingTimer.C
 				}
-				slidingTimer.Reset(connectorUpdateSlidingWindow)
+				slidingTimer.Reset(ConnectorUpdateSlidingWindow)
 				if !maxTimer.Stop() {
 					<-maxTimer.C
 				}
-				maxTimer.Reset(connectorUpdateMaxWindow)
+				maxTimer.Reset(ConnectorUpdateMaxWindow)
 				dispatchPending = true
 				batchCount++
 				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
@@ -694,7 +694,7 @@ func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
 				if !slidingTimer.Stop() {
 					<-slidingTimer.C
 				}
-				slidingTimer.Reset(connectorUpdateSlidingWindow)
+				slidingTimer.Reset(ConnectorUpdateSlidingWindow)
 				batchCount++
 				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
 			}
