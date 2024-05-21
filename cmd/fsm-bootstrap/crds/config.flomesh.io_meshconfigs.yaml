@@ -1788,16 +1788,11 @@ spec:
               misc:
                 description: Misc defines the configurations of misc info
                 properties:
-                  curlImage:
-                    default: flomesh/fsm-curl
-                    description: CurlImage defines the image of curl.
-                    type: string
                   repoServerImage:
                     default: flomesh/pipy-repo:1.1.0-1
                     description: RepoServerImage defines the image of repo server.
                     type: string
                 required:
-                - curlImage
                 - repoServerImage
                 type: object
               observability:

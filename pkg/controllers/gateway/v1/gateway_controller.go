@@ -821,7 +821,6 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
 		fmt.Sprintf("fsm.fsmGateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
 		fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
-		fmt.Sprintf("fsm.curlImage=%s", mc.GetCurlImage()),
 		fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
 		fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
 	}

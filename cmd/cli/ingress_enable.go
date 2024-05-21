@@ -290,7 +290,6 @@ func (cmd *ingressEnableCmd) ResolveValues(mc *configv1alpha3.MeshConfig, manife
 		fmt.Sprintf("fsm.image.registry=%s", mc.Spec.Image.Registry),
 		fmt.Sprintf("fsm.image.pullPolicy=%s", mc.Spec.Image.PullPolicy),
 		fmt.Sprintf("fsm.image.tag=%s", mc.Spec.Image.Tag),
-		fmt.Sprintf("fsm.curlImage=%s", mc.Spec.Misc.CurlImage),
 	}
 
 	if err := parseVal(valuesConfig, finalValues); err != nil {

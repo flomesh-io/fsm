@@ -119,7 +119,7 @@ var _ = FSMDescribe("Upgrade from latest",
 				PodName:   "client",
 				Namespace: ns,
 				Command:   []string{"sleep", "365d"},
-				Image:     "curlimages/curl",
+				Image:     "flomesh/fsm-curl",
 				Ports:     []int{80},
 				OS:        Td.ClusterOS,
 			})
