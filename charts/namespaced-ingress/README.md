@@ -59,7 +59,6 @@ The following table lists the configurable parameters of the fsm chart and their
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| fsm.curlImage | string | `"curlimages/curl"` | Curl image for control plane init container |
 | fsm.fsmIngress.className | string | `"pipy"` |  |
 | fsm.fsmIngress.env[0].name | string | `"GIN_MODE"` |  |
 | fsm.fsmIngress.env[0].value | string | `"release"` |  |
@@ -89,9 +88,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.tls.sslPassthrough.upstreamPort | int | `443` |  |
 | fsm.fsmIngress.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |
-| fsm.image.digest | object | `{"fsmIngress":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmCurl":"","fsmIngress":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest.fsmCurl | string | `""` | fsm-curl's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-gateway's image digest |
-| fsm.image.name | object | `{"fsmIngress":"fsm-ingress"}` | Image name defaults |
+| fsm.image.name | object | `{"fsmCurl":"fsm-curl","fsmIngress":"fsm-ingress"}` | Image name defaults |
+| fsm.image.name.fsmCurl | string | `"fsm-curl"` | fsm-curl's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |

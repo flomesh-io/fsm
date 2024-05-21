@@ -586,11 +586,6 @@ func (c *Client) ServiceLBImage() string {
 	return mcSpec.ServiceLB.Image
 }
 
-func (c *Client) GetCurlImage() string {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.Misc.CurlImage
-}
-
 // GetFLBSecretName returns the secret name for FLB
 func (c *Client) GetFLBSecretName() string {
 	return c.getMeshConfig().Spec.FLB.SecretName

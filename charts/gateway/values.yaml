@@ -12,16 +12,17 @@ fsm:
     name:
       # -- fsm-gateway's image name
       fsmGateway: fsm-gateway
+      # -- fsm-curl's image name
+      fsmCurl: fsm-curl
     # -- Image digest (defaults to latest compatible tag)
     digest:
       # -- fsm-gateway's image digest
       fsmGateway: ""
+      # -- fsm-curl's image digest
+      fsmCurl: ""
 
   # -- `fsm-gateway` image pull secret
   imagePullSecrets: []
-
-  # -- Curl image for control plane init container
-  curlImage: curlimages/curl
 
   # -- Identifier for the instance of a service mesh within a cluster
   meshName: fsm

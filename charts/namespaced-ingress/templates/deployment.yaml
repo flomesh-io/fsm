@@ -37,7 +37,7 @@ spec:
     spec:
       initContainers:
       - name: wait-controller
-        image: {{ .Values.fsm.curlImage }}
+        image: "{{ include "fsmCurl.image" . }}"
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command:
           - curl

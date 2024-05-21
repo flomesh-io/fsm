@@ -269,9 +269,6 @@ type Configurator interface {
 	// ServiceLBImage string returns the service-lb image
 	ServiceLBImage() string
 
-	// GetCurlImage returns the curl image
-	GetCurlImage() string
-
 	// GetFLBUpstreamMode returns the upstream mode of FLB
 	GetFLBUpstreamMode() configv1alpha3.FLBUpstreamMode
 }

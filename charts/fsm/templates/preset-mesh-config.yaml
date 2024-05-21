@@ -159,7 +159,6 @@ data:
         "pullPolicy": "{{ .Values.fsm.image.pullPolicy }}"
       },
       "misc": {
-        "curlImage": "{{ include "fsmCurl.image" . }}",
         "repoServerImage": "{{ include "repoServer.image" . }}"
       }
     }
