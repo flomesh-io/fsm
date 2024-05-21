@@ -157,7 +157,7 @@ func setupSource(sourceName string, withKubernetesService bool) *v1.Pod {
 		PodName:   sourceName,
 		Namespace: sourceName,
 		Command:   []string{"sleep", "365d"},
-		Image:     "curlimages/curl",
+		Image:     "flomesh/fsm-curl",
 		Ports:     []int{80},
 		OS:        Td.ClusterOS,
 	})
