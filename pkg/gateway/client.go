@@ -2,8 +2,8 @@ package gateway
 
 import (
 	"context"
-
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/version"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
@@ -76,11 +76,10 @@ func newClient(ctx *cctx.ControllerContext) *client {
 	}
 
 	// Initialize informers
-	for informerKey, obj := range map[fsminformers.InformerKey]crClient.Object{
+	informers := map[fsminformers.InformerKey]crClient.Object{
 		fsminformers.InformerKeyService:                  &corev1.Service{},
 		fsminformers.InformerKeyServiceImport:            &mcsv1alpha1.ServiceImport{},
 		fsminformers.InformerKeyEndpoints:                &corev1.Endpoints{},
-		fsminformers.InformerKeyEndpointSlices:           &discoveryv1.EndpointSlice{},
 		fsminformers.InformerKeySecret:                   &corev1.Secret{},
 		fsminformers.InformerKeyConfigMap:                &corev1.ConfigMap{},
 		fsminformers.InformerKeyGatewayAPIGatewayClass:   &gwv1.GatewayClass{},
@@ -101,9 +100,15 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyUpstreamTLSPolicy:        &gwpav1alpha1.UpstreamTLSPolicy{},
 		fsminformers.InformerKeyRetryPolicy:              &gwpav1alpha1.RetryPolicy{},
 		fsminformers.InformerKeyNamespace:                &corev1.Namespace{},
-	} {
+	}
+
+	if version.IsEndpointSliceEnabled(ctx.KubeClient) {
+		informers[fsminformers.InformerKeyEndpointSlices] = &discoveryv1.EndpointSlice{}
+	}
+
+	for informerKey, resource := range informers {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
-			c.informOnResource(ctx, obj, c.getEventHandlerFuncs(eventTypes))
+			c.informOnResource(ctx, resource, c.getEventHandlerFuncs(eventTypes))
 		}
 	}
 
