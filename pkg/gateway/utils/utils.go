@@ -176,64 +176,6 @@ func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyT
 	return true
 }
 
-// HasAccessToTarget returns true if the target reference is to the target object
-//func HasAccessToTarget(referenceGrants []*gwv1beta1.ReferenceGrant, policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
-//	targetGVK := target.GetObjectKind().GroupVersionKind()
-//
-//	log.Debug().Msgf("[TARGET] HasAccessToTarget: policy: %s/%s, ref: %s/%s/%s/%s, target: %s/%s/%s/%s",
-//		policy.GetNamespace(), policy.GetName(),
-//		ref.Group, ref.Kind, Namespace(ref.Namespace, policy.GetNamespace()), ref.Name,
-//		targetGVK.Group, targetGVK.Kind, target.GetNamespace(), target.GetName())
-//
-//	if string(ref.Group) != targetGVK.Group {
-//		log.Debug().Msgf("[TARGET] Not refer to the target with the same group, ref.Group: %s, target.Group: %s", ref.Group, targetGVK.Group)
-//		return false
-//	}
-//
-//	if string(ref.Kind) != targetGVK.Kind {
-//		log.Debug().Msgf("[TARGET] Not refer to the target with the same kind, ref.Kind: %s, target.Kind: %s", ref.Kind, targetGVK.Kind)
-//		return false
-//	}
-//
-//	// fast-fail, not refer to the target with the same name
-//	if string(ref.Name) != target.GetName() {
-//		log.Debug().Msgf("[TARGET] Not refer to the target with the same name, ref.Name: %s, target.Name: %s", ref.Name, target.GetName())
-//		return false
-//	}
-//
-//	if ns := Namespace(ref.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
-//		log.Debug().Msgf("[TARGET] Not refer to the target with the same namespace, resolved namespace: %s, target.Namespace: %s", ns, target.GetNamespace())
-//		return false
-//	}
-//
-//	if ref.Namespace != nil && string(*ref.Namespace) == target.GetNamespace() && string(*ref.Namespace) != policy.GetNamespace() {
-//		log.Debug().Msgf("[TARGET] Found a cross-namespace reference, policy: %s/%s, ref: %s/%s, target: %s/%s",
-//			policy.GetNamespace(), policy.GetName(), string(*ref.Namespace), ref.Name, target.GetNamespace(), target.GetName())
-//
-//		policyGVK := policy.GetObjectKind().GroupVersionKind()
-//		result := ValidCrossNamespaceRef(
-//			referenceGrants,
-//			gwtypes.CrossNamespaceFrom{
-//				Group:     policyGVK.Group,
-//				Kind:      policyGVK.Kind,
-//				Namespace: policy.GetNamespace(),
-//			},
-//			gwtypes.CrossNamespaceTo{
-//				Group:     string(ref.Group),
-//				Kind:      string(ref.Kind),
-//				Namespace: target.GetNamespace(),
-//				Name:      target.GetName(),
-//			},
-//		)
-//
-//		log.Debug().Msgf("[TARGET] Cross-namespace reference result: %v", result)
-//		return result
-//	}
-//
-//	log.Debug().Msgf("[TARGET] Found a match, ref: %s/%s, target: %s/%s", Namespace(ref.Namespace, policy.GetNamespace()), ref.Name, target.GetNamespace(), target.GetName())
-//	return true
-//}
-
 // IsTargetRefToGVK returns true if the target reference is to the given group version kind
 func IsTargetRefToGVK(targetRef gwv1alpha2.NamespacedPolicyTargetReference, gvk schema.GroupVersionKind) bool {
 	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
@@ -561,4 +503,35 @@ func ToSlicePtr[T any](slice []T) []*T {
 		ptrs[i] = &v
 	}
 	return ptrs
+}
+
+// IsValidRefToGroupKindOfCA returns true if the reference is to a ConfigMap or Secret in the core group
+func IsValidRefToGroupKindOfCA(ref gwv1.ObjectReference) bool {
+	if ref.Group != corev1.GroupName {
+		return false
+	}
+
+	if ref.Kind == constants.KubernetesSecretKind || ref.Kind == constants.KubernetesConfigMapKind {
+		return true
+	}
+
+	return false
+}
+
+// IsValidBackendRefToGroupKindOfService returns true if the reference is to a Service in the core group
+func IsValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool {
+	if ref.Group == nil {
+		return false
+	}
+
+	if ref.Kind == nil {
+		return false
+	}
+
+	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
+		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshMCSAPIGroup) {
+		return true
+	}
+
+	return false
 }

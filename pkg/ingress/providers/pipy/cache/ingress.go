@@ -370,26 +370,6 @@ func createSvcPortNameInstance(namespace, serviceName, portName string) *Service
 
 // svcName in namespace/name format
 func (t *IngressChangeTracker) findService(namespace string, service *networkingv1.IngressServiceBackend) (*corev1.Service, error) {
-	//svcName := fmt.Sprintf("%s/%s", namespace, service.Name)
-
-	//// first, find in local store
-	//svc, exists, err := t.informers.GetByKey(fsminformers.InformerKeyService, svcName)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if !exists {
-	//	log.Warn().Msgf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
-	//	// if not exists in local, retrieve it from remote API server, this's Plan-B, should seldom happns
-	//	svc, err = t.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	log.Info().Msgf("Found service %q from API server.", svcName)
-	//} else {
-	//	log.Info().Msgf("Found service %q in local store.", svcName)
-	//}
-	//return svc.(*corev1.Service), nil
-
 	svc := &corev1.Service{}
 	if err := t.client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: service.Name}, svc); err != nil {
 		return nil, err

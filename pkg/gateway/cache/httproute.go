@@ -30,7 +30,6 @@ func (c *GatewayProcessor) processHTTPRoutes() {
 }
 
 func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
-	//routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, httpRoute)
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(httpRoute)
 
 	for _, ref := range httpRoute.Spec.ParentRefs {

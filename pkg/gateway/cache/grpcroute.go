@@ -30,7 +30,6 @@ func (c *GatewayProcessor) processGRPCRoutes() {
 }
 
 func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
-	//routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, grpcRoute)
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(grpcRoute)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {

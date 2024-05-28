@@ -41,10 +41,6 @@ func (e *rateLimitPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumber, l
 
 		for _, rateLimit := range e.data {
 			rateLimit := rateLimit.(*gwpav1alpha1.RateLimitPolicy)
-			//rateLimit := rateLimit
-			//if !gwutils.HasAccessToTarget(e.ReferenceGrants, &rateLimit, rateLimit.Spec.TargetRef, gw) {
-			//	continue
-			//}
 
 			if len(rateLimit.Spec.Ports) == 0 {
 				continue
@@ -82,10 +78,6 @@ func (e *accessControlPortEnricher) Enrich(gw *gwv1.Gateway, port gwv1.PortNumbe
 
 		for _, accessControl := range e.data {
 			accessControl := accessControl.(*gwpav1alpha1.AccessControlPolicy)
-			//ac := accessControl
-			//if !gwutils.HasAccessToTarget(e.ReferenceGrants, &ac, ac.Spec.TargetRef, gw) {
-			//	continue
-			//}
 
 			if len(accessControl.Spec.Ports) == 0 {
 				continue

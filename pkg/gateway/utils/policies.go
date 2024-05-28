@@ -14,15 +14,13 @@ import (
 // ---------------------------- Access Control ----------------------------
 
 func GetAccessControlsMatchTypePort(cache cache.Cache, selector fields.Selector) []client.Object {
-	portPolicyList := &gwpav1alpha1.AccessControlPolicyList{}
-	if err := cache.List(context.Background(), portPolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.AccessControlPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(portPolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getGatewayRefGrants(cache),
 		isAcceptedAccessControlPolicy,
 		func(policy client.Object) bool {
@@ -34,15 +32,13 @@ func GetAccessControlsMatchTypePort(cache cache.Cache, selector fields.Selector)
 }
 
 func GetAccessControlsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
-	hostnamePolicyList := &gwpav1alpha1.AccessControlPolicyList{}
-	if err := cache.List(context.Background(), hostnamePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.AccessControlPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(hostnamePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHostnameRefGrants(cache),
 		isAcceptedAccessControlPolicy,
 		func(policy client.Object) bool {
@@ -54,15 +50,13 @@ func GetAccessControlsMatchTypeHostname(cache cache.Cache, selector fields.Selec
 }
 
 func GetAccessControlsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	httpRoutePolicyList := &gwpav1alpha1.AccessControlPolicyList{}
-	if err := cache.List(context.Background(), httpRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.AccessControlPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(httpRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHTTPRouteRefGrants(cache),
 		isAcceptedAccessControlPolicy,
 		func(policy client.Object) bool {
@@ -74,15 +68,13 @@ func GetAccessControlsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Sele
 }
 
 func GetAccessControlsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	grpcRoutePolicyList := &gwpav1alpha1.AccessControlPolicyList{}
-	if err := cache.List(context.Background(), grpcRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.AccessControlPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(grpcRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getGRPCRouteRefGrants(cache),
 		isAcceptedAccessControlPolicy,
 		func(policy client.Object) bool {
@@ -106,15 +98,13 @@ func accessControlPolicyHasAccessToTargetRef(policy client.Object, refGrants []*
 // ---------------------------- Rate Limit ----------------------------
 
 func GetRateLimitsMatchTypePort(cache cache.Cache, selector fields.Selector) []client.Object {
-	portPolicyList := &gwpav1alpha1.RateLimitPolicyList{}
-	if err := cache.List(context.Background(), portPolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.RateLimitPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(portPolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getGatewayRefGrants(cache),
 		isAcceptedRateLimitPolicy,
 		func(policy client.Object) bool {
@@ -126,15 +116,13 @@ func GetRateLimitsMatchTypePort(cache cache.Cache, selector fields.Selector) []c
 }
 
 func GetRateLimitsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
-	hostnamePolicyList := &gwpav1alpha1.RateLimitPolicyList{}
-	if err := cache.List(context.Background(), hostnamePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.RateLimitPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(hostnamePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHostnameRefGrants(cache),
 		isAcceptedRateLimitPolicy,
 		func(policy client.Object) bool {
@@ -146,15 +134,13 @@ func GetRateLimitsMatchTypeHostname(cache cache.Cache, selector fields.Selector)
 }
 
 func GetRateLimitsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	httpRoutePolicyList := &gwpav1alpha1.RateLimitPolicyList{}
-	if err := cache.List(context.Background(), httpRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.RateLimitPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(httpRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHTTPRouteRefGrants(cache),
 		isAcceptedRateLimitPolicy,
 		func(policy client.Object) bool {
@@ -166,15 +152,13 @@ func GetRateLimitsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector
 }
 
 func GetRateLimitsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	grpcRoutePolicyList := &gwpav1alpha1.RateLimitPolicyList{}
-	if err := cache.List(context.Background(), grpcRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.RateLimitPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(grpcRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getGRPCRouteRefGrants(cache),
 		isAcceptedRateLimitPolicy,
 		func(policy client.Object) bool {
@@ -198,15 +182,13 @@ func rateLimitPolicyHasAccessToTargetRef(policy client.Object, refGrants []*gwv1
 // ---------------------------- Fault Injection ----------------------------
 
 func GetFaultInjectionsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
-	hostnamePolicyList := &gwpav1alpha1.FaultInjectionPolicyList{}
-	if err := cache.List(context.Background(), hostnamePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.FaultInjectionPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(hostnamePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHostnameRefGrants(cache),
 		isAcceptedFaultInjectionPolicy,
 		func(policy client.Object) bool {
@@ -218,15 +200,13 @@ func GetFaultInjectionsMatchTypeHostname(cache cache.Cache, selector fields.Sele
 }
 
 func GetFaultInjectionsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	httpRoutePolicyList := &gwpav1alpha1.FaultInjectionPolicyList{}
-	if err := cache.List(context.Background(), httpRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.FaultInjectionPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(httpRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getHTTPRouteRefGrants(cache),
 		isAcceptedFaultInjectionPolicy,
 		func(policy client.Object) bool {
@@ -238,15 +218,13 @@ func GetFaultInjectionsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Sel
 }
 
 func GetFaultInjectionsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
-	grpcRoutePolicyList := &gwpav1alpha1.FaultInjectionPolicyList{}
-	if err := cache.List(context.Background(), grpcRoutePolicyList, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	list := &gwpav1alpha1.FaultInjectionPolicyList{}
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
 	return filterValidPolicies(
-		toClientObjects(ToSlicePtr(grpcRoutePolicyList.Items)),
+		toClientObjects(ToSlicePtr(list.Items)),
 		getGRPCRouteRefGrants(cache),
 		isAcceptedFaultInjectionPolicy,
 		func(policy client.Object) bool {
@@ -271,9 +249,7 @@ func faultInjectionPolicyHasAccessToTargetRef(policy client.Object, refGrants []
 
 func GetSessionStickies(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.SessionStickyPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
@@ -298,9 +274,7 @@ func GetSessionStickies(cache cache.Cache, selector fields.Selector) []client.Ob
 
 func GetCircuitBreakings(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.CircuitBreakingPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
@@ -325,9 +299,7 @@ func GetCircuitBreakings(cache cache.Cache, selector fields.Selector) []client.O
 
 func GetHealthChecks(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.HealthCheckPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
@@ -352,9 +324,7 @@ func GetHealthChecks(cache cache.Cache, selector fields.Selector) []client.Objec
 
 func GetLoadBalancers(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.LoadBalancerPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
@@ -379,9 +349,7 @@ func GetLoadBalancers(cache cache.Cache, selector fields.Selector) []client.Obje
 
 func GetRetries(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RetryPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 
@@ -406,9 +374,7 @@ func GetRetries(cache cache.Cache, selector fields.Selector) []client.Object {
 
 func GetUpStreamTLSes(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.UpstreamTLSPolicyList{}
-	if err := cache.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: selector,
-	}); err != nil {
+	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
 		return nil
 	}
 

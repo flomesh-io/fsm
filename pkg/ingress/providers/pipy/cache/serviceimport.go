@@ -43,9 +43,8 @@ import (
 )
 
 type baseServiceImportInfo struct {
-	address string
-	port    int
-	//portName string
+	address  string
+	port     int
 	protocol corev1.Protocol
 }
 
@@ -72,8 +71,6 @@ type enrichServiceImportInfoFunc func(port *mcsv1alpha1.ServicePort, svcImp *mcs
 type serviceImportChange struct {
 	previous ServiceImportMap
 	current  ServiceImportMap
-	//previousEndpoints EndpointsMap
-	//currentEndpoints  EndpointsMap
 }
 
 // ServiceImportChangeTracker tracks changes to ServiceImport objects

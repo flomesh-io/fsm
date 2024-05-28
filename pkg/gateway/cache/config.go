@@ -49,9 +49,6 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 	}
 
-	//policies := c.policyAttachments()
-	//referenceGrants := c.getReferenceGrantsFromCache()
-
 	for _, gw := range c.getActiveGateways() {
 		cfg := NewGatewayProcessor(c, gw).build()
 

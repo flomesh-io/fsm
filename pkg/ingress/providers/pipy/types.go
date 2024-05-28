@@ -35,8 +35,6 @@ import (
 
 // client is the type used to represent the Kubernetes client for the networking.k8s.io API group
 type client struct {
-	//informers  *informers.InformerCollection
-	//kubeClient kubernetes.Interface
 	msgBroker *messaging.Broker
 	cfg       configurator.Configurator
 	cache     *cache.Cache

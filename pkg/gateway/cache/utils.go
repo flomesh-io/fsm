@@ -526,43 +526,6 @@ func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
 	return false
 }
 
-//func isValidRefToGroupKindOfConfigMap(ref gwv1.ObjectReference) bool {
-//	if ref.Group == corev1.GroupName && ref.Kind == constants.KubernetesConfigMapKind {
-//		return true
-//	}
-//
-//	return false
-//}
-
-func isValidRefToGroupKindOfCA(ref gwv1.ObjectReference) bool {
-	if ref.Group != corev1.GroupName {
-		return false
-	}
-
-	if ref.Kind == constants.KubernetesSecretKind || ref.Kind == constants.KubernetesConfigMapKind {
-		return true
-	}
-
-	return false
-}
-
-func isValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool {
-	if ref.Group == nil {
-		return false
-	}
-
-	if ref.Kind == nil {
-		return false
-	}
-
-	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
-		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshMCSAPIGroup) {
-		return true
-	}
-
-	return false
-}
-
 func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.Endpoint {
 	endpoints := make(map[string]fgw.Endpoint)
 	for ep := range endpointSet {

@@ -52,11 +52,6 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ",")))
 	}
 
-	//referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
-	//	return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
-	//}
-
 	key := types.NamespacedName{
 		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
 		Name:      string(targetRef.Name),

@@ -69,13 +69,6 @@ type Cache struct {
 
 	mu sync.Mutex
 
-	//endpointsSynced      bool
-	//servicesSynced       bool
-	//ingressesSynced      bool
-	//ingressClassesSynced bool
-	//serviceImportSynced  bool
-	//initialized          int32
-
 	repoClient  *repo.PipyRepoClient
 	broadcaster events.EventBroadcaster
 
@@ -115,27 +108,6 @@ func NewCache(ctx *cctx.ControllerContext) *Cache {
 
 	return c
 }
-
-//
-//func (c *Cache) GetBroadcaster() events.EventBroadcaster {
-//	return c.broadcaster
-//}
-//
-//func (c *Cache) GetRecorder() events.EventRecorder {
-//	return c.recorder
-//}
-
-//func (c *Cache) setInitialized(value bool) {
-//	var initialized int32
-//	if value {
-//		initialized = 1
-//	}
-//	atomic.StoreInt32(&c.initialized, initialized)
-//}
-//
-//func (c *Cache) isInitialized() bool {
-//	return atomic.LoadInt32(&c.initialized) > 0
-//}
 
 // SyncRoutes syncs the routes to the repo
 func (c *Cache) SyncRoutes() {
@@ -213,9 +185,6 @@ func (c *Cache) SyncRoutes() {
 func (c *Cache) refreshIngress() {
 	log.Info().Msgf("Refreshing Ingress Map ...")
 
-	//ingresses, err := c.informers.GetListers().K8sIngress.
-	//	Ingresses(corev1.NamespaceAll).
-	//	List(labels.Everything())
 	ingresses := &networkingv1.IngressList{}
 	err := c.client.List(context.Background(), ingresses)
 	if err != nil {

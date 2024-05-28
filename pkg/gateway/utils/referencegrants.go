@@ -67,7 +67,6 @@ func GetServiceRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 	})
 	if err != nil {
 		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
-		//return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list ReferenceGrants: %s", err)))
 		return nil
 	}
 
@@ -81,7 +80,6 @@ func GetSecretRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 	})
 	if err != nil {
 		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
-		//return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list ReferenceGrants: %s", err)))
 		return nil
 	}
 
@@ -98,7 +96,6 @@ func GetCARefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 	})
 	if err != nil {
 		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
-		//return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list ReferenceGrants: %s", err)))
 		return nil
 	}
 

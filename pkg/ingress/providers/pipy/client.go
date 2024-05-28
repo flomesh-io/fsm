@@ -33,15 +33,12 @@ func NewIngressController(ctx *cctx.ControllerContext) Controller {
 
 func newClient(ctx *cctx.ControllerContext) *client {
 	c := &client{
-		//informers:  informerCollection,
-		//kubeClient: kubeClient,
 		msgBroker: ctx.MsgBroker,
 		cfg:       ctx.Configurator,
 		cache:     cache.NewCache(ctx),
 	}
 
 	// Initialize informers
-
 	for informerKey, obj := range map[fsminformers.InformerKey]crClient.Object{
 		fsminformers.InformerKeyService:         &corev1.Service{},
 		fsminformers.InformerKeyServiceImport:   &mcsv1alpha1.ServiceImport{},
@@ -54,18 +51,6 @@ func newClient(ctx *cctx.ControllerContext) *client {
 			c.informOnResource(ctx, obj, c.getEventHandlerFuncs(eventTypes))
 		}
 	}
-	//for _, informerKey := range []fsminformers.InformerKey{
-	//	fsminformers.InformerKeyService,
-	//	fsminformers.InformerKeyServiceImport,
-	//	fsminformers.InformerKeyEndpoints,
-	//	fsminformers.InformerKeySecret,
-	//	fsminformers.InformerKeyK8sIngressClass,
-	//	fsminformers.InformerKeyK8sIngress,
-	//} {
-	//	if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
-	//		c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
-	//	}
-	//}
 
 	return c
 }

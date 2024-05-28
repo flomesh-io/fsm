@@ -38,7 +38,7 @@ var (
 	log = logger.New("controller-gatewayapi")
 )
 
-// NewGatewayAPIController returns a gateway.Controller interface related to functionality provided by the resources in the plugin.flomesh.io API group
+// NewGatewayAPIController returns a gateway.Controller interface related to functionality provided by the resources in the gateway.flomesh.io API group
 func NewGatewayAPIController(ctx *cctx.ControllerContext) gwtypes.Controller {
 	return newClient(ctx)
 }

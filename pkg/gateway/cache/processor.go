@@ -73,14 +73,6 @@ func (c *GatewayProcessor) build() *fgw.ConfigSpec {
 	return configSpec
 }
 
-//func (c *GatewayProcessor) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
-//	return c.cache.getResourcesFromCache(resourceType, shouldSort)
-//}
-
-//func (c *GatewayProcessor) getNamespaceLister() v1.NamespaceLister {
-//	return c.cache.informers.GetListers().Namespace
-//}
-
 func (c *GatewayProcessor) getConfig() configurator.Configurator {
 	return c.cache.cfg
 }
@@ -227,34 +219,10 @@ func (c *GatewayProcessor) caCerts(l gwtypes.Listener) []string {
 }
 
 func (c *GatewayProcessor) routeRules() map[int32]fgw.RouteRule {
-	//for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
-	//	httpRoute := httpRoute.(*gwv1.HTTPRoute)
-	//	c.processHTTPRoute(httpRoute)
-	//}
 	c.processHTTPRoutes()
-
-	//for _, grpcRoute := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, true) {
-	//	grpcRoute := grpcRoute.(*gwv1.GRPCRoute)
-	//	c.processGRPCRoute(grpcRoute)
-	//}
 	c.processGRPCRoutes()
-
-	//for _, tlsRoute := range c.getResourcesFromCache(informers.TLSRoutesResourceType, true) {
-	//	tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
-	//	c.processTLSRoute(tlsRoute)
-	//}
 	c.processTLSRoutes()
-
-	//for _, tcpRoute := range c.getResourcesFromCache(informers.TCPRoutesResourceType, true) {
-	//	tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
-	//	c.processTCPRoute(tcpRoute)
-	//}
 	c.processTCPRoutes()
-
-	//for _, udpRoute := range c.getResourcesFromCache(informers.UDPRoutesResourceType, true) {
-	//	udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
-	//	c.processUDPRoute(udpRoute)
-	//}
 	c.processUDPRoutes()
 
 	return c.rules
@@ -302,9 +270,7 @@ func (c *GatewayProcessor) calculateEndpoints(svc *corev1.Service, port *int32) 
 
 func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
 	eps := &corev1.Endpoints{}
-	err := c.cache.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps)
-	//eps, err := c.cache.informers.GetListers().Endpoints.Endpoints(svc.Namespace).Get(svc.Name)
-	if err != nil {
+	if err := c.cache.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
 		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
@@ -344,9 +310,7 @@ func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *
 	}
 
 	endpointSliceList := &discoveryv1.EndpointSliceList{}
-	err = c.cache.client.List(context.TODO(), endpointSliceList, client.MatchingLabelsSelector{Selector: selector})
-	//endpointSliceList, err := c.cache.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
-	if err != nil {
+	if err := c.cache.client.List(context.TODO(), endpointSliceList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		log.Error().Msgf("Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
@@ -445,7 +409,7 @@ func (c *GatewayProcessor) chains() fgw.Chains {
 }
 
 func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *fgw.ServicePortName {
-	if !isValidBackendRefToGroupKindOfService(ref) {
+	if !gwutils.IsValidBackendRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
 		return nil
 	}
@@ -641,7 +605,7 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 }
 
 func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) ([]byte, error) {
-	if !isValidRefToGroupKindOfCA(ref) {
+	if !gwutils.IsValidRefToGroupKindOfCA(ref) {
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", ref.Group, ref.Kind)
 	}
 
