@@ -26,15 +26,18 @@
 package utils
 
 import (
+	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
-
-	v1 "k8s.io/client-go/listers/core/v1"
 
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -117,7 +120,7 @@ func IsAcceptedPolicyAttachment(conditions []metav1.Condition) bool {
 }
 
 // IsRefToGateway returns true if the parent reference is to the gateway
-func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bool {
+func IsRefToGateway(parentRef gwv1.ParentReference, gateway *gwv1.Gateway) bool {
 	if parentRef.Group != nil && string(*parentRef.Group) != gwv1.GroupName {
 		return false
 	}
@@ -133,7 +136,26 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway client.ObjectKey) bo
 	return string(parentRef.Name) == gateway.Name
 }
 
-func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, referenceGrants []client.Object) bool {
+// IsTargetRefToTarget returns true if the target reference is to the target resource
+func IsTargetRefToTarget(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
+	gvk := target.GetObjectKind().GroupVersionKind()
+
+	if string(targetRef.Group) != gvk.Group {
+		return false
+	}
+
+	if string(targetRef.Kind) != gvk.Kind {
+		return false
+	}
+
+	if ns := Namespace(targetRef.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
+		return false
+	}
+
+	return string(targetRef.Name) == target.GetName()
+}
+
+func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, referenceGrants []*gwv1beta1.ReferenceGrant) bool {
 	if ref.Namespace != nil && string(*ref.Namespace) != policy.GetNamespace() && !ValidCrossNamespaceRef(
 		referenceGrants,
 		gwtypes.CrossNamespaceFrom{
@@ -154,63 +176,63 @@ func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyT
 	return true
 }
 
-// IsRefToTarget returns true if the target reference is to the target object
-func IsRefToTarget(referenceGrants []client.Object, policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
-	targetGVK := target.GetObjectKind().GroupVersionKind()
-
-	log.Debug().Msgf("[TARGET] IsRefToTarget: policy: %s/%s, ref: %s/%s/%s/%s, target: %s/%s/%s/%s",
-		policy.GetNamespace(), policy.GetName(),
-		ref.Group, ref.Kind, Namespace(ref.Namespace, policy.GetNamespace()), ref.Name,
-		targetGVK.Group, targetGVK.Kind, target.GetNamespace(), target.GetName())
-
-	if string(ref.Group) != targetGVK.Group {
-		log.Debug().Msgf("[TARGET] Not refer to the target with the same group, ref.Group: %s, target.Group: %s", ref.Group, targetGVK.Group)
-		return false
-	}
-
-	if string(ref.Kind) != targetGVK.Kind {
-		log.Debug().Msgf("[TARGET] Not refer to the target with the same kind, ref.Kind: %s, target.Kind: %s", ref.Kind, targetGVK.Kind)
-		return false
-	}
-
-	// fast-fail, not refer to the target with the same name
-	if string(ref.Name) != target.GetName() {
-		log.Debug().Msgf("[TARGET] Not refer to the target with the same name, ref.Name: %s, target.Name: %s", ref.Name, target.GetName())
-		return false
-	}
-
-	if ns := Namespace(ref.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
-		log.Debug().Msgf("[TARGET] Not refer to the target with the same namespace, resolved namespace: %s, target.Namespace: %s", ns, target.GetNamespace())
-		return false
-	}
-
-	if ref.Namespace != nil && string(*ref.Namespace) == target.GetNamespace() && string(*ref.Namespace) != policy.GetNamespace() {
-		log.Debug().Msgf("[TARGET] Found a cross-namespace reference, policy: %s/%s, ref: %s/%s, target: %s/%s",
-			policy.GetNamespace(), policy.GetName(), string(*ref.Namespace), ref.Name, target.GetNamespace(), target.GetName())
-
-		policyGVK := policy.GetObjectKind().GroupVersionKind()
-		result := ValidCrossNamespaceRef(
-			referenceGrants,
-			gwtypes.CrossNamespaceFrom{
-				Group:     policyGVK.Group,
-				Kind:      policyGVK.Kind,
-				Namespace: policy.GetNamespace(),
-			},
-			gwtypes.CrossNamespaceTo{
-				Group:     string(ref.Group),
-				Kind:      string(ref.Kind),
-				Namespace: target.GetNamespace(),
-				Name:      target.GetName(),
-			},
-		)
-
-		log.Debug().Msgf("[TARGET] Cross-namespace reference result: %v", result)
-		return result
-	}
-
-	log.Debug().Msgf("[TARGET] Found a match, ref: %s/%s, target: %s/%s", Namespace(ref.Namespace, policy.GetNamespace()), ref.Name, target.GetNamespace(), target.GetName())
-	return true
-}
+// HasAccessToTarget returns true if the target reference is to the target object
+//func HasAccessToTarget(referenceGrants []*gwv1beta1.ReferenceGrant, policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
+//	targetGVK := target.GetObjectKind().GroupVersionKind()
+//
+//	log.Debug().Msgf("[TARGET] HasAccessToTarget: policy: %s/%s, ref: %s/%s/%s/%s, target: %s/%s/%s/%s",
+//		policy.GetNamespace(), policy.GetName(),
+//		ref.Group, ref.Kind, Namespace(ref.Namespace, policy.GetNamespace()), ref.Name,
+//		targetGVK.Group, targetGVK.Kind, target.GetNamespace(), target.GetName())
+//
+//	if string(ref.Group) != targetGVK.Group {
+//		log.Debug().Msgf("[TARGET] Not refer to the target with the same group, ref.Group: %s, target.Group: %s", ref.Group, targetGVK.Group)
+//		return false
+//	}
+//
+//	if string(ref.Kind) != targetGVK.Kind {
+//		log.Debug().Msgf("[TARGET] Not refer to the target with the same kind, ref.Kind: %s, target.Kind: %s", ref.Kind, targetGVK.Kind)
+//		return false
+//	}
+//
+//	// fast-fail, not refer to the target with the same name
+//	if string(ref.Name) != target.GetName() {
+//		log.Debug().Msgf("[TARGET] Not refer to the target with the same name, ref.Name: %s, target.Name: %s", ref.Name, target.GetName())
+//		return false
+//	}
+//
+//	if ns := Namespace(ref.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
+//		log.Debug().Msgf("[TARGET] Not refer to the target with the same namespace, resolved namespace: %s, target.Namespace: %s", ns, target.GetNamespace())
+//		return false
+//	}
+//
+//	if ref.Namespace != nil && string(*ref.Namespace) == target.GetNamespace() && string(*ref.Namespace) != policy.GetNamespace() {
+//		log.Debug().Msgf("[TARGET] Found a cross-namespace reference, policy: %s/%s, ref: %s/%s, target: %s/%s",
+//			policy.GetNamespace(), policy.GetName(), string(*ref.Namespace), ref.Name, target.GetNamespace(), target.GetName())
+//
+//		policyGVK := policy.GetObjectKind().GroupVersionKind()
+//		result := ValidCrossNamespaceRef(
+//			referenceGrants,
+//			gwtypes.CrossNamespaceFrom{
+//				Group:     policyGVK.Group,
+//				Kind:      policyGVK.Kind,
+//				Namespace: policy.GetNamespace(),
+//			},
+//			gwtypes.CrossNamespaceTo{
+//				Group:     string(ref.Group),
+//				Kind:      string(ref.Kind),
+//				Namespace: target.GetNamespace(),
+//				Name:      target.GetName(),
+//			},
+//		)
+//
+//		log.Debug().Msgf("[TARGET] Cross-namespace reference result: %v", result)
+//		return result
+//	}
+//
+//	log.Debug().Msgf("[TARGET] Found a match, ref: %s/%s, target: %s/%s", Namespace(ref.Namespace, policy.GetNamespace()), ref.Name, target.GetNamespace(), target.GetName())
+//	return true
+//}
 
 // IsTargetRefToGVK returns true if the target reference is to the given group version kind
 func IsTargetRefToGVK(targetRef gwv1alpha2.NamespacedPolicyTargetReference, gvk schema.GroupVersionKind) bool {
@@ -260,7 +282,7 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 
 // GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(
-	nsLister v1.NamespaceLister,
+	client cache.Cache,
 	gw *gwv1.Gateway,
 	parentRef gwv1.ParentReference,
 	params *gwtypes.RouteContext,
@@ -299,7 +321,7 @@ func GetAllowedListeners(
 		}
 
 		// Check if the route is in a namespace that the listener allows.
-		if !NamespaceMatches(nsLister, selectedListener.AllowedRoutes.Namespaces, gw.Namespace, routeNs) {
+		if !NamespaceMatches(client, selectedListener.AllowedRoutes.Namespaces, gw.Namespace, routeNs) {
 			continue
 		}
 
@@ -368,7 +390,7 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 }
 
 // NamespaceMatches returns true if the namespace matches
-func NamespaceMatches(nsLister v1.NamespaceLister, namespaces *gwv1.RouteNamespaces, gatewayNamespace, routeNamespace string) bool {
+func NamespaceMatches(client cache.Cache, namespaces *gwv1.RouteNamespaces, gatewayNamespace, routeNamespace string) bool {
 	if namespaces == nil || namespaces.From == nil {
 		return true
 	}
@@ -385,7 +407,9 @@ func NamespaceMatches(nsLister v1.NamespaceLister, namespaces *gwv1.RouteNamespa
 			return false
 		}
 
-		ns, err := nsLister.Get(routeNamespace)
+		ns := &corev1.Namespace{}
+		err = client.Get(context.Background(), types.NamespacedName{Name: routeNamespace}, ns)
+		//ns, err := client.Get(routeNamespace)
 		if err != nil {
 			log.Error().Msgf("failed to get namespace %s: %v", routeNamespace, err)
 			return false
@@ -455,13 +479,13 @@ func ToRouteContext(route client.Object) *gwtypes.RouteContext {
 	}
 }
 
-func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo) bool {
+func ValidCrossNamespaceRef(referenceGrants []*gwv1beta1.ReferenceGrant, from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo) bool {
 	if len(referenceGrants) == 0 {
 		return false
 	}
 
-	for _, referenceGrant := range referenceGrants {
-		refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
+	for _, refGrant := range referenceGrants {
+		//refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
 		log.Debug().Msgf("Evaluating ReferenceGrant: %s/%s", refGrant.GetNamespace(), refGrant.GetName())
 
 		if refGrant.Namespace != to.Namespace {
@@ -505,15 +529,35 @@ func ValidCrossNamespaceRef(referenceGrants []client.Object, from gwtypes.CrossN
 	return false
 }
 
-func GetActiveGateways(allGateways []client.Object) []*gwv1.Gateway {
+func GetActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range allGateways {
-		gw := gw.(*gwv1.Gateway)
+		//gw := gw.(*gwv1.Gateway)
 		if IsActiveGateway(gw) {
 			gateways = append(gateways, gw)
 		}
 	}
 
 	return gateways
+}
+
+func SortResources[T client.Object](resources []T) []T {
+	sort.Slice(resources, func(i, j int) bool {
+		if resources[i].GetCreationTimestamp().Time.Equal(resources[j].GetCreationTimestamp().Time) {
+			return client.ObjectKeyFromObject(resources[i]).String() < client.ObjectKeyFromObject(resources[j]).String()
+		}
+
+		return resources[i].GetCreationTimestamp().Time.Before(resources[j].GetCreationTimestamp().Time)
+	})
+
+	return resources
+}
+
+func ToSlicePtr[T any](slice []T) []*T {
+	ptrs := make([]*T, len(slice))
+	for i, v := range slice {
+		ptrs[i] = &v
+	}
+	return ptrs
 }

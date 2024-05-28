@@ -25,8 +25,10 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +39,6 @@ import (
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 type baseServiceImportInfo struct {
@@ -82,7 +83,7 @@ type ServiceImportChangeTracker struct {
 	enrichServiceImportInfo enrichServiceImportInfoFunc
 	enrichEndpointInfo      enrichMultiClusterEndpointFunc
 	recorder                events.EventRecorder
-	informers               *fsminformers.InformerCollection
+	client                  cache.Cache
 }
 
 // ServiceImportMap is a map of ServicePortName to ServicePort
@@ -124,14 +125,14 @@ func (t *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.Servic
 }
 
 // NewServiceImportChangeTracker creates a new ServiceImportChangeTracker
-func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, informers *fsminformers.InformerCollection) *ServiceImportChangeTracker {
+func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, client cache.Cache) *ServiceImportChangeTracker {
 	return &ServiceImportChangeTracker{
 		items:                   make(map[types.NamespacedName]*serviceImportChange),
 		endpointItems:           make(map[types.NamespacedName]*multiClusterEndpointsChange),
 		enrichServiceImportInfo: enrichServiceImportInfo,
 		enrichEndpointInfo:      enrichEndpointInfo,
 		recorder:                recorder,
-		informers:               informers,
+		client:                  client,
 	}
 }
 
@@ -265,7 +266,9 @@ func (t *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1alph
 }
 
 func (t *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.ServiceImport) (*corev1.Service, bool) {
-	svc, err := t.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
+	svc := &corev1.Service{}
+	//svc, err := t.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
+	err := t.client.Get(context.Background(), types.NamespacedName{Namespace: svcImp.Namespace, Name: svcImp.Name}, svc)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, false

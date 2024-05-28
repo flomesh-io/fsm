@@ -472,7 +472,7 @@ func (c *Connector) deleteServiceImport(export *mcsevent.ServiceExportEvent) err
 func (c *Connector) rejectServiceExport(svcExportEvt *mcsevent.ServiceExportEvent) error {
 	ctx := c.context.(*conn.ConnectorContext)
 	export := svcExportEvt.ServiceExport
-	//reason := svcExportEvt.Data["reason"]
+	//reason := svcExportEvt.data["reason"]
 	reason := svcExportEvt.Error
 
 	if ctx.ClusterKey == svcExportEvt.ClusterKey() {

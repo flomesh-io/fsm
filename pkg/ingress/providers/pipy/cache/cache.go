@@ -25,22 +25,24 @@
 package cache
 
 import (
+	"context"
 	"fmt"
+	networkingv1 "k8s.io/api/networking/v1"
 	"strings"
 	"sync"
 	"time"
 
+	cctx "github.com/flomesh-io/fsm/pkg/context"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/events"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -48,10 +50,9 @@ import (
 
 // Cache is the type used to represent the cache for the ingress controller
 type Cache struct {
-	kubeClient kubernetes.Interface
-	recorder   events.EventRecorder
-	cfg        configurator.Configurator
-	informers  *fsminformers.InformerCollection
+	recorder events.EventRecorder
+	cfg      configurator.Configurator
+	client   cache.Cache
 
 	serviceChanges       *ServiceChangeTracker
 	endpointsChanges     *EndpointChangeTracker
@@ -85,29 +86,30 @@ var (
 )
 
 // NewCache creates a new cache for the ingress controller
-func NewCache(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, cfg configurator.Configurator) *Cache {
-	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: kubeClient.EventsV1()})
+func NewCache(ctx *cctx.ControllerContext) *Cache {
+	eventBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{Interface: ctx.KubeClient.EventsV1()})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, "fsm-cluster-connector-local")
+	cfg := ctx.Configurator
 	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
 
 	c := &Cache{
-		kubeClient:               kubeClient,
+		client:                   ctx.Manager.GetCache(),
 		recorder:                 recorder,
-		cfg:                      cfg,
-		informers:                informers,
+		cfg:                      ctx.Configurator,
 		serviceMap:               make(ServiceMap),
 		serviceImportMap:         make(ServiceImportMap),
 		endpointsMap:             make(EndpointsMap),
 		ingressMap:               make(IngressMap),
 		multiClusterEndpointsMap: make(MultiClusterEndpointsMap),
-		repoClient:               repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
+		repoClient:               repo.NewRepoClient(repoBaseURL, ctx.Configurator.GetFSMLogLevel()),
 		broadcaster:              eventBroadcaster,
 	}
 
-	c.serviceChanges = NewServiceChangeTracker(enrichServiceInfo, recorder, kubeClient, informers)
-	c.serviceImportChanges = NewServiceImportChangeTracker(enrichServiceImportInfo, nil, recorder, informers)
+	client := ctx.Manager.GetCache()
+	c.serviceChanges = NewServiceChangeTracker(enrichServiceInfo, recorder, client)
+	c.serviceImportChanges = NewServiceImportChangeTracker(enrichServiceImportInfo, nil, recorder, client)
 	c.endpointsChanges = NewEndpointChangeTracker(nil, recorder)
-	c.ingressChanges = NewIngressChangeTracker(kubeClient, informers, recorder)
+	c.ingressChanges = NewIngressChangeTracker(client, recorder)
 
 	return c
 }
@@ -209,19 +211,22 @@ func (c *Cache) SyncRoutes() {
 func (c *Cache) refreshIngress() {
 	log.Info().Msgf("Refreshing Ingress Map ...")
 
-	ingresses, err := c.informers.GetListers().K8sIngress.
-		Ingresses(corev1.NamespaceAll).
-		List(labels.Everything())
+	//ingresses, err := c.informers.GetListers().K8sIngress.
+	//	Ingresses(corev1.NamespaceAll).
+	//	List(labels.Everything())
+	ingresses := &networkingv1.IngressList{}
+	err := c.client.List(context.Background(), ingresses)
 	if err != nil {
 		log.Error().Msgf("Failed to list all ingresses: %s", err)
 	}
 
-	for _, ing := range ingresses {
-		if !ingresspipy.IsValidPipyIngress(ing) {
+	for _, ing := range ingresses.Items {
+		ing := ing
+		if !ingresspipy.IsValidPipyIngress(&ing) {
 			continue
 		}
 
-		c.ingressChanges.Update(nil, ing)
+		c.ingressChanges.Update(nil, &ing)
 	}
 
 	c.ingressMap.Update(c.ingressChanges)

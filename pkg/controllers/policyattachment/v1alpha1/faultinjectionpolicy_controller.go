@@ -29,10 +29,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/fields"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
@@ -41,8 +45,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	corev1 "k8s.io/api/core/v1"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -139,37 +141,65 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *faultInjectionPolicyReconciler) getFaultInjections(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
-	faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
-	}
-
+func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	c := r.fctx.Manager.GetCache()
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
-	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
-	for _, p := range faultInjectionPolicyList.Items {
-		p := p
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
-			spec := p.Spec
-			targetRef := spec.TargetRef
-
-			switch {
-			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.Hostnames) > 0:
-				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
-			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.HTTPFaultInjections) > 0:
-				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
-			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.GRPCFaultInjections) > 0:
-				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
-			}
+	for _, param := range []struct {
+		matchType gwpkg.PolicyMatchType
+		fn        func(cache.Cache, fields.Selector) []client.Object
+		selector  fields.Selector
+	}{
+		{
+			matchType: gwpkg.PolicyMatchTypeHostnames,
+			fn:        gwutils.GetFaultInjectionsMatchTypeHostname,
+			selector:  fields.OneTermEqualSelector(constants.HostnamePolicyAttachmentIndex, fmt.Sprintf("%s/%s/%s", target.GetObjectKind().GroupVersionKind().Kind, target.GetNamespace(), target.GetName())),
+		},
+		{
+			matchType: gwpkg.PolicyMatchTypeHTTPRoute,
+			fn:        gwutils.GetFaultInjectionsMatchTypeHTTPRoute,
+			selector:  fields.OneTermEqualSelector(constants.HTTPRoutePolicyAttachmentIndex, client.ObjectKeyFromObject(target).String()),
+		},
+		{
+			matchType: gwpkg.PolicyMatchTypeGRPCRoute,
+			fn:        gwutils.GetFaultInjectionsMatchTypeGRPCRoute,
+			selector:  fields.OneTermEqualSelector(constants.GRPCRoutePolicyAttachmentIndex, client.ObjectKeyFromObject(target).String()),
+		},
+	} {
+		if result := param.fn(c, param.selector); len(result) > 0 {
+			policies[param.matchType] = result
 		}
 	}
+	//faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	//if err != nil {
+	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
+	//}
+	//
+	//policies := make(map[gwpkg.PolicyMatchType][]client.Object)
+	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	//
+	//for _, p := range faultInjectionPolicyList.Items {
+	//	p := p
+	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+	//		spec := p.Spec
+	//		targetRef := spec.TargetRef
+	//
+	//		switch {
+	//		case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.Hostnames) > 0:
+	//			policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
+	//		case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.HTTPFaultInjections) > 0:
+	//			policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
+	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.GRPCFaultInjections) > 0:
+	//			policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
+	//		}
+	//	}
+	//}
 
 	return policies, nil
 }
@@ -192,7 +222,7 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 
 			validListeners := gwutils.GetValidListenersForGateway(gateway)
 
-			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
+			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {
 				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {
@@ -203,12 +233,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 					for _, hr := range hostnamesFaultInjections {
 						hr := hr.(*gwpav1alpha1.FaultInjectionPolicy)
 
-						r1 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *hr)
+						r1 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, *currentPolicy)
+						r2 := faultinjection.GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(hostname, currentPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -246,12 +276,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedHTTPRouteBasedFaultInjecti
 					continue
 				}
 
-				r1 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *faultInjection)
+				r1 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, faultInjection)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, *currentPolicy)
+				r2 := faultinjection.GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(m, currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -287,12 +317,12 @@ func (r *faultInjectionPolicyReconciler) getConflictedGRPCRouteBasedRFaultInject
 					continue
 				}
 
-				r1 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *rr)
+				r1 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, rr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, *currentPolicy)
+				r2 := faultinjection.GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(m, currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -314,13 +344,75 @@ func (r *faultInjectionPolicyReconciler) getConflictedGRPCRouteBasedRFaultInject
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *faultInjectionPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.FaultInjectionPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addFaultInjectionPolicyIndexer(context.Background(), mgr)
+}
+
+func addFaultInjectionPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.FaultInjectionPolicy{}, constants.HostnamePolicyAttachmentIndex, addFaultInjectionHostnameIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.FaultInjectionPolicy{}, constants.HTTPRoutePolicyAttachmentIndex, addFaultInjectionHTTPRouteIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.FaultInjectionPolicy{}, constants.GRPCRoutePolicyAttachmentIndex, addFaultInjectionGRPCRouteIndexFunc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addFaultInjectionHostnameIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.FaultInjectionPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(policy.Spec.Hostnames) > 0 {
+		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.Namespace(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
+	}
+
+	return targets
+}
+
+func addFaultInjectionHTTPRouteIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.FaultInjectionPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(policy.Spec.HTTPFaultInjections) > 0 {
+		targets = append(targets, types.NamespacedName{
+			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Name:      string(targetRef.Name),
+		}.String())
+	}
+
+	return targets
+}
+
+func addFaultInjectionGRPCRouteIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.FaultInjectionPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(policy.Spec.GRPCFaultInjections) > 0 {
+		targets = append(targets, types.NamespacedName{
+			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Name:      string(targetRef.Name),
+		}.String())
+	}
+
+	return targets
 }
 
 func (r *faultInjectionPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
@@ -330,13 +422,21 @@ func (r *faultInjectionPolicyReconciler) referenceGrantToPolicyAttachment(_ cont
 		return nil
 	}
 
+	c := r.fctx.Manager.GetCache()
+	list := &gwpav1alpha1.FaultInjectionPolicyList{}
+	if err := c.List(context.Background(), list); err != nil {
+		log.Error().Msgf("Failed to list FaultInjectionPolicyList: %v", err)
+		return nil
+	}
+	policies := gwutils.ToSlicePtr(list.Items)
+
 	requests := make([]reconcile.Request, 0)
-	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.FaultInjectionPoliciesResourceType, false)
+	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.FaultInjectionPoliciesResourceType, false)
 
-	for _, p := range policies {
-		policy := p.(*gwpav1alpha1.FaultInjectionPolicy)
+	for _, policy := range policies {
+		//policy := p.(*gwpav1alpha1.FaultInjectionPolicy)
 
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

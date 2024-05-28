@@ -1,58 +1,86 @@
 package pipy
 
 import (
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	cctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
+	crClient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	"github.com/flomesh-io/fsm/pkg/certificate"
-	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/repo"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
-	"github.com/flomesh-io/fsm/pkg/messaging"
 )
 
 var (
 	log = logger.New("controller-gatewayapi")
 )
 
-// NewIngressController returns a ingress.Controller interface related to functionality provided by the resources in the k8s ingress API group
-func NewIngressController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, certMgr *certificate.Manager) Controller {
-	return newClient(informerCollection, kubeClient, msgBroker, cfg, certMgr)
+// NewIngressController returns an ingress.Controller interface related to functionality provided by the resources in the k8s ingress API group
+func NewIngressController(ctx *cctx.ControllerContext) Controller {
+	return newClient(ctx)
 }
 
-func newClient(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, _ *certificate.Manager) *client {
+func newClient(ctx *cctx.ControllerContext) *client {
 	c := &client{
-		informers:  informerCollection,
-		kubeClient: kubeClient,
-		msgBroker:  msgBroker,
-		cfg:        cfg,
-		cache:      cache.NewCache(kubeClient, informerCollection, cfg),
+		//informers:  informerCollection,
+		//kubeClient: kubeClient,
+		msgBroker: ctx.MsgBroker,
+		cfg:       ctx.Configurator,
+		cache:     cache.NewCache(ctx),
 	}
 
 	// Initialize informers
-	for _, informerKey := range []fsminformers.InformerKey{
-		fsminformers.InformerKeyService,
-		fsminformers.InformerKeyServiceImport,
-		fsminformers.InformerKeyEndpoints,
-		fsminformers.InformerKeySecret,
-		fsminformers.InformerKeyK8sIngressClass,
-		fsminformers.InformerKeyK8sIngress,
+
+	for informerKey, obj := range map[fsminformers.InformerKey]crClient.Object{
+		fsminformers.InformerKeyService:         &corev1.Service{},
+		fsminformers.InformerKeyServiceImport:   &mcsv1alpha1.ServiceImport{},
+		fsminformers.InformerKeyEndpoints:       &corev1.Endpoints{},
+		fsminformers.InformerKeySecret:          &corev1.Secret{},
+		fsminformers.InformerKeyK8sIngressClass: &networkingv1.IngressClass{},
+		fsminformers.InformerKeyK8sIngress:      &networkingv1.Ingress{},
 	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
-			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
+			c.informOnResource(ctx, obj, c.getEventHandlerFuncs(eventTypes))
 		}
 	}
+	//for _, informerKey := range []fsminformers.InformerKey{
+	//	fsminformers.InformerKeyService,
+	//	fsminformers.InformerKeyServiceImport,
+	//	fsminformers.InformerKeyEndpoints,
+	//	fsminformers.InformerKeySecret,
+	//	fsminformers.InformerKeyK8sIngressClass,
+	//	fsminformers.InformerKeyK8sIngress,
+	//} {
+	//	if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
+	//		c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
+	//	}
+	//}
 
 	return c
+}
+
+func (c *client) informOnResource(ctx *cctx.ControllerContext, obj crClient.Object, handler k8scache.ResourceEventHandlerFuncs) {
+	ch := ctx.Manager.GetCache()
+
+	informer, err := ch.GetInformer(context.Background(), obj)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = informer.AddEventHandler(handler)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c *client) getEventHandlerFuncs(eventTypes *k8s.EventTypes) k8scache.ResourceEventHandlerFuncs {

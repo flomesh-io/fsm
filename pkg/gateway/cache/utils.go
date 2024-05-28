@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -366,12 +365,13 @@ func getServicePort(svc *corev1.Service, port *int32) (corev1.ServicePort, error
 	return corev1.ServicePort{}, fmt.Errorf("no matching port for Service %s and port %d", svc.Name, port)
 }
 
-func filterEndpointSliceList(endpointSliceList []*discoveryv1.EndpointSlice, port corev1.ServicePort) []*discoveryv1.EndpointSlice {
-	filtered := make([]*discoveryv1.EndpointSlice, 0, len(endpointSliceList))
+func filterEndpointSliceList(endpointSliceList *discoveryv1.EndpointSliceList, port corev1.ServicePort) []*discoveryv1.EndpointSlice {
+	filtered := make([]*discoveryv1.EndpointSlice, 0, len(endpointSliceList.Items))
 
-	for _, endpointSlice := range endpointSliceList {
-		if !ignoreEndpointSlice(endpointSlice, port) {
-			filtered = append(filtered, endpointSlice)
+	for _, endpointSlice := range endpointSliceList.Items {
+		endpointSlice := endpointSlice
+		if !ignoreEndpointSlice(&endpointSlice, port) {
+			filtered = append(filtered, &endpointSlice)
 		}
 	}
 
@@ -557,15 +557,6 @@ func isValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool
 
 	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
 		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshMCSAPIGroup) {
-		return true
-	}
-
-	return false
-}
-
-func isValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetReference) bool {
-	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
-		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshMCSAPIGroup) {
 		return true
 	}
 

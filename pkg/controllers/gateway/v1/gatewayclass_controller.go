@@ -104,13 +104,6 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	// Accept all GatewayClasses those ControllerName is flomesh.io/gateway-controller
-	//r.setAcceptedStatus(gatewayClass)
-	//result, err := r.updateStatus(ctx, gatewayClass, gwv1.GatewayClassConditionStatusAccepted)
-	//if err != nil {
-	//	return result, err
-	//}
-
 	r.fctx.StatusUpdater.Send(status.Update{
 		Resource:       gatewayClass,
 		NamespacedName: client.ObjectKeyFromObject(gatewayClass),
@@ -136,12 +129,6 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 	// If there's multiple GatewayClasses whose ControllerName is flomesh.io/gateway-controller, the oldest is set to active and the rest are set to inactive
 	r.updateActiveStatus(gatewayClassList)
-	//for _, class := range r.updateActiveStatus(gatewayClassList) {
-	//result, err := r.updateStatus(ctx, class, gateway.GatewayClassConditionStatusActive)
-	//if err != nil {
-	//	return result, err
-	//}
-	//}
 
 	// As status of all GatewayClasses have been updated, just send the event
 	r.fctx.GatewayEventHandler.OnAdd(&gwv1.GatewayClass{
@@ -155,39 +142,10 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	return ctrl.Result{}, nil
 }
 
-//func (r *gatewayClassReconciler) updateStatus(ctx context.Context, class *gwv1.GatewayClass, status gwv1.GatewayClassConditionType) (ctrl.Result, error) {
-//	if err := r.fctx.Status().Update(ctx, class); err != nil {
-//		//defer r.recorder.Eventf(class, corev1.EventTypeWarning, "UpdateStatus", "Failed to update status of GatewayClass: %s", err)
-//		return ctrl.Result{}, err
-//	}
-//
-//	switch status {
-//	case gwv1.GatewayClassConditionStatusAccepted:
-//		if utils.IsAcceptedGatewayClass(class) {
-//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
-//		} else {
-//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Rejected", "GatewayClass is rejected")
-//		}
-//	case gateway.GatewayClassConditionStatusActive:
-//		if utils.IsActiveGatewayClass(class) {
-//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Active", "GatewayClass is set to active")
-//		} else {
-//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Inactive", "GatewayClass is set to inactive")
-//		}
-//	}
-//
-//	return ctrl.Result{}, nil
-//}
-
 func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1.GatewayClass) {
 	if gatewayClass.Spec.ControllerName == constants.GatewayController {
 		r.setAccepted(gatewayClass)
 	}
-	// Ignore other GatewayClass whose ControllerName is not flomesh.io/gateway-controller
-	//  as they are not supported and should not be processed by fsm
-	//else {
-	//	r.setRejected(gatewayClass)
-	//}
 }
 
 func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList) {
@@ -254,17 +212,6 @@ func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList)
 
 	//return statusChangedClasses
 }
-
-//func (r *gatewayClassReconciler) setRejected(gatewayClass *gwv1.GatewayClass) {
-//	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-//		Type:               string(gwv1.GatewayClassConditionStatusAccepted),
-//		Status:             metav1.ConditionFalse,
-//		ObservedGeneration: gatewayClass.Generation,
-//		LastTransitionTime: metav1.Time{Time: time.Now()},
-//		Reason:             "Rejected",
-//		Message:            fmt.Sprintf("GatewayClass %q is rejected as ControllerName %q is not supported.", gatewayClass.Name, gatewayClass.Spec.ControllerName),
-//	})
-//}
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{

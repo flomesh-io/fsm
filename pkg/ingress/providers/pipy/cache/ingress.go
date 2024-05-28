@@ -28,6 +28,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strconv"
 	"strings"
 	"sync"
@@ -182,15 +183,15 @@ type IngressChangeTracker struct {
 	kubeClient kubernetes.Interface
 	informers  *fsminformers.InformerCollection
 	recorder   events.EventRecorder
+	client     cache.Cache
 }
 
 // NewIngressChangeTracker creates a new IngressChangeTracker
-func NewIngressChangeTracker(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, recorder events.EventRecorder) *IngressChangeTracker {
+func NewIngressChangeTracker(client cache.Cache, recorder events.EventRecorder) *IngressChangeTracker {
 	return &IngressChangeTracker{
-		items:      make(map[types.NamespacedName]*ingressChange),
-		kubeClient: kubeClient,
-		informers:  informers,
-		recorder:   recorder,
+		items:    make(map[types.NamespacedName]*ingressChange),
+		recorder: recorder,
+		client:   client,
 	}
 }
 
@@ -617,8 +618,9 @@ func (t *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, name 
 	}
 
 	log.Info().Msgf("Fetching secret %s/%s ...", ns, name)
-	secret, err := t.informers.GetListers().Secret.Secrets(ns).Get(name)
-
+	//secret, err := t.informers.GetListers().Secret.Secrets(ns).Get(name)
+	secret := &corev1.Secret{}
+	err := t.client.Get(context.TODO(), types.NamespacedName{Namespace: ns, Name: name}, secret)
 	if err != nil {
 		log.Error().Msgf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)
 		return nil

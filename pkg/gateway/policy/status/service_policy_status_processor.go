@@ -35,7 +35,7 @@ type ServicePolicyStatusProcessor struct {
 }
 
 // GetAttachedPoliciesFunc is a function for getting attached policies for a service
-type GetAttachedPoliciesFunc func(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition)
+type GetAttachedPoliciesFunc func(svc client.Object) ([]client.Object, *metav1.Condition)
 
 // FindConflictFunc is a function for finding conflicted policy for a service port
 type FindConflictFunc func(policy client.Object, allPolicies []client.Object, port int32) *types.NamespacedName
@@ -52,10 +52,10 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ",")))
 	}
 
-	referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
-		return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
-	}
+	//referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	//if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
+	//	return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
+	//}
 
 	key := types.NamespacedName{
 		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
@@ -70,7 +70,7 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 		}
 	}
 
-	policies, condition := p.getSortedAttachedPolices(policy, svc)
+	policies, condition := p.getSortedAttachedPolices(svc)
 	if condition != nil {
 		return *condition
 	}
@@ -89,8 +89,8 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 	return AcceptedCondition(policy)
 }
 
-func (p *ServicePolicyStatusProcessor) getSortedAttachedPolices(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
-	policies, condition := p.GetAttachedPolicies(policy, svc)
+func (p *ServicePolicyStatusProcessor) getSortedAttachedPolices(svc client.Object) ([]client.Object, *metav1.Condition) {
+	policies, condition := p.GetAttachedPolicies(svc)
 	if condition != nil {
 		return nil, condition
 	}

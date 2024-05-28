@@ -4,36 +4,16 @@ package gateway
 import (
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/cache"
-
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	gwcache "github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 // client is the type used to represent the Kubernetes client for the gateway.networking.k8s.io API group
 type client struct {
-	informers  *informers.InformerCollection
-	kubeClient kubernetes.Interface
-	msgBroker  *messaging.Broker
-	cfg        configurator.Configurator
-	cache      gwcache.Cache
-}
-
-// Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
-type Controller interface {
-	cache.ResourceEventHandler
-
-	// Runnable runs the backend broadcast listener
-	manager.Runnable
-
-	// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
-	manager.LeaderElectionRunnable
+	msgBroker *messaging.Broker
+	cfg       configurator.Configurator
+	cache     gwcache.Cache
 }
 
 const (

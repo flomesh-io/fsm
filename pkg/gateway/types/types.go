@@ -2,16 +2,36 @@
 package types
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	"fmt"
+	"strings"
+
+	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/selection"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 var (
 	log = logger.New("fsm-gateway/types")
 )
+
+// Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
+type Controller interface {
+	cache.ResourceEventHandler
+
+	// Runnable runs the backend broadcast listener
+	manager.Runnable
+
+	// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
+	manager.LeaderElectionRunnable
+}
 
 // PolicyMatchType is the type used to represent the rate limit policy match type
 type PolicyMatchType string
@@ -77,4 +97,152 @@ type CrossNamespaceTo struct {
 	Kind      string
 	Namespace string
 	Name      string
+}
+
+type PolicyWrapper struct {
+	Policy     client.Object
+	TargetRef  gwv1alpha2.NamespacedPolicyTargetReference
+	Conditions []metav1.Condition
+}
+
+// hasIndex Selector
+
+func OneTermSelector(k string) fields.Selector {
+	return &hasIndex{field: k}
+}
+
+type hasIndex struct {
+	field string
+}
+
+func (t *hasIndex) Matches(ls fields.Fields) bool {
+	return ls.Has(t.field)
+}
+
+func (t *hasIndex) Empty() bool {
+	return false
+}
+
+func (t *hasIndex) RequiresExactMatch(field string) (value string, found bool) {
+	if t.field == field {
+		return "", true
+	}
+	return "", false
+}
+
+func (t *hasIndex) Transform(fn fields.TransformFunc) (fields.Selector, error) {
+	field, value, err := fn(t.field, "")
+	if err != nil {
+		return nil, err
+	}
+	if len(field) == 0 && len(value) == 0 {
+		return fields.Everything(), nil
+	}
+	return &hasIndex{field}, nil
+}
+
+func (t *hasIndex) Requirements() fields.Requirements {
+	return []fields.Requirement{{
+		Field:    t.field,
+		Operator: selection.Equals,
+		Value:    "",
+	}}
+}
+
+func (t *hasIndex) String() string {
+	return fmt.Sprintf("%v", t.field)
+}
+
+func (t *hasIndex) DeepCopySelector() fields.Selector {
+	if t == nil {
+		return nil
+	}
+	out := new(hasIndex)
+	*out = *t
+	return out
+}
+
+func OrSelectors(selectors ...fields.Selector) fields.Selector {
+	return orTerm(selectors)
+}
+
+type orTerm []fields.Selector
+
+func (t orTerm) Matches(ls fields.Fields) bool {
+	for _, q := range t {
+		if q.Matches(ls) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (t orTerm) Empty() bool {
+	if t == nil {
+		return true
+	}
+	if len([]fields.Selector(t)) == 0 {
+		return true
+	}
+	for i := range t {
+		if !t[i].Empty() {
+			return false
+		}
+	}
+	return true
+}
+
+func (t orTerm) RequiresExactMatch(field string) (string, bool) {
+	if t == nil || len([]fields.Selector(t)) == 0 {
+		return "", false
+	}
+	for i := range t {
+		if value, found := t[i].RequiresExactMatch(field); found {
+			return value, found
+		}
+	}
+	return "", false
+}
+
+func (t orTerm) Transform(fn fields.TransformFunc) (fields.Selector, error) {
+	next := make([]fields.Selector, 0, len([]fields.Selector(t)))
+	for _, s := range []fields.Selector(t) {
+		n, err := s.Transform(fn)
+		if err != nil {
+			return nil, err
+		}
+		if !n.Empty() {
+			next = append(next, n)
+		}
+	}
+	return orTerm(next), nil
+}
+
+func (t orTerm) Requirements() fields.Requirements {
+	reqs := make([]fields.Requirement, 0, len(t))
+	for _, s := range []fields.Selector(t) {
+		rs := s.Requirements()
+		reqs = append(reqs, rs...)
+	}
+	return reqs
+}
+
+func (t orTerm) String() string {
+	var terms []string
+	for _, q := range t {
+		terms = append(terms, q.String())
+	}
+	return strings.Join(terms, ",")
+}
+
+func (t orTerm) DeepCopySelector() fields.Selector {
+	if t == nil {
+		return nil
+	}
+	out := make([]fields.Selector, len(t))
+	for i := range t {
+		out[i] = t[i].DeepCopySelector()
+	}
+	return orTerm(out)
 }

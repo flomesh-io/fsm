@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"github.com/flomesh-io/fsm/pkg/version"
 
 	"sigs.k8s.io/yaml"
@@ -915,7 +917,7 @@ func (r *gatewayReconciler) setUnaccepted(gateway *gwv1.Gateway) {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.Gateway{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			gateway, ok := obj.(*gwv1.Gateway)
 			if !ok {
@@ -956,7 +958,11 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.configMapToGateways),
 		).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addGatewayIndexers(context.TODO(), mgr)
 }
 
 func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
@@ -1031,4 +1037,109 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 	}
 
 	return reconciles
+}
+
+func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretGatewayIndex, secretGatewayIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ConfigMapGatewayIndex, configMapGatewayIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ClassGatewayIndex, func(obj client.Object) []string {
+		gateway := obj.(*gwv1.Gateway)
+		return []string{string(gateway.Spec.GatewayClassName)}
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func secretGatewayIndexFunc(obj client.Object) []string {
+	gateway := obj.(*gwv1.Gateway)
+	var secretReferences []string
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Protocol != gwv1.TLSProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			continue
+		}
+
+		if listener.TLS == nil || *listener.TLS.Mode != gwv1.TLSModeTerminate {
+			continue
+		}
+
+		for _, cert := range listener.TLS.CertificateRefs {
+			if *cert.Kind == constants.KubernetesSecretKind {
+				secretReferences = append(secretReferences,
+					types.NamespacedName{
+						Namespace: gwutils.Namespace(cert.Namespace, gateway.Namespace),
+						Name:      string(cert.Name),
+					}.String(),
+				)
+			}
+		}
+
+		if listener.TLS.FrontendValidation != nil {
+			for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
+				if ca.Kind == constants.KubernetesSecretKind {
+					secretReferences = append(secretReferences,
+						types.NamespacedName{
+							Namespace: gwutils.Namespace(ca.Namespace, gateway.Namespace),
+							Name:      string(ca.Name),
+						}.String(),
+					)
+				}
+			}
+		}
+	}
+
+	return secretReferences
+}
+
+func configMapGatewayIndexFunc(obj client.Object) []string {
+	gateway := obj.(*gwv1.Gateway)
+	var cmRefs []string
+
+	// check against listeners
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Protocol != gwv1.TLSProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			continue
+		}
+
+		if listener.TLS == nil || *listener.TLS.Mode != gwv1.TLSModeTerminate {
+			continue
+		}
+
+		if listener.TLS.FrontendValidation == nil {
+			continue
+		}
+
+		for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
+			if ca.Kind == constants.KubernetesConfigMapKind {
+				cmRefs = append(cmRefs,
+					types.NamespacedName{
+						Namespace: gwutils.Namespace(ca.Namespace, gateway.Namespace),
+						Name:      string(ca.Name),
+					}.String(),
+				)
+			}
+		}
+	}
+
+	// check against infrastructure ParametersRef
+	if gateway.Spec.Infrastructure != nil && gateway.Spec.Infrastructure.ParametersRef != nil {
+		parametersRef := gateway.Spec.Infrastructure.ParametersRef
+		if parametersRef.Kind == constants.KubernetesConfigMapKind {
+			cmRefs = append(cmRefs,
+				types.NamespacedName{
+					Namespace: gateway.Namespace,
+					Name:      string(parametersRef.Name),
+				}.String(),
+			)
+		}
+	}
+
+	return cmRefs
 }

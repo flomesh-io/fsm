@@ -40,7 +40,7 @@ type PolicyStatusProcessor struct {
 type GetObjectByGroupKindFunc func(group gwv1.Group, kind gwv1.Kind) client.Object
 
 // GetPoliciesFunc returns the policies, and returns condition if there is any error
-type GetPoliciesFunc func(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition)
+type GetPoliciesFunc func(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition)
 
 // FindConflictPortFunc finds the conflicted port level policy
 type FindConflictPortFunc func(gateway *gwv1.Gateway, policy client.Object, allPortLevelPolicies []client.Object) *types.NamespacedName
@@ -66,10 +66,10 @@ func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Objec
 		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference kind, only %q are supported", strings.Join(p.supportedKinds(), ",")))
 	}
 
-	referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
-		return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
-	}
+	//referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	//if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
+	//	return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
+	//}
 
 	key := types.NamespacedName{
 		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
@@ -84,7 +84,7 @@ func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Objec
 		}
 	}
 
-	policies, condition := p.getSortedPolices(policy, target)
+	policies, condition := p.getSortedPolices(target)
 	if condition != nil {
 		return *condition
 	}
@@ -129,8 +129,8 @@ func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Objec
 	return AcceptedCondition(policy)
 }
 
-func (p *PolicyStatusProcessor) getSortedPolices(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
-	policies, condition := p.GetPolicies(policy, target)
+func (p *PolicyStatusProcessor) getSortedPolices(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	policies, condition := p.GetPolicies(target)
 	if condition != nil {
 		return nil, condition
 	}

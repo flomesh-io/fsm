@@ -60,9 +60,9 @@ type endpointContext struct {
 type calculateEndpointsFunc func(svc *corev1.Service, port *int32) map[string]fgw.Endpoint
 
 type globalPolicyAttachments struct {
-	rateLimits      map[gwpkg.PolicyMatchType][]gwpav1alpha1.RateLimitPolicy
-	accessControls  map[gwpkg.PolicyMatchType][]gwpav1alpha1.AccessControlPolicy
-	faultInjections map[gwpkg.PolicyMatchType][]gwpav1alpha1.FaultInjectionPolicy
+	rateLimits      map[gwpkg.PolicyMatchType][]*gwpav1alpha1.RateLimitPolicy
+	accessControls  map[gwpkg.PolicyMatchType][]*gwpav1alpha1.AccessControlPolicy
+	faultInjections map[gwpkg.PolicyMatchType][]*gwpav1alpha1.FaultInjectionPolicy
 }
 
 type routePolicies struct {

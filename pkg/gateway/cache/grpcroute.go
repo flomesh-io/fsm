@@ -1,22 +1,43 @@
 package cache
 
 import (
+	"context"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
+func (c *GatewayProcessor) processGRPCRoutes() {
+	list := &gwv1.GRPCRouteList{}
+	err := c.cache.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
+	})
+	if err != nil {
+		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		return
+	}
+
+	for _, grpcRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
+		c.processGRPCRoute(grpcRoute)
+	}
+}
+
 func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
-	routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, grpcRoute)
-	hostnameEnrichers := getHostnamePolicyEnrichers(routePolicies)
+	//routePolicies := filterPoliciesByRoute(c.referenceGrants, c.policies, grpcRoute)
+	hostnameEnrichers := c.getHostnamePolicyEnrichers(grpcRoute)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
+		if !gwutils.IsRefToGateway(ref, c.gateway) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(grpcRoute), c.validListeners)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.cache.client, c.gateway, ref, gwutils.ToRouteContext(grpcRoute), c.validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}
@@ -31,7 +52,7 @@ func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
 
 			grpcRule := fgw.L7RouteRule{}
 			for _, hostname := range hostnames {
-				r := c.generateGRPCRouteCfg(grpcRoute, routePolicies)
+				r := c.generateGRPCRouteCfg(grpcRoute)
 
 				for _, enricher := range hostnameEnrichers {
 					enricher.Enrich(hostname, r)
@@ -52,12 +73,12 @@ func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
 	}
 }
 
-func (c *GatewayProcessor) generateGRPCRouteCfg(grpcRoute *gwv1.GRPCRoute, routePolicies routePolicies) *fgw.GRPCRouteRuleSpec {
+func (c *GatewayProcessor) generateGRPCRouteCfg(grpcRoute *gwv1.GRPCRoute) *fgw.GRPCRouteRuleSpec {
 	grpcSpec := &fgw.GRPCRouteRuleSpec{
 		RouteType: fgw.L7RouteTypeGRPC,
 		Matches:   make([]fgw.GRPCTrafficMatch, 0),
 	}
-	enrichers := getGRPCRoutePolicyEnrichers(routePolicies)
+	enrichers := c.getGRPCRoutePolicyEnrichers(grpcRoute)
 
 	for _, rule := range grpcRoute.Spec.Rules {
 		backends := map[string]fgw.BackendServiceConfig{}

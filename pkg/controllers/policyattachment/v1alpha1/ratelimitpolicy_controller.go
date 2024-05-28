@@ -29,10 +29,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/fields"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
@@ -41,8 +45,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	corev1 "k8s.io/api/core/v1"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -134,41 +136,73 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func (r *rateLimitPolicyReconciler) getRateLimitPolices(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
-	rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list rate limit policies: %s", err)))
-	}
-
+func (r *rateLimitPolicyReconciler) getRateLimitPolices(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+	//rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	//if err != nil {
+	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list rate limit policies: %s", err)))
+	//}
+	c := r.fctx.Manager.GetCache()
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
-	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
 
-	for _, p := range rateLimitPolicyList.Items {
-		p := p
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
-			spec := p.Spec
-			targetRef := spec.TargetRef
-
-			switch {
-			case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.Ports) > 0:
-				policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
-			case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.Hostnames) > 0:
-				policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
-			case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.HTTPRateLimits) > 0:
-				policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
-			case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-				gwutils.IsRefToTarget(referenceGrants, &p, targetRef, target) &&
-				len(spec.GRPCRateLimits) > 0:
-				policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
-			}
+	for _, p := range []struct {
+		matchType gwpkg.PolicyMatchType
+		fn        func(cache.Cache, fields.Selector) []client.Object
+		selector  fields.Selector
+	}{
+		{
+			matchType: gwpkg.PolicyMatchTypePort,
+			fn:        gwutils.GetRateLimitsMatchTypePort,
+			selector:  fields.OneTermEqualSelector(constants.PortPolicyAttachmentIndex, client.ObjectKeyFromObject(target).String()),
+		},
+		{
+			matchType: gwpkg.PolicyMatchTypeHostnames,
+			fn:        gwutils.GetRateLimitsMatchTypeHostname,
+			selector:  fields.OneTermEqualSelector(constants.HostnamePolicyAttachmentIndex, fmt.Sprintf("%s/%s/%s", target.GetObjectKind().GroupVersionKind().Kind, target.GetNamespace(), target.GetName())),
+		},
+		{
+			matchType: gwpkg.PolicyMatchTypeHTTPRoute,
+			fn:        gwutils.GetRateLimitsMatchTypeHTTPRoute,
+			selector:  fields.OneTermEqualSelector(constants.HTTPRoutePolicyAttachmentIndex, client.ObjectKeyFromObject(target).String()),
+		},
+		{
+			matchType: gwpkg.PolicyMatchTypeGRPCRoute,
+			fn:        gwutils.GetRateLimitsMatchTypeGRPCRoute,
+			selector:  fields.OneTermEqualSelector(constants.GRPCRoutePolicyAttachmentIndex, client.ObjectKeyFromObject(target).String()),
+		},
+	} {
+		if result := p.fn(c, p.selector); len(result) > 0 {
+			policies[p.matchType] = result
 		}
 	}
+
+	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	//
+	//for _, p := range rateLimitPolicyList.Items {
+	//	p := p
+	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
+	//		spec := p.Spec
+	//		targetRef := spec.TargetRef
+	//
+	//		switch {
+	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.Ports) > 0:
+	//			policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
+	//		case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.Hostnames) > 0:
+	//			policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
+	//		case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.HTTPRateLimits) > 0:
+	//			policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
+	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
+	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
+	//			len(spec.GRPCRateLimits) > 0:
+	//			policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
+	//		}
+	//	}
+	//}
 
 	return policies, nil
 }
@@ -191,7 +225,7 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 
 			validListeners := gwutils.GetValidListenersForGateway(gateway)
 
-			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.InformerCollection.GetListers().Namespace, gateway, parent.ParentRef, route, validListeners)
+			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, parent.ParentRef, route, validListeners)
 			for _, listener := range allowedListeners {
 				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
 				if len(hostnames) == 0 {
@@ -202,12 +236,12 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 					for _, hr := range hostnamesRateLimits {
 						hr := hr.(*gwpav1alpha1.RateLimitPolicy)
 
-						r1 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *hr)
+						r1 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, hr)
 						if r1 == nil {
 							continue
 						}
 
-						r2 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, *currentPolicy)
+						r2 := ratelimit.GetRateLimitIfRouteHostnameMatchesPolicy(hostname, currentPolicy)
 						if r2 == nil {
 							continue
 						}
@@ -245,12 +279,12 @@ func (r *rateLimitPolicyReconciler) getConflictedHTTPRouteBasedRateLimitPolicy(r
 					continue
 				}
 
-				r1 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *routePolicy)
+				r1 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, routePolicy)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, *currentPolicy)
+				r2 := ratelimit.GetRateLimitIfHTTPRouteMatchesPolicy(m, currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -286,12 +320,12 @@ func (r *rateLimitPolicyReconciler) getConflictedGRPCRouteBasedRateLimitPolicy(r
 					continue
 				}
 
-				r1 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *routePolicy)
+				r1 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, routePolicy)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, *currentPolicy)
+				r2 := ratelimit.GetRateLimitIfGRPCRouteMatchesPolicy(m, currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -324,12 +358,12 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, rat
 
 		if len(pr.Spec.Ports) > 0 {
 			for _, listener := range validListeners {
-				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *pr)
+				r1 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, pr)
 				if r1 == nil {
 					continue
 				}
 
-				r2 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, *currentPolicy)
+				r2 := ratelimit.GetRateLimitIfPortMatchesPolicy(listener.Port, currentPolicy)
 				if r2 == nil {
 					continue
 				}
@@ -351,13 +385,94 @@ func (r *rateLimitPolicyReconciler) getConflictedPort(gateway *gwv1.Gateway, rat
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *rateLimitPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.RateLimitPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addRateLimitPolicyIndexer(context.Background(), mgr)
+}
+
+func addRateLimitPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RateLimitPolicy{}, constants.PortPolicyAttachmentIndex, addRateLimitPortIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RateLimitPolicy{}, constants.HostnamePolicyAttachmentIndex, addRateLimitHostnameIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RateLimitPolicy{}, constants.HTTPRoutePolicyAttachmentIndex, addRateLimitHTTPRouteIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RateLimitPolicy{}, constants.GRPCRoutePolicyAttachmentIndex, addRateLimitGRPCRouteIndexFunc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addRateLimitPortIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.RateLimitPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) && len(policy.Spec.Ports) > 0 {
+		targets = append(targets, types.NamespacedName{
+			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Name:      string(targetRef.Name),
+		}.String())
+	}
+
+	return targets
+}
+
+func addRateLimitHostnameIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.RateLimitPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(policy.Spec.Hostnames) > 0 {
+		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.Namespace(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
+	}
+
+	return targets
+}
+
+func addRateLimitHTTPRouteIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.RateLimitPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(policy.Spec.HTTPRateLimits) > 0 {
+		targets = append(targets, types.NamespacedName{
+			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Name:      string(targetRef.Name),
+		}.String())
+	}
+
+	return targets
+}
+
+func addRateLimitGRPCRouteIndexFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.RateLimitPolicy)
+	targetRef := policy.Spec.TargetRef
+
+	var targets []string
+	if gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(policy.Spec.GRPCRateLimits) > 0 {
+		targets = append(targets, types.NamespacedName{
+			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Name:      string(targetRef.Name),
+		}.String())
+	}
+
+	return targets
 }
 
 func (r *rateLimitPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
@@ -367,13 +482,21 @@ func (r *rateLimitPolicyReconciler) referenceGrantToPolicyAttachment(_ context.C
 		return nil
 	}
 
+	c := r.fctx.Manager.GetCache()
+	list := &gwpav1alpha1.RateLimitPolicyList{}
+	if err := c.List(context.Background(), list); err != nil {
+		log.Error().Msgf("Failed to list RateLimitPolicyList: %v", err)
+		return nil
+	}
+	policies := gwutils.ToSlicePtr(list.Items)
+
 	requests := make([]reconcile.Request, 0)
-	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RateLimitPoliciesResourceType, false)
+	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RateLimitPoliciesResourceType, false)
 
-	for _, p := range policies {
-		policy := p.(*gwpav1alpha1.RateLimitPolicy)
+	for _, policy := range policies {
+		//policy := p.(*gwpav1alpha1.RateLimitPolicy)
 
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

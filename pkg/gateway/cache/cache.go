@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"sync"
 
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	cctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/version"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -16,7 +19,6 @@ import (
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
-	"k8s.io/client-go/kubernetes"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -27,8 +29,7 @@ import (
 // GatewayCache is a cache of all the resources that are relevant to the gateway
 type GatewayCache struct {
 	repoClient        *repo.PipyRepoClient
-	informers         *informers.InformerCollection
-	kubeClient        kubernetes.Interface
+	client            cache.Cache
 	cfg               configurator.Configurator
 	triggers          map[informers.ResourceType]Trigger
 	gatewayclass      *gwv1.GatewayClass
@@ -37,13 +38,13 @@ type GatewayCache struct {
 }
 
 // NewGatewayCache creates a new gateway cache
-func NewGatewayCache(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, cfg configurator.Configurator) *GatewayCache {
+func NewGatewayCache(ctx *cctx.ControllerContext) *GatewayCache {
+	cfg := ctx.Configurator
 	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
-	useEndpointSlices := cfg.GetFeatureFlags().UseEndpointSlicesForGateway && version.IsEndpointSliceEnabled(kubeClient)
+	useEndpointSlices := cfg.GetFeatureFlags().UseEndpointSlicesForGateway && version.IsEndpointSliceEnabled(ctx.KubeClient)
 	return &GatewayCache{
 		repoClient: repo.NewRepoClient(repoBaseURL, cfg.GetFSMLogLevel()),
-		informers:  informerCollection,
-		kubeClient: kubeClient,
+		client:     ctx.Manager.GetCache(),
 		cfg:        cfg,
 
 		triggers: map[informers.ResourceType]Trigger{

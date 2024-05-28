@@ -6,23 +6,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	gwpav1alpha1lister "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/listers/policyattachment/v1alpha1"
-
-	v1 "k8s.io/client-go/listers/core/v1"
-	discoveryv1 "k8s.io/client-go/listers/discovery/v1"
-	networkingv1 "k8s.io/client-go/listers/networking/v1"
-	gwv1lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1"
-	gwv1alpha2lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1alpha2"
-	gwv1beta1lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
-
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/listers/multicluster/v1alpha1"
-	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/listers/namespacedingress/v1alpha1"
-
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -172,40 +155,40 @@ var (
 // type should only be passed around as a pointer
 type InformerCollection struct {
 	informers map[InformerKey]cache.SharedIndexInformer
-	listers   *Lister
-	meshName  string
+	//listers   *Lister
+	meshName string
 }
 
 // Lister is the listers for the informers in the collection
-type Lister struct {
-	Service               v1.ServiceLister
-	ServiceImport         mcsv1alpha1.ServiceImportLister
-	Endpoints             v1.EndpointsLister
-	EndpointSlice         discoveryv1.EndpointSliceLister
-	Secret                v1.SecretLister
-	ConfigMap             v1.ConfigMapLister
-	GatewayClass          gwv1lister.GatewayClassLister
-	Gateway               gwv1lister.GatewayLister
-	HTTPRoute             gwv1lister.HTTPRouteLister
-	GRPCRoute             gwv1lister.GRPCRouteLister
-	TLSRoute              gwv1alpha2lister.TLSRouteLister
-	TCPRoute              gwv1alpha2lister.TCPRouteLister
-	UDPRoute              gwv1alpha2lister.UDPRouteLister
-	K8sIngressClass       networkingv1.IngressClassLister
-	K8sIngress            networkingv1.IngressLister
-	NamespacedIngress     nsigv1alpha1.NamespacedIngressLister
-	RateLimitPolicy       gwpav1alpha1lister.RateLimitPolicyLister
-	SessionStickyPolicy   gwpav1alpha1lister.SessionStickyPolicyLister
-	LoadBalancerPolicy    gwpav1alpha1lister.LoadBalancerPolicyLister
-	CircuitBreakingPolicy gwpav1alpha1lister.CircuitBreakingPolicyLister
-	AccessControlPolicy   gwpav1alpha1lister.AccessControlPolicyLister
-	HealthCheckPolicy     gwpav1alpha1lister.HealthCheckPolicyLister
-	FaultInjectionPolicy  gwpav1alpha1lister.FaultInjectionPolicyLister
-	UpstreamTLSPolicy     gwpav1alpha1lister.UpstreamTLSPolicyLister
-	RetryPolicy           gwpav1alpha1lister.RetryPolicyLister
-	ReferenceGrant        gwv1beta1lister.ReferenceGrantLister
-	Namespace             v1.NamespaceLister
-}
+//type Lister struct {
+//	Service               v1.ServiceLister
+//	ServiceImport         mcsv1alpha1.ServiceImportLister
+//	Endpoints             v1.EndpointsLister
+//	EndpointSlice         discoveryv1.EndpointSliceLister
+//	Secret                v1.SecretLister
+//	ConfigMap             v1.ConfigMapLister
+//	GatewayClass          gwv1lister.GatewayClassLister
+//	Gateway               gwv1lister.GatewayLister
+//	HTTPRoute             gwv1lister.HTTPRouteLister
+//	GRPCRoute             gwv1lister.GRPCRouteLister
+//	TLSRoute              gwv1alpha2lister.TLSRouteLister
+//	TCPRoute              gwv1alpha2lister.TCPRouteLister
+//	UDPRoute              gwv1alpha2lister.UDPRouteLister
+//	K8sIngressClass       networkingv1.IngressClassLister
+//	K8sIngress            networkingv1.IngressLister
+//	NamespacedIngress     nsigv1alpha1.NamespacedIngressLister
+//	RateLimitPolicy       gwpav1alpha1lister.RateLimitPolicyLister
+//	SessionStickyPolicy   gwpav1alpha1lister.SessionStickyPolicyLister
+//	LoadBalancerPolicy    gwpav1alpha1lister.LoadBalancerPolicyLister
+//	CircuitBreakingPolicy gwpav1alpha1lister.CircuitBreakingPolicyLister
+//	AccessControlPolicy   gwpav1alpha1lister.AccessControlPolicyLister
+//	HealthCheckPolicy     gwpav1alpha1lister.HealthCheckPolicyLister
+//	FaultInjectionPolicy  gwpav1alpha1lister.FaultInjectionPolicyLister
+//	UpstreamTLSPolicy     gwpav1alpha1lister.UpstreamTLSPolicyLister
+//	RetryPolicy           gwpav1alpha1lister.RetryPolicyLister
+//	ReferenceGrant        gwv1beta1lister.ReferenceGrantLister
+//	Namespace             v1.NamespaceLister
+//}
 
 // ResourceType is the type used to represent the type of resource
 type ResourceType string
@@ -282,13 +265,13 @@ const (
 )
 
 // GatewayAPIResource is the type used to represent the Gateway API resource
-type GatewayAPIResource interface {
-	*gwv1.GatewayClass | *gwv1.Gateway |
-		*gwv1.HTTPRoute | *gwv1.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
-		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
-		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
-		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
-}
+//type GatewayAPIResource interface {
+//	*gwv1.GatewayClass | *gwv1.Gateway |
+//		*gwv1.HTTPRoute | *gwv1.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
+//		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
+//		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
+//		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
+//}
 
 var (
 	selectAll = labels.Set{}.AsSelector()

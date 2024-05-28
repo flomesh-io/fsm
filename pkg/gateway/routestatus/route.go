@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 
-package status
+package routestatus
 
 import (
 	"context"
 	"fmt"
 	"time"
+
+	fctx "github.com/flomesh-io/fsm/pkg/context"
+	"k8s.io/apimachinery/pkg/fields"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
@@ -38,17 +41,25 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 // RouteStatusProcessor is responsible for computing the status of a Route
 type RouteStatusProcessor struct {
-	Informers *informers.InformerCollection
+	Ctx *fctx.ControllerContext
 }
 
 // ProcessRouteStatus computes the status of a Route
 func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route client.Object) ([]gwv1.RouteParentStatus, error) {
-	activeGateways := gwutils.GetActiveGateways(p.Informers.GetGatewayResourcesFromCache(informers.GatewaysResourceType, false))
+	c := p.Ctx.Manager.GetCache()
+	list := &gwv1.GatewayList{}
+	if err := c.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, constants.FSMGatewayClassName),
+	}); err != nil {
+		log.Error().Msgf("Failed to list Gateways: %v", err)
+		return nil, err
+	}
+
+	activeGateways := gwutils.GetActiveGateways(gwutils.ToSlicePtr(list.Items))
 
 	if len(activeGateways) > 0 {
 		params := gwutils.ToRouteContext(route)
@@ -72,7 +83,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 		validListeners := gwutils.GetValidListenersForGateway(gw)
 
 		for _, parentRef := range params.ParentRefs {
-			if !gwutils.IsRefToGateway(parentRef, gwutils.ObjectKey(gw)) {
+			if !gwutils.IsRefToGateway(parentRef, gw) {
 				continue
 			}
 
@@ -83,7 +94,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 			}
 
 			//allowedListeners := p.getAllowedListenersAndSetStatus(gw, parentRef, params, validListeners, routeParentStatus)
-			allowedListeners, conditions := gwutils.GetAllowedListeners(p.Informers.GetListers().Namespace, gw, parentRef, params, validListeners)
+			allowedListeners, conditions := gwutils.GetAllowedListeners(p.Ctx.Manager.GetCache(), gw, parentRef, params, validListeners)
 			//if len(allowedListeners) == 0 {
 			//
 			//}

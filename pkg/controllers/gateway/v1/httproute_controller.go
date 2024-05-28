@@ -27,6 +27,14 @@ package v1
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -36,13 +44,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
 type httpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *status.RouteStatusProcessor
+	statusProcessor *routestatus.RouteStatusProcessor
 }
 
 func (r *httpRouteReconciler) NeedLeaderElection() bool {
@@ -54,7 +61,7 @@ func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
 		fctx:            ctx,
-		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
+		statusProcessor: &routestatus.RouteStatusProcessor{Ctx: ctx},
 	}
 }
 
@@ -95,7 +102,87 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.HTTPRoute{}).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addHTTPRouteIndexers(context.Background(), mgr)
+}
+
+func addHTTPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.GatewayHTTPRouteIndex, gatewayHTTPRouteIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.BackendHTTPRouteIndex, backendHTTPRouteIndexFunc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func gatewayHTTPRouteIndexFunc(obj client.Object) []string {
+	httproute := obj.(*gwv1.HTTPRoute)
+	var gateways []string
+	for _, parent := range httproute.Spec.ParentRefs {
+		if parent.Kind == nil || string(*parent.Kind) == constants.GatewayAPIGatewayKind {
+			gateways = append(gateways,
+				types.NamespacedName{
+					Namespace: gwutils.Namespace(parent.Namespace, httproute.Namespace),
+					Name:      string(parent.Name),
+				}.String(),
+			)
+		}
+	}
+
+	return gateways
+}
+
+func backendHTTPRouteIndexFunc(obj client.Object) []string {
+	httproute := obj.(*gwv1.HTTPRoute)
+	var backendRefs []string
+	for _, rule := range httproute.Spec.Rules {
+		for _, backend := range rule.BackendRefs {
+			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
+				backendRefs = append(backendRefs,
+					types.NamespacedName{
+						Namespace: gwutils.Namespace(backend.Namespace, httproute.Namespace),
+						Name:      string(backend.Name),
+					}.String(),
+				)
+			}
+
+			for _, filter := range backend.Filters {
+				if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
+					if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
+						mirror := filter.RequestMirror.BackendRef
+						backendRefs = append(backendRefs,
+							types.NamespacedName{
+								Namespace: gwutils.Namespace(mirror.Namespace, httproute.Namespace),
+								Name:      string(mirror.Name),
+							}.String(),
+						)
+					}
+				}
+			}
+		}
+
+		for _, filter := range rule.Filters {
+			if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
+				if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
+					mirror := filter.RequestMirror.BackendRef
+					backendRefs = append(backendRefs,
+						types.NamespacedName{
+							Namespace: gwutils.Namespace(mirror.Namespace, httproute.Namespace),
+							Name:      string(mirror.Name),
+						}.String(),
+					)
+				}
+			}
+		}
+	}
+
+	return backendRefs
 }
