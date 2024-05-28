@@ -125,7 +125,7 @@ func addUpstreamTLSPolicyIndexer(ctx context.Context, mgr manager.Manager) error
 		var targets []string
 		if targetRef.Kind == constants.KubernetesServiceKind {
 			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 				Name:      string(targetRef.Name),
 			}.String())
 		}
@@ -151,7 +151,7 @@ func addSecretUpstreamTLSPolicyFunc(obj client.Object) []string {
 		kind := ref.Kind
 		if kind == nil || string(*kind) == constants.KubernetesSecretKind {
 			secrets = append(secrets, types.NamespacedName{
-				Namespace: gwutils.Namespace(ref.Namespace, policy.Namespace),
+				Namespace: gwutils.NamespaceDerefOr(ref.Namespace, policy.Namespace),
 				Name:      string(ref.Name),
 			}.String())
 		}
@@ -167,7 +167,7 @@ func addSecretUpstreamTLSPolicyFunc(obj client.Object) []string {
 			kind := ref.Kind
 			if kind == nil || string(*kind) == constants.KubernetesSecretKind {
 				secrets = append(secrets, types.NamespacedName{
-					Namespace: gwutils.Namespace(ref.Namespace, policy.Namespace),
+					Namespace: gwutils.NamespaceDerefOr(ref.Namespace, policy.Namespace),
 					Name:      string(ref.Name),
 				}.String())
 			}

@@ -136,7 +136,7 @@ func gatewayGRPCRouteIndexFunc(obj client.Object) []string {
 			// lookup the provided Gateway Name.
 			gateways = append(gateways,
 				types.NamespacedName{
-					Namespace: gwutils.Namespace(parent.Namespace, grpcroute.Namespace),
+					Namespace: gwutils.NamespaceDerefOr(parent.Namespace, grpcroute.Namespace),
 					Name:      string(parent.Name),
 				}.String(),
 			)
@@ -153,7 +153,7 @@ func backendGRPCRouteIndexFunc(obj client.Object) []string {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(backend.Namespace, grpcroute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, grpcroute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)
@@ -165,7 +165,7 @@ func backendGRPCRouteIndexFunc(obj client.Object) []string {
 						mirror := filter.RequestMirror.BackendRef
 						backendRefs = append(backendRefs,
 							types.NamespacedName{
-								Namespace: gwutils.Namespace(mirror.Namespace, grpcroute.Namespace),
+								Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, grpcroute.Namespace),
 								Name:      string(mirror.Name),
 							}.String(),
 						)
@@ -180,7 +180,7 @@ func backendGRPCRouteIndexFunc(obj client.Object) []string {
 					mirror := filter.RequestMirror.BackendRef
 					backendRefs = append(backendRefs,
 						types.NamespacedName{
-							Namespace: gwutils.Namespace(mirror.Namespace, grpcroute.Namespace),
+							Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, grpcroute.Namespace),
 							Name:      string(mirror.Name),
 						}.String(),
 					)

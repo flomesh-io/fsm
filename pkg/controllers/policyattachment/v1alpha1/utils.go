@@ -10,7 +10,7 @@ import (
 
 func getRouteParentKey(route metav1.Object, parent gwv1.RouteParentStatus) types.NamespacedName {
 	return types.NamespacedName{
-		Namespace: gwutils.Namespace(parent.ParentRef.Namespace, route.GetNamespace()),
+		Namespace: gwutils.NamespaceDerefOr(parent.ParentRef.Namespace, route.GetNamespace()),
 		Name:      string(parent.ParentRef.Name),
 	}
 }

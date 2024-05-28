@@ -120,7 +120,7 @@ func addTCPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 			if string(*parent.Kind) == constants.GatewayAPIGatewayKind {
 				gateways = append(gateways,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(parent.Namespace, tcpRoute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(parent.Namespace, tcpRoute.Namespace),
 						Name:      string(parent.Name),
 					}.String(),
 				)
@@ -145,7 +145,7 @@ func backendTCPRouteIndexFunc(obj client.Object) []string {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(backend.Namespace, tcpRoute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tcpRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)

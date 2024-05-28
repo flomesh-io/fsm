@@ -61,8 +61,8 @@ var (
 	log = logger.New("fsm-gateway/utils")
 )
 
-// Namespace returns the namespace if it is not nil, otherwise returns the default namespace
-func Namespace(ns *gwv1.Namespace, defaultNs string) string {
+// NamespaceDerefOr returns the namespace if it is not nil, otherwise returns the default namespace
+func NamespaceDerefOr(ns *gwv1.Namespace, defaultNs string) string {
 	if ns == nil {
 		return defaultNs
 	}
@@ -148,16 +148,16 @@ func IsTargetRefToTarget(policy client.Object, targetRef gwv1alpha2.NamespacedPo
 		return false
 	}
 
-	if ns := Namespace(targetRef.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
+	if ns := NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()); ns != target.GetNamespace() {
 		return false
 	}
 
 	return string(targetRef.Name) == target.GetName()
 }
 
+// HasAccessToTargetRef returns true if the policy has access to the target reference
 func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, referenceGrants []*gwv1beta1.ReferenceGrant) bool {
 	if ref.Namespace != nil && string(*ref.Namespace) != policy.GetNamespace() && !ValidCrossNamespaceRef(
-		referenceGrants,
 		gwtypes.CrossNamespaceFrom{
 			Group:     policy.GetObjectKind().GroupVersionKind().Group,
 			Kind:      policy.GetObjectKind().GroupVersionKind().Kind,
@@ -169,6 +169,7 @@ func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyT
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
+		referenceGrants,
 	) {
 		return false
 	}
@@ -251,7 +252,7 @@ func GetAllowedListeners(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1.RouteReasonNoMatchingParent),
-			Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
+			Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 		return nil, invalidListenerConditions
 	}
@@ -277,7 +278,7 @@ func GetAllowedListeners(
 			ObservedGeneration: routeGeneration,
 			LastTransitionTime: metav1.Time{Time: time.Now()},
 			Reason:             string(gwv1.RouteReasonNotAllowedByListeners),
-			Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: Namespace(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
+			Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		})
 		return nil, invalidListenerConditions
 	}
@@ -421,13 +422,13 @@ func ToRouteContext(route client.Object) *gwtypes.RouteContext {
 	}
 }
 
-func ValidCrossNamespaceRef(referenceGrants []*gwv1beta1.ReferenceGrant, from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo) bool {
+// ValidCrossNamespaceRef returns if the reference is valid across namespaces based on the reference grants
+func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo, referenceGrants []*gwv1beta1.ReferenceGrant) bool {
 	if len(referenceGrants) == 0 {
 		return false
 	}
 
 	for _, refGrant := range referenceGrants {
-		//refGrant := referenceGrant.(*gwv1beta1.ReferenceGrant)
 		log.Debug().Msgf("Evaluating ReferenceGrant: %s/%s", refGrant.GetNamespace(), refGrant.GetName())
 
 		if refGrant.Namespace != to.Namespace {
@@ -471,11 +472,11 @@ func ValidCrossNamespaceRef(referenceGrants []*gwv1beta1.ReferenceGrant, from gw
 	return false
 }
 
+// GetActiveGateways returns the active gateways from the list of gateways
 func GetActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range allGateways {
-		//gw := gw.(*gwv1.Gateway)
 		if IsActiveGateway(gw) {
 			gateways = append(gateways, gw)
 		}
@@ -484,6 +485,7 @@ func GetActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
 	return gateways
 }
 
+// SortResources sorts the resources by creation timestamp and name
 func SortResources[T client.Object](resources []T) []T {
 	sort.Slice(resources, func(i, j int) bool {
 		if resources[i].GetCreationTimestamp().Time.Equal(resources[j].GetCreationTimestamp().Time) {
@@ -530,6 +532,33 @@ func IsValidBackendRefToGroupKindOfService(ref gwv1.BackendObjectReference) bool
 
 	if (string(*ref.Kind) == constants.KubernetesServiceKind && string(*ref.Group) == constants.KubernetesCoreGroup) ||
 		(string(*ref.Kind) == constants.FlomeshAPIServiceImportKind && string(*ref.Group) == constants.FlomeshMCSAPIGroup) {
+		return true
+	}
+
+	return false
+}
+
+// IsValidRefToGroupKindOfSecret returns true if the reference is to a Secret in the core group
+func IsValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
+	if ref.Group == nil {
+		return false
+	}
+
+	if ref.Kind == nil {
+		return false
+	}
+
+	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
+		return true
+	}
+
+	return false
+}
+
+// IsValidTargetRefToGroupKindOfService checks if the target reference is valid to the group kind of service
+func IsValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetReference) bool {
+	if (ref.Kind == constants.KubernetesServiceKind && ref.Group == constants.KubernetesCoreGroup) ||
+		(ref.Kind == constants.FlomeshAPIServiceImportKind && ref.Group == constants.FlomeshMCSAPIGroup) {
 		return true
 	}
 

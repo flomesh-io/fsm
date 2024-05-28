@@ -415,7 +415,6 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 	}
 
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
-		gwutils.GetServiceRefGrants(c.cache.client),
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -427,6 +426,7 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
+		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -436,7 +436,7 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 
 	return &fgw.ServicePortName{
 		NamespacedName: types.NamespacedName{
-			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		},
 		Port: pointer.Int32(int32(*ref.Port)),
@@ -450,7 +450,6 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 	}
 
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
-		gwutils.GetServiceRefGrants(c.cache.client),
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -462,6 +461,7 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
+		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -471,7 +471,7 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 
 	return &fgw.ServicePortName{
 		NamespacedName: types.NamespacedName{
-			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		},
 		Port: pointer.Int32(port),
@@ -574,13 +574,12 @@ func (c *GatewayProcessor) toFSMGRPCRouteFilter(referer client.Object, filter gw
 }
 
 func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
-	if !isValidRefToGroupKindOfSecret(ref) {
+	if !gwutils.IsValidRefToGroupKindOfSecret(ref) {
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
 	}
 
 	// If the secret is in a different namespace than the referer, check ReferenceGrants
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
-		gwutils.GetSecretRefGrants(c.cache.client),
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -592,6 +591,7 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
+		gwutils.GetSecretRefGrants(c.cache.client),
 	) {
 		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -599,7 +599,7 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 	}
 
 	return c.cache.getSecretFromCache(client.ObjectKey{
-		Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+		Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 		Name:      string(ref.Name),
 	})
 }
@@ -611,7 +611,6 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 
 	// If the secret is in a different namespace than the referer, check ReferenceGrants
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
-		gwutils.GetCARefGrants(c.cache.client),
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -623,6 +622,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
+		gwutils.GetCARefGrants(c.cache.client),
 	) {
 		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -634,7 +634,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 	switch ref.Kind {
 	case constants.KubernetesSecretKind:
 		secret, err := c.cache.getSecretFromCache(client.ObjectKey{
-			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		})
 		if err != nil {
@@ -647,7 +647,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 		}
 	case constants.KubernetesConfigMapKind:
 		cm, err := c.cache.getConfigMapFromCache(client.ObjectKey{
-			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		})
 		if err != nil {
@@ -661,7 +661,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 	}
 
 	if len(ca) == 0 {
-		return nil, fmt.Errorf("no CA certificate found in %s %s/%s", ref.Kind, gwutils.Namespace(ref.Namespace, referer.GetNamespace()), ref.Name)
+		return nil, fmt.Errorf("no CA certificate found in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()), ref.Name)
 	}
 
 	return ca, nil

@@ -379,7 +379,7 @@ func addFaultInjectionHostnameIndexFunc(obj client.Object) []string {
 
 	var targets []string
 	if (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(policy.Spec.Hostnames) > 0 {
-		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.Namespace(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
+		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
 	}
 
 	return targets
@@ -392,7 +392,7 @@ func addFaultInjectionHTTPRouteIndexFunc(obj client.Object) []string {
 	var targets []string
 	if gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(policy.Spec.HTTPFaultInjections) > 0 {
 		targets = append(targets, types.NamespacedName{
-			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 			Name:      string(targetRef.Name),
 		}.String())
 	}
@@ -407,7 +407,7 @@ func addFaultInjectionGRPCRouteIndexFunc(obj client.Object) []string {
 	var targets []string
 	if gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(policy.Spec.GRPCFaultInjections) > 0 {
 		targets = append(targets, types.NamespacedName{
-			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 			Name:      string(targetRef.Name),
 		}.String())
 	}

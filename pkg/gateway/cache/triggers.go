@@ -18,20 +18,21 @@ import (
 /**
  * This file contains the trigger functions for the GatewayCache.
  * These functions are used to roughly checking if the resources is referred to by another resource,
- * no need to check ReferenceGrants here
+ * no need to check ReferenceGrants here, over reaction to check ReferenceGrants will cause performance issue
  * will compute with ReferenceGrants when generating configuration
  */
 
 // no need to check ReferenceGrant here
+// isRoutableService checks if the service is referred by HTTPRoute/GRPCRoute/TCPRoute/UDPRoute/TLSRoute backendRefs
 func (c *GatewayCache) isRoutableService(service client.ObjectKey) bool {
-	for _, checkRoutableFunc := range []func(client.ObjectKey) bool{
+	for _, fn := range []func(client.ObjectKey) bool{
 		c.isRoutableHTTPService,
 		c.isRoutableGRPCService,
 		c.isRoutableTLSService,
 		c.isRoutableTCPService,
 		c.isRoutableUDPService,
 	} {
-		if checkRoutableFunc(service) {
+		if fn(service) {
 			return true
 		}
 	}
@@ -105,6 +106,7 @@ func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
 }
 
 // no need to check ReferenceGrant here
+// isEffectiveRoute checks if the route has reference to active Gateway,
 func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool {
 	gateways := c.getActiveGateways()
 
@@ -124,6 +126,8 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool 
 }
 
 // no need to check ReferenceGrant here
+// isEffectiveTargetRef checks if the targetRef is effective,
+// it's used to check ONLY policy attachments those are targeting Gateway or HTTPRoute/GRPCRoute resources
 func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if targetRef.Group != constants.GatewayAPIGroup {
 		return false
@@ -131,7 +135,7 @@ func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1
 
 	//referenceGrants := c.getReferenceGrantsFromCache()
 	key := types.NamespacedName{
-		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
+		Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
 		Name:      string(targetRef.Name),
 	}
 
@@ -166,11 +170,13 @@ func (c *GatewayCache) isEffectiveTargetRef(policy client.Object, targetRef gwv1
 }
 
 // no need to check ReferenceGrant here
+// isRoutableTargetService checks if the targetRef is a valid kind of service,
+// routable means it's a service that is referred by HTTPRoute/GRPCRoute/TCPRoute/UDPRoute/TLSRoute backendRefs
 func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
 		(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
 		return c.isRoutableService(client.ObjectKey{
-			Namespace: gwutils.Namespace(targetRef.Namespace, owner.GetNamespace()),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, owner.GetNamespace()),
 			Name:      string(targetRef.Name),
 		})
 	}
@@ -179,6 +185,7 @@ func (c *GatewayCache) isRoutableTargetService(owner client.Object, targetRef gw
 }
 
 // no need to check ReferenceGrant here
+// isSecretReferred checks if the secret is referred by Gateway or UpstreamTLSPolicy
 func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 	list := &gwv1.GatewayList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
@@ -204,6 +211,7 @@ func (c *GatewayCache) isSecretReferred(secret client.ObjectKey) bool {
 }
 
 // no need to check ReferenceGrant here
+// isConfigMapReferred checks if the configMap is referred by Gateway to store the configuration of gateway or CA certificates
 func (c *GatewayCache) isConfigMapReferred(cm client.ObjectKey) bool {
 	//ctx := context.TODO()
 	list := &gwv1.GatewayList{}

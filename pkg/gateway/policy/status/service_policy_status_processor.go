@@ -53,7 +53,7 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 	}
 
 	key := types.NamespacedName{
-		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
+		Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
 		Name:      string(targetRef.Name),
 	}
 

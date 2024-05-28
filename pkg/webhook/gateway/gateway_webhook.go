@@ -260,7 +260,7 @@ func (w *validator) validateSecretsExistence(gateway *gwv1.Gateway, c gwv1.Liste
 
 	for j, ref := range c.TLS.CertificateRefs {
 		if string(*ref.Kind) == "Secret" && string(*ref.Group) == "" {
-			ns := gwutils.Namespace(ref.Namespace, gateway.Namespace)
+			ns := gwutils.NamespaceDerefOr(ref.Namespace, gateway.Namespace)
 			name := string(ref.Name)
 
 			path := field.NewPath("spec").

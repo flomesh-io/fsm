@@ -122,7 +122,7 @@ func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 			if string(*parent.Kind) == constants.GatewayAPIGatewayKind {
 				gateways = append(gateways,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(parent.Namespace, tlsRoute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(parent.Namespace, tlsRoute.Namespace),
 						Name:      string(parent.Name),
 					}.String(),
 				)
@@ -147,7 +147,7 @@ func backendTLSRouteIndexFunc(obj client.Object) []string {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(backend.Namespace, tlsroute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tlsroute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)

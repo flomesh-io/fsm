@@ -1074,7 +1074,7 @@ func secretGatewayIndexFunc(obj client.Object) []string {
 			if *cert.Kind == constants.KubernetesSecretKind {
 				secretReferences = append(secretReferences,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(cert.Namespace, gateway.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(cert.Namespace, gateway.Namespace),
 						Name:      string(cert.Name),
 					}.String(),
 				)
@@ -1086,7 +1086,7 @@ func secretGatewayIndexFunc(obj client.Object) []string {
 				if ca.Kind == constants.KubernetesSecretKind {
 					secretReferences = append(secretReferences,
 						types.NamespacedName{
-							Namespace: gwutils.Namespace(ca.Namespace, gateway.Namespace),
+							Namespace: gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace),
 							Name:      string(ca.Name),
 						}.String(),
 					)
@@ -1120,7 +1120,7 @@ func configMapGatewayIndexFunc(obj client.Object) []string {
 			if ca.Kind == constants.KubernetesConfigMapKind {
 				cmRefs = append(cmRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(ca.Namespace, gateway.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace),
 						Name:      string(ca.Name),
 					}.String(),
 				)

@@ -120,7 +120,7 @@ func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 			if string(*parent.Kind) == constants.GatewayAPIGatewayKind {
 				gateways = append(gateways,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(parent.Namespace, udpRoute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(parent.Namespace, udpRoute.Namespace),
 						Name:      string(parent.Name),
 					}.String(),
 				)
@@ -145,7 +145,7 @@ func backendUDPRouteIndexFunc(obj client.Object) []string {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(backend.Namespace, udproute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udproute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)

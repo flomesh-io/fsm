@@ -124,7 +124,7 @@ func addRetryPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
 		var targets []string
 		if targetRef.Kind == constants.KubernetesServiceKind {
 			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 				Name:      string(targetRef.Name),
 			}.String())
 		}

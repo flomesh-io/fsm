@@ -213,7 +213,7 @@ func addCircuitBreakingPolicyIndexer(ctx context.Context, mgr manager.Manager) e
 		var targets []string
 		if targetRef.Kind == constants.KubernetesServiceKind {
 			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 				Name:      string(targetRef.Name),
 			}.String())
 		}

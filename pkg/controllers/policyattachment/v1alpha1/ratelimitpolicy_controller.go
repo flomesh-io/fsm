@@ -425,7 +425,7 @@ func addRateLimitPortIndexFunc(obj client.Object) []string {
 	var targets []string
 	if gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) && len(policy.Spec.Ports) > 0 {
 		targets = append(targets, types.NamespacedName{
-			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 			Name:      string(targetRef.Name),
 		}.String())
 	}
@@ -439,7 +439,7 @@ func addRateLimitHostnameIndexFunc(obj client.Object) []string {
 
 	var targets []string
 	if (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) && len(policy.Spec.Hostnames) > 0 {
-		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.Namespace(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
+		targets = append(targets, fmt.Sprintf("%s/%s/%s", targetRef.Kind, gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace), string(targetRef.Name)))
 	}
 
 	return targets
@@ -452,7 +452,7 @@ func addRateLimitHTTPRouteIndexFunc(obj client.Object) []string {
 	var targets []string
 	if gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) && len(policy.Spec.HTTPRateLimits) > 0 {
 		targets = append(targets, types.NamespacedName{
-			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 			Name:      string(targetRef.Name),
 		}.String())
 	}
@@ -467,7 +467,7 @@ func addRateLimitGRPCRouteIndexFunc(obj client.Object) []string {
 	var targets []string
 	if gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) && len(policy.Spec.GRPCRateLimits) > 0 {
 		targets = append(targets, types.NamespacedName{
-			Namespace: gwutils.Namespace(targetRef.Namespace, policy.Namespace),
+			Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
 			Name:      string(targetRef.Name),
 		}.String())
 	}

@@ -510,22 +510,6 @@ func passthroughTarget(ref gwv1.BackendRef) *string {
 	return nil
 }
 
-func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
-	if ref.Group == nil {
-		return false
-	}
-
-	if ref.Kind == nil {
-		return false
-	}
-
-	if string(*ref.Group) == constants.KubernetesCoreGroup && string(*ref.Kind) == constants.KubernetesSecretKind {
-		return true
-	}
-
-	return false
-}
-
 func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.Endpoint {
 	endpoints := make(map[string]fgw.Endpoint)
 	for ep := range endpointSet {

@@ -13,6 +13,7 @@ import (
 
 // ---------------------------- Access Control ----------------------------
 
+// GetAccessControlsMatchTypePort returns a list of AccessControlPolicy objects that match the given selector
 func GetAccessControlsMatchTypePort(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.AccessControlPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -31,6 +32,7 @@ func GetAccessControlsMatchTypePort(cache cache.Cache, selector fields.Selector)
 	)
 }
 
+// GetAccessControlsMatchTypeHostname returns a list of AccessControlPolicy objects that match the given selector
 func GetAccessControlsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.AccessControlPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -49,6 +51,7 @@ func GetAccessControlsMatchTypeHostname(cache cache.Cache, selector fields.Selec
 	)
 }
 
+// GetAccessControlsMatchTypeHTTPRoute returns a list of AccessControlPolicy objects that match the given selector
 func GetAccessControlsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.AccessControlPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -67,6 +70,7 @@ func GetAccessControlsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Sele
 	)
 }
 
+// GetAccessControlsMatchTypeGRPCRoute returns a list of AccessControlPolicy objects that match the given selector
 func GetAccessControlsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.AccessControlPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -97,6 +101,7 @@ func accessControlPolicyHasAccessToTargetRef(policy client.Object, refGrants []*
 
 // ---------------------------- Rate Limit ----------------------------
 
+// GetRateLimitsMatchTypePort returns a list of RateLimitPolicy objects that match the given selector
 func GetRateLimitsMatchTypePort(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RateLimitPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -115,6 +120,7 @@ func GetRateLimitsMatchTypePort(cache cache.Cache, selector fields.Selector) []c
 	)
 }
 
+// GetRateLimitsMatchTypeHostname returns a list of RateLimitPolicy objects that match the given selector
 func GetRateLimitsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RateLimitPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -133,6 +139,7 @@ func GetRateLimitsMatchTypeHostname(cache cache.Cache, selector fields.Selector)
 	)
 }
 
+// GetRateLimitsMatchTypeHTTPRoute returns a list of RateLimitPolicy objects that match the given selector
 func GetRateLimitsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RateLimitPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -151,6 +158,7 @@ func GetRateLimitsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector
 	)
 }
 
+// GetRateLimitsMatchTypeGRPCRoute returns a list of RateLimitPolicy objects that match the given selector
 func GetRateLimitsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RateLimitPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -181,6 +189,7 @@ func rateLimitPolicyHasAccessToTargetRef(policy client.Object, refGrants []*gwv1
 
 // ---------------------------- Fault Injection ----------------------------
 
+// GetFaultInjectionsMatchTypeHostname returns a list of FaultInjectionPolicy objects that match the given selector
 func GetFaultInjectionsMatchTypeHostname(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.FaultInjectionPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -199,6 +208,7 @@ func GetFaultInjectionsMatchTypeHostname(cache cache.Cache, selector fields.Sele
 	)
 }
 
+// GetFaultInjectionsMatchTypeHTTPRoute returns a list of FaultInjectionPolicy objects that match the given selector
 func GetFaultInjectionsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.FaultInjectionPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -217,6 +227,7 @@ func GetFaultInjectionsMatchTypeHTTPRoute(cache cache.Cache, selector fields.Sel
 	)
 }
 
+// GetFaultInjectionsMatchTypeGRPCRoute returns a list of FaultInjectionPolicy objects that match the given selector
 func GetFaultInjectionsMatchTypeGRPCRoute(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.FaultInjectionPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -247,6 +258,7 @@ func faultInjectionPolicyHasAccessToTargetRef(policy client.Object, refGrants []
 
 // ---------------------------- Session Sticky ----------------------------
 
+// GetSessionStickiesMatchTypePort returns a list of SessionStickyPolicy objects that match the given selector
 func GetSessionStickies(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.SessionStickyPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -272,6 +284,7 @@ func GetSessionStickies(cache cache.Cache, selector fields.Selector) []client.Ob
 
 // ---------------------------- Circuit Breaking ----------------------------
 
+// GetCircuitBreakings returns a list of CircuitBreakingPolicy objects that match the given selector
 func GetCircuitBreakings(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.CircuitBreakingPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -297,6 +310,7 @@ func GetCircuitBreakings(cache cache.Cache, selector fields.Selector) []client.O
 
 // ---------------------------- Health Check ----------------------------
 
+// GetHealthChecks returns a list of HealthCheckPolicy objects that match the given selector
 func GetHealthChecks(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.HealthCheckPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -322,6 +336,7 @@ func GetHealthChecks(cache cache.Cache, selector fields.Selector) []client.Objec
 
 // ---------------------------- Load Balancer ----------------------------
 
+// GetLoadBalancers returns a list of LoadBalancerPolicy objects that match the given selector
 func GetLoadBalancers(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.LoadBalancerPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -347,6 +362,7 @@ func GetLoadBalancers(cache cache.Cache, selector fields.Selector) []client.Obje
 
 // ---------------------------- Retry ----------------------------
 
+// GetRetries returns a list of RetryPolicy objects that match the given selector
 func GetRetries(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.RetryPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -372,6 +388,7 @@ func GetRetries(cache cache.Cache, selector fields.Selector) []client.Object {
 
 // ---------------------------- Upstream TLS ----------------------------
 
+// GetUpStreamTLSes returns a list of UpstreamTLSPolicy objects that match the given selector
 func GetUpStreamTLSes(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.UpstreamTLSPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {

@@ -131,7 +131,7 @@ func gatewayHTTPRouteIndexFunc(obj client.Object) []string {
 		if parent.Kind == nil || string(*parent.Kind) == constants.GatewayAPIGatewayKind {
 			gateways = append(gateways,
 				types.NamespacedName{
-					Namespace: gwutils.Namespace(parent.Namespace, httproute.Namespace),
+					Namespace: gwutils.NamespaceDerefOr(parent.Namespace, httproute.Namespace),
 					Name:      string(parent.Name),
 				}.String(),
 			)
@@ -149,7 +149,7 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.Namespace(backend.Namespace, httproute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, httproute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)
@@ -161,7 +161,7 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 						mirror := filter.RequestMirror.BackendRef
 						backendRefs = append(backendRefs,
 							types.NamespacedName{
-								Namespace: gwutils.Namespace(mirror.Namespace, httproute.Namespace),
+								Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httproute.Namespace),
 								Name:      string(mirror.Name),
 							}.String(),
 						)
@@ -176,7 +176,7 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 					mirror := filter.RequestMirror.BackendRef
 					backendRefs = append(backendRefs,
 						types.NamespacedName{
-							Namespace: gwutils.Namespace(mirror.Namespace, httproute.Namespace),
+							Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httproute.Namespace),
 							Name:      string(mirror.Name),
 						}.String(),
 					)

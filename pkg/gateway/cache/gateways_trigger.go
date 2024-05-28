@@ -19,7 +19,7 @@ func (p *GatewaysTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 
 	//key := utils.ObjectKey(gw)
 	//
-	//gw, err := cache.informers.GetListers().Gateway.Gateways(gw.Namespace).Get(gw.Name)
+	//gw, err := cache.informers.GetListers().Gateway.Gateways(gw.NamespaceDerefOr).Get(gw.Name)
 	//if err != nil {
 	//	log.Error().Msgf("Failed to get Gateway %s: %s", key, err)
 	//	return false
