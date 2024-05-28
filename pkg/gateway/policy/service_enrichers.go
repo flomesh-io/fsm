@@ -1,6 +1,13 @@
 package policy
 
 import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/circuitbreaking"
@@ -10,12 +17,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/sessionsticky"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/upstreamtls"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 type ResolveServicePortNameFunc func(referer client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, port int32) *fgw.ServicePortName

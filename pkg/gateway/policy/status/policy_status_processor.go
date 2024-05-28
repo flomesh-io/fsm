@@ -199,10 +199,10 @@ func (p *PolicyStatusProcessor) supportedKinds() []string {
 	return kinds
 }
 
-func ns(namespace *gwv1.Namespace) string {
-	if namespace == nil {
-		return ""
-	}
-
-	return string(*namespace)
-}
+//func ns(namespace *gwv1.Namespace) string {
+//	if namespace == nil {
+//		return ""
+//	}
+//
+//	return string(*namespace)
+//}

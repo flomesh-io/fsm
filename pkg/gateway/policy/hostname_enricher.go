@@ -1,15 +1,16 @@
 package policy
 
 import (
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type HostnamePolicyEnricher interface {

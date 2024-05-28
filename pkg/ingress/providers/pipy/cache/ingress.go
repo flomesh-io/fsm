@@ -28,10 +28,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"strconv"
 	"strings"
 	"sync"
+
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"

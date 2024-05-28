@@ -27,9 +27,10 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 

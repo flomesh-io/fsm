@@ -5,11 +5,12 @@ import (
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 func getGatewayRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {

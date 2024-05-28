@@ -28,9 +28,7 @@ package cache
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
-	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
@@ -59,23 +57,23 @@ type endpointContext struct {
 
 type calculateEndpointsFunc func(svc *corev1.Service, port *int32) map[string]fgw.Endpoint
 
-type globalPolicyAttachments struct {
-	rateLimits      map[gwpkg.PolicyMatchType][]*gwpav1alpha1.RateLimitPolicy
-	accessControls  map[gwpkg.PolicyMatchType][]*gwpav1alpha1.AccessControlPolicy
-	faultInjections map[gwpkg.PolicyMatchType][]*gwpav1alpha1.FaultInjectionPolicy
-}
-
-type routePolicies struct {
-	hostnamesRateLimits      []gwpav1alpha1.RateLimitPolicy
-	httpRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
-	grpcRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
-	hostnamesAccessControls  []gwpav1alpha1.AccessControlPolicy
-	httpRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
-	grpcRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
-	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
-	httpRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
-	grpcRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
-}
+//type globalPolicyAttachments struct {
+//	rateLimits      map[gwpkg.PolicyMatchType][]*gwpav1alpha1.RateLimitPolicy
+//	accessControls  map[gwpkg.PolicyMatchType][]*gwpav1alpha1.AccessControlPolicy
+//	faultInjections map[gwpkg.PolicyMatchType][]*gwpav1alpha1.FaultInjectionPolicy
+//}
+//
+//type routePolicies struct {
+//	hostnamesRateLimits      []gwpav1alpha1.RateLimitPolicy
+//	httpRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
+//	grpcRouteRateLimits      []gwpav1alpha1.RateLimitPolicy
+//	hostnamesAccessControls  []gwpav1alpha1.AccessControlPolicy
+//	httpRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
+//	grpcRouteAccessControls  []gwpav1alpha1.AccessControlPolicy
+//	hostnamesFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+//	httpRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+//	grpcRouteFaultInjections []gwpav1alpha1.FaultInjectionPolicy
+//}
 
 var (
 	log = logger.New("fsm-gateway/cache")

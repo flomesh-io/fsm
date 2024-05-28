@@ -27,13 +27,15 @@ package cache
 import (
 	"context"
 	"fmt"
-	networkingv1 "k8s.io/api/networking/v1"
 	"strings"
 	"sync"
 	"time"
 
-	cctx "github.com/flomesh-io/fsm/pkg/context"
+	networkingv1 "k8s.io/api/networking/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	cctx "github.com/flomesh-io/fsm/pkg/context"
 
 	mapset "github.com/deckarep/golang-set/v2"
 	corev1 "k8s.io/api/core/v1"

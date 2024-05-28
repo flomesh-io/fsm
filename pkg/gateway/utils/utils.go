@@ -557,6 +557,7 @@ func SortResources[T client.Object](resources []T) []T {
 func ToSlicePtr[T any](slice []T) []*T {
 	ptrs := make([]*T, len(slice))
 	for i, v := range slice {
+		v := v
 		ptrs[i] = &v
 	}
 	return ptrs

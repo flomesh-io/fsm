@@ -3,9 +3,10 @@ package cache
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"

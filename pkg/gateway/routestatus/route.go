@@ -29,8 +29,9 @@ import (
 	"fmt"
 	"time"
 
-	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"k8s.io/apimachinery/pkg/fields"
+
+	fctx "github.com/flomesh-io/fsm/pkg/context"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 

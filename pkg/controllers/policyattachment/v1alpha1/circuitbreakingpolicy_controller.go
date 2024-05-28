@@ -4,8 +4,9 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

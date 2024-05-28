@@ -3,9 +3,10 @@ package v1alpha1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"

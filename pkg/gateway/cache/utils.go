@@ -526,13 +526,13 @@ func isValidRefToGroupKindOfSecret(ref gwv1.SecretObjectReference) bool {
 	return false
 }
 
-func isValidRefToGroupKindOfConfigMap(ref gwv1.ObjectReference) bool {
-	if ref.Group == corev1.GroupName && ref.Kind == constants.KubernetesConfigMapKind {
-		return true
-	}
-
-	return false
-}
+//func isValidRefToGroupKindOfConfigMap(ref gwv1.ObjectReference) bool {
+//	if ref.Group == corev1.GroupName && ref.Kind == constants.KubernetesConfigMapKind {
+//		return true
+//	}
+//
+//	return false
+//}
 
 func isValidRefToGroupKindOfCA(ref gwv1.ObjectReference) bool {
 	if ref.Group != corev1.GroupName {

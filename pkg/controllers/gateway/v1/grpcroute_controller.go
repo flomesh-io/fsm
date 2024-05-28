@@ -29,12 +29,14 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
 
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 

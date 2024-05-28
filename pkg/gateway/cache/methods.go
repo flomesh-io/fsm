@@ -5,14 +5,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/fields"
 
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
 	"github.com/flomesh-io/fsm/pkg/k8s"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
@@ -68,16 +67,16 @@ func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Servic
 	return obj, nil
 }
 
-func (c *GatewayCache) getReferenceGrantsFromCache() []*gwv1beta1.ReferenceGrant {
-	list := &gwv1beta1.ReferenceGrantList{}
-	err := c.client.List(context.TODO(), list)
-	if err != nil {
-		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
-		return nil
-	}
-
-	return gwutils.ToSlicePtr(list.Items)
-}
+//func (c *GatewayCache) getReferenceGrantsFromCache() []*gwv1beta1.ReferenceGrant {
+//	list := &gwv1beta1.ReferenceGrantList{}
+//	err := c.client.List(context.TODO(), list)
+//	if err != nil {
+//		log.Error().Msgf("Failed to list ReferenceGrants: %v", err)
+//		return nil
+//	}
+//
+//	return gwutils.ToSlicePtr(list.Items)
+//}
 
 func (c *GatewayCache) isHeadlessService(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)

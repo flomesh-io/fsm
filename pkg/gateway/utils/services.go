@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/flomesh-io/fsm/pkg/constants"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 func IsValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetReference) bool {

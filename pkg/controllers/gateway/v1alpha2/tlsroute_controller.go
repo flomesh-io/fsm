@@ -31,8 +31,9 @@ import (
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"

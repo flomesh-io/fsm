@@ -1,8 +1,6 @@
 package pipy
 
 import (
-	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	cctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
 	"golang.org/x/net/context"
@@ -11,6 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	k8scache "k8s.io/client-go/tools/cache"
 	crClient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	cctx "github.com/flomesh-io/fsm/pkg/context"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/cache"

@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"k8s.io/apimachinery/pkg/labels"
-
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -273,6 +271,6 @@ const (
 //		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
 //}
 
-var (
-	selectAll = labels.Set{}.AsSelector()
-)
+//var (
+//	selectAll = labels.Set{}.AsSelector()
+//)
