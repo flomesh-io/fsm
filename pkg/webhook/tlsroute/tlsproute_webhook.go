@@ -25,6 +25,7 @@
 package tlsroute
 
 import (
+	"github.com/flomesh-io/fsm/pkg/version"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -35,6 +36,7 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	flomeshadmission "github.com/flomesh-io/fsm/pkg/admission"
+	gwv1alpha2validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1alpha2/validation"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -166,8 +168,10 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	//errorList := gwv1alpha2validation.ValidateTLSRoute(route)
 	var errorList field.ErrorList
+	if !version.IsCELValidationEnabled(w.kubeClient) {
+		errorList = append(errorList, gwv1alpha2validation.ValidateTLSRoute(route)...)
+	}
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateTLSRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)

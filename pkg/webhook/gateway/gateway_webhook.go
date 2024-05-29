@@ -27,6 +27,8 @@ package gateway
 import (
 	"context"
 	"fmt"
+	gwv1validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1/validation"
+	"github.com/flomesh-io/fsm/pkg/version"
 	"net/http"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -202,8 +204,10 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	//errorList := gwv1validation.ValidateGateway(gateway)
 	var errorList field.ErrorList
+	if !version.IsCELValidationEnabled(w.kubeClient) {
+		errorList = append(errorList, gwv1validation.ValidateGateway(gateway)...)
+	}
 	errorList = append(errorList, w.validateListenerPort(gateway)...)
 	errorList = append(errorList, w.validateCertificateSecret(gateway)...)
 	if w.cfg.GetFeatureFlags().EnableValidateGatewayListenerHostname {

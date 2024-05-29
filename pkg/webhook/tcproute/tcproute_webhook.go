@@ -25,6 +25,8 @@
 package tcproute
 
 import (
+	gwv1alpha2validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1alpha2/validation"
+	"github.com/flomesh-io/fsm/pkg/version"
 	"net/http"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -139,12 +141,12 @@ func (w *validator) RuntimeObject() runtime.Object {
 
 // ValidateCreate validates the creation of the TCPRoute
 func (w *validator) ValidateCreate(obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateUpdate validates the update of the TCPRoute
 func (w *validator) ValidateUpdate(_, obj interface{}) error {
-	return doValidation(obj)
+	return w.doValidation(obj)
 }
 
 // ValidateDelete validates the deletion of the TCPRoute
@@ -158,7 +160,7 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 	}
 }
 
-func doValidation(obj interface{}) error {
+func (w *validator) doValidation(obj interface{}) error {
 	route, ok := obj.(*gwv1alpha2.TCPRoute)
 	if !ok {
 		return nil
@@ -166,6 +168,9 @@ func doValidation(obj interface{}) error {
 
 	//errorList := gwv1alpha2validation.ValidateTCPRoute(route)
 	var errorList field.ErrorList
+	if !version.IsCELValidationEnabled(w.kubeClient) {
+		errorList = append(errorList, gwv1alpha2validation.ValidateTCPRoute(route)...)
+	}
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if len(errorList) > 0 {
 		return utils.ErrorListToError(errorList)

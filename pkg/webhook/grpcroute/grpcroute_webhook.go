@@ -25,6 +25,8 @@
 package grpcroute
 
 import (
+	gwv1validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1/validation"
+	"github.com/flomesh-io/fsm/pkg/version"
 	"net/http"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -167,8 +169,10 @@ func (w *validator) doValidation(obj interface{}) error {
 		return nil
 	}
 
-	//errorList := gwv1alpha2validation.ValidateGRPCRoute(route)
 	var errorList field.ErrorList
+	if !version.IsCELValidationEnabled(w.kubeClient) {
+		errorList = append(errorList, gwv1validation.ValidateGRPCRoute(route)...)
+	}
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateGRPCRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)
