@@ -414,10 +414,16 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 		return nil
 	}
 
+	if ref.Port == nil {
+		log.Warn().Msgf("Port is not specified in the backend reference %s/%s when the referent is a Kubernetes Service", gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()), ref.Name)
+		return nil
+	}
+
+	gvk := referer.GetObjectKind().GroupVersionKind()
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
 		gwtypes.CrossNamespaceFrom{
-			Group:     referer.GetObjectKind().GroupVersionKind().Group,
-			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Group:     gvk.Group,
+			Kind:      gvk.Kind,
 			Namespace: referer.GetNamespace(),
 		},
 		gwtypes.CrossNamespaceTo{
@@ -429,7 +435,7 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			gvk.Kind, gvk.Group, referer.GetNamespace(), referer.GetName(),
 			string(*ref.Kind), string(*ref.Group), string(*ref.Namespace), ref.Name)
 		return nil
 	}
@@ -439,7 +445,7 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		},
-		Port: pointer.Int32(int32(*ref.Port)),
+		Port: ptr.To(int32(*ref.Port)),
 	}
 }
 
@@ -449,10 +455,11 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 		return nil
 	}
 
+	gvk := referer.GetObjectKind().GroupVersionKind()
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
 		gwtypes.CrossNamespaceFrom{
-			Group:     referer.GetObjectKind().GroupVersionKind().Group,
-			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
+			Group:     gvk.Group,
+			Kind:      gvk.Kind,
 			Namespace: referer.GetNamespace(),
 		},
 		gwtypes.CrossNamespaceTo{
@@ -464,7 +471,7 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
+			gvk.Kind, gvk.Group, referer.GetNamespace(), referer.GetName(),
 			string(ref.Kind), string(ref.Group), string(*ref.Namespace), ref.Name)
 		return nil
 	}
