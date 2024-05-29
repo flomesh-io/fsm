@@ -287,8 +287,8 @@ func (c *Connector) onDeleteFunc(_ *k8s.EventTypes) func(obj interface{}) {
 
 			c.controlPlaneBroker.GetQueue().AddRateLimited(events.PubSubMessage{
 				Kind:   announcements.MultiClusterServiceExportDeleted,
-				OldObj: nil,
-				NewObj: &mcsevent.ServiceExportEvent{
+				NewObj: nil,
+				OldObj: &mcsevent.ServiceExportEvent{
 					Geo:           connectorConfig,
 					ServiceExport: obj,
 					Service:       svc,
