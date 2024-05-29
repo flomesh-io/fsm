@@ -27,9 +27,10 @@ package gateway
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	gwv1validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1/validation"
 	"github.com/flomesh-io/fsm/pkg/version"
-	"net/http"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 

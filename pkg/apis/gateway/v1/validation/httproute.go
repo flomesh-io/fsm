@@ -373,9 +373,6 @@ func hasExactlyOnePrefixMatch(matches []gatewayv1.HTTPRouteMatch) bool {
 		return false
 	}
 	pathMatchType := matches[0].Path.Type
-	if *pathMatchType != gatewayv1.PathMatchPathPrefix {
-		return false
-	}
 
-	return true
+	return *pathMatchType != gatewayv1.PathMatchPathPrefix
 }

@@ -80,7 +80,3 @@ func ValidateParentRefs(parentRefs []gatewayv1b1.ParentReference, path *field.Pa
 	}
 	return errs
 }
-
-func ptrTo[T any](a T) *T {
-	return &a
-}

@@ -19,8 +19,9 @@ package validation
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	gatewayvalidationv1b1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1beta1/validation"
 	v1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	gatewayvalidationv1b1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1beta1/validation"
 )
 
 // validateParentRefs validates ParentRefs SectionName must be set and unique
@@ -46,8 +47,4 @@ func validateBackendRefServicePort(ref *v1a2.BackendRef, path *field.Path) field
 	}
 
 	return errs
-}
-
-func ptrTo[T any](a T) *T {
-	return &a
 }
