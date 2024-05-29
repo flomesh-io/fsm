@@ -50,6 +50,7 @@ spec:
               pipy()
               .listen(8080)
               .serveHTTP(new Message('Hi, I am from ${K3D_CLUSTER_NAME} and controlled by mesh!\n'))
+          workingDir: /tmp
 ---
 apiVersion: v1
 kind: Service
