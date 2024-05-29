@@ -80,6 +80,7 @@ func ValidateParentRefs(parentRefs []gatewayv1.ParentReference, path *field.Path
 	return errs
 }
 
+//lint:ignore U1000 ignore unused
 func ptrTo[T any](a T) *T {
 	return &a
 }
