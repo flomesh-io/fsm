@@ -28,6 +28,12 @@ var (
 
 	// MinK8sVersionForGatewayAPI is the minimum version of Kubernetes that supports Gateway API.
 	MinK8sVersionForGatewayAPI = MinK8sVersion
+
+	// MinK8sVersionForCELValidation is the minimum version of Kubernetes that supports CustomResourceValidationExpressions.
+	// This feature was introduced since Kubernetes 1.23 but turned off by default.
+	// It has been turned on by default since Kubernetes 1.25 and finally graduated to GA in Kubernetes 1.29
+	// https://github.com/kubernetes/enhancements/issues/2876
+	MinK8sVersionForCELValidation = semver.Version{Major: 1, Minor: 25, Patch: 0}
 )
 
 func getServerVersion(kubeClient kubernetes.Interface) (semver.Version, error) {
@@ -78,4 +84,10 @@ func IsDualStackEnabled(kubeClient kubernetes.Interface) bool {
 // IsSupportedK8sVersionForGatewayAPI returns true if the Kubernetes cluster version is supported by the operator.
 func IsSupportedK8sVersionForGatewayAPI(kubeClient kubernetes.Interface) bool {
 	return IsSupportedK8sVersion(kubeClient)
+}
+
+// IsCELValidationEnabled returns true if CustomResourceValidationExpressions are enabled in the Kubernetes cluster.
+func IsCELValidationEnabled(kubeClient kubernetes.Interface) bool {
+	detectServerVersion(kubeClient)
+	return ServerVersion.GTE(MinK8sVersionForCELValidation)
 }
