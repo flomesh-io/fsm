@@ -27,6 +27,9 @@ package httproute
 import (
 	"net/http"
 
+	gwv1validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1/validation"
+	"github.com/flomesh-io/fsm/pkg/version"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -168,6 +171,9 @@ func (w *validator) doValidation(obj interface{}) error {
 
 	//errorList := gwv1validation.ValidateHTTPRoute(route)
 	var errorList field.ErrorList
+	if !version.IsCELValidationEnabled(w.kubeClient) {
+		errorList = append(errorList, gwv1validation.ValidateHTTPRoute(route)...)
+	}
 	errorList = append(errorList, webhook.ValidateParentRefs(route.Spec.ParentRefs)...)
 	if w.cfg.GetFeatureFlags().EnableValidateHTTPRouteHostnames {
 		errorList = append(errorList, webhook.ValidateRouteHostnames(route.Spec.Hostnames)...)
