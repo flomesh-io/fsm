@@ -25,7 +25,8 @@
 package gatewayclass
 
 import (
-	"fmt"
+	gwv1validation "github.com/flomesh-io/fsm/pkg/apis/gateway/v1/validation"
+	"github.com/flomesh-io/fsm/pkg/utils"
 	"net/http"
 
 	admissionregv1 "k8s.io/api/admissionregistration/v1"
@@ -136,8 +137,8 @@ func (w *validator) RuntimeObject() runtime.Object {
 }
 
 // ValidateCreate validates the create request for the webhook
-func (w *validator) ValidateCreate(obj interface{}) error {
-	return doValidation(obj)
+func (w *validator) ValidateCreate(_ interface{}) error {
+	return nil
 }
 
 // ValidateUpdate validates the update request for the webhook
@@ -152,16 +153,15 @@ func (w *validator) ValidateUpdate(oldObj, obj interface{}) error {
 		return nil
 	}
 
-	if oldGatewayClass.Spec.ControllerName != gatewayClass.Spec.ControllerName {
-		if err := doValidation(obj); err != nil {
-			return err
-		}
-	}
-
-	//errorList := gwv1validation.ValidateGatewayClassUpdate(oldGatewayClass, gatewayClass)
-	//if len(errorList) > 0 {
-	//	return utils.ErrorListToError(errorList)
+	//if oldGatewayClass.Spec.ControllerName != gatewayClass.Spec.ControllerName {
+	//	if err := doValidation(obj); err != nil {
+	//		return err
+	//	}
 	//}
+
+	if errorList := gwv1validation.ValidateGatewayClassUpdate(oldGatewayClass, gatewayClass); len(errorList) > 0 {
+		return utils.ErrorListToError(errorList)
+	}
 
 	return nil
 }
@@ -177,16 +177,16 @@ func newValidator(kubeClient kubernetes.Interface) *validator {
 	}
 }
 
-func doValidation(obj interface{}) error {
-	gatewayClass, ok := obj.(*gwv1.GatewayClass)
-	if !ok {
-		log.Warn().Msgf("unexpected object type: %T", obj)
-		return nil
-	}
-
-	if gatewayClass.Spec.ControllerName != constants.GatewayController {
-		return fmt.Errorf("unknown gateway controller: %s, ONLY %s is supported", gatewayClass.Spec.ControllerName, constants.GatewayController)
-	}
-
-	return nil
-}
+//func doValidation(obj interface{}) error {
+//	gatewayClass, ok := obj.(*gwv1.GatewayClass)
+//	if !ok {
+//		log.Warn().Msgf("unexpected object type: %T", obj)
+//		return nil
+//	}
+//
+//	if gatewayClass.Spec.ControllerName != constants.GatewayController {
+//		return fmt.Errorf("unknown gateway controller: %s, ONLY %s is supported", gatewayClass.Spec.ControllerName, constants.GatewayController)
+//	}
+//
+//	return nil
+//}
