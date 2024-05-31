@@ -648,7 +648,7 @@ type ServiceLBSpec struct {
 	// Enabled defines if service lb is enabled.
 	Enabled bool `json:"enabled"`
 
-	// +kubebuilder:default="flomesh/mirrored-klipper-lb:v0.3.5"
+	// +kubebuilder:default="flomesh/mirrored-klipper-lb:v0.4.7"
 	// Image defines the service lb image.
 	Image string `json:"image"`
 }

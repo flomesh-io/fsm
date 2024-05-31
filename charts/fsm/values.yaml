@@ -937,7 +937,7 @@ fsm:
       # -- service-lb image name
       name: mirrored-klipper-lb
       # -- service-lb image tag
-      tag: v0.3.5
+      tag: v0.4.7
 
   #
   # -- FSM FLB parameters
