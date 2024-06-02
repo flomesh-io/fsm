@@ -91,7 +91,7 @@ type gatewayAcceptedCondition struct {
 	condition metav1.Condition
 }
 
-type Listener struct {
+type listener struct {
 	Name     gwv1.SectionName  `json:"name"`
 	Port     gwv1.PortNumber   `json:"port"`
 	Protocol gwv1.ProtocolType `json:"protocol"`
@@ -148,41 +148,34 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	log.Debug().Msgf("[GW] 1")
 	effectiveGatewayClass, err := gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	log.Debug().Msgf("[GW] 2")
 	if effectiveGatewayClass == nil {
 		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
 
-	log.Debug().Msgf("[GW] 3")
 	result, err := r.updateGatewayStatus(ctx, gateway, effectiveGatewayClass)
 	if err != nil {
 		return result, err
 	}
 
-	log.Debug().Msgf("[GW] 4")
 	// 5. update listener status of this gateway no matter it's accepted or not
 	result, err = r.updateListenerStatus(ctx, gateway)
 	if err != nil {
 		return result, err
 	}
 
-	log.Debug().Msgf("[GW] 5")
 	result, err = r.updateGatewayAddresses(ctx, gateway)
 	if err != nil || result.RequeueAfter > 0 || result.Requeue {
 		return result, err
 	}
 
-	log.Debug().Msgf("[GW] 6")
 	r.fctx.GatewayEventHandler.OnAdd(gateway, false)
 
-	log.Debug().Msgf("[GW] 7")
 	return ctrl.Result{}, nil
 }
 
@@ -230,29 +223,16 @@ func (r *gatewayReconciler) computeGatewayAcceptedCondition(ctx context.Context,
 	// If spec.GatewayClassName equals effectiveGatewayClass then it's a valid gateway
 	// Otherwise, it's invalid
 	validGateways := make([]*gwv1.Gateway, 0)
-	//invalidGateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range gatewayList.Items {
 		gw := gw // fix lint GO-LOOP-REF
 		if string(gw.Spec.GatewayClassName) == effectiveGatewayClass.Name {
 			validGateways = append(validGateways, &gw)
 		}
-		//else {
-		//	invalidGateways = append(invalidGateways, &gw)
-		//}
 	}
-
-	//sort.Slice(validGateways, func(i, j int) bool {
-	//	if validGateways[i].CreationTimestamp.Time.Equal(validGateways[j].CreationTimestamp.Time) {
-	//		return client.ObjectKeyFromObject(validGateways[i]).String() < client.ObjectKeyFromObject(validGateways[j]).String()
-	//	}
-	//
-	//	return validGateways[i].CreationTimestamp.Time.Before(validGateways[j].CreationTimestamp.Time)
-	//})
 
 	// 3. Set the oldest as Accepted and the rest are unaccepted
 	acceptedStatusChangedGatewayConditions := make([]*gatewayAcceptedCondition, 0)
-
 	for i := range gwutils.SortResources(validGateways) {
 		if i == 0 {
 			if !gwutils.IsAcceptedGateway(validGateways[i]) {
@@ -270,17 +250,6 @@ func (r *gatewayReconciler) computeGatewayAcceptedCondition(ctx context.Context,
 			}
 		}
 	}
-
-	// in case of effective GatewayClass changed or spec.GatewayClassName was changed
-	//for i := range invalidGateways {
-	//	if gwutils.IsAcceptedGateway(invalidGateways[i]) {
-	//		//r.unacceptedCondition(invalidGateways[i])
-	//		acceptedStatusChangedGatewayConditions = append(acceptedStatusChangedGatewayConditions, &gatewayAcceptedCondition{
-	//			gateway:   invalidGateways[i],
-	//			condition: r.unacceptedCondition(invalidGateways[i]),
-	//		})
-	//	}
-	//}
 
 	return acceptedStatusChangedGatewayConditions, nil
 }
@@ -353,7 +322,6 @@ func (r *gatewayReconciler) getNodeIPs(ctx context.Context, svc *corev1.Service)
 }
 
 func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway *gwv1.Gateway) (ctrl.Result, error) {
-	log.Debug().Msgf("[GW] 5.1")
 	// 6. after all status of gateways in the namespace have been updated successfully
 	//   list all gateways in the namespace and deploy/redeploy the effective one
 	preActiveGateway, err := r.findPreActiveGatewayByNamespace(ctx, gateway.Namespace)
@@ -361,33 +329,24 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		return ctrl.Result{}, err
 	}
 
-	log.Debug().Msgf("[GW] 5.2")
 	if preActiveGateway == nil {
 		log.Warn().Msgf("[GW] No active gateway found in namespace %s", gateway.Namespace)
 		return ctrl.Result{}, nil
 	}
 
-	log.Debug().Msgf("[GW] 5.3")
 	if !isSameGateway(activeGateways[gateway.Namespace], preActiveGateway) {
-		log.Debug().Msgf("[GW] 5.3.1")
 		result, err := r.applyGateway(preActiveGateway)
-		log.Debug().Msgf("[GW] 5.3.2")
 		if err != nil {
-			log.Debug().Msgf("[GW] 5.3.3")
 			return result, err
 		}
-		log.Debug().Msgf("[GW] 5.3.4")
 		activeGateways[gateway.Namespace] = preActiveGateway
 	}
 
-	log.Debug().Msgf("[GW] 5.4")
 	// 7. update addresses of Gateway status if any IP is allocated
 	addresses := r.gatewayAddresses(ctx, preActiveGateway)
 
-	log.Debug().Msgf("[GW] 5.5")
 	condition, programmed := r.computeGatewayProgrammedCondition(ctx, preActiveGateway, addresses)
 
-	log.Debug().Msgf("[GW] 5.6")
 	r.fctx.StatusUpdater.Send(status.Update{
 		Resource:       &gwv1.Gateway{},
 		NamespacedName: client.ObjectKeyFromObject(preActiveGateway),
@@ -405,14 +364,11 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		}),
 	})
 
-	log.Debug().Msgf("[GW] 5.7")
 	if !programmed {
-		log.Debug().Msgf("[GW] 5.7.1")
 		log.Debug().Msgf("[GW] Requeue gateway %s/%s after 3 second", preActiveGateway.Namespace, preActiveGateway.Name)
 		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
 	}
 
-	log.Debug().Msgf("[GW] 5.8")
 	// if there's any previous active gateways and has been assigned addresses, clean it up
 	gatewayList := &gwv1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(preActiveGateway.Namespace)); err != nil {
@@ -420,7 +376,6 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		return ctrl.Result{}, err
 	}
 
-	log.Debug().Msgf("[GW] 5.9")
 	for _, gw := range gatewayList.Items {
 		gw := gw // fix lint GO-LOOP-REF
 		if gw.Name != preActiveGateway.Name && len(gw.Status.Addresses) > 0 {
@@ -441,7 +396,6 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 		}
 	}
 
-	log.Debug().Msgf("[GW] 5.10")
 	return ctrl.Result{}, nil
 }
 
@@ -877,6 +831,8 @@ func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Con
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
+	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Codebase", "Codebase %s created successfully", gwPath)
+
 	return ctrl.Result{}, nil
 }
 
@@ -921,19 +877,6 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 
 	log.Debug().Msgf("[GW] Resolving Values ...")
 
-	//gwBytes, err := ghodssyaml.Marshal(&gatewayValues{
-	//	Gateway:   gateway,
-	//	Listeners: gwutils.GetValidListenersForGateway(gateway),
-	//})
-	//if err != nil {
-	//	return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)
-	//}
-	//log.Debug().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
-	//gwValues, err := chartutil.ReadValues(gwBytes)
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	// these values are from MeshConfig and Gateway resource, it will not be overridden by values from ParametersRef
 	gwBytes, err := ghodssyaml.Marshal(map[string]interface{}{
 		"fsm": map[string]interface{}{
@@ -958,29 +901,12 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)
 	}
 	log.Debug().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
+
 	gwValues, err := chartutil.ReadValues(gwBytes)
 	if err != nil {
 		return nil, err
 	}
-
 	gatewayValues := gwValues.AsMap()
-
-	//overrides := []string{
-	//	fmt.Sprintf("fsm.image.registry=%s", mc.GetImageRegistry()),
-	//	fmt.Sprintf("fsm.image.tag=%s", mc.GetImageTag()),
-	//	fmt.Sprintf("fsm.image.pullPolicy=%s", mc.GetImagePullPolicy()),
-	//	fmt.Sprintf("fsm.fsmNamespace=%s", mc.GetFSMNamespace()),
-	//	fmt.Sprintf("fsm.gateway.logLevel=%s", mc.GetFSMGatewayLogLevel()),
-	//	fmt.Sprintf("fsm.meshName=%s", r.fctx.MeshName),
-	//	fmt.Sprintf("hasTCP=%t", hasTCP(gateway)),
-	//	fmt.Sprintf("hasUDP=%t", hasUDP(gateway)),
-	//}
-	//
-	//for _, ov := range overrides {
-	//	if err := strvals.ParseInto(ov, gatewayValues); err != nil {
-	//		return nil, err
-	//	}
-	//}
 
 	parameterValues, err := r.resolveParameterValues(gateway)
 	if err != nil {
@@ -1015,10 +941,10 @@ func infraForTemplate(gateway *gwv1.Gateway) map[string]map[gwv1.AnnotationKey]g
 	return infra
 }
 
-func listenersForTemplate(gateway *gwv1.Gateway) []Listener {
-	listeners := make([]Listener, 0)
+func listenersForTemplate(gateway *gwv1.Gateway) []listener {
+	listeners := make([]listener, 0)
 	for _, l := range gwutils.GetValidListenersForGateway(gateway) {
-		listeners = append(listeners, Listener{
+		listeners = append(listeners, listener{
 			Name:     l.Listener.Name,
 			Port:     l.Listener.Port,
 			Protocol: l.Listener.Protocol,
