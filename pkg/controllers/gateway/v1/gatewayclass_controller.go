@@ -27,13 +27,15 @@ package v1
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

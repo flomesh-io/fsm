@@ -3,13 +3,15 @@ package utils
 import (
 	"context"
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/apis/gateway"
-	"github.com/flomesh-io/fsm/pkg/constants"
+
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/apis/gateway"
+	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
 // IsAcceptedGatewayClass returns true if the gateway class is accepted

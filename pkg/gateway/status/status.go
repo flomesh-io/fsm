@@ -211,7 +211,6 @@ func isStatusEqual(objA, objB interface{}) bool {
 		}
 
 		// FIXME: Add more types here as needed. i.e. XXXPolicyAttachment
-
 	}
 
 	return false

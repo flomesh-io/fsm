@@ -28,7 +28,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
+	"time"
+
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -37,7 +38,8 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
-	"time"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 

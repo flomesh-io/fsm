@@ -3,7 +3,8 @@ package utils
 import (
 	"context"
 	"fmt"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"time"
+
 	corev1 "k8s.io/api/core/v1"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	"time"
+
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
 // IsAcceptedGateway returns true if the gateway is accepted
