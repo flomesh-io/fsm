@@ -490,10 +490,6 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				} else {
 					bytes, _ = json.Marshal(pipyConf)
 				}
-				{
-					bytes1, _ := json.Marshal(pipyConf)
-					fmt.Println(codebaseCurV, string(bytes1))
-				}
 				_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
 					{
 						Basepath: codebase,
