@@ -215,10 +215,10 @@ func visit(files *[]string) filepath.WalkFunc {
 //}
 
 func (r *rebuilder) rebuildRepoJob() error {
-	log.Debug().Msg("<<<<<< rebuilding repo - start >>>>>> ")
+	log.Trace().Msg("<<<<<< rebuilding repo - start >>>>>> ")
 
 	if !r.repoClient.IsRepoUp() {
-		log.Debug().Msg("Repo is not up, sleeping ...")
+		log.Trace().Msg("Repo is not up, sleeping ...")
 		return nil
 	}
 
@@ -307,6 +307,6 @@ func (r *rebuilder) rebuildRepoJob() error {
 		}
 	}
 
-	log.Debug().Msg("<<<<<< rebuilding repo - end >>>>>> ")
+	log.Trace().Msg("<<<<<< rebuilding repo - end >>>>>> ")
 	return nil
 }

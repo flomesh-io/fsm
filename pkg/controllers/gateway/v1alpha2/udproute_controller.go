@@ -26,6 +26,7 @@ package v1alpha2
 
 import (
 	"context"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
 
@@ -90,10 +91,20 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if len(routeStatus) > 0 {
-		udpRoute.Status.Parents = routeStatus
-		if err := r.fctx.Status().Update(ctx, udpRoute); err != nil {
-			return ctrl.Result{}, err
-		}
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1alpha2.UDPRoute{},
+			NamespacedName: client.ObjectKeyFromObject(udpRoute),
+			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+				ur, ok := obj.(*gwv1alpha2.UDPRoute)
+				if !ok {
+					log.Error().Msgf("Unexpected object type %T", obj)
+				}
+				urCopy := ur.DeepCopy()
+				urCopy.Status.Parents = routeStatus
+
+				return urCopy
+			}),
+		})
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(udpRoute, false)

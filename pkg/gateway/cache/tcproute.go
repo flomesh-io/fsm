@@ -32,7 +32,7 @@ func (c *GatewayProcessor) processTCPRoutes() {
 
 func (c *GatewayProcessor) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
 	for _, ref := range tcpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, c.gateway) {
+		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 

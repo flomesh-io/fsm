@@ -116,7 +116,7 @@ func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool 
 
 	for _, parentRef := range parentRefs {
 		for _, gw := range gateways {
-			if gwutils.IsRefToGateway(parentRef, gw) {
+			if gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(gw)) {
 				return true
 			}
 		}

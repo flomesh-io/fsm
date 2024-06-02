@@ -184,6 +184,13 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
+	case *gwv1.GRPCRoute:
+		if b, ok := objB.(*gwv1.GRPCRoute); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+
 	case *gwv1alpha2.TLSRoute:
 		if b, ok := objB.(*gwv1alpha2.TLSRoute); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
@@ -202,12 +209,9 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gwv1.GRPCRoute:
-		if b, ok := objB.(*gwv1.GRPCRoute); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
+
+		// FIXME: Add more types here as needed. i.e. XXXPolicyAttachment
+
 	}
 
 	return false

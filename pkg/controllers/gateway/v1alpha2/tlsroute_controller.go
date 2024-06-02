@@ -26,6 +26,7 @@ package v1alpha2
 
 import (
 	"context"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
 
@@ -92,10 +93,20 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if len(routeStatus) > 0 {
-		tlsRoute.Status.Parents = routeStatus
-		if err := r.fctx.Status().Update(ctx, tlsRoute); err != nil {
-			return ctrl.Result{}, err
-		}
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1alpha2.TLSRoute{},
+			NamespacedName: client.ObjectKeyFromObject(tlsRoute),
+			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+				tr, ok := obj.(*gwv1alpha2.TLSRoute)
+				if !ok {
+					log.Error().Msgf("Unexpected object type %T", obj)
+				}
+				trCopy := tr.DeepCopy()
+				trCopy.Status.Parents = routeStatus
+
+				return trCopy
+			}),
+		})
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(tlsRoute, false)

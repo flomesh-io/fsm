@@ -27,11 +27,12 @@ package v1
 import (
 	"context"
 	"fmt"
-	"sort"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
@@ -105,12 +106,12 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       gatewayClass,
+		Resource:       &gwv1.GatewayClass{},
 		NamespacedName: client.ObjectKeyFromObject(gatewayClass),
 		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 			class, ok := obj.(*gwv1.GatewayClass)
 			if !ok {
-				log.Error().Msgf("unsupported object type %T", obj)
+				log.Error().Msgf("Unexpected object type %T", obj)
 			}
 			classCopy := class.DeepCopy()
 			r.setAcceptedStatus(classCopy)
@@ -157,28 +158,17 @@ func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList)
 		}
 	}
 
-	sort.Slice(acceptedClasses, func(i, j int) bool {
-		if acceptedClasses[i].CreationTimestamp.Time.Equal(acceptedClasses[j].CreationTimestamp.Time) {
-			return acceptedClasses[i].Name < acceptedClasses[j].Name
-		}
-
-		return acceptedClasses[i].CreationTimestamp.Time.Before(acceptedClasses[j].CreationTimestamp.Time)
-	})
-
-	//statusChangedClasses := make([]*gwv1.GatewayClass, 0)
-	for i, class := range acceptedClasses {
+	for i, class := range gwutils.SortResources(acceptedClasses) {
 		// ONLY the oldest GatewayClass is active
 		if i == 0 {
 			if !utils.IsActiveGatewayClass(class) {
-				//r.setActive(acceptedClasses[i])
-				//statusChangedClasses = append(statusChangedClasses, acceptedClasses[i])
 				r.fctx.StatusUpdater.Send(status.Update{
-					Resource:       class,
+					Resource:       &gwv1.GatewayClass{},
 					NamespacedName: client.ObjectKeyFromObject(class),
 					Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 						clazz, ok := obj.(*gwv1.GatewayClass)
 						if !ok {
-							log.Error().Msgf("unsupported object type %T", obj)
+							log.Error().Msgf("Unexpected object type %T", obj)
 						}
 						classCopy := clazz.DeepCopy()
 						r.setActive(classCopy)
@@ -191,15 +181,13 @@ func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList)
 		}
 
 		if utils.IsActiveGatewayClass(class) {
-			//r.setInactive(acceptedClasses[i])
-			//statusChangedClasses = append(statusChangedClasses, acceptedClasses[i])
 			r.fctx.StatusUpdater.Send(status.Update{
-				Resource:       class,
+				Resource:       &gwv1.GatewayClass{},
 				NamespacedName: client.ObjectKeyFromObject(class),
 				Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 					clazz, ok := obj.(*gwv1.GatewayClass)
 					if !ok {
-						log.Error().Msgf("unsupported object type %T", obj)
+						log.Error().Msgf("Unexpected object type %T", obj)
 					}
 					classCopy := clazz.DeepCopy()
 					r.setInactive(classCopy)
@@ -209,8 +197,6 @@ func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList)
 			})
 		}
 	}
-
-	//return statusChangedClasses
 }
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
@@ -260,7 +246,22 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return gatewayClass.Spec.ControllerName == constants.GatewayController
 	})
 
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.GatewayClass{}, builder.WithPredicates(gwclsPrct)).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addGatewayClassIndexers(context.Background(), mgr)
+}
+
+func addGatewayClassIndexers(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GatewayClass{}, constants.ControllerGatewayClassIndex, func(obj client.Object) []string {
+		cls := obj.(*gwv1.GatewayClass)
+		return []string{string(cls.Spec.ControllerName)}
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

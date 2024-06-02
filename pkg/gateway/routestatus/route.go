@@ -52,9 +52,16 @@ type RouteStatusProcessor struct {
 // ProcessRouteStatus computes the status of a Route
 func (p *RouteStatusProcessor) ProcessRouteStatus(_ context.Context, route client.Object) ([]gwv1.RouteParentStatus, error) {
 	c := p.Ctx.Manager.GetCache()
+
+	class, err := gwutils.FindEffectiveGatewayClass(c)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil, err
+	}
+
 	list := &gwv1.GatewayList{}
 	if err := c.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, constants.FSMGatewayClassName),
+		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, class.Name),
 	}); err != nil {
 		log.Error().Msgf("Failed to list Gateways: %v", err)
 		return nil, err
@@ -84,7 +91,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(
 		validListeners := gwutils.GetValidListenersForGateway(gw)
 
 		for _, parentRef := range params.ParentRefs {
-			if !gwutils.IsRefToGateway(parentRef, gw) {
+			if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(gw)) {
 				continue
 			}
 

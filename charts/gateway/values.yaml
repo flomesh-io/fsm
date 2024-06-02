@@ -30,8 +30,13 @@ fsm:
   # -- Namespace to deploy FSM in. If not specified, the Helm release namespace is used.
   fsmNamespace: ""
 
-  fsmGateway:
+  gateway:
     logLevel: info
+
+    # -- FSM Gateway's service type, only LoadBalancer and NodePort are supported
+    serviceType: LoadBalancer
+
+    # -- FSM Gateway's replica count
     replicas: 1
     # -- FSM Gateway's container resource parameters.
     resources:
@@ -172,3 +177,28 @@ fsm:
       requests:
         cpu: "200m"
         memory: "128M"
+
+    # -- NodePort service configuration
+    #    nodePorts:
+    #      - port: 80
+    #        nodePort: 30080
+    #      - port: 443
+    #        nodePort: 30443
+    #      - port: 53
+    #        nodePort: 30053
+    nodePorts: []
+
+    # -- Gateway's namespace, not overridable by parameterRef
+    namespace: default
+
+    # -- Gateway's infrastructure, override by gateway.spec.infrastructure.annotations and gateway.spec.infrastructure.labels
+    # -- NOT override by parameterRef
+    infrastructure:
+      annotations: {}
+      labels: {}
+
+    # -- Gateway's listeners, not overridable by parameterRef
+    listeners: {}
+
+
+

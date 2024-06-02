@@ -26,6 +26,7 @@ package v1
 
 import (
 	"context"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
 
@@ -93,10 +94,20 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	if len(routeStatus) > 0 {
-		grpcRoute.Status.Parents = routeStatus
-		if err := r.fctx.Status().Update(ctx, grpcRoute); err != nil {
-			return ctrl.Result{}, err
-		}
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1.GRPCRoute{},
+			NamespacedName: client.ObjectKeyFromObject(grpcRoute),
+			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+				gr, ok := obj.(*gwv1.GRPCRoute)
+				if !ok {
+					log.Error().Msgf("Unexpected object type %T", obj)
+				}
+				grCopy := gr.DeepCopy()
+				grCopy.Status.Parents = routeStatus
+
+				return grCopy
+			}),
+		})
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(grpcRoute, false)

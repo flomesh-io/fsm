@@ -22,7 +22,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-var log = logger.NewPretty("ci/maestro")
+var log = logger.New("ci/maestro")
 
 const (
 	// Pod labels

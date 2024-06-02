@@ -32,7 +32,7 @@ func (c *GatewayProcessor) processTLSRoutes() {
 
 func (c *GatewayProcessor) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
 	for _, ref := range tlsRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, c.gateway) {
+		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 

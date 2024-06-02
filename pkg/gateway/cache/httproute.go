@@ -33,7 +33,7 @@ func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(httpRoute)
 
 	for _, ref := range httpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, c.gateway) {
+		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 

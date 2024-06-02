@@ -606,6 +606,7 @@ const (
 
 // GatewayAPI Resources Indexer constants
 const (
+	ControllerGatewayClassIndex    = "controllerGatewayClassIndex"
 	ClassGatewayIndex              = "classGatewayIndex"
 	GatewayTLSRouteIndex           = "gatewayTLSRouteIndex"
 	GatewayHTTPRouteIndex          = "gatewayHTTPRouteIndex"

@@ -17,9 +17,15 @@ import (
 )
 
 func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
+	class, err := gwutils.FindEffectiveGatewayClass(c.client)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil
+	}
+
 	list := &gwv1.GatewayList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, constants.FSMGatewayClassName),
+		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, class.Name),
 	}); err != nil {
 		log.Error().Msgf("Failed to list Gateways: %v", err)
 		return nil

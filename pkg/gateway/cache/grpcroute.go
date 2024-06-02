@@ -33,7 +33,7 @@ func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(grpcRoute)
 
 	for _, ref := range grpcRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, c.gateway) {
+		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 

@@ -32,7 +32,7 @@ func (c *GatewayProcessor) processUDPRoutes() {
 
 func (c *GatewayProcessor) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
 	for _, ref := range udpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, c.gateway) {
+		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 

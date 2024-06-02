@@ -104,7 +104,7 @@ func (r *register) GetWebhooks() ([]admissionregv1.MutatingWebhook, []admissionr
 func (r *register) GetHandlers() map[string]http.Handler {
 	return map[string]http.Handler{
 		constants.GatewayMutatingWebhookPath:   webhook.DefaultingWebhookFor(r.Scheme, newDefaulter(r.KubeClient, r.gatewayAPIClient, r.Configurator, r.MeshName, r.FSMVersion)),
-		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.Configurator)),
+		constants.GatewayValidatingWebhookPath: webhook.ValidatingWebhookFor(r.Scheme, newValidator(r.KubeClient, r.gatewayAPIClient, r.Configurator)),
 	}
 }
 
@@ -139,7 +139,7 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	}
 
 	log.Debug().Msgf("Default Webhook, name=%s", gateway.Name)
-	log.Debug().Msgf("Before setting default values, spec=%v", gateway.Spec)
+	log.Debug().Msgf("Before setting default values: %v", gateway)
 
 	gatewayClass, err := w.gatewayAPIClient.
 		GatewayV1().
@@ -164,12 +164,13 @@ func (w *defaulter) SetDefaults(obj interface{}) {
 	gateway.Labels[constants.FSMAppVersionLabelKey] = w.fsmVersion
 	gateway.Labels[constants.AppLabel] = constants.FSMGatewayName
 
-	log.Debug().Msgf("After setting default values, spec=%v", gateway.Spec)
+	log.Debug().Msgf("After setting default values: %v", gateway)
 }
 
 type validator struct {
-	kubeClient kubernetes.Interface
-	cfg        configurator.Configurator
+	kubeClient       kubernetes.Interface
+	gatewayAPIClient gatewayApiClientset.Interface
+	cfg              configurator.Configurator
 }
 
 // RuntimeObject returns the runtime object of gateway
@@ -192,16 +193,31 @@ func (w *validator) ValidateDelete(_ interface{}) error {
 	return nil
 }
 
-func newValidator(kubeClient kubernetes.Interface, cfg configurator.Configurator) *validator {
+func newValidator(kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, cfg configurator.Configurator) *validator {
 	return &validator{
-		kubeClient: kubeClient,
-		cfg:        cfg,
+		kubeClient:       kubeClient,
+		gatewayAPIClient: gatewayAPIClient,
+		cfg:              cfg,
 	}
 }
 
 func (w *validator) doValidation(obj interface{}) error {
 	gateway, ok := obj.(*gwv1.Gateway)
 	if !ok {
+		return nil
+	}
+
+	gatewayClass, err := w.gatewayAPIClient.
+		GatewayV1().
+		GatewayClasses().
+		Get(context.TODO(), string(gateway.Spec.GatewayClassName), metav1.GetOptions{})
+	if err != nil {
+		log.Error().Msgf("failed to get gatewayclass %s", gateway.Spec.GatewayClassName)
+		return nil
+	}
+
+	if gatewayClass.Spec.ControllerName != constants.GatewayController {
+		log.Warn().Msgf("class controller of Gateway %s/%s is not %s", gateway.Namespace, gateway.Name, constants.GatewayController)
 		return nil
 	}
 

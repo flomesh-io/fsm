@@ -26,8 +26,8 @@ package v1alpha2
 
 import (
 	"context"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -90,10 +90,20 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if len(routeStatus) > 0 {
-		tcpRoute.Status.Parents = routeStatus
-		if err := r.fctx.Status().Update(ctx, tcpRoute); err != nil {
-			return ctrl.Result{}, err
-		}
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1alpha2.TCPRoute{},
+			NamespacedName: client.ObjectKeyFromObject(tcpRoute),
+			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+				tr, ok := obj.(*gwv1alpha2.TCPRoute)
+				if !ok {
+					log.Error().Msgf("Unexpected object type %T", obj)
+				}
+				trCopy := tr.DeepCopy()
+				trCopy.Status.Parents = routeStatus
+
+				return trCopy
+			}),
+		})
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(tcpRoute, false)
