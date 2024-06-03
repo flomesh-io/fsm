@@ -84,6 +84,8 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 					if metaSet, metaErr := ins.Metadata.GetString(meta.Key); metaErr == nil {
 						if strings.EqualFold(metaSet, meta.Value) {
 							continue
+						} else if len(metaSet) == 0 && len(meta.Value) == 0 {
+							continue
 						}
 					}
 					matched = false
@@ -129,6 +131,8 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 					for _, meta := range filterMetadatas {
 						if metaSet, metaErr := svcIns.Metadata.GetString(meta.Key); metaErr == nil {
 							if strings.EqualFold(metaSet, meta.Value) {
+								continue
+							} else if len(metaSet) == 0 && len(meta.Value) == 0 {
 								continue
 							}
 						}
