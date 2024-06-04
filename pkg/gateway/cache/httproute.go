@@ -42,12 +42,12 @@ func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 		gwutils.ToSlicePtr(httpRoute.Status.Parents),
 	)
 
-	for _, ref := range httpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
+	for _, parentRef := range httpRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		h := rsh.StatusUpdateFor(ref)
+		h := rsh.StatusUpdateFor(parentRef)
 
 		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		log.Debug().Msgf("allowedListeners: %v", allowedListeners)
