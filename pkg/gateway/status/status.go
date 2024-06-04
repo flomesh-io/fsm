@@ -16,6 +16,8 @@ package status
 import (
 	"context"
 
+	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+
 	"github.com/rs/zerolog"
 
 	"github.com/google/go-cmp/cmp"
@@ -162,7 +164,17 @@ func (u *UpdateWriter) Send(update Update) {
 //	TCPRoute
 //	UDPRoute
 //	GRPCRoute
+//  AccessControlPolicy
+//  RateLimitPolicy
+//  FaultInjectionPolicy
+//  SessionStickyPolicy
+//  CircuitBreakingPolicy
+//  LoadBalancerPolicy
+//  HealthCheckPolicy
+//  RetryPolicy
+//  UpstreamTLSPolicy
 
+//gocyclo:ignore
 func isStatusEqual(objA, objB interface{}) bool {
 	opts := cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")
 	switch a := objA.(type) {
@@ -209,8 +221,60 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-
-		// FIXME: Add more types here as needed. i.e. XXXPolicyAttachment
+	case *gwpav1alpha1.AccessControlPolicy:
+		if b, ok := objB.(*gwpav1alpha1.AccessControlPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.RateLimitPolicy:
+		if b, ok := objB.(*gwpav1alpha1.RateLimitPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.FaultInjectionPolicy:
+		if b, ok := objB.(*gwpav1alpha1.FaultInjectionPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.SessionStickyPolicy:
+		if b, ok := objB.(*gwpav1alpha1.SessionStickyPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.CircuitBreakingPolicy:
+		if b, ok := objB.(*gwpav1alpha1.CircuitBreakingPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.LoadBalancerPolicy:
+		if b, ok := objB.(*gwpav1alpha1.LoadBalancerPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.HealthCheckPolicy:
+		if b, ok := objB.(*gwpav1alpha1.HealthCheckPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.RetryPolicy:
+		if b, ok := objB.(*gwpav1alpha1.RetryPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
+	case *gwpav1alpha1.UpstreamTLSPolicy:
+		if b, ok := objB.(*gwpav1alpha1.UpstreamTLSPolicy); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
 	}
 
 	return false

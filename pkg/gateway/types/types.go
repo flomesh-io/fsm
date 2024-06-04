@@ -66,17 +66,6 @@ func (l *Listener) AllowsKind(gvk schema.GroupVersionKind) bool {
 	return false
 }
 
-// RouteContext is a wrapper around the Gateway API Route object
-//type RouteContext struct {
-//	Meta         metav1.Object
-//	ParentRefs   []gwv1.ParentReference
-//	GVK          schema.GroupVersionKind
-//	Generation   int64
-//	Hostnames    []gwv1.Hostname
-//	Namespace    string
-//	ParentStatus []gwv1.RouteParentStatus
-//}
-
 // CrossNamespaceFrom is the type used to represent the from part of a cross-namespace reference
 type CrossNamespaceFrom struct {
 	Group     string

@@ -13,6 +13,7 @@ import (
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 )
 
+// PolicyUpdate is a struct that holds the information needed to update the status of a policy attachment
 type PolicyUpdate struct {
 	objectMeta     *metav1.ObjectMeta
 	typeMeta       *metav1.TypeMeta
@@ -38,11 +39,6 @@ func NewPolicyUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *
 }
 
 func (r *PolicyUpdate) AddCondition(condition metav1.Condition) metav1.Condition {
-	//msg := condition.Message
-	//if cond := metautil.FindStatusCondition(r.conditions, condition.Type); cond != nil {
-	//	msg = cond.Message + ", " + msg
-	//}
-
 	cond := metav1.Condition{
 		Reason:             condition.Reason,
 		Status:             condition.Status,
@@ -76,6 +72,10 @@ func (r *PolicyUpdate) GetTargetRef() gwv1alpha2.NamespacedPolicyTargetReference
 
 func (r *PolicyUpdate) GetResource() client.Object {
 	return r.resource
+}
+
+func (r *PolicyUpdate) GetFullName() types.NamespacedName {
+	return r.fullName
 }
 
 func (r *PolicyUpdate) Mutate(obj client.Object) client.Object {

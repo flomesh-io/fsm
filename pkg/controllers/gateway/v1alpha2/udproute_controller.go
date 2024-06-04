@@ -27,11 +27,7 @@ package v1alpha2
 import (
 	"context"
 
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,28 +84,6 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	//routeStatus, err := r.statusProcessor.Process(ctx, udpRoute, nil)
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//if len(routeStatus) > 0 {
-	//	r.fctx.StatusUpdater.Send(status.Update{
-	//		Resource:       &gwv1alpha2.UDPRoute{},
-	//		NamespacedName: client.ObjectKeyFromObject(udpRoute),
-	//		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-	//			ur, ok := obj.(*gwv1alpha2.UDPRoute)
-	//			if !ok {
-	//				log.Error().Msgf("Unexpected object type %T", obj)
-	//			}
-	//			urCopy := ur.DeepCopy()
-	//			urCopy.Status.Parents = routeStatus
-	//
-	//			return urCopy
-	//		}),
-	//	})
-	//}
-
 	rsu := route.NewRouteStatusUpdate(
 		udpRoute,
 		&udpRoute.ObjectMeta,
@@ -117,15 +91,9 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		nil,
 		gwutils.ToSlicePtr(udpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, rsu, udpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, udpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwv1.HTTPRoute{},
-		NamespacedName: client.ObjectKeyFromObject(udpRoute),
-		Mutator:        rsu,
-	})
 
 	r.fctx.GatewayEventHandler.OnAdd(udpRoute, false)
 

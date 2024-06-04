@@ -194,65 +194,6 @@ func HostnameMatchesWildcardHostname(hostname, wildcardHostname string) bool {
 	return g.Match(hostname)
 }
 
-//func ToRouteContext(route client.Object) *gwtypes.RouteContext {
-//
-//	switch route := route.(type) {
-//	case *gwv1.HTTPRoute:
-//		return &gwtypes.RouteContext{
-//			Meta:         route.GetObjectMeta(),
-//			ParentRefs:   route.Spec.ParentRefs,
-//			GVK:          route.GroupVersionKind(),
-//			Generation:   route.GetGeneration(),
-//			Hostnames:    route.Spec.Hostnames,
-//			Namespace:    route.GetNamespace(),
-//			ParentStatus: route.Status.Parents,
-//		}
-//	case *gwv1.GRPCRoute:
-//		return &gwtypes.RouteContext{
-//			Meta:         route.GetObjectMeta(),
-//			ParentRefs:   route.Spec.ParentRefs,
-//			GVK:          route.GroupVersionKind(),
-//			Generation:   route.GetGeneration(),
-//			Hostnames:    route.Spec.Hostnames,
-//			Namespace:    route.GetNamespace(),
-//			ParentStatus: route.Status.Parents,
-//		}
-//	case *gwv1alpha2.TLSRoute:
-//		return &gwtypes.RouteContext{
-//			Meta:         route.GetObjectMeta(),
-//			ParentRefs:   route.Spec.ParentRefs,
-//			GVK:          route.GroupVersionKind(),
-//			Generation:   route.GetGeneration(),
-//			Hostnames:    route.Spec.Hostnames,
-//			Namespace:    route.GetNamespace(),
-//			ParentStatus: route.Status.Parents,
-//		}
-//	case *gwv1alpha2.TCPRoute:
-//		return &gwtypes.RouteContext{
-//			Meta:         route.GetObjectMeta(),
-//			ParentRefs:   route.Spec.ParentRefs,
-//			GVK:          route.GroupVersionKind(),
-//			Generation:   route.GetGeneration(),
-//			Hostnames:    nil,
-//			Namespace:    route.GetNamespace(),
-//			ParentStatus: route.Status.Parents,
-//		}
-//	case *gwv1alpha2.UDPRoute:
-//		return &gwtypes.RouteContext{
-//			Meta:         route.GetObjectMeta(),
-//			ParentRefs:   route.Spec.ParentRefs,
-//			GVK:          route.GroupVersionKind(),
-//			Generation:   route.GetGeneration(),
-//			Hostnames:    nil,
-//			Namespace:    route.GetNamespace(),
-//			ParentStatus: route.Status.Parents,
-//		}
-//	default:
-//		log.Warn().Msgf("Unsupported route type: %T", route)
-//		return nil
-//	}
-//}
-
 // ValidCrossNamespaceRef returns if the reference is valid across namespaces based on the reference grants
 func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo, referenceGrants []*gwv1beta1.ReferenceGrant) bool {
 	if len(referenceGrants) == 0 {

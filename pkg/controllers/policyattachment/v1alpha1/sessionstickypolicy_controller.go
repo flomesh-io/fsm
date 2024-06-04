@@ -4,8 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -81,29 +79,13 @@ func (r *sessionStickyPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.SessionStickyPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -146,56 +128,11 @@ func addSessionStickyPolicyIndexer(ctx context.Context, mgr manager.Manager) err
 }
 
 func (r *sessionStickyPolicyReconciler) getAttachedSessionStickies(svc client.Object) ([]client.Object, *metav1.Condition) {
-	//sessionStickyPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().SessionStickyPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list SessionStickyPolicies: %s", err)))
-	//}
-	//
-	//sessionStickies := make([]client.Object, 0)
-	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//
-	//for _, p := range sessionStickyPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-	//		gwutils.HasAccessToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
-	//		sessionStickies = append(sessionStickies, &p)
-	//	}
-	//}
-	//
-	//return sessionStickies, nil
-
-	//referenceGrants, cond := gwutils.getServiceRefGrants(c, policy)
-	//if cond != nil {
-	//	return nil, cond
-	//}
-
 	c := r.fctx.Manager.GetCache()
 	key := client.ObjectKeyFromObject(svc).String()
 	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
 
 	return gwutils.GetSessionStickies(c, selector), nil
-	//policyList := &gwpav1alpha1.SessionStickyPolicyList{}
-	//if err := c.List(context.Background(), policyList, &client.ListOptions{
-	//	FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, client.ObjectKeyFromObject(svc).String()),
-	//}); err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list SessionStickyPolicyList: %s", err)))
-	//}
-	//
-	//return gwutils.filterValidPolicies(
-	//	gwutils.toClientObjects(gwutils.ToSlicePtr(policyList.Items)),
-	//	gwutils.getServiceRefGrants(c),
-	//	func(policy client.Object) bool {
-	//		p := policy.(*gwpav1alpha1.SessionStickyPolicy)
-	//		return gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions)
-	//	},
-	//	func(policy client.Object) bool {
-	//		return false
-	//	},
-	//	func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool {
-	//		p := policy.(*gwpav1alpha1.SessionStickyPolicy)
-	//		return gwutils.HasAccessToTargetRef(p, p.Spec.TargetRef, refGrants)
-	//	},
-	//), nil
 }
 
 func (r *sessionStickyPolicyReconciler) findConflict(sessionStickyPolicy client.Object, allSessionStickyPolicies []client.Object, port int32) *types.NamespacedName {
@@ -243,11 +180,7 @@ func (r *sessionStickyPolicyReconciler) referenceGrantToPolicyAttachment(_ conte
 	policies := gwutils.ToSlicePtr(list.Items)
 
 	requests := make([]reconcile.Request, 0)
-	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.SessionStickyPoliciesResourceType, false)
-
 	for _, policy := range policies {
-		//policy := p.(*gwpav1alpha1.SessionStickyPolicy)
-
 		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

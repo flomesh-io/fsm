@@ -115,28 +115,13 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef, u),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.AccessControlPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -144,11 +129,6 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 }
 
 func (r *accessControlPolicyReconciler) getAccessControls(target client.Object) map[gwpkg.PolicyMatchType][]client.Object {
-	//accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list AccessControlPolicies: %s", err)))
-	//}
-
 	c := r.fctx.Manager.GetCache()
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
 
@@ -183,44 +163,6 @@ func (r *accessControlPolicyReconciler) getAccessControls(target client.Object) 
 		}
 	}
 
-	//for matchType, fn := range map[gwpkg.PolicyMatchType]func(cache.Cache, client.Object) []client.Object{
-	//	gwpkg.PolicyMatchTypePort:      gwutils.GetAccessControlsMatchTypePort,
-	//	gwpkg.PolicyMatchTypeHostnames: gwutils.GetAccessControlsMatchTypeHostname,
-	//	gwpkg.PolicyMatchTypeHTTPRoute: gwutils.GetAccessControlsMatchTypeHTTPRoute,
-	//	gwpkg.PolicyMatchTypeGRPCRoute: gwutils.GetAccessControlsMatchTypeGRPCRoute,
-	//} {
-	//	if result := fn(c, target); len(result) > 0 {
-	//		policies[matchType] = result
-	//	}
-	//}
-
-	//for _, p := range accessControlPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
-	//		spec := p.Spec
-	//		targetRef := spec.TargetRef
-	//
-	//		switch {
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-	//			gwutils.HasAccessToTarget(gatewayRefGrants, &p, targetRef, target) &&
-	//			len(spec.Ports) > 0:
-	//			policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
-	//		case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-	//			gwutils.HasAccessToTarget(hostnamesRefGrants, &p, targetRef, target) &&
-	//			len(spec.Hostnames) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-	//			gwutils.HasAccessToTarget(httpRouteRefGrants, &p, targetRef, target) &&
-	//			len(spec.HTTPAccessControls) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-	//			gwutils.HasAccessToTarget(grpcRouteRefGrants, &p, targetRef, target) &&
-	//			len(spec.GRPCAccessControls) > 0:
-	//			policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
-	//		}
-	//	}
-	//}
-
 	return policies
 }
 
@@ -241,8 +183,6 @@ func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControl
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
-
-			//validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, h)
 			for _, listener := range allowedListeners {
@@ -511,8 +451,6 @@ func (r *accessControlPolicyReconciler) referenceGrantToPolicyAttachment(_ conte
 
 	requests := make([]reconcile.Request, 0)
 	for _, policy := range policies {
-		//policy := p.(*gwpav1alpha1.AccessControlPolicy)
-
 		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

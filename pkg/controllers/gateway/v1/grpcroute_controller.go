@@ -29,8 +29,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -89,28 +87,6 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	//routeStatus, err := r.statusProcessor.Process(ctx, grpcRoute, nil)
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//if len(routeStatus) > 0 {
-	//	r.fctx.StatusUpdater.Send(status.Update{
-	//		Resource:       &gwv1.GRPCRoute{},
-	//		NamespacedName: client.ObjectKeyFromObject(grpcRoute),
-	//		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-	//			gr, ok := obj.(*gwv1.GRPCRoute)
-	//			if !ok {
-	//				log.Error().Msgf("Unexpected object type %T", obj)
-	//			}
-	//			grCopy := gr.DeepCopy()
-	//			grCopy.Status.Parents = routeStatus
-	//
-	//			return grCopy
-	//		}),
-	//	})
-	//}
-
 	rsu := route.NewRouteStatusUpdate(
 		grpcRoute,
 		&grpcRoute.ObjectMeta,
@@ -118,15 +94,9 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		grpcRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(grpcRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, rsu, grpcRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, grpcRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwv1.HTTPRoute{},
-		NamespacedName: client.ObjectKeyFromObject(grpcRoute),
-		Mutator:        rsu,
-	})
 
 	r.fctx.GatewayEventHandler.OnAdd(grpcRoute, false)
 

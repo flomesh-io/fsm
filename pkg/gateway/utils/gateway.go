@@ -96,14 +96,11 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 // GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RouteParentStatusObject) []gwtypes.Listener {
 	routeGvk := u.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
-	//routeGeneration := u.Meta.Generation
 	routeNs := u.GetRouteStatusObject().GetObjectMeta().Namespace
 	parentRef := u.GetParentRef()
 	validListeners := GetValidListenersForGateway(gw)
 
 	selectedListeners := make([]gwtypes.Listener, 0)
-	//invalidListenerConditions := make([]metav1.Condition, 0)
-
 	for _, validListener := range validListeners {
 		if (parentRef.SectionName == nil || *parentRef.SectionName == validListener.Name) &&
 			(parentRef.Port == nil || *parentRef.Port == validListener.Port) {
@@ -118,14 +115,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 			gwv1.RouteReasonNoMatchingParent,
 			fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		)
-		//invalidListenerConditions = append(invalidListenerConditions, metav1.Condition{
-		//	Type:               string(gwv1.RouteConditionAccepted),
-		//	Status:             metav1.ConditionFalse,
-		//	ObservedGeneration: routeGeneration,
-		//	LastTransitionTime: metav1.Time{Time: time.Now()},
-		//	Reason:             string(gwv1.RouteReasonNoMatchingParent),
-		//	Message:            fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
-		//})
+
 		return nil
 	}
 
@@ -150,14 +140,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 			gwv1.RouteReasonNotAllowedByListeners,
 			fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 		)
-		//invalidListenerConditions = append(invalidListenerConditions, metav1.Condition{
-		//	Type:               string(gwv1.RouteConditionAccepted),
-		//	Status:             metav1.ConditionFalse,
-		//	ObservedGeneration: routeGeneration,
-		//	LastTransitionTime: metav1.Time{Time: time.Now()},
-		//	Reason:             string(gwv1.RouteReasonNotAllowedByListeners),
-		//	Message:            fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
-		//})
+
 		return nil
 	}
 

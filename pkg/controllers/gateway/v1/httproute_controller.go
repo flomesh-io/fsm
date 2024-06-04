@@ -27,7 +27,6 @@ package v1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -92,32 +91,9 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		httpRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(httpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, rsu, httpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, httpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	//if len(routeStatus) > 0 {
-	//	r.fctx.StatusUpdater.Send(status.Update{
-	//		Resource:       &gwv1.HTTPRoute{},
-	//		NamespacedName: client.ObjectKeyFromObject(httpRoute),
-	//		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-	//			hr, ok := obj.(*gwv1.HTTPRoute)
-	//			if !ok {
-	//				log.Error().Msgf("Unexpected object type %T", obj)
-	//			}
-	//			hrCopy := hr.DeepCopy()
-	//			hrCopy.Status.Parents = routeStatus
-	//
-	//			return hrCopy
-	//		}),
-	//	})
-	//}
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwv1.HTTPRoute{},
-		NamespacedName: client.ObjectKeyFromObject(httpRoute),
-		Mutator:        rsu,
-	})
 
 	r.fctx.GatewayEventHandler.OnAdd(httpRoute, false)
 

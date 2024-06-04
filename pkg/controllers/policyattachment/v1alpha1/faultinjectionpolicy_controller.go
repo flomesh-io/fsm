@@ -121,29 +121,13 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, nil
 	}
 
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef, nil),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.FaultInjectionPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -179,36 +163,6 @@ func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object
 			policies[param.matchType] = result
 		}
 	}
-	//faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
-	//}
-	//
-	//policies := make(map[gwpkg.PolicyMatchType][]client.Object)
-	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//
-	//for _, p := range faultInjectionPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
-	//		spec := p.Spec
-	//		targetRef := spec.TargetRef
-	//
-	//		switch {
-	//		case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.Hostnames) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.HTTPFaultInjections) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.GRPCFaultInjections) > 0:
-	//			policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
-	//		}
-	//	}
-	//}
 
 	return policies
 }
@@ -230,8 +184,6 @@ func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjecti
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
-
-			//validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, h)
 			for _, listener := range allowedListeners {
@@ -442,11 +394,7 @@ func (r *faultInjectionPolicyReconciler) referenceGrantToPolicyAttachment(_ cont
 	policies := gwutils.ToSlicePtr(list.Items)
 
 	requests := make([]reconcile.Request, 0)
-	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.FaultInjectionPoliciesResourceType, false)
-
 	for _, policy := range policies {
-		//policy := p.(*gwpav1alpha1.FaultInjectionPolicy)
-
 		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

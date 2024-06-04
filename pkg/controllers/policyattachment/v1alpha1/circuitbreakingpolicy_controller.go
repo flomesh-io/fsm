@@ -4,8 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -81,29 +79,13 @@ func (r *circuitBreakingPolicyReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.CircuitBreakingPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -116,58 +98,6 @@ func (r *circuitBreakingPolicyReconciler) getAttachedCircuitBreakings(svc client
 	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
 
 	return gwutils.GetCircuitBreakings(c, selector), nil
-
-	//circuitBreakingPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().CircuitBreakingPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list CircuitBreakingPolicies: %s", err)))
-	//}
-	//
-	//circuitBreakings := make([]client.Object, 0)
-	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//
-	//for _, p := range circuitBreakingPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-	//		gwutils.HasAccessToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
-	//		circuitBreakings = append(circuitBreakings, &p)
-	//	}
-	//}
-	//
-	//return circuitBreakings, nil
-	//c := r.fctx.Manager.GetCache()
-	//
-	//referenceGrants, cond := gwutils.getServiceRefGrants(c, policy)
-	//if cond != nil {
-	//	return nil, cond
-	//}
-	//
-	//policyList := &gwpav1alpha1.CircuitBreakingPolicyList{}
-	//if err := c.List(context.Background(), policyList, &client.ListOptions{
-	//	FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, client.ObjectKeyFromObject(svc).String()),
-	//}); err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list CircuitBreakingPolicyList: %s", err)))
-	//}
-	//
-	//return gwutils.filterValidPolicies(
-	//	gwutils.toClientObjects(gwutils.ToSlicePtr(policyList.Items)),
-	//	svc,
-	//	referenceGrants,
-	//	func(policy client.Object) bool {
-	//		p := policy.(*gwpav1alpha1.CircuitBreakingPolicy)
-	//		return gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions)
-	//	},
-	//	func(policy client.Object) bool {
-	//		return false
-	//	},
-	//	func(policy client.Object, target client.Object) bool {
-	//		p := policy.(*gwpav1alpha1.CircuitBreakingPolicy)
-	//		return gwutils.IsTargetRefToTarget(p.Spec.TargetRef, target)
-	//	},
-	//	func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool {
-	//		p := policy.(*gwpav1alpha1.CircuitBreakingPolicy)
-	//		return gwutils.HasAccessToTargetRef(p, p.Spec.TargetRef, refGrants)
-	//	},
-	//), nil
 }
 
 func (r *circuitBreakingPolicyReconciler) findConflict(circuitBreakingPolicy client.Object, allCircuitBreakingPolicies []client.Object, port int32) *types.NamespacedName {

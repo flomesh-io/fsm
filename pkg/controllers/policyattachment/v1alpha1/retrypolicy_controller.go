@@ -4,8 +4,6 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -81,29 +79,13 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.RetryPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -151,58 +133,6 @@ func (r *retryPolicyReconciler) getAttachedRetryPolicies(svc client.Object) ([]c
 	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
 
 	return gwutils.GetRetries(c, selector), nil
-
-	//retryPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RetryPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list RetryPolicies: %s", err)))
-	//}
-	//
-	//retryPolicies := make([]client.Object, 0)
-	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//
-	//for _, p := range retryPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-	//		gwutils.HasAccessToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
-	//		retryPolicies = append(retryPolicies, &p)
-	//	}
-	//}
-	//
-	//return retryPolicies, nil
-	//c := r.fctx.Manager.GetCache()
-	//
-	//referenceGrants, cond := gwutils.getServiceRefGrants(c, policy)
-	//if cond != nil {
-	//	return nil, cond
-	//}
-	//
-	//policyList := &gwpav1alpha1.RetryPolicyList{}
-	//if err := c.List(context.Background(), policyList, &client.ListOptions{
-	//	FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, client.ObjectKeyFromObject(svc).String()),
-	//}); err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list RetryPolicyList: %s", err)))
-	//}
-	//
-	//return gwutils.filterValidPolicies(
-	//	gwutils.toClientObjects(gwutils.ToSlicePtr(policyList.Items)),
-	//	svc,
-	//	referenceGrants,
-	//	func(policy client.Object) bool {
-	//		p := policy.(*gwpav1alpha1.RetryPolicy)
-	//		return gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions)
-	//	},
-	//	func(policy client.Object) bool {
-	//		return false
-	//	},
-	//	func(policy client.Object, target client.Object) bool {
-	//		p := policy.(*gwpav1alpha1.RetryPolicy)
-	//		return gwutils.IsTargetRefToTarget(p.Spec.TargetRef, target)
-	//	},
-	//	func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool {
-	//		p := policy.(*gwpav1alpha1.RetryPolicy)
-	//		return gwutils.HasAccessToTargetRef(p, p.Spec.TargetRef, refGrants)
-	//	},
-	//), nil
 }
 
 func (r *retryPolicyReconciler) findConflict(retryPolicy client.Object, allRetryPolicies []client.Object, port int32) *types.NamespacedName {
@@ -250,11 +180,7 @@ func (r *retryPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Conte
 	policies := gwutils.ToSlicePtr(list.Items)
 
 	requests := make([]reconcile.Request, 0)
-	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RetryPoliciesResourceType, false)
-
 	for _, policy := range policies {
-		//policy := p.(*gwpav1alpha1.RetryPolicy)
-
 		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

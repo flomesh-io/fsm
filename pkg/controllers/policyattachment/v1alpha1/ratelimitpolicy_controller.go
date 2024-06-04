@@ -116,29 +116,13 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	//metautil.SetStatusCondition(
-	//	&policy.Status.Conditions,
-	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef, nil),
-	//)
-	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	u := policystatus.NewPolicyUpdate(
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
 		policy.Spec.TargetRef,
 		policy.Status.Conditions,
-	)
-
-	r.statusProcessor.Process(ctx, u)
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwpav1alpha1.RateLimitPolicy{},
-		NamespacedName: client.ObjectKeyFromObject(policy),
-		Mutator:        u,
-	})
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -146,10 +130,6 @@ func (r *rateLimitPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 }
 
 func (r *rateLimitPolicyReconciler) getRateLimitPolices(target client.Object) map[gwpkg.PolicyMatchType][]client.Object {
-	//rateLimitPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RateLimitPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	//if err != nil {
-	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list rate limit policies: %s", err)))
-	//}
 	c := r.fctx.Manager.GetCache()
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
 
@@ -184,35 +164,6 @@ func (r *rateLimitPolicyReconciler) getRateLimitPolices(target client.Object) ma
 		}
 	}
 
-	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	//
-	//for _, p := range rateLimitPolicyList.Items {
-	//	p := p
-	//	if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) {
-	//		spec := p.Spec
-	//		targetRef := spec.TargetRef
-	//
-	//		switch {
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GatewayGVK) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.Ports) > 0:
-	//			policies[gwpkg.PolicyMatchTypePort] = append(policies[gwpkg.PolicyMatchTypePort], &p)
-	//		case (gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) || gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK)) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.Hostnames) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHostnames] = append(policies[gwpkg.PolicyMatchTypeHostnames], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.HTTPRouteGVK) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.HTTPRateLimits) > 0:
-	//			policies[gwpkg.PolicyMatchTypeHTTPRoute] = append(policies[gwpkg.PolicyMatchTypeHTTPRoute], &p)
-	//		case gwutils.IsTargetRefToGVK(targetRef, constants.GRPCRouteGVK) &&
-	//			gwutils.HasAccessToTarget(referenceGrants, &p, targetRef, target) &&
-	//			len(spec.GRPCRateLimits) > 0:
-	//			policies[gwpkg.PolicyMatchTypeGRPCRoute] = append(policies[gwpkg.PolicyMatchTypeGRPCRoute], &p)
-	//		}
-	//	}
-	//}
-
 	return policies
 }
 
@@ -233,8 +184,6 @@ func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(r
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
-
-			//validListeners := gwutils.GetValidListenersForGateway(gateway)
 
 			allowedListeners := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, h)
 
@@ -503,11 +452,7 @@ func (r *rateLimitPolicyReconciler) referenceGrantToPolicyAttachment(_ context.C
 	policies := gwutils.ToSlicePtr(list.Items)
 
 	requests := make([]reconcile.Request, 0)
-	//policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RateLimitPoliciesResourceType, false)
-
 	for _, policy := range policies {
-		//policy := p.(*gwpav1alpha1.RateLimitPolicy)
-
 		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{

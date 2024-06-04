@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -39,18 +41,28 @@ type GetAttachedPoliciesFunc func(svc client.Object) ([]client.Object, *metav1.C
 type FindConflictFunc func(policy client.Object, allPolicies []client.Object, port int32) *types.NamespacedName
 
 // Process processes the service level policy status
-func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, update *PolicyUpdate) metav1.Condition {
-	policy := update.GetResource()
-	targetRef := update.GetTargetRef()
+func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, updater status.Updater, u *PolicyUpdate) {
+	p.internalProcess(ctx, u)
+
+	updater.Send(status.Update{
+		Resource:       u.GetResource(),
+		NamespacedName: u.GetFullName(),
+		Mutator:        u,
+	})
+}
+
+func (p *ServicePolicyStatusProcessor) internalProcess(ctx context.Context, u *PolicyUpdate) metav1.Condition {
+	policy := u.GetResource()
+	targetRef := u.GetTargetRef()
 
 	_, ok := p.getServiceGroupKindObjectMapping()[string(targetRef.Group)]
 	if !ok {
-		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference group %q, only %q is/are supported", targetRef.Group, strings.Join(p.supportedGroups(), ","))))
+		return u.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference group %q, only %q is/are supported", targetRef.Group, strings.Join(p.supportedGroups(), ","))))
 	}
 
 	svc := p.getServiceObjectByGroupKind(targetRef.Group, targetRef.Kind)
 	if svc == nil {
-		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ","))))
+		return u.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ","))))
 	}
 
 	key := types.NamespacedName{
@@ -60,9 +72,9 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, update *Poli
 
 	if err := p.Get(ctx, key, svc); err != nil {
 		if errors.IsNotFound(err) {
-			return update.AddCondition(notFoundCondition(fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String())))
+			return u.AddCondition(notFoundCondition(fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String())))
 		} else {
-			return update.AddCondition(invalidCondition(fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err)))
+			return u.AddCondition(invalidCondition(fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err)))
 		}
 	}
 
@@ -74,15 +86,15 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, update *Poli
 	switch svc := svc.(type) {
 	case *corev1.Service:
 		if conflict := p.getConflictedPolicyByService(policy, policies, svc); conflict != nil {
-			return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
+			return u.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 		}
 	case *mcsv1alpha1.ServiceImport:
 		if conflict := p.getConflictedPolicyByServiceImport(policy, policies, svc); conflict != nil {
-			return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
+			return u.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 		}
 	}
 
-	return update.AddCondition(acceptedCondition())
+	return u.AddCondition(acceptedCondition())
 }
 
 func (p *ServicePolicyStatusProcessor) getSortedAttachedPolices(svc client.Object) ([]client.Object, *metav1.Condition) {
