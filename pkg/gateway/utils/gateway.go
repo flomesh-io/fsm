@@ -56,8 +56,8 @@ func IsListenerAccepted(listenerStatus gwv1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted))
 }
 
-// GetActiveGateways returns the active gateways from the list of gateways
-func GetActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
+// FilterActiveGateways returns the active gateways from the list of gateways
+func FilterActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range allGateways {
@@ -77,15 +77,15 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 	}
 
 	validListeners := make([]gwtypes.Listener, 0)
-	for _, status := range gw.Status.Listeners {
-		if IsListenerAccepted(status) && IsListenerProgrammed(status) {
-			l, ok := listeners[status.Name]
+	for _, s := range gw.Status.Listeners {
+		if IsListenerAccepted(s) && IsListenerProgrammed(s) {
+			l, ok := listeners[s.Name]
 			if !ok {
 				continue
 			}
 			validListeners = append(validListeners, gwtypes.Listener{
 				Listener:       l,
-				SupportedKinds: status.SupportedKinds,
+				SupportedKinds: s.SupportedKinds,
 			})
 		}
 	}

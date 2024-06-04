@@ -31,7 +31,7 @@ func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
 		return nil
 	}
 
-	return gwutils.GetActiveGateways(gwutils.ToSlicePtr(list.Items))
+	return gwutils.FilterActiveGateways(gwutils.ToSlicePtr(list.Items))
 }
 
 func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret, error) {

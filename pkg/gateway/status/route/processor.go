@@ -68,7 +68,7 @@ func (p *RouteStatusProcessor) Process(ctx context.Context, updater status.Updat
 		return err
 	}
 
-	activeGateways := gwutils.GetActiveGateways(gwutils.ToSlicePtr(list.Items))
+	activeGateways := gwutils.FilterActiveGateways(gwutils.ToSlicePtr(list.Items))
 
 	if len(activeGateways) > 0 {
 		p.computeRouteParentStatus(activeGateways, update, parentRefs)
