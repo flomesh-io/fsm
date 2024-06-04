@@ -46,11 +46,11 @@ func acceptedCondition() metav1.Condition {
 }
 
 // noAccessCondition returns the no access condition with the given message for the policy
-func noAccessCondition(message string) metav1.Condition {
-	return metav1.Condition{
-		Type:    string(gwv1alpha2.PolicyConditionAccepted),
-		Status:  metav1.ConditionFalse,
-		Reason:  "NoAccessToTarget",
-		Message: message,
-	}
-}
+//func noAccessCondition(message string) metav1.Condition {
+//	return metav1.Condition{
+//		Type:    string(gwv1alpha2.PolicyConditionAccepted),
+//		Status:  metav1.ConditionFalse,
+//		Reason:  "NoAccessToTarget",
+//		Message: message,
+//	}
+//}
