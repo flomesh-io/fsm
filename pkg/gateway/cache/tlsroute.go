@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -31,12 +33,22 @@ func (c *GatewayProcessor) processTLSRoutes() {
 }
 
 func (c *GatewayProcessor) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
-	for _, ref := range tlsRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
+	rsh := route.NewRouteStatusUpdate(
+		tlsRoute,
+		&tlsRoute.ObjectMeta,
+		&tlsRoute.TypeMeta,
+		tlsRoute.Spec.Hostnames,
+		gwutils.ToSlicePtr(tlsRoute.Status.Parents),
+	)
+
+	for _, parentRef := range tlsRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.cache.client, c.gateway, ref, gwutils.ToRouteContext(tlsRoute), c.validListeners)
+		h := rsh.StatusUpdateFor(parentRef)
+
+		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		if len(allowedListeners) == 0 {
 			continue
 		}

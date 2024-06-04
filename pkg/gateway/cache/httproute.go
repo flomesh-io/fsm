@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -32,12 +34,22 @@ func (c *GatewayProcessor) processHTTPRoutes() {
 func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(httpRoute)
 
+	rsh := route.NewRouteStatusUpdate(
+		httpRoute,
+		&httpRoute.ObjectMeta,
+		&httpRoute.TypeMeta,
+		httpRoute.Spec.Hostnames,
+		gwutils.ToSlicePtr(httpRoute.Status.Parents),
+	)
+
 	for _, ref := range httpRoute.Spec.ParentRefs {
 		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.cache.client, c.gateway, ref, gwutils.ToRouteContext(httpRoute), c.validListeners)
+		h := rsh.StatusUpdateFor(ref)
+
+		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		log.Debug().Msgf("allowedListeners: %v", allowedListeners)
 		if len(allowedListeners) == 0 {
 			continue

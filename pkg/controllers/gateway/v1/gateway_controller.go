@@ -81,12 +81,7 @@ var (
 	activeGateways map[string]*gwv1.Gateway
 )
 
-//type gatewayValues struct {
-//	Gateway   *gwv1.Gateway    `json:"gwy,omitempty"`
-//	Listeners []gwpkg.Listener `json:"listeners,omitempty"`
-//}
-
-type gatewayAcceptedCondition struct {
+type gatewayCondition struct {
 	gateway   *gwv1.Gateway
 	condition metav1.Condition
 }
@@ -211,7 +206,7 @@ func (r *gatewayReconciler) updateGatewayStatus(ctx context.Context, gateway *gw
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) computeGatewayAcceptedCondition(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass) ([]*gatewayAcceptedCondition, error) {
+func (r *gatewayReconciler) computeGatewayAcceptedCondition(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass) ([]*gatewayCondition, error) {
 	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
 	gatewayList := &gwv1.GatewayList{}
 	if err := r.fctx.List(ctx, gatewayList, client.InNamespace(gateway.Namespace)); err != nil {
@@ -232,22 +227,23 @@ func (r *gatewayReconciler) computeGatewayAcceptedCondition(ctx context.Context,
 	}
 
 	// 3. Set the oldest as Accepted and the rest are unaccepted
-	acceptedStatusChangedGatewayConditions := make([]*gatewayAcceptedCondition, 0)
+	acceptedStatusChangedGatewayConditions := make([]*gatewayCondition, 0)
 	for i := range gwutils.SortResources(validGateways) {
 		if i == 0 {
 			if !gwutils.IsAcceptedGateway(validGateways[i]) {
-				acceptedStatusChangedGatewayConditions = append(acceptedStatusChangedGatewayConditions, &gatewayAcceptedCondition{
+				acceptedStatusChangedGatewayConditions = append(acceptedStatusChangedGatewayConditions, &gatewayCondition{
 					gateway:   validGateways[i],
-					condition: r.acceptedCondition(validGateways[i]),
+					condition: gatewayAcceptedCondition(validGateways[i]),
 				})
 			}
-		} else {
-			if gwutils.IsAcceptedGateway(validGateways[i]) {
-				acceptedStatusChangedGatewayConditions = append(acceptedStatusChangedGatewayConditions, &gatewayAcceptedCondition{
-					gateway:   validGateways[i],
-					condition: r.unacceptedCondition(validGateways[i]),
-				})
-			}
+			continue
+		}
+
+		if gwutils.IsAcceptedGateway(validGateways[i]) {
+			acceptedStatusChangedGatewayConditions = append(acceptedStatusChangedGatewayConditions, &gatewayCondition{
+				gateway:   validGateways[i],
+				condition: gatewayUnacceptedCondition(validGateways[i]),
+			})
 		}
 	}
 
@@ -484,39 +480,18 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 	if len(addresses) == 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Addresses", "No addresses have been assigned to the Gateway")
 
-		return metav1.Condition{
-			Type:               string(gwv1.GatewayConditionProgrammed),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: gw.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1.GatewayReasonAddressNotAssigned),
-			Message:            "No addresses have been assigned to the Gateway",
-		}, false
+		return gatewayAddressNotAssignedCondition(gw), false
 	}
 
 	if deployment == nil || deployment.Status.AvailableReplicas == 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Unavailable", "Gateway Deployment replicas unavailable")
 
-		return metav1.Condition{
-			Type:               string(gwv1.GatewayConditionProgrammed),
-			Status:             metav1.ConditionFalse,
-			ObservedGeneration: gw.Generation,
-			LastTransitionTime: metav1.Time{Time: time.Now()},
-			Reason:             string(gwv1.GatewayReasonNoResources),
-			Message:            "Deployment replicas unavailable",
-		}, false
+		return gatewayNoResourcesCondition(gw), false
 	}
 
 	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", "Address assigned to the Gateway, Gateway is programmed")
 
-	return metav1.Condition{
-		Type:               string(gwv1.GatewayConditionProgrammed),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: gw.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1.GatewayConditionProgrammed),
-		Message:            fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas),
-	}, true
+	return gatewayProgrammedCondition(gw, deployment), true
 }
 
 func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gateway) *appsv1.Deployment {
@@ -898,7 +873,7 @@ func (r *gatewayReconciler) resolveValues(object metav1.Object, mc configurator.
 		"hasUDP": hasUDP(gateway),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("convert Gateway to yaml, err = %v", err)
+		return nil, fmt.Errorf("convert values map to yaml, err = %v", err)
 	}
 	log.Debug().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
 
@@ -1003,28 +978,6 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway) (map[s
 	return paramsMap, nil
 }
 
-func (r *gatewayReconciler) acceptedCondition(gateway *gwv1.Gateway) metav1.Condition {
-	return metav1.Condition{
-		Type:               string(gwv1.GatewayConditionAccepted),
-		Status:             metav1.ConditionTrue,
-		ObservedGeneration: gateway.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gwv1.GatewayReasonAccepted),
-		Message:            fmt.Sprintf("Gateway %s/%s is accepted.", gateway.Namespace, gateway.Name),
-	}
-}
-
-func (r *gatewayReconciler) unacceptedCondition(gateway *gwv1.Gateway) metav1.Condition {
-	return metav1.Condition{
-		Type:               string(gwv1.GatewayConditionAccepted),
-		Status:             metav1.ConditionFalse,
-		ObservedGeneration: gateway.Generation,
-		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             "Unaccepted",
-		Message:            fmt.Sprintf("Gateway %s/%s is not accepted as it's not the oldest one in namespace %q.", gateway.Namespace, gateway.Name, gateway.Namespace),
-	}
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -1087,12 +1040,9 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 	if gwutils.IsEffectiveGatewayClass(gatewayClass) {
 		c := r.fctx.Manager.GetCache()
 		gateways := &gwv1.GatewayList{}
-		err := c.List(ctx, gateways, &client.ListOptions{
+		if err := c.List(ctx, gateways, &client.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, gatewayClass.Name),
-		})
-		//var gateways gwv1.GatewayList
-		//if err := r.fctx.List(ctx, &gateways); err != nil {
-		if err != nil {
+		}); err != nil {
 			log.Error().Msgf("error listing gateways: %s", err)
 			return nil
 		}
@@ -1100,7 +1050,6 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 		var reconciles []reconcile.Request
 		for _, gw := range gateways.Items {
 			gw := gw
-			//if string(gw.Spec.GatewayClassName) == gatewayClass.GetName() {
 			if gwutils.IsActiveGateway(&gw) {
 				reconciles = append(reconciles, reconcile.Request{
 					NamespacedName: types.NamespacedName{
@@ -1126,12 +1075,10 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 
 	c := r.fctx.Manager.GetCache()
 	gateways := &gwv1.GatewayList{}
-	err := c.List(ctx, gateways, &client.ListOptions{
+	if err := c.List(ctx, gateways, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ConfigMapGatewayIndex, client.ObjectKeyFromObject(cm).String()),
 		Namespace:     cm.Namespace,
-	})
-	//err := r.fctx.List(ctx, gateways, client.InNamespace(cm.Namespace))
-	if err != nil {
+	}); err != nil {
 		log.Error().Msgf("error listing gateways: %s", err)
 		return nil
 	}
@@ -1151,23 +1098,6 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 				},
 			})
 		}
-		//if gw.Spec.Infrastructure == nil {
-		//	continue
-		//}
-		//
-		//if gw.Spec.Infrastructure.ParametersRef == nil {
-		//	continue
-		//}
-		//
-		//paramRef := gw.Spec.Infrastructure.ParametersRef
-		//if paramRef.Name == cm.Name && paramRef.Group == corev1.GroupName && paramRef.Kind == constants.KubernetesConfigMapKind {
-		//	reconciles = append(reconciles, reconcile.Request{
-		//		NamespacedName: types.NamespacedName{
-		//			Namespace: gw.Namespace,
-		//			Name:      gw.Name,
-		//		},
-		//	})
-		//}
 	}
 
 	return reconciles
@@ -1182,10 +1112,9 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 
 	c := r.fctx.Manager.GetCache()
 	gateways := &gwv1.GatewayList{}
-	err := c.List(ctx, gateways, &client.ListOptions{
+	if err := c.List(ctx, gateways, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.SecretGatewayIndex, client.ObjectKeyFromObject(secret).String()),
-	})
-	if err != nil {
+	}); err != nil {
 		log.Error().Msgf("error listing gateways: %s", err)
 		return nil
 	}

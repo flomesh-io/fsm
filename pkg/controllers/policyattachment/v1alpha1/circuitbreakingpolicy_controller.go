@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+
 	"k8s.io/apimachinery/pkg/fields"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -11,8 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/circuitbreaking"
 
@@ -45,7 +45,7 @@ type circuitBreakingPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *status.ServicePolicyStatusProcessor
+	statusProcessor           *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *circuitBreakingPolicyReconciler) NeedLeaderElection() bool {
@@ -61,7 +61,7 @@ func NewCircuitBreakingPolicyReconciler(ctx *fctx.ControllerContext) controllers
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 
-	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
 		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedCircuitBreakings,

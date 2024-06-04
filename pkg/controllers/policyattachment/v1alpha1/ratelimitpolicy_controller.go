@@ -29,6 +29,9 @@ import (
 	"fmt"
 	"reflect"
 
+	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+
 	"k8s.io/apimachinery/pkg/fields"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -38,15 +41,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
-
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/ratelimit"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -76,7 +76,7 @@ type rateLimitPolicyReconciler struct {
 	fctx                      *fctx.ControllerContext
 	gatewayAPIClient          gwclient.Interface
 	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *status.PolicyStatusProcessor
+	statusProcessor           *policy.PolicyStatusProcessor
 }
 
 func (r *rateLimitPolicyReconciler) NeedLeaderElection() bool {
@@ -92,7 +92,7 @@ func NewRateLimitPolicyReconciler(ctx *fctx.ControllerContext) controllers.Recon
 		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 
-	r.statusProcessor = &status.PolicyStatusProcessor{
+	r.statusProcessor = &policy.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
 		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getRateLimitPolices,
@@ -207,27 +207,30 @@ func (r *rateLimitPolicyReconciler) getRateLimitPolices(target client.Object) (m
 	return policies, nil
 }
 
-func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route *gwtypes.RouteContext, rateLimitPolicy client.Object, hostnamesRateLimits []client.Object) *types.NamespacedName {
+func (r *rateLimitPolicyReconciler) getConflictedHostnamesBasedRateLimitPolicy(route routestatus.RouteStatusObject, parentRefs []gwv1.ParentReference, rateLimitPolicy client.Object, hostnamesRateLimits []client.Object) *types.NamespacedName {
 	currentPolicy := rateLimitPolicy.(*gwpav1alpha1.RateLimitPolicy)
 
 	if len(currentPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
 
-	for _, parent := range route.ParentStatus {
-		if metautil.IsStatusConditionTrue(parent.Conditions, string(gwv1.RouteConditionAccepted)) {
-			key := getRouteParentKey(route.Meta, parent)
+	for _, parentRef := range parentRefs {
+		h := route.StatusUpdateFor(parentRef)
+
+		if metautil.IsStatusConditionTrue(h.ConditionsForParentRef(parentRef), string(gwv1.RouteConditionAccepted)) {
+			key := getRouteParentKey(route.GetObjectMeta(), parentRef)
 
 			gateway := &gwv1.Gateway{}
 			if err := r.fctx.Get(context.TODO(), key, gateway); err != nil {
 				continue
 			}
 
-			validListeners := gwutils.GetValidListenersForGateway(gateway)
+			//validListeners := gwutils.GetValidListenersForGateway(gateway)
 
-			allowedListeners, _ := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, parent.ParentRef, route, validListeners)
+			allowedListeners := gwutils.GetAllowedListeners(r.fctx.Manager.GetCache(), gateway, h)
+
 			for _, listener := range allowedListeners {
-				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.Hostnames)
+				hostnames := gwutils.GetValidHostnames(listener.Hostname, route.GetHostnames())
 				if len(hostnames) == 0 {
 					// no valid hostnames, should ignore it
 					continue

@@ -3,6 +3,8 @@ package cache
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -31,13 +33,22 @@ func (c *GatewayProcessor) processGRPCRoutes() {
 
 func (c *GatewayProcessor) processGRPCRoute(grpcRoute *gwv1.GRPCRoute) {
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(grpcRoute)
+	rsh := route.NewRouteStatusHolder(
+		grpcRoute,
+		&grpcRoute.ObjectMeta,
+		&grpcRoute.TypeMeta,
+		grpcRoute.Spec.Hostnames,
+		gwutils.ToSlicePtr(grpcRoute.Status.Parents),
+	)
 
-	for _, ref := range grpcRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
+	for _, parentRef := range grpcRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.cache.client, c.gateway, ref, gwutils.ToRouteContext(grpcRoute), c.validListeners)
+		h := rsh.StatusUpdateFor(parentRef)
+
+		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		if len(allowedListeners) == 0 {
 			continue
 		}

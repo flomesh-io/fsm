@@ -27,7 +27,10 @@ package v1alpha2
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +54,7 @@ import (
 type tcpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *routestatus.RouteStatusProcessor
+	statusProcessor *route.RouteStatusProcessor
 }
 
 func (r *tcpRouteReconciler) NeedLeaderElection() bool {
@@ -63,7 +66,7 @@ func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
 		fctx:            ctx,
-		statusProcessor: &routestatus.RouteStatusProcessor{Ctx: ctx},
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
 	}
 }
 
@@ -85,27 +88,44 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, tcpRoute)
-	if err != nil {
+	//routeStatus, err := r.statusProcessor.Process(ctx, tcpRoute, nil)
+	//if err != nil {
+	//	return ctrl.Result{}, err
+	//}
+	//
+	//if len(routeStatus) > 0 {
+	//	r.fctx.StatusUpdater.Send(status.Update{
+	//		Resource:       &gwv1alpha2.TCPRoute{},
+	//		NamespacedName: client.ObjectKeyFromObject(tcpRoute),
+	//		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+	//			tr, ok := obj.(*gwv1alpha2.TCPRoute)
+	//			if !ok {
+	//				log.Error().Msgf("Unexpected object type %T", obj)
+	//			}
+	//			trCopy := tr.DeepCopy()
+	//			trCopy.Status.Parents = routeStatus
+	//
+	//			return trCopy
+	//		}),
+	//	})
+	//}
+
+	rsu := route.NewRouteStatusUpdate(
+		tcpRoute,
+		&tcpRoute.ObjectMeta,
+		&tcpRoute.TypeMeta,
+		nil,
+		gwutils.ToSlicePtr(tcpRoute.Status.Parents),
+	)
+	if err := r.statusProcessor.Process(ctx, rsu, tcpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if len(routeStatus) > 0 {
-		r.fctx.StatusUpdater.Send(status.Update{
-			Resource:       &gwv1alpha2.TCPRoute{},
-			NamespacedName: client.ObjectKeyFromObject(tcpRoute),
-			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-				tr, ok := obj.(*gwv1alpha2.TCPRoute)
-				if !ok {
-					log.Error().Msgf("Unexpected object type %T", obj)
-				}
-				trCopy := tr.DeepCopy()
-				trCopy.Status.Parents = routeStatus
-
-				return trCopy
-			}),
-		})
-	}
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwv1.HTTPRoute{},
+		NamespacedName: client.ObjectKeyFromObject(tcpRoute),
+		Mutator:        rsu,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(tcpRoute, false)
 

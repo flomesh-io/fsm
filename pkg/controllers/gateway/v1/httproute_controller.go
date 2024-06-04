@@ -27,8 +27,8 @@ package v1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/routestatus"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +51,7 @@ import (
 type httpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *routestatus.RouteStatusProcessor
+	statusProcessor *route.RouteStatusProcessor
 }
 
 func (r *httpRouteReconciler) NeedLeaderElection() bool {
@@ -63,7 +63,7 @@ func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
 		fctx:            ctx,
-		statusProcessor: &routestatus.RouteStatusProcessor{Ctx: ctx},
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
 	}
 }
 
@@ -85,27 +85,39 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, httpRoute)
-	if err != nil {
+	rsu := route.NewRouteStatusUpdate(
+		httpRoute,
+		&httpRoute.ObjectMeta,
+		&httpRoute.TypeMeta,
+		httpRoute.Spec.Hostnames,
+		gwutils.ToSlicePtr(httpRoute.Status.Parents),
+	)
+	if err := r.statusProcessor.Process(ctx, rsu, httpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if len(routeStatus) > 0 {
-		r.fctx.StatusUpdater.Send(status.Update{
-			Resource:       &gwv1.HTTPRoute{},
-			NamespacedName: client.ObjectKeyFromObject(httpRoute),
-			Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-				hr, ok := obj.(*gwv1.HTTPRoute)
-				if !ok {
-					log.Error().Msgf("Unexpected object type %T", obj)
-				}
-				hrCopy := hr.DeepCopy()
-				hrCopy.Status.Parents = routeStatus
+	//if len(routeStatus) > 0 {
+	//	r.fctx.StatusUpdater.Send(status.Update{
+	//		Resource:       &gwv1.HTTPRoute{},
+	//		NamespacedName: client.ObjectKeyFromObject(httpRoute),
+	//		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+	//			hr, ok := obj.(*gwv1.HTTPRoute)
+	//			if !ok {
+	//				log.Error().Msgf("Unexpected object type %T", obj)
+	//			}
+	//			hrCopy := hr.DeepCopy()
+	//			hrCopy.Status.Parents = routeStatus
+	//
+	//			return hrCopy
+	//		}),
+	//	})
+	//}
 
-				return hrCopy
-			}),
-		})
-	}
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwv1.HTTPRoute{},
+		NamespacedName: client.ObjectKeyFromObject(httpRoute),
+		Mutator:        rsu,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(httpRoute, false)
 

@@ -6,6 +6,8 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -31,12 +33,22 @@ func (c *GatewayProcessor) processUDPRoutes() {
 }
 
 func (c *GatewayProcessor) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
-	for _, ref := range udpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, client.ObjectKeyFromObject(c.gateway)) {
+	rsh := route.NewRouteStatusUpdate(
+		udpRoute,
+		&udpRoute.ObjectMeta,
+		&udpRoute.TypeMeta,
+		nil,
+		gwutils.ToSlicePtr(udpRoute.Status.Parents),
+	)
+
+	for _, parentRef := range udpRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.cache.client, c.gateway, ref, gwutils.ToRouteContext(udpRoute), c.validListeners)
+		h := rsh.StatusUpdateFor(parentRef)
+
+		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		if len(allowedListeners) == 0 {
 			continue
 		}
