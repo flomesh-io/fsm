@@ -146,6 +146,13 @@ func (c *GatewayProcessor) generateHTTPRouteConfig(httpRoute *gwv1.HTTPRoute) *f
 				match.RequestParams = httpMatchQueryParams(m)
 			}
 
+			if rule.Timeouts != nil {
+				match.Timeouts = &fgw.HTTPRouteTimeouts{
+					Request:        rule.Timeouts.Request,
+					BackendRequest: rule.Timeouts.BackendRequest,
+				}
+			}
+
 			for _, enricher := range enrichers {
 				enricher.Enrich(m, match)
 			}
