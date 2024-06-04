@@ -29,10 +29,11 @@ import (
 	"fmt"
 	"reflect"
 
-	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
@@ -54,8 +55,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 
@@ -67,16 +66,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type faultInjectionPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *policy.PolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.PolicyStatusProcessor
 }
 
 func (r *faultInjectionPolicyReconciler) NeedLeaderElection() bool {
@@ -86,13 +81,11 @@ func (r *faultInjectionPolicyReconciler) NeedLeaderElection() bool {
 // NewFaultInjectionPolicyReconciler returns a new FaultInjectionPolicy Reconciler
 func NewFaultInjectionPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &faultInjectionPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("FaultInjectionPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("FaultInjectionPolicy"),
+		fctx:     ctx,
 	}
 
-	r.statusProcessor = &policy.PolicyStatusProcessor{
+	r.statusProcessor = &policystatus.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
 		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getFaultInjections,
@@ -128,20 +121,36 @@ func (r *faultInjectionPolicyReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	//metautil.SetStatusCondition(
+	//	&policy.Status.Conditions,
+	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef, nil),
+	//)
+	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
+	//	return ctrl.Result{}, err
+	//}
+
+	u := policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
 	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+
+	r.statusProcessor.Process(ctx, u)
+
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwpav1alpha1.FaultInjectionPolicy{},
+		NamespacedName: client.ObjectKeyFromObject(policy),
+		Mutator:        u,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object) map[gwpkg.PolicyMatchType][]client.Object {
 	c := r.fctx.Manager.GetCache()
 	policies := make(map[gwpkg.PolicyMatchType][]client.Object)
 
@@ -172,7 +181,7 @@ func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object
 	}
 	//faultInjectionPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().FaultInjectionPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	//if err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list FaultInjectionPolicies: %s", err)))
 	//}
 	//
 	//policies := make(map[gwpkg.PolicyMatchType][]client.Object)
@@ -201,10 +210,10 @@ func (r *faultInjectionPolicyReconciler) getFaultInjections(target client.Object
 	//	}
 	//}
 
-	return policies, nil
+	return policies
 }
 
-func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route routestatus.RouteStatusObject, parentRefs []gwv1.ParentReference, faultInjectionPolicy client.Object, hostnamesFaultInjections []client.Object) *types.NamespacedName {
+func (r *faultInjectionPolicyReconciler) getConflictedHostnamesBasedFaultInjectionPolicy(route status.RouteStatusObject, parentRefs []gwv1.ParentReference, faultInjectionPolicy client.Object, hostnamesFaultInjections []client.Object) *types.NamespacedName {
 	currentPolicy := faultInjectionPolicy.(*gwpav1alpha1.FaultInjectionPolicy)
 
 	if len(currentPolicy.Spec.Hostnames) == 0 {

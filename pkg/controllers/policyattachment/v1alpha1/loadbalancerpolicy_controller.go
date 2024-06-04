@@ -3,6 +3,8 @@ package v1alpha1
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -21,10 +23,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	metautil "k8s.io/apimachinery/pkg/api/meta"
-
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -35,16 +33,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type loadBalancerPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *policystatus.ServicePolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
@@ -54,10 +48,8 @@ func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
 // NewLoadBalancerPolicyReconciler returns a new LoadBalancerPolicy Reconciler
 func NewLoadBalancerPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &loadBalancerPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("LoadBalancerPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("LoadBalancerPolicy"),
+		fctx:     ctx,
 	}
 
 	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
@@ -88,13 +80,29 @@ func (r *loadBalancerPolicyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	//metautil.SetStatusCondition(
+	//	&policy.Status.Conditions,
+	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	//)
+	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
+	//	return ctrl.Result{}, err
+	//}
+
+	u := policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
 	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+
+	r.statusProcessor.Process(ctx, u)
+
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwpav1alpha1.LoadBalancerPolicy{},
+		NamespacedName: client.ObjectKeyFromObject(policy),
+		Mutator:        u,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -145,7 +153,7 @@ func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(svc client.Objec
 
 	//loadBalancerPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().LoadBalancerPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	//if err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err)))
 	//}
 	//
 	//loadBalancers := make([]client.Object, 0)
@@ -172,7 +180,7 @@ func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(svc client.Objec
 	//if err := c.List(context.Background(), policyList, &client.ListOptions{
 	//	FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, client.ObjectKeyFromObject(svc).String()),
 	//}); err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicyList: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicyList: %s", err)))
 	//}
 	//
 	//return gwutils.filterValidPolicies(

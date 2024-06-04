@@ -19,8 +19,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -41,15 +39,18 @@ type GetAttachedPoliciesFunc func(svc client.Object) ([]client.Object, *metav1.C
 type FindConflictFunc func(policy client.Object, allPolicies []client.Object, port int32) *types.NamespacedName
 
 // Process processes the service level policy status
-func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) metav1.Condition {
+func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, update *PolicyUpdate) metav1.Condition {
+	policy := update.GetResource()
+	targetRef := update.GetTargetRef()
+
 	_, ok := p.getServiceGroupKindObjectMapping()[string(targetRef.Group)]
 	if !ok {
-		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference group %q, only %q is/are supported", targetRef.Group, strings.Join(p.supportedGroups(), ",")))
+		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference group %q, only %q is/are supported", targetRef.Group, strings.Join(p.supportedGroups(), ","))))
 	}
 
 	svc := p.getServiceObjectByGroupKind(targetRef.Group, targetRef.Kind)
 	if svc == nil {
-		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ",")))
+		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference kind %q, only %q are supported", targetRef.Kind, strings.Join(p.supportedKinds(), ","))))
 	}
 
 	key := types.NamespacedName{
@@ -59,9 +60,9 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 
 	if err := p.Get(ctx, key, svc); err != nil {
 		if errors.IsNotFound(err) {
-			return NotFoundCondition(policy, fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String()))
+			return update.AddCondition(notFoundCondition(fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String())))
 		} else {
-			return InvalidCondition(policy, fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err))
+			return update.AddCondition(invalidCondition(fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err)))
 		}
 	}
 
@@ -73,15 +74,15 @@ func (p *ServicePolicyStatusProcessor) Process(ctx context.Context, policy clien
 	switch svc := svc.(type) {
 	case *corev1.Service:
 		if conflict := p.getConflictedPolicyByService(policy, policies, svc); conflict != nil {
-			return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+			return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 		}
 	case *mcsv1alpha1.ServiceImport:
 		if conflict := p.getConflictedPolicyByServiceImport(policy, policies, svc); conflict != nil {
-			return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+			return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 		}
 	}
 
-	return AcceptedCondition(policy)
+	return update.AddCondition(acceptedCondition())
 }
 
 func (p *ServicePolicyStatusProcessor) getSortedAttachedPolices(svc client.Object) ([]client.Object, *metav1.Condition) {

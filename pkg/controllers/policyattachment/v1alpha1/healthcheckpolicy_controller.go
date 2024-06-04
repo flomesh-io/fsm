@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
 	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -23,10 +25,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	metautil "k8s.io/apimachinery/pkg/api/meta"
-
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -37,16 +35,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type healthCheckPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *policystatus.ServicePolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
@@ -56,10 +50,8 @@ func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
 // NewHealthCheckPolicyReconciler returns a new HealthCheckPolicy Reconciler
 func NewHealthCheckPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &healthCheckPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("HealthCheckPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("HealthCheckPolicy"),
+		fctx:     ctx,
 	}
 
 	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
@@ -90,13 +82,29 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	//metautil.SetStatusCondition(
+	//	&policy.Status.Conditions,
+	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	//)
+	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
+	//	return ctrl.Result{}, err
+	//}
+
+	u := policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
 	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+
+	r.statusProcessor.Process(ctx, u)
+
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwpav1alpha1.HealthCheckPolicy{},
+		NamespacedName: client.ObjectKeyFromObject(policy),
+		Mutator:        u,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -147,7 +155,7 @@ func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(svc client.Object)
 
 	//healthCheckPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().HealthCheckPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	//if err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicies: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicies: %s", err)))
 	//}
 	//
 	//referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
@@ -172,7 +180,7 @@ func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(svc client.Object)
 	//if err := c.List(context.Background(), policyList, &client.ListOptions{
 	//	FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, client.ObjectKeyFromObject(svc).String()),
 	//}); err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicyList: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicyList: %s", err)))
 	//}
 	//
 	//return gwutils.filterValidPolicies(

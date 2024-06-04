@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
 
 	"k8s.io/apimachinery/pkg/fields"
 
@@ -46,15 +46,13 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -67,16 +65,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type accessControlPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *policy.PolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.PolicyStatusProcessor
 }
 
 func (r *accessControlPolicyReconciler) NeedLeaderElection() bool {
@@ -86,13 +80,11 @@ func (r *accessControlPolicyReconciler) NeedLeaderElection() bool {
 // NewAccessControlPolicyReconciler returns a new AccessControlPolicy Reconciler
 func NewAccessControlPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &accessControlPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("AccessControlPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("AccessControlPolicy"),
+		fctx:     ctx,
 	}
 
-	r.statusProcessor = &policy.PolicyStatusProcessor{
+	r.statusProcessor = &policystatus.PolicyStatusProcessor{
 		Client:                             r.fctx.Client,
 		Informer:                           r.fctx.InformerCollection,
 		GetPolicies:                        r.getAccessControls,
@@ -123,23 +115,38 @@ func (r *accessControlPolicyReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	u := policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
 	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+	//metautil.SetStatusCondition(
+	//	&policy.Status.Conditions,
+	//	r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef, u),
+	//)
+	//if err := r.fctx.Status().Update(ctx, policy); err != nil {
+	//	return ctrl.Result{}, err
+	//}
+
+	r.statusProcessor.Process(ctx, u)
+
+	r.fctx.StatusUpdater.Send(status.Update{
+		Resource:       &gwpav1alpha1.AccessControlPolicy{},
+		NamespacedName: client.ObjectKeyFromObject(policy),
+		Mutator:        u,
+	})
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *accessControlPolicyReconciler) getAccessControls(target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
+func (r *accessControlPolicyReconciler) getAccessControls(target client.Object) map[gwpkg.PolicyMatchType][]client.Object {
 	//accessControlPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().AccessControlPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
 	//if err != nil {
-	//	return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list AccessControlPolicies: %s", err)))
+	//	return nil, status.ConditionPointer(status.invalidCondition(policy, fmt.Sprintf("Failed to list AccessControlPolicies: %s", err)))
 	//}
 
 	c := r.fctx.Manager.GetCache()
@@ -214,10 +221,10 @@ func (r *accessControlPolicyReconciler) getAccessControls(target client.Object) 
 	//	}
 	//}
 
-	return policies, nil
+	return policies
 }
 
-func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControlPolicy(route routestatus.RouteStatusObject, parentRefs []gwv1.ParentReference, accessControlPolicy client.Object, hostnamesAccessControls []client.Object) *types.NamespacedName {
+func (r *accessControlPolicyReconciler) getConflictedHostnamesBasedAccessControlPolicy(route status.RouteStatusObject, parentRefs []gwv1.ParentReference, accessControlPolicy client.Object, hostnamesAccessControls []client.Object) *types.NamespacedName {
 	currentPolicy := accessControlPolicy.(*gwpav1alpha1.AccessControlPolicy)
 
 	if len(currentPolicy.Spec.Hostnames) == 0 {
