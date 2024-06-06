@@ -297,7 +297,7 @@ spec:
     spec:
       containers:
         - name: pipy
-          image: flomesh/pipy:1.1.0-1
+          image: flomesh/pipy:1.2.0
           ports:
             - name: pipy
               containerPort: 8080
@@ -395,7 +395,7 @@ spec:
     spec:
       containers:
         - name: pipy
-          image: flomesh/pipy:1.1.0-1
+          image: flomesh/pipy:1.2.0
           ports:
             - name: pipy
               containerPort: 8080
