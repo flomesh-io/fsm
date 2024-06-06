@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	v1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +24,11 @@ func IsAcceptedGateway(gateway *gwv1.Gateway) bool {
 	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionAccepted))
 }
 
+// IsEffectiveGateway returns true if the gateway is effective
+func IsEffectiveGateway(gateway *gwv1.Gateway) bool {
+	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(v1.GatewayConditionEffective))
+}
+
 // IsProgrammedGateway returns true if the gateway is programmed
 func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
 	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionProgrammed))
@@ -29,22 +36,22 @@ func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
 
 // IsActiveGateway returns true if the gateway is active, it stands for the gateway is accepted, programmed and has a valid listener
 func IsActiveGateway(gateway *gwv1.Gateway) bool {
-	return IsPreActiveGateway(gateway) && IsProgrammedGateway(gateway)
+	return IsEffectiveGateway(gateway) && IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 }
 
 // IsPreActiveGateway returns true if the gateway is pre-active, it stands for the gateway is accepted and has a valid listener
-func IsPreActiveGateway(gateway *gwv1.Gateway) bool {
-	hasValidListener := false
-
-	for _, listenerStatus := range gateway.Status.Listeners {
-		if IsListenerAccepted(listenerStatus) && IsListenerProgrammed(listenerStatus) {
-			hasValidListener = true
-			break
-		}
-	}
-
-	return IsAcceptedGateway(gateway) && hasValidListener
-}
+//func IsPreActiveGateway(gateway *gwv1.Gateway) bool {
+//	hasValidListener := false
+//
+//	for _, listenerStatus := range gateway.Status.Listeners {
+//		if IsListenerAccepted(listenerStatus) && IsListenerProgrammed(listenerStatus) {
+//			hasValidListener = true
+//			break
+//		}
+//	}
+//
+//	return IsAcceptedGateway(gateway) && hasValidListener
+//}
 
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
@@ -54,6 +61,21 @@ func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
 // IsListenerAccepted returns true if the listener is accepted
 func IsListenerAccepted(listenerStatus gwv1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted))
+}
+
+// IsListenerConflicted returns true if the listener is conflicted
+func IsListenerConflicted(listenerStatus gwv1.ListenerStatus) bool {
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionConflicted))
+}
+
+// IsListenerResolvedRefs returns true if the listener is resolved refs
+func IsListenerResolvedRefs(listenerStatus gwv1.ListenerStatus) bool {
+	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionResolvedRefs))
+}
+
+// IsListenerValid returns true if the listener is valid
+func IsListenerValid(s gwv1.ListenerStatus) bool {
+	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
 }
 
 // FilterActiveGateways returns the active gateways from the list of gateways
@@ -78,7 +100,7 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 
 	validListeners := make([]gwtypes.Listener, 0)
 	for _, s := range gw.Status.Listeners {
-		if IsListenerAccepted(s) && IsListenerProgrammed(s) {
+		if IsListenerValid(s) {
 			l, ok := listeners[s.Name]
 			if !ok {
 				continue

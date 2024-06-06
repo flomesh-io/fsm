@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"time"
 
+	v1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -48,7 +50,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -215,22 +216,22 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 
 func (r *gatewayClassReconciler) setActive(gatewayClass *gwv1.GatewayClass) {
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-		Type:               string(gateway.GatewayClassConditionStatusActive),
+		Type:               string(v1.GatewayClassConditionStatusActive),
 		Status:             metav1.ConditionTrue,
 		ObservedGeneration: gatewayClass.Generation,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gateway.GatewayClassReasonActive),
+		Reason:             string(v1.GatewayClassReasonActive),
 		Message:            fmt.Sprintf("GatewayClass %q is set to active.", gatewayClass.Name),
 	})
 	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Active", "GatewayClass is set to active")
 }
 func (r *gatewayClassReconciler) setInactive(gatewayClass *gwv1.GatewayClass) {
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-		Type:               string(gateway.GatewayClassConditionStatusActive),
+		Type:               string(v1.GatewayClassConditionStatusActive),
 		Status:             metav1.ConditionFalse,
 		ObservedGeneration: gatewayClass.Generation,
 		LastTransitionTime: metav1.Time{Time: time.Now()},
-		Reason:             string(gateway.GatewayClassReasonInactive),
+		Reason:             string(v1.GatewayClassReasonInactive),
 		Message:            fmt.Sprintf("GatewayClass %q is inactive as there's already an active GatewayClass.", gatewayClass.Name),
 	})
 	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Inactive", "GatewayClass is set to inactive")

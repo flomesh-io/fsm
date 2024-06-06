@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	v1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1"
+
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
@@ -21,7 +22,7 @@ func IsAcceptedGatewayClass(gatewayClass *gwv1.GatewayClass) bool {
 
 // IsActiveGatewayClass returns true if the gateway class is active
 func IsActiveGatewayClass(gatewayClass *gwv1.GatewayClass) bool {
-	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(gateway.GatewayClassConditionStatusActive))
+	return metautil.IsStatusConditionTrue(gatewayClass.Status.Conditions, string(v1.GatewayClassConditionStatusActive))
 }
 
 // IsEffectiveGatewayClass returns true if the gateway class is effective

@@ -25,8 +25,13 @@
 // Package v1 contains controller logic for the Gateway API v1.
 package v1
 
-import "github.com/flomesh-io/fsm/pkg/logger"
+import (
+	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/webhook"
+)
 
 var (
 	log = logger.New("gatewayapi-controller/v1")
 )
+
+var isValidHostname = webhook.IsValidHostname
