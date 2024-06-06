@@ -650,7 +650,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 		return false
 	}
 
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", "Valid Gateway")
+	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", "Gateway is programmed")
 
 	update.AddCondition(
 		gwv1.GatewayConditionProgrammed,
@@ -667,8 +667,8 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 	programmed := r.computeGatewayProgrammedCondition(ctx, gateway, addresses, update)
 
 	if !programmed {
-		log.Debug().Msgf("[GW] Requeue gateway %s/%s after 3 second", gateway.Namespace, gateway.Name)
-		return ctrl.Result{RequeueAfter: 3 * time.Second}, nil
+		log.Debug().Msgf("[GW] Requeue gateway %s/%s after 5 second", gateway.Namespace, gateway.Name)
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
 	update.SetAddresses(addresses)

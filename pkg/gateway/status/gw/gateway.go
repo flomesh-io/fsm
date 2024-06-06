@@ -42,6 +42,10 @@ func (g *GatewayStatusUpdate) AddCondition(
 	reason gwv1.GatewayConditionReason,
 	message string,
 ) metav1.Condition {
+	if g.conditions == nil {
+		g.conditions = make(map[gwv1.GatewayConditionType]metav1.Condition)
+	}
+
 	if c, ok := g.conditions[conditionType]; ok {
 		message = fmt.Sprintf("%s, %s", c.Message, message)
 	}
