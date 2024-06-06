@@ -49,7 +49,7 @@ func (httpProbe HTTPProbe) Probe() (int, error) {
 		// #nosec G402
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: true, // #nosec G402
 				MinVersion:         tls.VersionTLS13,
 			},
 		}
