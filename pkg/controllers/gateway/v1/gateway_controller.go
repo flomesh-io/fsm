@@ -418,39 +418,41 @@ func invalidateListeners(listeners []gwv1.Listener) map[gwv1.SectionName]metav1.
 			continue
 		}
 
-		for j := range i {
-			otherListener := listeners[j]
+		func() {
+			for j := range i {
+				otherListener := listeners[j]
 
-			if listener.Port != otherListener.Port {
-				continue
-			}
-
-			if listener.Protocol != otherListener.Protocol {
-				// same port, different protocol, not allowed
-				invalidListenerConditions[listener.Name] = metav1.Condition{
-					Type:    string(gwv1.ListenerConditionConflicted),
-					Status:  metav1.ConditionTrue,
-					Reason:  string(gwv1.ListenerReasonProtocolConflict),
-					Message: "All Listener protocols for a given port must be the same",
+				if listener.Port != otherListener.Port {
+					continue
 				}
 
-				continue
-			}
-
-			switch listener.Protocol {
-			case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-				// Hostname conflict
-				if ptr.Deref(listener.Hostname, "") == ptr.Deref(otherListener.Hostname, "") {
+				if listener.Protocol != otherListener.Protocol {
+					// same port, different protocol, not allowed
 					invalidListenerConditions[listener.Name] = metav1.Condition{
 						Type:    string(gwv1.ListenerConditionConflicted),
 						Status:  metav1.ConditionTrue,
-						Reason:  string(gwv1.ListenerReasonHostnameConflict),
-						Message: "All Listener hostnames for a given port must be unique",
+						Reason:  string(gwv1.ListenerReasonProtocolConflict),
+						Message: "All Listener protocols for a given port must be the same",
 					}
-					continue
+
+					return
+				}
+
+				switch listener.Protocol {
+				case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+					// Hostname conflict
+					if ptr.Deref(listener.Hostname, "") == ptr.Deref(otherListener.Hostname, "") {
+						invalidListenerConditions[listener.Name] = metav1.Condition{
+							Type:    string(gwv1.ListenerConditionConflicted),
+							Status:  metav1.ConditionTrue,
+							Reason:  string(gwv1.ListenerReasonHostnameConflict),
+							Message: "All Listener hostnames for a given port must be unique",
+						}
+						return
+					}
 				}
 			}
-		}
+		}()
 	}
 
 	return invalidListenerConditions
