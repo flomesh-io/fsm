@@ -851,6 +851,11 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 	}
 
 	if err := r.fctx.Get(ctx, key, deployment); err != nil {
+		if errors.IsNotFound(err) {
+			log.Warn().Msgf("Deployment %s not found", key.String())
+			return nil
+		}
+
 		log.Error().Msgf("Failed to get deployment %s: %s", key.String(), err)
 		return nil
 	}
@@ -914,15 +919,13 @@ func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Con
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
 
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Codebase", "Codebase %s created successfully", gwPath)
-
 	return ctrl.Result{}, nil
 }
 
 func (r *gatewayReconciler) updateConfig(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
 	// TODO: update pipy repo
 	// defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Repo", "Failed to update repo config of gateway: %s", err)
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Repo", "Update repo config of gateway successfully")
+	//defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Repo", "Update repo config of gateway successfully")
 	return ctrl.Result{}, nil
 }
 
@@ -961,7 +964,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 		return ctrlResult, err
 	}
 
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Deploy", "Deploy gateway successfully")
+	//defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Deploy", "Deploy gateway successfully")
 
 	return ctrl.Result{}, nil
 }
