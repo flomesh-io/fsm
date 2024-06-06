@@ -36,8 +36,6 @@ issues:
   exclude-files:
     - "zz_generated.deepcopy.go$"
     - "zz_generated.register.go$"
-    - "pkg/sidecar/providers/pipy/driver/debugger_sidecar.go"
-    - "pkg/utils/mtls.go"
   exclude-rules:
     # Ignore error for ginkgo and gomega dot imports
     - linters:

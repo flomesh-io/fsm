@@ -17,7 +17,6 @@ func (sd PipySidecarDriver) getSidecarConfig(pod *v1.Pod, url string) string {
 	minPort := 16000
 	maxPort := 18000
 
-	// #nosec G404
 	portFwdRequest := debugger.PortForward{
 		Pod:       pod,
 		LocalPort: rand.Intn(maxPort-minPort) + minPort, // #nosec G404
