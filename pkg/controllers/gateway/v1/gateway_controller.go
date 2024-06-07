@@ -130,12 +130,17 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	effectiveGatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
+	gatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Warn().Msgf("GatewayClass %s not found, ignore processing Gateway resource %s.", gateway.Spec.GatewayClassName, req.NamespacedName.String())
+			return ctrl.Result{}, nil
+		}
+
 		return ctrl.Result{}, err
 	}
 
-	if effectiveGatewayClass == nil {
+	if gatewayClass == nil {
 		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
@@ -147,7 +152,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		&gateway.Status,
 	)
 
-	if result, err := r.computeGatewayStatus(ctx, gateway, effectiveGatewayClass, update); err != nil || result.RequeueAfter > 0 || result.Requeue {
+	if result, err := r.computeGatewayStatus(ctx, gateway, update); err != nil || result.RequeueAfter > 0 || result.Requeue {
 		return result, err
 	}
 
@@ -162,7 +167,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
+func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	// 1. compute listener status & accepted status
 	result, err := r.computeListenerStatus(ctx, gateway, update)
 	if err != nil {
@@ -170,11 +175,9 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	}
 
 	// 2. so far, it's accepted, just deploy it if not
-	//if !isSameGateway(activeGateways[gateway.Namespace], gateway) {
 	if result, err := r.applyGateway(gateway, update); err != nil {
 		return result, err
 	}
-	//}
 
 	// 3. compute gateway address and programmed status
 	result, err = r.updateGatewayAddresses(ctx, gateway, update)
@@ -582,7 +585,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 		return false
 	}
 
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", "Gateway is programmed")
+	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
 
 	update.AddCondition(
 		gwv1.GatewayConditionProgrammed,
