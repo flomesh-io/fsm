@@ -75,9 +75,6 @@ import (
 var (
 	//go:embed chart.tgz
 	chartSource []byte
-
-	// namespace <-> active gateway
-	activeGateways map[string]*gwv1.Gateway
 )
 
 type listener struct {
@@ -94,10 +91,6 @@ type gatewayReconciler struct {
 func (r *gatewayReconciler) NeedLeaderElection() bool {
 	return true
 }
-
-//func init() {
-//	activeGateways = make(map[string]*gwv1.Gateway)
-//}
 
 // NewGatewayReconciler returns a new reconciler for Gateway resources
 func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
@@ -137,7 +130,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	//effectiveGatewayClass, err := gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())
 	effectiveGatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
 	if err != nil {
 		return ctrl.Result{}, err
@@ -147,11 +139,6 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		log.Warn().Msgf("No effective GatewayClass, ignore processing Gateway resource %s.", req.NamespacedName)
 		return ctrl.Result{}, nil
 	}
-
-	//if string(gateway.Spec.GatewayClassName) != effectiveGatewayClass.Name {
-	//	log.Warn().Msgf("Ignore Gateway %s/%s as it's GatewayClassName %q is not effective", gateway.Namespace, gateway.Name, gateway.Spec.GatewayClassName)
-	//	return ctrl.Result{}, nil
-	//}
 
 	update := gw.NewGatewayStatusUpdate(
 		gateway,
@@ -176,31 +163,20 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
-	// 1. compute gateway effective status
-	//effective, err := r.computeGatewayEffectiveCondition(ctx, gateway, effectiveGatewayClass, update)
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
-	// 2. stop processing other status if not effective
-	//if !effective {
-	//	return ctrl.Result{}, nil
-	//}
-
-	// 3. compute listener status & accepted status
+	// 1. compute listener status & accepted status
 	result, err := r.computeListenerStatus(ctx, gateway, update)
 	if err != nil {
 		return result, err
 	}
 
-	// 4. so far, it's accepted, just deploy it if not
+	// 2. so far, it's accepted, just deploy it if not
 	//if !isSameGateway(activeGateways[gateway.Namespace], gateway) {
 	if result, err := r.applyGateway(gateway, update); err != nil {
 		return result, err
 	}
 	//}
 
-	// 5. compute gateway address and programmed status
+	// 3. compute gateway address and programmed status
 	result, err = r.updateGatewayAddresses(ctx, gateway, update)
 	if err != nil || result.RequeueAfter > 0 || result.Requeue {
 		return result, err
@@ -230,48 +206,6 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 
 	return ctrl.Result{}, nil
 }
-
-//func (r *gatewayReconciler) computeGatewayEffectiveCondition(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (bool, error) {
-//	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
-//	c := r.fctx.Manager.GetCache()
-//	gatewayList := &gwv1.GatewayList{}
-//	if err := c.List(ctx, gatewayList, &client.ListOptions{
-//		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, effectiveGatewayClass.Name),
-//		Namespace:     gateway.Namespace,
-//	}); err != nil {
-//		log.Error().Msgf("error listing gateways: %s", err)
-//		return false, err
-//	}
-//
-//	if len(gatewayList.Items) == 0 {
-//		return false, fmt.Errorf("no gateway found in namespace %s with GatewayClass %s", gateway.Namespace, effectiveGatewayClass.Name)
-//	}
-//
-//	// 2. Sort the gateways by CreationTimestamp
-//	validGateways := gwutils.SortResources(gwutils.ToSlicePtr(gatewayList.Items))
-//
-//	// 3. Current Gateway is not the oldest, it should be ineffective
-//	if validGateways[0].Name != gateway.Name {
-//		update.AddCondition(
-//			v1.GatewayConditionEffective,
-//			metav1.ConditionFalse,
-//			v1.GatewayReasonNotOldest,
-//			fmt.Sprintf("Gateway is not effective as it's not the oldest in namespace %q.", gateway.Namespace),
-//		)
-//
-//		return false, nil
-//	}
-//
-//	// 4. Current Gateway is the oldest, it's effective
-//	update.AddCondition(
-//		v1.GatewayConditionEffective,
-//		metav1.ConditionTrue,
-//		v1.GatewayReasonEffective,
-//		"Gateway is effective.",
-//	)
-//
-//	return true, nil
-//}
 
 func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)

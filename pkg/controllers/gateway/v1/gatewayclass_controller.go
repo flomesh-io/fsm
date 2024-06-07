@@ -117,84 +117,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		}),
 	})
 
-	//gatewayClassList, err := r.gatewayAPIClient.GatewayV1().
-	//	GatewayClasses().
-	//	List(ctx, metav1.ListOptions{})
-	//if err != nil {
-	//	log.Error().Msgf("failed list gatewayclasses: %s", err)
-	//	return ctrl.Result{}, err
-	//}
-	//
-	//// If there's multiple GatewayClasses whose ControllerName is flomesh.io/gateway-controller, the oldest is set to active and the rest are set to inactive
-	//r.updateActiveStatus(gatewayClassList)
-	//
-	//// As status of all GatewayClasses have been updated, just send the event
-	//r.fctx.GatewayEventHandler.OnAdd(&gwv1.GatewayClass{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Namespace: req.Namespace,
-	//		Name:      req.Name,
-	//	}},
-	//	false,
-	//)
-
 	return ctrl.Result{}, nil
 }
-
-//func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1.GatewayClass) {
-//	if gatewayClass.Spec.ControllerName == constants.GatewayController {
-//		r.setAccepted(gatewayClass)
-//	}
-//}
-
-//func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList) {
-//	acceptedClasses := make([]*gwv1.GatewayClass, 0)
-//	for _, class := range list.Items {
-//		class := class // fix lint GO-LOOP-REF
-//		if class.Spec.ControllerName == constants.GatewayController && utils.IsAcceptedGatewayClass(&class) {
-//			acceptedClasses = append(acceptedClasses, &class)
-//		}
-//	}
-//
-//	for i, class := range gwutils.SortResources(acceptedClasses) {
-//		// ONLY the oldest GatewayClass is active
-//		if i == 0 {
-//			if !utils.IsActiveGatewayClass(class) {
-//				r.fctx.StatusUpdater.Send(status.Update{
-//					Resource:       &gwv1.GatewayClass{},
-//					NamespacedName: client.ObjectKeyFromObject(class),
-//					Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-//						clazz, ok := obj.(*gwv1.GatewayClass)
-//						if !ok {
-//							log.Error().Msgf("Unexpected object type %T", obj)
-//						}
-//						classCopy := clazz.DeepCopy()
-//						r.setActive(classCopy)
-//
-//						return classCopy
-//					}),
-//				})
-//			}
-//			continue
-//		}
-//
-//		if utils.IsActiveGatewayClass(class) {
-//			r.fctx.StatusUpdater.Send(status.Update{
-//				Resource:       &gwv1.GatewayClass{},
-//				NamespacedName: client.ObjectKeyFromObject(class),
-//				Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
-//					clazz, ok := obj.(*gwv1.GatewayClass)
-//					if !ok {
-//						log.Error().Msgf("Unexpected object type %T", obj)
-//					}
-//					classCopy := clazz.DeepCopy()
-//					r.setInactive(classCopy)
-//
-//					return classCopy
-//				}),
-//			})
-//		}
-//	}
-//}
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
@@ -208,29 +132,6 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 		Message:            fmt.Sprintf("GatewayClass %q is accepted.", gatewayClass.Name),
 	})
 }
-
-//func (r *gatewayClassReconciler) setActive(gatewayClass *gwv1.GatewayClass) {
-//	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-//		Type:               string(v1.GatewayClassConditionStatusActive),
-//		Status:             metav1.ConditionTrue,
-//		ObservedGeneration: gatewayClass.Generation,
-//		LastTransitionTime: metav1.Time{Time: time.Now()},
-//		Reason:             string(v1.GatewayClassReasonActive),
-//		Message:            fmt.Sprintf("GatewayClass %q is set to active.", gatewayClass.Name),
-//	})
-//	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Active", "GatewayClass is set to active")
-//}
-//func (r *gatewayClassReconciler) setInactive(gatewayClass *gwv1.GatewayClass) {
-//	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
-//		Type:               string(v1.GatewayClassConditionStatusActive),
-//		Status:             metav1.ConditionFalse,
-//		ObservedGeneration: gatewayClass.Generation,
-//		LastTransitionTime: metav1.Time{Time: time.Now()},
-//		Reason:             string(v1.GatewayClassReasonInactive),
-//		Message:            fmt.Sprintf("GatewayClass %q is inactive as there's already an active GatewayClass.", gatewayClass.Name),
-//	})
-//	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Inactive", "GatewayClass is set to inactive")
-//}
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
