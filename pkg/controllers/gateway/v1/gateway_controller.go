@@ -903,7 +903,7 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.Gatew
 		return result, err
 	}
 
-	activeGateways[gateway.Namespace] = gateway
+	//activeGateways[gateway.Namespace] = gateway
 
 	return ctrl.Result{}, nil
 }
