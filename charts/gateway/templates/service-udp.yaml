@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ printf "fsm-gateway-%s-udp" .Values.fsm.gateway.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s-udp" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
   {{- if .Values.fsm.gateway.infrastructure }}
   {{- with .Values.fsm.gateway.infrastructure.annotations }}
@@ -19,6 +19,7 @@ metadata:
     {{- end }}
     app: fsm-gateway
     gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
 spec:
   type: {{ .Values.fsm.gateway.serviceType }}
   {{- $setNodePorts := (and (eq .Values.fsm.gateway.serviceType "NodePort") .Values.fsm.gateway.nodePorts)}}
@@ -42,4 +43,5 @@ spec:
   selector:
     app: fsm-gateway
     gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
 {{- end }}

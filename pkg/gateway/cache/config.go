@@ -18,7 +18,7 @@ func (c *GatewayCache) BuildConfigs() {
 	defer c.mutex.Unlock()
 
 	syncConfig := func(gateway *gwv1.Gateway, config *fgw.ConfigSpec) {
-		gatewayPath := utils.GatewayCodebasePath(gateway.Namespace)
+		gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
 		if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
 			return
 		}

@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "fsm-gateway-%s" .Values.fsm.gateway.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
   {{- if .Values.fsm.gateway.infrastructure }}
   {{- with .Values.fsm.gateway.infrastructure.annotations }}
@@ -25,6 +25,7 @@ spec:
     matchLabels:
       app: fsm-gateway
       gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+      gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -35,6 +36,7 @@ spec:
       labels:
         app: fsm-gateway
         gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+        gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
         {{- with .Values.fsm.gateway.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -92,6 +94,8 @@ spec:
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
           - --fsm-version={{ .Chart.AppVersion }}
           - --mesh-name={{ .Values.fsm.meshName }}
+          - --gateway-namespace={{ .Values.fsm.gateway.namespace }}
+          - --gateway-name={{ .Values.fsm.gateway.name }}
         resources:
           {{- toYaml .Values.fsm.gateway.resources | nindent 10 }}
         env:
@@ -163,6 +167,10 @@ spec:
                       operator: In
                       values:
                         - {{ .Values.fsm.gateway.namespace }}
+                    - key: gateway.flomesh.io/name
+                      operator: In
+                      values:
+                        - {{ .Values.fsm.gateway.name }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
       {{- with .Values.fsm.gateway.tolerations }}

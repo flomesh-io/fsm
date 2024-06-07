@@ -88,6 +88,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.gateway.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource configuration |
 | fsm.gateway.listeners | object | `{}` | Gateway's listeners, not overridable by parameterRef |
 | fsm.gateway.logLevel | string | `"info"` |  |
+| fsm.gateway.name | string | `"UNKNOWN"` | Gateway's name, not overridable by parameterRef |
 | fsm.gateway.namespace | string | `"default"` | Gateway's namespace, not overridable by parameterRef |
 | fsm.gateway.nodePorts | list | `[]` | NodePort service configuration    nodePorts:      - port: 80        nodePort: 30080      - port: 443        nodePort: 30443      - port: 53        nodePort: 30053 |
 | fsm.gateway.nodeSelector | object | `{}` | Node selector applied to control plane pods. |

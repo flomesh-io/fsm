@@ -191,6 +191,9 @@ fsm:
     # -- Gateway's namespace, not overridable by parameterRef
     namespace: default
 
+    # -- Gateway's name, not overridable by parameterRef
+    name: UNKNOWN
+
     # -- Gateway's infrastructure, override by gateway.spec.infrastructure.annotations and gateway.spec.infrastructure.labels
     # -- NOT override by parameterRef
     infrastructure:

@@ -695,28 +695,28 @@ func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway 
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) gatewayService(ctx context.Context, activeGateway *gwv1.Gateway) (*corev1.Service, error) {
+func (r *gatewayReconciler) gatewayService(ctx context.Context, gateway *gwv1.Gateway) (*corev1.Service, error) {
 	gatewayServiceName := func(activeGateway *gwv1.Gateway) string {
 		if hasTCP(activeGateway) {
-			return fmt.Sprintf("fsm-gateway-%s-tcp", activeGateway.Namespace)
+			return fmt.Sprintf("fsm-gateway-%s-%s-tcp", activeGateway.Namespace, activeGateway.Name)
 		}
 
 		if hasUDP(activeGateway) {
-			return fmt.Sprintf("fsm-gateway-%s-udp", activeGateway.Namespace)
+			return fmt.Sprintf("fsm-gateway-%s-%s-udp", activeGateway.Namespace, activeGateway.Name)
 		}
 
 		return ""
 	}
 
-	serviceName := gatewayServiceName(activeGateway)
+	serviceName := gatewayServiceName(gateway)
 	if serviceName == "" {
-		log.Warn().Msgf("[GW] No supported service protocols for Gateway %s/%s, only TCP and UDP are supported now.", activeGateway.Namespace, activeGateway.Name)
-		return nil, fmt.Errorf("no supported service protocols for Gateway %s/%s, only TCP and UDP are supported", activeGateway.Namespace, activeGateway.Name)
+		log.Warn().Msgf("[GW] No supported service protocols for Gateway %s/%s, only TCP and UDP are supported now.", gateway.Namespace, gateway.Name)
+		return nil, fmt.Errorf("no supported service protocols for Gateway %s/%s, only TCP and UDP are supported", gateway.Namespace, gateway.Name)
 	}
 
 	svc := &corev1.Service{}
 	key := client.ObjectKey{
-		Namespace: activeGateway.Namespace,
+		Namespace: gateway.Namespace,
 		Name:      serviceName,
 	}
 	if err := r.fctx.Get(ctx, key, svc); err != nil {
@@ -845,7 +845,7 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 	deployment := &appsv1.Deployment{}
 	key := types.NamespacedName{
 		Namespace: gw.Namespace,
-		Name:      fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
+		Name:      fmt.Sprintf("fsm-gateway-%s-%s", gw.Namespace, gw.Name),
 	}
 
 	if err := r.fctx.Get(ctx, key, deployment); err != nil {
@@ -909,7 +909,7 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.Gatew
 }
 
 func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
-	gwPath := utils.GatewayCodebasePath(gw.Namespace)
+	gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
 	parentPath := utils.GetDefaultGatewaysPath()
 	if err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase of gateway: %s", err)
@@ -953,7 +953,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 
 	templateClient := helm.TemplateClient(
 		actionConfig,
-		fmt.Sprintf("fsm-gateway-%s", gw.Namespace),
+		fmt.Sprintf("fsm-gateway-%s-%s", gw.Namespace, gw.Name),
 		gw.Namespace,
 		r.kubeVersionForTemplate(),
 	)
@@ -990,6 +990,7 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 			"meshName":     r.fctx.MeshName,
 			"gateway": map[string]interface{}{
 				"namespace":      gateway.Namespace,
+				"name":           gateway.Name,
 				"listeners":      r.listenersForTemplate(gateway, update),
 				"infrastructure": infraForTemplate(gateway),
 				"logLevel":       mc.GetFSMGatewayLogLevel(),

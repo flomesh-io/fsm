@@ -3,13 +3,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ printf "fsm-gateway-%s-hpa" .Values.fsm.gateway.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s-hpa" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ printf "fsm-gateway-%s" .Values.fsm.gateway.namespace }}
+    name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   minReplicas: {{.Values.fsm.gateway.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.gateway.autoScale.maxReplicas}}
   {{- with .Values.fsm.gateway.autoScale.metrics }}
@@ -24,13 +24,13 @@ spec:
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ printf "fsm-gateway-%s-hpa" .Values.fsm.gateway.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s-hpa" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ printf "fsm-gateway-%s" .Values.fsm.gateway.namespace }}
+    name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   minReplicas: {{.Values.fsm.gateway.autoScale.minReplicas}}
   maxReplicas: {{.Values.fsm.gateway.autoScale.maxReplicas}}
   metrics:

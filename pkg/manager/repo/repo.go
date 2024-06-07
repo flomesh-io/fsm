@@ -298,7 +298,7 @@ func (r *rebuilder) rebuildRepoJob() error {
 		for _, gw := range gatewayList.Items {
 			gw := gw // fix lint GO-LOOP-REF
 			if gwutils.IsActiveGateway(&gw) {
-				gwPath := utils.GatewayCodebasePath(gw.Namespace)
+				gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
 				parentPath := utils.GetDefaultGatewaysPath()
 				if err := r.repoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 					return err
