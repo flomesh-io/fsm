@@ -33,8 +33,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -49,13 +47,11 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 type gatewayClassReconciler struct {
-	recorder         record.EventRecorder
-	fctx             *fctx.ControllerContext
-	gatewayAPIClient gwclient.Interface
+	recorder record.EventRecorder
+	fctx     *fctx.ControllerContext
 }
 
 func (r *gatewayClassReconciler) NeedLeaderElection() bool {
@@ -65,9 +61,8 @@ func (r *gatewayClassReconciler) NeedLeaderElection() bool {
 // NewGatewayClassReconciler returns a new reconciler for GatewayClass
 func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{
-		recorder:         ctx.Manager.GetEventRecorderFor("GatewayClass"),
-		fctx:             ctx,
-		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
+		fctx:     ctx,
 	}
 }
 

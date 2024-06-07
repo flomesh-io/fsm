@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/cache"

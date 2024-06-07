@@ -30,8 +30,6 @@ import (
 	"fmt"
 	"time"
 
-	v1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 
 	ghodssyaml "github.com/ghodss/yaml"
@@ -51,7 +49,6 @@ import (
 
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -234,47 +231,47 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) computeGatewayEffectiveCondition(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (bool, error) {
-	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
-	c := r.fctx.Manager.GetCache()
-	gatewayList := &gwv1.GatewayList{}
-	if err := c.List(ctx, gatewayList, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, effectiveGatewayClass.Name),
-		Namespace:     gateway.Namespace,
-	}); err != nil {
-		log.Error().Msgf("error listing gateways: %s", err)
-		return false, err
-	}
-
-	if len(gatewayList.Items) == 0 {
-		return false, fmt.Errorf("no gateway found in namespace %s with GatewayClass %s", gateway.Namespace, effectiveGatewayClass.Name)
-	}
-
-	// 2. Sort the gateways by CreationTimestamp
-	validGateways := gwutils.SortResources(gwutils.ToSlicePtr(gatewayList.Items))
-
-	// 3. Current Gateway is not the oldest, it should be ineffective
-	if validGateways[0].Name != gateway.Name {
-		update.AddCondition(
-			v1.GatewayConditionEffective,
-			metav1.ConditionFalse,
-			v1.GatewayReasonNotOldest,
-			fmt.Sprintf("Gateway is not effective as it's not the oldest in namespace %q.", gateway.Namespace),
-		)
-
-		return false, nil
-	}
-
-	// 4. Current Gateway is the oldest, it's effective
-	update.AddCondition(
-		v1.GatewayConditionEffective,
-		metav1.ConditionTrue,
-		v1.GatewayReasonEffective,
-		"Gateway is effective.",
-	)
-
-	return true, nil
-}
+//func (r *gatewayReconciler) computeGatewayEffectiveCondition(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (bool, error) {
+//	// 1. List all Gateways in the namespace whose GatewayClass is current effective class
+//	c := r.fctx.Manager.GetCache()
+//	gatewayList := &gwv1.GatewayList{}
+//	if err := c.List(ctx, gatewayList, &client.ListOptions{
+//		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, effectiveGatewayClass.Name),
+//		Namespace:     gateway.Namespace,
+//	}); err != nil {
+//		log.Error().Msgf("error listing gateways: %s", err)
+//		return false, err
+//	}
+//
+//	if len(gatewayList.Items) == 0 {
+//		return false, fmt.Errorf("no gateway found in namespace %s with GatewayClass %s", gateway.Namespace, effectiveGatewayClass.Name)
+//	}
+//
+//	// 2. Sort the gateways by CreationTimestamp
+//	validGateways := gwutils.SortResources(gwutils.ToSlicePtr(gatewayList.Items))
+//
+//	// 3. Current Gateway is not the oldest, it should be ineffective
+//	if validGateways[0].Name != gateway.Name {
+//		update.AddCondition(
+//			v1.GatewayConditionEffective,
+//			metav1.ConditionFalse,
+//			v1.GatewayReasonNotOldest,
+//			fmt.Sprintf("Gateway is not effective as it's not the oldest in namespace %q.", gateway.Namespace),
+//		)
+//
+//		return false, nil
+//	}
+//
+//	// 4. Current Gateway is the oldest, it's effective
+//	update.AddCondition(
+//		v1.GatewayConditionEffective,
+//		metav1.ConditionTrue,
+//		v1.GatewayReasonEffective,
+//		"Gateway is effective.",
+//	)
+//
+//	return true, nil
+//}
 
 func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
@@ -864,9 +861,9 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 	return deployment
 }
 
-func isSameGateway(oldGateway, newGateway *gwv1.Gateway) bool {
-	return equality.Semantic.DeepEqual(oldGateway, newGateway)
-}
+//func isSameGateway(oldGateway, newGateway *gwv1.Gateway) bool {
+//	return equality.Semantic.DeepEqual(oldGateway, newGateway)
+//}
 
 func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	if len(gateway.Spec.Addresses) > 0 {
