@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/tidwall/gjson"
@@ -49,7 +51,7 @@ func (c *GatewayCache) BuildConfigs() {
 		}
 	}
 
-	for _, gw := range c.getActiveGateways() {
+	for _, gw := range gwutils.GetActiveGateways(c.client) {
 		cfg := NewGatewayProcessor(c, gw).build()
 
 		go syncConfig(gw, cfg)

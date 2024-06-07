@@ -108,7 +108,7 @@ func (c *GatewayCache) isRoutableUDPService(service client.ObjectKey) bool {
 // no need to check ReferenceGrant here
 // isEffectiveRoute checks if the route has reference to active Gateway,
 func (c *GatewayCache) isEffectiveRoute(parentRefs []gwv1.ParentReference) bool {
-	gateways := c.getActiveGateways()
+	gateways := gwutils.GetActiveGateways(c.client)
 
 	if len(gateways) == 0 {
 		return false

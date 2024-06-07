@@ -4,6 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	corev1 "k8s.io/api/core/v1"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,11 +27,6 @@ func IsAcceptedGateway(gateway *gwv1.Gateway) bool {
 	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionAccepted))
 }
 
-// IsEffectiveGateway returns true if the gateway is effective
-//func IsEffectiveGateway(gateway *gwv1.Gateway) bool {
-//	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(v1.GatewayConditionEffective))
-//}
-
 // IsProgrammedGateway returns true if the gateway is programmed
 func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
 	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionProgrammed))
@@ -34,23 +34,8 @@ func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
 
 // IsActiveGateway returns true if the gateway is active, it stands for the gateway is accepted, programmed and has a valid listener
 func IsActiveGateway(gateway *gwv1.Gateway) bool {
-	//return IsEffectiveGateway(gateway) && IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 	return IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 }
-
-// IsPreActiveGateway returns true if the gateway is pre-active, it stands for the gateway is accepted and has a valid listener
-//func IsPreActiveGateway(gateway *gwv1.Gateway) bool {
-//	hasValidListener := false
-//
-//	for _, listenerStatus := range gateway.Status.Listeners {
-//		if IsListenerAccepted(listenerStatus) && IsListenerProgrammed(listenerStatus) {
-//			hasValidListener = true
-//			break
-//		}
-//	}
-//
-//	return IsAcceptedGateway(gateway) && hasValidListener
-//}
 
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
@@ -77,8 +62,31 @@ func IsListenerValid(s gwv1.ListenerStatus) bool {
 	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
 }
 
-// FilterActiveGateways returns the active gateways from the list of gateways
-func FilterActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
+func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
+	classes, err := findFSMGatewayClasses(cache)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil
+	}
+
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := cache.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, ToSlicePtr(list.Items)...)
+	}
+
+	return filterActiveGateways(gateways)
+}
+
+// filterActiveGateways returns the active gateways from the list of gateways
+func filterActiveGateways(allGateways []*gwv1.Gateway) []*gwv1.Gateway {
 	gateways := make([]*gwv1.Gateway, 0)
 
 	for _, gw := range allGateways {

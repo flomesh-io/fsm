@@ -3,41 +3,11 @@ package cache
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/fields"
-
 	"github.com/flomesh-io/fsm/pkg/k8s"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
-
-func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
-	classes, err := gwutils.FindFSMGatewayClasses(c.client)
-	if err != nil {
-		log.Error().Msgf("Failed to find GatewayClass: %v", err)
-		return nil
-	}
-
-	gateways := make([]*gwv1.Gateway, 0)
-	for _, cls := range classes {
-		list := &gwv1.GatewayList{}
-		if err := c.client.List(context.Background(), list, &client.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
-		}); err != nil {
-			log.Error().Msgf("Failed to list Gateways: %v", err)
-			continue
-		}
-
-		gateways = append(gateways, gwutils.ToSlicePtr(list.Items)...)
-	}
-
-	return gwutils.FilterActiveGateways(gateways)
-}
 
 func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret, error) {
 	obj := &corev1.Secret{}

@@ -28,7 +28,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -53,29 +52,8 @@ func NewRouteStatusProcessor(cache cache.Cache) *RouteStatusProcessor {
 }
 
 // Process computes the status of a Route
-func (p *RouteStatusProcessor) Process(ctx context.Context, updater status.Updater, update status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
-	classes, err := gwutils.FindFSMGatewayClasses(p.client)
-	if err != nil {
-		log.Error().Msgf("Failed to find GatewayClass: %v", err)
-		return nil
-	}
-
-	gateways := make([]*gwv1.Gateway, 0)
-	for _, cls := range classes {
-		list := &gwv1.GatewayList{}
-		if err := p.client.List(context.Background(), list, &client.ListOptions{
-			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
-		}); err != nil {
-			log.Error().Msgf("Failed to list Gateways: %v", err)
-			continue
-		}
-
-		gateways = append(gateways, gwutils.ToSlicePtr(list.Items)...)
-	}
-
-	activeGateways := gwutils.FilterActiveGateways(gateways)
-
-	if len(activeGateways) > 0 {
+func (p *RouteStatusProcessor) Process(_ context.Context, updater status.Updater, update status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
+	if activeGateways := gwutils.GetActiveGateways(p.client); len(activeGateways) > 0 {
 		p.computeRouteParentStatus(activeGateways, update, parentRefs)
 
 		updater.Send(status.Update{
