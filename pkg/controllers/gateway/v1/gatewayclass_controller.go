@@ -111,7 +111,7 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				log.Error().Msgf("Unexpected object type %T", obj)
 			}
 			classCopy := class.DeepCopy()
-			r.setAccepted(gatewayClass)
+			r.setAccepted(classCopy)
 
 			return classCopy
 		}),
@@ -197,6 +197,8 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 //}
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
+	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
+
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
 		Type:               string(gwv1.GatewayClassConditionStatusAccepted),
 		Status:             metav1.ConditionTrue,
@@ -205,7 +207,6 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 		Reason:             string(gwv1.GatewayClassReasonAccepted),
 		Message:            fmt.Sprintf("GatewayClass %q is accepted.", gatewayClass.Name),
 	})
-	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
 }
 
 //func (r *gatewayClassReconciler) setActive(gatewayClass *gwv1.GatewayClass) {
