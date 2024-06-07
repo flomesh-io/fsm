@@ -17,21 +17,26 @@ import (
 )
 
 func (c *GatewayCache) getActiveGateways() []*gwv1.Gateway {
-	class, err := gwutils.FindEffectiveGatewayClass(c.client)
+	classes, err := gwutils.FindFSMGatewayClasses(c.client)
 	if err != nil {
 		log.Error().Msgf("Failed to find GatewayClass: %v", err)
 		return nil
 	}
 
-	list := &gwv1.GatewayList{}
-	if err := c.client.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, class.Name),
-	}); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
-		return nil
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := c.client.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, gwutils.ToSlicePtr(list.Items)...)
 	}
 
-	return gwutils.FilterActiveGateways(gwutils.ToSlicePtr(list.Items))
+	return gwutils.FilterActiveGateways(gateways)
 }
 
 func (c *GatewayCache) getSecretFromCache(key client.ObjectKey) (*corev1.Secret, error) {

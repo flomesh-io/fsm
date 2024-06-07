@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/flomesh-io/fsm/pkg/apis/gateway/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,9 +23,9 @@ func IsAcceptedGateway(gateway *gwv1.Gateway) bool {
 }
 
 // IsEffectiveGateway returns true if the gateway is effective
-func IsEffectiveGateway(gateway *gwv1.Gateway) bool {
-	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(v1.GatewayConditionEffective))
-}
+//func IsEffectiveGateway(gateway *gwv1.Gateway) bool {
+//	return metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(v1.GatewayConditionEffective))
+//}
 
 // IsProgrammedGateway returns true if the gateway is programmed
 func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
@@ -36,7 +34,8 @@ func IsProgrammedGateway(gateway *gwv1.Gateway) bool {
 
 // IsActiveGateway returns true if the gateway is active, it stands for the gateway is accepted, programmed and has a valid listener
 func IsActiveGateway(gateway *gwv1.Gateway) bool {
-	return IsEffectiveGateway(gateway) && IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
+	//return IsEffectiveGateway(gateway) && IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
+	return IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 }
 
 // IsPreActiveGateway returns true if the gateway is pre-active, it stands for the gateway is accepted and has a valid listener

@@ -54,21 +54,26 @@ func NewRouteStatusProcessor(cache cache.Cache) *RouteStatusProcessor {
 
 // Process computes the status of a Route
 func (p *RouteStatusProcessor) Process(ctx context.Context, updater status.Updater, update status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
-	class, err := gwutils.FindEffectiveGatewayClass(p.client)
+	classes, err := gwutils.FindFSMGatewayClasses(p.client)
 	if err != nil {
 		log.Error().Msgf("Failed to find GatewayClass: %v", err)
-		return err
+		return nil
 	}
 
-	list := &gwv1.GatewayList{}
-	if err := p.client.List(ctx, list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, class.Name),
-	}); err != nil {
-		log.Error().Msgf("Failed to list Gateways: %v", err)
-		return err
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := p.client.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, gwutils.ToSlicePtr(list.Items)...)
 	}
 
-	activeGateways := gwutils.FilterActiveGateways(gwutils.ToSlicePtr(list.Items))
+	activeGateways := gwutils.FilterActiveGateways(gateways)
 
 	if len(activeGateways) > 0 {
 		p.computeRouteParentStatus(activeGateways, update, parentRefs)

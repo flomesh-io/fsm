@@ -98,9 +98,9 @@ func (r *gatewayReconciler) NeedLeaderElection() bool {
 	return true
 }
 
-func init() {
-	activeGateways = make(map[string]*gwv1.Gateway)
-}
+//func init() {
+//	activeGateways = make(map[string]*gwv1.Gateway)
+//}
 
 // NewGatewayReconciler returns a new reconciler for Gateway resources
 func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
@@ -140,7 +140,8 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	effectiveGatewayClass, err := gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())
+	//effectiveGatewayClass, err := gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())gwutils.FindEffectiveGatewayClass(r.fctx.Manager.GetCache())
+	effectiveGatewayClass, err := gwutils.FindGatewayClassByName(r.fctx.Manager.GetCache(), string(gateway.Spec.GatewayClassName))
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -150,10 +151,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	if string(gateway.Spec.GatewayClassName) != effectiveGatewayClass.Name {
-		log.Warn().Msgf("Ignore Gateway %s/%s as it's GatewayClassName %q is not effective", gateway.Namespace, gateway.Name, gateway.Spec.GatewayClassName)
-		return ctrl.Result{}, nil
-	}
+	//if string(gateway.Spec.GatewayClassName) != effectiveGatewayClass.Name {
+	//	log.Warn().Msgf("Ignore Gateway %s/%s as it's GatewayClassName %q is not effective", gateway.Namespace, gateway.Name, gateway.Spec.GatewayClassName)
+	//	return ctrl.Result{}, nil
+	//}
 
 	update := gw.NewGatewayStatusUpdate(
 		gateway,
@@ -179,15 +180,15 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, effectiveGatewayClass *gwv1.GatewayClass, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	// 1. compute gateway effective status
-	effective, err := r.computeGatewayEffectiveCondition(ctx, gateway, effectiveGatewayClass, update)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
+	//effective, err := r.computeGatewayEffectiveCondition(ctx, gateway, effectiveGatewayClass, update)
+	//if err != nil {
+	//	return ctrl.Result{}, err
+	//}
 
 	// 2. stop processing other status if not effective
-	if !effective {
-		return ctrl.Result{}, nil
-	}
+	//if !effective {
+	//	return ctrl.Result{}, nil
+	//}
 
 	// 3. compute listener status & accepted status
 	result, err := r.computeListenerStatus(ctx, gateway, update)
@@ -196,11 +197,11 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	}
 
 	// 4. so far, it's accepted, just deploy it if not
-	if !isSameGateway(activeGateways[gateway.Namespace], gateway) {
-		if result, err := r.applyGateway(gateway, update); err != nil {
-			return result, err
-		}
+	//if !isSameGateway(activeGateways[gateway.Namespace], gateway) {
+	if result, err := r.applyGateway(gateway, update); err != nil {
+		return result, err
 	}
+	//}
 
 	// 5. compute gateway address and programmed status
 	result, err = r.updateGatewayAddresses(ctx, gateway, update)
@@ -1192,7 +1193,7 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 		return nil
 	}
 
-	if gwutils.IsEffectiveGatewayClass(gatewayClass) {
+	if gwutils.IsAcceptedGatewayClass(gatewayClass) {
 		c := r.fctx.Manager.GetCache()
 		gateways := &gwv1.GatewayList{}
 		if err := c.List(ctx, gateways, &client.ListOptions{
@@ -1203,13 +1204,13 @@ func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj clie
 		}
 
 		var reconciles []reconcile.Request
-		for _, gw := range gateways.Items {
-			gw := gw
-			if gwutils.IsActiveGateway(&gw) {
+		for _, gwy := range gateways.Items {
+			gwy := gwy
+			if gwutils.IsActiveGateway(&gwy) {
 				reconciles = append(reconciles, reconcile.Request{
 					NamespacedName: types.NamespacedName{
-						Namespace: gw.Namespace,
-						Name:      gw.Name,
+						Namespace: gwy.Namespace,
+						Name:      gwy.Name,
 					},
 				})
 			}
@@ -1279,13 +1280,13 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 	}
 
 	reconciles := make([]reconcile.Request, 0)
-	for _, gw := range gateways.Items {
-		gw := gw
-		if gwutils.IsActiveGateway(&gw) {
+	for _, gwy := range gateways.Items {
+		gwy := gwy
+		if gwutils.IsActiveGateway(&gwy) {
 			reconciles = append(reconciles, reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Namespace: gw.Namespace,
-					Name:      gw.Name,
+					Namespace: gwy.Namespace,
+					Name:      gwy.Name,
 				},
 			})
 		}

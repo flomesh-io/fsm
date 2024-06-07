@@ -28,11 +28,11 @@ import (
 
 // GatewayCache is a cache of all the resources that are relevant to the gateway
 type GatewayCache struct {
-	repoClient        *repo.PipyRepoClient
-	client            cache.Cache
-	cfg               configurator.Configurator
-	triggers          map[informers.ResourceType]Trigger
-	gatewayclass      *gwv1.GatewayClass
+	repoClient *repo.PipyRepoClient
+	client     cache.Cache
+	cfg        configurator.Configurator
+	triggers   map[informers.ResourceType]Trigger
+	//gatewayclass      *gwv1.GatewayClass
 	mutex             *sync.RWMutex
 	useEndpointSlices bool
 }
