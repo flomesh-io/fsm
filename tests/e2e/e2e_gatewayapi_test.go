@@ -346,7 +346,7 @@ func testFSMGatewayHTTPTrafficSameNamespace() {
 					Containers: []corev1.Container{
 						{
 							Name:  "pipy",
-							Image: "flomesh/pipy:1.1.0-1",
+							Image: "flomesh/pipy:1.2.0",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "pipy",
@@ -473,7 +473,7 @@ func testFSMGatewayHTTPTrafficCrossNamespace() {
 					Containers: []corev1.Container{
 						{
 							Name:  "pipy",
-							Image: "flomesh/pipy:1.1.0-1",
+							Image: "flomesh/pipy:1.2.0",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "pipy",
