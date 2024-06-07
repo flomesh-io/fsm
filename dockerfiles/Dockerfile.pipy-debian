@@ -39,8 +39,8 @@ RUN apt-get update && \
       zlib1g zlib1g-dev libtool libtiff-dev libjpeg-dev
 
 WORKDIR /workspace
-RUN git clone -b "$PIPY_VERSION" https://github.com/flomesh-io/pipy.git && \
-    cd /workspace/pipy && sed -i 's/make \-j/make/g' CMakeLists.txt && ./build.sh && \
+RUN git clone https://github.com/flomesh-io/pipy.git && \
+    cd /workspace/pipy && ./build.sh -t "$PIPY_VERSION" && \
     cp -fv /workspace/pipy/bin/pipy /usr/local/bin/pipy
 
 ENTRYPOINT ["/usr/local/bin/pipy"]

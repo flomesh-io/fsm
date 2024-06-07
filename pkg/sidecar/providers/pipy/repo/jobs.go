@@ -385,17 +385,14 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 	kubeController := cataloger.GetKubeController()
 	svcList := kubeController.ListServices()
 	for _, svc := range svcList {
-		if pipyConf.DNSResolveDB == nil {
-			pipyConf.DNSResolveDB = make(map[string][]interface{})
-		}
-		if _, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
-			continue
-		}
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if !ctok.IsSyncCloudNamespace(ns) {
 			continue
 		}
 		if len(svc.Annotations) > 0 {
+			if pipyConf.DNSResolveDB == nil {
+				pipyConf.DNSResolveDB = make(map[string][]interface{})
+			}
 			resolvableIPSet := mapset.NewSet()
 			for anno := range svc.Annotations {
 				if !strings.HasPrefix(anno, connector.AnnotationMeshEndpointAddr) {
@@ -410,6 +407,13 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 				resolvableIPSet.Add(ip.To4().String())
 			}
 			if resolvableIPSet.Cardinality() > 0 {
+				if addrs, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
+					for _, addr := range addrs {
+						if !resolvableIPSet.Contains(addr) {
+							resolvableIPSet.Add(addr)
+						}
+					}
+				}
 				addrItems := resolvableIPSet.ToSlice()
 				sort.SliceStable(addrItems, func(i, j int) bool {
 					addr1 := addrItems[i].(string)

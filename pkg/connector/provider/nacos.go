@@ -157,6 +157,8 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 						if strings.EqualFold(metaSet, meta.Value) {
 							continue
 						}
+					} else if len(meta.Value) == 0 {
+						continue
 					}
 					matched = false
 					break
@@ -199,6 +201,8 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 							if strings.EqualFold(metaSet, meta.Value) {
 								continue
 							}
+						} else if len(meta.Value) == 0 {
+							continue
 						}
 						matched = false
 						break
