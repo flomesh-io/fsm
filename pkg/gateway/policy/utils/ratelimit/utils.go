@@ -14,7 +14,7 @@ import (
 )
 
 // GetRateLimitIfRouteHostnameMatchesPolicy returns the rate limit config if the route hostname matches the policy
-func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
@@ -42,7 +42,7 @@ func GetRateLimitIfRouteHostnameMatchesPolicy(routeHostname string, rateLimitPol
 }
 
 // GetRateLimitIfHTTPRouteMatchesPolicy returns the rate limit config if the HTTP route matches the policy
-func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.HTTPRateLimits) == 0 {
 		return nil
 	}
@@ -57,7 +57,7 @@ func GetRateLimitIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, rateLi
 }
 
 // GetRateLimitIfGRPCRouteMatchesPolicy returns the rate limit config if the GRPC route matches the policy
-func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
+func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy) *gwpav1alpha1.L7RateLimit {
 	if len(rateLimitPolicy.Spec.GRPCRateLimits) == 0 {
 		return nil
 	}
@@ -72,7 +72,7 @@ func GetRateLimitIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, rateLi
 }
 
 // GetRateLimitIfPortMatchesPolicy returns true if the port matches the rate limit policy
-func GetRateLimitIfPortMatchesPolicy(port gwv1.PortNumber, rateLimitPolicy gwpav1alpha1.RateLimitPolicy) *int64 {
+func GetRateLimitIfPortMatchesPolicy(port gwv1.PortNumber, rateLimitPolicy *gwpav1alpha1.RateLimitPolicy) *int64 {
 	if len(rateLimitPolicy.Spec.Ports) == 0 {
 		return nil
 	}

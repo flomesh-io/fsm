@@ -1,6 +1,15 @@
 package cache
 
 import (
+	"context"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -8,13 +17,38 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
+func (c *GatewayProcessor) processTLSRoutes() {
+	list := &gwv1alpha2.TLSRouteList{}
+	err := c.cache.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
+	})
+	if err != nil {
+		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		return
+	}
+
+	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
+		c.processTLSRoute(tlsRoute)
+	}
+}
+
 func (c *GatewayProcessor) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
-	for _, ref := range tlsRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
+	rsh := route.NewRouteStatusUpdate(
+		tlsRoute,
+		&tlsRoute.ObjectMeta,
+		&tlsRoute.TypeMeta,
+		tlsRoute.Spec.Hostnames,
+		gwutils.ToSlicePtr(tlsRoute.Status.Parents),
+	)
+
+	for _, parentRef := range tlsRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
 
-		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(tlsRoute), c.validListeners)
+		h := rsh.StatusUpdateFor(parentRef)
+
+		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
 		if len(allowedListeners) == 0 {
 			continue
 		}

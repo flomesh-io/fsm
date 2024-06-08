@@ -1,22 +1,22 @@
-{{- if .Values.fsm.fsmGateway.autoScale.enable }}
+{{- if .Values.fsm.gateway.autoScale.enable }}
 {{- if (semverCompare ">=1.23-0" .Capabilities.KubeVersion.GitVersion) }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ printf "fsm-gateway-%s-hpa" .Values.gwy.metadata.namespace }}
-  namespace: {{ .Values.gwy.metadata.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s-hpa" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
+  namespace: {{ .Values.fsm.gateway.namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
-  minReplicas: {{.Values.fsm.fsmGateway.autoScale.minReplicas}}
-  maxReplicas: {{.Values.fsm.fsmGateway.autoScale.maxReplicas}}
-  {{- with .Values.fsm.fsmGateway.autoScale.metrics }}
+    name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
+  minReplicas: {{.Values.fsm.gateway.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.gateway.autoScale.maxReplicas}}
+  {{- with .Values.fsm.gateway.autoScale.metrics }}
   metrics:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with .Values.fsm.fsmGateway.autoScale.behavior }}
+  {{- with .Values.fsm.gateway.autoScale.behavior }}
   behavior:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -24,27 +24,27 @@ spec:
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ printf "fsm-gateway-%s-hpa" .Values.gwy.metadata.namespace }}
-  namespace: {{ .Values.gwy.metadata.namespace }}
+  name: {{ printf "fsm-gateway-%s-%s-hpa" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
+  namespace: {{ .Values.fsm.gateway.namespace }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
-  minReplicas: {{.Values.fsm.fsmGateway.autoScale.minReplicas}}
-  maxReplicas: {{.Values.fsm.fsmGateway.autoScale.maxReplicas}}
+    name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
+  minReplicas: {{.Values.fsm.gateway.autoScale.minReplicas}}
+  maxReplicas: {{.Values.fsm.gateway.autoScale.maxReplicas}}
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: {{.Values.fsm.fsmGateway.autoScale.cpu.targetAverageUtilization}}
+        averageUtilization: {{.Values.fsm.gateway.autoScale.cpu.targetAverageUtilization}}
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: {{.Values.fsm.fsmGateway.autoScale.memory.targetAverageUtilization}}
+        averageUtilization: {{.Values.fsm.gateway.autoScale.memory.targetAverageUtilization}}
 {{- end }}
 {{- end }}

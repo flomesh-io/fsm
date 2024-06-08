@@ -73,9 +73,9 @@ func GetDefaultIngressPath() string {
 }
 
 // GatewayCodebasePath get the codebase URL for the gateway in specified namespace
-// inherit hierarchy: /base/gateways -> /local/gateways -> /local/gw/[ns]
-func GatewayCodebasePath(namespace string) string {
-	return fmt.Sprintf("/local/gw/%s", namespace)
+// inherit hierarchy: /base/gateways -> /local/gateways -> /local/gw/[ns]/[name]
+func GatewayCodebasePath(namespace, name string) string {
+	return fmt.Sprintf("/local/gw/%s/%s", namespace, name)
 }
 
 // GetDefaultGatewaysPath returns the path to the gateways codebase.

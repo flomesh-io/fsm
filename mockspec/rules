@@ -36,7 +36,7 @@ service; pkg/service/mock_service_provider_generated.go; github.com/flomesh-io/f
 configurator; pkg/configurator/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/configurator; Configurator
 
 # pkg/gateway
-gateway; pkg/gateway/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/gateway; Controller
+gateway; pkg/gateway/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/gateway/types; Controller
 
 # pkg/gateway/cache
 cache; pkg/gateway/cache/mock_cache_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Cache

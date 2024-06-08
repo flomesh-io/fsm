@@ -38,7 +38,7 @@ type ServiceExportEvent struct {
 	ServiceExport *mcsv1alpha1.ServiceExport
 	Service       *corev1.Service
 	Error         string
-	//Data          map[string]interface{}
+	//data          map[string]interface{}
 }
 
 // ClusterKey returns the cluster key

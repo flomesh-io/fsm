@@ -1,10 +1,15 @@
-package status
+package policy
 
 import (
 	"context"
 	"fmt"
 	"sort"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	gwpkg "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -16,12 +21,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // PolicyStatusProcessor is a processor for processing port level policy status
@@ -40,13 +42,13 @@ type PolicyStatusProcessor struct {
 type GetObjectByGroupKindFunc func(group gwv1.Group, kind gwv1.Kind) client.Object
 
 // GetPoliciesFunc returns the policies, and returns condition if there is any error
-type GetPoliciesFunc func(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition)
+type GetPoliciesFunc func(target client.Object) map[gwpkg.PolicyMatchType][]client.Object
 
 // FindConflictPortFunc finds the conflicted port level policy
 type FindConflictPortFunc func(gateway *gwv1.Gateway, policy client.Object, allPortLevelPolicies []client.Object) *types.NamespacedName
 
 // FindConflictedHostnamesBasedPolicyFunc finds the conflicted hostnames based policy
-type FindConflictedHostnamesBasedPolicyFunc func(route *gwtypes.RouteContext, policy client.Object, allHostnamesBasedPolicies []client.Object) *types.NamespacedName
+type FindConflictedHostnamesBasedPolicyFunc func(route status.RouteStatusObject, parentRefs []gwv1.ParentReference, policy client.Object, allHostnamesBasedPolicies []client.Object) *types.NamespacedName
 
 // FindConflictedHTTPRouteBasedPolicyFunc finds the conflicted HTTPRoute based policy
 type FindConflictedHTTPRouteBasedPolicyFunc func(route *gwv1.HTTPRoute, policy client.Object, allRouteBasedPolicies []client.Object) *types.NamespacedName
@@ -55,85 +57,99 @@ type FindConflictedHTTPRouteBasedPolicyFunc func(route *gwv1.HTTPRoute, policy c
 type FindConflictedGRPCRouteBasedPolicyFunc func(route *gwv1.GRPCRoute, policy client.Object, allRouteBasedPolicies []client.Object) *types.NamespacedName
 
 // Process processes the policy status of port, hostnames and route level
-func (p *PolicyStatusProcessor) Process(ctx context.Context, policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) metav1.Condition {
+func (p *PolicyStatusProcessor) Process(ctx context.Context, updater status.Updater, u *PolicyUpdate) {
+	p.internalProcess(ctx, u)
+
+	updater.Send(status.Update{
+		Resource:       u.GetResource(),
+		NamespacedName: u.GetFullName(),
+		Mutator:        u,
+	})
+}
+
+func (p *PolicyStatusProcessor) internalProcess(ctx context.Context, update *PolicyUpdate) metav1.Condition {
+	policy := update.GetResource()
+	targetRef := update.GetTargetRef()
+
 	_, ok := p.getGatewayAPIGroupKindObjectMapping()[string(targetRef.Group)]
 	if !ok {
-		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference group, only %q is/are supported", strings.Join(p.supportedGroups(), ",")))
+		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference group, only %q is/are supported", strings.Join(p.supportedGroups(), ","))))
 	}
 
 	target := p.getGatewayAPIObjectByGroupKind(targetRef.Group, targetRef.Kind)
 	if target == nil {
-		return InvalidCondition(policy, fmt.Sprintf("Invalid target reference kind, only %q are supported", strings.Join(p.supportedKinds(), ",")))
-	}
-
-	referenceGrants := p.Informer.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	if !gwutils.HasAccessToTargetRef(policy, targetRef, referenceGrants) {
-		return NoAccessCondition(policy, fmt.Sprintf("Cross namespace reference to target %s/%s/%s is not allowed", targetRef.Kind, ns(targetRef.Namespace), targetRef.Name))
+		return update.AddCondition(invalidCondition(fmt.Sprintf("Invalid target reference kind, only %q are supported", strings.Join(p.supportedKinds(), ","))))
 	}
 
 	key := types.NamespacedName{
-		Namespace: gwutils.Namespace(targetRef.Namespace, policy.GetNamespace()),
+		Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
 		Name:      string(targetRef.Name),
 	}
 
 	if err := p.Get(ctx, key, target); err != nil {
 		if errors.IsNotFound(err) {
-			return NotFoundCondition(policy, fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String()))
+			return update.AddCondition(notFoundCondition(fmt.Sprintf("Invalid target reference, cannot find target %s %q", targetRef.Kind, key.String())))
 		} else {
-			return InvalidCondition(policy, fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err))
+			return update.AddCondition(invalidCondition(fmt.Sprintf("Failed to get target %s %q: %s", targetRef.Kind, key, err)))
 		}
 	}
 
-	policies, condition := p.getSortedPolices(policy, target)
-	if condition != nil {
-		return *condition
-	}
+	policies := p.getSortedPolices(target)
 
 	switch obj := target.(type) {
 	case *gwv1.Gateway:
 		if p.FindConflictPort != nil && len(policies[gwpkg.PolicyMatchTypePort]) > 0 {
 			if conflict := p.FindConflictPort(obj, policy, policies[gwpkg.PolicyMatchTypePort]); conflict != nil {
-				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+				return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 			}
 		}
 	case *gwv1.HTTPRoute:
 		if p.FindConflictedHostnamesBasedPolicy != nil && len(policies[gwpkg.PolicyMatchTypeHostnames]) > 0 {
-			info := gwutils.ToRouteContext(obj)
+			info := route.NewRouteStatusHolder(
+				obj,
+				&obj.ObjectMeta,
+				&obj.TypeMeta,
+				obj.Spec.Hostnames,
+				gwutils.ToSlicePtr(obj.Status.Parents),
+			)
 
-			if conflict := p.FindConflictedHostnamesBasedPolicy(info, policy, policies[gwpkg.PolicyMatchTypeHostnames]); conflict != nil {
-				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+			if conflict := p.FindConflictedHostnamesBasedPolicy(info, obj.Spec.ParentRefs, policy, policies[gwpkg.PolicyMatchTypeHostnames]); conflict != nil {
+				return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 			}
 		}
 
 		if p.FindConflictedHTTPRouteBasedPolicy != nil && len(policies[gwpkg.PolicyMatchTypeHTTPRoute]) > 0 {
 			if conflict := p.FindConflictedHTTPRouteBasedPolicy(obj, policy, policies[gwpkg.PolicyMatchTypeHTTPRoute]); conflict != nil {
-				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+				return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 			}
 		}
 	case *gwv1.GRPCRoute:
 		if p.FindConflictedHostnamesBasedPolicy != nil && len(policies[gwpkg.PolicyMatchTypeHostnames]) > 0 {
-			info := gwutils.ToRouteContext(obj)
+			info := route.NewRouteStatusHolder(
+				obj,
+				&obj.ObjectMeta,
+				&obj.TypeMeta,
+				obj.Spec.Hostnames,
+				gwutils.ToSlicePtr(obj.Status.Parents),
+			)
 
-			if conflict := p.FindConflictedHostnamesBasedPolicy(info, policy, policies[gwpkg.PolicyMatchTypeHostnames]); conflict != nil {
-				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+			if conflict := p.FindConflictedHostnamesBasedPolicy(info, obj.Spec.ParentRefs, policy, policies[gwpkg.PolicyMatchTypeHostnames]); conflict != nil {
+				return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 			}
 		}
 
 		if p.FindConflictedGRPCRouteBasedPolicy != nil && len(policies[gwpkg.PolicyMatchTypeGRPCRoute]) > 0 {
 			if conflict := p.FindConflictedGRPCRouteBasedPolicy(obj, policy, policies[gwpkg.PolicyMatchTypeGRPCRoute]); conflict != nil {
-				return ConflictCondition(policy, fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict))
+				return update.AddCondition(conflictCondition(fmt.Sprintf("Conflict with %s: %s", policy.GetObjectKind().GroupVersionKind().Kind, conflict)))
 			}
 		}
 	}
 
-	return AcceptedCondition(policy)
+	return update.AddCondition(acceptedCondition())
 }
 
-func (p *PolicyStatusProcessor) getSortedPolices(policy client.Object, target client.Object) (map[gwpkg.PolicyMatchType][]client.Object, *metav1.Condition) {
-	policies, condition := p.GetPolicies(policy, target)
-	if condition != nil {
-		return nil, condition
-	}
+func (p *PolicyStatusProcessor) getSortedPolices(target client.Object) map[gwpkg.PolicyMatchType][]client.Object {
+	policies := p.GetPolicies(target)
 
 	// sort each type of by creation timestamp, then by namespace/name
 	for matchType, ps := range policies {
@@ -147,7 +163,7 @@ func (p *PolicyStatusProcessor) getSortedPolices(policy client.Object, target cl
 		policies[matchType] = ps
 	}
 
-	return policies, nil
+	return policies
 }
 
 func (p *PolicyStatusProcessor) getGatewayAPIObjectByGroupKind(group gwv1.Group, kind gwv1.Kind) client.Object {
@@ -197,12 +213,4 @@ func (p *PolicyStatusProcessor) supportedKinds() []string {
 	}
 
 	return kinds
-}
-
-func ns(namespace *gwv1.Namespace) string {
-	if namespace == nil {
-		return ""
-	}
-
-	return string(*namespace)
 }

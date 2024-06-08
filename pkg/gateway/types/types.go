@@ -2,7 +2,9 @@
 package types
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -12,6 +14,17 @@ import (
 var (
 	log = logger.New("fsm-gateway/types")
 )
+
+// Controller is the interface for the functionality provided by the resources part of the gateway.networking.k8s.io API group
+type Controller interface {
+	cache.ResourceEventHandler
+
+	// Runnable runs the backend broadcast listener
+	manager.Runnable
+
+	// LeaderElectionRunnable knows if a Runnable needs to be run in the leader election mode.
+	manager.LeaderElectionRunnable
+}
 
 // PolicyMatchType is the type used to represent the rate limit policy match type
 type PolicyMatchType string
@@ -51,17 +64,6 @@ func (l *Listener) AllowsKind(gvk schema.GroupVersionKind) bool {
 	}
 
 	return false
-}
-
-// RouteContext is a wrapper around the Gateway API Route object
-type RouteContext struct {
-	Meta         metav1.Object
-	ParentRefs   []gwv1.ParentReference
-	GVK          schema.GroupVersionKind
-	Generation   int64
-	Hostnames    []gwv1.Hostname
-	Namespace    string
-	ParentStatus []gwv1.RouteParentStatus
 }
 
 // CrossNamespaceFrom is the type used to represent the from part of a cross-namespace reference

@@ -604,6 +604,31 @@ const (
 	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
 )
 
+// GatewayAPI Resources Indexer constants
+const (
+	ControllerGatewayClassIndex    = "controllerGatewayClassIndex"
+	ClassGatewayIndex              = "classGatewayIndex"
+	GatewayTLSRouteIndex           = "gatewayTLSRouteIndex"
+	GatewayHTTPRouteIndex          = "gatewayHTTPRouteIndex"
+	GatewayGRPCRouteIndex          = "gatewayGRPCRouteIndex"
+	GatewayTCPRouteIndex           = "gatewayTCPRouteIndex"
+	GatewayUDPRouteIndex           = "gatewayUDPRouteIndex"
+	SecretGatewayIndex             = "secretGatewayIndex"
+	ConfigMapGatewayIndex          = "configMapGatewayIndex"
+	TargetKindRefGrantIndex        = "targetRefGrantRouteIndex"
+	BackendHTTPRouteIndex          = "backendHTTPRouteIndex"
+	BackendGRPCRouteIndex          = "backendGRPCRouteIndex"
+	BackendTLSRouteIndex           = "backendTLSRouteIndex"
+	BackendTCPRouteIndex           = "backendTCPRouteIndex"
+	BackendUDPRouteIndex           = "backendUDPRouteIndex"
+	ServicePolicyAttachmentIndex   = "servicePolicyAttachmentIndex"
+	SecretUpstreamTLSPolicyIndex   = "secretUpstreamTLSPolicyIndex"
+	PortPolicyAttachmentIndex      = "portPolicyAttachmentIndex"
+	HostnamePolicyAttachmentIndex  = "hostnamePolicyAttachmentIndex"
+	HTTPRoutePolicyAttachmentIndex = "httpRoutePolicyAttachmentIndex"
+	GRPCRoutePolicyAttachmentIndex = "grpcRoutePolicyAttachmentIndex"
+)
+
 // PIPY Repo constants
 const (
 	// DefaultPipyRepoPath is the default path for the PIPY repo

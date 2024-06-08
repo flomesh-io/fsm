@@ -2,15 +2,18 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+
+	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+
+	"k8s.io/apimachinery/pkg/fields"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/upstreamtls"
 
@@ -19,12 +22,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"k8s.io/apimachinery/pkg/types"
-
-	corev1 "k8s.io/api/core/v1"
-
-	metautil "k8s.io/apimachinery/pkg/api/meta"
-
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,16 +33,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type upstreamTLSPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *status.ServicePolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *upstreamTLSPolicyReconciler) NeedLeaderElection() bool {
@@ -55,13 +48,11 @@ func (r *upstreamTLSPolicyReconciler) NeedLeaderElection() bool {
 // NewUpstreamTLSPolicyReconciler returns a new UpstreamTLSPolicy Reconciler
 func NewUpstreamTLSPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &upstreamTLSPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("UpstreamTLSPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("UpstreamTLSPolicy"),
+		fctx:     ctx,
 	}
 
-	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
 		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedUpstreamTLSPolices,
@@ -89,13 +80,13 @@ func (r *upstreamTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
-	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -104,33 +95,84 @@ func (r *upstreamTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *upstreamTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.UpstreamTLSPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r)
-}
-
-func (r *upstreamTLSPolicyReconciler) getAttachedUpstreamTLSPolices(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
-	upstreamTLSPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().UpstreamTLSPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list UpstreamTLSPolicies: %s", err)))
+		Complete(r); err != nil {
+		return err
 	}
 
-	upstreamTLSPolicies := make([]client.Object, 0)
-	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+	return addUpstreamTLSPolicyIndexer(context.Background(), mgr)
+}
 
-	for _, p := range upstreamTLSPolicyList.Items {
-		p := p
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
-			upstreamTLSPolicies = append(upstreamTLSPolicies, &p)
+func addUpstreamTLSPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.UpstreamTLSPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
+		policy := obj.(*gwpav1alpha1.UpstreamTLSPolicy)
+		targetRef := policy.Spec.TargetRef
+		var targets []string
+		if targetRef.Kind == constants.KubernetesServiceKind {
+			targets = append(targets, types.NamespacedName{
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
+				Name:      string(targetRef.Name),
+			}.String())
+		}
+
+		return targets
+	}); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.UpstreamTLSPolicy{}, constants.SecretUpstreamTLSPolicyIndex, addSecretUpstreamTLSPolicyFunc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addSecretUpstreamTLSPolicyFunc(obj client.Object) []string {
+	policy := obj.(*gwpav1alpha1.UpstreamTLSPolicy)
+	secrets := make([]string, 0)
+
+	if policy.Spec.DefaultConfig != nil {
+		ref := policy.Spec.DefaultConfig.CertificateRef
+		kind := ref.Kind
+		if kind == nil || string(*kind) == constants.KubernetesSecretKind {
+			secrets = append(secrets, types.NamespacedName{
+				Namespace: gwutils.NamespaceDerefOr(ref.Namespace, policy.Namespace),
+				Name:      string(ref.Name),
+			}.String())
 		}
 	}
 
-	return upstreamTLSPolicies, nil
+	if len(policy.Spec.Ports) > 0 {
+		for _, port := range policy.Spec.Ports {
+			if port.Config == nil {
+				continue
+			}
+
+			ref := port.Config.CertificateRef
+			kind := ref.Kind
+			if kind == nil || string(*kind) == constants.KubernetesSecretKind {
+				secrets = append(secrets, types.NamespacedName{
+					Namespace: gwutils.NamespaceDerefOr(ref.Namespace, policy.Namespace),
+					Name:      string(ref.Name),
+				}.String())
+			}
+		}
+	}
+
+	return secrets
+}
+
+func (r *upstreamTLSPolicyReconciler) getAttachedUpstreamTLSPolices(svc client.Object) ([]client.Object, *metav1.Condition) {
+	c := r.fctx.Manager.GetCache()
+	key := client.ObjectKeyFromObject(svc).String()
+	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
+
+	return gwutils.GetUpStreamTLSes(c, selector), nil
 }
 
 func (r *upstreamTLSPolicyReconciler) findConflict(upstreamTLSPolicy client.Object, allUpstreamTLSPolicies []client.Object, port int32) *types.NamespacedName {
@@ -169,13 +211,17 @@ func (r *upstreamTLSPolicyReconciler) referenceGrantToPolicyAttachment(_ context
 		return nil
 	}
 
+	c := r.fctx.Manager.GetCache()
+	list := &gwpav1alpha1.UpstreamTLSPolicyList{}
+	if err := c.List(context.Background(), list); err != nil {
+		log.Error().Msgf("Failed to list UpstreamTLSPolicyList: %v", err)
+		return nil
+	}
+	policies := gwutils.ToSlicePtr(list.Items)
+
 	requests := make([]reconcile.Request, 0)
-	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.UpstreamTLSPoliciesResourceType, false)
-
-	for _, p := range policies {
-		policy := p.(*gwpav1alpha1.UpstreamTLSPolicy)
-
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+	for _, policy := range policies {
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

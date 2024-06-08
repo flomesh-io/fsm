@@ -2,15 +2,18 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+
+	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
+
+	"k8s.io/apimachinery/pkg/fields"
+
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/healthcheck"
 
@@ -19,12 +22,6 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"k8s.io/apimachinery/pkg/types"
-
-	corev1 "k8s.io/api/core/v1"
-
-	metautil "k8s.io/apimachinery/pkg/api/meta"
-
-	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,16 +33,12 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
-
-	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type healthCheckPolicyReconciler struct {
-	recorder                  record.EventRecorder
-	fctx                      *fctx.ControllerContext
-	gatewayAPIClient          gwclient.Interface
-	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
-	statusProcessor           *status.ServicePolicyStatusProcessor
+	recorder        record.EventRecorder
+	fctx            *fctx.ControllerContext
+	statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
@@ -55,13 +48,11 @@ func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
 // NewHealthCheckPolicyReconciler returns a new HealthCheckPolicy Reconciler
 func NewHealthCheckPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &healthCheckPolicyReconciler{
-		recorder:                  ctx.Manager.GetEventRecorderFor("HealthCheckPolicy"),
-		fctx:                      ctx,
-		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
-		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
+		recorder: ctx.Manager.GetEventRecorderFor("HealthCheckPolicy"),
+		fctx:     ctx,
 	}
 
-	r.statusProcessor = &status.ServicePolicyStatusProcessor{
+	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
 		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedHealthChecks,
@@ -89,13 +80,13 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
-	metautil.SetStatusCondition(
-		&policy.Status.Conditions,
-		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
-	)
-	if err := r.fctx.Status().Update(ctx, policy); err != nil {
-		return ctrl.Result{}, err
-	}
+	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRef,
+		policy.Status.Conditions,
+	))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -104,32 +95,45 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *healthCheckPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.HealthCheckPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addHealthCheckPolicyIndexer(context.Background(), mgr)
 }
 
-func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
-	healthCheckPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().HealthCheckPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list HealthCheckPolicies: %s", err)))
-	}
-
-	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
-	healthChecks := make([]client.Object, 0)
-	for _, p := range healthCheckPolicyList.Items {
-		p := p
-		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
-			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
-			healthChecks = append(healthChecks, &p)
+func addHealthCheckPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.HealthCheckPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
+		policy := obj.(*gwpav1alpha1.HealthCheckPolicy)
+		targetRef := policy.Spec.TargetRef
+		var targets []string
+		if targetRef.Kind == constants.KubernetesServiceKind {
+			targets = append(targets, types.NamespacedName{
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
+				Name:      string(targetRef.Name),
+			}.String())
 		}
+
+		return targets
+	}); err != nil {
+		return err
 	}
 
-	return healthChecks, nil
+	return nil
+}
+
+func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(svc client.Object) ([]client.Object, *metav1.Condition) {
+	c := r.fctx.Manager.GetCache()
+	key := client.ObjectKeyFromObject(svc).String()
+	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
+
+	return gwutils.GetHealthChecks(c, selector), nil
 }
 
 func (r *healthCheckPolicyReconciler) findConflict(healthCheckPolicy client.Object, allHealthCheckPolicies []client.Object, port int32) *types.NamespacedName {
@@ -168,13 +172,17 @@ func (r *healthCheckPolicyReconciler) referenceGrantToPolicyAttachment(_ context
 		return nil
 	}
 
+	c := r.fctx.Manager.GetCache()
+	list := &gwpav1alpha1.HealthCheckPolicyList{}
+	if err := c.List(context.Background(), list); err != nil {
+		log.Error().Msgf("Failed to list HealthCheckPolicyList: %v", err)
+		return nil
+	}
+	policies := gwutils.ToSlicePtr(list.Items)
+
 	requests := make([]reconcile.Request, 0)
-	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.HealthCheckPoliciesResourceType, false)
-
-	for _, p := range policies {
-		policy := p.(*gwpav1alpha1.HealthCheckPolicy)
-
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
+	for _, policy := range policies {
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

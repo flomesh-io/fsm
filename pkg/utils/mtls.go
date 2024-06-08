@@ -28,9 +28,8 @@ func setupMutualTLS(insecure bool, serverName string, certPem []byte, keyPem []b
 		return nil, fmt.Errorf("[grpc][mTLS][%s] Failed to append client certs", serverName)
 	}
 
-	// #nosec G402
 	tlsConfig := tls.Config{
-		InsecureSkipVerify: insecure,
+		InsecureSkipVerify: insecure, // #nosec G402
 		ServerName:         serverName,
 		ClientAuth:         tls.RequireAndVerifyClientCert,
 		Certificates:       []tls.Certificate{certif},
