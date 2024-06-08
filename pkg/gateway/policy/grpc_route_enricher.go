@@ -1,7 +1,12 @@
 package policy
 
 import (
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
@@ -17,17 +22,24 @@ type GRPCRoutePolicyEnricher interface {
 
 // ---
 
-// RateLimitGRPCRouteEnricher is an enricher for rate limit policies at the GRPC route level
-type RateLimitGRPCRouteEnricher struct {
-	Data []gwpav1alpha1.RateLimitPolicy
+func NewRateLimitGRPCRouteEnricher(cache cache.Cache, selector fields.Selector) GRPCRoutePolicyEnricher {
+	return &rateLimitGRPCRouteEnricher{
+		data: gwutils.SortResources(gwutils.GetRateLimitsMatchTypeGRPCRoute(cache, selector)),
+	}
 }
 
-func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
-	if len(e.Data) == 0 {
+// rateLimitGRPCRouteEnricher is an enricher for rate limit policies at the GRPC route level
+type rateLimitGRPCRouteEnricher struct {
+	data []client.Object
+}
+
+func (e *rateLimitGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
+	if len(e.data) == 0 {
 		return
 	}
 
-	for _, rateLimit := range e.Data {
+	for _, rateLimit := range e.data {
+		rateLimit := rateLimit.(*gwpav1alpha1.RateLimitPolicy)
 		if len(rateLimit.Spec.GRPCRateLimits) == 0 {
 			continue
 		}
@@ -41,17 +53,24 @@ func (e *RateLimitGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg 
 
 // ---
 
-// AccessControlGRPCRouteEnricher is an enricher for access control policies at the GRPC route level
-type AccessControlGRPCRouteEnricher struct {
-	Data []gwpav1alpha1.AccessControlPolicy
+func NewAccessControlGRPCRouteEnricher(cache cache.Cache, selector fields.Selector) GRPCRoutePolicyEnricher {
+	return &accessControlGRPCRouteEnricher{
+		data: gwutils.SortResources(gwutils.GetAccessControlsMatchTypeGRPCRoute(cache, selector)),
+	}
 }
 
-func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
-	if len(e.Data) == 0 {
+// accessControlGRPCRouteEnricher is an enricher for access control policies at the GRPC route level
+type accessControlGRPCRouteEnricher struct {
+	data []client.Object
+}
+
+func (e *accessControlGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
+	if len(e.data) == 0 {
 		return
 	}
 
-	for _, accessControl := range e.Data {
+	for _, accessControl := range e.data {
+		accessControl := accessControl.(*gwpav1alpha1.AccessControlPolicy)
 		if len(accessControl.Spec.GRPCAccessControls) == 0 {
 			continue
 		}
@@ -65,17 +84,24 @@ func (e *AccessControlGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, match
 
 // ---
 
-// FaultInjectionGRPCRouteEnricher is an enricher for fault injection policies at the GRPC route level
-type FaultInjectionGRPCRouteEnricher struct {
-	Data []gwpav1alpha1.FaultInjectionPolicy
+func NewFaultInjectionGRPCRouteEnricher(cache cache.Cache, selector fields.Selector) GRPCRoutePolicyEnricher {
+	return &faultInjectionGRPCRouteEnricher{
+		data: gwutils.SortResources(gwutils.GetFaultInjectionsMatchTypeGRPCRoute(cache, selector)),
+	}
 }
 
-func (e *FaultInjectionGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
-	if len(e.Data) == 0 {
+// faultInjectionGRPCRouteEnricher is an enricher for fault injection policies at the GRPC route level
+type faultInjectionGRPCRouteEnricher struct {
+	data []client.Object
+}
+
+func (e *faultInjectionGRPCRouteEnricher) Enrich(match gwv1.GRPCRouteMatch, matchCfg *fgw.GRPCTrafficMatch) {
+	if len(e.data) == 0 {
 		return
 	}
 
-	for _, faultInjection := range e.Data {
+	for _, faultInjection := range e.data {
+		faultInjection := faultInjection.(*gwpav1alpha1.FaultInjectionPolicy)
 		if len(faultInjection.Spec.GRPCFaultInjections) == 0 {
 			continue
 		}

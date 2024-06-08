@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-// Package gateway contains the GatewayAPI types
-package gateway
+// Package v1 contains the extended GatewayAPI types
+package v1
 
 import gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -36,4 +36,17 @@ const (
 
 	// GatewayClassReasonInactive is the reason for inactive GatewayClass
 	GatewayClassReasonInactive gwv1.GatewayClassConditionReason = "Inactive"
+)
+
+const (
+	// GatewayConditionEffective is the status condition for active Gateway
+	// The active gateway is the oldest gateway in the namespace.
+	// If CreationTimestamp is equal, then sort by name in alphabet order.
+	GatewayConditionEffective gwv1.GatewayConditionType = "Effective"
+
+	// GatewayReasonEffective is the reason for Effective Gateway
+	GatewayReasonEffective gwv1.GatewayConditionReason = "Effective"
+
+	// GatewayReasonNotOldest is the reason for inactive Gateway
+	GatewayReasonNotOldest gwv1.GatewayConditionReason = "NotOldest"
 )

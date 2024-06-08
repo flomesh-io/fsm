@@ -2,7 +2,7 @@
 ServiceAccountName - GatewayAPI
 */}}
 {{- define "fsm.gateway.serviceAccountName" -}}
-{{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
+{{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
 {{- end }}
 
 {{/* fsm-gateway image */}}

@@ -14,7 +14,7 @@ import (
 )
 
 // GetAccessControlConfigIfPortMatchesPolicy returns true if the port matches the access control policy
-func GetAccessControlConfigIfPortMatchesPolicy(port gwv1.PortNumber, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfPortMatchesPolicy(port gwv1.PortNumber, accessControlPolicy *gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.Ports) == 0 {
 		return nil
 	}
@@ -29,7 +29,7 @@ func GetAccessControlConfigIfPortMatchesPolicy(port gwv1.PortNumber, accessContr
 }
 
 // GetAccessControlConfigIfRouteHostnameMatchesPolicy returns the access control config if the route hostname matches the policy
-func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, accessControlPolicy *gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
@@ -57,7 +57,7 @@ func GetAccessControlConfigIfRouteHostnameMatchesPolicy(routeHostname string, ac
 }
 
 // GetAccessControlConfigIfHTTPRouteMatchesPolicy returns the access control config if the HTTP route matches the policy
-func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, accessControlPolicy *gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.HTTPAccessControls) == 0 {
 		return nil
 	}
@@ -72,7 +72,7 @@ func GetAccessControlConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMat
 }
 
 // GetAccessControlConfigIfGRPCRouteMatchesPolicy returns the access control config if the GRPC route matches the policy
-func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, accessControlPolicy gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
+func GetAccessControlConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, accessControlPolicy *gwpav1alpha1.AccessControlPolicy) *gwpav1alpha1.AccessControlConfig {
 	if len(accessControlPolicy.Spec.GRPCAccessControls) == 0 {
 		return nil
 	}

@@ -2,29 +2,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "fsm-gateway-%s" .Values.gwy.metadata.namespace }}
-  namespace: {{ .Values.gwy.metadata.namespace }}
-  {{- if .Values.gwy.spec.infrastructure }}
-  {{- with .Values.gwy.spec.infrastructure.annotations }}
+  name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
+  namespace: {{ .Values.fsm.gateway.namespace }}
+  {{- if .Values.fsm.gateway.infrastructure }}
+  {{- with .Values.fsm.gateway.infrastructure.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- end }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    {{- if .Values.gwy.spec.infrastructure }}
-    {{- with .Values.gwy.spec.infrastructure.labels }}
+    {{- if .Values.fsm.gateway.infrastructure }}
+    {{- with .Values.fsm.gateway.infrastructure.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- end }}
     app: fsm-gateway
     meshName: {{ .Values.fsm.meshName }}
 spec:
-  replicas: {{ default 1 .Values.fsm.fsmGateway.replicas }}
+  replicas: {{ default 1 .Values.fsm.gateway.replicas }}
   selector:
     matchLabels:
       app: fsm-gateway
-      gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
+      gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+      gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -34,23 +35,24 @@ spec:
     metadata:
       labels:
         app: fsm-gateway
-        gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
-        {{- with .Values.fsm.fsmGateway.podLabels }}
+        gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+        gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+        {{- with .Values.fsm.gateway.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if .Values.gwy.spec.infrastructure }}
-        {{- with .Values.gwy.spec.infrastructure.labels }}
+        {{- if .Values.fsm.gateway.infrastructure }}
+        {{- with .Values.fsm.gateway.infrastructure.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- end }}
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9091'
-        {{- with .Values.fsm.fsmGateway.podAnnotations }}
+        {{- with .Values.fsm.gateway.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if .Values.gwy.spec.infrastructure }}
-        {{- with .Values.gwy.spec.infrastructure.annotations }}
+        {{- if .Values.fsm.gateway.infrastructure }}
+        {{- with .Values.fsm.gateway.infrastructure.annotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
         {{- end }}
@@ -71,8 +73,8 @@ spec:
           - --retry-delay
           - "5"
         resources:
-          {{- toYaml .Values.fsm.fsmGateway.initResources | nindent 10 }}
-        {{- with .Values.fsm.fsmGateway.securityContext }}
+          {{- toYaml .Values.fsm.gateway.initResources | nindent 10 }}
+        {{- with .Values.fsm.gateway.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -81,19 +83,21 @@ spec:
         image: {{ include "fsmGateway.image" . }}
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         ports:
-          {{- range $listener := .Values.listeners }}
+          {{- range $listener := .Values.fsm.gateway.listeners }}
           - name: {{ $listener.name }}
             containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
           {{- end }}
           - name: health
             containerPort: 8081
         args:
-          - --verbosity={{ .Values.fsm.fsmGateway.logLevel }}
+          - --verbosity={{ .Values.fsm.gateway.logLevel }}
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
           - --fsm-version={{ .Chart.AppVersion }}
           - --mesh-name={{ .Values.fsm.meshName }}
+          - --gateway-namespace={{ .Values.fsm.gateway.namespace }}
+          - --gateway-name={{ .Values.fsm.gateway.name }}
         resources:
-          {{- toYaml .Values.fsm.fsmGateway.resources | nindent 10 }}
+          {{- toYaml .Values.fsm.gateway.resources | nindent 10 }}
         env:
         - name: FSM_NAMESPACE
           value: {{ .Values.fsm.fsmNamespace }}
@@ -105,10 +109,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        {{- with .Values.fsm.fsmGateway.env }}
+        {{- with .Values.fsm.gateway.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.fsm.fsmGateway.securityContext }}
+        {{- with .Values.fsm.gateway.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -123,7 +127,7 @@ spec:
           tcpSocket:
             port: 9091
       terminationGracePeriodSeconds: 60
-      {{- with .Values.fsm.fsmGateway.podSecurityContext }}
+      {{- with .Values.fsm.gateway.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -132,7 +136,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.fsm.fsmGateway.nodeSelector }}
+      {{- with .Values.fsm.gateway.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -162,10 +166,14 @@ spec:
                     - key: gateway.flomesh.io/ns
                       operator: In
                       values:
-                        - {{ .Values.gwy.metadata.namespace }}
+                        - {{ .Values.fsm.gateway.namespace }}
+                    - key: gateway.flomesh.io/name
+                      operator: In
+                      values:
+                        - {{ .Values.fsm.gateway.name }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
-      {{- with .Values.fsm.fsmGateway.tolerations }}
+      {{- with .Values.fsm.gateway.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}

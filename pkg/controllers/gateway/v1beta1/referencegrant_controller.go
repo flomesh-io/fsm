@@ -27,6 +27,11 @@ package v1beta1
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -83,7 +88,27 @@ func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *referenceGrantReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1beta1.ReferenceGrant{}).
-		Complete(r)
+		Complete(r); err != nil {
+		return err
+	}
+
+	return addReferenceGrantIndexers(context.Background(), mgr)
+}
+
+func addReferenceGrantIndexers(ctx context.Context, mgr manager.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1beta1.ReferenceGrant{}, constants.TargetKindRefGrantIndex, func(obj client.Object) []string {
+		refGrant := obj.(*gwv1beta1.ReferenceGrant)
+		var referredResources []string
+		for _, target := range refGrant.Spec.To {
+			referredResources = append(referredResources, string(target.Kind))
+		}
+
+		return referredResources
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

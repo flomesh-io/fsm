@@ -31,15 +31,14 @@ import (
 	"strings"
 	"sync"
 
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
-
-	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 type baseServiceInfo struct {
@@ -80,8 +79,7 @@ type ServiceChangeTracker struct {
 	items             map[types.NamespacedName]*serviceChange
 	enrichServiceInfo enrichServiceInfoFunc
 	recorder          events.EventRecorder
-	informers         *fsminformers.InformerCollection
-	kubeClient        kubernetes.Interface
+	client            cache.Cache
 }
 
 // ServiceMap is a map of ServicePortName to ServicePort
@@ -149,13 +147,12 @@ func (t *ServiceChangeTracker) newBaseServiceInfo(port *corev1.ServicePort, serv
 }
 
 // NewServiceChangeTracker creates a new ServiceChangeTracker
-func NewServiceChangeTracker(enrichServiceInfo enrichServiceInfoFunc, recorder events.EventRecorder, kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection) *ServiceChangeTracker {
+func NewServiceChangeTracker(enrichServiceInfo enrichServiceInfoFunc, recorder events.EventRecorder, client cache.Cache) *ServiceChangeTracker {
 	return &ServiceChangeTracker{
 		items:             make(map[types.NamespacedName]*serviceChange),
 		enrichServiceInfo: enrichServiceInfo,
 		recorder:          recorder,
-		informers:         informers,
-		kubeClient:        kubeClient,
+		client:            client,
 	}
 }
 
@@ -251,25 +248,6 @@ func (t *ServiceChangeTracker) shouldSkipService(svc *corev1.Service) bool {
 
 	return false
 }
-
-//func (sct *ServiceChangeTracker) serviceImportExists(svc *corev1.Service) bool {
-//	_, err := sct.informers.GetListers().ServiceImport.
-//		ServiceImports(svc.Namespace).
-//		Get(svc.Name)
-//	if err != nil {
-//		if errors.IsNotFound(err) {
-//			// do nothing, not exists, go ahead and check svc
-//			log.Info().Msgf("ServiceImport %s/%s doesn't exist", svc.Namespace, svc.Name)
-//			return false
-//		}
-//
-//		log.Warn().Msgf("Failed to get ServiceImport %s/%s, %s", svc.Namespace, svc.Name, err)
-//
-//		return false
-//	}
-//
-//	return true
-//}
 
 func (sm *ServiceMap) apply(changes *ServiceChangeTracker) {
 	changes.lock.Lock()
