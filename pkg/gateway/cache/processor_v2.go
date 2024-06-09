@@ -67,11 +67,10 @@ func (c *GatewayProcessorV2) processGateway() *v2.Gateway {
 	g2.Spec.Listeners = make([]v2.Listener, 0)
 	for _, l := range c.validListeners {
 		v2l := &v2.Listener{
-			Name:          l.Name,
-			Hostname:      l.Hostname,
-			Port:          l.Port,
-			Protocol:      l.Protocol,
-			AllowedRoutes: l.AllowedRoutes,
+			Name:     l.Name,
+			Hostname: l.Hostname,
+			Port:     l.Port,
+			Protocol: l.Protocol,
 		}
 
 		if l.TLS != nil {
