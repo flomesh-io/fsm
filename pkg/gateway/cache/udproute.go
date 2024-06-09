@@ -33,7 +33,7 @@ func (c *GatewayProcessor) processUDPRoutes() {
 }
 
 func (c *GatewayProcessor) processUDPRoute(udpRoute *gwv1alpha2.UDPRoute) {
-	rsh := route.NewRouteStatusUpdate(
+	rsh := route.NewRouteStatusHolder(
 		udpRoute,
 		&udpRoute.ObjectMeta,
 		&udpRoute.TypeMeta,

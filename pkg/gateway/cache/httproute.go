@@ -34,7 +34,7 @@ func (c *GatewayProcessor) processHTTPRoutes() {
 func (c *GatewayProcessor) processHTTPRoute(httpRoute *gwv1.HTTPRoute) {
 	hostnameEnrichers := c.getHostnamePolicyEnrichers(httpRoute)
 
-	rsh := route.NewRouteStatusUpdate(
+	rsh := route.NewRouteStatusHolder(
 		httpRoute,
 		&httpRoute.ObjectMeta,
 		&httpRoute.TypeMeta,

@@ -3,6 +3,8 @@ package cache
 import (
 	"fmt"
 
+	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
+
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -19,7 +21,7 @@ func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	syncConfig := func(gateway *gwv1.Gateway, config *fgw.ConfigSpec) {
+	syncConfig := func(gateway *gwv1.Gateway, config *fgw.ConfigSpec, config2 *v2.Config) {
 		gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
 		if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
 			return
@@ -41,6 +43,7 @@ func (c *GatewayCache) BuildConfigs() {
 				Basepath: gatewayPath,
 				Items: []repo.BatchItem{
 					{Path: "", Filename: "config.json", Content: config},
+					{Path: "", Filename: "config2.json", Content: config2},
 				},
 			},
 		}
@@ -53,8 +56,9 @@ func (c *GatewayCache) BuildConfigs() {
 
 	for _, gw := range gwutils.GetActiveGateways(c.client) {
 		cfg := NewGatewayProcessor(c, gw).build()
+		cfg2 := NewGatewayProcessorV2(c, gw).build()
 
-		go syncConfig(gw, cfg)
+		go syncConfig(gw, cfg, cfg2)
 	}
 }
 

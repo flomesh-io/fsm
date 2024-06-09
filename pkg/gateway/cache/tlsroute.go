@@ -33,7 +33,7 @@ func (c *GatewayProcessor) processTLSRoutes() {
 }
 
 func (c *GatewayProcessor) processTLSRoute(tlsRoute *gwv1alpha2.TLSRoute) {
-	rsh := route.NewRouteStatusUpdate(
+	rsh := route.NewRouteStatusHolder(
 		tlsRoute,
 		&tlsRoute.ObjectMeta,
 		&tlsRoute.TypeMeta,

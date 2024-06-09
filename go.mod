@@ -92,6 +92,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/consul/api v1.21.0
 	github.com/hudl/fargo v1.4.0
+	github.com/jinzhu/copier v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7

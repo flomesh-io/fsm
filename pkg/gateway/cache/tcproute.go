@@ -33,7 +33,7 @@ func (c *GatewayProcessor) processTCPRoutes() {
 }
 
 func (c *GatewayProcessor) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
-	rsh := route.NewRouteStatusUpdate(
+	rsh := route.NewRouteStatusHolder(
 		tcpRoute,
 		&tcpRoute.ObjectMeta,
 		&tcpRoute.TypeMeta,
