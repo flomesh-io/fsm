@@ -13,7 +13,7 @@ type Config struct {
 }
 
 type Gateway struct {
-	Kind      string      `json:"kind,omitempty"`
+	Kind      string      `json:"kind"`
 	Namespace string      `json:"namespace"`
 	Name      string      `json:"name"`
 	Spec      GatewaySpec `json:"spec"`
@@ -21,7 +21,7 @@ type Gateway struct {
 
 type GatewaySpec struct {
 	GatewayClassName gwv1.ObjectName       `json:"gatewayClassName"`
-	Listeners        []Listener            `json:"listeners" copier:"-"`
+	Listeners        []Listener            `json:"listeners,omitempty" copier:"-"`
 	Addresses        []gwv1.GatewayAddress `json:"addresses,omitempty"`
 }
 
@@ -46,12 +46,12 @@ type FrontendTLSValidation struct {
 
 // Certificate is the certificate configuration
 type Certificate struct {
-	CertChain  string `json:"certChain,omitempty"`
-	PrivateKey string `json:"privateKey,omitempty"`
+	CertChain  string `json:"certChain"`
+	PrivateKey string `json:"privateKey"`
 }
 
 type HTTPRoute struct {
-	Kind      string        `json:"kind,omitempty"`
+	Kind      string        `json:"kind"`
 	Namespace string        `json:"namespace"`
 	Name      string        `json:"name"`
 	Spec      HTTPRouteSpec `json:"spec"`
@@ -71,7 +71,7 @@ type HTTPRouteRule struct {
 }
 
 type GRPCRoute struct {
-	Kind      string        `json:"kind,omitempty"`
+	Kind      string        `json:"kind"`
 	Namespace string        `json:"namespace"`
 	Name      string        `json:"name"`
 	Spec      GRPCRouteSpec `json:"spec,omitempty"`
@@ -91,7 +91,7 @@ type GRPCRouteRule struct {
 }
 
 type TCPRoute struct {
-	Kind      string       `json:"kind,omitempty"`
+	Kind      string       `json:"kind"`
 	Namespace string       `json:"namespace"`
 	Name      string       `json:"name"`
 	Spec      TCPRouteSpec `json:"spec"`
@@ -108,14 +108,14 @@ type TCPRouteRule struct {
 }
 
 type TLSRoute struct {
-	Kind      string                  `json:"kind,omitempty"`
+	Kind      string                  `json:"kind"`
 	Namespace string                  `json:"namespace"`
 	Name      string                  `json:"name"`
 	Spec      gwv1alpha2.TLSRouteSpec `json:"spec"`
 }
 
 type UDPRoute struct {
-	Kind      string       `json:"kind,omitempty"`
+	Kind      string       `json:"kind"`
 	Namespace string       `json:"namespace"`
 	Name      string       `json:"name"`
 	Spec      UDPRouteSpec `json:"spec"`

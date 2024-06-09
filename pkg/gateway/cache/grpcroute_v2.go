@@ -54,11 +54,47 @@ func (c *GatewayProcessorV2) processGRPCRoutes() {
 				continue
 			}
 
+			if len(r2.Filters) > 0 {
+				filters := make([]gwv1.GRPCRouteFilter, 0)
+				for _, f := range r2.Filters {
+					f := f
+					switch f.Type {
+					case gwv1.GRPCRouteFilterRequestMirror:
+						if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
+							filters = append(filters, *f.DeepCopy())
+						}
+					default:
+						filters = append(filters, *f.DeepCopy())
+					}
+				}
+
+				r2.Filters = filters
+			}
+
 			r2.BackendRefs = make([]gwv1.GRPCBackendRef, 0)
 			for _, bk := range rule.BackendRefs {
 				bk := bk
 				if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
-					r2.BackendRefs = append(r2.BackendRefs, *bk.DeepCopy())
+					bkCopy := *bk.DeepCopy()
+
+					if len(bkCopy.Filters) > 0 {
+						filters := make([]gwv1.GRPCRouteFilter, 0)
+						for _, f := range bkCopy.Filters {
+							f := f
+							switch f.Type {
+							case gwv1.GRPCRouteFilterRequestMirror:
+								if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
+									filters = append(filters, *f.DeepCopy())
+								}
+							default:
+								filters = append(filters, *f.DeepCopy())
+							}
+						}
+
+						bkCopy.Filters = filters
+					}
+
+					r2.BackendRefs = append(r2.BackendRefs, bkCopy)
 				}
 			}
 
