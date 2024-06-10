@@ -57,11 +57,18 @@ func (c *GatewayProcessorV2) processUDPRoutes() {
 				continue
 			}
 
-			r2.BackendRefs = make([]gwv1alpha2.BackendRef, 0)
+			r2.BackendRefs = make([]v2.BackendRef, 0)
 			for _, backend := range rule.BackendRefs {
 				backend := backend
 				if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
-					r2.BackendRefs = append(r2.BackendRefs, *backend.DeepCopy())
+					r2.BackendRefs = append(r2.BackendRefs, v2.BackendRef{
+						Kind: "Backend",
+						Name: svcPort.String(),
+					})
+
+					c.services[svcPort.String()] = serviceContextV2{
+						svcPortName: *svcPort,
+					}
 				}
 			}
 

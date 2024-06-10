@@ -55,46 +55,27 @@ func (c *GatewayProcessorV2) processGRPCRoutes() {
 			}
 
 			if len(r2.Filters) > 0 {
-				filters := make([]gwv1.GRPCRouteFilter, 0)
-				for _, f := range r2.Filters {
-					f := f
-					switch f.Type {
-					case gwv1.GRPCRouteFilterRequestMirror:
-						if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
-							filters = append(filters, *f.DeepCopy())
-						}
-					default:
-						filters = append(filters, *f.DeepCopy())
-					}
-				}
-
-				r2.Filters = filters
+				r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters)
 			}
 
-			r2.BackendRefs = make([]gwv1.GRPCBackendRef, 0)
+			r2.BackendRefs = make([]v2.GRPCBackendRef, 0)
 			for _, bk := range rule.BackendRefs {
-				bk := bk
 				if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
-					bkCopy := *bk.DeepCopy()
-
-					if len(bkCopy.Filters) > 0 {
-						filters := make([]gwv1.GRPCRouteFilter, 0)
-						for _, f := range bkCopy.Filters {
-							f := f
-							switch f.Type {
-							case gwv1.GRPCRouteFilterRequestMirror:
-								if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
-									filters = append(filters, *f.DeepCopy())
-								}
-							default:
-								filters = append(filters, *f.DeepCopy())
-							}
-						}
-
-						bkCopy.Filters = filters
+					b2 := v2.GRPCBackendRef{
+						Kind:   "Backend",
+						Name:   svcPort.String(),
+						Weight: backendWeight(bk.BackendRef),
 					}
 
-					r2.BackendRefs = append(r2.BackendRefs, bkCopy)
+					if len(bk.Filters) > 0 {
+						b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters)
+					}
+
+					r2.BackendRefs = append(r2.BackendRefs, b2)
+
+					c.services[svcPort.String()] = serviceContextV2{
+						svcPortName: *svcPort,
+					}
 				}
 			}
 
@@ -113,6 +94,39 @@ func (c *GatewayProcessorV2) processGRPCRoutes() {
 	}
 
 	c.resources = append(c.resources, routes...)
+}
+
+func (c *GatewayProcessorV2) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter) []v2.GRPCRouteFilter {
+	filters := make([]v2.GRPCRouteFilter, 0)
+	for _, f := range routeFilters {
+		f := f
+		switch f.Type {
+		case gwv1.GRPCRouteFilterRequestMirror:
+			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
+				filters = append(filters, v2.GRPCRouteFilter{
+					Type: gwv1.GRPCRouteFilterRequestMirror,
+					RequestMirror: &v2.HTTPRequestMirrorFilter{
+						BackendRef: v2.BackendRef{
+							Kind:   "Backend",
+							Name:   svcPort.String(),
+							Weight: 1,
+						},
+					},
+				})
+				c.services[svcPort.String()] = serviceContextV2{
+					svcPortName: *svcPort,
+				}
+			}
+		default:
+			f2 := v2.GRPCRouteFilter{}
+			if err := copier.CopyWithOption(&f2, &f, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+				continue
+			}
+			filters = append(filters, f2)
+		}
+	}
+
+	return filters
 }
 
 func (c *GatewayProcessorV2) ignoreGRPCRoute(grpcRoute *gwv1.GRPCRoute, rsh status.RouteStatusObject) bool {

@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"k8s.io/utils/ptr"
+
+	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
+
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -520,4 +524,17 @@ func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.End
 	}
 
 	return endpoints
+}
+
+func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []v2.BackendTarget {
+	targets := make([]v2.BackendTarget, 0)
+	for ep := range endpointSet {
+		targets = append(targets, v2.BackendTarget{
+			Address: ep.address,
+			Port:    ptr.To(ep.port),
+			Weight:  1,
+		})
+	}
+
+	return targets
 }

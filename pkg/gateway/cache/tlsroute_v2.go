@@ -2,6 +2,9 @@ package cache
 
 import (
 	"context"
+	"fmt"
+
+	"k8s.io/utils/ptr"
 
 	"github.com/jinzhu/copier"
 	"k8s.io/apimachinery/pkg/fields"
@@ -25,6 +28,8 @@ func (c *GatewayProcessorV2) processTLSRoutes() {
 		return
 	}
 
+	routes := make([]interface{}, 0)
+	backends := make([]interface{}, 0)
 	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := route.NewRouteStatusHolder(
 			tlsRoute,
@@ -45,8 +50,72 @@ func (c *GatewayProcessorV2) processTLSRoutes() {
 			continue
 		}
 
-		c.resources = append(c.resources, t2)
+		t2.Spec.Rules = make([]v2.TLSRouteRule, 0)
+		for _, rule := range tlsRoute.Spec.Rules {
+			rule := rule
+			r2 := &v2.TLSRouteRule{}
+			if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+				log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
+				continue
+			}
+
+			r2.BackendRefs = make([]v2.BackendRef, 0)
+			for _, backend := range rule.BackendRefs {
+				name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
+
+				r2.BackendRefs = append(r2.BackendRefs, v2.BackendRef{
+					Kind:   "Backend",
+					Name:   name,
+					Weight: backendWeight(backend),
+				})
+				backends = append(backends, v2.Backend{
+					Kind: "Backend",
+					ObjectMeta: v2.ObjectMeta{
+						Name: name,
+					},
+					Spec: v2.BackendSpec{
+						Targets: []v2.BackendTarget{
+							{
+								Address: string(backend.Name),
+								Port:    tlsBackendPort(backend.Port),
+							},
+						},
+					},
+				})
+			}
+
+			if len(r2.BackendRefs) == 0 {
+				continue
+			}
+
+			t2.Spec.Rules = append(t2.Spec.Rules, *r2)
+		}
+
+		if len(t2.Spec.Rules) == 0 {
+			continue
+		}
+
+		routes = append(routes, t2)
 	}
+
+	c.resources = append(c.resources, routes...)
+	c.resources = append(c.resources, backends...)
+}
+
+func formatTLSPort(port *gwv1alpha2.PortNumber) string {
+	if port == nil {
+		return ""
+	}
+
+	return fmt.Sprintf("-%d", *port)
+}
+
+func tlsBackendPort(port *gwv1alpha2.PortNumber) *int32 {
+	if port == nil {
+		return nil
+	}
+
+	return ptr.To(int32(*port))
 }
 
 func (c *GatewayProcessorV2) ignoreTLSRoute(tlsRoute *gwv1alpha2.TLSRoute, rsh status.RouteStatusObject) bool {
