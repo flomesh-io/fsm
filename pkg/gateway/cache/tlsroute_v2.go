@@ -19,13 +19,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessorV2) processTLSRoutes() {
+func (c *GatewayProcessorV2) processTLSRoutes() []interface{} {
 	list := &gwv1alpha2.TLSRouteList{}
 	if err := c.cache.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
-		return
+		return nil
 	}
 
 	routes := make([]interface{}, 0)
@@ -98,8 +98,11 @@ func (c *GatewayProcessorV2) processTLSRoutes() {
 		routes = append(routes, t2)
 	}
 
-	c.resources = append(c.resources, routes...)
-	c.resources = append(c.resources, backends...)
+	resources := make([]interface{}, 0)
+	resources = append(resources, routes...)
+	resources = append(resources, backends...)
+
+	return resources
 }
 
 func formatTLSPort(port *gwv1alpha2.PortNumber) string {

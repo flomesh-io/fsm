@@ -9,7 +9,6 @@ import (
 )
 
 type Config struct {
-	//Gateway     *Gateway          `json:"gateway"`
 	Resources []interface{}     `json:"resources" hash:"set"`
 	Secrets   map[string]string `json:"secrets"`
 	Version   string            `json:"version" hash:"ignore"`
@@ -20,6 +19,10 @@ type ObjectMeta struct {
 	Name      string `json:"name"`
 }
 
+type CommonRouteSpec struct {
+	ParentRefs []gwv1.ParentReference `json:"parentRefs,omitempty" hash:"set"`
+}
+
 type Gateway struct {
 	Kind       string      `json:"kind"`
 	ObjectMeta ObjectMeta  `json:"metadata"`
@@ -28,7 +31,7 @@ type Gateway struct {
 
 type GatewaySpec struct {
 	GatewayClassName gwv1.ObjectName       `json:"gatewayClassName"`
-	Listeners        []Listener            `json:"listeners,omitempty" copier:"-"`
+	Listeners        []Listener            `json:"listeners,omitempty" copier:"-" hash:"set"`
 	Addresses        []gwv1.GatewayAddress `json:"addresses,omitempty"`
 }
 
@@ -42,13 +45,13 @@ type Listener struct {
 
 type GatewayTLSConfig struct {
 	Mode               *gwv1.TLSModeType                           `json:"mode,omitempty"`
-	Certificates       []map[string]string                         `json:"certificates,omitempty" copier:"-"`
+	Certificates       []map[string]string                         `json:"certificates,omitempty" copier:"-" hash:"set"`
 	FrontendValidation *FrontendTLSValidation                      `json:"frontendValidation,omitempty" copier:"-"`
 	Options            map[gwv1.AnnotationKey]gwv1.AnnotationValue `json:"options,omitempty"`
 }
 
 type FrontendTLSValidation struct {
-	CACertificates []map[string]string `json:"caCertificates,omitempty" copier:"-"`
+	CACertificates []map[string]string `json:"caCertificates,omitempty" copier:"-" hash:"set"`
 }
 
 // Certificate is the certificate configuration
@@ -64,14 +67,14 @@ type HTTPRoute struct {
 }
 
 type HTTPRouteSpec struct {
-	gwv1.CommonRouteSpec `json:",inline"`
-	Hostnames            []gwv1.Hostname `json:"hostnames,omitempty"`
-	Rules                []HTTPRouteRule `json:"rules,omitempty" copier:"-"`
+	CommonRouteSpec `json:",inline"`
+	Hostnames       []gwv1.Hostname `json:"hostnames,omitempty" hash:"set"`
+	Rules           []HTTPRouteRule `json:"rules,omitempty" copier:"-" hash:"set"`
 }
 type HTTPRouteRule struct {
-	Matches            []gwv1.HTTPRouteMatch    `json:"matches,omitempty"`
-	Filters            []HTTPRouteFilter        `json:"filters,omitempty"`
-	BackendRefs        []HTTPBackendRef         `json:"backendRefs,omitempty" copier:"-"`
+	Matches            []gwv1.HTTPRouteMatch    `json:"matches,omitempty" hash:"set"`
+	Filters            []HTTPRouteFilter        `json:"filters,omitempty" hash:"set"`
+	BackendRefs        []HTTPBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 	Timeouts           *gwv1.HTTPRouteTimeouts  `json:"timeouts,omitempty"`
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
 }
@@ -83,15 +86,15 @@ type GRPCRoute struct {
 }
 
 type GRPCRouteSpec struct {
-	gwv1.CommonRouteSpec `json:",inline"`
-	Hostnames            []gwv1.Hostname `json:"hostnames,omitempty"`
-	Rules                []GRPCRouteRule `json:"rules,omitempty" copier:"-"`
+	CommonRouteSpec `json:",inline"`
+	Hostnames       []gwv1.Hostname `json:"hostnames,omitempty" hash:"set"`
+	Rules           []GRPCRouteRule `json:"rules,omitempty" copier:"-" hash:"set"`
 }
 
 type GRPCRouteRule struct {
-	Matches            []gwv1.GRPCRouteMatch    `json:"matches,omitempty"`
-	Filters            []GRPCRouteFilter        `json:"filters,omitempty"`
-	BackendRefs        []GRPCBackendRef         `json:"backendRefs,omitempty" copier:"-"`
+	Matches            []gwv1.GRPCRouteMatch    `json:"matches,omitempty" hash:"set"`
+	Filters            []GRPCRouteFilter        `json:"filters,omitempty" hash:"set"`
+	BackendRefs        []GRPCBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
 }
 
@@ -103,12 +106,12 @@ type TCPRoute struct {
 
 // TCPRouteSpec defines the desired state of TCPRoute
 type TCPRouteSpec struct {
-	gwv1alpha2.CommonRouteSpec `json:",inline"`
-	Rules                      []TCPRouteRule `json:"rules" copier:"-"`
+	CommonRouteSpec `json:",inline"`
+	Rules           []TCPRouteRule `json:"rules" copier:"-" hash:"set"`
 }
 
 type TCPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-"`
+	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
 type TLSRoute struct {
@@ -119,13 +122,13 @@ type TLSRoute struct {
 
 // TLSRouteSpec defines the desired state of a TLSRoute resource.
 type TLSRouteSpec struct {
-	gwv1alpha2.CommonRouteSpec `json:",inline"`
-	Hostnames                  []gwv1alpha2.Hostname `json:"hostnames,omitempty"`
-	Rules                      []TLSRouteRule        `json:"rules" copier:"-"`
+	CommonRouteSpec `json:",inline"`
+	Hostnames       []gwv1alpha2.Hostname `json:"hostnames,omitempty" hash:"set"`
+	Rules           []TLSRouteRule        `json:"rules" copier:"-" hash:"set"`
 }
 
 type TLSRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty"`
+	BackendRefs []BackendRef `json:"backendRefs,omitempty" hash:"set"`
 }
 
 type UDPRoute struct {
@@ -135,19 +138,19 @@ type UDPRoute struct {
 }
 
 type UDPRouteSpec struct {
-	gwv1alpha2.CommonRouteSpec `json:",inline"`
-	Rules                      []UDPRouteRule `json:"rules" copier:"-"`
+	CommonRouteSpec `json:",inline"`
+	Rules           []UDPRouteRule `json:"rules" copier:"-" hash:"set"`
 }
 
 type UDPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-"`
+	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
 type HTTPBackendRef struct {
 	Kind    string            `json:"kind"`
 	Name    string            `json:"name"`
 	Weight  int32             `json:"weight,omitempty"`
-	Filters []HTTPRouteFilter `json:"filters,omitempty"`
+	Filters []HTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
 type HTTPRouteFilter struct {
@@ -168,7 +171,7 @@ type GRPCBackendRef struct {
 	Kind    string            `json:"kind"`
 	Name    string            `json:"name"`
 	Weight  int32             `json:"weight,omitempty"`
-	Filters []GRPCRouteFilter `json:"filters,omitempty"`
+	Filters []GRPCRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
 type GRPCRouteFilter struct {
@@ -193,7 +196,7 @@ type Backend struct {
 }
 
 type BackendSpec struct {
-	Targets []BackendTarget `json:"targets,omitempty"`
+	Targets []BackendTarget `json:"targets,omitempty" hash:"set"`
 }
 
 type BackendTarget struct {

@@ -16,13 +16,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessorV2) processTCPRoutes() {
+func (c *GatewayProcessorV2) processTCPRoutes() []interface{} {
 	list := &gwv1alpha2.TCPRouteList{}
 	if err := c.cache.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
-		return
+		return nil
 	}
 
 	routes := make([]interface{}, 0)
@@ -85,7 +85,8 @@ func (c *GatewayProcessorV2) processTCPRoutes() {
 		routes = append(routes, t2)
 	}
 
-	c.resources = append(c.resources, routes...)
+	//c.resources = append(c.resources, routes...)
+	return routes
 }
 
 func (c *GatewayProcessorV2) ignoreTCPRoute(tcpRoute *gwv1alpha2.TCPRoute, rsh status.RouteStatusObject) bool {

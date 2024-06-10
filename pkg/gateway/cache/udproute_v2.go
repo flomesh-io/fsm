@@ -18,13 +18,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessorV2) processUDPRoutes() {
+func (c *GatewayProcessorV2) processUDPRoutes() []interface{} {
 	list := &gwv1alpha2.UDPRouteList{}
 	if err := c.cache.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayUDPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
-		return
+		return nil
 	}
 
 	routes := make([]interface{}, 0)
@@ -86,7 +86,8 @@ func (c *GatewayProcessorV2) processUDPRoutes() {
 		routes = append(routes, u2)
 	}
 
-	c.resources = append(c.resources, routes...)
+	//c.resources = append(c.resources, routes...)
+	return routes
 }
 
 func (c *GatewayProcessorV2) ignoreUDPRoute(udpRoute *gwv1alpha2.UDPRoute, rsh status.RouteStatusObject) bool {

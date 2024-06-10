@@ -15,13 +15,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessorV2) processHTTPRoutes() {
+func (c *GatewayProcessorV2) processHTTPRoutes() []interface{} {
 	list := &gwv1.HTTPRouteList{}
 	if err := c.cache.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayHTTPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
-		return
+		return nil
 	}
 
 	routes := make([]interface{}, 0)
@@ -94,7 +94,9 @@ func (c *GatewayProcessorV2) processHTTPRoutes() {
 		routes = append(routes, h2)
 	}
 
-	c.resources = append(c.resources, routes...)
+	//c.resources = append(c.resources, routes...)
+
+	return routes
 }
 
 func (c *GatewayProcessorV2) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter) []v2.HTTPRouteFilter {

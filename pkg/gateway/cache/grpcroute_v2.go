@@ -15,13 +15,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessorV2) processGRPCRoutes() {
+func (c *GatewayProcessorV2) processGRPCRoutes() []interface{} {
 	list := &gwv1.GRPCRouteList{}
 	if err := c.cache.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
-		return
+		return nil
 	}
 
 	routes := make([]interface{}, 0)
@@ -93,7 +93,8 @@ func (c *GatewayProcessorV2) processGRPCRoutes() {
 		routes = append(routes, g2)
 	}
 
-	c.resources = append(c.resources, routes...)
+	//c.resources = append(c.resources, routes...)
+	return routes
 }
 
 func (c *GatewayProcessorV2) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter) []v2.GRPCRouteFilter {

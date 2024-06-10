@@ -27,23 +27,19 @@ import (
 )
 
 type GatewayProcessorV2 struct {
-	cache          *GatewayCache
-	gateway        *gwv1.Gateway
-	validListeners []gwtypes.Listener
-	resources      []interface{}
-	secretFiles    map[string]string
-	services       map[string]serviceContextV2
-	upstreams      calculateBackendTargetsFunc
+	cache       *GatewayCache
+	gateway     *gwv1.Gateway
+	secretFiles map[string]string
+	services    map[string]serviceContextV2
+	upstreams   calculateBackendTargetsFunc
 }
 
 func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayProcessorV2 {
 	p := &GatewayProcessorV2{
-		cache:          cache,
-		gateway:        gateway,
-		validListeners: gwutils.GetValidListenersForGateway(gateway),
-		resources:      []interface{}{},
-		secretFiles:    map[string]string{},
-		services:       map[string]serviceContextV2{},
+		cache:       cache,
+		gateway:     gateway,
+		secretFiles: map[string]string{},
+		services:    map[string]serviceContextV2{},
 	}
 
 	if cache.useEndpointSlices {
@@ -57,7 +53,6 @@ func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayP
 
 func (c *GatewayProcessorV2) build() *v2.Config {
 	cfg := &v2.Config{
-		//Gateway:   gateway,
 		Resources: c.processResources(),
 		Secrets:   c.secretFiles,
 	}
@@ -66,18 +61,32 @@ func (c *GatewayProcessorV2) build() *v2.Config {
 	return cfg
 }
 
+func (c *GatewayProcessorV2) processResources() []interface{} {
+	resources := make([]interface{}, 0)
+
+	resources = append(resources, c.processGateway())
+	resources = append(resources, c.processHTTPRoutes()...)
+	resources = append(resources, c.processGRPCRoutes()...)
+	resources = append(resources, c.processTLSRoutes()...)
+	resources = append(resources, c.processTCPRoutes()...)
+	resources = append(resources, c.processUDPRoutes()...)
+	resources = append(resources, c.processBackends()...)
+
+	return resources
+}
+
 func (c *GatewayProcessorV2) processGateway() *v2.Gateway {
 	g2 := &v2.Gateway{}
 
 	err := copier.CopyWithOption(g2, c.gateway, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 	if err != nil {
 		log.Error().Msgf("Failed to copy gateway: %v", err)
-		return &v2.Gateway{}
+		return nil
 	}
 
 	// replace listeners with valid listeners
 	g2.Spec.Listeners = make([]v2.Listener, 0)
-	for _, l := range c.validListeners {
+	for _, l := range gwutils.GetValidListenersForGateway(c.gateway) {
 		v2l := &v2.Listener{
 			Name:     l.Name,
 			Hostname: l.Hostname,
@@ -185,21 +194,7 @@ func (c *GatewayProcessorV2) processCACerts(l gwtypes.Listener, v2l *v2.Listener
 	}
 }
 
-func (c *GatewayProcessorV2) processResources() []interface{} {
-	c.resources = append(c.resources, c.processGateway())
-
-	c.processHTTPRoutes()
-	c.processGRPCRoutes()
-	c.processTLSRoutes()
-	c.processTCPRoutes()
-	c.processUDPRoutes()
-
-	c.processBackends()
-
-	return c.resources
-}
-
-func (c *GatewayProcessorV2) processBackends() {
+func (c *GatewayProcessorV2) processBackends() []interface{} {
 	//configs := make(map[string]fgw.ServiceConfig)
 	backends := make([]interface{}, 0)
 	for svcPortName, svcInfo := range c.services {
@@ -240,7 +235,9 @@ func (c *GatewayProcessorV2) processBackends() {
 
 	//return configs
 
-	c.resources = append(c.resources, backends...)
+	//c.resources = append(c.resources, backends...)
+
+	return backends
 }
 
 func (c *GatewayProcessorV2) calculateEndpoints(svc *corev1.Service, port *int32) []v2.BackendTarget {

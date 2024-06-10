@@ -1193,7 +1193,7 @@ spec:
   rules:
   - backendRefs:
     - name: tcproute
-      port: 8080
+      port: 8078
 EOF
 ```
 
