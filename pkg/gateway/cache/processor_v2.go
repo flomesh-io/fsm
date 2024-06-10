@@ -211,31 +211,26 @@ func (c *GatewayProcessorV2) processBackends() []interface{} {
 			continue
 		}
 
-		//svcCfg := &fgw.ServiceConfig{
-		//	Endpoints: c.calculateEndpoints(svc, svcInfo.svcPortName.Port),
-		//}
-
-		bk := &v2.Backend{
-			Kind: "Backend",
-			ObjectMeta: v2.ObjectMeta{
-				Name: svcPortName,
-			},
-			Spec: v2.BackendSpec{
-				Targets: c.calculateEndpoints(svc, svcInfo.svcPortName.Port),
-			},
+		// don't create Backend resource if there are no endpoints
+		targets := c.calculateEndpoints(svc, svcInfo.svcPortName.Port)
+		if len(targets) == 0 {
+			continue
 		}
 
 		//for _, enricher := range c.getServicePolicyEnrichers(svc) {
 		//    enricher.Enrich(svcPortName, svcCfg)
 		//}
 
-		//configs[svcPortName] = *svcCfg
-		backends = append(backends, bk)
+		backends = append(backends, &v2.Backend{
+			Kind: "Backend",
+			ObjectMeta: v2.ObjectMeta{
+				Name: svcPortName,
+			},
+			Spec: v2.BackendSpec{
+				Targets: targets,
+			},
+		})
 	}
-
-	//return configs
-
-	//c.resources = append(c.resources, backends...)
 
 	return backends
 }
