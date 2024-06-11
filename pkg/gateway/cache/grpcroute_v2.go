@@ -38,63 +38,78 @@ func (c *GatewayProcessorV2) processGRPCRoutes() []interface{} {
 			continue
 		}
 
-		g2 := &v2.GRPCRoute{}
-		err := copier.CopyWithOption(g2, grpcRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true})
-		if err != nil {
-			log.Error().Msgf("Failed to copy GRPCRoute: %v", err)
-			continue
+		if g2 := c.toV2GRPCRoute(grpcRoute); g2 != nil {
+			routes = append(routes, g2)
 		}
-
-		g2.Spec.Rules = make([]v2.GRPCRouteRule, 0)
-		for _, rule := range grpcRoute.Spec.Rules {
-			rule := rule
-			r2 := &v2.GRPCRouteRule{}
-			if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
-				log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
-				continue
-			}
-
-			if len(r2.Filters) > 0 {
-				r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters)
-			}
-
-			r2.BackendRefs = make([]v2.GRPCBackendRef, 0)
-			for _, bk := range rule.BackendRefs {
-				if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
-					b2 := v2.GRPCBackendRef{
-						Kind:   "Backend",
-						Name:   svcPort.String(),
-						Weight: backendWeight(bk.BackendRef),
-					}
-
-					if len(bk.Filters) > 0 {
-						b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters)
-					}
-
-					r2.BackendRefs = append(r2.BackendRefs, b2)
-
-					c.services[svcPort.String()] = serviceContextV2{
-						svcPortName: *svcPort,
-					}
-				}
-			}
-
-			if len(r2.BackendRefs) == 0 {
-				continue
-			}
-
-			g2.Spec.Rules = append(g2.Spec.Rules, *r2)
-		}
-
-		if len(g2.Spec.Rules) == 0 {
-			continue
-		}
-
-		routes = append(routes, g2)
 	}
 
-	//c.resources = append(c.resources, routes...)
 	return routes
+}
+
+func (c *GatewayProcessorV2) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute) *v2.GRPCRoute {
+	g2 := &v2.GRPCRoute{}
+	if err := copier.CopyWithOption(g2, grpcRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy GRPCRoute: %v", err)
+		return nil
+	}
+
+	g2.Spec.Rules = make([]v2.GRPCRouteRule, 0)
+	for _, rule := range grpcRoute.Spec.Rules {
+		rule := rule
+		if r2 := c.toV2GRPCRouteRule(grpcRoute, rule); r2 != nil {
+			g2.Spec.Rules = append(g2.Spec.Rules, *r2)
+		}
+	}
+
+	if len(g2.Spec.Rules) == 0 {
+		return nil
+	}
+
+	return g2
+}
+
+func (c *GatewayProcessorV2) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule) *v2.GRPCRouteRule {
+	r2 := &v2.GRPCRouteRule{}
+	if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
+		return nil
+	}
+
+	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule.BackendRefs)
+	if len(r2.BackendRefs) == 0 {
+		return nil
+	}
+
+	if len(r2.Filters) > 0 {
+		r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters)
+	}
+
+	return r2
+}
+
+func (c *GatewayProcessorV2) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, refs []gwv1.GRPCBackendRef) []v2.GRPCBackendRef {
+	backendRefs := make([]v2.GRPCBackendRef, 0)
+	for _, bk := range refs {
+		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+			b2 := v2.GRPCBackendRef{
+				Kind:   "Backend",
+				Name:   svcPort.String(),
+				Weight: backendWeight(bk.BackendRef),
+			}
+
+			if len(bk.Filters) > 0 {
+				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters)
+			}
+
+			backendRefs = append(backendRefs, b2)
+
+			c.services[svcPort.String()] = serviceContextV2{
+				svcPortName: *svcPort,
+			}
+		}
+	}
+
+	return backendRefs
 }
 
 func (c *GatewayProcessorV2) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter) []v2.GRPCRouteFilter {

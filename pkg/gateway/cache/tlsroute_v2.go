@@ -28,8 +28,7 @@ func (c *GatewayProcessorV2) processTLSRoutes() []interface{} {
 		return nil
 	}
 
-	routes := make([]interface{}, 0)
-	backends := make([]interface{}, 0)
+	resources := make([]interface{}, 0)
 	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := route.NewRouteStatusHolder(
 			tlsRoute,
@@ -43,66 +42,87 @@ func (c *GatewayProcessorV2) processTLSRoutes() []interface{} {
 			continue
 		}
 
-		t2 := &v2.TLSRoute{}
-		err := copier.CopyWithOption(t2, tlsRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true})
-		if err != nil {
-			log.Error().Msgf("Failed to copy TLSRoute: %v", err)
-			continue
+		t2, bks := c.toV2TLSRoute(tlsRoute)
+		if t2 != nil {
+			resources = append(resources, t2)
+			resources = append(resources, bks...)
 		}
-
-		t2.Spec.Rules = make([]v2.TLSRouteRule, 0)
-		for _, rule := range tlsRoute.Spec.Rules {
-			rule := rule
-			r2 := &v2.TLSRouteRule{}
-			if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
-				log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
-				continue
-			}
-
-			r2.BackendRefs = make([]v2.BackendRef, 0)
-			for _, backend := range rule.BackendRefs {
-				name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
-
-				r2.BackendRefs = append(r2.BackendRefs, v2.BackendRef{
-					Kind:   "Backend",
-					Name:   name,
-					Weight: backendWeight(backend),
-				})
-				backends = append(backends, v2.Backend{
-					Kind: "Backend",
-					ObjectMeta: v2.ObjectMeta{
-						Name: name,
-					},
-					Spec: v2.BackendSpec{
-						Targets: []v2.BackendTarget{
-							{
-								Address: string(backend.Name),
-								Port:    tlsBackendPort(backend.Port),
-							},
-						},
-					},
-				})
-			}
-
-			if len(r2.BackendRefs) == 0 {
-				continue
-			}
-
-			t2.Spec.Rules = append(t2.Spec.Rules, *r2)
-		}
-
-		if len(t2.Spec.Rules) == 0 {
-			continue
-		}
-
-		routes = append(routes, t2)
 	}
 
-	resources := make([]interface{}, 0)
-	resources = append(resources, routes...)
-	resources = append(resources, backends...)
-
 	return resources
+}
+
+func (c *GatewayProcessorV2) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute) (*v2.TLSRoute, []interface{}) {
+	t2 := &v2.TLSRoute{}
+	if err := copier.CopyWithOption(t2, tlsRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy TLSRoute: %v", err)
+		return nil, nil
+	}
+
+	backends := make([]interface{}, 0)
+	t2.Spec.Rules = make([]v2.TLSRouteRule, 0)
+	for _, rule := range tlsRoute.Spec.Rules {
+		rule := rule
+		r2, bks := c.toV2TLSRouteRule(tlsRoute, rule)
+		if r2 != nil {
+			t2.Spec.Rules = append(t2.Spec.Rules, *r2)
+			backends = append(backends, bks...)
+		}
+	}
+
+	if len(t2.Spec.Rules) == 0 {
+		return nil, nil
+	}
+
+	return t2, backends
+}
+
+func (c *GatewayProcessorV2) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule) (*v2.TLSRouteRule, []interface{}) {
+	r2 := &v2.TLSRouteRule{}
+	if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
+		return nil, nil
+	}
+
+	backendRefs, bks := c.toV2TLSBackendRefs(tlsRoute, rule.BackendRefs)
+	if len(backendRefs) == 0 {
+		return nil, nil
+	}
+
+	r2.BackendRefs = backendRefs
+
+	return r2, bks
+}
+
+func (c *GatewayProcessorV2) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, refs []gwv1alpha2.BackendRef) ([]v2.BackendRef, []interface{}) {
+	backendRefs := make([]v2.BackendRef, 0)
+	backends := make([]interface{}, 0)
+
+	for _, backend := range refs {
+		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
+
+		backendRefs = append(backendRefs, v2.BackendRef{
+			Kind:   "Backend",
+			Name:   name,
+			Weight: backendWeight(backend),
+		})
+		backends = append(backends, v2.Backend{
+			Kind: "Backend",
+			ObjectMeta: v2.ObjectMeta{
+				Name: name,
+			},
+			Spec: v2.BackendSpec{
+				Targets: []v2.BackendTarget{
+					{
+						Address: string(backend.Name),
+						Port:    tlsBackendPort(backend.Port),
+					},
+				},
+			},
+		})
+	}
+
+	return backendRefs, backends
 }
 
 func formatTLSPort(port *gwv1alpha2.PortNumber) string {

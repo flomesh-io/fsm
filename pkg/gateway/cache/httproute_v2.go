@@ -38,65 +38,79 @@ func (c *GatewayProcessorV2) processHTTPRoutes() []interface{} {
 			continue
 		}
 
-		h2 := &v2.HTTPRoute{}
-		err := copier.CopyWithOption(h2, httpRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true})
-		if err != nil {
-			log.Error().Msgf("Failed to copy HTTPRoute: %v", err)
-			continue
+		if h2 := c.toV2HTTPRoute(httpRoute); h2 != nil {
+			routes = append(routes, h2)
 		}
-
-		h2.Spec.Rules = make([]v2.HTTPRouteRule, 0)
-		for _, rule := range httpRoute.Spec.Rules {
-			rule := rule
-			r2 := &v2.HTTPRouteRule{}
-			if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
-				log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
-				continue
-			}
-
-			if len(rule.Filters) > 0 {
-				r2.Filters = c.toV2HTTPRouteFilters(httpRoute, rule.Filters)
-			}
-
-			r2.BackendRefs = make([]v2.HTTPBackendRef, 0)
-			for _, bk := range rule.BackendRefs {
-				if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
-					//bkCopy := bk.DeepCopy()
-					b2 := v2.HTTPBackendRef{
-						Kind:   "Backend",
-						Name:   svcPort.String(),
-						Weight: backendWeight(bk.BackendRef),
-					}
-
-					if len(bk.Filters) > 0 {
-						b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters)
-					}
-
-					r2.BackendRefs = append(r2.BackendRefs, b2)
-
-					c.services[svcPort.String()] = serviceContextV2{
-						svcPortName: *svcPort,
-					}
-				}
-			}
-
-			if len(r2.BackendRefs) == 0 {
-				continue
-			}
-
-			h2.Spec.Rules = append(h2.Spec.Rules, *r2)
-		}
-
-		if len(h2.Spec.Rules) == 0 {
-			continue
-		}
-
-		routes = append(routes, h2)
 	}
 
-	//c.resources = append(c.resources, routes...)
-
 	return routes
+}
+
+func (c *GatewayProcessorV2) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute) *v2.HTTPRoute {
+	h2 := &v2.HTTPRoute{}
+	if err := copier.CopyWithOption(h2, httpRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy HTTPRoute: %v", err)
+		return nil
+	}
+
+	h2.Spec.Rules = make([]v2.HTTPRouteRule, 0)
+	for _, rule := range httpRoute.Spec.Rules {
+		rule := rule
+		if r2 := c.toV2HTTPRouteRule(httpRoute, rule); r2 != nil {
+			h2.Spec.Rules = append(h2.Spec.Rules, *r2)
+		}
+	}
+
+	if len(h2.Spec.Rules) == 0 {
+		return nil
+	}
+
+	return h2
+}
+
+func (c *GatewayProcessorV2) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule) *v2.HTTPRouteRule {
+	r2 := &v2.HTTPRouteRule{}
+	if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
+		return nil
+	}
+
+	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule.BackendRefs)
+	if len(r2.BackendRefs) == 0 {
+		return nil
+	}
+
+	if len(rule.Filters) > 0 {
+		r2.Filters = c.toV2HTTPRouteFilters(httpRoute, rule.Filters)
+	}
+
+	return r2
+}
+
+func (c *GatewayProcessorV2) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, refs []gwv1.HTTPBackendRef) []v2.HTTPBackendRef {
+	backendRefs := make([]v2.HTTPBackendRef, 0)
+	for _, bk := range refs {
+		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
+			//bkCopy := bk.DeepCopy()
+			b2 := v2.HTTPBackendRef{
+				Kind:   "Backend",
+				Name:   svcPort.String(),
+				Weight: backendWeight(bk.BackendRef),
+			}
+
+			if len(bk.Filters) > 0 {
+				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters)
+			}
+
+			backendRefs = append(backendRefs, b2)
+
+			c.services[svcPort.String()] = serviceContextV2{
+				svcPortName: *svcPort,
+			}
+		}
+	}
+
+	return backendRefs
 }
 
 func (c *GatewayProcessorV2) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter) []v2.HTTPRouteFilter {

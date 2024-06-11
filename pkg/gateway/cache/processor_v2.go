@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
@@ -34,7 +36,7 @@ type GatewayProcessorV2 struct {
 	upstreams   calculateBackendTargetsFunc
 }
 
-func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayProcessorV2 {
+func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) Processor {
 	p := &GatewayProcessorV2{
 		cache:       cache,
 		gateway:     gateway,
@@ -51,8 +53,8 @@ func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayP
 	return p
 }
 
-func (c *GatewayProcessorV2) build() *v2.Config {
-	cfg := &v2.Config{
+func (c *GatewayProcessorV2) Build() fgw.Config {
+	cfg := &v2.ConfigSpec{
 		Resources: c.processResources(),
 		Secrets:   c.secretFiles,
 	}

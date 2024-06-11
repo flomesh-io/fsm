@@ -37,7 +37,7 @@ type GatewayProcessor struct {
 	upstreams      calculateEndpointsFunc
 }
 
-func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayProcessor {
+func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway) Processor {
 	p := &GatewayProcessor{
 		cache:          cache,
 		gateway:        gateway,
@@ -55,7 +55,7 @@ func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayPro
 	return p
 }
 
-func (c *GatewayProcessor) build() *fgw.ConfigSpec {
+func (c *GatewayProcessor) Build() fgw.Config {
 	// those three methods must run in order, as they depend on previous results
 	listeners := c.listeners()
 	rules := c.routeRules()

@@ -47,6 +47,11 @@ type Cache interface {
 	BuildConfigs()
 }
 
+// Processor is the interface for processing the gateway resources and building the configuration
+type Processor interface {
+	Build() fgw.Config
+}
+
 type serviceContext struct {
 	svcPortName fgw.ServicePortName
 }

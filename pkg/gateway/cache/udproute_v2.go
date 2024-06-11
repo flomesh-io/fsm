@@ -41,53 +41,68 @@ func (c *GatewayProcessorV2) processUDPRoutes() []interface{} {
 			continue
 		}
 
-		u2 := &v2.UDPRoute{}
-		err := copier.CopyWithOption(u2, udpRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true})
-		if err != nil {
-			log.Error().Msgf("Failed to copy UDPRoute: %v", err)
-			continue
+		if u2 := c.toV2UDPRoute(udpRoute); u2 != nil {
+			routes = append(routes, u2)
 		}
-
-		u2.Spec.Rules = make([]v2.UDPRouteRule, 0)
-		for _, rule := range udpRoute.Spec.Rules {
-			rule := rule
-			r2 := &v2.UDPRouteRule{}
-			if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
-				log.Error().Msgf("Failed to copy UDPRouteRule: %v", err)
-				continue
-			}
-
-			r2.BackendRefs = make([]v2.BackendRef, 0)
-			for _, backend := range rule.BackendRefs {
-				backend := backend
-				if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
-					r2.BackendRefs = append(r2.BackendRefs, v2.BackendRef{
-						Kind: "Backend",
-						Name: svcPort.String(),
-					})
-
-					c.services[svcPort.String()] = serviceContextV2{
-						svcPortName: *svcPort,
-					}
-				}
-			}
-
-			if len(r2.BackendRefs) == 0 {
-				continue
-			}
-
-			u2.Spec.Rules = append(u2.Spec.Rules, *r2)
-		}
-
-		if len(u2.Spec.Rules) == 0 {
-			continue
-		}
-
-		routes = append(routes, u2)
 	}
 
-	//c.resources = append(c.resources, routes...)
 	return routes
+}
+
+func (c *GatewayProcessorV2) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute) *v2.UDPRoute {
+	u2 := &v2.UDPRoute{}
+	if err := copier.CopyWithOption(u2, udpRoute, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy UDPRoute: %v", err)
+		return nil
+	}
+
+	u2.Spec.Rules = make([]v2.UDPRouteRule, 0)
+	for _, rule := range udpRoute.Spec.Rules {
+		rule := rule
+		if r2 := c.toV2UDPRouteRule(udpRoute, rule); r2 != nil {
+			u2.Spec.Rules = append(u2.Spec.Rules, *r2)
+		}
+	}
+
+	if len(u2.Spec.Rules) == 0 {
+		return nil
+	}
+
+	return u2
+}
+
+func (c *GatewayProcessorV2) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule) *v2.UDPRouteRule {
+	r2 := &v2.UDPRouteRule{}
+	if err := copier.CopyWithOption(r2, &rule, copier.Option{IgnoreEmpty: true, DeepCopy: true}); err != nil {
+		log.Error().Msgf("Failed to copy UDPRouteRule: %v", err)
+		return nil
+	}
+
+	r2.BackendRefs = c.toV2UDPBackendRefs(udpRoute, rule.BackendRefs)
+	if len(r2.BackendRefs) == 0 {
+		return nil
+	}
+
+	return r2
+}
+
+func (c *GatewayProcessorV2) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, refs []gwv1alpha2.BackendRef) []v2.BackendRef {
+	backendRefs := make([]v2.BackendRef, 0)
+	for _, backend := range refs {
+		backend := backend
+		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
+			backendRefs = append(backendRefs, v2.BackendRef{
+				Kind: "Backend",
+				Name: svcPort.String(),
+			})
+
+			c.services[svcPort.String()] = serviceContextV2{
+				svcPortName: *svcPort,
+			}
+		}
+	}
+
+	return backendRefs
 }
 
 func (c *GatewayProcessorV2) ignoreUDPRoute(udpRoute *gwv1alpha2.UDPRoute, rsh status.RouteStatusObject) bool {

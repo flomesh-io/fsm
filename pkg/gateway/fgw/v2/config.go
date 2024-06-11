@@ -8,10 +8,14 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
-type Config struct {
+type ConfigSpec struct {
 	Resources []interface{}     `json:"resources" hash:"set"`
 	Secrets   map[string]string `json:"secrets"`
 	Version   string            `json:"version" hash:"ignore"`
+}
+
+func (c *ConfigSpec) GetVersion() string {
+	return c.Version
 }
 
 type ObjectMeta struct {

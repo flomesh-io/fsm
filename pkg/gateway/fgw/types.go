@@ -1,4 +1,4 @@
-// Package routecfg contains types for the gateway route
+// Package fgw contains types for the gateway route
 package fgw
 
 import (
@@ -13,6 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
+
+// Config is the configuration for the gateway
+type Config interface {
+	GetVersion() string
+}
 
 // ServicePortName is a combination of a service name, namespace, and port
 type ServicePortName struct {
@@ -75,6 +80,10 @@ type ConfigSpec struct {
 	Chains      Chains                   `json:"Chains"`
 	Features    Features                 `json:"Features"`
 	Version     string                   `json:"Version" hash:"ignore"`
+}
+
+func (c *ConfigSpec) GetVersion() string {
+	return c.Version
 }
 
 // Defaults is the default configuration
