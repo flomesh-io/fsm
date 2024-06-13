@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/spf13/pflag"
@@ -282,16 +284,41 @@ func applyOrUpdateCRDs(crdClient *apiclient.ApiextensionsV1Client) {
 			}
 
 			crdExisting.Labels[constants.ReconcileLabel] = strconv.FormatBool(enableReconciler)
-			crdExisting.Spec = crd.Spec
+			crdExisting.Spec.Group = crd.Spec.Group
+			crdExisting.Spec.Names = crd.Spec.Names
+			crdExisting.Spec.Scope = crd.Spec.Scope
+			crdExisting.Spec.PreserveUnknownFields = crd.Spec.PreserveUnknownFields
 			crdExisting.Spec.Conversion = &apiv1.CustomResourceConversion{
 				Strategy: apiv1.NoneConverter,
 			}
+
+			crdExisting.Spec.Versions = computeVersions(crdExisting, crd)
+
 			if _, err = crdClient.CustomResourceDefinitions().Update(context.Background(), crdExisting, metav1.UpdateOptions{}); err != nil {
 				log.Fatal().Err(err).Msgf("Error updating conversion webhook configuration for crd : %s", crd.Name)
 			}
 			log.Info().Msgf("successfully set conversion webhook configuration for crd : %s to \"None\"", crd.Name)
 		}
 	}
+}
+
+func computeVersions(crdExisting, crd *apiv1.CustomResourceDefinition) []apiv1.CustomResourceDefinitionVersion {
+	versions := make([]apiv1.CustomResourceDefinitionVersion, 0)
+
+	newVersionNames := sets.NewString()
+	for i, v := range crd.Spec.Versions {
+		newVersionNames.Insert(v.Name)
+		versions = append(versions, crd.Spec.Versions[i])
+	}
+
+	for i, v := range crdExisting.Spec.Versions {
+		if !newVersionNames.Has(v.Name) {
+			crdExisting.Spec.Versions[i].Storage = false
+			versions = append(versions, crdExisting.Spec.Versions[i])
+		}
+	}
+
+	return versions
 }
 
 func (b *bootstrap) createDefaultMeshConfig() error {
