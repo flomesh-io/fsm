@@ -30,13 +30,16 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 
 	ghodssyaml "github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -84,8 +87,14 @@ type listener struct {
 }
 
 type gatewayReconciler struct {
-	recorder record.EventRecorder
-	fctx     *fctx.ControllerContext
+	recorder       record.EventRecorder
+	fctx           *fctx.ControllerContext
+	activeGateways map[string]*gatewayDeployment
+}
+
+type gatewayDeployment struct {
+	gateway    *gwv1.Gateway
+	valuesHash string
 }
 
 func (r *gatewayReconciler) NeedLeaderElection() bool {
@@ -95,8 +104,9 @@ func (r *gatewayReconciler) NeedLeaderElection() bool {
 // NewGatewayReconciler returns a new reconciler for Gateway resources
 func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("Gateway"),
-		fctx:     ctx,
+		recorder:       ctx.Manager.GetEventRecorderFor("Gateway"),
+		fctx:           ctx,
+		activeGateways: map[string]*gatewayDeployment{},
 	}
 }
 
@@ -118,6 +128,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Namespace: req.Namespace,
 					Name:      req.Name,
 				}})
+			delete(r.activeGateways, types.NamespacedName{
+				Namespace: req.Namespace,
+				Name:      req.Name,
+			}.String())
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -127,6 +141,7 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if gateway.DeletionTimestamp != nil {
 		r.fctx.GatewayEventHandler.OnDelete(gateway)
+		delete(r.activeGateways, client.ObjectKeyFromObject(gateway).String())
 		return ctrl.Result{}, nil
 	}
 
@@ -145,34 +160,51 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	update := gw.NewGatewayStatusUpdate(
-		gateway,
-		&gateway.ObjectMeta,
-		&gateway.TypeMeta,
-		&gateway.Status,
-	)
+	if r.compute(gateway) {
+		update := gw.NewGatewayStatusUpdate(
+			gateway,
+			&gateway.ObjectMeta,
+			&gateway.TypeMeta,
+			&gateway.Status,
+		)
 
-	if result, err := r.computeGatewayStatus(ctx, gateway, update); err != nil || result.RequeueAfter > 0 || result.Requeue {
-		return result, err
+		if result, err := r.computeGatewayStatus(ctx, gateway, update); err != nil || result.RequeueAfter > 0 || result.Requeue {
+			return result, err
+		}
+
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1.Gateway{},
+			NamespacedName: client.ObjectKeyFromObject(gateway),
+			Mutator:        update,
+		})
 	}
-
-	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwv1.Gateway{},
-		NamespacedName: client.ObjectKeyFromObject(gateway),
-		Mutator:        update,
-	})
 
 	r.fctx.GatewayEventHandler.OnAdd(gateway, false)
 
 	return ctrl.Result{}, nil
 }
 
+func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
+	old := r.activeGateways[client.ObjectKeyFromObject(gateway).String()]
+
+	if old == nil {
+		return true
+	}
+
+	if !metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionProgrammed)) {
+		return true
+	}
+
+	if !metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionAccepted)) {
+		return true
+	}
+
+	return !cmp.Equal(old.gateway.Spec, gateway.Spec)
+}
+
 func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	// 1. compute listener status & accepted status
-	result, err := r.computeListenerStatus(ctx, gateway, update)
-	if err != nil {
-		return result, err
-	}
+	r.computeListenerStatus(ctx, gateway, update)
 
 	// 2. so far, it's accepted, just deploy it if not
 	if result, err := r.applyGateway(gateway, update); err != nil {
@@ -180,13 +212,10 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	}
 
 	// 3. compute gateway address and programmed status
-	result, err = r.updateGatewayAddresses(ctx, gateway, update)
-	if err != nil || result.RequeueAfter > 0 || result.Requeue {
-		return result, err
-	}
+	r.computeGatewayProgrammedCondition(ctx, gateway, update)
 
 	if !update.ConditionExists(gwv1.GatewayConditionAccepted) {
-		r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
+		defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
 
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
@@ -196,21 +225,21 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 		)
 	}
 
-	if !update.ConditionExists(gwv1.GatewayConditionProgrammed) {
-		r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Programmed", "Gateway is programmed")
-
-		update.AddCondition(
-			gwv1.GatewayConditionProgrammed,
-			metav1.ConditionTrue,
-			gwv1.GatewayReasonProgrammed,
-			"Gateway is programmed",
-		)
-	}
+	//if !update.ConditionExists(gwv1.GatewayConditionProgrammed) {
+	//	defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Programmed", "Gateway is programmed")
+	//
+	//	update.AddCondition(
+	//		gwv1.GatewayConditionProgrammed,
+	//		metav1.ConditionTrue,
+	//		gwv1.GatewayReasonProgrammed,
+	//		"Gateway is programmed",
+	//	)
+	//}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
+func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
 	for name, cond := range invalidListeners {
 		update.AddListenerCondition(
@@ -311,7 +340,26 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 		}
 	}
 
-	return ctrl.Result{}, nil
+	allListenersProgrammed := func(gw *gwv1.Gateway) bool {
+		for _, listener := range gw.Status.Listeners {
+			if !gwutils.IsListenerProgrammed(listener) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	if !allListenersProgrammed(gateway) {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Listeners", "Not All listeners are programmed")
+
+		update.AddCondition(
+			gwv1.GatewayConditionAccepted,
+			metav1.ConditionFalse,
+			gwv1.GatewayReasonListenersNotValid,
+			"Not all listeners are programmed",
+		)
+	}
 }
 
 func invalidateListeners(listeners []gwv1.Listener) map[gwv1.SectionName]metav1.Condition {
@@ -348,8 +396,9 @@ func invalidateListeners(listeners []gwv1.Listener) map[gwv1.SectionName]metav1.
 			continue
 		}
 
-		if listener.Port > 60000 && listener.Port <= 65535 {
-			invalidListenerConditions[listener.Name] = conflictCondition(fmt.Sprintf("Listener port %d is invalid, must be in the range 1-60000", listener.Port))
+		//if listener.Port > 60000 && listener.Port <= 65535 {
+		if constants.ReservedGatewayPorts.Has(int32(listener.Port)) {
+			invalidListenerConditions[listener.Name] = conflictCondition(fmt.Sprintf("Listener port %d is reserved, please use other port instead", listener.Port))
 			continue
 		}
 
@@ -529,8 +578,8 @@ func supportedRouteGroupKinds(_ *gwv1.Gateway, listener gwv1.Listener, update *g
 	return kinds
 }
 
-func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Context, gw *gwv1.Gateway, addresses []gwv1.GatewayStatusAddress, update *gw.GatewayStatusUpdate) bool {
-	if len(addresses) == 0 {
+func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Context, gw *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
+	if len(gw.Status.Addresses) == 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Addresses", "No addresses have been assigned to the Gateway")
 
 		update.AddCondition(
@@ -539,9 +588,16 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 			gwv1.GatewayReasonAddressNotAssigned,
 			"No addresses have been assigned to the Gateway",
 		)
-		return false
 	}
 
+	svc, err := r.gatewayService(ctx, gw)
+	if err != nil {
+		log.Error().Msgf("Failed to get Gateway service: %s", err)
+	}
+	if svc != nil {
+		addresses := r.gatewayAddresses(svc)
+		update.SetAddresses(addresses)
+	}
 	//isSpecAddressAssigned := func(specAddresses []gwv1.GatewayAddress, statusAddresses []gwv1.GatewayStatusAddress) bool {
 	//	if len(specAddresses) == 0 {
 	//		return true
@@ -581,70 +637,33 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 			gwv1.GatewayReasonNoResources,
 			"Deployment replicas unavailable",
 		)
-
-		return false
 	}
 
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
-
-	update.AddCondition(
-		gwv1.GatewayConditionProgrammed,
-		metav1.ConditionTrue,
-		gwv1.GatewayReasonProgrammed,
-		fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas),
-	)
-
-	return true
-}
-
-func (r *gatewayReconciler) updateGatewayAddresses(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
-	addresses := r.gatewayAddresses(ctx, gateway)
-	programmed := r.computeGatewayProgrammedCondition(ctx, gateway, addresses, update)
-
-	if !programmed {
-		log.Debug().Msgf("[GW] Requeue gateway %s/%s after 5 second", gateway.Namespace, gateway.Name)
-		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
-	}
-
-	update.SetAddresses(addresses)
-
-	allListenersProgrammed := func(gw *gwv1.Gateway) bool {
-		for _, listener := range gw.Status.Listeners {
-			if !gwutils.IsListenerProgrammed(listener) {
-				return false
-			}
-		}
-
-		return true
-	}
-
-	if !allListenersProgrammed(gateway) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Listeners", "Not All listeners are programmed")
+	if !update.ConditionExists(gwv1.GatewayConditionProgrammed) && deployment != nil && deployment.Status.AvailableReplicas != 0 {
+		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
 
 		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonListenersNotValid,
-			"Not all listeners are programmed",
+			gwv1.GatewayConditionProgrammed,
+			metav1.ConditionTrue,
+			gwv1.GatewayReasonProgrammed,
+			fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas),
 		)
 	}
+}
 
-	return ctrl.Result{}, nil
+func gatewayServiceName(activeGateway *gwv1.Gateway) string {
+	if hasTCP(activeGateway) {
+		return fmt.Sprintf("fsm-gateway-%s-%s-tcp", activeGateway.Namespace, activeGateway.Name)
+	}
+
+	if hasUDP(activeGateway) {
+		return fmt.Sprintf("fsm-gateway-%s-%s-udp", activeGateway.Namespace, activeGateway.Name)
+	}
+
+	return ""
 }
 
 func (r *gatewayReconciler) gatewayService(ctx context.Context, gateway *gwv1.Gateway) (*corev1.Service, error) {
-	gatewayServiceName := func(activeGateway *gwv1.Gateway) string {
-		if hasTCP(activeGateway) {
-			return fmt.Sprintf("fsm-gateway-%s-%s-tcp", activeGateway.Namespace, activeGateway.Name)
-		}
-
-		if hasUDP(activeGateway) {
-			return fmt.Sprintf("fsm-gateway-%s-%s-udp", activeGateway.Namespace, activeGateway.Name)
-		}
-
-		return ""
-	}
-
 	serviceName := gatewayServiceName(gateway)
 	if serviceName == "" {
 		log.Warn().Msgf("[GW] No supported service protocols for Gateway %s/%s, only TCP and UDP are supported now.", gateway.Namespace, gateway.Name)
@@ -661,121 +680,6 @@ func (r *gatewayReconciler) gatewayService(ctx context.Context, gateway *gwv1.Ga
 	}
 
 	return svc, nil
-}
-
-func (r *gatewayReconciler) gatewayAddresses(ctx context.Context, gw *gwv1.Gateway) []gwv1.GatewayStatusAddress {
-	gwSvc, err := r.gatewayService(ctx, gw)
-	if err != nil {
-		log.Error().Msgf("Failed to get gateway service: %s", err)
-		return nil
-	}
-
-	var addresses, hostnames []string
-
-	switch gwSvc.Spec.Type {
-	case corev1.ServiceTypeLoadBalancer:
-		for i := range gwSvc.Status.LoadBalancer.Ingress {
-			switch {
-			case len(gwSvc.Status.LoadBalancer.Ingress[i].IP) > 0:
-				addresses = append(addresses, gwSvc.Status.LoadBalancer.Ingress[i].IP)
-			case len(gwSvc.Status.LoadBalancer.Ingress[i].Hostname) > 0:
-				if gwSvc.Status.LoadBalancer.Ingress[i].Hostname == "localhost" {
-					addresses = append(addresses, "127.0.0.1")
-				}
-				hostnames = append(hostnames, gwSvc.Status.LoadBalancer.Ingress[i].Hostname)
-			}
-		}
-	case corev1.ServiceTypeNodePort:
-		addresses = append(addresses, r.getNodeIPs(ctx, gwSvc)...)
-	default:
-		return nil
-	}
-
-	var gwAddresses []gwv1.GatewayStatusAddress
-	for i := range addresses {
-		addr := gwv1.GatewayStatusAddress{
-			Type:  ptr.To(gwv1.IPAddressType),
-			Value: addresses[i],
-		}
-		gwAddresses = append(gwAddresses, addr)
-	}
-
-	for i := range hostnames {
-		addr := gwv1.GatewayStatusAddress{
-			Type:  ptr.To(gwv1.HostnameAddressType),
-			Value: hostnames[i],
-		}
-		gwAddresses = append(gwAddresses, addr)
-	}
-
-	return gwAddresses
-}
-
-func (r *gatewayReconciler) getNodeIPs(ctx context.Context, svc *corev1.Service) []string {
-	pods := &corev1.PodList{}
-	if err := r.fctx.List(
-		ctx,
-		pods,
-		client.InNamespace(svc.Namespace),
-		client.MatchingLabelsSelector{
-			Selector: labels.SelectorFromSet(svc.Spec.Selector),
-		},
-	); err != nil {
-		log.Error().Msgf("Failed to get pods: %s", err)
-		return nil
-	}
-
-	extIPs := sets.New[string]()
-	intIPs := sets.New[string]()
-
-	for _, pod := range pods.Items {
-		if pod.Spec.NodeName == "" || pod.Status.PodIP == "" {
-			continue
-		}
-
-		if !utils.IsPodStatusConditionTrue(pod.Status.Conditions, corev1.PodReady) {
-			continue
-		}
-
-		node := &corev1.Node{}
-		if err := r.fctx.Get(ctx, client.ObjectKey{Name: pod.Spec.NodeName}, node); err != nil {
-			if errors.IsNotFound(err) {
-				continue
-			}
-
-			log.Error().Msgf("Failed to get node %q: %s", pod.Spec.NodeName, err)
-			return nil
-		}
-
-		for _, addr := range node.Status.Addresses {
-			switch addr.Type {
-			case corev1.NodeExternalIP:
-				extIPs.Insert(addr.Address)
-			case corev1.NodeInternalIP:
-				intIPs.Insert(addr.Address)
-			default:
-				continue
-			}
-		}
-	}
-
-	var nodeIPs []string
-	if len(extIPs) > 0 {
-		nodeIPs = extIPs.UnsortedList()
-	} else {
-		nodeIPs = intIPs.UnsortedList()
-	}
-
-	if version.IsDualStackEnabled(r.fctx.KubeClient) {
-		ips, err := utils.FilterByIPFamily(nodeIPs, svc)
-		if err != nil {
-			return nil
-		}
-
-		nodeIPs = ips
-	}
-
-	return nodeIPs
 }
 
 func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gateway) *appsv1.Deployment {
@@ -798,10 +702,6 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 	return deployment
 }
 
-//func isSameGateway(oldGateway, newGateway *gwv1.Gateway) bool {
-//	return equality.Semantic.DeepEqual(oldGateway, newGateway)
-//}
-
 func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	if len(gateway.Spec.Addresses) > 0 {
 		update.AddCondition(
@@ -818,7 +718,7 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, update *gw.Gatew
 			".spec.addresses is not supported yet.",
 		)
 
-		r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Address", ".spec.addresses is not supported yet.")
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Address", ".spec.addresses is not supported yet.")
 
 		return ctrl.Result{}, nil
 	}
@@ -864,6 +764,25 @@ func (r *gatewayReconciler) updateConfig(gw *gwv1.Gateway, _ configurator.Config
 	return ctrl.Result{}, nil
 }
 
+func (r *gatewayReconciler) isSameGateway(gateway *gwv1.Gateway, valuesHash string) bool {
+	old := r.activeGateways[client.ObjectKeyFromObject(gateway).String()]
+
+	log.Debug().Msgf("[GW] old = %v", old)
+	if old != nil {
+		log.Debug().Msgf("[GW] old.valuesHash = %s, valuesHash = %s", old.valuesHash, valuesHash)
+	}
+
+	if old != nil && cmp.Equal(old.gateway.Spec, gateway.Spec) && old.valuesHash == valuesHash {
+		return true
+	}
+
+	if old != nil {
+		log.Debug().Msgf("[GW] diff = %v", cmp.Diff(old.gateway.Spec, gateway.Spec))
+	}
+
+	return false
+}
+
 func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Configurator, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
 
@@ -888,6 +807,14 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 		return chartutil.CoalesceTables(parameterValues, gatewayValues), nil
 	}
 
+	values, _ := resolveValues(gw, mc)
+	valuesHash := utils.SimpleHash(values)
+
+	if r.isSameGateway(gw, valuesHash) {
+		return ctrl.Result{}, nil
+	}
+
+	log.Debug().Msgf("[GW] Deploying gateway %s/%s ...", gw.Namespace, gw.Name)
 	templateClient := helm.TemplateClient(
 		actionConfig,
 		fmt.Sprintf("fsm-gateway-%s-%s", gw.Namespace, gw.Name),
@@ -896,10 +823,16 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 	)
 	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, resolveValues); err != nil {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
+
 		return ctrlResult, err
 	}
 
 	//defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Deploy", "Deploy gateway successfully")
+
+	r.activeGateways[client.ObjectKeyFromObject(gw).String()] = &gatewayDeployment{
+		gateway:    gw,
+		valuesHash: valuesHash,
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -928,6 +861,7 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 			"gateway": map[string]interface{}{
 				"namespace":      gateway.Namespace,
 				"name":           gateway.Name,
+				"serviceName":    gatewayServiceName(gateway),
 				"listeners":      r.listenersForTemplate(gateway, update),
 				"infrastructure": infraForTemplate(gateway),
 				"logLevel":       mc.GetFSMGatewayLogLevel(),
@@ -1069,6 +1003,115 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 	return paramsMap, nil
 }
 
+func (r *gatewayReconciler) gatewayAddresses(gwSvc *corev1.Service) []gwv1.GatewayStatusAddress {
+	var addresses, hostnames []string
+
+	switch gwSvc.Spec.Type {
+	case corev1.ServiceTypeLoadBalancer:
+		for i := range gwSvc.Status.LoadBalancer.Ingress {
+			switch {
+			case len(gwSvc.Status.LoadBalancer.Ingress[i].IP) > 0:
+				addresses = append(addresses, gwSvc.Status.LoadBalancer.Ingress[i].IP)
+			case len(gwSvc.Status.LoadBalancer.Ingress[i].Hostname) > 0:
+				if gwSvc.Status.LoadBalancer.Ingress[i].Hostname == "localhost" {
+					addresses = append(addresses, "127.0.0.1")
+				}
+				hostnames = append(hostnames, gwSvc.Status.LoadBalancer.Ingress[i].Hostname)
+			}
+		}
+	case corev1.ServiceTypeNodePort:
+		addresses = append(addresses, r.getNodeIPs(gwSvc)...)
+	default:
+		return nil
+	}
+
+	var gwAddresses []gwv1.GatewayStatusAddress
+	for i := range addresses {
+		addr := gwv1.GatewayStatusAddress{
+			Type:  ptr.To(gwv1.IPAddressType),
+			Value: addresses[i],
+		}
+		gwAddresses = append(gwAddresses, addr)
+	}
+
+	for i := range hostnames {
+		addr := gwv1.GatewayStatusAddress{
+			Type:  ptr.To(gwv1.HostnameAddressType),
+			Value: hostnames[i],
+		}
+		gwAddresses = append(gwAddresses, addr)
+	}
+
+	return gwAddresses
+}
+
+func (r *gatewayReconciler) getNodeIPs(svc *corev1.Service) []string {
+	pods := &corev1.PodList{}
+	if err := r.fctx.List(
+		context.Background(),
+		pods,
+		client.InNamespace(svc.Namespace),
+		client.MatchingLabelsSelector{
+			Selector: labels.SelectorFromSet(svc.Spec.Selector),
+		},
+	); err != nil {
+		log.Error().Msgf("Failed to get pods: %s", err)
+		return nil
+	}
+
+	extIPs := sets.New[string]()
+	intIPs := sets.New[string]()
+
+	for _, pod := range pods.Items {
+		if pod.Spec.NodeName == "" || pod.Status.PodIP == "" {
+			continue
+		}
+
+		if !utils.IsPodStatusConditionTrue(pod.Status.Conditions, corev1.PodReady) {
+			continue
+		}
+
+		node := &corev1.Node{}
+		if err := r.fctx.Get(context.Background(), client.ObjectKey{Name: pod.Spec.NodeName}, node); err != nil {
+			if errors.IsNotFound(err) {
+				continue
+			}
+
+			log.Error().Msgf("Failed to get node %q: %s", pod.Spec.NodeName, err)
+			return nil
+		}
+
+		for _, addr := range node.Status.Addresses {
+			switch addr.Type {
+			case corev1.NodeExternalIP:
+				extIPs.Insert(addr.Address)
+			case corev1.NodeInternalIP:
+				intIPs.Insert(addr.Address)
+			default:
+				continue
+			}
+		}
+	}
+
+	var nodeIPs []string
+	if len(extIPs) > 0 {
+		nodeIPs = extIPs.UnsortedList()
+	} else {
+		nodeIPs = intIPs.UnsortedList()
+	}
+
+	if version.IsDualStackEnabled(r.fctx.KubeClient) {
+		ips, err := utils.FilterByIPFamily(nodeIPs, svc)
+		if err != nil {
+			return nil
+		}
+
+		nodeIPs = ips
+	}
+
+	return nodeIPs
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -1179,13 +1222,13 @@ func (r *gatewayReconciler) configMapToGateways(ctx context.Context, object clie
 	}
 
 	reconciles := make([]reconcile.Request, 0)
-	for _, gw := range gateways.Items {
-		gw := gw
-		if gwutils.IsActiveGateway(&gw) {
+	for _, gwy := range gateways.Items {
+		gwy := gwy
+		if gwutils.IsActiveGateway(&gwy) {
 			reconciles = append(reconciles, reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Namespace: gw.Namespace,
-					Name:      gw.Name,
+					Namespace: gwy.Namespace,
+					Name:      gwy.Name,
 				},
 			})
 		}

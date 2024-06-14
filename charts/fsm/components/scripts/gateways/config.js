@@ -1,39 +1,74 @@
-((
-  config = JSON.decode(pipy.load('config.json')),
-  routeRules = {},
-  hostRules = null,
-) => (
-  Object.keys(config?.RouteRules || {}).forEach(
-    ports => (
-      hostRules = {},
-      Object.keys(config.RouteRules[ports] || {}).forEach(
-        hosts => (
-          hosts.split(',').forEach(
-            host => (hostRules[host.trim()] = config.RouteRules[ports][hosts])
-          )
-        )
-      ),
-      config.RouteRules[ports] = hostRules
-    )
-  ),
-  Object.keys(config?.RouteRules || {}).forEach(
-    ports => (
-      ports.split(',').forEach(
-        port => (routeRules[port.trim()] = config.RouteRules[ports])
-      )
-    )
-  ),
-  config.RouteRules = routeRules,
-  {
-    config,
-    isDebugEnabled: Boolean(config?.Configs?.EnableDebug),
-    socketTimeoutOptions: (config?.Configs?.SocketTimeout > 0) ? (
-      {
-        connectTimeout: config.Configs.SocketTimeout,
-        readTimeout: config.Configs.SocketTimeout,
-        writeTimeout: config.Configs.SocketTimeout,
-        idleTimeout: config.Configs.SocketTimeout,
-      }
-    ) : {},
+import { log } from './log.js'
+
+var DEFAULT_CONFIG_PATH = '/etc/fgw'
+
+function load(filename) {
+  if (!filename) {
+    if (os.stat(DEFAULT_CONFIG_PATH)?.isDirectory?.()) {
+      filename = DEFAULT_CONFIG_PATH
+    } else {
+      loadConfig(JSON.decode(pipy.load('config.json')))
+      return
+    }
   }
-))()
+
+  var st = os.stat(filename)
+  if (!st) throw `file or directory not found: ${filename}`
+
+  if (st.isDirectory()) {
+    loadConfigDir(filename)
+  } else {
+    if (isYAML(filename)) {
+      loadConfig(YAML.decode(os.read(filename)))
+    } else {
+      loadConfig(JSON.decode(os.read(filename)))
+    }
+  }
+}
+
+function loadConfig(obj) {
+  config.resources = obj.resources || []
+  config?.resources?.forEach(r => {
+    log?.(`[CFG] resource: [${r?.kind}, ${r?.metadata?.namespace}, ${r?.metadata?.name}]`)
+  })
+  config.secrets = obj.secrets || {}
+  log?.(`[CFG] secrets length: ${Object.keys(config?.secrets).length}`)
+}
+
+function loadConfigDir(dirname) {
+  var list = os.readDir(dirname)
+  var resources = []
+  var secrets = {}
+  list.forEach(name => {
+    var filename = os.path.join(dirname, name)
+    if (isSecret(name)) {
+      secrets[name] = os.read(filename).toString()
+    } else if (isJSON(name)) {
+      resources.push(JSON.decode(os.read(filename)))
+    } else if (isYAML(name)) {
+      resources.push(YAML.decode(os.read(filename)))
+    }
+  })
+  config.resources = resources
+  config.secrets = secrets
+}
+
+function isJSON(filename) {
+  return filename.endsWith('.json')
+}
+
+function isYAML(filename) {
+  return filename.endsWith('.yaml') || filename.endsWith('.yml')
+}
+
+function isSecret(filename) {
+  return filename.endsWith('.crt') || filename.endsWith('.key')
+}
+
+var config = {
+  load,
+  resources: null,
+  secrets: null,
+}
+
+export default config

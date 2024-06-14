@@ -85,10 +85,11 @@ spec:
         ports:
           {{- range $listener := .Values.fsm.gateway.listeners }}
           - name: {{ $listener.name }}
-            containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
+{{/*            containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}*/}}
+            containerPort: {{ $listener.port }}
           {{- end }}
           - name: health
-            containerPort: 8081
+            containerPort: 9091
         args:
           - --verbosity={{ .Values.fsm.gateway.logLevel }}
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
@@ -96,6 +97,7 @@ spec:
           - --mesh-name={{ .Values.fsm.meshName }}
           - --gateway-namespace={{ .Values.fsm.gateway.namespace }}
           - --gateway-name={{ .Values.fsm.gateway.name }}
+          - --service-name={{ .Values.fsm.gateway.serviceName }}
         resources:
           {{- toYaml .Values.fsm.gateway.resources | nindent 10 }}
         env:

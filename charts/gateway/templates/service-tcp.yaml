@@ -29,7 +29,8 @@ spec:
     {{- $listenerPort := .port }}
     - name: {{ .name }}
       port: {{ $listenerPort }}
-      targetPort: {{ ternary (add 60000 $listenerPort) $listenerPort (lt (int $listenerPort) 1024)}}
+{{/*      targetPort: {{ ternary (add 60000 $listenerPort) $listenerPort (lt (int $listenerPort) 1024)}}*/}}
+      targetPort: {{ $listenerPort }}
       protocol: TCP
       {{- if $setNodePorts }}
       {{- range $.Values.fsm.gateway.nodePorts }}

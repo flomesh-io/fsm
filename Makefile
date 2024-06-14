@@ -94,8 +94,11 @@ helm-update-dep: helm
 	$(HELM) dependency update charts/connector/
 
 .PHONY: package-scripts
-package-scripts: ## Tar all repo initializing scripts
-	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' -zcvf $(SCRIPTS_TAR) scripts/
+package-scripts:
+	find $(CHART_COMPONENTS_DIR) -type f -name '._*' -exec echo "deleting: {}" \; -delete
+	find $(CHART_COMPONENTS_DIR) -type f -name '.DS_Store' -exec echo "deleting: {}" \; -delete
+	## Tar all repo initializing scripts
+	tar --no-xattrs -C $(CHART_COMPONENTS_DIR)/ --exclude='.DS_Store' --exclude='._*' -zcvf $(SCRIPTS_TAR) scripts/
 
 .PHONY: charts-tgz
 charts-tgz: pkg/controllers/namespacedingress/v1alpha1/chart.tgz pkg/controllers/gateway/v1/chart.tgz pkg/controllers/connector/v1alpha1/chart.tgz

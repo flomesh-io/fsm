@@ -32,13 +32,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/kelseyhightower/envconfig"
-	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	ctrl "sigs.k8s.io/controller-runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -52,6 +47,14 @@ import (
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/version"
+	"github.com/kelseyhightower/envconfig"
+	"github.com/spf13/pflag"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type metadata struct {
@@ -60,8 +63,9 @@ type metadata struct {
 }
 
 var (
-	flags = pflag.NewFlagSet(`fsm-gateway`, pflag.ExitOnError)
-	log   = logger.New("fsm-gateway/main")
+	flags  = pflag.NewFlagSet(`fsm-gateway`, pflag.ExitOnError)
+	log    = logger.New("fsm-gateway/main")
+	scheme = runtime.NewScheme()
 )
 
 var (
@@ -72,6 +76,7 @@ var (
 	fsmVersion        string
 	gatewayNamespace  string
 	gatewayName       string
+	serviceName       string
 
 	meta metadata
 )
@@ -84,8 +89,12 @@ func init() {
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&gatewayNamespace, "gateway-namespace", "", "Namespace of Gateway")
 	flags.StringVar(&gatewayName, "gateway-name", "", "Name of Gateway")
+	flags.StringVar(&serviceName, "service-name", "", "Name of Gateway Service")
 
 	meta = getMetadata()
+
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
 }
 
 func getMetadata() metadata {
@@ -129,7 +138,7 @@ func main() {
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 	)
 	if err != nil {
-		log.Error().Msgf("")
+		log.Error().Msgf("Error creating informer collection: %s", err)
 	}
 
 	cfg := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, msgBroker)
@@ -138,6 +147,8 @@ func main() {
 		log.Error().Msgf("GatewayAPI is not enabled, FSM doesn't support Ingress and GatewayAPI are both enabled.")
 		os.Exit(1)
 	}
+
+	startHTTPServer()
 
 	// codebase URL
 	url := codebase(cfg)
@@ -149,7 +160,66 @@ func main() {
 
 	startPipy(spawn, url)
 
-	startHTTPServer()
+	//ctrl.SetLogger(zerologr.New(&log))
+	//mgr, err := ctrl.NewManager(kubeconfig, ctrl.Options{
+	//	Scheme:                  scheme,
+	//	LeaderElection:          true,
+	//	LeaderElectionNamespace: gatewayNamespace,
+	//	LeaderElectionID:        fmt.Sprintf("%s.%s.%s", gatewayName, gatewayNamespace, constants.FSMGatewayLeaderElectionID),
+	//	Cache: ctcache.Options{
+	//		DefaultNamespaces: map[string]ctcache.Config{
+	//			gatewayNamespace: {},
+	//		},
+	//	},
+	//})
+	//if err != nil {
+	//	log.Fatal().Msgf("Unable to create manager: %s", err)
+	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
+	//}
+	//
+	//statusHandler := status.NewUpdateHandler(log, mgr.GetClient())
+	//if err := mgr.Add(statusHandler); err != nil {
+	//	log.Fatal().Msgf("Unable to add status handler: %s", err)
+	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error adding status handler")
+	//}
+	//
+	//statusWriter := &gatewayStatusWriter{
+	//	addresses:     make(chan []gwv1.GatewayStatusAddress, 1),
+	//	statusUpdater: statusHandler.Writer(),
+	//}
+	//if err := mgr.Add(statusWriter); err != nil {
+	//	log.Fatal().Msgf("Unable to add gatewayStatusWriter: %s", err)
+	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error adding gatewayStatusWriter")
+	//}
+	//
+	//serviceWatcher := &serviceStatusWatcher{
+	//	gateway: types.NamespacedName{
+	//		Name:      gatewayName,
+	//		Namespace: gatewayNamespace,
+	//	},
+	//	serviceName: serviceName,
+	//	addresses:   statusWriter.addresses,
+	//	client:      mgr.GetClient(),
+	//	kubeClient:  kubeClient,
+	//}
+	//
+	//informer, err := mgr.GetCache().GetInformer(context.Background(), &corev1.Service{})
+	//if err != nil {
+	//	log.Error().Msgf("Failed to create informer: %v", err)
+	//}
+	//
+	//_, err = informer.AddEventHandler(&toolscache.FilteringResourceEventHandler{
+	//	FilterFunc: serviceWatcher.shouldIgnore,
+	//	Handler:    serviceWatcher,
+	//})
+	//if err != nil {
+	//	log.Error().Msgf("Failed to add event handler to informer: %v", err)
+	//}
+	//
+	//if err := mgr.Start(context.Background()); err != nil {
+	//	log.Fatal().Msgf("Problem running manager, %s", err)
+	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")
+	//}
 
 	<-stop
 	cancel()
@@ -219,8 +289,13 @@ func startPipy(spawn int64, url string) {
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}
+
 	if verbosity != "disabled" {
 		args = append([]string{fmt.Sprintf("--log-level=%s", utils.PipyLogLevelByVerbosity(verbosity))}, args...)
+	}
+
+	if verbosity == "debug" || verbosity == "trace" {
+		args = append(args, "--args", "--debug")
 	}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
@@ -229,7 +304,7 @@ func startPipy(spawn int64, url string) {
 
 	log.Info().Msgf("cmd = %v", cmd)
 
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Run(); err != nil {
 		log.Fatal().Err(err)
 		os.Exit(1)
 	}

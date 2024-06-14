@@ -19,7 +19,7 @@ func (c *GatewayCache) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	syncConfig := func(gateway *gwv1.Gateway, config fgw.Config, configV2 fgw.Config) {
+	syncConfig := func(gateway *gwv1.Gateway, config fgw.Config) {
 		gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
 		if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
 			return
@@ -29,6 +29,8 @@ func (c *GatewayCache) BuildConfigs() {
 		if err != nil {
 			return
 		}
+
+		log.Debug().Msgf("jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
 
 		if jsonVersion == config.GetVersion() {
 			// config not changed, ignore updating
@@ -41,7 +43,6 @@ func (c *GatewayCache) BuildConfigs() {
 				Basepath: gatewayPath,
 				Items: []repo.BatchItem{
 					{Path: "", Filename: "config.json", Content: config},
-					{Path: "", Filename: "config-v2.json", Content: configV2},
 				},
 			},
 		}
@@ -53,10 +54,10 @@ func (c *GatewayCache) BuildConfigs() {
 	}
 
 	for _, gw := range gwutils.GetActiveGateways(c.client) {
-		cfg := NewGatewayProcessor(c, gw).Build()
-		cfg2 := NewGatewayProcessorV2(c, gw).Build()
+		//cfg := NewGatewayProcessor(c, gw).Build()
+		cfg := NewGatewayProcessorV2(c, gw).Build()
 
-		go syncConfig(gw, cfg, cfg2)
+		go syncConfig(gw, cfg)
 	}
 }
 
@@ -69,7 +70,7 @@ func (c *GatewayCache) getVersionOfConfigJSON(basepath string) (string, error) {
 		return "", err
 	}
 
-	version := gjson.Get(json, "Version").String()
+	version := gjson.Get(json, "version").String()
 
 	return version, nil
 }

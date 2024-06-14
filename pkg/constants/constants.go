@@ -7,6 +7,8 @@ import (
 	"text/template"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -90,6 +92,9 @@ const (
 	// FSMControllerLeaderElectionID is the name of the resource that leader election
 	// 	will use for holding the leader lock.
 	FSMControllerLeaderElectionID = "fsm-controller.flomesh.io"
+
+	// FSMGatewayLeaderElectionID is the name of the resource that leader election will use for holding the leader lock.
+	FSMGatewayLeaderElectionID = "fsm-gateway.flomesh.io"
 
 	// FSMControllerName is the name of the FSM Controller (formerly ADS service).
 	FSMControllerName = "fsm-controller"
@@ -955,4 +960,10 @@ var (
 	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), FaultInjectionPolicyKind)
 	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), UpstreamTLSPolicyKind)
 	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RetryPolicyKind)
+)
+
+// GatewayAPI resources variables
+
+var (
+	ReservedGatewayPorts = sets.NewInt32(FSMHTTPServerPort)
 )

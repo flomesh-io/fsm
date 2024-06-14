@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -9,16 +8,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 
-	discoveryv1 "k8s.io/api/discovery/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/flomesh-io/fsm/pkg/k8s"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 
-	"github.com/jinzhu/copier"
 	corev1 "k8s.io/api/core/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -34,6 +27,7 @@ type GatewayProcessorV2 struct {
 	secretFiles map[string]string
 	services    map[string]serviceContextV2
 	upstreams   calculateBackendTargetsFunc
+	policies    []interface{}
 }
 
 func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) Processor {
@@ -42,6 +36,7 @@ func NewGatewayProcessorV2(cache *GatewayCache, gateway *gwv1.Gateway) Processor
 		gateway:     gateway,
 		secretFiles: map[string]string{},
 		services:    map[string]serviceContextV2{},
+		policies:    []interface{}{},
 	}
 
 	if cache.useEndpointSlices {
@@ -73,259 +68,9 @@ func (c *GatewayProcessorV2) processResources() []interface{} {
 	resources = append(resources, c.processTCPRoutes()...)
 	resources = append(resources, c.processUDPRoutes()...)
 	resources = append(resources, c.processBackends()...)
+	resources = append(resources, c.policies...)
 
 	return resources
-}
-
-func (c *GatewayProcessorV2) processGateway() *v2.Gateway {
-	g2 := &v2.Gateway{}
-
-	err := copier.CopyWithOption(g2, c.gateway, copier.Option{IgnoreEmpty: true, DeepCopy: true})
-	if err != nil {
-		log.Error().Msgf("Failed to copy gateway: %v", err)
-		return nil
-	}
-
-	// replace listeners with valid listeners
-	g2.Spec.Listeners = make([]v2.Listener, 0)
-	for _, l := range gwutils.GetValidListenersForGateway(c.gateway) {
-		v2l := &v2.Listener{
-			Name:     l.Name,
-			Hostname: l.Hostname,
-			Port:     l.Port,
-			Protocol: l.Protocol,
-		}
-
-		if l.TLS != nil {
-			v2l.TLS = &v2.GatewayTLSConfig{
-				Mode:         l.TLS.Mode,
-				Certificates: []map[string]string{},
-				Options:      l.TLS.Options,
-			}
-
-			if l.TLS.FrontendValidation != nil {
-				v2l.TLS.FrontendValidation = &v2.FrontendTLSValidation{CACertificates: []map[string]string{}}
-			}
-		}
-
-		// get certificates and CA certificates
-		if c.tls(l) && v2l.TLS != nil {
-			c.processCertificates(l, v2l)
-			c.processCACerts(l, v2l)
-		}
-
-		g2.Spec.Listeners = append(g2.Spec.Listeners, *v2l)
-	}
-
-	return g2
-}
-
-func (c *GatewayProcessorV2) tls(l gwtypes.Listener) bool {
-	switch l.Protocol {
-	case gwv1.HTTPSProtocolType:
-		// Terminate
-		if l.TLS != nil {
-			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
-				return true
-			}
-		}
-	case gwv1.TLSProtocolType:
-		// Terminate & Passthrough
-		if l.TLS != nil {
-			if l.TLS.Mode == nil {
-				return true
-			}
-
-			switch *l.TLS.Mode {
-			case gwv1.TLSModeTerminate:
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func (c *GatewayProcessorV2) processCertificates(l gwtypes.Listener, v2l *v2.Listener) {
-	for index, ref := range l.TLS.CertificateRefs {
-		secret, err := c.secretRefToSecret(c.gateway, ref)
-
-		if err != nil {
-			log.Error().Msgf("Failed to resolve Secret: %s", err)
-			continue
-		}
-
-		if secret.Type != corev1.SecretTypeTLS {
-			log.Warn().Msgf("Secret %s/%s is not of type %s, will be ignored for port %d of Gateway %s/%s",
-				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
-				l.Port, c.gateway.Namespace, c.gateway.Name)
-			continue
-		}
-
-		certName := fmt.Sprintf("tls-%d-%d.crt", l.Port, index)
-		keyName := fmt.Sprintf("tls-%d-%d.key", l.Port, index)
-
-		v2l.TLS.Certificates = append(v2l.TLS.Certificates, map[string]string{
-			corev1.TLSCertKey:       certName,
-			corev1.TLSPrivateKeyKey: keyName,
-		})
-
-		c.secretFiles[certName] = string(secret.Data[corev1.TLSCertKey])
-		c.secretFiles[keyName] = string(secret.Data[corev1.TLSPrivateKeyKey])
-	}
-}
-
-func (c *GatewayProcessorV2) processCACerts(l gwtypes.Listener, v2l *v2.Listener) {
-	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
-		for index, ref := range l.TLS.FrontendValidation.CACertificateRefs {
-			ca, err := c.objectRefToCACertificate(c.gateway, ref)
-
-			if err != nil {
-				log.Error().Msgf("Failed to resolve CA Certificate: %s", err)
-				continue
-			}
-
-			caName := fmt.Sprintf("ca-%d-%d.crt", l.Port, index)
-
-			v2l.TLS.FrontendValidation.CACertificates = append(v2l.TLS.FrontendValidation.CACertificates, map[string]string{
-				corev1.ServiceAccountRootCAKey: caName,
-			})
-
-			c.secretFiles[caName] = string(ca)
-		}
-	}
-}
-
-func (c *GatewayProcessorV2) processBackends() []interface{} {
-	//configs := make(map[string]fgw.ServiceConfig)
-	backends := make([]interface{}, 0)
-	for svcPortName, svcInfo := range c.services {
-		svcKey := svcInfo.svcPortName.NamespacedName
-		svc, err := c.cache.getServiceFromCache(svcKey)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
-			continue
-		}
-
-		if svc.Spec.Type == corev1.ServiceTypeExternalName {
-			log.Warn().Msgf("Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
-			continue
-		}
-
-		// don't create Backend resource if there are no endpoints
-		targets := c.calculateEndpoints(svc, svcInfo.svcPortName.Port)
-		if len(targets) == 0 {
-			continue
-		}
-
-		//for _, enricher := range c.getServicePolicyEnrichers(svc) {
-		//    enricher.Enrich(svcPortName, svcCfg)
-		//}
-
-		backends = append(backends, &v2.Backend{
-			Kind: "Backend",
-			ObjectMeta: v2.ObjectMeta{
-				Name: svcPortName,
-			},
-			Spec: v2.BackendSpec{
-				Targets: targets,
-			},
-		})
-	}
-
-	return backends
-}
-
-func (c *GatewayProcessorV2) calculateEndpoints(svc *corev1.Service, port *int32) []v2.BackendTarget {
-	// If the Service is headless, use the Endpoints to get the list of backends
-	if k8s.IsHeadlessService(*svc) {
-		return c.upstreamsByEndpoints(svc, port)
-	}
-
-	return c.upstreams(svc, port)
-}
-
-func (c *GatewayProcessorV2) upstreamsByEndpoints(svc *corev1.Service, port *int32) []v2.BackendTarget {
-	eps := &corev1.Endpoints{}
-	if err := c.cache.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
-		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
-		return nil
-	}
-
-	if len(eps.Subsets) == 0 {
-		return nil
-	}
-
-	svcPort, err := getServicePort(svc, port)
-	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
-		return nil
-	}
-
-	endpointSet := make(map[endpointContext]struct{})
-	for _, subset := range eps.Subsets {
-		if endpointPort := findEndpointPort(subset.Ports, svcPort); endpointPort > 0 && endpointPort <= 65535 {
-			for _, address := range subset.Addresses {
-				ep := endpointContext{address: address.IP, port: endpointPort}
-				endpointSet[ep] = struct{}{}
-			}
-		}
-	}
-
-	return toFGWBackendTargets(endpointSet)
-}
-
-func (c *GatewayProcessorV2) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) []v2.BackendTarget {
-	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			discoveryv1.LabelServiceName: svc.Name,
-		},
-	})
-	if err != nil {
-		log.Error().Msgf("Failed to convert LabelSelector to Selector: %s", err)
-		return nil
-	}
-
-	endpointSliceList := &discoveryv1.EndpointSliceList{}
-	if err := c.cache.client.List(context.TODO(), endpointSliceList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
-		log.Error().Msgf("Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
-		return nil
-	}
-
-	if len(endpointSliceList.Items) == 0 {
-		return nil
-	}
-
-	svcPort, err := getServicePort(svc, port)
-	if err != nil {
-		log.Error().Msgf("Failed to get ServicePort: %s", err)
-		return nil
-	}
-
-	filteredSlices := filterEndpointSliceList(endpointSliceList, svcPort)
-	if len(filteredSlices) == 0 {
-		log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, svcPort)
-		return nil
-	}
-
-	endpointSet := make(map[endpointContext]struct{})
-	for _, eps := range filteredSlices {
-		for _, endpoint := range eps.Endpoints {
-			if !isEndpointReady(endpoint) {
-				continue
-			}
-
-			if endpointPort := findEndpointSlicePort(eps.Ports, svcPort); endpointPort > 0 && endpointPort <= 65535 {
-				for _, address := range endpoint.Addresses {
-					ep := endpointContext{address: address, port: endpointPort}
-					endpointSet[ep] = struct{}{}
-				}
-			}
-		}
-	}
-
-	return toFGWBackendTargets(endpointSet)
 }
 
 func (c *GatewayProcessorV2) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *v2.ServicePortName {

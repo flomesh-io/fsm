@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -96,7 +98,7 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gwv1.RouteCondition
 	var rps *gwv1.RouteParentStatus
 
 	for _, v := range r.routeParentStatuses {
-		if v.ParentRef == r.ParentRef {
+		if cmp.Equal(v.ParentRef, r.ParentRef) {
 			rps = v
 			break
 		}
@@ -111,16 +113,16 @@ func (r *RouteParentStatusUpdate) AddCondition(conditionType gwv1.RouteCondition
 		r.routeParentStatuses = append(r.routeParentStatuses, rps)
 	}
 
-	msg := message
-	if cond := metautil.FindStatusCondition(rps.Conditions, string(conditionType)); cond != nil {
-		msg = cond.Message + ", " + message
-	}
+	//msg := message
+	//if cond := metautil.FindStatusCondition(rps.Conditions, string(conditionType)); cond != nil {
+	//	msg = cond.Message + ", " + message
+	//}
 
 	cond := metav1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(conditionType),
-		Message:            msg,
+		Message:            message,
 		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: r.generation,
 	}
@@ -141,7 +143,7 @@ func (r *RouteParentStatusUpdate) ConditionExists(conditionType gwv1.RouteCondit
 
 func (r *RouteStatusUpdate) ConditionsForParentRef(parentRef gwv1.ParentReference) []metav1.Condition {
 	for _, rps := range r.routeParentStatuses {
-		if rps.ParentRef == parentRef {
+		if cmp.Equal(rps.ParentRef, parentRef) {
 			return rps.Conditions
 		}
 	}
@@ -322,7 +324,7 @@ func (r *RouteParentStatusHolder) ConditionExists(conditionType gwv1.RouteCondit
 
 func (r *RouteParentStatusHolder) ConditionsForParentRef(parentRef gwv1.ParentReference) []metav1.Condition {
 	for _, rps := range r.routeParentStatuses {
-		if rps.ParentRef == parentRef {
+		if cmp.Equal(rps.ParentRef, parentRef) {
 			return rps.Conditions
 		}
 	}

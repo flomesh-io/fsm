@@ -56,9 +56,9 @@ type register struct {
 	gatewayAPIClient gatewayApiClientset.Interface
 }
 
-const (
-	reservedPortRangeStart = 60000
-)
+//const (
+//	reservedPortRangeStart = 60000
+//)
 
 // NewRegister creates a new gateway webhook register
 func NewRegister(cfg *webhook.RegisterConfig) webhook.Register {
@@ -339,12 +339,13 @@ func (w *validator) validateListenerHostname(gateway *gwv1.Gateway) field.ErrorL
 func (w *validator) validateListenerPort(gateway *gwv1.Gateway) field.ErrorList {
 	var errs field.ErrorList
 	for i, listener := range gateway.Spec.Listeners {
-		if listener.Port > reservedPortRangeStart {
+		//if listener.Port > reservedPortRangeStart {
+		if constants.ReservedGatewayPorts.Has(int32(listener.Port)) {
 			path := field.NewPath("spec").
 				Child("listeners").Index(i).
 				Child("port")
 
-			errs = append(errs, field.Invalid(path, listener.Port, fmt.Sprintf("port must be less than or equals %d", reservedPortRangeStart)))
+			errs = append(errs, field.Invalid(path, listener.Port, fmt.Sprintf("port %d is reserved, please use other port instead", listener.Port)))
 		}
 	}
 	return errs

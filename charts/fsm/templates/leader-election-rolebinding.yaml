@@ -1,13 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: fsm-leader-election-rolebinding
-  namespace: {{ include "fsm.namespace" . }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: fsm-leader-election-role
 subjects:
 - kind: ServiceAccount
