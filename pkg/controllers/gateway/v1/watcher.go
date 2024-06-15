@@ -1,4 +1,4 @@
-package main
+package v1
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 type serviceStatusWatcher struct {
 	serviceName string
 	gateway     types.NamespacedName
-	addresses   chan []gwv1.GatewayStatusAddress
+	addr        chan gatewayAddresses
 	client      client.Client
 	kubeClient  kubernetes.Interface
 }
@@ -65,7 +65,10 @@ func (w *serviceStatusWatcher) OnDelete(obj any) {
 }
 
 func (w *serviceStatusWatcher) notify(addresses []gwv1.GatewayStatusAddress) {
-	w.addresses <- addresses
+	w.addr <- gatewayAddresses{
+		gateway:   w.gateway,
+		addresses: addresses,
+	}
 }
 
 func (w *serviceStatusWatcher) shouldIgnore(obj any) bool {

@@ -43,7 +43,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -148,8 +147,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	startHTTPServer()
-
 	// codebase URL
 	url := codebase(cfg)
 	log.Info().Msgf("Gateway Repo = %q", url)
@@ -158,68 +155,9 @@ func main() {
 	spawn := calcPipySpawn(kubeClient)
 	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
-	startPipy(spawn, url)
+	startHTTPServer()
 
-	//ctrl.SetLogger(zerologr.New(&log))
-	//mgr, err := ctrl.NewManager(kubeconfig, ctrl.Options{
-	//	Scheme:                  scheme,
-	//	LeaderElection:          true,
-	//	LeaderElectionNamespace: gatewayNamespace,
-	//	LeaderElectionID:        fmt.Sprintf("%s.%s.%s", gatewayName, gatewayNamespace, constants.FSMGatewayLeaderElectionID),
-	//	Cache: ctcache.Options{
-	//		DefaultNamespaces: map[string]ctcache.Config{
-	//			gatewayNamespace: {},
-	//		},
-	//	},
-	//})
-	//if err != nil {
-	//	log.Fatal().Msgf("Unable to create manager: %s", err)
-	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating manager")
-	//}
-	//
-	//statusHandler := status.NewUpdateHandler(log, mgr.GetClient())
-	//if err := mgr.Add(statusHandler); err != nil {
-	//	log.Fatal().Msgf("Unable to add status handler: %s", err)
-	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error adding status handler")
-	//}
-	//
-	//statusWriter := &gatewayStatusWriter{
-	//	addresses:     make(chan []gwv1.GatewayStatusAddress, 1),
-	//	statusUpdater: statusHandler.Writer(),
-	//}
-	//if err := mgr.Add(statusWriter); err != nil {
-	//	log.Fatal().Msgf("Unable to add gatewayStatusWriter: %s", err)
-	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error adding gatewayStatusWriter")
-	//}
-	//
-	//serviceWatcher := &serviceStatusWatcher{
-	//	gateway: types.NamespacedName{
-	//		Name:      gatewayName,
-	//		Namespace: gatewayNamespace,
-	//	},
-	//	serviceName: serviceName,
-	//	addresses:   statusWriter.addresses,
-	//	client:      mgr.GetClient(),
-	//	kubeClient:  kubeClient,
-	//}
-	//
-	//informer, err := mgr.GetCache().GetInformer(context.Background(), &corev1.Service{})
-	//if err != nil {
-	//	log.Error().Msgf("Failed to create informer: %v", err)
-	//}
-	//
-	//_, err = informer.AddEventHandler(&toolscache.FilteringResourceEventHandler{
-	//	FilterFunc: serviceWatcher.shouldIgnore,
-	//	Handler:    serviceWatcher,
-	//})
-	//if err != nil {
-	//	log.Error().Msgf("Failed to add event handler to informer: %v", err)
-	//}
-	//
-	//if err := mgr.Start(context.Background()); err != nil {
-	//	log.Fatal().Msgf("Problem running manager, %s", err)
-	//	events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting manager")
-	//}
+	startPipy(spawn, url)
 
 	<-stop
 	cancel()
@@ -294,6 +232,9 @@ func startPipy(spawn int64, url string) {
 		args = append([]string{fmt.Sprintf("--log-level=%s", utils.PipyLogLevelByVerbosity(verbosity))}, args...)
 	}
 
+	args = append(args, fmt.Sprintf("--admin-port=%d", constants.FSMGatewayAdminPort))
+
+	// arguments for FGW
 	if verbosity == "debug" || verbosity == "trace" {
 		args = append(args, "--args", "--debug")
 	}
@@ -308,13 +249,24 @@ func startPipy(spawn int64, url string) {
 		log.Fatal().Err(err)
 		os.Exit(1)
 	}
+
+	if cmd.ProcessState != nil {
+		log.Info().Msgf("PIPY process state: %v", cmd.ProcessState.String())
+	}
+
+	if cmd.Process != nil {
+		// detach it from the go process
+		if err := cmd.Process.Release(); err != nil {
+			log.Fatal().Err(err)
+		}
+	}
 }
 
 func startHTTPServer() {
 	// Initialize FSM's http service server
-	httpServer := httpserver.NewHTTPServer(constants.FSMHTTPServerPort)
+	httpServer := httpserver.NewHTTPServer(constants.FSMGatewayHTTPServerPort)
 	// Metrics
-	httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
+	// httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
 	// Version
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
 

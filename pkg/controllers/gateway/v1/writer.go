@@ -1,4 +1,4 @@
-package main
+package v1
 
 import (
 	"context"
@@ -11,8 +11,13 @@ import (
 )
 
 type gatewayStatusWriter struct {
-	addresses     chan []gwv1.GatewayStatusAddress
+	addr          chan gatewayAddresses
 	statusUpdater status.Updater
+}
+
+type gatewayAddresses struct {
+	gateway   types.NamespacedName
+	addresses []gwv1.GatewayStatusAddress
 }
 
 func (w *gatewayStatusWriter) NeedLeaderElection() bool {
@@ -24,15 +29,12 @@ func (w *gatewayStatusWriter) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case addresses := <-w.addresses:
-			log.Info().Msgf("[GW] Received new addresses: %v", addresses)
+		case addr := <-w.addr:
+			log.Info().Msgf("[GW] Received new addresses: %v", addr.addresses)
 
 			w.statusUpdater.Send(status.Update{
-				NamespacedName: types.NamespacedName{
-					Name:      gatewayName,
-					Namespace: gatewayNamespace,
-				},
-				Resource: &gwv1.Gateway{},
+				NamespacedName: addr.gateway,
+				Resource:       &gwv1.Gateway{},
 				Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 					gw, ok := obj.(*gwv1.Gateway)
 					if !ok {
@@ -41,7 +43,7 @@ func (w *gatewayStatusWriter) Start(ctx context.Context) error {
 					}
 
 					gwCopy := gw.DeepCopy()
-					gwCopy.Status.Addresses = addresses
+					gwCopy.Status.Addresses = addr.addresses
 
 					return gwCopy
 				}),

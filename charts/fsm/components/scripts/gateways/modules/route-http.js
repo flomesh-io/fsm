@@ -71,7 +71,7 @@ export default function (config, listener, routeResources) {
               return matches.some(f => f(head))
             }
           )
-          return [matchFunc, makeBackendSelectorForRule(r)]
+          return [matchFunc, makeBackendSelectorForRule(r, false)]
         })
         break
       case 'GRPCRoute':
@@ -90,7 +90,7 @@ export default function (config, listener, routeResources) {
               return matches.some(f => f(head))
             }
           )
-          return [matchFunc, makeBackendSelectorForRule(r)]
+          return [matchFunc, makeBackendSelectorForRule(r, true)]
         })
         break
       default: throw `route-http: unknown resource kind: '${resource.kind}'`
@@ -164,14 +164,14 @@ export default function (config, listener, routeResources) {
     }
   }
 
-  function makeBackendSelectorForRule(rule) {
+  function makeBackendSelectorForRule(rule, isHTTP2) {
     var sessionPersistenceConfig = rule.sessionPersistence
     var sessionPersistence = sessionPersistenceConfig && makeSessionPersistence(sessionPersistenceConfig)
     var selector = makeBackendSelector(
       config, 'http', rule,
       function (backendRef, backendResource, filters) {
         if (!backendResource) return response500
-        var forwarder = makeForwarder(config, backendRef, backendResource)
+        var forwarder = makeForwarder(config, backendRef, backendResource, isHTTP2)
         if (sessionPersistence) {
           var preserveSession = sessionPersistence.preserve
           return pipeline($=>$

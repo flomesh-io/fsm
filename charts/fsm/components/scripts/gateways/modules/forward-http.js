@@ -7,7 +7,7 @@ import { log } from '../log.js'
 var $ctx
 var $selection
 
-export default function (config, backendRef, backendResource) {
+export default function (config, backendRef, backendResource, isHTTP2) {
   var hc = makeHealthCheck(config, backendRef, backendResource)
   var tls = makeBackendTLS(config, backendRef, backendResource)
 
@@ -77,7 +77,7 @@ export default function (config, backendRef, backendResource) {
     )
 
     var forward = pipeline($=>{
-      $.muxHTTP(() => $selection).to($=>{
+      $.muxHTTP(() => $selection, { version: isHTTP2 ? 2 : 1 }).to($=>{
         if (tls) {
           $.connectTLS({
             ...tls,

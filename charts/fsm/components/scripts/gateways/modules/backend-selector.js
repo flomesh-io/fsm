@@ -1,11 +1,7 @@
-import { log } from '../log.js'
-
 export default function (config, protocol, rule, makeForwarder) {
   var ruleFilters = makeFilters(rule?.filters)
 
   var refs = rule?.backendRefs || []
-  log?.('rule', rule, 'refs', refs)
-
   if (refs.length > 1) {
     var lb = new algo.LoadBalancer(
       refs.map(ref => makeBackendTarget(ruleFilters, ref)),
@@ -22,8 +18,6 @@ export default function (config, protocol, rule, makeForwarder) {
 
   function makeBackendTarget(ruleFilters, backendRef) {
     var backendResource = findBackendResource(backendRef)
-    log?.('[makeBackendTarget]','backendRef', backendRef, 'backendResource', backendResource)
-
     var filters = [
       ...ruleFilters,
       ...makeFilters(backendRef?.filters),
@@ -41,12 +35,9 @@ export default function (config, protocol, rule, makeForwarder) {
     if (backendRef) {
       var kind = backendRef.kind || 'Backend'
       var name = backendRef.name
-      var res = config.resources.find(
+      return config.resources.find(
         r => r.kind === kind && r.metadata.name === name
       )
-      log?.('[findBackendResource]', 'backendRef', backendRef, 'backendResource', res)
-
-      return res
     }
   }
 

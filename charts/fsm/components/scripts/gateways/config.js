@@ -1,5 +1,3 @@
-import { log } from './log.js'
-
 var DEFAULT_CONFIG_PATH = '/etc/fgw'
 
 function load(filename) {
@@ -28,11 +26,7 @@ function load(filename) {
 
 function loadConfig(obj) {
   config.resources = obj.resources || []
-  config?.resources?.forEach(r => {
-    log?.(`[CFG] resource: [${r?.kind}, ${r?.metadata?.namespace}, ${r?.metadata?.name}]`)
-  })
   config.secrets = obj.secrets || {}
-  log?.(`[CFG] secrets length: ${Object.keys(config?.secrets).length}`)
 }
 
 function loadConfigDir(dirname) {

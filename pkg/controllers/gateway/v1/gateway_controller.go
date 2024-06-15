@@ -1157,6 +1157,10 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.secretToGateways),
 		).
+		Watches(
+			&corev1.Service{},
+			handler.EnqueueRequestsFromMapFunc(r.serviceToGateways),
+		).
 		Complete(r); err != nil {
 		return err
 	}
@@ -1271,6 +1275,54 @@ func (r *gatewayReconciler) secretToGateways(ctx context.Context, object client.
 	}
 
 	return reconciles
+}
+
+func (r *gatewayReconciler) serviceToGateways(_ context.Context, object client.Object) []reconcile.Request {
+	svc, ok := object.(*corev1.Service)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", object)
+		return nil
+	}
+
+	// Gateway service is either LOadBalancer or NodePort, and should have labels:
+	//   app: fsm-gateway
+	//   gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+	//   gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+	switch svc.Spec.Type {
+	case corev1.ServiceTypeLoadBalancer, corev1.ServiceTypeNodePort:
+		if len(svc.Labels) == 0 {
+			return nil
+		}
+
+		app, ok := svc.Labels[constants.AppLabel]
+		if !ok {
+			return nil
+		}
+		if app != constants.FSMGatewayName {
+			return nil
+		}
+
+		ns, ok := svc.Labels[constants.GatewayNamespaceLabel]
+		if !ok {
+			return nil
+		}
+
+		name, ok := svc.Labels[constants.GatewayNameLabel]
+		if !ok {
+			return nil
+		}
+
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Namespace: ns,
+					Name:      name,
+				},
+			},
+		}
+	default:
+		return nil
+	}
 }
 
 func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {

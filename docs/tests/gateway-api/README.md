@@ -1178,6 +1178,7 @@ Sent 1 request and received 1 response
 ```
 
 ### Test TLS Terminate
+
 #### Create TCPRoute and attach to TLS port
 ```shell
 kubectl -n test apply -f - <<EOF
@@ -1192,17 +1193,20 @@ spec:
       port: 9443
   rules:
   - backendRefs:
-    - name: tcproute
-      port: 8078
+    - name: httpbin
+      port: 8080
 EOF
 ```
 
 #### Test it:
 ```shell
 ❯ curl -iv --cacert https.crt https://httptest.localhost:9443
-*   Trying 127.0.0.1:9443...
-* Connected to httptest.localhost (127.0.0.1) port 9443 (#0)
-* ALPN: offers h2,http/1.1
+* Host httptest.localhost:9443 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:9443...
+* Connected to httptest.localhost (::1) port 9443
+* ALPN: curl offers h2,http/1.1
 * (304) (OUT), TLS handshake, Client hello (1):
 *  CAfile: https.crt
 *  CApath: none
@@ -1212,33 +1216,30 @@ EOF
 * (304) (IN), TLS handshake, CERT verify (15):
 * (304) (IN), TLS handshake, Finished (20):
 * (304) (OUT), TLS handshake, Finished (20):
-* SSL connection using TLSv1.3 / AEAD-AES256-GCM-SHA384
-* ALPN: server accepted h2
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
+* ALPN: server did not agree on a protocol. Uses default.
 * Server certificate:
 *  subject: CN=httptest.localhost
-*  start date: Jul  6 03:41:13 2023 GMT
-*  expire date: Jul  5 03:41:13 2024 GMT
+*  start date: Jun 15 10:38:16 2024 GMT
+*  expire date: Jun 15 10:38:16 2025 GMT
 *  subjectAltName: host "httptest.localhost" matched cert's "httptest.localhost"
 *  issuer: CN=httptest.localhost
 *  SSL certificate verify ok.
-* using HTTP/2
-* h2h3 [:method: GET]
-* h2h3 [:path: /]
-* h2h3 [:scheme: https]
-* h2h3 [:authority: httptest.localhost]
-* h2h3 [user-agent: curl/7.88.1]
-* h2h3 [accept: */*]
-* Using Stream ID: 1 (easy handle 0x7f90ec011e00)
-> GET / HTTP/2
-> Host: httptest.localhost
-> user-agent: curl/7.88.1
-> accept: */*
+* using HTTP/1.x
+> GET / HTTP/1.1
+> Host: httptest.localhost:9443
+> User-Agent: curl/8.6.0
+> Accept: */*
 >
-< HTTP/2 200
-HTTP/2 200
+< HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+< content-length: 20
+content-length: 20
+< connection: keep-alive
+connection: keep-alive
 
 <
-Hi, I am TCPRoute!
+Hi, I am HTTPRoute!
 * Connection #0 to host httptest.localhost left intact
 ```
 
