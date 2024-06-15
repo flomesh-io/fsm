@@ -726,7 +726,7 @@ func testFSMGatewayGRPCTrafficSameNamespace() {
 		Destination: "grpctest.localhost:8090",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
-		ProtoFile:   "scripts/hello.proto",
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 
@@ -887,7 +887,7 @@ func testFSMGatewayGRPCTrafficCrossNamespace() {
 		Destination: "grpctest.localhost:9090",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
-		ProtoFile:   "scripts/hello.proto",
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 
@@ -1536,7 +1536,7 @@ func testFSMGatewayGRPCSTraffic() {
 		JSONRequest: `{"greeting":"Flomesh"}`,
 		UseTLS:      true,
 		CertFile:    "grpc.crt",
-		ProtoFile:   "scripts/hello.proto",
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 
