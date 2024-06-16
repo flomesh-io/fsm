@@ -914,6 +914,51 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&corev1.Service{},
 			handler.EnqueueRequestsFromMapFunc(r.serviceToGateways),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+				service, ok := obj.(*corev1.Service)
+				if !ok {
+					log.Error().Msgf("unexpected object type: %T", obj)
+					return false
+				}
+
+				switch service.Spec.Type {
+				case corev1.ServiceTypeLoadBalancer, corev1.ServiceTypeNodePort:
+					if len(service.Labels) == 0 {
+						return false
+					}
+
+					app, ok := service.Labels[constants.AppLabel]
+					if !ok {
+						return false
+					}
+
+					return app == constants.FSMGatewayName
+				default:
+					return false
+				}
+			})),
+		).
+		Watches(
+			&appsv1.Deployment{},
+			handler.EnqueueRequestsFromMapFunc(r.deploymentToGateways),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+				deployment, ok := obj.(*appsv1.Deployment)
+				if !ok {
+					log.Error().Msgf("unexpected object type: %T", obj)
+					return false
+				}
+
+				if len(deployment.Labels) == 0 {
+					return false
+				}
+
+				app, ok := deployment.Labels[constants.AppLabel]
+				if !ok {
+					return false
+				}
+
+				return app == constants.FSMGatewayName
+			})),
 		).
 		Complete(r); err != nil {
 		return err
@@ -1038,44 +1083,63 @@ func (r *gatewayReconciler) serviceToGateways(_ context.Context, object client.O
 		return nil
 	}
 
-	// Gateway service is either LOadBalancer or NodePort, and should have labels:
+	// Gateway service is either LoadBalancer or NodePort, and should have labels:
 	//   app: fsm-gateway
 	//   gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
 	//   gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
-	switch svc.Spec.Type {
-	case corev1.ServiceTypeLoadBalancer, corev1.ServiceTypeNodePort:
-		if len(svc.Labels) == 0 {
-			return nil
-		}
-
-		app, ok := svc.Labels[constants.AppLabel]
-		if !ok {
-			return nil
-		}
-		if app != constants.FSMGatewayName {
-			return nil
-		}
-
-		ns, ok := svc.Labels[constants.GatewayNamespaceLabel]
-		if !ok {
-			return nil
-		}
-
-		name, ok := svc.Labels[constants.GatewayNameLabel]
-		if !ok {
-			return nil
-		}
-
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Namespace: ns,
-					Name:      name,
-				},
-			},
-		}
-	default:
+	ns, ok := svc.Labels[constants.GatewayNamespaceLabel]
+	if !ok {
 		return nil
+	}
+
+	name, ok := svc.Labels[constants.GatewayNameLabel]
+	if !ok {
+		return nil
+	}
+
+	log.Debug().Msgf("[GW] Found Gateway Service %s/%s", ns, name)
+
+	return []reconcile.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Namespace: ns,
+				Name:      name,
+			},
+		},
+	}
+}
+
+func (r *gatewayReconciler) deploymentToGateways(_ context.Context, object client.Object) []reconcile.Request {
+	deployment, ok := object.(*appsv1.Deployment)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", object)
+		return nil
+	}
+
+	// Gateway deployment should have labels:
+	//   app: fsm-gateway
+	//   gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+	//   gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+
+	ns, ok := deployment.Labels[constants.GatewayNamespaceLabel]
+	if !ok {
+		return nil
+	}
+
+	name, ok := deployment.Labels[constants.GatewayNameLabel]
+	if !ok {
+		return nil
+	}
+
+	log.Debug().Msgf("[GW] Found Gateway Deployment %s/%s", ns, name)
+
+	return []reconcile.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Namespace: ns,
+				Name:      name,
+			},
+		},
 	}
 }
 

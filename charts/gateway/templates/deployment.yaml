@@ -18,6 +18,8 @@ metadata:
     {{- end }}
     {{- end }}
     app: fsm-gateway
+    gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
     meshName: {{ .Values.fsm.meshName }}
 spec:
   replicas: {{ default 1 .Values.fsm.gateway.replicas }}
@@ -86,7 +88,6 @@ spec:
         ports:
           {{- range $listener := .Values.fsm.gateway.listeners }}
           - name: {{ $listener.name }}
-{{/*            containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}*/}}
             containerPort: {{ $listener.port }}
           {{- end }}
           - name: health
