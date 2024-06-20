@@ -3,9 +3,6 @@ package gateway
 import (
 	"context"
 
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
-	"github.com/flomesh-io/fsm/pkg/version"
-
 	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,8 +11,8 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	k8scache "k8s.io/client-go/tools/cache"
-	crClient "sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -25,37 +22,34 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	cctx "github.com/flomesh-io/fsm/pkg/context"
+	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/gateway/repo"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/messaging"
 )
 
 var (
 	log = logger.New("controller-gatewayapi")
 )
 
-// NewGatewayAPIController returns a gateway.Controller interface related to functionality provided by the resources in the gateway.flomesh.io API group
-func NewGatewayAPIController(ctx *cctx.ControllerContext) gwtypes.Controller {
-	return newClient(ctx)
+// NewGatewayAPIController returns a gateway.Controller interface related to functionality provided by the resources in the plugin.flomesh.io API group
+func NewGatewayAPIController(informerCollection *fsminformers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) Controller {
+	return newClient(informerCollection, kubeClient, gatewayAPIClient, msgBroker, cfg, meshName, fsmVersion)
 }
 
-func newClient(ctx *cctx.ControllerContext) *client {
-	gatewayAPIClient, err := gatewayApiClientset.NewForConfig(ctx.KubeConfig)
-	if err != nil {
-		panic(err)
-	}
-
+func newClient(informerCollection *informers.InformerCollection, kubeClient kubernetes.Interface, gatewayAPIClient gatewayApiClientset.Interface, msgBroker *messaging.Broker, cfg configurator.Configurator, meshName, fsmVersion string) *client {
 	fsmGatewayClass := &gwv1.GatewayClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constants.FSMGatewayClassName,
 			Labels: map[string]string{
 				constants.FSMAppNameLabelKey:     constants.FSMAppNameLabelValue,
-				constants.FSMAppInstanceLabelKey: ctx.MeshName,
-				constants.FSMAppVersionLabelKey:  ctx.FSMVersion,
+				constants.FSMAppInstanceLabelKey: meshName,
+				constants.FSMAppVersionLabelKey:  fsmVersion,
 				constants.AppLabel:               constants.FSMGatewayName,
 			},
 		},
@@ -71,63 +65,45 @@ func newClient(ctx *cctx.ControllerContext) *client {
 	}
 
 	c := &client{
-		msgBroker: ctx.MsgBroker,
-		cfg:       ctx.Configurator,
-		cache:     cache.NewGatewayCache(ctx),
+		informers:  informerCollection,
+		kubeClient: kubeClient,
+		msgBroker:  msgBroker,
+		cfg:        cfg,
+		cache:      cache.NewGatewayCache(informerCollection, kubeClient, cfg),
 	}
 
 	// Initialize informers
-	informers := map[fsminformers.InformerKey]crClient.Object{
-		fsminformers.InformerKeyService:                  &corev1.Service{},
-		fsminformers.InformerKeyServiceImport:            &mcsv1alpha1.ServiceImport{},
-		fsminformers.InformerKeyEndpoints:                &corev1.Endpoints{},
-		fsminformers.InformerKeySecret:                   &corev1.Secret{},
-		fsminformers.InformerKeyConfigMap:                &corev1.ConfigMap{},
-		fsminformers.InformerKeyGatewayAPIGatewayClass:   &gwv1.GatewayClass{},
-		fsminformers.InformerKeyGatewayAPIGateway:        &gwv1.Gateway{},
-		fsminformers.InformerKeyGatewayAPIHTTPRoute:      &gwv1.HTTPRoute{},
-		fsminformers.InformerKeyGatewayAPIGRPCRoute:      &gwv1.GRPCRoute{},
-		fsminformers.InformerKeyGatewayAPITLSRoute:       &gwv1alpha2.TLSRoute{},
-		fsminformers.InformerKeyGatewayAPITCPRoute:       &gwv1alpha2.TCPRoute{},
-		fsminformers.InformerKeyGatewayAPIUDPRoute:       &gwv1alpha2.UDPRoute{},
-		fsminformers.InformerKeyGatewayAPIReferenceGrant: &gwv1beta1.ReferenceGrant{},
-		fsminformers.InformerKeyRateLimitPolicy:          &gwpav1alpha1.RateLimitPolicy{},
-		fsminformers.InformerKeySessionStickyPolicy:      &gwpav1alpha1.SessionStickyPolicy{},
-		fsminformers.InformerKeyLoadBalancerPolicy:       &gwpav1alpha1.LoadBalancerPolicy{},
-		fsminformers.InformerKeyCircuitBreakingPolicy:    &gwpav1alpha1.CircuitBreakingPolicy{},
-		fsminformers.InformerKeyAccessControlPolicy:      &gwpav1alpha1.AccessControlPolicy{},
-		fsminformers.InformerKeyHealthCheckPolicy:        &gwpav1alpha1.HealthCheckPolicy{},
-		fsminformers.InformerKeyFaultInjectionPolicy:     &gwpav1alpha1.FaultInjectionPolicy{},
-		fsminformers.InformerKeyUpstreamTLSPolicy:        &gwpav1alpha1.UpstreamTLSPolicy{},
-		fsminformers.InformerKeyRetryPolicy:              &gwpav1alpha1.RetryPolicy{},
-		fsminformers.InformerKeyNamespace:                &corev1.Namespace{},
-	}
-
-	if version.IsEndpointSliceEnabled(ctx.KubeClient) {
-		informers[fsminformers.InformerKeyEndpointSlices] = &discoveryv1.EndpointSlice{}
-	}
-
-	for informerKey, resource := range informers {
+	for _, informerKey := range []fsminformers.InformerKey{
+		fsminformers.InformerKeyService,
+		fsminformers.InformerKeyServiceImport,
+		fsminformers.InformerKeyEndpoints,
+		fsminformers.InformerKeyEndpointSlices,
+		fsminformers.InformerKeySecret,
+		fsminformers.InformerKeyConfigMap,
+		fsminformers.InformerKeyGatewayAPIGatewayClass,
+		fsminformers.InformerKeyGatewayAPIGateway,
+		fsminformers.InformerKeyGatewayAPIHTTPRoute,
+		fsminformers.InformerKeyGatewayAPIGRPCRoute,
+		fsminformers.InformerKeyGatewayAPITLSRoute,
+		fsminformers.InformerKeyGatewayAPITCPRoute,
+		fsminformers.InformerKeyGatewayAPIUDPRoute,
+		fsminformers.InformerKeyGatewayAPIReferenceGrant,
+		fsminformers.InformerKeyRateLimitPolicy,
+		fsminformers.InformerKeySessionStickyPolicy,
+		fsminformers.InformerKeyLoadBalancerPolicy,
+		fsminformers.InformerKeyCircuitBreakingPolicy,
+		fsminformers.InformerKeyAccessControlPolicy,
+		fsminformers.InformerKeyHealthCheckPolicy,
+		fsminformers.InformerKeyFaultInjectionPolicy,
+		fsminformers.InformerKeyUpstreamTLSPolicy,
+		fsminformers.InformerKeyRetryPolicy,
+	} {
 		if eventTypes := getEventTypesByInformerKey(informerKey); eventTypes != nil {
-			c.informOnResource(ctx, resource, c.getEventHandlerFuncs(eventTypes))
+			c.informers.AddEventHandler(informerKey, c.getEventHandlerFuncs(eventTypes))
 		}
 	}
 
 	return c
-}
-
-func (c *client) informOnResource(ctx *cctx.ControllerContext, obj crClient.Object, handler k8scache.ResourceEventHandlerFuncs) {
-	ch := ctx.Manager.GetCache()
-
-	informer, err := ch.GetInformer(context.Background(), obj)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = informer.AddEventHandler(handler)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (c *client) getEventHandlerFuncs(eventTypes *k8s.EventTypes) k8scache.ResourceEventHandlerFuncs {

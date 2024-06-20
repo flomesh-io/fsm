@@ -8,9 +8,9 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func getRouteParentKey(route metav1.Object, parentRef gwv1.ParentReference) types.NamespacedName {
+func getRouteParentKey(route metav1.Object, parent gwv1.RouteParentStatus) types.NamespacedName {
 	return types.NamespacedName{
-		Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, route.GetNamespace()),
-		Name:      string(parentRef.Name),
+		Namespace: gwutils.Namespace(parent.ParentRef.Namespace, route.GetNamespace()),
+		Name:      string(parent.ParentRef.Name),
 	}
 }

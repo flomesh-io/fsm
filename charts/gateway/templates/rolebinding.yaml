@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: fsm-gateway-rolebinding
-  namespace: {{ .Values.fsm.gateway.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
     app: fsm-gateway
@@ -14,12 +14,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "fsm.gateway.serviceAccountName" . }}
-    namespace: {{ .Values.fsm.gateway.namespace }}
+    namespace: {{ .Values.gwy.metadata.namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ printf "fsm-mesh-config-rolebinding-%s" .Values.fsm.gateway.namespace }}
+  name: {{ printf "fsm-mesh-config-rolebinding-%s" .Values.gwy.metadata.namespace }}
   namespace: {{ .Values.fsm.fsmNamespace }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
@@ -31,5 +31,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "fsm.gateway.serviceAccountName" . }}
-    namespace: {{ .Values.fsm.gateway.namespace }}
+    namespace: {{ .Values.gwy.metadata.namespace }}
 {{- end }}

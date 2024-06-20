@@ -25,12 +25,9 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"sync"
-
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,11 +37,13 @@ import (
 	utilcache "k8s.io/kubernetes/pkg/proxy/util"
 
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
 type baseServiceImportInfo struct {
-	address  string
-	port     int
+	address string
+	port    int
+	//portName string
 	protocol corev1.Protocol
 }
 
@@ -71,6 +70,8 @@ type enrichServiceImportInfoFunc func(port *mcsv1alpha1.ServicePort, svcImp *mcs
 type serviceImportChange struct {
 	previous ServiceImportMap
 	current  ServiceImportMap
+	//previousEndpoints EndpointsMap
+	//currentEndpoints  EndpointsMap
 }
 
 // ServiceImportChangeTracker tracks changes to ServiceImport objects
@@ -81,7 +82,7 @@ type ServiceImportChangeTracker struct {
 	enrichServiceImportInfo enrichServiceImportInfoFunc
 	enrichEndpointInfo      enrichMultiClusterEndpointFunc
 	recorder                events.EventRecorder
-	client                  cache.Cache
+	informers               *fsminformers.InformerCollection
 }
 
 // ServiceImportMap is a map of ServicePortName to ServicePort
@@ -123,14 +124,14 @@ func (t *ServiceImportChangeTracker) newBaseServiceInfo(port *mcsv1alpha1.Servic
 }
 
 // NewServiceImportChangeTracker creates a new ServiceImportChangeTracker
-func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, client cache.Cache) *ServiceImportChangeTracker {
+func NewServiceImportChangeTracker(enrichServiceImportInfo enrichServiceImportInfoFunc, enrichEndpointInfo enrichMultiClusterEndpointFunc, recorder events.EventRecorder, informers *fsminformers.InformerCollection) *ServiceImportChangeTracker {
 	return &ServiceImportChangeTracker{
 		items:                   make(map[types.NamespacedName]*serviceImportChange),
 		endpointItems:           make(map[types.NamespacedName]*multiClusterEndpointsChange),
 		enrichServiceImportInfo: enrichServiceImportInfo,
 		enrichEndpointInfo:      enrichEndpointInfo,
 		recorder:                recorder,
-		client:                  client,
+		informers:               informers,
 	}
 }
 
@@ -264,9 +265,7 @@ func (t *ServiceImportChangeTracker) serviceImportToServiceMap(svcImp *mcsv1alph
 }
 
 func (t *ServiceImportChangeTracker) serviceExists(svcImp *mcsv1alpha1.ServiceImport) (*corev1.Service, bool) {
-	svc := &corev1.Service{}
-	//svc, err := t.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
-	err := t.client.Get(context.Background(), types.NamespacedName{Namespace: svcImp.Namespace, Name: svcImp.Name}, svc)
+	svc, err := t.informers.GetListers().Service.Services(svcImp.Namespace).Get(svcImp.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, false

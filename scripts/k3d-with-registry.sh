@@ -11,7 +11,7 @@ K3D_NAMESPACED_INGRESS_ENABLE="${K3D_NAMESPACED_INGRESS_ENABLE:-false}"
 K3D_GATEWAY_API_ENABLE="${K3D_GATEWAY_API_ENABLE:-false}"
 K3D_FLB_ENABLE="${K3D_FLB_ENABLE:-false}"
 K3D_SERVICELB_ENABLE="${K3D_SERVICELB_ENABLE:-false}"
-K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.25.16-k3s4}"
+K3D_IMAGE="${K3D_IMAGE:-rancher/k3s:v1.21.11-k3s1}"
 
 # shellcheck disable=SC2086
 jq_cluster_exists=".[] | select(.name == \"$K3D_CLUSTER_NAME\")"

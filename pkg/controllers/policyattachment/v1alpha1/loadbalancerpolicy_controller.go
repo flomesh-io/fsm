@@ -2,16 +2,14 @@ package v1alpha1
 
 import (
 	"context"
-
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
+	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/loadbalancer"
 
@@ -20,6 +18,12 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"k8s.io/apimachinery/pkg/types"
+
+	corev1 "k8s.io/api/core/v1"
+
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,12 +35,16 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+
+	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type loadBalancerPolicyReconciler struct {
-	recorder        record.EventRecorder
-	fctx            *fctx.ControllerContext
-	statusProcessor *policystatus.ServicePolicyStatusProcessor
+	recorder                  record.EventRecorder
+	fctx                      *fctx.ControllerContext
+	gatewayAPIClient          gwclient.Interface
+	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
@@ -46,11 +54,13 @@ func (r *loadBalancerPolicyReconciler) NeedLeaderElection() bool {
 // NewLoadBalancerPolicyReconciler returns a new LoadBalancerPolicy Reconciler
 func NewLoadBalancerPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &loadBalancerPolicyReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("LoadBalancerPolicy"),
-		fctx:     ctx,
+		recorder:                  ctx.Manager.GetEventRecorderFor("LoadBalancerPolicy"),
+		fctx:                      ctx,
+		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
+		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 
-	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
 		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedLoadBalancers,
@@ -78,13 +88,13 @@ func (r *loadBalancerPolicyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
-		policy.Spec.TargetRef,
-		policy.Status.Conditions,
-	))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
+	if err := r.fctx.Status().Update(ctx, policy); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -93,45 +103,33 @@ func (r *loadBalancerPolicyReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *loadBalancerPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.LoadBalancerPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addLoadBalancerPolicyIndexer(context.Background(), mgr)
+		Complete(r)
 }
 
-func addLoadBalancerPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.LoadBalancerPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
-		policy := obj.(*gwpav1alpha1.LoadBalancerPolicy)
-		targetRef := policy.Spec.TargetRef
-		var targets []string
-		if targetRef.Kind == constants.KubernetesServiceKind {
-			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
-				Name:      string(targetRef.Name),
-			}.String())
+func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	loadBalancerPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().LoadBalancerPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list LoadBalancerPolicies: %s", err)))
+	}
+
+	loadBalancers := make([]client.Object, 0)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+
+	for _, p := range loadBalancerPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
+			loadBalancers = append(loadBalancers, &p)
 		}
-
-		return targets
-	}); err != nil {
-		return err
 	}
 
-	return nil
-}
-
-func (r *loadBalancerPolicyReconciler) getAttachedLoadBalancers(svc client.Object) ([]client.Object, *metav1.Condition) {
-	c := r.fctx.Manager.GetCache()
-	key := client.ObjectKeyFromObject(svc).String()
-	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
-
-	return gwutils.GetLoadBalancers(c, selector), nil
+	return loadBalancers, nil
 }
 
 func (r *loadBalancerPolicyReconciler) findConflict(loadBalancerPolicy client.Object, allSessionStickyPolicies []client.Object, port int32) *types.NamespacedName {
@@ -170,17 +168,13 @@ func (r *loadBalancerPolicyReconciler) referenceGrantToPolicyAttachment(_ contex
 		return nil
 	}
 
-	c := r.fctx.Manager.GetCache()
-	list := &gwpav1alpha1.LoadBalancerPolicyList{}
-	if err := c.List(context.Background(), list); err != nil {
-		log.Error().Msgf("Failed to list LoadBalancerPolicyList: %v", err)
-		return nil
-	}
-	policies := gwutils.ToSlicePtr(list.Items)
-
 	requests := make([]reconcile.Request, 0)
-	for _, policy := range policies {
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.LoadBalancerPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.LoadBalancerPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

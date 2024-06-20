@@ -1,15 +1,6 @@
 package cache
 
 import (
-	"context"
-
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -17,38 +8,13 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *GatewayProcessor) processTCPRoutes() {
-	list := &gwv1alpha2.TCPRouteList{}
-	err := c.cache.client.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
-	})
-	if err != nil {
-		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
-		return
-	}
-
-	for _, tcpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
-		c.processTCPRoute(tcpRoute)
-	}
-}
-
 func (c *GatewayProcessor) processTCPRoute(tcpRoute *gwv1alpha2.TCPRoute) {
-	rsh := route.NewRouteStatusUpdate(
-		tcpRoute,
-		&tcpRoute.ObjectMeta,
-		&tcpRoute.TypeMeta,
-		nil,
-		gwutils.ToSlicePtr(tcpRoute.Status.Parents),
-	)
-
-	for _, parentRef := range tcpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
+	for _, ref := range tcpRoute.Spec.ParentRefs {
+		if !gwutils.IsRefToGateway(ref, gwutils.ObjectKey(c.gateway)) {
 			continue
 		}
 
-		h := rsh.StatusUpdateFor(parentRef)
-
-		allowedListeners := gwutils.GetAllowedListeners(c.cache.client, c.gateway, h)
+		allowedListeners, _ := gwutils.GetAllowedListeners(c.getNamespaceLister(), c.gateway, ref, gwutils.ToRouteContext(tcpRoute), c.validListeners)
 		if len(allowedListeners) == 0 {
 			continue
 		}

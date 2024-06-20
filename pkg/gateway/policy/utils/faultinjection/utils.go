@@ -14,7 +14,7 @@ import (
 )
 
 // GetFaultInjectionConfigIfRouteHostnameMatchesPolicy returns the fault injection config if the route hostname matches the policy
-func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
 	if len(faultInjectionPolicy.Spec.Hostnames) == 0 {
 		return nil
 	}
@@ -42,7 +42,7 @@ func GetFaultInjectionConfigIfRouteHostnameMatchesPolicy(routeHostname string, f
 }
 
 // GetFaultInjectionConfigIfHTTPRouteMatchesPolicy returns the fault injection config if the HTTP route matches the policy
-func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
 	if len(faultInjectionPolicy.Spec.HTTPFaultInjections) == 0 {
 		return nil
 	}
@@ -57,7 +57,7 @@ func GetFaultInjectionConfigIfHTTPRouteMatchesPolicy(routeMatch gwv1.HTTPRouteMa
 }
 
 // GetFaultInjectionConfigIfGRPCRouteMatchesPolicy returns the fault injection config if the GRPC route matches the policy
-func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, faultInjectionPolicy *gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
+func GetFaultInjectionConfigIfGRPCRouteMatchesPolicy(routeMatch gwv1.GRPCRouteMatch, faultInjectionPolicy gwpav1alpha1.FaultInjectionPolicy) *gwpav1alpha1.FaultInjectionConfig {
 	if len(faultInjectionPolicy.Spec.GRPCFaultInjections) == 0 {
 		return nil
 	}

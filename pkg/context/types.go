@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
-
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
+	"github.com/flomesh-io/fsm/pkg/gateway"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +51,7 @@ type ControllerContext struct {
 	KubeClient          kubernetes.Interface
 	RepoClient          *repo.PipyRepoClient
 	InformerCollection  *fsminformers.InformerCollection
-	GatewayEventHandler gwtypes.Controller
+	GatewayEventHandler gateway.Controller
 	StatusUpdater       status.Updater
 	MeshName            string
 	TrustDomain         string

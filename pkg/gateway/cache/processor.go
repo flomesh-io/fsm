@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -15,6 +14,8 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 
+	v1 "k8s.io/client-go/listers/core/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -25,25 +26,30 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 type GatewayProcessor struct {
-	cache          *GatewayCache
-	gateway        *gwv1.Gateway
-	validListeners []gwtypes.Listener
-	services       map[string]serviceContext
-	rules          map[int32]fgw.RouteRule
-	upstreams      calculateEndpointsFunc
+	cache           *GatewayCache
+	gateway         *gwv1.Gateway
+	policies        globalPolicyAttachments
+	referenceGrants []client.Object
+	validListeners  []gwtypes.Listener
+	services        map[string]serviceContext
+	rules           map[int32]fgw.RouteRule
+	upstreams       calculateEndpointsFunc
 }
 
-func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway) *GatewayProcessor {
+func NewGatewayProcessor(cache *GatewayCache, gateway *gwv1.Gateway, policies globalPolicyAttachments, referenceGrants []client.Object) *GatewayProcessor {
 	p := &GatewayProcessor{
-		cache:          cache,
-		gateway:        gateway,
-		validListeners: gwutils.GetValidListenersForGateway(gateway),
-		services:       make(map[string]serviceContext),
-		rules:          make(map[int32]fgw.RouteRule),
+		cache:           cache,
+		gateway:         gateway,
+		policies:        policies,
+		referenceGrants: referenceGrants,
+		validListeners:  gwutils.GetValidListenersForGateway(gateway),
+		services:        make(map[string]serviceContext),
+		rules:           make(map[int32]fgw.RouteRule),
 	}
 
 	if cache.useEndpointSlices {
@@ -73,6 +79,14 @@ func (c *GatewayProcessor) build() *fgw.ConfigSpec {
 	return configSpec
 }
 
+func (c *GatewayProcessor) getResourcesFromCache(resourceType informers.ResourceType, shouldSort bool) []client.Object {
+	return c.cache.getResourcesFromCache(resourceType, shouldSort)
+}
+
+func (c *GatewayProcessor) getNamespaceLister() v1.NamespaceLister {
+	return c.cache.informers.GetListers().Namespace
+}
+
 func (c *GatewayProcessor) getConfig() configurator.Configurator {
 	return c.cache.cfg
 }
@@ -88,7 +102,7 @@ func (c *GatewayProcessor) isDebugEnabled() bool {
 
 func (c *GatewayProcessor) listeners() []fgw.Listener {
 	listeners := make([]fgw.Listener, 0)
-	enrichers := c.getPortPolicyEnrichers(c.gateway)
+	enrichers := c.getPortPolicyEnrichers()
 
 	for _, l := range c.validListeners {
 		listener := &fgw.Listener{
@@ -219,17 +233,37 @@ func (c *GatewayProcessor) caCerts(l gwtypes.Listener) []string {
 }
 
 func (c *GatewayProcessor) routeRules() map[int32]fgw.RouteRule {
-	c.processHTTPRoutes()
-	c.processGRPCRoutes()
-	c.processTLSRoutes()
-	c.processTCPRoutes()
-	c.processUDPRoutes()
+	for _, httpRoute := range c.getResourcesFromCache(informers.HTTPRoutesResourceType, true) {
+		httpRoute := httpRoute.(*gwv1.HTTPRoute)
+		c.processHTTPRoute(httpRoute)
+	}
+
+	for _, grpcRoute := range c.getResourcesFromCache(informers.GRPCRoutesResourceType, true) {
+		grpcRoute := grpcRoute.(*gwv1.GRPCRoute)
+		c.processGRPCRoute(grpcRoute)
+	}
+
+	for _, tlsRoute := range c.getResourcesFromCache(informers.TLSRoutesResourceType, true) {
+		tlsRoute := tlsRoute.(*gwv1alpha2.TLSRoute)
+		c.processTLSRoute(tlsRoute)
+	}
+
+	for _, tcpRoute := range c.getResourcesFromCache(informers.TCPRoutesResourceType, true) {
+		tcpRoute := tcpRoute.(*gwv1alpha2.TCPRoute)
+		c.processTCPRoute(tcpRoute)
+	}
+
+	for _, udpRoute := range c.getResourcesFromCache(informers.UDPRoutesResourceType, true) {
+		udpRoute := udpRoute.(*gwv1alpha2.UDPRoute)
+		c.processUDPRoute(udpRoute)
+	}
 
 	return c.rules
 }
 
 func (c *GatewayProcessor) serviceConfigs() map[string]fgw.ServiceConfig {
 	configs := make(map[string]fgw.ServiceConfig)
+	enrichers := c.getServicePolicyEnrichers()
 
 	for svcPortName, svcInfo := range c.services {
 		svcKey := svcInfo.svcPortName.NamespacedName
@@ -249,7 +283,7 @@ func (c *GatewayProcessor) serviceConfigs() map[string]fgw.ServiceConfig {
 			Endpoints: c.calculateEndpoints(svc, svcInfo.svcPortName.Port),
 		}
 
-		for _, enricher := range c.getServicePolicyEnrichers(svc) {
+		for _, enricher := range enrichers {
 			enricher.Enrich(svcPortName, svcCfg)
 		}
 
@@ -269,8 +303,8 @@ func (c *GatewayProcessor) calculateEndpoints(svc *corev1.Service, port *int32) 
 }
 
 func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
-	eps := &corev1.Endpoints{}
-	if err := c.cache.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
+	eps, err := c.cache.informers.GetListers().Endpoints.Endpoints(svc.Namespace).Get(svc.Name)
+	if err != nil {
 		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
@@ -309,13 +343,13 @@ func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *
 		return nil
 	}
 
-	endpointSliceList := &discoveryv1.EndpointSliceList{}
-	if err := c.cache.client.List(context.TODO(), endpointSliceList, client.MatchingLabelsSelector{Selector: selector}); err != nil {
+	endpointSliceList, err := c.cache.informers.GetListers().EndpointSlice.EndpointSlices(svc.Namespace).List(selector)
+	if err != nil {
 		log.Error().Msgf("Failed to list EndpointSlice of Service %s/%s: %s", svc.Namespace, svc.Name, err)
 		return nil
 	}
 
-	if len(endpointSliceList.Items) == 0 {
+	if len(endpointSliceList) == 0 {
 		return nil
 	}
 
@@ -409,21 +443,16 @@ func (c *GatewayProcessor) chains() fgw.Chains {
 }
 
 func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, ref gwv1.BackendObjectReference) *fgw.ServicePortName {
-	if !gwutils.IsValidBackendRefToGroupKindOfService(ref) {
+	if !isValidBackendRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *ref.Group, *ref.Kind)
 		return nil
 	}
 
-	if ref.Port == nil {
-		log.Warn().Msgf("Port is not specified in the backend reference %s/%s when the referent is a Kubernetes Service", gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()), ref.Name)
-		return nil
-	}
-
-	gvk := referer.GetObjectKind().GroupVersionKind()
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
 		gwtypes.CrossNamespaceFrom{
-			Group:     gvk.Group,
-			Kind:      gvk.Kind,
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
 			Namespace: referer.GetNamespace(),
 		},
 		gwtypes.CrossNamespaceTo{
@@ -432,34 +461,33 @@ func (c *GatewayProcessor) backendRefToServicePortName(referer client.Object, re
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-			gvk.Kind, gvk.Group, referer.GetNamespace(), referer.GetName(),
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
 			string(*ref.Kind), string(*ref.Group), string(*ref.Namespace), ref.Name)
 		return nil
 	}
 
 	return &fgw.ServicePortName{
 		NamespacedName: types.NamespacedName{
-			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		},
-		Port: ptr.To(int32(*ref.Port)),
+		Port: pointer.Int32(int32(*ref.Port)),
 	}
 }
 
 func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, port int32) *fgw.ServicePortName {
-	if !gwutils.IsValidTargetRefToGroupKindOfService(ref) {
+	if !isValidTargetRefToGroupKindOfService(ref) {
 		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
 		return nil
 	}
 
-	gvk := referer.GetObjectKind().GroupVersionKind()
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
 		gwtypes.CrossNamespaceFrom{
-			Group:     gvk.Group,
-			Kind:      gvk.Kind,
+			Group:     referer.GetObjectKind().GroupVersionKind().Group,
+			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
 			Namespace: referer.GetNamespace(),
 		},
 		gwtypes.CrossNamespaceTo{
@@ -468,17 +496,16 @@ func (c *GatewayProcessor) targetRefToServicePortName(referer client.Object, ref
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		gwutils.GetServiceRefGrants(c.cache.client),
 	) {
 		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-			gvk.Kind, gvk.Group, referer.GetNamespace(), referer.GetName(),
+			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
 			string(ref.Kind), string(ref.Group), string(*ref.Namespace), ref.Name)
 		return nil
 	}
 
 	return &fgw.ServicePortName{
 		NamespacedName: types.NamespacedName{
-			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		},
 		Port: pointer.Int32(port),
@@ -581,12 +608,13 @@ func (c *GatewayProcessor) toFSMGRPCRouteFilter(referer client.Object, filter gw
 }
 
 func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
-	if !gwutils.IsValidRefToGroupKindOfSecret(ref) {
+	if !isValidRefToGroupKindOfSecret(ref) {
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
 	}
 
 	// If the secret is in a different namespace than the referer, check ReferenceGrants
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -598,7 +626,6 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		gwutils.GetSecretRefGrants(c.cache.client),
 	) {
 		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -606,18 +633,19 @@ func (c *GatewayProcessor) secretRefToSecret(referer client.Object, ref gwv1.Sec
 	}
 
 	return c.cache.getSecretFromCache(client.ObjectKey{
-		Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
+		Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 		Name:      string(ref.Name),
 	})
 }
 
 func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) ([]byte, error) {
-	if !gwutils.IsValidRefToGroupKindOfCA(ref) {
+	if !isValidRefToGroupKindOfCA(ref) {
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", ref.Group, ref.Kind)
 	}
 
 	// If the secret is in a different namespace than the referer, check ReferenceGrants
 	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
+		c.referenceGrants,
 		gwtypes.CrossNamespaceFrom{
 			Group:     referer.GetObjectKind().GroupVersionKind().Group,
 			Kind:      referer.GetObjectKind().GroupVersionKind().Kind,
@@ -629,7 +657,6 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		gwutils.GetCARefGrants(c.cache.client),
 	) {
 		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -641,7 +668,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 	switch ref.Kind {
 	case constants.KubernetesSecretKind:
 		secret, err := c.cache.getSecretFromCache(client.ObjectKey{
-			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		})
 		if err != nil {
@@ -654,7 +681,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 		}
 	case constants.KubernetesConfigMapKind:
 		cm, err := c.cache.getConfigMapFromCache(client.ObjectKey{
-			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
+			Namespace: gwutils.Namespace(ref.Namespace, referer.GetNamespace()),
 			Name:      string(ref.Name),
 		})
 		if err != nil {
@@ -668,7 +695,7 @@ func (c *GatewayProcessor) objectRefToCACertificate(referer client.Object, ref g
 	}
 
 	if len(ca) == 0 {
-		return nil, fmt.Errorf("no CA certificate found in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()), ref.Name)
+		return nil, fmt.Errorf("no CA certificate found in %s %s/%s", ref.Kind, gwutils.Namespace(ref.Namespace, referer.GetNamespace()), ref.Name)
 	}
 
 	return ca, nil

@@ -2,46 +2,35 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ printf "fsm-gateway-%s-%s-tcp" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
-  namespace: {{ .Values.fsm.gateway.namespace }}
-  {{- if .Values.fsm.gateway.infrastructure }}
-  {{- with .Values.fsm.gateway.infrastructure.annotations }}
+  name: {{ printf "fsm-gateway-%s-tcp" .Values.gwy.metadata.namespace }}
+  namespace: {{ .Values.gwy.metadata.namespace }}
+  {{- if .Values.gwy.spec.infrastructure }}
+  {{- with .Values.gwy.spec.infrastructure.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- end }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
-    {{- if .Values.fsm.gateway.infrastructure }}
-    {{- with .Values.fsm.gateway.infrastructure.labels }}
+    {{- if .Values.gwy.spec.infrastructure }}
+    {{- with .Values.gwy.spec.infrastructure.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- end }}
     app: fsm-gateway
-    gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
-    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+    gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
 spec:
-  type: {{ .Values.fsm.gateway.serviceType }}
-  {{- $setNodePorts := (and (eq .Values.fsm.gateway.serviceType "NodePort") .Values.fsm.gateway.nodePorts)}}
+  type: LoadBalancer
   ports:
-    {{- range .Values.fsm.gateway.listeners }}
-    {{- if ne .protocol "UDP" }}
-    {{- $listenerPort := .port }}
-    - name: {{ .name }}
-      port: {{ $listenerPort }}
-      targetPort: {{ ternary (add 60000 $listenerPort) $listenerPort (lt (int $listenerPort) 1024)}}
+    {{- range $listener := .Values.listeners }}
+    {{- if ne $listener.protocol "UDP" }}
+    - name: {{ $listener.name }}
+      port: {{ $listener.port }}
+      targetPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
       protocol: TCP
-      {{- if $setNodePorts }}
-      {{- range $.Values.fsm.gateway.nodePorts }}
-      {{- if (eq .port $listenerPort) }}
-      nodePort: {{ .nodePort }}
-      {{- end }}
-      {{- end }}
-      {{- end }}
     {{- end }}
     {{- end }}
   selector:
     app: fsm-gateway
-    gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
-    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+    gateway.flomesh.io/ns: {{ .Values.gwy.metadata.namespace }}
 {{- end }}

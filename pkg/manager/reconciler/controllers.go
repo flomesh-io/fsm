@@ -3,6 +3,8 @@ package reconciler
 import (
 	"context"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -24,7 +26,7 @@ func RegisterControllers(ctx context.Context) error {
 	kubeClient := cctx.KubeClient
 
 	if mc.IsIngressEnabled() {
-		ingressController := pipy.NewIngressController(cctx)
+		ingressController := pipy.NewIngressController(cctx.InformerCollection, kubeClient, cctx.MsgBroker, mc, cctx.CertManager)
 		if err := mgr.Add(ingressController); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Ingress Controller to manager")
 
@@ -40,7 +42,12 @@ func RegisterControllers(ctx context.Context) error {
 			return err
 		}
 
-		gatewayController := gateway.NewGatewayAPIController(cctx)
+		gatewayAPIClient, err := gatewayApiClientset.NewForConfig(cctx.KubeConfig)
+		if err != nil {
+			return err
+		}
+
+		gatewayController := gateway.NewGatewayAPIController(cctx.InformerCollection, kubeClient, gatewayAPIClient, cctx.MsgBroker, mc, cctx.MeshName, cctx.FSMVersion)
 		cctx.GatewayEventHandler = gatewayController
 		if err := mgr.Add(gatewayController); err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error add Gateway Controller to manager")

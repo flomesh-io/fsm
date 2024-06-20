@@ -52,12 +52,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				installOpts.EnableServiceLB = true
 
 				Expect(Td.InstallFSM(installOpts)).To(Succeed())
-				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app.kubernetes.io/instance": "fsm",
-						"app.kubernetes.io/name":     "flomesh.io",
-					},
-				})).To(Succeed())
+				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, nil)).To(Succeed())
 
 				testDeployFSMGateway()
 
@@ -156,7 +151,7 @@ func testDeployFSMGateway() {
 		Data: map[string]string{
 			"values.yaml": `
 fsm:
-  gateway:
+  fsmGateway:
     replicas: 2
     resources:
       requests:

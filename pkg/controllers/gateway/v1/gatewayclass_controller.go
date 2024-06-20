@@ -27,11 +27,12 @@ package v1
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -44,14 +45,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	"github.com/flomesh-io/fsm/pkg/apis/gateway"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/utils"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 )
 
 type gatewayClassReconciler struct {
-	recorder record.EventRecorder
-	fctx     *fctx.ControllerContext
+	recorder         record.EventRecorder
+	fctx             *fctx.ControllerContext
+	gatewayAPIClient gwclient.Interface
 }
 
 func (r *gatewayClassReconciler) NeedLeaderElection() bool {
@@ -61,8 +67,9 @@ func (r *gatewayClassReconciler) NeedLeaderElection() bool {
 // NewGatewayClassReconciler returns a new reconciler for GatewayClass
 func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &gatewayClassReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
-		fctx:     ctx,
+		recorder:         ctx.Manager.GetEventRecorderFor("GatewayClass"),
+		fctx:             ctx,
+		gatewayAPIClient: gatewayApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 }
 
@@ -97,32 +104,169 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	// ignore if the GatewayClass is not managed by the FSM GatewayController
-	if gatewayClass.Spec.ControllerName != constants.GatewayController {
-		return ctrl.Result{}, nil
-	}
+	// Accept all GatewayClasses those ControllerName is flomesh.io/gateway-controller
+	//r.setAcceptedStatus(gatewayClass)
+	//result, err := r.updateStatus(ctx, gatewayClass, gwv1.GatewayClassConditionStatusAccepted)
+	//if err != nil {
+	//	return result, err
+	//}
 
 	r.fctx.StatusUpdater.Send(status.Update{
-		Resource:       &gwv1.GatewayClass{},
+		Resource:       gatewayClass,
 		NamespacedName: client.ObjectKeyFromObject(gatewayClass),
 		Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
 			class, ok := obj.(*gwv1.GatewayClass)
 			if !ok {
-				log.Error().Msgf("Unexpected object type %T", obj)
+				log.Error().Msgf("unsupported object type %T", obj)
 			}
 			classCopy := class.DeepCopy()
-			r.setAccepted(classCopy)
+			r.setAcceptedStatus(classCopy)
 
 			return classCopy
 		}),
 	})
 
+	gatewayClassList, err := r.gatewayAPIClient.GatewayV1().
+		GatewayClasses().
+		List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Error().Msgf("failed list gatewayclasses: %s", err)
+		return ctrl.Result{}, err
+	}
+
+	// If there's multiple GatewayClasses whose ControllerName is flomesh.io/gateway-controller, the oldest is set to active and the rest are set to inactive
+	r.updateActiveStatus(gatewayClassList)
+	//for _, class := range r.updateActiveStatus(gatewayClassList) {
+	//result, err := r.updateStatus(ctx, class, gateway.GatewayClassConditionStatusActive)
+	//if err != nil {
+	//	return result, err
+	//}
+	//}
+
+	// As status of all GatewayClasses have been updated, just send the event
+	r.fctx.GatewayEventHandler.OnAdd(&gwv1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: req.Namespace,
+			Name:      req.Name,
+		}},
+		false,
+	)
+
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
-	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
+//func (r *gatewayClassReconciler) updateStatus(ctx context.Context, class *gwv1.GatewayClass, status gwv1.GatewayClassConditionType) (ctrl.Result, error) {
+//	if err := r.fctx.Status().Update(ctx, class); err != nil {
+//		//defer r.recorder.Eventf(class, corev1.EventTypeWarning, "UpdateStatus", "Failed to update status of GatewayClass: %s", err)
+//		return ctrl.Result{}, err
+//	}
+//
+//	switch status {
+//	case gwv1.GatewayClassConditionStatusAccepted:
+//		if utils.IsAcceptedGatewayClass(class) {
+//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
+//		} else {
+//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Rejected", "GatewayClass is rejected")
+//		}
+//	case gateway.GatewayClassConditionStatusActive:
+//		if utils.IsActiveGatewayClass(class) {
+//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Active", "GatewayClass is set to active")
+//		} else {
+//			defer r.recorder.Eventf(class, corev1.EventTypeNormal, "Inactive", "GatewayClass is set to inactive")
+//		}
+//	}
+//
+//	return ctrl.Result{}, nil
+//}
 
+func (r *gatewayClassReconciler) setAcceptedStatus(gatewayClass *gwv1.GatewayClass) {
+	if gatewayClass.Spec.ControllerName == constants.GatewayController {
+		r.setAccepted(gatewayClass)
+	}
+	// Ignore other GatewayClass whose ControllerName is not flomesh.io/gateway-controller
+	//  as they are not supported and should not be processed by fsm
+	//else {
+	//	r.setRejected(gatewayClass)
+	//}
+}
+
+func (r *gatewayClassReconciler) updateActiveStatus(list *gwv1.GatewayClassList) {
+	acceptedClasses := make([]*gwv1.GatewayClass, 0)
+	for _, class := range list.Items {
+		class := class // fix lint GO-LOOP-REF
+		if class.Spec.ControllerName == constants.GatewayController && utils.IsAcceptedGatewayClass(&class) {
+			acceptedClasses = append(acceptedClasses, &class)
+		}
+	}
+
+	sort.Slice(acceptedClasses, func(i, j int) bool {
+		if acceptedClasses[i].CreationTimestamp.Time.Equal(acceptedClasses[j].CreationTimestamp.Time) {
+			return acceptedClasses[i].Name < acceptedClasses[j].Name
+		}
+
+		return acceptedClasses[i].CreationTimestamp.Time.Before(acceptedClasses[j].CreationTimestamp.Time)
+	})
+
+	//statusChangedClasses := make([]*gwv1.GatewayClass, 0)
+	for i, class := range acceptedClasses {
+		// ONLY the oldest GatewayClass is active
+		if i == 0 {
+			if !utils.IsActiveGatewayClass(class) {
+				//r.setActive(acceptedClasses[i])
+				//statusChangedClasses = append(statusChangedClasses, acceptedClasses[i])
+				r.fctx.StatusUpdater.Send(status.Update{
+					Resource:       class,
+					NamespacedName: client.ObjectKeyFromObject(class),
+					Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+						clazz, ok := obj.(*gwv1.GatewayClass)
+						if !ok {
+							log.Error().Msgf("unsupported object type %T", obj)
+						}
+						classCopy := clazz.DeepCopy()
+						r.setActive(classCopy)
+
+						return classCopy
+					}),
+				})
+			}
+			continue
+		}
+
+		if utils.IsActiveGatewayClass(class) {
+			//r.setInactive(acceptedClasses[i])
+			//statusChangedClasses = append(statusChangedClasses, acceptedClasses[i])
+			r.fctx.StatusUpdater.Send(status.Update{
+				Resource:       class,
+				NamespacedName: client.ObjectKeyFromObject(class),
+				Mutator: status.MutatorFunc(func(obj client.Object) client.Object {
+					clazz, ok := obj.(*gwv1.GatewayClass)
+					if !ok {
+						log.Error().Msgf("unsupported object type %T", obj)
+					}
+					classCopy := clazz.DeepCopy()
+					r.setInactive(classCopy)
+
+					return classCopy
+				}),
+			})
+		}
+	}
+
+	//return statusChangedClasses
+}
+
+//func (r *gatewayClassReconciler) setRejected(gatewayClass *gwv1.GatewayClass) {
+//	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
+//		Type:               string(gwv1.GatewayClassConditionStatusAccepted),
+//		Status:             metav1.ConditionFalse,
+//		ObservedGeneration: gatewayClass.Generation,
+//		LastTransitionTime: metav1.Time{Time: time.Now()},
+//		Reason:             "Rejected",
+//		Message:            fmt.Sprintf("GatewayClass %q is rejected as ControllerName %q is not supported.", gatewayClass.Name, gatewayClass.Spec.ControllerName),
+//	})
+//}
+
+func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
 		Type:               string(gwv1.GatewayClassConditionStatusAccepted),
 		Status:             metav1.ConditionTrue,
@@ -131,6 +275,30 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 		Reason:             string(gwv1.GatewayClassReasonAccepted),
 		Message:            fmt.Sprintf("GatewayClass %q is accepted.", gatewayClass.Name),
 	})
+	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
+}
+
+func (r *gatewayClassReconciler) setActive(gatewayClass *gwv1.GatewayClass) {
+	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
+		Type:               string(gateway.GatewayClassConditionStatusActive),
+		Status:             metav1.ConditionTrue,
+		ObservedGeneration: gatewayClass.Generation,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Reason:             string(gateway.GatewayClassReasonActive),
+		Message:            fmt.Sprintf("GatewayClass %q is set to active.", gatewayClass.Name),
+	})
+	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Active", "GatewayClass is set to active")
+}
+func (r *gatewayClassReconciler) setInactive(gatewayClass *gwv1.GatewayClass) {
+	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
+		Type:               string(gateway.GatewayClassConditionStatusActive),
+		Status:             metav1.ConditionFalse,
+		ObservedGeneration: gatewayClass.Generation,
+		LastTransitionTime: metav1.Time{Time: time.Now()},
+		Reason:             string(gateway.GatewayClassReasonInactive),
+		Message:            fmt.Sprintf("GatewayClass %q is inactive as there's already an active GatewayClass.", gatewayClass.Name),
+	})
+	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Inactive", "GatewayClass is set to inactive")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -145,22 +313,7 @@ func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return gatewayClass.Spec.ControllerName == constants.GatewayController
 	})
 
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.GatewayClass{}, builder.WithPredicates(gwclsPrct)).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addGatewayClassIndexers(context.Background(), mgr)
-}
-
-func addGatewayClassIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GatewayClass{}, constants.ControllerGatewayClassIndex, func(obj client.Object) []string {
-		cls := obj.(*gwv1.GatewayClass)
-		return []string{string(cls.Spec.ControllerName)}
-	}); err != nil {
-		return err
-	}
-
-	return nil
+		Complete(r)
 }

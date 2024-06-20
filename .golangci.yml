@@ -3,8 +3,6 @@ run:
   timeout: 20m
 
 linters:
-  disable:
-    - errcheck
   enable:
     - goconst
     - gocyclo
@@ -24,18 +22,12 @@ linters-settings:
     rules:
       - name: unused-parameter
         disabled: true
-  gosec:
-    exclude-generated: true
-    severity: medium
-    confidence: medium
 
 issues:
   exclude-dirs:
     - pkg/gen
-    - pkg/bugreport
   exclude-files:
     - "zz_generated.deepcopy.go$"
-    - "zz_generated.register.go$"
   exclude-rules:
     # Ignore error for ginkgo and gomega dot imports
     - linters:

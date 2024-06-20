@@ -74,7 +74,6 @@ kubectl create ns tcp-route
 kubectl create ns tcp
 kubectl create ns udp-route
 kubectl create ns udp
-kubectl create ns nodeport
 
 kubectl label ns http-route app=http-cross
 kubectl label ns grpc-route app=grpc-cross
@@ -139,7 +138,7 @@ metadata:
 data:
   values.yaml: |
     fsm:
-      gateway:
+      fsmGateway:
         replicas: 2
         resources:
           requests:
@@ -2437,54 +2436,5 @@ spec:
     - group: ""
       kind: Service
       name: httpbin-cross
-EOF
-```
-
-### Test Gateway in NodePort mode
-
-- Create ConfigMap for configuring the Gateway
-```shell
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  namespace: nodeport
-  name: gateway-config
-data:
-  values.yaml: |
-    fsm:
-      gateway:
-        replicas: 2
-        serviceType: NodePort
-        nodePorts:
-          - port: 10080
-            nodePort: 30080
-          - port: 10443
-            nodePort: 30443
-EOF
-```
-
-#### Deploy Gateway
-```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  namespace: nodeport
-  name: test-gw-2
-spec:
-  gatewayClassName: fsm
-  listeners:
-    - protocol: HTTP
-      port: 10080
-      name: http
-    - protocol: HTTP
-      port: 10443
-      name: http2
-  infrastructure:
-    parametersRef:
-      group: ""
-      kind: ConfigMap
-      name: gateway-config
 EOF
 ```

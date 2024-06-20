@@ -27,15 +27,6 @@ package v1alpha2
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
-
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -45,12 +36,13 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
 type tcpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *status.RouteStatusProcessor
 }
 
 func (r *tcpRouteReconciler) NeedLeaderElection() bool {
@@ -62,7 +54,7 @@ func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 
@@ -84,15 +76,16 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
-		tcpRoute,
-		&tcpRoute.ObjectMeta,
-		&tcpRoute.TypeMeta,
-		nil,
-		gwutils.ToSlicePtr(tcpRoute.Status.Parents),
-	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, tcpRoute.Spec.ParentRefs); err != nil {
+	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, tcpRoute)
+	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	if len(routeStatus) > 0 {
+		tcpRoute.Status.Parents = routeStatus
+		if err := r.fctx.Status().Update(ctx, tcpRoute); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(tcpRoute, false)
@@ -102,55 +95,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TCPRoute{}).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addTCPRouteIndexers(context.Background(), mgr)
-}
-
-func addTCPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TCPRoute{}, constants.GatewayTCPRouteIndex, func(obj client.Object) []string {
-		tcpRoute := obj.(*gwv1alpha2.TCPRoute)
-		var gateways []string
-		for _, parent := range tcpRoute.Spec.ParentRefs {
-			if string(*parent.Kind) == constants.GatewayAPIGatewayKind {
-				gateways = append(gateways,
-					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(parent.Namespace, tcpRoute.Namespace),
-						Name:      string(parent.Name),
-					}.String(),
-				)
-			}
-		}
-		return gateways
-	}); err != nil {
-		return err
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TCPRoute{}, constants.BackendTCPRouteIndex, backendTCPRouteIndexFunc); err != nil {
-		return err
-	}
-	return nil
-}
-
-func backendTCPRouteIndexFunc(obj client.Object) []string {
-	tcpRoute := obj.(*gwv1alpha2.TCPRoute)
-	var backendRefs []string
-	for _, rule := range tcpRoute.Spec.Rules {
-		for _, backend := range rule.BackendRefs {
-			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				backendRefs = append(backendRefs,
-					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tcpRoute.Namespace),
-						Name:      string(backend.Name),
-					}.String(),
-				)
-			}
-		}
-	}
-
-	return backendRefs
+		Complete(r)
 }

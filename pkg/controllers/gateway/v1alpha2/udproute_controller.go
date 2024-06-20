@@ -27,15 +27,6 @@ package v1alpha2
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
-
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -45,12 +36,13 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
 type udpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *status.RouteStatusProcessor
 }
 
 func (r *udpRouteReconciler) NeedLeaderElection() bool {
@@ -62,7 +54,7 @@ func NewUDPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	return &udpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("UDPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 
@@ -84,15 +76,16 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
-		udpRoute,
-		&udpRoute.ObjectMeta,
-		&udpRoute.TypeMeta,
-		nil,
-		gwutils.ToSlicePtr(udpRoute.Status.Parents),
-	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, udpRoute.Spec.ParentRefs); err != nil {
+	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, udpRoute)
+	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	if len(routeStatus) > 0 {
+		udpRoute.Status.Parents = routeStatus
+		if err := r.fctx.Status().Update(ctx, udpRoute); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(udpRoute, false)
@@ -102,55 +95,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.UDPRoute{}).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addUDPRouteIndexers(context.Background(), mgr)
-}
-
-func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.GatewayUDPRouteIndex, func(obj client.Object) []string {
-		udpRoute := obj.(*gwv1alpha2.UDPRoute)
-		var gateways []string
-		for _, parent := range udpRoute.Spec.ParentRefs {
-			if string(*parent.Kind) == constants.GatewayAPIGatewayKind {
-				gateways = append(gateways,
-					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(parent.Namespace, udpRoute.Namespace),
-						Name:      string(parent.Name),
-					}.String(),
-				)
-			}
-		}
-		return gateways
-	}); err != nil {
-		return err
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.BackendUDPRouteIndex, backendUDPRouteIndexFunc); err != nil {
-		return err
-	}
-	return nil
-}
-
-func backendUDPRouteIndexFunc(obj client.Object) []string {
-	udproute := obj.(*gwv1alpha2.UDPRoute)
-	var backendRefs []string
-	for _, rule := range udproute.Spec.Rules {
-		for _, backend := range rule.BackendRefs {
-			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				backendRefs = append(backendRefs,
-					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udproute.Namespace),
-						Name:      string(backend.Name),
-					}.String(),
-				)
-			}
-		}
-	}
-
-	return backendRefs
+		Complete(r)
 }

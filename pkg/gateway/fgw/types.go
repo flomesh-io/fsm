@@ -432,13 +432,6 @@ type HTTPTrafficMatch struct {
 	AccessControlLists *AccessControlLists             `json:"AccessControlLists,omitempty"`
 	FaultInjection     *FaultInjection                 `json:"Fault,omitempty"`
 	Filters            []Filter                        `json:"Filters,omitempty" hash:"set"`
-	Timeouts           *HTTPRouteTimeouts              `json:"Timeout,omitempty"`
-}
-
-// HTTPRouteTimeouts is the HTTP route timeouts configuration
-type HTTPRouteTimeouts struct {
-	Request        *gwv1.Duration `json:"Request,omitempty"`
-	BackendRequest *gwv1.Duration `json:"BackendRequest,omitempty"`
 }
 
 // GRPCTrafficMatch is the GRPC traffic match configuration

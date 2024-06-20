@@ -215,10 +215,10 @@ func visit(files *[]string) filepath.WalkFunc {
 //}
 
 func (r *rebuilder) rebuildRepoJob() error {
-	log.Trace().Msg("<<<<<< rebuilding repo - start >>>>>> ")
+	log.Debug().Msg("<<<<<< rebuilding repo - start >>>>>> ")
 
 	if !r.repoClient.IsRepoUp() {
-		log.Trace().Msg("Repo is not up, sleeping ...")
+		log.Debug().Msg("Repo is not up, sleeping ...")
 		return nil
 	}
 
@@ -298,7 +298,7 @@ func (r *rebuilder) rebuildRepoJob() error {
 		for _, gw := range gatewayList.Items {
 			gw := gw // fix lint GO-LOOP-REF
 			if gwutils.IsActiveGateway(&gw) {
-				gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
+				gwPath := utils.GatewayCodebasePath(gw.Namespace)
 				parentPath := utils.GetDefaultGatewaysPath()
 				if err := r.repoClient.DeriveCodebase(gwPath, parentPath); err != nil {
 					return err
@@ -307,6 +307,6 @@ func (r *rebuilder) rebuildRepoJob() error {
 		}
 	}
 
-	log.Trace().Msg("<<<<<< rebuilding repo - end >>>>>> ")
+	log.Debug().Msg("<<<<<< rebuilding repo - end >>>>>> ")
 	return nil
 }

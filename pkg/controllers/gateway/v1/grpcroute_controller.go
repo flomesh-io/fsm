@@ -27,17 +27,6 @@ package v1
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
-
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -48,12 +37,13 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
 type grpcRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *status.RouteStatusProcessor
 }
 
 func (r *grpcRouteReconciler) NeedLeaderElection() bool {
@@ -65,7 +55,7 @@ func NewGRPCRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler 
 	return &grpcRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("GRPCRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: &status.RouteStatusProcessor{Informers: ctx.InformerCollection},
 	}
 }
 
@@ -87,15 +77,16 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
-		grpcRoute,
-		&grpcRoute.ObjectMeta,
-		&grpcRoute.TypeMeta,
-		grpcRoute.Spec.Hostnames,
-		gwutils.ToSlicePtr(grpcRoute.Status.Parents),
-	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, grpcRoute.Spec.ParentRefs); err != nil {
+	routeStatus, err := r.statusProcessor.ProcessRouteStatus(ctx, grpcRoute)
+	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	if len(routeStatus) > 0 {
+		grpcRoute.Status.Parents = routeStatus
+		if err := r.fctx.Status().Update(ctx, grpcRoute); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(grpcRoute, false)
@@ -105,88 +96,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.GRPCRoute{}).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addGRPCRouteIndexers(context.Background(), mgr)
-}
-
-func addGRPCRouteIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.GatewayGRPCRouteIndex, gatewayGRPCRouteIndexFunc); err != nil {
-		return err
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.BackendGRPCRouteIndex, backendGRPCRouteIndexFunc); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func gatewayGRPCRouteIndexFunc(obj client.Object) []string {
-	grpcroute := obj.(*gwv1.GRPCRoute)
-	var gateways []string
-	for _, parent := range grpcroute.Spec.ParentRefs {
-		if parent.Kind == nil || string(*parent.Kind) == constants.GatewayAPIGatewayKind {
-			// If an explicit Gateway namespace is not provided, use the GRPCRoute namespace to
-			// lookup the provided Gateway Name.
-			gateways = append(gateways,
-				types.NamespacedName{
-					Namespace: gwutils.NamespaceDerefOr(parent.Namespace, grpcroute.Namespace),
-					Name:      string(parent.Name),
-				}.String(),
-			)
-		}
-	}
-	return gateways
-}
-
-func backendGRPCRouteIndexFunc(obj client.Object) []string {
-	grpcroute := obj.(*gwv1.GRPCRoute)
-	var backendRefs []string
-	for _, rule := range grpcroute.Spec.Rules {
-		for _, backend := range rule.BackendRefs {
-			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				backendRefs = append(backendRefs,
-					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, grpcroute.Namespace),
-						Name:      string(backend.Name),
-					}.String(),
-				)
-			}
-
-			for _, filter := range backend.Filters {
-				if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
-					if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
-						mirror := filter.RequestMirror.BackendRef
-						backendRefs = append(backendRefs,
-							types.NamespacedName{
-								Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, grpcroute.Namespace),
-								Name:      string(mirror.Name),
-							}.String(),
-						)
-					}
-				}
-			}
-		}
-
-		for _, filter := range rule.Filters {
-			if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
-				if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
-					mirror := filter.RequestMirror.BackendRef
-					backendRefs = append(backendRefs,
-						types.NamespacedName{
-							Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, grpcroute.Namespace),
-							Name:      string(mirror.Name),
-						}.String(),
-					)
-				}
-			}
-		}
-	}
-
-	return backendRefs
+		Complete(r)
 }

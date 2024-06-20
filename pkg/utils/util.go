@@ -19,7 +19,7 @@ func SimpleHash(obj interface{}) string {
 	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, nil)
 
 	if err != nil {
-		log.Error().Msgf("Not able convert data to hash, error: %s", err.Error())
+		log.Error().Msgf("Not able convert Data to hash, error: %s", err.Error())
 		return ""
 	}
 

@@ -32,18 +32,19 @@ import (
 	"strings"
 	"sync"
 
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/events"
 
 	apiconstants "github.com/flomesh-io/fsm/pkg/apis"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	repocfg "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/route"
 	ingresspipy "github.com/flomesh-io/fsm/pkg/ingress/providers/pipy/utils"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
@@ -176,18 +177,20 @@ type ingressChange struct {
 
 // IngressChangeTracker tracks changes to Ingresses
 type IngressChangeTracker struct {
-	lock     sync.Mutex
-	items    map[types.NamespacedName]*ingressChange
-	recorder events.EventRecorder
-	client   cache.Cache
+	lock       sync.Mutex
+	items      map[types.NamespacedName]*ingressChange
+	kubeClient kubernetes.Interface
+	informers  *fsminformers.InformerCollection
+	recorder   events.EventRecorder
 }
 
 // NewIngressChangeTracker creates a new IngressChangeTracker
-func NewIngressChangeTracker(client cache.Cache, recorder events.EventRecorder) *IngressChangeTracker {
+func NewIngressChangeTracker(kubeClient kubernetes.Interface, informers *fsminformers.InformerCollection, recorder events.EventRecorder) *IngressChangeTracker {
 	return &IngressChangeTracker{
-		items:    make(map[types.NamespacedName]*ingressChange),
-		recorder: recorder,
-		client:   client,
+		items:      make(map[types.NamespacedName]*ingressChange),
+		kubeClient: kubeClient,
+		informers:  informers,
+		recorder:   recorder,
 	}
 }
 
@@ -370,12 +373,25 @@ func createSvcPortNameInstance(namespace, serviceName, portName string) *Service
 
 // svcName in namespace/name format
 func (t *IngressChangeTracker) findService(namespace string, service *networkingv1.IngressServiceBackend) (*corev1.Service, error) {
-	svc := &corev1.Service{}
-	if err := t.client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: service.Name}, svc); err != nil {
+	svcName := fmt.Sprintf("%s/%s", namespace, service.Name)
+
+	// first, find in local store
+	svc, exists, err := t.informers.GetByKey(fsminformers.InformerKeyService, svcName)
+	if err != nil {
 		return nil, err
 	}
-
-	return svc, nil
+	if !exists {
+		log.Warn().Msgf("no object matching key %q in local store, will try to retrieve it from API server.", svcName)
+		// if not exists in local, retrieve it from remote API server, this's Plan-B, should seldom happns
+		svc, err = t.kubeClient.CoreV1().Services(namespace).Get(context.TODO(), service.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		log.Info().Msgf("Found service %q from API server.", svcName)
+	} else {
+		log.Info().Msgf("Found service %q in local store.", svcName)
+	}
+	return svc.(*corev1.Service), nil
 }
 
 func (t *IngressChangeTracker) checkoutChanges() []*ingressChange {
@@ -601,9 +617,8 @@ func (t *IngressChangeTracker) fetchSSLCert(ing *networkingv1.Ingress, ns, name 
 	}
 
 	log.Info().Msgf("Fetching secret %s/%s ...", ns, name)
-	//secret, err := t.informers.GetListers().Secret.Secrets(ns).Get(name)
-	secret := &corev1.Secret{}
-	err := t.client.Get(context.TODO(), types.NamespacedName{Namespace: ns, Name: name}, secret)
+	secret, err := t.informers.GetListers().Secret.Secrets(ns).Get(name)
+
 	if err != nil {
 		log.Error().Msgf("Failed to get secret %s/%s of Ingress %s/%s: %s", ns, name, ing.Namespace, ing.Name, err)
 		return nil

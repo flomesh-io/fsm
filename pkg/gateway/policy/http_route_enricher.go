@@ -1,12 +1,7 @@
 package policy
 
 import (
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/accesscontrol"
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/faultinjection"
@@ -22,25 +17,17 @@ type HTTPRoutePolicyEnricher interface {
 
 // ---
 
-func NewRateLimitHTTPRouteEnricher(cache cache.Cache, selector fields.Selector) HTTPRoutePolicyEnricher {
-	return &rateLimitHTTPRouteEnricher{
-		data: gwutils.SortResources(gwutils.GetRateLimitsMatchTypeHTTPRoute(cache, selector)),
-	}
+// RateLimitHTTPRouteEnricher is an enricher for rate limit policies at the HTTP route level
+type RateLimitHTTPRouteEnricher struct {
+	Data []gwpav1alpha1.RateLimitPolicy
 }
 
-// rateLimitHTTPRouteEnricher is an enricher for rate limit policies at the HTTP route level
-type rateLimitHTTPRouteEnricher struct {
-	data []client.Object
-}
-
-func (e *rateLimitHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
-	if len(e.data) == 0 {
+func (e *RateLimitHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+	if len(e.Data) == 0 {
 		return
 	}
 
-	for _, rateLimit := range e.data {
-		rateLimit := rateLimit.(*gwpav1alpha1.RateLimitPolicy)
-
+	for _, rateLimit := range e.Data {
 		if len(rateLimit.Spec.HTTPRateLimits) == 0 {
 			continue
 		}
@@ -54,25 +41,17 @@ func (e *rateLimitHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg 
 
 // ---
 
-func NewAccessControlHTTPRouteEnricher(cache cache.Cache, selector fields.Selector) HTTPRoutePolicyEnricher {
-	return &accessControlHTTPRouteEnricher{
-		data: gwutils.SortResources(gwutils.GetAccessControlsMatchTypeHTTPRoute(cache, selector)),
-	}
+// AccessControlHTTPRouteEnricher is an enricher for access control policies at the HTTP route level
+type AccessControlHTTPRouteEnricher struct {
+	Data []gwpav1alpha1.AccessControlPolicy
 }
 
-// accessControlHTTPRouteEnricher is an enricher for access control policies at the HTTP route level
-type accessControlHTTPRouteEnricher struct {
-	data []client.Object
-}
-
-func (e *accessControlHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
-	if len(e.data) == 0 {
+func (e *AccessControlHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+	if len(e.Data) == 0 {
 		return
 	}
 
-	for _, accessControl := range e.data {
-		accessControl := accessControl.(*gwpav1alpha1.AccessControlPolicy)
-
+	for _, accessControl := range e.Data {
 		if len(accessControl.Spec.HTTPAccessControls) == 0 {
 			continue
 		}
@@ -86,25 +65,17 @@ func (e *accessControlHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, match
 
 // ---
 
-func NewFaultInjectionHTTPRouteEnricher(cache cache.Cache, selector fields.Selector) HTTPRoutePolicyEnricher {
-	return &faultInjectionHTTPRouteEnricher{
-		data: gwutils.SortResources(gwutils.GetFaultInjectionsMatchTypeHTTPRoute(cache, selector)),
-	}
+// FaultInjectionHTTPRouteEnricher is an enricher for fault injection policies at the HTTP route level
+type FaultInjectionHTTPRouteEnricher struct {
+	Data []gwpav1alpha1.FaultInjectionPolicy
 }
 
-// faultInjectionHTTPRouteEnricher is an enricher for fault injection policies at the HTTP route level
-type faultInjectionHTTPRouteEnricher struct {
-	data []client.Object
-}
-
-func (e *faultInjectionHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
-	if len(e.data) == 0 {
+func (e *FaultInjectionHTTPRouteEnricher) Enrich(match gwv1.HTTPRouteMatch, matchCfg *fgw.HTTPTrafficMatch) {
+	if len(e.Data) == 0 {
 		return
 	}
 
-	for _, faultInjection := range e.data {
-		faultInjection := faultInjection.(*gwpav1alpha1.FaultInjectionPolicy)
-
+	for _, faultInjection := range e.Data {
 		if len(faultInjection.Spec.HTTPFaultInjections) == 0 {
 			continue
 		}

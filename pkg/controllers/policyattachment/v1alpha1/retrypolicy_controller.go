@@ -2,17 +2,15 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 	"reflect"
-
-	policystatus "github.com/flomesh-io/fsm/pkg/gateway/status/policy"
-
-	"k8s.io/apimachinery/pkg/fields"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/policy/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/policy/utils/retry"
 
@@ -21,6 +19,12 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"k8s.io/apimachinery/pkg/types"
+
+	corev1 "k8s.io/api/core/v1"
+
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
+	gwclient "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,12 +36,16 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+
+	policyAttachmentApiClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 )
 
 type retryPolicyReconciler struct {
-	recorder        record.EventRecorder
-	fctx            *fctx.ControllerContext
-	statusProcessor *policystatus.ServicePolicyStatusProcessor
+	recorder                  record.EventRecorder
+	fctx                      *fctx.ControllerContext
+	gatewayAPIClient          gwclient.Interface
+	policyAttachmentAPIClient policyAttachmentApiClientset.Interface
+	statusProcessor           *status.ServicePolicyStatusProcessor
 }
 
 func (r *retryPolicyReconciler) NeedLeaderElection() bool {
@@ -47,11 +55,13 @@ func (r *retryPolicyReconciler) NeedLeaderElection() bool {
 // NewRetryPolicyReconciler returns a new RetryPolicy Reconciler
 func NewRetryPolicyReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
 	r := &retryPolicyReconciler{
-		recorder: ctx.Manager.GetEventRecorderFor("RetryPolicy"),
-		fctx:     ctx,
+		recorder:                  ctx.Manager.GetEventRecorderFor("RetryPolicy"),
+		fctx:                      ctx,
+		gatewayAPIClient:          gwclient.NewForConfigOrDie(ctx.KubeConfig),
+		policyAttachmentAPIClient: policyAttachmentApiClientset.NewForConfigOrDie(ctx.KubeConfig),
 	}
 
-	r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
+	r.statusProcessor = &status.ServicePolicyStatusProcessor{
 		Client:              r.fctx.Client,
 		Informer:            r.fctx.InformerCollection,
 		GetAttachedPolicies: r.getAttachedRetryPolicies,
@@ -79,13 +89,13 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, nil
 	}
 
-	r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
-		policy.Spec.TargetRef,
-		policy.Status.Conditions,
-	))
+	metautil.SetStatusCondition(
+		&policy.Status.Conditions,
+		r.statusProcessor.Process(ctx, policy, policy.Spec.TargetRef),
+	)
+	if err := r.fctx.Status().Update(ctx, policy); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
@@ -94,45 +104,33 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *retryPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewControllerManagedBy(mgr).
+	return ctrl.NewControllerManagedBy(mgr).
 		For(&gwpav1alpha1.RetryPolicy{}).
 		Watches(
 			&gwv1beta1.ReferenceGrant{},
 			handler.EnqueueRequestsFromMapFunc(r.referenceGrantToPolicyAttachment),
 		).
-		Complete(r); err != nil {
-		return err
-	}
-
-	return addRetryPolicyIndexer(context.Background(), mgr)
+		Complete(r)
 }
 
-func addRetryPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RetryPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
-		policy := obj.(*gwpav1alpha1.RetryPolicy)
-		targetRef := policy.Spec.TargetRef
-		var targets []string
-		if targetRef.Kind == constants.KubernetesServiceKind {
-			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
-				Name:      string(targetRef.Name),
-			}.String())
+func (r *retryPolicyReconciler) getAttachedRetryPolicies(policy client.Object, svc client.Object) ([]client.Object, *metav1.Condition) {
+	retryPolicyList, err := r.policyAttachmentAPIClient.GatewayV1alpha1().RetryPolicies(corev1.NamespaceAll).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, status.ConditionPointer(status.InvalidCondition(policy, fmt.Sprintf("Failed to list RetryPolicies: %s", err)))
+	}
+
+	retryPolicies := make([]client.Object, 0)
+	referenceGrants := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.ReferenceGrantResourceType, false)
+
+	for _, p := range retryPolicyList.Items {
+		p := p
+		if gwutils.IsAcceptedPolicyAttachment(p.Status.Conditions) &&
+			gwutils.IsRefToTarget(referenceGrants, &p, p.Spec.TargetRef, svc) {
+			retryPolicies = append(retryPolicies, &p)
 		}
-
-		return targets
-	}); err != nil {
-		return err
 	}
 
-	return nil
-}
-
-func (r *retryPolicyReconciler) getAttachedRetryPolicies(svc client.Object) ([]client.Object, *metav1.Condition) {
-	c := r.fctx.Manager.GetCache()
-	key := client.ObjectKeyFromObject(svc).String()
-	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
-
-	return gwutils.GetRetries(c, selector), nil
+	return retryPolicies, nil
 }
 
 func (r *retryPolicyReconciler) findConflict(retryPolicy client.Object, allRetryPolicies []client.Object, port int32) *types.NamespacedName {
@@ -171,17 +169,13 @@ func (r *retryPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Conte
 		return nil
 	}
 
-	c := r.fctx.Manager.GetCache()
-	list := &gwpav1alpha1.RetryPolicyList{}
-	if err := c.List(context.Background(), list); err != nil {
-		log.Error().Msgf("Failed to list RetryPolicyList: %v", err)
-		return nil
-	}
-	policies := gwutils.ToSlicePtr(list.Items)
-
 	requests := make([]reconcile.Request, 0)
-	for _, policy := range policies {
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
+	policies := r.fctx.InformerCollection.GetGatewayResourcesFromCache(informers.RetryPoliciesResourceType, false)
+
+	for _, p := range policies {
+		policy := p.(*gwpav1alpha1.RetryPolicy)
+
+		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []client.Object{refGrant}) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

@@ -70,8 +70,6 @@ var (
 	fsmNamespace      string
 	fsmMeshConfigName string
 	fsmVersion        string
-	gatewayNamespace  string
-	gatewayName       string
 
 	meta metadata
 )
@@ -82,8 +80,6 @@ func init() {
 	flags.StringVar(&fsmNamespace, "fsm-namespace", "", "FSM controller's namespace")
 	flags.StringVar(&fsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
-	flags.StringVar(&gatewayNamespace, "gateway-namespace", "", "Namespace of Gateway")
-	flags.StringVar(&gatewayName, "gateway-name", "", "Name of Gateway")
 
 	meta = getMetadata()
 }
@@ -159,7 +155,7 @@ func main() {
 func codebase(cfg configurator.Configurator) string {
 	repoHost := fmt.Sprintf("%s.%s.svc", constants.FSMControllerName, fsmNamespace)
 	repoPort := cfg.GetProxyServerPort()
-	return fmt.Sprintf("%s://%s:%d/repo%s/", "http", repoHost, repoPort, utils.GatewayCodebasePath(gatewayNamespace, gatewayName))
+	return fmt.Sprintf("%s://%s:%d/repo%s/", "http", repoHost, repoPort, utils.GatewayCodebasePath(meta.PodNamespace))
 }
 
 func calcPipySpawn(kubeClient kubernetes.Interface) int64 {
