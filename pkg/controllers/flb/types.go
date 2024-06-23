@@ -29,6 +29,7 @@ const (
 	flbXForwardedForEnabledHeaderName = "X-FLB-XForwardedFor"
 	flbLimitSizeHeaderName            = "X-FLB-Limit-Size"
 	flbLimitSyncRateHeaderName        = "X-FLB-Limit-SyncRate"
+	flbSessionStickyHeaderName        = "X-FLB-Sticky"
 )
 
 var (

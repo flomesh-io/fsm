@@ -466,6 +466,7 @@ func (r *serviceReconciler) getFLBParameters(svc *corev1.Service) map[string]str
 		flbXForwardedForEnabledHeaderName: svc.Annotations[constants.FLBXForwardedForEnabledAnnotation],
 		flbLimitSizeHeaderName:            svc.Annotations[constants.FLBLimitSizeAnnotation],
 		flbLimitSyncRateHeaderName:        svc.Annotations[constants.FLBLimitSyncRateAnnotation],
+		flbSessionStickyHeaderName:        svc.Annotations[constants.FLBSessionStickyAnnotation],
 	}
 
 	if flb.IsTLSEnabled(svc) {
