@@ -749,6 +749,9 @@ const (
 	// FLBLimitSyncRateAnnotation is the annotation used to indicate the limit sync rate
 	FLBLimitSyncRateAnnotation = FLBPrefix + "/limit-sync-rate"
 
+	// FLBSessionStickyAnnotation is the annotation used to indicate if session sticky is enabled
+	FLBSessionStickyAnnotation = FLBPrefix + "/session-sticky"
+
 	// FLBConfigSecretLabel is the label used to indicate the secret
 	FLBConfigSecretLabel = FLBPrefix + "/config"
 
