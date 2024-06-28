@@ -371,7 +371,7 @@ func IsValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetR
 
 // DeepCopy copy all fields from source to destination
 func DeepCopy(dst any, src any) error {
-	return copier.CopyWithOption(&dst, &src, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+	return copier.CopyWithOption(dst, src, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 }
 
 var IsValidHostname = webhook.IsValidHostname
