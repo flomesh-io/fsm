@@ -1,10 +1,5 @@
 package utils
 
-import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
-)
-
 // ---------------------------- Access Control ----------------------------
 
 // GetAccessControlsMatchTypePort returns a list of AccessControlPolicy objects that match the given selector
@@ -434,43 +429,43 @@ import (
 
 // ---------------------------- Common methods ----------------------------
 
-func toClientObjects[T client.Object](policies []T) []client.Object {
-	objects := make([]client.Object, 0)
-	for _, p := range policies {
-		p := p
-		objects = append(objects, p)
-	}
-
-	return objects
-}
-
-type isAcceptedFunc func(policy client.Object) bool
-type noDataFunc func(policy client.Object) bool
-type hasAccessFunc func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool
-
-func filterValidPolicies[T client.Object](
-	policies []T,
-	refGrants []*gwv1beta1.ReferenceGrant,
-	isAccepted isAcceptedFunc,
-	noData noDataFunc,
-	hasAccess hasAccessFunc,
-) []client.Object {
-	validPolicies := make([]client.Object, 0)
-	for _, p := range policies {
-		if !isAccepted(p) {
-			continue
-		}
-
-		if noData(p) {
-			continue
-		}
-
-		if !hasAccess(p, refGrants) {
-			continue
-		}
-
-		validPolicies = append(validPolicies, p)
-	}
-
-	return validPolicies
-}
+//func toClientObjects[T client.Object](policies []T) []client.Object {
+//	objects := make([]client.Object, 0)
+//	for _, p := range policies {
+//		p := p
+//		objects = append(objects, p)
+//	}
+//
+//	return objects
+//}
+//
+//type isAcceptedFunc func(policy client.Object) bool
+//type noDataFunc func(policy client.Object) bool
+//type hasAccessFunc func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool
+//
+//func filterValidPolicies[T client.Object](
+//	policies []T,
+//	refGrants []*gwv1beta1.ReferenceGrant,
+//	isAccepted isAcceptedFunc,
+//	noData noDataFunc,
+//	hasAccess hasAccessFunc,
+//) []client.Object {
+//	validPolicies := make([]client.Object, 0)
+//	for _, p := range policies {
+//		if !isAccepted(p) {
+//			continue
+//		}
+//
+//		if noData(p) {
+//			continue
+//		}
+//
+//		if !hasAccess(p, refGrants) {
+//			continue
+//		}
+//
+//		validPolicies = append(validPolicies, p)
+//	}
+//
+//	return validPolicies
+//}

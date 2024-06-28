@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -14,7 +16,6 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
@@ -208,15 +209,15 @@ func (c *GatewayProcessor) IsSecretReferred(secret client.ObjectKey) bool {
 		return true
 	}
 
-	policies := &gwpav1alpha1.UpstreamTLSPolicyList{}
+	policies := &gwv1alpha3.BackendTLSPolicyList{}
 	if err := c.client.List(context.Background(), policies, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.SecretUpstreamTLSPolicyIndex, secret.String()),
+		FieldSelector: fields.OneTermEqualSelector(constants.SecretBackendTLSPolicyIndex, secret.String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list UpstreamTLSPolicyList: %v", err)
 		return false
 	}
 
-	return len(list.Items) > 0
+	return len(policies.Items) > 0
 }
 
 // no need to check ReferenceGrant here
@@ -232,7 +233,19 @@ func (c *GatewayProcessor) IsConfigMapReferred(cm client.ObjectKey) bool {
 		return false
 	}
 
-	return len(list.Items) > 0
+	if len(list.Items) > 0 {
+		return true
+	}
+
+	policies := &gwv1alpha3.BackendTLSPolicyList{}
+	if err := c.client.List(context.Background(), policies, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ConfigmapBackendTLSPolicyIndex, cm.String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list BackendTLSPolicyList: %v", err)
+		return false
+	}
+
+	return len(policies.Items) > 0
 }
 
 func (c *GatewayProcessor) IsHeadlessService(key client.ObjectKey) bool {

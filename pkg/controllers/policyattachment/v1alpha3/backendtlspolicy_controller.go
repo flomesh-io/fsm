@@ -3,6 +3,8 @@ package v1alpha3
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
@@ -124,42 +126,49 @@ func addBackendTLSPolicyIndexer(ctx context.Context, mgr manager.Manager) error 
 		return err
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha3.BackendTLSPolicy{}, constants.SecretBackendTLSPolicyIndex, addSecretBackendTLSPolicy); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha3.BackendTLSPolicy{}, constants.ConfigmapBackendTLSPolicyIndex, addConfigMapBackendTLSPolicy); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-//func (r *backendTLSPolicyReconciler) getAttachedRetryPolicies(svc client.Object) ([]client.Object, *metav1.Condition) {
-//	c := r.fctx.Manager.GetCache()
-//	key := client.ObjectKeyFromObject(svc).String()
-//	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
-//
-//	return gwutils.GetRetries(c, selector), nil
-//}
-//
-//func (r *backendTLSPolicyReconciler) findConflict(backendTLSPolicy client.Object, allRetryPolicies []client.Object, port int32) *types.NamespacedName {
-//	currentPolicy := backendTLSPolicy.(*gwpav1alpha1.BackendTLSPolicy)
-//
-//	for _, policy := range allRetryPolicies {
-//		policy := policy.(*gwpav1alpha1.BackendTLSPolicy)
-//
-//		c1 := backendTLS.GetRetryConfigIfPortMatchesPolicy(port, *policy)
-//		if c1 == nil {
-//			continue
-//		}
-//
-//		c2 := backendTLS.GetRetryConfigIfPortMatchesPolicy(port, *currentPolicy)
-//		if c2 == nil {
-//			continue
-//		}
-//
-//		if reflect.DeepEqual(c1, c2) {
-//			continue
-//		}
-//
-//		return &types.NamespacedName{
-//			Name:      policy.Name,
-//			Namespace: policy.Namespace,
-//		}
-//	}
-//
-//	return nil
-//}
+func addSecretBackendTLSPolicy(obj client.Object) []string {
+	policy := obj.(*gwv1alpha3.BackendTLSPolicy)
+	secrets := make([]string, 0)
+
+	if len(policy.Spec.Validation.CACertificateRefs) > 0 {
+		for _, ref := range policy.Spec.Validation.CACertificateRefs {
+			if ref.Kind == constants.KubernetesSecretKind && ref.Group == corev1.GroupName {
+				secrets = append(secrets, types.NamespacedName{
+					Namespace: policy.Namespace,
+					Name:      string(ref.Name),
+				}.String())
+			}
+		}
+	}
+
+	return secrets
+}
+
+func addConfigMapBackendTLSPolicy(obj client.Object) []string {
+	policy := obj.(*gwv1alpha3.BackendTLSPolicy)
+	secrets := make([]string, 0)
+
+	if len(policy.Spec.Validation.CACertificateRefs) > 0 {
+		for _, ref := range policy.Spec.Validation.CACertificateRefs {
+			if ref.Kind == constants.KubernetesConfigMapKind && ref.Group == corev1.GroupName {
+				secrets = append(secrets, types.NamespacedName{
+					Namespace: policy.Namespace,
+					Name:      string(ref.Name),
+				}.String())
+			}
+		}
+	}
+
+	return secrets
+}

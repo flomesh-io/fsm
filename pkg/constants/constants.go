@@ -635,6 +635,8 @@ const (
 	BackendUDPRouteIndex           = "backendUDPRouteIndex"
 	ServicePolicyAttachmentIndex   = "servicePolicyAttachmentIndex"
 	SecretUpstreamTLSPolicyIndex   = "secretUpstreamTLSPolicyIndex"
+	SecretBackendTLSPolicyIndex    = "secretBackendTLSPolicyIndex"
+	ConfigmapBackendTLSPolicyIndex = "cmBackendTLSPolicyIndex"
 	PortPolicyAttachmentIndex      = "portPolicyAttachmentIndex"
 	HostnamePolicyAttachmentIndex  = "hostnamePolicyAttachmentIndex"
 	HTTPRoutePolicyAttachmentIndex = "httpRoutePolicyAttachmentIndex"

@@ -235,21 +235,21 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 }
 
 // WithPolicyAttachmentClient sets the PolicyAttachment client for the InformerCollection
-func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
-	return func(ic *InformerCollection) {
-		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
-
-		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
-		ic.informers[InformerKeySessionStickyPolicy] = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Informer()
-		ic.informers[InformerKeyLoadBalancerPolicy] = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Informer()
-		ic.informers[InformerKeyCircuitBreakingPolicy] = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()
-		ic.informers[InformerKeyAccessControlPolicy] = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Informer()
-		ic.informers[InformerKeyHealthCheckPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
-		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
-		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
-		ic.informers[InformerKeyRetryPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
-	}
-}
+//func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
+//	return func(ic *InformerCollection) {
+//		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
+//
+//		ic.informers[InformerKeyRateLimitPolicy] = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Informer()
+//		ic.informers[InformerKeySessionStickyPolicy] = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Informer()
+//		ic.informers[InformerKeyLoadBalancerPolicy] = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Informer()
+//		ic.informers[InformerKeyCircuitBreakingPolicy] = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()
+//		ic.informers[InformerKeyAccessControlPolicy] = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Informer()
+//		ic.informers[InformerKeyHealthCheckPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
+//		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
+//		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
+//		ic.informers[InformerKeyRetryPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
+//	}
+//}
 
 // WithPolicyAttachmentClientV2 sets the PolicyAttachment client for the InformerCollection
 func WithPolicyAttachmentClientV2(gatewayAPIClient gatewayApiClientset.Interface, policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
