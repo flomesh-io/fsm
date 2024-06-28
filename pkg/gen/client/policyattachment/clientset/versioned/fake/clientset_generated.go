@@ -19,6 +19,8 @@ import (
 	clientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	gatewayv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha1"
 	fakegatewayv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha1/fake"
+	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha2"
+	fakegatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha2/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -79,4 +81,9 @@ var (
 // GatewayV1alpha1 retrieves the GatewayV1alpha1Client
 func (c *Clientset) GatewayV1alpha1() gatewayv1alpha1.GatewayV1alpha1Interface {
 	return &fakegatewayv1alpha1.FakeGatewayV1alpha1{Fake: &c.Fake}
+}
+
+// GatewayV1alpha2 retrieves the GatewayV1alpha2Client
+func (c *Clientset) GatewayV1alpha2() gatewayv1alpha2.GatewayV1alpha2Interface {
+	return &fakegatewayv1alpha2.FakeGatewayV1alpha2{Fake: &c.Fake}
 }

@@ -37,6 +37,11 @@ func IsActiveGateway(gateway *gwv1.Gateway) bool {
 	return IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 }
 
+func IsActiveGatewayByConditions(conditions []metav1.Condition) bool {
+	return metautil.IsStatusConditionTrue(conditions, string(gwv1.GatewayConditionAccepted)) &&
+		metautil.IsStatusConditionTrue(conditions, string(gwv1.GatewayConditionProgrammed))
+}
+
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed))
@@ -123,10 +128,10 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 }
 
 // GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RouteParentStatusObject) []gwtypes.Listener {
-	routeGvk := u.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
-	routeNs := u.GetRouteStatusObject().GetObjectMeta().Namespace
-	parentRef := u.GetParentRef()
+func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteParentStatusObject) []gwtypes.Listener {
+	routeGvk := rps.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
+	routeNs := rps.GetRouteStatusObject().GetObjectMeta().Namespace
+	parentRef := rps.GetParentRef()
 	validListeners := GetValidListenersForGateway(gw)
 
 	selectedListeners := make([]gwtypes.Listener, 0)
@@ -138,7 +143,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 	}
 
 	if len(selectedListeners) == 0 {
-		u.AddCondition(
+		rps.AddCondition(
 			gwv1.RouteConditionAccepted,
 			metav1.ConditionFalse,
 			gwv1.RouteReasonNoMatchingParent,
@@ -163,7 +168,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 	}
 
 	if len(allowedListeners) == 0 {
-		u.AddCondition(
+		rps.AddCondition(
 			gwv1.RouteConditionAccepted,
 			metav1.ConditionFalse,
 			gwv1.RouteReasonNotAllowedByListeners,
@@ -204,4 +209,12 @@ func NamespaceMatches(client cache.Cache, namespaces *gwv1.RouteNamespaces, gate
 	}
 
 	return true
+}
+
+// IsEffectiveRouteForParent returns true if the route is accepted and all references are resolved
+func IsEffectiveRouteForParent(rsh status.RouteStatusObject, parentRef gwv1.ParentReference) bool {
+	conditions := rsh.ConditionsForParentRef(parentRef)
+
+	return metautil.IsStatusConditionTrue(conditions, string(gwv1.RouteConditionAccepted)) &&
+		metautil.IsStatusConditionTrue(conditions, string(gwv1.RouteConditionResolvedRefs))
 }

@@ -27,6 +27,15 @@ package v1alpha2
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -45,12 +54,14 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 )
 
 type tcpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
 	statusProcessor *route.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *tcpRouteReconciler) NeedLeaderElection() bool {
@@ -58,11 +69,12 @@ func (r *tcpRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewTCPRouteReconciler returns a new TCPRoute Reconciler
-func NewTCPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewTCPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -91,7 +103,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		nil,
 		gwutils.ToSlicePtr(tcpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, tcpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, tcpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -102,13 +114,79 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1alpha2.TCPRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TCPRoute{}).
+		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToTCPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
 
 	return addTCPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *tcpRouteReconciler) backendTLSToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwv1alpha3.BackendTLSPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	targetRefs := make([]gwv1alpha2.NamespacedPolicyTargetReference, len(policy.Spec.TargetRefs))
+	for i, ref := range policy.Spec.TargetRefs {
+		targetRefs[i] = gwv1alpha2.NamespacedPolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(policy.Namespace)),
+		}
+	}
+
+	return r.policyToTCPRoutes(ctx, policy, targetRefs)
+}
+
+func (r *tcpRouteReconciler) policyToTCPRoutes(ctx context.Context, policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) []reconcile.Request {
+	var requests []reconcile.Request
+
+	for _, targetRef := range targetRefs {
+		if targetRef.Group != corev1.GroupName {
+			continue
+		}
+
+		if targetRef.Kind != constants.KubernetesServiceKind {
+			continue
+		}
+
+		list := &gwv1alpha2.TCPRouteList{}
+		if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.BackendTCPRouteIndex, types.NamespacedName{
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
+				Name:      string(targetRef.Name),
+			}.String()),
+		}); err != nil {
+			log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+			continue
+		}
+
+		for _, tcpRoute := range list.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: tcpRoute.Namespace,
+					Name:      tcpRoute.Name,
+				},
+			})
+		}
+	}
+
+	return requests
 }
 
 func addTCPRouteIndexers(ctx context.Context, mgr manager.Manager) error {

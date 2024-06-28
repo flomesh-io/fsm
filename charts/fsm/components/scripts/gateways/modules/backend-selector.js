@@ -45,13 +45,23 @@ export default function (config, protocol, rule, makeForwarder) {
     if (!filters) return []
     return filters.map(
       config => {
-        try {
-          var maker = pipy.import(`../filters/${protocol}/${config.type}.js`).default
-          return maker(config)
-        } catch {
-          throw `invalid filter type: ${config.type}`
-        }
+        var maker = (
+          importFilter(`../config/filters/${protocol}/${config.type}.js`) ||
+          importFilter(`../filters/${protocol}/${config.type}.js`)
+        )
+        if (!maker) throw `${protocol} filter not found: ${config.type}`
+        if (typeof maker !== 'function') throw `filter ${config.type} is not a function`
+        return maker(config)
       }
     )
+  }
+}
+
+function importFilter(pathname) {
+  try {
+    var filter = pipy.import(pathname)
+    return filter.default
+  } catch {
+    return null
   }
 }

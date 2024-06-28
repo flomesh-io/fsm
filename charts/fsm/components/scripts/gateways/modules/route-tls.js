@@ -34,6 +34,8 @@ export default function (config, listener, routeResources) {
     })
   })
 
+  hostPostfixes.sort((a, b) => b[0].length - a[0].length)
+
   function route(hello) {
     var sni = hello.serverNames[0] || ''
     var name = sni.toLowerCase()

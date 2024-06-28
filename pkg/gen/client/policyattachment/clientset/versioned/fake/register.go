@@ -17,6 +17,7 @@ package fake
 
 import (
 	gatewayv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -29,6 +30,7 @@ var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
 	gatewayv1alpha1.AddToScheme,
+	gatewayv1alpha2.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

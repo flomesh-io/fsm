@@ -27,6 +27,22 @@ package v1
 import (
 	"context"
 
+	"k8s.io/utils/ptr"
+
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -51,6 +67,7 @@ type httpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
 	statusProcessor *route.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *httpRouteReconciler) NeedLeaderElection() bool {
@@ -58,11 +75,12 @@ func (r *httpRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewHTTPRouteReconciler returns a new HTTPRoute Reconciler
-func NewHTTPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewHTTPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &httpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -91,7 +109,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		httpRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(httpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, httpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, httpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -102,13 +120,122 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1.HTTPRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.HTTPRoute{}).
+		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToHTTPRoutes)).
+		Watches(&gwv1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToHTTPRoutes)).
+		Watches(&gwpav1alpha2.HealthCheckPolicy{}, handler.EnqueueRequestsFromMapFunc(r.healthCheckToHTTPRoutes)).
+		Watches(&gwpav1alpha2.RetryPolicy{}, handler.EnqueueRequestsFromMapFunc(r.retryToHTTPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
 
 	return addHTTPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *httpRouteReconciler) backendTLSToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwv1alpha3.BackendTLSPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	targetRefs := make([]gwv1alpha2.NamespacedPolicyTargetReference, len(policy.Spec.TargetRefs))
+	for i, ref := range policy.Spec.TargetRefs {
+		targetRefs[i] = gwv1alpha2.NamespacedPolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(policy.Namespace)),
+		}
+	}
+
+	return r.policyToHTTPRoutes(ctx, policy, targetRefs)
+}
+
+func (r *httpRouteReconciler) backendLBToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwv1alpha2.BackendLBPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	targetRefs := make([]gwv1alpha2.NamespacedPolicyTargetReference, len(policy.Spec.TargetRefs))
+	for i, ref := range policy.Spec.TargetRefs {
+		targetRefs[i] = gwv1alpha2.NamespacedPolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(policy.Namespace)),
+		}
+	}
+
+	return r.policyToHTTPRoutes(ctx, policy, targetRefs)
+}
+
+func (r *httpRouteReconciler) healthCheckToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwpav1alpha2.HealthCheckPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	return r.policyToHTTPRoutes(ctx, policy, policy.Spec.TargetRefs)
+}
+
+func (r *httpRouteReconciler) retryToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwpav1alpha2.HealthCheckPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	return r.policyToHTTPRoutes(ctx, policy, policy.Spec.TargetRefs)
+}
+
+func (r *httpRouteReconciler) policyToHTTPRoutes(ctx context.Context, policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) []reconcile.Request {
+	var requests []reconcile.Request
+
+	for _, targetRef := range targetRefs {
+		if targetRef.Group != corev1.GroupName {
+			continue
+		}
+
+		if targetRef.Kind != constants.KubernetesServiceKind {
+			continue
+		}
+
+		httpRouteList := &gwv1.HTTPRouteList{}
+		if err := r.fctx.Manager.GetCache().List(ctx, httpRouteList, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.BackendHTTPRouteIndex, types.NamespacedName{
+				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
+				Name:      string(targetRef.Name),
+			}.String()),
+		}); err != nil {
+			log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+			continue
+		}
+
+		for _, httpRoute := range httpRouteList.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: httpRoute.Namespace,
+					Name:      httpRoute.Name,
+				},
+			})
+		}
+	}
+
+	return requests
 }
 
 func addHTTPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
@@ -124,13 +251,13 @@ func addHTTPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 }
 
 func gatewayHTTPRouteIndexFunc(obj client.Object) []string {
-	httproute := obj.(*gwv1.HTTPRoute)
+	httpRoute := obj.(*gwv1.HTTPRoute)
 	var gateways []string
-	for _, parent := range httproute.Spec.ParentRefs {
+	for _, parent := range httpRoute.Spec.ParentRefs {
 		if parent.Kind == nil || string(*parent.Kind) == constants.GatewayAPIGatewayKind {
 			gateways = append(gateways,
 				types.NamespacedName{
-					Namespace: gwutils.NamespaceDerefOr(parent.Namespace, httproute.Namespace),
+					Namespace: gwutils.NamespaceDerefOr(parent.Namespace, httpRoute.Namespace),
 					Name:      string(parent.Name),
 				}.String(),
 			)
@@ -141,14 +268,14 @@ func gatewayHTTPRouteIndexFunc(obj client.Object) []string {
 }
 
 func backendHTTPRouteIndexFunc(obj client.Object) []string {
-	httproute := obj.(*gwv1.HTTPRoute)
+	httpRoute := obj.(*gwv1.HTTPRoute)
 	var backendRefs []string
-	for _, rule := range httproute.Spec.Rules {
+	for _, rule := range httpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, httproute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, httpRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)
@@ -160,7 +287,7 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 						mirror := filter.RequestMirror.BackendRef
 						backendRefs = append(backendRefs,
 							types.NamespacedName{
-								Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httproute.Namespace),
+								Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httpRoute.Namespace),
 								Name:      string(mirror.Name),
 							}.String(),
 						)
@@ -175,7 +302,7 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 					mirror := filter.RequestMirror.BackendRef
 					backendRefs = append(backendRefs,
 						types.NamespacedName{
-							Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httproute.Namespace),
+							Namespace: gwutils.NamespaceDerefOr(mirror.Namespace, httpRoute.Namespace),
 							Name:      string(mirror.Name),
 						}.String(),
 					)

@@ -31,6 +31,10 @@ import (
 	"fmt"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	ghodssyaml "github.com/ghodss/yaml"
@@ -65,6 +69,7 @@ var (
 type reconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *reconciler) NeedLeaderElection() bool {
@@ -72,10 +77,11 @@ func (r *reconciler) NeedLeaderElection() bool {
 }
 
 // NewReconciler returns a new NamespacedIngress reconciler
-func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &reconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("NamespacedIngress"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -233,6 +239,15 @@ func (r *reconciler) updateConfig(nsig *nsigv1alpha1.NamespacedIngress, mc confi
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&nsigv1alpha1.NamespacedIngress{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&nsigv1alpha1.NamespacedIngress{}).
 		Complete(r)

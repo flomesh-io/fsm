@@ -2,11 +2,14 @@ var DEFAULT_CONFIG_PATH = '/etc/fgw'
 
 function load(filename) {
   if (!filename) {
-    if (os.stat(DEFAULT_CONFIG_PATH)?.isDirectory?.()) {
+    var configJSON = pipy.load('config.json')
+    if (configJSON) {
+      loadConfig(JSON.decode(configJSON))
+      return
+    } else if (os.stat(DEFAULT_CONFIG_PATH)?.isDirectory?.()) {
       filename = DEFAULT_CONFIG_PATH
     } else {
-      loadConfig(JSON.decode(pipy.load('config.json')))
-      return
+      throw 'missing configuration'
     }
   }
 
@@ -14,7 +17,10 @@ function load(filename) {
   if (!st) throw `file or directory not found: ${filename}`
 
   if (st.isDirectory()) {
-    loadConfigDir(filename)
+    if (pipy.thread.id === 0) {
+      pipy.mount('config', filename)
+    }
+    loadConfigDir('/config')
   } else {
     if (isYAML(filename)) {
       loadConfig(YAML.decode(os.read(filename)))
@@ -27,20 +33,28 @@ function load(filename) {
 function loadConfig(obj) {
   config.resources = obj.resources || []
   config.secrets = obj.secrets || {}
+  if (pipy.thread.id === 0) {
+    Object.entries(obj.filters?.http || {}).forEach(
+      ([name, content]) => pipy.patch(`filters/http/${name}.js`, content)
+    )
+    Object.entries(config.filters?.tcp || {}).forEach(
+      ([name, content]) => pipy.patch(`filters/tcp/${name}.js`, content)
+    )
+  }
 }
 
 function loadConfigDir(dirname) {
-  var list = os.readDir(dirname)
+  var list = pipy.list(dirname)
   var resources = []
   var secrets = {}
   list.forEach(name => {
     var filename = os.path.join(dirname, name)
     if (isSecret(name)) {
-      secrets[name] = os.read(filename).toString()
+      secrets[name] = pipy.load(filename).toString()
     } else if (isJSON(name)) {
-      resources.push(JSON.decode(os.read(filename)))
+      resources.push(JSON.decode(pipy.load(filename)))
     } else if (isYAML(name)) {
-      resources.push(YAML.decode(os.read(filename)))
+      resources.push(YAML.decode(pipy.load(filename)))
     }
   })
   config.resources = resources

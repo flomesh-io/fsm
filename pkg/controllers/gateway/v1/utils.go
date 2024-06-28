@@ -3,12 +3,13 @@ package v1
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 func hasTCP(gateway *gwv1.Gateway) bool {
@@ -47,7 +48,7 @@ func invalidateListeners(listeners []gwv1.Listener) map[gwv1.SectionName]metav1.
 	for i, listener := range listeners {
 		// Check for a valid hostname.
 		if hostname := ptr.Deref(listener.Hostname, ""); len(hostname) > 0 {
-			if err := isValidHostname(string(hostname)); err != nil {
+			if err := gwutils.IsValidHostname(string(hostname)); err != nil {
 				invalidListenerConditions[listener.Name] = metav1.Condition{
 					Type:    string(gwv1.ListenerConditionProgrammed),
 					Status:  metav1.ConditionFalse,

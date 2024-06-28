@@ -29,6 +29,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/webhook"
+
+	"github.com/jinzhu/copier"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -364,3 +368,10 @@ func IsValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetR
 
 	return false
 }
+
+// DeepCopy copy all fields from source to destination
+func DeepCopy(dst any, src any) error {
+	return copier.CopyWithOption(&dst, &src, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+}
+
+var IsValidHostname = webhook.IsValidHostname

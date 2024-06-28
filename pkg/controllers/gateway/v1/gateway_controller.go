@@ -28,7 +28,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"sync"
 	"time"
+
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -89,6 +94,8 @@ type listener struct {
 type gatewayReconciler struct {
 	recorder       record.EventRecorder
 	fctx           *fctx.ControllerContext
+	webhook        whtypes.Register
+	mutex          *sync.RWMutex
 	activeGateways map[string]*gatewayDeployment
 }
 
@@ -102,10 +109,12 @@ func (r *gatewayReconciler) NeedLeaderElection() bool {
 }
 
 // NewGatewayReconciler returns a new reconciler for Gateway resources
-func NewGatewayReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewGatewayReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &gatewayReconciler{
 		recorder:       ctx.Manager.GetEventRecorderFor("Gateway"),
 		fctx:           ctx,
+		webhook:        webhook,
+		mutex:          new(sync.RWMutex),
 		activeGateways: map[string]*gatewayDeployment{},
 	}
 }
@@ -128,10 +137,14 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					Namespace: req.Namespace,
 					Name:      req.Name,
 				}})
+
+			r.mutex.Lock()
 			delete(r.activeGateways, types.NamespacedName{
 				Namespace: req.Namespace,
 				Name:      req.Name,
 			}.String())
+			r.mutex.Unlock()
+
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -141,7 +154,11 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if gateway.DeletionTimestamp != nil {
 		r.fctx.GatewayEventHandler.OnDelete(gateway)
+
+		r.mutex.Lock()
 		delete(r.activeGateways, client.ObjectKeyFromObject(gateway).String())
+		r.mutex.Unlock()
+
 		return ctrl.Result{}, nil
 	}
 
@@ -185,7 +202,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
+	r.mutex.Lock()
 	old := r.activeGateways[client.ObjectKeyFromObject(gateway).String()]
+	r.mutex.Unlock()
 
 	if old == nil {
 		return true
@@ -521,7 +540,9 @@ func (r *gatewayReconciler) updateConfig(gw *gwv1.Gateway, _ configurator.Config
 }
 
 func (r *gatewayReconciler) isSameGateway(gateway *gwv1.Gateway, valuesHash string) bool {
+	r.mutex.Lock()
 	old := r.activeGateways[client.ObjectKeyFromObject(gateway).String()]
+	r.mutex.Unlock()
 
 	log.Debug().Msgf("[GW] old = %v", old)
 	if old != nil {
@@ -583,6 +604,8 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 		return ctrlResult, err
 	}
 
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 	r.activeGateways[client.ObjectKeyFromObject(gw).String()] = &gatewayDeployment{
 		spec:       gw.Spec,
 		valuesHash: valuesHash,
@@ -868,6 +891,15 @@ func (r *gatewayReconciler) getNodeIPs(svc *corev1.Service) []string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1.Gateway{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.Gateway{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			gateway, ok := obj.(*gwv1.Gateway)

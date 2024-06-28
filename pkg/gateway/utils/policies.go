@@ -258,7 +258,7 @@ func faultInjectionPolicyHasAccessToTargetRef(policy client.Object, refGrants []
 
 // ---------------------------- Session Sticky ----------------------------
 
-// GetSessionStickiesMatchTypePort returns a list of SessionStickyPolicy objects that match the given selector
+// GetSessionStickies returns a list of SessionStickyPolicy objects that match the given selector
 func GetSessionStickies(cache cache.Cache, selector fields.Selector) []client.Object {
 	list := &gwpav1alpha1.SessionStickyPolicyList{}
 	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
@@ -411,6 +411,32 @@ func GetUpStreamTLSes(cache cache.Cache, selector fields.Selector) []client.Obje
 		},
 	)
 }
+
+// ---------------------------- Backend TLS ----------------------------
+
+// GetBackendTLSes returns a list of BackendTLSPolicy objects that match the given selector
+//func GetBackendTLSes(cache cache.Cache, selector fields.Selector) []client.Object {
+//	list := &gwv1alpha3.BackendTLSPolicyList{}
+//	if err := cache.List(context.Background(), list, &client.ListOptions{FieldSelector: selector}); err != nil {
+//		return nil
+//	}
+//
+//	return filterValidPolicies(
+//		toClientObjects(ToSlicePtr(list.Items)),
+//		GetServiceRefGrants(cache),
+//		func(policy client.Object) bool {
+//			p := policy.(*gwv1alpha3.BackendTLSPolicy)
+//			return IsAcceptedPolicyAttachment(p.Status.Conditions)
+//		},
+//		func(policy client.Object) bool {
+//			return false
+//		},
+//		func(policy client.Object, refGrants []*gwv1beta1.ReferenceGrant) bool {
+//			p := policy.(*gwv1alpha3.BackendTLSPolicy)
+//			return HasAccessToTargetRef(p, p.Spec.TargetRef, refGrants)
+//		},
+//	)
+//}
 
 // ---------------------------- Common methods ----------------------------
 

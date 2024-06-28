@@ -27,6 +27,10 @@ package v1alpha2
 import (
 	"context"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -51,6 +55,7 @@ type udpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
 	statusProcessor *route.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *udpRouteReconciler) NeedLeaderElection() bool {
@@ -58,11 +63,12 @@ func (r *udpRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewUDPRouteReconciler returns a new UDPRoute Reconciler
-func NewUDPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewUDPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &udpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("UDPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -91,7 +97,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		nil,
 		gwutils.ToSlicePtr(udpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, udpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, udpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -102,6 +108,15 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1alpha2.UDPRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.UDPRoute{}).
 		Complete(r); err != nil {
@@ -133,18 +148,19 @@ func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.BackendUDPRouteIndex, backendUDPRouteIndexFunc); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func backendUDPRouteIndexFunc(obj client.Object) []string {
-	udproute := obj.(*gwv1alpha2.UDPRoute)
+	udpRoute := obj.(*gwv1alpha2.UDPRoute)
 	var backendRefs []string
-	for _, rule := range udproute.Spec.Rules {
+	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udproute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udpRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)

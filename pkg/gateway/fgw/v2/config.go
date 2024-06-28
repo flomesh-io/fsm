@@ -3,6 +3,10 @@ package v2
 import (
 	"fmt"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -18,14 +22,20 @@ func (c *ConfigSpec) GetVersion() string {
 	return c.Version
 }
 
+// ---
+
 type ObjectMeta struct {
 	Namespace string `json:"namespace,omitempty"`
 	Name      string `json:"name"`
 }
 
+// ---
+
 type CommonRouteSpec struct {
 	ParentRefs []gwv1.ParentReference `json:"parentRefs,omitempty" hash:"set"`
 }
+
+// ---
 
 type Gateway struct {
 	Kind       string      `json:"kind"`
@@ -58,11 +68,7 @@ type FrontendTLSValidation struct {
 	CACertificates []map[string]string `json:"caCertificates,omitempty" copier:"-" hash:"set"`
 }
 
-// Certificate is the certificate configuration
-type Certificate struct {
-	CertChain  string `json:"certChain"`
-	PrivateKey string `json:"privateKey"`
-}
+// ---
 
 type HTTPRoute struct {
 	Kind       string        `json:"kind"`
@@ -83,6 +89,8 @@ type HTTPRouteRule struct {
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
 }
 
+// ---
+
 type GRPCRoute struct {
 	Kind       string        `json:"kind"`
 	ObjectMeta ObjectMeta    `json:"metadata"`
@@ -102,6 +110,8 @@ type GRPCRouteRule struct {
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
 }
 
+// ---
+
 type TCPRoute struct {
 	Kind       string       `json:"kind"`
 	ObjectMeta ObjectMeta   `json:"metadata"`
@@ -117,6 +127,8 @@ type TCPRouteSpec struct {
 type TCPRouteRule struct {
 	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
+
+// ---
 
 type TLSRoute struct {
 	Kind       string       `json:"kind"`
@@ -135,6 +147,8 @@ type TLSRouteRule struct {
 	BackendRefs []BackendRef `json:"backendRefs,omitempty" hash:"set"`
 }
 
+// ---
+
 type UDPRoute struct {
 	Kind       string       `json:"kind"`
 	ObjectMeta ObjectMeta   `json:"metadata"`
@@ -150,12 +164,16 @@ type UDPRouteRule struct {
 	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
+// ---
+
 type HTTPBackendRef struct {
 	Kind    string            `json:"kind"`
 	Name    string            `json:"name"`
 	Weight  int32             `json:"weight,omitempty"`
 	Filters []HTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 }
+
+// ---
 
 type HTTPRouteFilter struct {
 	Type                   gwv1.HTTPRouteFilterType        `json:"type"`
@@ -167,9 +185,13 @@ type HTTPRouteFilter struct {
 	ExtensionRef           *gwv1.LocalObjectReference      `json:"extensionRef,omitempty"`
 }
 
+// ---
+
 type HTTPRequestMirrorFilter struct {
 	BackendRef BackendRef `json:"backendRef"`
 }
+
+// ---
 
 type GRPCBackendRef struct {
 	Kind    string            `json:"kind"`
@@ -177,6 +199,8 @@ type GRPCBackendRef struct {
 	Weight  int32             `json:"weight,omitempty"`
 	Filters []GRPCRouteFilter `json:"filters,omitempty" hash:"set"`
 }
+
+// ---
 
 type GRPCRouteFilter struct {
 	Type                   gwv1.GRPCRouteFilterType   `json:"type"`
@@ -186,10 +210,12 @@ type GRPCRouteFilter struct {
 	ExtensionRef           *gwv1.LocalObjectReference `json:"extensionRef,omitempty"`
 }
 
+// ---
+
 type BackendRef struct {
 	Kind   string `json:"kind"`
 	Name   string `json:"name"`
-	Weight int32  `json:"weight,omitempty"`
+	Weight *int32 `json:"weight,omitempty"`
 }
 
 type Backend struct {
@@ -210,10 +236,13 @@ type BackendTarget struct {
 	Tags    map[string]string `json:"tags,omitempty"`
 }
 
+// ---
+
 // ServicePortName is a combination of a service name, namespace, and port
 type ServicePortName struct {
 	types.NamespacedName
-	Port *int32
+	SectionName string
+	Port        *int32
 }
 
 func (spn *ServicePortName) String() string {
@@ -225,4 +254,77 @@ func fmtPortName(in *int32) string {
 		return ""
 	}
 	return fmt.Sprintf("-%d", *in)
+}
+
+// ---
+
+type Policy interface {
+	GetTargetRefs() []Backend
+	SetTargetRefs(backends []Backend)
+}
+
+type PolicyResult struct {
+	FullName string
+	Policy   interface{}
+	Secrets  map[string]string
+}
+
+// ---
+
+type BackendTLSPolicy struct {
+	Kind       string               `json:"kind"`
+	ObjectMeta ObjectMeta           `json:"metadata"`
+	Spec       BackendTLSPolicySpec `json:"spec"`
+}
+
+type BackendTLSPolicySpec struct {
+	TargetRefs []BackendRef               `json:"targetRefs" copier:"-" hash:"set"`
+	Validation BackendTLSPolicyValidation `json:"validation"`
+}
+
+type BackendTLSPolicyValidation struct {
+	CACertificates          []map[string]string                     `json:"caCertificates,omitempty" copier:"-" hash:"set"`
+	WellKnownCACertificates *gwv1alpha3.WellKnownCACertificatesType `json:"wellKnownCACertificates,omitempty"`
+	Hostname                gwv1.PreciseHostname                    `json:"hostname"`
+}
+
+// ---
+
+type BackendLBPolicy struct {
+	Kind       string              `json:"kind"`
+	ObjectMeta ObjectMeta          `json:"metadata"`
+	Spec       BackendLBPolicySpec `json:"spec"`
+}
+
+type BackendLBPolicySpec struct {
+	TargetRefs         []BackendRef             `json:"targetRefs" copier:"-" hash:"set"`
+	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
+}
+
+// ---
+
+type RetryPolicy struct {
+	Kind       string          `json:"kind"`
+	ObjectMeta ObjectMeta      `json:"metadata"`
+	Spec       RetryPolicySpec `json:"spec"`
+}
+
+type RetryPolicySpec struct {
+	TargetRefs   []BackendRef              `json:"targetRefs" copier:"-" hash:"set"`
+	Ports        []gwpav1alpha2.PortRetry  `json:"ports,omitempty" hash:"set"`
+	DefaultRetry *gwpav1alpha2.RetryConfig `json:"retry,omitempty"`
+}
+
+// ---
+
+type HealthCheckPolicy struct {
+	Kind       string                `json:"kind"`
+	ObjectMeta ObjectMeta            `json:"metadata"`
+	Spec       HealthCheckPolicySpec `json:"spec"`
+}
+
+type HealthCheckPolicySpec struct {
+	TargetRefs         []BackendRef                    `json:"targetRefs" copier:"-" hash:"set"`
+	Ports              []gwpav1alpha2.PortHealthCheck  `json:"ports,omitempty" hash:"set"`
+	DefaultHealthCheck *gwpav1alpha2.HealthCheckConfig `json:"healthCheck,omitempty"`
 }

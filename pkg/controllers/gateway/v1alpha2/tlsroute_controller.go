@@ -27,6 +27,10 @@ package v1alpha2
 import (
 	"context"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -53,6 +57,7 @@ type tlsRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
 	statusProcessor *route.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *tlsRouteReconciler) NeedLeaderElection() bool {
@@ -60,11 +65,12 @@ func (r *tlsRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewTLSRouteReconciler returns a new TLSRoute.Reconciler
-func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewTLSRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &tlsRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -93,7 +99,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		tlsRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(tlsRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, tlsRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, tlsRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -104,6 +110,15 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *tlsRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1alpha2.TLSRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TLSRoute{}).
 		Complete(r); err != nil {
@@ -139,14 +154,14 @@ func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 }
 
 func backendTLSRouteIndexFunc(obj client.Object) []string {
-	tlsroute := obj.(*gwv1alpha2.TLSRoute)
+	tlsRoute := obj.(*gwv1alpha2.TLSRoute)
 	var backendRefs []string
-	for _, rule := range tlsroute.Spec.Rules {
+	for _, rule := range tlsRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tlsroute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tlsRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)

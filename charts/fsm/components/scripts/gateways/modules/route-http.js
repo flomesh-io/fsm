@@ -12,20 +12,29 @@ export default function (config, listener, routeResources) {
   var response500 = pipeline($=>$.replaceMessage(new Message({ status: 500 })))
 
   var hostFullnames = {}
-  var hostPostfixes = []
+  var hostPostfixes = {}
 
   routeResources.forEach(r => {
     var hostnames = r.spec.hostnames || ['*']
-    var selector = makeRuleSelector(r)
     hostnames.forEach(name => {
       name = name.trim().toLowerCase()
       if (name.startsWith('*')) {
-        hostPostfixes.push([name.substring(1), selector])
+        (hostPostfixes[name.substring(1)] ??= []).push(r)
       } else {
-        hostFullnames[name] = selector
+        (hostFullnames[name] ??= []).push(r)
       }
     })
   })
+
+  hostFullnames = Object.fromEntries(
+    Object.entries(hostFullnames).map(
+      ([k, v]) => [k, makeRuleSelector(v)]
+    )
+  )
+
+  hostPostfixes = Object.entries(hostPostfixes)
+    .sort((a, b) => b[0].length - a[0].length)
+    .map(([k, v]) => [k, makeRuleSelector(v)])
 
   function route(msg) {
     var head = msg.head
@@ -48,56 +57,85 @@ export default function (config, listener, routeResources) {
     )
   }
 
-  function makeRuleSelector(routeResource) {
-    var rules = routeResource.spec.rules
-    switch (routeResource.kind) {
+  function makeRuleSelector(routeResources) {
+    var kind = routeResources[0].kind
+    var rules = routeResources.flatMap(r => r.spec.rules).map(r => [r, makeBackendSelectorForRule(r, kind === 'GRPCRoute')])
+    var matches = rules.flatMap(([rule, backendSelector]) => {
+      if (rule.matches) {
+        return rule.matches.map(m => [m, backendSelector])
+      } else {
+        return [[{}, backendSelector]]
+      }
+    })
+
+    matches.sort((a, b) => {
+      var ra = getMatchPriority(a[0])
+      var rb = getMatchPriority(b[0])
+      var i = ra.findIndex((r, i) => r !== rb[i])
+      if (i < 0) return 0
+      return ra[i] > rb[i] ? -1 : 1
+    })
+
+    function getMatchPriority(match) {
+      var ranks = new Array(5)
+      switch (match.path?.type) {
+        case 'Exact':
+          ranks[0] = 3
+          ranks[1] = match.path.value
+          break
+        case 'PathPrefix':
+          ranks[0] = 2
+          ranks[1] = match.path.value.length
+          break
+        case 'RegularExpression':
+          ranks[0] = 1
+          ranks[1] = match.path.value.length
+          break
+        default:
+          ranks[0] = 0
+          ranks[1] = 0
+          break
+      }
+      ranks[2] = Boolean(match.method)
+      ranks[3] = match.headers?.length || 0
+      ranks[4] = match.queryParams?.length || 0
+      return ranks
+    }
+
+    switch (kind) {
       case 'HTTPRoute':
-        rules = rules.map(r => {
-          var matches = (r.matches || []).map(m => {
-            var matchMethod = makeMethodMatcher(m.method)
-            var matchPath = makePathMatcher(m.path)
-            var matchHeaders = makeObjectMatcher(m.headers)
-            var matchParams = makeObjectMatcher(m.queryParams)
-            return function (head) {
-              if (matchMethod && !matchMethod(head.method)) return false
-              if (matchPath && !matchPath(head.path)) return false
-              if (matchHeaders && !matchHeaders(head.headers)) return false
-              if (matchParams && !matchParams(new URL(head.path).searchParams.toObject())) return false
-              return true
-            }
-          })
-          var matchFunc = matches.length > 0 && (
-            function (head) {
-              return matches.some(f => f(head))
-            }
-          )
-          return [matchFunc, makeBackendSelectorForRule(r, false)]
+        matches = matches.map(([m, backendSelector], i) => {
+          var matchMethod = makeMethodMatcher(m.method)
+          var matchPath = makePathMatcher(m.path)
+          var matchHeaders = makeObjectMatcher(m.headers)
+          var matchParams = makeObjectMatcher(m.queryParams)
+          var matchFunc = function (head) {
+            if (matchMethod && !matchMethod(head.method)) return false
+            if (matchPath && !matchPath(head.path)) return false
+            if (matchHeaders && !matchHeaders(head.headers)) return false
+            if (matchParams && !matchParams(new URL(head.path).searchParams.toObject())) return false
+            return true
+          }
+          return [matchFunc, backendSelector]
         })
         break
       case 'GRPCRoute':
-        rules = rules.map(r => {
-          var matches = (r.matches || []).map(m => {
-            var matchMethod = makeGRPCMethodMatcher(m.method)
-            var matchHeaders = makeObjectMatcher(m.headers)
-            return function (head) {
-              if (matchMethod && !matchMethod(head.path)) return false
-              if (matchHeaders && !matchHeaders(head.headers)) return false
-              return true
-            }
-          })
-          var matchFunc = matches.length > 0 && (
-            function (head) {
-              return matches.some(f => f(head))
-            }
-          )
-          return [matchFunc, makeBackendSelectorForRule(r, true)]
+        matches = matches.map(([m, backendSelector]) => {
+          var matchMethod = makeGRPCMethodMatcher(m.method)
+          var matchHeaders = makeObjectMatcher(m.headers)
+          var matchFunc = function (head) {
+            if (matchMethod && !matchMethod(head.path)) return false
+            if (matchHeaders && !matchHeaders(head.headers)) return false
+            return true
+          }
+          return [matchFunc, backendSelector]
         })
         break
-      default: throw `route-http: unknown resource kind: '${resource.kind}'`
+      default: throw `route-http: unknown resource kind: '${kind}'`
     }
     return function (head) {
-      var r = rules.find(([matchFunc]) => !matchFunc || matchFunc(head))
-      if (r) return r[1](head)
+      var m = matches.find(([matchFunc]) => matchFunc(head))
+      if (m) return m[1](head)
     }
   }
 

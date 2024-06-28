@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -68,6 +69,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().SessionStickyPolicies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("upstreamtlspolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()}, nil
+
+		// Group=gateway.flomesh.io, Version=v1alpha2
+	case v1alpha2.SchemeGroupVersion.WithResource("healthcheckpolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().HealthCheckPolicies().Informer()}, nil
+	case v1alpha2.SchemeGroupVersion.WithResource("retrypolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().RetryPolicies().Informer()}, nil
 
 	}
 

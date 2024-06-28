@@ -99,15 +99,8 @@ func WithKubeClient(kubeClient kubernetes.Interface) InformerCollectionOption {
 		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 		ic.informers[InformerKeyNamespaceAll] = v1api.Namespaces().Informer()
 
-		//ic.listers.Service = v1api.Services().Lister()
-		//ic.listers.Secret = v1api.Secrets().Lister()
-		//ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
-		//ic.listers.Endpoints = v1api.Endpoints().Lister()
-		//ic.listers.Namespace = v1api.Namespaces().Lister()
-
 		if version.IsEndpointSliceEnabled(kubeClient) {
 			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
-			//ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
 		}
 	}
 }
@@ -126,14 +119,8 @@ func WithKubeClientWithoutNamespace(kubeClient kubernetes.Interface) InformerCol
 		ic.informers[InformerKeySecret] = v1api.Secrets().Informer()
 		ic.informers[InformerKeyConfigMap] = v1api.ConfigMaps().Informer()
 
-		//ic.listers.Service = v1api.Services().Lister()
-		//ic.listers.Secret = v1api.Secrets().Lister()
-		//ic.listers.ConfigMap = v1api.ConfigMaps().Lister()
-		//ic.listers.Endpoints = v1api.Endpoints().Lister()
-
 		if version.IsEndpointSliceEnabled(kubeClient) {
 			ic.informers[InformerKeyEndpointSlices] = informerFactory.Discovery().V1().EndpointSlices().Informer()
-			//ic.listers.EndpointSlice = informerFactory.Discovery().V1().EndpointSlices().Lister()
 		}
 	}
 }
@@ -222,8 +209,6 @@ func WithMultiClusterClient(multiclusterClient multiclusterClientset.Interface) 
 		ic.informers[InformerKeyServiceExport] = informerFactory.Multicluster().V1alpha1().ServiceExports().Informer()
 		ic.informers[InformerKeyServiceImport] = informerFactory.Multicluster().V1alpha1().ServiceImports().Informer()
 		ic.informers[InformerKeyGlobalTrafficPolicy] = informerFactory.Multicluster().V1alpha1().GlobalTrafficPolicies().Informer()
-
-		//ic.listers.ServiceImport = informerFactory.Multicluster().V1alpha1().ServiceImports().Lister()
 	}
 }
 
@@ -244,13 +229,8 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 		ic.informers[InformerKeyK8sIngressClass] = informerFactory.Networking().V1().IngressClasses().Informer()
 		ic.informers[InformerKeyK8sIngress] = informerFactory.Networking().V1().Ingresses().Informer()
 
-		//ic.listers.K8sIngressClass = informerFactory.Networking().V1().IngressClasses().Lister()
-		//ic.listers.K8sIngress = informerFactory.Networking().V1().Ingresses().Lister()
-
 		nsigInformerFactory := nsigInformers.NewSharedInformerFactory(nsigClient, DefaultKubeEventResyncInterval)
 		ic.informers[InformerKeyNamespacedIngress] = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Informer()
-
-		//ic.listers.NamespacedIngress = nsigInformerFactory.Networking().V1alpha1().NamespacedIngresses().Lister()
 	}
 }
 
@@ -264,20 +244,24 @@ func WithPolicyAttachmentClient(policyAttachmentClient policyAttachmentClientset
 		ic.informers[InformerKeyLoadBalancerPolicy] = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Informer()
 		ic.informers[InformerKeyCircuitBreakingPolicy] = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()
 		ic.informers[InformerKeyAccessControlPolicy] = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Informer()
-		ic.informers[InformerKeyHealthCheckPolicy] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
+		ic.informers[InformerKeyHealthCheckPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Informer()
 		ic.informers[InformerKeyFaultInjectionPolicy] = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Informer()
 		ic.informers[InformerKeyUpstreamTLSPolicy] = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()
-		ic.informers[InformerKeyRetryPolicy] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
+		ic.informers[InformerKeyRetryPolicyV1alpha1] = informerFactory.Gateway().V1alpha1().RetryPolicies().Informer()
+	}
+}
 
-		//ic.listers.RateLimitPolicy = informerFactory.Gateway().V1alpha1().RateLimitPolicies().Lister()
-		//ic.listers.SessionStickyPolicy = informerFactory.Gateway().V1alpha1().SessionStickyPolicies().Lister()
-		//ic.listers.LoadBalancerPolicy = informerFactory.Gateway().V1alpha1().LoadBalancerPolicies().Lister()
-		//ic.listers.CircuitBreakingPolicy = informerFactory.Gateway().V1alpha1().CircuitBreakingPolicies().Lister()
-		//ic.listers.AccessControlPolicy = informerFactory.Gateway().V1alpha1().AccessControlPolicies().Lister()
-		//ic.listers.HealthCheckPolicy = informerFactory.Gateway().V1alpha1().HealthCheckPolicies().Lister()
-		//ic.listers.FaultInjectionPolicy = informerFactory.Gateway().V1alpha1().FaultInjectionPolicies().Lister()
-		//ic.listers.UpstreamTLSPolicy = informerFactory.Gateway().V1alpha1().UpstreamTLSPolicies().Lister()
-		//ic.listers.RetryPolicy = informerFactory.Gateway().V1alpha1().RetryPolicies().Lister()
+// WithPolicyAttachmentClientV2 sets the PolicyAttachment client for the InformerCollection
+func WithPolicyAttachmentClientV2(gatewayAPIClient gatewayApiClientset.Interface, policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		gatewayInformerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
+		ic.informers[InformerKeyBackendLBPolicy] = gatewayInformerFactory.Gateway().V1alpha2().BackendLBPolicies().Informer()
+		ic.informers[InformerKeyBackendTLSPolicy] = gatewayInformerFactory.Gateway().V1alpha3().BackendTLSPolicies().Informer()
+
+		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyHealthCheckPolicyV1alpha1] = informerFactory.Gateway().V1alpha2().HealthCheckPolicies().Informer()
+		ic.informers[InformerKeyRetryPolicyV1alpha1] = informerFactory.Gateway().V1alpha2().RetryPolicies().Informer()
 	}
 }
 
@@ -294,15 +278,6 @@ func WithGatewayAPIClient(gatewayAPIClient gatewayApiClientset.Interface) Inform
 		ic.informers[InformerKeyGatewayAPITLSRoute] = informerFactory.Gateway().V1alpha2().TLSRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIUDPRoute] = informerFactory.Gateway().V1alpha2().UDPRoutes().Informer()
 		ic.informers[InformerKeyGatewayAPIReferenceGrant] = informerFactory.Gateway().V1beta1().ReferenceGrants().Informer()
-
-		//ic.listers.GatewayClass = informerFactory.Gateway().V1().GatewayClasses().Lister()
-		//ic.listers.Gateway = informerFactory.Gateway().V1().Gateways().Lister()
-		//ic.listers.HTTPRoute = informerFactory.Gateway().V1().HTTPRoutes().Lister()
-		//ic.listers.GRPCRoute = informerFactory.Gateway().V1().GRPCRoutes().Lister()
-		//ic.listers.TLSRoute = informerFactory.Gateway().V1alpha2().TLSRoutes().Lister()
-		//ic.listers.TCPRoute = informerFactory.Gateway().V1alpha2().TCPRoutes().Lister()
-		//ic.listers.UDPRoute = informerFactory.Gateway().V1alpha2().UDPRoutes().Lister()
-		//ic.listers.ReferenceGrant = informerFactory.Gateway().V1beta1().ReferenceGrants().Lister()
 	}
 }
 

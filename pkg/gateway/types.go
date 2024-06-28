@@ -4,8 +4,11 @@ package gateway
 import (
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/logger"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/processor"
+
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	gwcache "github.com/flomesh-io/fsm/pkg/gateway/cache"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 )
 
@@ -13,7 +16,7 @@ import (
 type client struct {
 	msgBroker *messaging.Broker
 	cfg       configurator.Configurator
-	cache     gwcache.Cache
+	processor processor.Processor
 }
 
 const (
@@ -21,4 +24,8 @@ const (
 	// This is set to 0 because we do not need resyncs from k8s client, and have our
 	// own Ticker to turn on periodic resyncs.
 	DefaultKubeEventResyncInterval = 0 * time.Second
+)
+
+var (
+	log = logger.New("controller-gatewayapi")
 )
