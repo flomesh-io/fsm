@@ -3,6 +3,10 @@ package v2
 import (
 	"fmt"
 
+	"k8s.io/utils/ptr"
+
+	"github.com/google/go-cmp/cmp"
+
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
@@ -173,6 +177,14 @@ type HTTPBackendRef struct {
 	Filters []HTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
+func NewHTTPBackendRef(name string, weight int32) HTTPBackendRef {
+	return HTTPBackendRef{
+		Kind:   "Backend",
+		Name:   name,
+		Weight: weight,
+	}
+}
+
 // ---
 
 type HTTPRouteFilter struct {
@@ -200,6 +212,14 @@ type GRPCBackendRef struct {
 	Filters []GRPCRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
+func NewGRPCBackendRef(name string, weight int32) GRPCBackendRef {
+	return GRPCBackendRef{
+		Kind:   "Backend",
+		Name:   name,
+		Weight: weight,
+	}
+}
+
 // ---
 
 type GRPCRouteFilter struct {
@@ -218,11 +238,38 @@ type BackendRef struct {
 	Weight *int32 `json:"weight,omitempty"`
 }
 
+func NewBackendRef(name string) BackendRef {
+	return BackendRef{
+		Kind: "Backend",
+		Name: name,
+	}
+}
+
+func NewBackendRefWithWeight(name string, weight int32) BackendRef {
+	return BackendRef{
+		Kind:   "Backend",
+		Name:   name,
+		Weight: ptr.To(weight),
+	}
+}
+
 type Backend struct {
 	Kind       string      `json:"kind"`
 	ObjectMeta ObjectMeta  `json:"metadata"`
 	Spec       BackendSpec `json:"spec"`
 	Port       int32       `json:"-"` // store the port for the backend temporarily
+}
+
+func NewBackend(svcPortName string, targets []BackendTarget) *Backend {
+	return &Backend{
+		Kind: "Backend",
+		ObjectMeta: ObjectMeta{
+			Name: svcPortName,
+		},
+		Spec: BackendSpec{
+			Targets: targets,
+		},
+	}
 }
 
 type BackendSpec struct {
@@ -258,19 +305,6 @@ func fmtPortName(in *int32) string {
 
 // ---
 
-type Policy interface {
-	GetTargetRefs() []Backend
-	SetTargetRefs(backends []Backend)
-}
-
-type PolicyResult struct {
-	FullName string
-	Policy   interface{}
-	Secrets  map[string]string
-}
-
-// ---
-
 type BackendTLSPolicy struct {
 	Kind       string               `json:"kind"`
 	ObjectMeta ObjectMeta           `json:"metadata"`
@@ -288,6 +322,24 @@ type BackendTLSPolicyValidation struct {
 	Hostname                gwv1.PreciseHostname                    `json:"hostname"`
 }
 
+func (p *BackendTLSPolicy) AddTargetRef(ref BackendRef) {
+	if len(p.Spec.TargetRefs) > 0 {
+		exists := false
+		for _, targetRef := range p.Spec.TargetRefs {
+			if cmp.Equal(targetRef, ref) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.TargetRefs = append(p.Spec.TargetRefs, ref)
+		}
+	} else {
+		p.Spec.TargetRefs = []BackendRef{ref}
+	}
+}
+
 // ---
 
 type BackendLBPolicy struct {
@@ -299,6 +351,24 @@ type BackendLBPolicy struct {
 type BackendLBPolicySpec struct {
 	TargetRefs         []BackendRef             `json:"targetRefs" copier:"-" hash:"set"`
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
+}
+
+func (p *BackendLBPolicy) AddTargetRef(ref BackendRef) {
+	if len(p.Spec.TargetRefs) > 0 {
+		exists := false
+		for _, targetRef := range p.Spec.TargetRefs {
+			if cmp.Equal(targetRef, ref) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.TargetRefs = append(p.Spec.TargetRefs, ref)
+		}
+	} else {
+		p.Spec.TargetRefs = []BackendRef{ref}
+	}
 }
 
 // ---
@@ -315,6 +385,24 @@ type RetryPolicySpec struct {
 	DefaultRetry *gwpav1alpha2.RetryConfig `json:"retry,omitempty"`
 }
 
+func (p *RetryPolicy) AddTargetRef(ref BackendRef) {
+	if len(p.Spec.TargetRefs) > 0 {
+		exists := false
+		for _, targetRef := range p.Spec.TargetRefs {
+			if cmp.Equal(targetRef, ref) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.TargetRefs = append(p.Spec.TargetRefs, ref)
+		}
+	} else {
+		p.Spec.TargetRefs = []BackendRef{ref}
+	}
+}
+
 // ---
 
 type HealthCheckPolicy struct {
@@ -327,4 +415,22 @@ type HealthCheckPolicySpec struct {
 	TargetRefs         []BackendRef                    `json:"targetRefs" copier:"-" hash:"set"`
 	Ports              []gwpav1alpha2.PortHealthCheck  `json:"ports,omitempty" hash:"set"`
 	DefaultHealthCheck *gwpav1alpha2.HealthCheckConfig `json:"healthCheck,omitempty"`
+}
+
+func (p *HealthCheckPolicy) AddTargetRef(ref BackendRef) {
+	if len(p.Spec.TargetRefs) > 0 {
+		exists := false
+		for _, targetRef := range p.Spec.TargetRefs {
+			if cmp.Equal(targetRef, ref) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.TargetRefs = append(p.Spec.TargetRefs, ref)
+		}
+	} else {
+		p.Spec.TargetRefs = []BackendRef{ref}
+	}
 }

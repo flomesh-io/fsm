@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/go-cmp/cmp"
-
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	corev1 "k8s.io/api/core/v1"
@@ -54,12 +52,12 @@ func (p *BackendTLSPolicyProcessor) Process(route client.Object, backendRef gwv1
 		return
 	}
 
-	p2 := p.createOrGetBackendTLSPolicy(policy)
-	p.addTargetRef(p2, v2.BackendRef{Kind: "Backend", Name: svcPort.String()})
+	p2 := p.getOrCreateBackendTLSPolicy(policy)
+	p2.AddTargetRef(v2.NewBackendRef(svcPort.String()))
 	p.processCACertificates(policy, p2)
 }
 
-func (p *BackendTLSPolicyProcessor) createOrGetBackendTLSPolicy(policy *gwv1alpha3.BackendTLSPolicy) *v2.BackendTLSPolicy {
+func (p *BackendTLSPolicyProcessor) getOrCreateBackendTLSPolicy(policy *gwv1alpha3.BackendTLSPolicy) *v2.BackendTLSPolicy {
 	key := client.ObjectKeyFromObject(policy).String()
 
 	p2, ok := p.generator.backendTLSPolicies[key]
@@ -72,29 +70,10 @@ func (p *BackendTLSPolicyProcessor) createOrGetBackendTLSPolicy(policy *gwv1alph
 		return nil
 	}
 
-	p2.Spec.TargetRefs = make([]v2.BackendRef, 0)
 	p2.Spec.Validation.CACertificates = make([]map[string]string, 0)
 	p.generator.backendTLSPolicies[key] = p2
 
 	return p2
-}
-
-func (p *BackendTLSPolicyProcessor) addTargetRef(p2 *v2.BackendTLSPolicy, ref v2.BackendRef) {
-	if len(p2.Spec.TargetRefs) > 0 {
-		exists := false
-		for _, targetRef := range p2.Spec.TargetRefs {
-			if cmp.Equal(targetRef, ref) {
-				exists = true
-				break
-			}
-		}
-
-		if !exists {
-			p2.Spec.TargetRefs = append(p2.Spec.TargetRefs, ref)
-		}
-	} else {
-		p2.Spec.TargetRefs = []v2.BackendRef{ref}
-	}
 }
 
 func (p *BackendTLSPolicyProcessor) processCACertificates(policy *gwv1alpha3.BackendTLSPolicy, p2 *v2.BackendTLSPolicy) {

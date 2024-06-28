@@ -107,25 +107,14 @@ func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, refs []gwv1
 	for _, backend := range refs {
 		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
 
-		backendRefs = append(backendRefs, v2.BackendRef{
-			Kind:   "Backend",
-			Name:   name,
-			Weight: ptr.To(backendWeight(backend)),
-		})
-		backends = append(backends, v2.Backend{
-			Kind: "Backend",
-			ObjectMeta: v2.ObjectMeta{
-				Name: name,
+		backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(name, backendWeight(backend)))
+
+		backends = append(backends, v2.NewBackend(name, []v2.BackendTarget{
+			{
+				Address: string(backend.Name),
+				Port:    tlsBackendPort(backend.Port),
 			},
-			Spec: v2.BackendSpec{
-				Targets: []v2.BackendTarget{
-					{
-						Address: string(backend.Name),
-						Port:    tlsBackendPort(backend.Port),
-					},
-				},
-			},
-		})
+		}))
 	}
 
 	return backendRefs, backends

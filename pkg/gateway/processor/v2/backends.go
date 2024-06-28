@@ -41,15 +41,7 @@ func (c *ConfigGenerator) processBackends() []interface{} {
 		//    enricher.Enrich(svcPortName, svcCfg)
 		//}
 
-		backends = append(backends, &v2.Backend{
-			Kind: "Backend",
-			ObjectMeta: v2.ObjectMeta{
-				Name: svcPortName,
-			},
-			Spec: v2.BackendSpec{
-				Targets: targets,
-			},
-		})
+		backends = append(backends, v2.NewBackend(svcPortName, targets))
 	}
 
 	return backends
