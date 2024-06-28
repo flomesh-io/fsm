@@ -21,5 +21,4 @@ func NewRetryPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 
 func (p RetryPolicyProcessor) Process(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
 	//TODO implement me
-	panic("implement me")
 }
