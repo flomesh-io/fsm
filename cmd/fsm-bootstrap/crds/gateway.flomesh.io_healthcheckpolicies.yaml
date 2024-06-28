@@ -11,9 +11,13 @@ metadata:
 spec:
   group: gateway.flomesh.io
   names:
+    categories:
+    - gateway-api
     kind: HealthCheckPolicy
     listKind: HealthCheckPolicyList
     plural: healthcheckpolicies
+    shortNames:
+    - hckpolicy
     singular: healthcheckpolicy
   scope: Namespaced
   versions:
