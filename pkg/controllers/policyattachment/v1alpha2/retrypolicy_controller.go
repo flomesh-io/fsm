@@ -3,6 +3,8 @@ package v1alpha2
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
@@ -29,8 +31,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -70,7 +70,7 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	policy := &gwpav1alpha2.RetryPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha1.RetryPolicy{
+		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha2.RetryPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -121,15 +121,17 @@ func (r *retryPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func addRetryPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha1.RetryPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
-		policy := obj.(*gwpav1alpha1.RetryPolicy)
-		targetRef := policy.Spec.TargetRef
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha2.RetryPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
+		policy := obj.(*gwpav1alpha2.RetryPolicy)
+
 		var targets []string
-		if targetRef.Kind == constants.KubernetesServiceKind {
-			targets = append(targets, types.NamespacedName{
-				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
-				Name:      string(targetRef.Name),
-			}.String())
+		for _, targetRef := range policy.Spec.TargetRefs {
+			if targetRef.Kind == constants.KubernetesServiceKind {
+				targets = append(targets, types.NamespacedName{
+					Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.Namespace),
+					Name:      string(targetRef.Name),
+				}.String())
+			}
 		}
 
 		return targets
@@ -149,10 +151,10 @@ func addRetryPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
 //}
 //
 //func (r *retryPolicyReconciler) findConflict(retryPolicy client.Object, allRetryPolicies []client.Object, port int32) *types.NamespacedName {
-//	currentPolicy := retryPolicy.(*gwpav1alpha1.RetryPolicy)
+//	currentPolicy := retryPolicy.(*gwpav1alpha2.RetryPolicy)
 //
 //	for _, policy := range allRetryPolicies {
-//		policy := policy.(*gwpav1alpha1.RetryPolicy)
+//		policy := policy.(*gwpav1alpha2.RetryPolicy)
 //
 //		c1 := retry.GetRetryConfigIfPortMatchesPolicy(port, *policy)
 //		if c1 == nil {
@@ -184,17 +186,28 @@ func (r *retryPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Conte
 		return nil
 	}
 
-	c := r.fctx.Manager.GetCache()
-	list := &gwpav1alpha1.RetryPolicyList{}
-	if err := c.List(context.Background(), list); err != nil {
-		log.Error().Msgf("Failed to list RetryPolicyList: %v", err)
-		return nil
+	namespaces := sets.New[string]()
+	for _, from := range refGrant.Spec.From {
+		if from.Group == gwpav1alpha2.GroupName && from.Kind == constants.RetryPolicyKind {
+			namespaces.Insert(string(from.Namespace))
+		}
 	}
-	policies := gwutils.ToSlicePtr(list.Items)
+
+	c := r.fctx.Manager.GetCache()
+	items := make([]gwpav1alpha2.RetryPolicy, 0)
+	for ns := range namespaces {
+		list := &gwpav1alpha2.RetryPolicyList{}
+		if err := c.List(context.Background(), list, client.InNamespace(ns)); err != nil {
+			log.Error().Msgf("Failed to list RetryPolicyList: %v", err)
+			continue
+		}
+
+		items = append(items, list.Items...)
+	}
 
 	requests := make([]reconcile.Request, 0)
-	for _, policy := range policies {
-		if gwutils.HasAccessToTargetRef(policy, policy.Spec.TargetRef, []*gwv1beta1.ReferenceGrant{refGrant}) {
+	for _, policy := range gwutils.ToSlicePtr(items) {
+		if isConcernedPolicy(policy, policy.Spec.TargetRefs, refGrant) {
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      policy.Name,

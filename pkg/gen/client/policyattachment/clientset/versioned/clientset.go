@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 
-	gatewayv1alpha1 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha1"
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/typed/policyattachment/v1alpha2"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -28,20 +27,13 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	GatewayV1alpha1() gatewayv1alpha1.GatewayV1alpha1Interface
 	GatewayV1alpha2() gatewayv1alpha2.GatewayV1alpha2Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	gatewayV1alpha1 *gatewayv1alpha1.GatewayV1alpha1Client
 	gatewayV1alpha2 *gatewayv1alpha2.GatewayV1alpha2Client
-}
-
-// GatewayV1alpha1 retrieves the GatewayV1alpha1Client
-func (c *Clientset) GatewayV1alpha1() gatewayv1alpha1.GatewayV1alpha1Interface {
-	return c.gatewayV1alpha1
 }
 
 // GatewayV1alpha2 retrieves the GatewayV1alpha2Client
@@ -93,10 +85,6 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.gatewayV1alpha1, err = gatewayv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
 	cs.gatewayV1alpha2, err = gatewayv1alpha2.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
@@ -122,7 +110,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.gatewayV1alpha1 = gatewayv1alpha1.New(c)
 	cs.gatewayV1alpha2 = gatewayv1alpha2.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)

@@ -14,8 +14,6 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
-
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
@@ -949,26 +947,26 @@ var (
 
 // GroupVersionKind variables
 var (
-	GatewayClassGVK          = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
-	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
-	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
-	TLSRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
-	TCPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
-	UDPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
-	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
-	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
-	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
-	ConfigMapGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
-	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
-	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RateLimitPolicyKind)
-	SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), SessionStickyPolicyKind)
-	LoadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), LoadBalancerPolicyKind)
-	CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), CircuitBreakingPolicyKind)
-	AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), AccessControlPolicyKind)
-	HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), HealthCheckPolicyKind)
-	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionPolicyKind)
-	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), UpstreamTLSPolicyKind)
-	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RetryPolicyKind)
+	GatewayClassGVK   = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
+	GatewayGVK        = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
+	HTTPRouteGVK      = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
+	TLSRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
+	TCPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
+	UDPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
+	GRPCRouteGVK      = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
+	ReferenceGrantGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
+	SecretGVK         = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
+	ConfigMapGVK      = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
+	ServiceGVK        = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
+	//RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RateLimitPolicyKind)
+	//SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), SessionStickyPolicyKind)
+	//LoadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), LoadBalancerPolicyKind)
+	//CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), CircuitBreakingPolicyKind)
+	//AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), AccessControlPolicyKind)
+	//HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), HealthCheckPolicyKind)
+	//FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionPolicyKind)
+	//UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), UpstreamTLSPolicyKind)
+	//RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RetryPolicyKind)
 )
 
 // GatewayAPI resources variables
