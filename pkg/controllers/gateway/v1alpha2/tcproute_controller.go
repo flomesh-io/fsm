@@ -228,7 +228,7 @@ func (r *tcpRouteReconciler) referenceGrantToTCPRoutes(ctx context.Context, obj 
 	list := &gwv1alpha2.TCPRouteList{}
 	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
 		// This index implies that the TCPRoute has a backend of type Service in the same namespace as the ReferenceGrant
-		FieldSelector: fields.OneTermEqualSelector(constants.BackendNamespaceTCPRouteIndex, refGrant.Namespace),
+		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceTCPRouteIndex, refGrant.Namespace),
 	}); err != nil {
 		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
 		return nil
@@ -281,7 +281,7 @@ func addTCPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TCPRoute{}, constants.BackendNamespaceTCPRouteIndex, backendNamespaceTCPRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TCPRoute{}, constants.CrossNamespaceBackendNamespaceTCPRouteIndex, crossNamespaceBackendNamespaceTCPRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -307,13 +307,15 @@ func backendTCPRouteIndexFunc(obj client.Object) []string {
 	return backendRefs
 }
 
-func backendNamespaceTCPRouteIndexFunc(obj client.Object) []string {
+func crossNamespaceBackendNamespaceTCPRouteIndexFunc(obj client.Object) []string {
 	tcpRoute := obj.(*gwv1alpha2.TCPRoute)
 	namespaces := sets.New[string]()
 	for _, rule := range tcpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, tcpRoute.Namespace))
+				if backend.Namespace != nil && string(*backend.Namespace) != tcpRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
 			}
 		}
 	}

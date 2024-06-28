@@ -1215,8 +1215,8 @@ func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj cl
 	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
 		// This index implies that the Gateway has a reference to Secret/ConfigMap in the same namespace as the ReferenceGrant
 		FieldSelector: gwtypes.OrSelectors(
-			fields.OneTermEqualSelector(constants.SecretNamespaceGatewayIndex, refGrant.Namespace),
-			fields.OneTermEqualSelector(constants.ConfigMapNamespaceGatewayIndex, refGrant.Namespace),
+			fields.OneTermEqualSelector(constants.CrossNamespaceSecretNamespaceGatewayIndex, refGrant.Namespace),
+			fields.OneTermEqualSelector(constants.CrossNamespaceConfigMapNamespaceGatewayIndex, refGrant.Namespace),
 		),
 	}); err != nil {
 		log.Error().Msgf("Failed to list Gateways: %v", err)
@@ -1256,11 +1256,11 @@ func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretNamespaceGatewayIndex, secretNamespaceGatewayIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.CrossNamespaceSecretNamespaceGatewayIndex, crossNamespaceSecretNamespaceGatewayIndexFunc); err != nil {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ConfigMapNamespaceGatewayIndex, configMapNamespaceGatewayIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.CrossNamespaceConfigMapNamespaceGatewayIndex, crossNamespaceConfigMapNamespaceGatewayIndexFunc); err != nil {
 		return err
 	}
 
@@ -1314,7 +1314,7 @@ func secretGatewayIndexFunc(obj client.Object) []string {
 	return secretReferences
 }
 
-func secretNamespaceGatewayIndexFunc(obj client.Object) []string {
+func crossNamespaceSecretNamespaceGatewayIndexFunc(obj client.Object) []string {
 	gateway := obj.(*gwv1.Gateway)
 	namespaces := sets.New[string]()
 	for _, listener := range gateway.Spec.Listeners {
@@ -1328,14 +1328,18 @@ func secretNamespaceGatewayIndexFunc(obj client.Object) []string {
 
 		for _, cert := range listener.TLS.CertificateRefs {
 			if *cert.Kind == constants.KubernetesSecretKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(cert.Namespace, gateway.Namespace))
+				if cert.Namespace != nil && string(*cert.Namespace) != gateway.Namespace {
+					namespaces.Insert(string(*cert.Namespace))
+				}
 			}
 		}
 
 		if listener.TLS.FrontendValidation != nil {
 			for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
 				if ca.Kind == constants.KubernetesSecretKind {
-					namespaces.Insert(gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace))
+					if ca.Namespace != nil && string(*ca.Namespace) != gateway.Namespace {
+						namespaces.Insert(string(*ca.Namespace))
+					}
 				}
 			}
 		}
@@ -1390,7 +1394,7 @@ func configMapGatewayIndexFunc(obj client.Object) []string {
 	return cmRefs
 }
 
-func configMapNamespaceGatewayIndexFunc(obj client.Object) []string {
+func crossNamespaceConfigMapNamespaceGatewayIndexFunc(obj client.Object) []string {
 	gateway := obj.(*gwv1.Gateway)
 	namespaces := sets.New[string]()
 
@@ -1410,7 +1414,9 @@ func configMapNamespaceGatewayIndexFunc(obj client.Object) []string {
 
 		for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
 			if ca.Kind == constants.KubernetesConfigMapKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace))
+				if ca.Namespace != nil && string(*ca.Namespace) != gateway.Namespace {
+					namespaces.Insert(string(*ca.Namespace))
+				}
 			}
 		}
 	}

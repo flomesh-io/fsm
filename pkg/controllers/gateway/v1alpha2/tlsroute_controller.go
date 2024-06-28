@@ -153,7 +153,7 @@ func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.BackendNamespaceTLSRouteIndex, backendNamespaceTLSRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.CrossNamespaceBackendNamespaceTLSRouteIndex, crossNamespaceBackendNamespaceTLSRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -179,13 +179,15 @@ func backendTLSRouteIndexFunc(obj client.Object) []string {
 	return backendRefs
 }
 
-func backendNamespaceTLSRouteIndexFunc(obj client.Object) []string {
+func crossNamespaceBackendNamespaceTLSRouteIndexFunc(obj client.Object) []string {
 	tlsRoute := obj.(*gwv1alpha2.TLSRoute)
 	namespaces := sets.New[string]()
 	for _, rule := range tlsRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, tlsRoute.Namespace))
+				if backend.Namespace != nil && string(*backend.Namespace) != tlsRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
 			}
 		}
 	}

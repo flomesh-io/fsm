@@ -277,7 +277,7 @@ func (r *httpRouteReconciler) referenceGrantToHTTPRoutes(ctx context.Context, ob
 	list := &gwv1.HTTPRouteList{}
 	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
 		// This index implies that the HTTPRoute has a backend of type Service in the same namespace as the ReferenceGrant
-		FieldSelector: fields.OneTermEqualSelector(constants.BackendNamespaceHTTPRouteIndex, refGrant.Namespace),
+		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceHTTPRouteIndex, refGrant.Namespace),
 	}); err != nil {
 		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
 		return nil
@@ -316,7 +316,7 @@ func addHTTPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.BackendNamespaceHTTPRouteIndex, backendNamespaceHTTPRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.CrossNamespaceBackendNamespaceHTTPRouteIndex, crossNamespaceBackendNamespaceHTTPRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -387,20 +387,24 @@ func backendHTTPRouteIndexFunc(obj client.Object) []string {
 	return backendRefs
 }
 
-func backendNamespaceHTTPRouteIndexFunc(obj client.Object) []string {
+func crossNamespaceBackendNamespaceHTTPRouteIndexFunc(obj client.Object) []string {
 	httpRoute := obj.(*gwv1.HTTPRoute)
 	namespaces := sets.New[string]()
 	for _, rule := range httpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, httpRoute.Namespace))
+				if backend.Namespace != nil && string(*backend.Namespace) != httpRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
 			}
 
 			for _, filter := range backend.Filters {
 				if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
 					if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
 						mirror := filter.RequestMirror.BackendRef
-						namespaces.Insert(gwutils.NamespaceDerefOr(mirror.Namespace, httpRoute.Namespace))
+						if mirror.Namespace != nil && string(*mirror.Namespace) != httpRoute.Namespace {
+							namespaces.Insert(string(*mirror.Namespace))
+						}
 					}
 				}
 			}
@@ -410,7 +414,9 @@ func backendNamespaceHTTPRouteIndexFunc(obj client.Object) []string {
 			if filter.Type == gwv1.HTTPRouteFilterRequestMirror {
 				if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
 					mirror := filter.RequestMirror.BackendRef
-					namespaces.Insert(gwutils.NamespaceDerefOr(mirror.Namespace, httpRoute.Namespace))
+					if mirror.Namespace != nil && string(*mirror.Namespace) != httpRoute.Namespace {
+						namespaces.Insert(string(*mirror.Namespace))
+					}
 				}
 			}
 		}

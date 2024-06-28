@@ -168,7 +168,7 @@ func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj 
 	list := &gwv1alpha2.UDPRouteList{}
 	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
 		// This index implies that the UDPRoute has a backend of type Service in the same namespace as the ReferenceGrant
-		FieldSelector: fields.OneTermEqualSelector(constants.BackendNamespaceUDPRouteIndex, refGrant.Namespace),
+		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceUDPRouteIndex, refGrant.Namespace),
 	}); err != nil {
 		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
 		return nil
@@ -221,7 +221,7 @@ func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.BackendNamespaceUDPRouteIndex, backendNamespaceUDPRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.CrossNamespaceBackendNamespaceUDPRouteIndex, crossNamespaceBackendNamespaceUDPRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -247,13 +247,15 @@ func backendUDPRouteIndexFunc(obj client.Object) []string {
 	return backendRefs
 }
 
-func backendNamespaceUDPRouteIndexFunc(obj client.Object) []string {
+func crossNamespaceBackendNamespaceUDPRouteIndexFunc(obj client.Object) []string {
 	udpRoute := obj.(*gwv1alpha2.UDPRoute)
 	namespaces := sets.New[string]()
 	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, udpRoute.Namespace))
+				if backend.Namespace != nil && string(*backend.Namespace) != udpRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
 			}
 		}
 	}

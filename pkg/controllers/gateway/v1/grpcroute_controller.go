@@ -254,7 +254,7 @@ func (r *grpcRouteReconciler) referenceGrantToGRPCRoutes(ctx context.Context, ob
 	list := &gwv1.GRPCRouteList{}
 	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
 		// This index implies that the GRPCRoute has a backend of type Service in the same namespace as the ReferenceGrant
-		FieldSelector: fields.OneTermEqualSelector(constants.BackendNamespaceGRPCRouteIndex, refGrant.Namespace),
+		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceGRPCRouteIndex, refGrant.Namespace),
 	}); err != nil {
 		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
 		return nil
@@ -293,7 +293,7 @@ func addGRPCRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.BackendNamespaceGRPCRouteIndex, backendNamespaceGRPCRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.CrossNamespaceBackendNamespaceGRPCRouteIndex, crossNamespaceBackendNamespaceGRPCRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -365,20 +365,24 @@ func backendGRPCRouteIndexFunc(obj client.Object) []string {
 	return backendRefs
 }
 
-func backendNamespaceGRPCRouteIndexFunc(obj client.Object) []string {
+func crossNamespaceBackendNamespaceGRPCRouteIndexFunc(obj client.Object) []string {
 	grpcRoute := obj.(*gwv1.GRPCRoute)
 	namespaces := sets.New[string]()
 	for _, rule := range grpcRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
-				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, grpcRoute.Namespace))
+				if backend.Namespace != nil && string(*backend.Namespace) != grpcRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
 			}
 
 			for _, filter := range backend.Filters {
 				if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
 					if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
 						mirror := filter.RequestMirror.BackendRef
-						namespaces.Insert(gwutils.NamespaceDerefOr(mirror.Namespace, grpcRoute.Namespace))
+						if mirror.Namespace != nil && string(*mirror.Namespace) != grpcRoute.Namespace {
+							namespaces.Insert(string(*mirror.Namespace))
+						}
 					}
 				}
 			}
@@ -388,7 +392,9 @@ func backendNamespaceGRPCRouteIndexFunc(obj client.Object) []string {
 			if filter.Type == gwv1.GRPCRouteFilterRequestMirror {
 				if filter.RequestMirror.BackendRef.Kind == nil || string(*filter.RequestMirror.BackendRef.Kind) == constants.KubernetesServiceKind {
 					mirror := filter.RequestMirror.BackendRef
-					namespaces.Insert(gwutils.NamespaceDerefOr(mirror.Namespace, grpcRoute.Namespace))
+					if mirror.Namespace != nil && string(*mirror.Namespace) != grpcRoute.Namespace {
+						namespaces.Insert(string(*mirror.Namespace))
+					}
 				}
 			}
 		}
