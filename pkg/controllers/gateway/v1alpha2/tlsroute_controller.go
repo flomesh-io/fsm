@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
@@ -150,6 +152,11 @@ func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.BackendTLSRouteIndex, backendTLSRouteIndexFunc); err != nil {
 		return err
 	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.BackendNamespaceTLSRouteIndex, backendNamespaceTLSRouteIndexFunc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -170,4 +177,18 @@ func backendTLSRouteIndexFunc(obj client.Object) []string {
 	}
 
 	return backendRefs
+}
+
+func backendNamespaceTLSRouteIndexFunc(obj client.Object) []string {
+	tlsRoute := obj.(*gwv1alpha2.TLSRoute)
+	namespaces := sets.New[string]()
+	for _, rule := range tlsRoute.Spec.Rules {
+		for _, backend := range rule.BackendRefs {
+			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
+				namespaces.Insert(gwutils.NamespaceDerefOr(backend.Namespace, tlsRoute.Namespace))
+			}
+		}
+	}
+
+	return namespaces.UnsortedList()
 }

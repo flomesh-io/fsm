@@ -97,6 +97,14 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	for _, parentRef := range parentRefs {
 		rps := rs.StatusUpdateFor(parentRef)
 
+		gvk := rs.GetTypeMeta().GroupVersionKind()
+		rps.AddCondition(
+			gwv1.RouteConditionAccepted,
+			metav1.ConditionTrue,
+			gwv1.RouteReasonAccepted,
+			fmt.Sprintf("%s is Accepted", gvk.Kind),
+		)
+
 		if parentRef.Group != nil && *parentRef.Group != gwv1.GroupName {
 			rps.AddCondition(
 				gwv1.RouteConditionAccepted,
@@ -152,6 +160,9 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 		}
 
 		allowedListeners := gwutils.GetAllowedListeners(p.client, parent, rps)
+		if len(allowedListeners) == 0 {
+			continue
+		}
 
 		count := 0
 		for _, listener := range allowedListeners {
@@ -164,7 +175,6 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 			count += len(hostnames)
 		}
 
-		gvk := rs.GetTypeMeta().GroupVersionKind()
 		switch gvk.Kind {
 		case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
 			if count == 0 && !rps.ConditionExists(gwv1.RouteConditionAccepted) {
@@ -174,131 +184,102 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 					gwv1.RouteReasonNoMatchingListenerHostname,
 					"No matching hostnames were found between the listener and the route.",
 				)
+				continue
 			}
 		}
 
 		switch route := rs.GetResource().(type) {
 		case *gwv1.HTTPRoute:
-			for _, rule := range route.Spec.Rules {
-				for _, bk := range rule.BackendRefs {
-					if svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps); svcPort != nil {
-						log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
-
-						p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-						p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-						p.computeHealthCheckPolicyStatus()
-						p.computeRetryPolicyStatus()
-					}
-				}
+			if !p.processHTTPRouteStatus(route, rps, parentRef) {
+				continue
 			}
 		case *gwv1.GRPCRoute:
-			for _, rule := range route.Spec.Rules {
-				for _, bk := range rule.BackendRefs {
-					if svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps); svcPort != nil {
-						log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
-
-						p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-						p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-					}
-				}
+			if !p.processGRPCRouteStatus(route, rps, parentRef) {
+				continue
 			}
 		case *gwv1alpha2.TLSRoute:
 			//for _, rule := range route.Spec.Rules {
 			//
 			//}
 		case *gwv1alpha2.TCPRoute:
-			for _, rule := range route.Spec.Rules {
-				for _, bk := range rule.BackendRefs {
-					if svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps); svcPort != nil {
-						log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
-
-						p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-					}
-				}
+			if !p.processTCPRouteStatus(route, rps, parentRef) {
+				continue
 			}
 		case *gwv1alpha2.UDPRoute:
-			for _, rule := range route.Spec.Rules {
-				for _, bk := range rule.BackendRefs {
-					if svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps); svcPort != nil {
-						log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
-					}
-				}
+			if !p.processUDPRouteStatus(route, rps) {
+				continue
 			}
 		default:
 			continue
 		}
+	}
+}
 
-		if !rps.ConditionExists(gwv1.RouteConditionResolvedRefs) {
-			rps.AddCondition(
-				gwv1.RouteConditionResolvedRefs,
-				metav1.ConditionTrue,
-				gwv1.RouteReasonResolvedRefs,
-				fmt.Sprintf("References of %s is resolved", gvk.Kind),
-			)
-		}
+func (p *RouteStatusProcessor) processUDPRouteStatus(route *gwv1alpha2.UDPRoute, rps status.RouteParentStatusObject) bool {
+	for _, rule := range route.Spec.Rules {
+		for _, bk := range rule.BackendRefs {
+			svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps)
+			if svcPort == nil {
+				return false
+			}
 
-		if !rps.ConditionExists(gwv1.RouteConditionAccepted) {
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionTrue,
-				gwv1.RouteReasonAccepted,
-				fmt.Sprintf("%s is Accepted", gvk.Kind),
-			)
+			log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
 		}
 	}
 
-	//for _, gw := range activeGateways {
-	//	for _, parentRef := range parentRefs {
-	//		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(gw)) {
-	//			continue
-	//		}
-	//
-	//		u := update.StatusUpdateFor(parentRef)
-	//
-	//		allowedListeners := gwutils.GetAllowedListeners(p.client, gw, u)
-	//
-	//		count := 0
-	//		for _, listener := range allowedListeners {
-	//			hostnames := gwutils.GetValidHostnames(listener.Hostname, update.GetHostnames())
-	//
-	//			//if len(hostnames) == 0 {
-	//			//	continue
-	//			//}
-	//
-	//			count += len(hostnames)
-	//		}
-	//
-	//		switch update.GetTypeMeta().GroupVersionKind().Kind {
-	//		case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
-	//			if count == 0 && !u.ConditionExists(gwv1.RouteConditionAccepted) {
-	//				u.AddCondition(
-	//					gwv1.RouteConditionAccepted,
-	//					metav1.ConditionFalse,
-	//					gwv1.RouteReasonNoMatchingListenerHostname,
-	//					"No matching hostnames were found between the listener and the route.",
-	//				)
-	//			}
-	//		}
-	//
-	//		if !u.ConditionExists(gwv1.RouteConditionResolvedRefs) {
-	//			u.AddCondition(
-	//				gwv1.RouteConditionResolvedRefs,
-	//				metav1.ConditionTrue,
-	//				gwv1.RouteReasonResolvedRefs,
-	//				fmt.Sprintf("References of %s is resolved", update.GetTypeMeta().GroupVersionKind().Kind),
-	//			)
-	//		}
-	//
-	//		if !u.ConditionExists(gwv1.RouteConditionAccepted) {
-	//			u.AddCondition(
-	//				gwv1.RouteConditionAccepted,
-	//				metav1.ConditionTrue,
-	//				gwv1.RouteReasonAccepted,
-	//				fmt.Sprintf("%s is Accepted", update.GetTypeMeta().GroupVersionKind().Kind),
-	//			)
-	//		}
-	//	}
-	//}
+	return true
+}
+
+func (p *RouteStatusProcessor) processTCPRouteStatus(route *gwv1alpha2.TCPRoute, rps status.RouteParentStatusObject, parentRef gwv1.ParentReference) bool {
+	for _, rule := range route.Spec.Rules {
+		for _, bk := range rule.BackendRefs {
+			svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps)
+			if svcPort == nil {
+				return false
+			}
+
+			log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
+			p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+		}
+	}
+
+	return true
+}
+
+func (p *RouteStatusProcessor) processGRPCRouteStatus(route *gwv1.GRPCRoute, rps status.RouteParentStatusObject, parentRef gwv1.ParentReference) bool {
+	for _, rule := range route.Spec.Rules {
+		for _, bk := range rule.BackendRefs {
+			svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps)
+			if svcPort == nil {
+				return false
+			}
+
+			log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
+			p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+			p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+		}
+	}
+
+	return true
+}
+
+func (p *RouteStatusProcessor) processHTTPRouteStatus(route *gwv1.HTTPRoute, rps status.RouteParentStatusObject, parentRef gwv1.ParentReference) bool {
+	for _, rule := range route.Spec.Rules {
+		for _, bk := range rule.BackendRefs {
+			svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps)
+			if svcPort == nil {
+				return false
+			}
+
+			log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
+			p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+			p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+			p.computeHealthCheckPolicyStatus()
+			p.computeRetryPolicyStatus()
+		}
+	}
+
+	return true
 }
 
 func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {

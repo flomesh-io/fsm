@@ -30,5 +30,5 @@ import (
 )
 
 var (
-	log = logger.New("gatewayapi-controller/v1")
+	log = logger.NewPretty("gatewayapi-controller/v1")
 )

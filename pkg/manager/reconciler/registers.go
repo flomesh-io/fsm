@@ -46,6 +46,7 @@ import (
 	pav1alpha2 "github.com/flomesh-io/fsm/pkg/controllers/policyattachment/v1alpha2"
 
 	gatewayv1alpha2 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1alpha2"
+	gatewayv1beta1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1beta1"
 
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/cluster/v1alpha1"
 	gatewayv1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1"
@@ -279,6 +280,8 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		webhooks[GatewayAPITLSRoute] = gwwhv1alpha2.NewTLSRouteWebhook(regCfg)
 		reconcilers[GatewayAPITLSRoute] = gatewayv1alpha2.NewTLSRouteReconciler(ctx, webhooks[GatewayAPITLSRoute])
+
+		reconcilers[GatewayAPIReferenceGrant] = gatewayv1beta1.NewReferenceGrantReconciler(ctx)
 
 		webhooks[PolicyAttachmentHealthCheck] = pawhv1alpha2.NewHealthCheckPolicyWebhook(regCfg)
 		reconcilers[PolicyAttachmentHealthCheck] = pav1alpha2.NewHealthCheckPolicyReconciler(ctx, webhooks[PolicyAttachmentHealthCheck])

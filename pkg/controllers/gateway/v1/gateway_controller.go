@@ -31,6 +31,10 @@ import (
 	"sync"
 	"time"
 
+	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
+
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
@@ -992,6 +996,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return app == constants.FSMGatewayName
 			})),
 		).
+		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -1175,12 +1180,87 @@ func (r *gatewayReconciler) deploymentToGateways(_ context.Context, object clien
 	}
 }
 
+func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	isConcerned := false
+	for _, target := range refGrant.Spec.To {
+		if target.Kind == constants.KubernetesSecretKind || target.Kind == constants.KubernetesConfigMapKind {
+			isConcerned = true
+		}
+	}
+
+	// Not target for Secret/ConfigMap
+	if !isConcerned {
+		return nil
+	}
+
+	fromNamespaces := sets.New[string]()
+	for _, from := range refGrant.Spec.From {
+		if from.Group == gwv1.GroupName && from.Kind == constants.GatewayAPIGatewayKind {
+			fromNamespaces.Insert(string(from.Namespace))
+		}
+	}
+
+	// Not for Gateway
+	if fromNamespaces.Len() == 0 {
+		return nil
+	}
+
+	list := &gwv1.GatewayList{}
+	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
+		// This index implies that the Gateway has a reference to Secret/ConfigMap in the same namespace as the ReferenceGrant
+		FieldSelector: gwtypes.OrSelectors(
+			fields.OneTermEqualSelector(constants.SecretNamespaceGatewayIndex, refGrant.Namespace),
+			fields.OneTermEqualSelector(constants.ConfigMapNamespaceGatewayIndex, refGrant.Namespace),
+		),
+	}); err != nil {
+		log.Error().Msgf("Failed to list Gateways: %v", err)
+		return nil
+	}
+
+	if len(list.Items) == 0 {
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	for _, ns := range fromNamespaces.UnsortedList() {
+		for _, h := range list.Items {
+			// not controlled by this ReferenceGrant
+			if h.Namespace != ns {
+				continue
+			}
+
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: h.Namespace,
+					Name:      h.Name,
+				},
+			})
+		}
+	}
+
+	return requests
+}
+
 func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretGatewayIndex, secretGatewayIndexFunc); err != nil {
 		return err
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ConfigMapGatewayIndex, configMapGatewayIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretNamespaceGatewayIndex, secretNamespaceGatewayIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ConfigMapNamespaceGatewayIndex, configMapNamespaceGatewayIndexFunc); err != nil {
 		return err
 	}
 
@@ -1234,6 +1314,36 @@ func secretGatewayIndexFunc(obj client.Object) []string {
 	return secretReferences
 }
 
+func secretNamespaceGatewayIndexFunc(obj client.Object) []string {
+	gateway := obj.(*gwv1.Gateway)
+	namespaces := sets.New[string]()
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Protocol != gwv1.TLSProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			continue
+		}
+
+		if listener.TLS == nil || *listener.TLS.Mode != gwv1.TLSModeTerminate {
+			continue
+		}
+
+		for _, cert := range listener.TLS.CertificateRefs {
+			if *cert.Kind == constants.KubernetesSecretKind {
+				namespaces.Insert(gwutils.NamespaceDerefOr(cert.Namespace, gateway.Namespace))
+			}
+		}
+
+		if listener.TLS.FrontendValidation != nil {
+			for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
+				if ca.Kind == constants.KubernetesSecretKind {
+					namespaces.Insert(gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace))
+				}
+			}
+		}
+	}
+
+	return namespaces.UnsortedList()
+}
+
 func configMapGatewayIndexFunc(obj client.Object) []string {
 	gateway := obj.(*gwv1.Gateway)
 	var cmRefs []string
@@ -1278,4 +1388,32 @@ func configMapGatewayIndexFunc(obj client.Object) []string {
 	}
 
 	return cmRefs
+}
+
+func configMapNamespaceGatewayIndexFunc(obj client.Object) []string {
+	gateway := obj.(*gwv1.Gateway)
+	namespaces := sets.New[string]()
+
+	// check against listeners
+	for _, listener := range gateway.Spec.Listeners {
+		if listener.Protocol != gwv1.TLSProtocolType && listener.Protocol != gwv1.HTTPSProtocolType {
+			continue
+		}
+
+		if listener.TLS == nil || *listener.TLS.Mode != gwv1.TLSModeTerminate {
+			continue
+		}
+
+		if listener.TLS.FrontendValidation == nil {
+			continue
+		}
+
+		for _, ca := range listener.TLS.FrontendValidation.CACertificateRefs {
+			if ca.Kind == constants.KubernetesConfigMapKind {
+				namespaces.Insert(gwutils.NamespaceDerefOr(ca.Namespace, gateway.Namespace))
+			}
+		}
+	}
+
+	return namespaces.UnsortedList()
 }
