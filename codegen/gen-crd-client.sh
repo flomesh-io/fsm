@@ -51,7 +51,7 @@ source "${CODEGEN_PKG}/kube_codegen.sh"
 
 # Generate tagged register code
 #
-# USAGE: kube::codegen::gen_registers [FLAGS] <input-dir>
+# USAGE: kube::codegen::gen_register [FLAGS] <input-dir>
 #
 # <input-dir>
 #   The root directory under which to search for Go files which request code to
@@ -64,24 +64,15 @@ source "${CODEGEN_PKG}/kube_codegen.sh"
 #   --boilerplate <string = path_to_kube_codegen_boilerplate>
 #     An optional override for the header file to insert into generated files.
 #
-#   --extra-peer-dir <string>
-#     An optional list (this flag may be specified multiple times) of "extra"
-#     directories to consider during conversion generation.
-#
-function kube::codegen::gen_registers() {
+function kube::codegen::gen_register() {
     local in_dir=""
     local boilerplate="${KUBE_CODEGEN_ROOT}/hack/boilerplate.go.txt"
     local v="${KUBE_VERBOSE:-0}"
-    local extra_peers=()
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
             "--boilerplate")
                 boilerplate="$2"
-                shift 2
-                ;;
-            "--extra-peer-dir")
-                extra_peers+=("$2")
                 shift 2
                 ;;
             *)
@@ -125,7 +116,7 @@ function kube::codegen::gen_registers() {
         input_pkgs+=("${pkg}")
     done < <(
         ( kube::codegen::internal::grep -l --null \
-            -e '+groupName=' \
+            -e '^\s*//\s*+groupName=' \
             -r "${in_dir}" \
             --include '*.go' \
             || true \
@@ -163,7 +154,7 @@ function generate_client() {
     --boilerplate "${ROOT_DIR}/codegen/boilerplate.go.txt" \
     "${ROOT_DIR}/pkg/apis/${CUSTOM_RESOURCE_NAME}"
 
-  kube::codegen::gen_registers \
+  kube::codegen::gen_register \
       --boilerplate "${ROOT_DIR}/codegen/boilerplate.go.txt" \
       "${ROOT_DIR}/pkg/apis/${CUSTOM_RESOURCE_NAME}"
 
