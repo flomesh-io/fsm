@@ -82,6 +82,9 @@ type GRPCRequestDef struct {
 
 	// CertFile is the path to the certificate file
 	CertFile string
+
+	// ProtoFile
+	ProtoFile string
 }
 
 // UDPRequestDef defines a remote UDP request intent
@@ -320,6 +323,10 @@ func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 	} else {
 		// '-plaintext' is to indicate to the grpcurl to send plaintext requests; not encrypted with TLS
 		args = []string{"-d", req.JSONRequest, "-plaintext", req.Destination, req.Symbol}
+	}
+
+	if req.ProtoFile != "" {
+		args = append([]string{"-proto", req.ProtoFile}, args...)
 	}
 
 	stdout, stderr, err := td.RunLocal("grpcurl", args...)

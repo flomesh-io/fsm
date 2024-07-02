@@ -27,11 +27,8 @@ package v1
 
 import (
 	"github.com/flomesh-io/fsm/pkg/logger"
-	"github.com/flomesh-io/fsm/pkg/webhook"
 )
 
 var (
-	log = logger.New("gatewayapi-controller/v1")
+	log = logger.NewPretty("gatewayapi-controller/v1")
 )
-
-var isValidHostname = webhook.IsValidHostname

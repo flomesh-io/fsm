@@ -1,90 +1,120 @@
-((
-  { config, socketTimeoutOptions } = pipy.solve('config.js'),
-  { metrics } = pipy.solve('lib/metrics.js'),
-  listeners = {},
-  listenPort = 0,
-) => pipy()
+#!/usr/bin/env -S pipy --args
 
-.export('listener', {
-  __port: null,
+import options from './options.js'
+import config from './config.js'
+import { log, logEnable } from './log.js'
+
+var opts = options(pipy.argv, {
+  defaults: {
+    '--config': '',
+    '--debug': false,
+  },
+  shorthands: {
+    '-c': '--config',
+    '-d': '--debug',
+  },
 })
 
-.branch(
-  config?.Configs?.PidFile, (
-    $=>$
-    .task()
-    .onStart(
-      () => void (
-        os.writeFile(config.Configs.PidFile, '' + pipy.pid)
+logEnable(opts['--debug'])
+config.load(opts['--config'])
+
+var $ctx
+
+config.resources.filter(r => r.kind === 'Gateway').forEach(gw => {
+  gw.spec.listeners.forEach(l => {
+    var wireProto
+    var routeKind
+    var routeModuleName
+    var termTLS = false
+
+    switch (l.protocol) {
+      case 'HTTP':
+        wireProto = 'tcp'
+        routeKind = 'HTTPRoute'
+        routeModuleName = './modules/route-http.js'
+        break
+      case 'HTTPS':
+        wireProto = 'tcp'
+        routeKind = 'HTTPRoute'
+        routeModuleName = './modules/route-http.js'
+        termTLS = true
+        break
+      case 'TLS':
+        wireProto = 'tcp'
+        switch (l.tls?.mode) {
+          case 'Terminate':
+            routeKind = 'TCPRoute'
+            routeModuleName = './modules/route-tcp.js'
+            termTLS = true
+            break
+          case 'Passthrough':
+            routeKind = 'TLSRoute'
+            routeModuleName = './modules/route-tls.js'
+            break
+          default: throw `Listener: unknown TLS mode '${l.tls?.mode}'`
+        }
+        break
+      case 'TCP':
+        wireProto = 'tcp'
+        routeKind = 'TCPRoute'
+        routeModuleName = './modules/route-tcp.js'
+        break
+      case 'UDP':
+        wireProto = 'udp'
+        routeKind = 'UDPRoute'
+        routeModuleName = './modules/route-udp.js'
+        break
+      default: throw `Listener: unknown protocol '${l.protocol}'`
+    }
+
+    var routeKinds = [routeKind]
+    if (routeKind === 'HTTPRoute') routeKinds.push('GRPCRoute')
+
+    var routeResources = config.resources.filter(
+      r => {
+        if (!routeKinds.includes(r.kind)) return false
+        var refs = r.spec?.parentRefs
+        if (refs instanceof Array) {
+          if (refs.some(
+            r => {
+              if (r.kind && r.kind !== 'Gateway') return false
+              if (r.name !== gw.metadata.name) return false
+              if (r.sectionName === l.name && l.name) return true
+              if (r.port == l.port) return true
+              return false
+            }
+          )) return true
+        }
+        return false
+      }
+    )
+
+    var pipelines = [
+      pipy.import(routeModuleName).default(config, l, routeResources)
+    ]
+
+    if (termTLS) {
+      pipelines.unshift(
+        pipy.import('./modules/terminate-tls.js').default(config, l)
       )
-    )
-    .exit()
-    .onStart(
-      () => void (
-        os.unlink(config.Configs.PidFile)
-      )
-    )
-  )
-)
-.task()
-.onStart(
-  () => void (
-    metrics.fgwMetaInfo.withLabels(pipy.uuid || '', pipy.name || '', pipy.source || '', os.env.PIPY_K8S_CLUSTER || '').increase()
-  )
-)
-.branch(
-  (config?.Configs?.ResourceUsage?.ScrapeInterval > 0), (
-    $=>$
-    .task()
-    .use('common/resource-usage.js')
-  )
-)
+    }
 
-.repeat(
-  (config.Listeners || []),
-  ($, l) => $.listen(
-    (
-      listenPort = (l.Listen || l.Port || 0),
-      listeners[listenPort] = new ListenerArray([{ ...socketTimeoutOptions, ...l, port: listenPort, protocol: (l.Protocol?.toLowerCase?.() === 'udp') ? 'udp' : 'tcp' }]),
-      listeners[listenPort]
+    pipy.listen(l.port, wireProto, $=>$
+      .onStart(i => {
+        $ctx = {
+          inbound: i,
+          messageCount: 0,
+          serverName: '',
+          serverCert: null,
+          clientCert: null,
+          backendResource: null,
+        }
+        log?.(`Inb #${i.id} accepted on [${i.localAddress}]:${i.localPort} from [${i.remoteAddress}]:${i.remotePort}`)
+        return new Data
+      })
+      .pipe(pipelines, () => $ctx)
     )
-  )
-  .onStart(
-    () => (
-      __port = l,
-      new Data
-    )
-  )
-  .link('launch')
-)
 
-.pipeline('launch')
-.branch(
-  () => (__port?.Protocol === 'HTTP'), (
-    $=>$.chain(config?.Chains?.HTTPRoute || [])
-  ),
-  () => (__port?.Protocol === 'HTTPS'), (
-    $=>$.chain(config?.Chains?.HTTPSRoute || [])
-  ),
-  () => (__port?.Protocol === 'TLS' && __port?.TLS?.TLSModeType === 'Passthrough'), (
-    $=>$.chain(config?.Chains?.TLSPassthrough || [])
-  ),
-  () => (__port?.Protocol === 'TLS' && __port?.TLS?.TLSModeType === 'Terminate'), (
-    $=>$.chain(config?.Chains?.TLSTerminate || [])
-  ),
-  () => (__port?.Protocol === 'TCP'), (
-    $=>$.chain(config?.Chains?.TCPRoute || [])
-  ),
-  () => (__port?.Protocol === 'UDP'), (
-    $=>$.chain(config?.Chains?.UDPRoute || [])
-  ),
-  (
-    $=>$.replaceStreamStart(new StreamEnd)
-  )
-)
-
-.task()
-.onStart(new Data)
-.use('common/health-check.js')
-
-)()
+    log?.(`Listening ${l.protocol} on ${l.port}`)
+  })
+})

@@ -1097,26 +1097,30 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayAPITCPRouteAdded, announcements.GatewayAPITCPRouteDeleted, announcements.GatewayAPITCPRouteUpdated,
 		// UDPRoute event
 		announcements.GatewayAPIUDPRouteAdded, announcements.GatewayAPIUDPRouteDeleted, announcements.GatewayAPIUDPRouteUpdated,
+		// ReferenceGrant event
+		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 		// RateLimitPolicy event
-		announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
+		//announcements.RateLimitPolicyAdded, announcements.RateLimitPolicyDeleted, announcements.RateLimitPolicyUpdated,
 		// SessionStickyPolicy event
-		announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
+		//announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
 		// LoadBalancerPolicy event
-		announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
+		//announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
 		// CircuitBreakingPolicy event
-		announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
+		//announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
 		// AccessControlPolicy event
-		announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
+		//announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
 		// HealthCheckPolicy event
 		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
 		// FaultInjectionPolicy event
-		announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
+		//announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
 		// UpstreamTLSPolicy event
-		announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
+		//announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
 		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
-		// ReferenceGrant event
-		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
+		// BackendTLSPolicy event
+		announcements.BackendTLSPolicyAdded, announcements.BackendTLSPolicyDeleted, announcements.BackendTLSPolicyUpdated,
+		// BackendLBPolicy event
+		announcements.BackendLBPolicyAdded, announcements.BackendLBPolicyDeleted, announcements.BackendLBPolicyUpdated,
 
 		//
 		// MultiCluster events
@@ -1128,40 +1132,40 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 			msg:   msg,
 			topic: announcements.GatewayUpdate.String(),
 		}
-	case announcements.MeshConfigUpdated:
-		return gatewayInterestedConfigChanged(msg)
+	//case announcements.MeshConfigUpdated:
+	//	return gatewayInterestedConfigChanged(msg)
 	default:
 		return nil
 	}
 }
 
-func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEvent {
-	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
-	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
-	if !okPrevCast || !okNewCast {
-		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
-		return nil
-	}
-	prevSpec := prevMeshConfig.Spec
-	newSpec := newMeshConfig.Spec
-
-	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
-		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
-		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
-		prevSpec.GatewayAPI.ProxyPreserveHost != newSpec.GatewayAPI.ProxyPreserveHost ||
-		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
-		prevSpec.GatewayAPI.ProxyTag.DstHostHeader != newSpec.GatewayAPI.ProxyTag.DstHostHeader ||
-		prevSpec.GatewayAPI.ProxyTag.SrcHostHeader != newSpec.GatewayAPI.ProxyTag.SrcHostHeader ||
-		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
-		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
-		return &gatewayUpdateEvent{
-			msg:   msg,
-			topic: announcements.GatewayUpdate.String(),
-		}
-	}
-
-	return nil
-}
+//func gatewayInterestedConfigChanged(msg events.PubSubMessage) *gatewayUpdateEvent {
+//	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
+//	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
+//	if !okPrevCast || !okNewCast {
+//		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
+//		return nil
+//	}
+//	prevSpec := prevMeshConfig.Spec
+//	newSpec := newMeshConfig.Spec
+//
+//	if prevSpec.GatewayAPI.FGWLogLevel != newSpec.GatewayAPI.FGWLogLevel ||
+//		prevSpec.FeatureFlags.EnableGatewayAgentService != newSpec.FeatureFlags.EnableGatewayAgentService ||
+//		prevSpec.GatewayAPI.StripAnyHostPort != newSpec.GatewayAPI.StripAnyHostPort ||
+//		prevSpec.GatewayAPI.ProxyPreserveHost != newSpec.GatewayAPI.ProxyPreserveHost ||
+//		prevSpec.GatewayAPI.SSLPassthroughUpstreamPort != newSpec.GatewayAPI.SSLPassthroughUpstreamPort ||
+//		prevSpec.GatewayAPI.ProxyTag.DstHostHeader != newSpec.GatewayAPI.ProxyTag.DstHostHeader ||
+//		prevSpec.GatewayAPI.ProxyTag.SrcHostHeader != newSpec.GatewayAPI.ProxyTag.SrcHostHeader ||
+//		prevSpec.GatewayAPI.HTTP1PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP1PerRequestLoadBalancing ||
+//		prevSpec.GatewayAPI.HTTP2PerRequestLoadBalancing != newSpec.GatewayAPI.HTTP2PerRequestLoadBalancing {
+//		return &gatewayUpdateEvent{
+//			msg:   msg,
+//			topic: announcements.GatewayUpdate.String(),
+//		}
+//	}
+//
+//	return nil
+//}
 
 // getMCSUpdateEvent returns a mcsUpdateEvent type indicating whether the given PubSubMessage should
 // result in a gateway configuration update on an appropriate topic. Nil is returned if the PubSubMessage

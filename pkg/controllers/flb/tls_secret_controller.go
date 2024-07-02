@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -37,6 +41,7 @@ type secretReconciler struct {
 	fctx       *fctx.ControllerContext
 	settingMgr *SettingManager
 	cache      map[types.NamespacedName]*corev1.Secret
+	webhook    whtypes.Register
 }
 
 func (r *secretReconciler) NeedLeaderElection() bool {
@@ -63,7 +68,7 @@ type CertDeleteRequest struct {
 }
 
 // NewSecretReconciler returns a new reconciler for Secret
-func NewSecretReconciler(ctx *fctx.ControllerContext, settingManager *SettingManager) controllers.Reconciler {
+func NewSecretReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register, settingManager *SettingManager) controllers.Reconciler {
 	log.Info().Msgf("Creating FLB secret reconciler ...")
 
 	return &secretReconciler{
@@ -71,6 +76,7 @@ func NewSecretReconciler(ctx *fctx.ControllerContext, settingManager *SettingMan
 		fctx:       ctx,
 		settingMgr: settingManager,
 		cache:      make(map[types.NamespacedName]*corev1.Secret),
+		webhook:    webhook,
 	}
 }
 
@@ -256,6 +262,16 @@ func (r *secretReconciler) invokeFLBAPI(namespace string, body interface{}, del 
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *secretReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&corev1.Secret{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		WithCategoryProvider(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(
 			&corev1.Secret{},

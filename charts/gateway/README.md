@@ -88,7 +88,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.gateway.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | initContainer resource configuration |
 | fsm.gateway.listeners | object | `{}` | Gateway's listeners, not overridable by parameterRef |
 | fsm.gateway.logLevel | string | `"info"` |  |
-| fsm.gateway.name | string | `"UNKNOWN"` | Gateway's name, not overridable by parameterRef |
+| fsm.gateway.name | string | `""` | Gateway's name, not overridable by parameterRef |
 | fsm.gateway.namespace | string | `"default"` | Gateway's namespace, not overridable by parameterRef |
 | fsm.gateway.nodePorts | list | `[]` | NodePort service configuration    nodePorts:      - port: 80        nodePort: 30080      - port: 443        nodePort: 30443      - port: 53        nodePort: 30053 |
 | fsm.gateway.nodeSelector | object | `{}` | Node selector applied to control plane pods. |
@@ -101,6 +101,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.gateway.replicas | int | `1` | FSM Gateway's replica count |
 | fsm.gateway.resources | object | `{"limits":{"cpu":"2","memory":"1G"},"requests":{"cpu":"0.5","memory":"128M"}}` | FSM Gateway's container resource parameters. |
 | fsm.gateway.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]}}` | FSM Gateway Controller's container security context |
+| fsm.gateway.serviceName | string | `""` | Gateway's service name, not overridable by parameterRef |
 | fsm.gateway.serviceType | string | `"LoadBalancer"` | FSM Gateway's service type, only LoadBalancer and NodePort are supported |
 | fsm.gateway.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.image.digest | object | `{"fsmCurl":"","fsmGateway":""}` | Image digest (defaults to latest compatible tag) |

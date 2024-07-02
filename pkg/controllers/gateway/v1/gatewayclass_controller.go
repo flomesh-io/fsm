@@ -29,6 +29,10 @@ import (
 	"fmt"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -52,6 +56,7 @@ import (
 type gatewayClassReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *gatewayClassReconciler) NeedLeaderElection() bool {
@@ -59,10 +64,11 @@ func (r *gatewayClassReconciler) NeedLeaderElection() bool {
 }
 
 // NewGatewayClassReconciler returns a new reconciler for GatewayClass
-func NewGatewayClassReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewGatewayClassReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &gatewayClassReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("GatewayClass"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -135,6 +141,15 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *gatewayClassReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1.GatewayClass{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	gwclsPrct := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		gatewayClass, ok := object.(*gwv1.GatewayClass)
 		if !ok {

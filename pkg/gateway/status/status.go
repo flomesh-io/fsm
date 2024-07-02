@@ -16,7 +16,9 @@ package status
 import (
 	"context"
 
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	"github.com/rs/zerolog"
 
@@ -202,7 +204,6 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-
 	case *gwv1alpha2.TLSRoute:
 		if b, ok := objB.(*gwv1alpha2.TLSRoute); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
@@ -221,60 +222,84 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gwpav1alpha1.AccessControlPolicy:
-		if b, ok := objB.(*gwpav1alpha1.AccessControlPolicy); ok {
+	case *gwv1alpha2.BackendLBPolicy:
+		if b, ok := objB.(*gwv1alpha2.BackendLBPolicy); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}
 		}
-	case *gwpav1alpha1.RateLimitPolicy:
-		if b, ok := objB.(*gwpav1alpha1.RateLimitPolicy); ok {
+	case *gwv1alpha3.BackendTLSPolicy:
+		if b, ok := objB.(*gwv1alpha3.BackendTLSPolicy); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}
 		}
-	case *gwpav1alpha1.FaultInjectionPolicy:
-		if b, ok := objB.(*gwpav1alpha1.FaultInjectionPolicy); ok {
+	case *gwpav1alpha2.HealthCheckPolicy:
+		if b, ok := objB.(*gwpav1alpha2.HealthCheckPolicy); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}
 		}
-	case *gwpav1alpha1.SessionStickyPolicy:
-		if b, ok := objB.(*gwpav1alpha1.SessionStickyPolicy); ok {
+	case *gwpav1alpha2.RetryPolicy:
+		if b, ok := objB.(*gwpav1alpha2.RetryPolicy); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}
 		}
-	case *gwpav1alpha1.CircuitBreakingPolicy:
-		if b, ok := objB.(*gwpav1alpha1.CircuitBreakingPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
-	case *gwpav1alpha1.LoadBalancerPolicy:
-		if b, ok := objB.(*gwpav1alpha1.LoadBalancerPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
-	case *gwpav1alpha1.HealthCheckPolicy:
-		if b, ok := objB.(*gwpav1alpha1.HealthCheckPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
-	case *gwpav1alpha1.RetryPolicy:
-		if b, ok := objB.(*gwpav1alpha1.RetryPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
-	case *gwpav1alpha1.UpstreamTLSPolicy:
-		if b, ok := objB.(*gwpav1alpha1.UpstreamTLSPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
+		//case *gwpav1alpha1.AccessControlPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.AccessControlPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.RateLimitPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.RateLimitPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.FaultInjectionPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.FaultInjectionPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.SessionStickyPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.SessionStickyPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.CircuitBreakingPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.CircuitBreakingPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.LoadBalancerPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.LoadBalancerPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.HealthCheckPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.HealthCheckPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.RetryPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.RetryPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
+		//case *gwpav1alpha1.UpstreamTLSPolicy:
+		//	if b, ok := objB.(*gwpav1alpha1.UpstreamTLSPolicy); ok {
+		//		if cmp.Equal(a.Status, b.Status, opts) {
+		//			return true
+		//		}
+		//	}
 	}
 
 	return false

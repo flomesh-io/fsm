@@ -29,6 +29,10 @@ import (
 	"fmt"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +57,7 @@ import (
 type serviceExportReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *serviceExportReconciler) NeedLeaderElection() bool {
@@ -60,10 +65,11 @@ func (r *serviceExportReconciler) NeedLeaderElection() bool {
 }
 
 // NewServiceExportReconciler returns a new ServiceExport.Reconciler
-func NewServiceExportReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewServiceExportReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &serviceExportReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ServiceExport"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -414,6 +420,15 @@ func (r *serviceExportReconciler) successExport(ctx context.Context, req ctrl.Re
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *serviceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&mcsv1alpha1.ServiceExport{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	mc := r.fctx.Configurator
 
 	if mc.IsIngressEnabled() {

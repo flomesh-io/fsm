@@ -18,6 +18,8 @@ metadata:
     {{- end }}
     {{- end }}
     app: fsm-gateway
+    gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+    gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
     meshName: {{ .Values.fsm.meshName }}
 spec:
   replicas: {{ default 1 .Values.fsm.gateway.replicas }}
@@ -47,7 +49,8 @@ spec:
         {{- end }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: '9091'
+        prometheus.io/port: '59092'
+        prometheus.io/path: '/metrics'
         {{- with .Values.fsm.gateway.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -85,10 +88,12 @@ spec:
         ports:
           {{- range $listener := .Values.fsm.gateway.listeners }}
           - name: {{ $listener.name }}
-            containerPort: {{ ternary (add 60000 $listener.port) $listener.port (lt (int $listener.port) 1024)}}
+            containerPort: {{ $listener.port }}
           {{- end }}
           - name: health
-            containerPort: 8081
+            containerPort: 59091
+          - name: metrics
+            containerPort: 59092
         args:
           - --verbosity={{ .Values.fsm.gateway.logLevel }}
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
@@ -96,6 +101,7 @@ spec:
           - --mesh-name={{ .Values.fsm.meshName }}
           - --gateway-namespace={{ .Values.fsm.gateway.namespace }}
           - --gateway-name={{ .Values.fsm.gateway.name }}
+          - --service-name={{ .Values.fsm.gateway.serviceName }}
         resources:
           {{- toYaml .Values.fsm.gateway.resources | nindent 10 }}
         env:
@@ -120,12 +126,12 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 9091
+            port: 59091
         readinessProbe:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 9091
+            port: 59091
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
       securityContext:

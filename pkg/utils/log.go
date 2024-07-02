@@ -1,5 +1,7 @@
 package utils
 
+import "fmt"
+
 const (
 	logLevelTrace = "trace"
 	logLevelDebug = "debug"
@@ -13,12 +15,14 @@ const (
 func PipyLogLevelByVerbosity(verbosity string) string {
 	switch verbosity {
 	case logLevelTrace:
-		return logLevelDebug
+		return fmt.Sprintf("%s:thread", logLevelDebug)
+	case logLevelDebug:
+		return fmt.Sprintf("%s:thread", logLevelDebug)
 	case logLevelFatal:
 		return logLevelError
 	case logLevelPanic:
 		return logLevelError
-	case logLevelDebug, logLevelInfo, logLevelWarn, logLevelError:
+	case logLevelInfo, logLevelWarn, logLevelError:
 		return verbosity
 	default:
 		// default to error if verbosity is not recognized
