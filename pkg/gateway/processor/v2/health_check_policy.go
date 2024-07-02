@@ -1,12 +1,13 @@
 package v2
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	"github.com/flomesh-io/fsm/pkg/constants"
