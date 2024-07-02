@@ -108,7 +108,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, refs []
 			backendRefs = append(backendRefs, b2)
 
 			for _, processor := range c.getBackendPolicyProcessors(httpRoute) {
-				processor.Process(httpRoute, bk.BackendObjectReference, svcPort)
+				processor.Process(httpRoute, holder.GetParentRef(), bk.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

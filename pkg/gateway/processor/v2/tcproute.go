@@ -100,7 +100,7 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, refs
 			backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
 
 			for _, processor := range c.getBackendPolicyProcessors(tcpRoute) {
-				processor.Process(tcpRoute, backend.BackendObjectReference, svcPort)
+				processor.Process(tcpRoute, holder.GetParentRef(), backend.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

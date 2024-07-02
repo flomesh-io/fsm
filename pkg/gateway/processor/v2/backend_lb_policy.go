@@ -24,7 +24,7 @@ func NewBackendLBPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendLBPolicyProcessor) Process(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReference{
 		Group: ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:  ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -37,6 +37,10 @@ func (p *BackendLBPolicyProcessor) Process(route client.Object, backendRef gwv1.
 	}
 
 	p2 := p.getOrCreateBackendLBPolicy(policy)
+	if p2 == nil {
+		return
+	}
+
 	p2.AddTargetRef(v2.NewBackendRef(svcPort.String()))
 }
 
@@ -50,6 +54,7 @@ func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwv1alpha2
 
 	p2 = &v2.BackendLBPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
+		log.Error().Err(err).Msgf("Failed to copy BackendLBPolicy %s", key)
 		return nil
 	}
 

@@ -29,7 +29,7 @@ func NewBackendTLSPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendTLSPolicyProcessor) Process(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *BackendTLSPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReferenceWithSectionName{
 		LocalPolicyTargetReference: gwv1alpha2.LocalPolicyTargetReference{
 			Group: ptr.Deref(backendRef.Group, corev1.GroupName),
@@ -53,6 +53,10 @@ func (p *BackendTLSPolicyProcessor) Process(route client.Object, backendRef gwv1
 	}
 
 	p2 := p.getOrCreateBackendTLSPolicy(policy)
+	if p2 == nil {
+		return
+	}
+
 	p2.AddTargetRef(v2.NewBackendRef(svcPort.String()))
 	p.processCACertificates(policy, p2)
 }
@@ -67,6 +71,7 @@ func (p *BackendTLSPolicyProcessor) getOrCreateBackendTLSPolicy(policy *gwv1alph
 
 	p2 = &v2.BackendTLSPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
+		log.Error().Err(err).Msgf("Failed to copy BackendTLSPolicy %s", key)
 		return nil
 	}
 

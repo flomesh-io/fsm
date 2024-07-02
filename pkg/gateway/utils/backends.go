@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	"github.com/google/go-cmp/cmp"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -158,16 +160,16 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 }
 
 // FindBackendTLSPolicy finds the BackendTLSPolicy for the given LocalPolicyTargetReferenceWithSectionName.
-func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, namespace string) (*gwv1alpha3.BackendTLSPolicy, bool) {
+func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, routeNamespace string) (*gwv1alpha3.BackendTLSPolicy, bool) {
 	var fallbackBackendTLSPolicy *gwv1alpha3.BackendTLSPolicy
 
 	list := &gwv1alpha3.BackendTLSPolicyList{}
 	if err := c.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
-			Namespace: namespace,
+			Namespace: routeNamespace,
 			Name:      string(targetRef.Name),
 		}.String()),
-		Namespace: namespace,
+		Namespace: routeNamespace,
 	}); err != nil {
 		return nil, false
 	}
@@ -200,14 +202,14 @@ func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetR
 }
 
 // FindBackendLBPolicy finds the BackendTLSPolicy for the given LocalPolicyTargetReference.
-func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReference, namespace string) (*gwv1alpha2.BackendLBPolicy, bool) {
+func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReference, routeNamespace string) (*gwv1alpha2.BackendLBPolicy, bool) {
 	list := &gwv1alpha2.BackendLBPolicyList{}
 	if err := c.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
-			Namespace: namespace,
+			Namespace: routeNamespace,
 			Name:      string(targetRef.Name),
 		}.String()),
-		Namespace: namespace,
+		Namespace: routeNamespace,
 	}); err != nil {
 		return nil, false
 	}
@@ -222,4 +224,72 @@ func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetRe
 	}
 
 	return nil, false
+}
+
+func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *v2.ServicePortName) (*gwpav1alpha2.HealthCheckPolicy, *gwpav1alpha2.PortHealthCheck, bool) {
+	if svcPort == nil {
+		return nil, nil, false
+	}
+
+	if svcPort.Port == nil {
+		return nil, nil, false
+	}
+
+	list := &gwpav1alpha2.HealthCheckPolicyList{}
+	if err := c.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
+			Namespace: NamespaceDerefOr(targetRef.Namespace, routeNamespace),
+			Name:      string(targetRef.Name),
+		}.String()),
+	}); err != nil {
+		return nil, nil, false
+	}
+
+	for _, policy := range ToSlicePtr(list.Items) {
+		for _, ref := range policy.Spec.TargetRefs {
+			if cmp.Equal(ref, targetRef) {
+				for i, port := range policy.Spec.Ports {
+					if *svcPort.Port == int32(port.Port) {
+						return policy, &policy.Spec.Ports[i], true
+					}
+				}
+			}
+		}
+	}
+
+	return nil, nil, false
+}
+
+func FindRetryPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *v2.ServicePortName) (*gwpav1alpha2.RetryPolicy, *gwpav1alpha2.PortRetry, bool) {
+	if svcPort == nil {
+		return nil, nil, false
+	}
+
+	if svcPort.Port == nil {
+		return nil, nil, false
+	}
+
+	list := &gwpav1alpha2.RetryPolicyList{}
+	if err := c.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
+			Namespace: NamespaceDerefOr(targetRef.Namespace, routeNamespace),
+			Name:      string(targetRef.Name),
+		}.String()),
+	}); err != nil {
+		return nil, nil, false
+	}
+
+	for _, policy := range ToSlicePtr(list.Items) {
+		for _, ref := range policy.Spec.TargetRefs {
+			if cmp.Equal(ref, targetRef) {
+				for i, port := range policy.Spec.Ports {
+					if *svcPort.Port == int32(port.Port) {
+						return policy, &policy.Spec.Ports[i], true
+					}
+				}
+			}
+		}
+	}
+
+	return nil, nil, false
 }

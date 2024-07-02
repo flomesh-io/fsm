@@ -274,8 +274,8 @@ func (p *RouteStatusProcessor) processHTTPRouteStatus(route *gwv1.HTTPRoute, rps
 			log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
 			p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
 			p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-			p.computeHealthCheckPolicyStatus()
-			p.computeRetryPolicyStatus()
+			p.computeHealthCheckPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
+			p.computeRetryPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
 		}
 	}
 
@@ -358,7 +358,7 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 	})
 }
 
-func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, _ *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReference{
 		Group: ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:  ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -396,12 +396,82 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 	})
 }
 
-func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus() {
+func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
+		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
+		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
+		Namespace: backendRef.Namespace,
+		Name:      backendRef.Name,
+	}
 
+	policy, _, found := gwutils.FindHealthCheckPolicy(p.client, targetRef, route.GetNamespace(), svcPort)
+	if !found {
+		return
+	}
+
+	psu := policyv2.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRefs,
+		gwutils.ToSlicePtr(policy.Status.Ancestors),
+	)
+
+	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
+
+	if gwutils.HasAccessToBackendTargetRef(p.client, policy, targetRef, ancestorStatus) {
+		ancestorStatus.AddCondition(
+			gwv1alpha2.PolicyConditionAccepted,
+			metav1.ConditionTrue,
+			gwv1alpha2.PolicyReasonAccepted,
+			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
+		)
+	}
+
+	p.statusUpdater.Send(status.Update{
+		Resource:       psu.GetResource(),
+		NamespacedName: psu.GetFullName(),
+		Mutator:        psu,
+	})
 }
 
-func (p *RouteStatusProcessor) computeRetryPolicyStatus() {
+func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
+		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
+		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
+		Namespace: backendRef.Namespace,
+		Name:      backendRef.Name,
+	}
 
+	policy, _, found := gwutils.FindRetryPolicy(p.client, targetRef, route.GetNamespace(), svcPort)
+	if !found {
+		return
+	}
+
+	psu := policyv2.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
+		policy,
+		&policy.ObjectMeta,
+		&policy.TypeMeta,
+		policy.Spec.TargetRefs,
+		gwutils.ToSlicePtr(policy.Status.Ancestors),
+	)
+
+	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
+
+	if gwutils.HasAccessToBackendTargetRef(p.client, policy, targetRef, ancestorStatus) {
+		ancestorStatus.AddCondition(
+			gwv1alpha2.PolicyConditionAccepted,
+			metav1.ConditionTrue,
+			gwv1alpha2.PolicyReasonAccepted,
+			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
+		)
+	}
+
+	p.statusUpdater.Send(status.Update{
+		Resource:       psu.GetResource(),
+		NamespacedName: psu.GetFullName(),
+		Mutator:        psu,
+	})
 }
 
 func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *v2.ServicePortName {

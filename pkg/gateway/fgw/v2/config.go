@@ -403,6 +403,24 @@ func (p *RetryPolicy) AddTargetRef(ref BackendRef) {
 	}
 }
 
+func (p *RetryPolicy) AddPort(port gwpav1alpha2.PortRetry) {
+	if len(p.Spec.Ports) > 0 {
+		exists := false
+		for _, p := range p.Spec.Ports {
+			if p.Port == port.Port {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.Ports = append(p.Spec.Ports, port)
+		}
+	} else {
+		p.Spec.Ports = []gwpav1alpha2.PortRetry{port}
+	}
+}
+
 // ---
 
 type HealthCheckPolicy struct {
@@ -413,7 +431,7 @@ type HealthCheckPolicy struct {
 
 type HealthCheckPolicySpec struct {
 	TargetRefs         []BackendRef                    `json:"targetRefs" copier:"-" hash:"set"`
-	Ports              []gwpav1alpha2.PortHealthCheck  `json:"ports,omitempty" hash:"set"`
+	Ports              []gwpav1alpha2.PortHealthCheck  `json:"ports,omitempty" copier:"-" hash:"set"`
 	DefaultHealthCheck *gwpav1alpha2.HealthCheckConfig `json:"healthCheck,omitempty"`
 }
 
@@ -432,5 +450,23 @@ func (p *HealthCheckPolicy) AddTargetRef(ref BackendRef) {
 		}
 	} else {
 		p.Spec.TargetRefs = []BackendRef{ref}
+	}
+}
+
+func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
+	if len(p.Spec.Ports) > 0 {
+		exists := false
+		for _, p := range p.Spec.Ports {
+			if p.Port == port.Port {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			p.Spec.Ports = append(p.Spec.Ports, port)
+		}
+	} else {
+		p.Spec.Ports = []gwpav1alpha2.PortHealthCheck{port}
 	}
 }

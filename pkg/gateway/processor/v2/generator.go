@@ -25,14 +25,16 @@ import (
 )
 
 type ConfigGenerator struct {
-	client             cache.Cache
-	processor          processor.Processor
-	gateway            *gwv1.Gateway
-	secretFiles        map[string]string
-	services           map[string]serviceContext
-	upstreams          calculateBackendTargetsFunc
-	backendTLSPolicies map[string]*v2.BackendTLSPolicy
-	backendLBPolicies  map[string]*v2.BackendLBPolicy
+	client              cache.Cache
+	processor           processor.Processor
+	gateway             *gwv1.Gateway
+	secretFiles         map[string]string
+	services            map[string]serviceContext
+	upstreams           calculateBackendTargetsFunc
+	backendTLSPolicies  map[string]*v2.BackendTLSPolicy
+	backendLBPolicies   map[string]*v2.BackendLBPolicy
+	healthCheckPolicies map[string]*v2.HealthCheckPolicy
+	retryPolicies       map[string]*v2.RetryPolicy
 }
 
 func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache) processor.Generator {
@@ -85,40 +87,8 @@ func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backe
 	return gwutils.BackendRefToServicePortName(c.client, route, backendRef, rps)
 }
 
-//func (c *ConfigGenerator) targetRefToServicePortName(referer client.Object, ref gwv1alpha2.NamespacedPolicyTargetReference, port int32) *fgw.ServicePortName {
-//	if !gwutils.IsValidTargetRefToGroupKindOfService(ref) {
-//		log.Error().Msgf("Unsupported target group %s and kind %s for service", ref.Group, ref.Kind)
-//		return nil
-//	}
-//
-//	gvk := referer.GetObjectKind().GroupVersionKind()
-//	if ref.Namespace != nil && string(*ref.Namespace) != referer.GetNamespace() && !gwutils.ValidCrossNamespaceRef(
-//		gwtypes.CrossNamespaceFrom{
-//			Group:     gvk.Group,
-//			Kind:      gvk.Kind,
-//			Namespace: referer.GetNamespace(),
-//		},
-//		gwtypes.CrossNamespaceTo{
-//			Group:     string(ref.Group),
-//			Kind:      string(ref.Kind),
-//			Namespace: string(*ref.Namespace),
-//			Name:      string(ref.Name),
-//		},
-//		gwutils.GetServiceRefGrants(c.client),
-//	) {
-//		log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-//			gvk.Kind, gvk.Group, referer.GetNamespace(), referer.GetName(),
-//			string(ref.Kind), string(ref.Group), string(*ref.Namespace), ref.Name)
-//		return nil
-//	}
-//
-//	return &fgw.ServicePortName{
-//		NamespacedName: types.NamespacedName{
-//			Namespace: gwutils.NamespaceDerefOr(ref.Namespace, referer.GetNamespace()),
-//			Name:      string(ref.Name),
-//		},
-//		Port: pointer.Int32(port),
-//	}
+//func (c *ConfigGenerator) targetRefToServicePortName(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference, port int32) *v2.ServicePortName {
+//	return gwutils.HasAccessToBackendTargetRef(c.client, policy, targetRef, port)
 //}
 
 func (c *ConfigGenerator) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {

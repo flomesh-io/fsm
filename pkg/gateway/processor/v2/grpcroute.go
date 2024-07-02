@@ -108,7 +108,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, refs []
 			backendRefs = append(backendRefs, b2)
 
 			for _, processor := range c.getBackendPolicyProcessors(grpcRoute) {
-				processor.Process(grpcRoute, bk.BackendObjectReference, svcPort)
+				processor.Process(grpcRoute, holder.GetParentRef(), bk.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

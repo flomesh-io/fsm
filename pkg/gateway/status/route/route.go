@@ -70,7 +70,7 @@ func (r *DefaultRouteStatusObject) Mutate(obj client.Object) client.Object {
 func (r *DefaultRouteStatusObject) StatusUpdateFor(parentRef gwv1.ParentReference) status.RouteParentStatusObject {
 	return &DefaultRouteParentStatusObject{
 		DefaultRouteStatusObject: r,
-		ParentRef:                parentRef,
+		parentRef:                parentRef,
 	}
 }
 
@@ -88,7 +88,7 @@ func (r *DefaultRouteStatusObject) ConditionsForParentRef(parentRef gwv1.ParentR
 
 type DefaultRouteParentStatusObject struct {
 	*DefaultRouteStatusObject
-	ParentRef gwv1.ParentReference
+	parentRef gwv1.ParentReference
 }
 
 func (r *DefaultRouteParentStatusObject) GetRouteStatusObject() status.RouteStatusObject {
@@ -96,14 +96,14 @@ func (r *DefaultRouteParentStatusObject) GetRouteStatusObject() status.RouteStat
 }
 
 func (r *DefaultRouteParentStatusObject) GetParentRef() gwv1.ParentReference {
-	return r.ParentRef
+	return r.parentRef
 }
 
 func (r *DefaultRouteParentStatusObject) AddCondition(conditionType gwv1.RouteConditionType, status metav1.ConditionStatus, reason gwv1.RouteConditionReason, message string) metav1.Condition {
 	var rps *gwv1.RouteParentStatus
 
 	for _, v := range r.routeParentStatuses {
-		if cmp.Equal(v.ParentRef, r.ParentRef) {
+		if cmp.Equal(v.ParentRef, r.parentRef) {
 			rps = v
 			break
 		}
@@ -111,7 +111,7 @@ func (r *DefaultRouteParentStatusObject) AddCondition(conditionType gwv1.RouteCo
 
 	if rps == nil {
 		rps = &gwv1.RouteParentStatus{
-			ParentRef:      r.ParentRef,
+			ParentRef:      r.parentRef,
 			ControllerName: constants.GatewayController,
 		}
 
@@ -138,7 +138,7 @@ func (r *DefaultRouteParentStatusObject) AddCondition(conditionType gwv1.RouteCo
 }
 
 func (r *DefaultRouteParentStatusObject) ConditionExists(conditionType gwv1.RouteConditionType) bool {
-	for _, c := range r.ConditionsForParentRef(r.ParentRef) {
+	for _, c := range r.ConditionsForParentRef(r.parentRef) {
 		if c.Type == string(conditionType) {
 			return true
 		}
@@ -236,7 +236,7 @@ func (r *RouteStatusHolder) StatusUpdateFor(parentRef gwv1.ParentReference) stat
 	return &RouteParentStatusHolder{
 		DefaultRouteParentStatusObject: &DefaultRouteParentStatusObject{
 			DefaultRouteStatusObject: r.DefaultRouteStatusObject,
-			ParentRef:                parentRef,
+			parentRef:                parentRef,
 		},
 	}
 }

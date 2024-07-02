@@ -26,5 +26,5 @@ type calculateBackendTargetsFunc func(svc *corev1.Service, port *int32) []v2.Bac
 
 // BackendPolicyProcessor is an interface for enriching backend level policies
 type BackendPolicyProcessor interface {
-	Process(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName)
+	Process(route client.Object, routeParentRef gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName)
 }

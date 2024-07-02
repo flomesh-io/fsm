@@ -63,7 +63,7 @@ func (p *DefaultPolicyStatusObject) GetGeneration() int64 {
 }
 
 func (p *DefaultPolicyStatusObject) StatusUpdateFor(ancestorRef gwv1.ParentReference) status.PolicyAncestorStatusObject {
-	return &DefaultPolicyAncestorStatusUpdate{
+	return &DefaultPolicyAncestorStatusObject{
 		DefaultPolicyStatusObject: p,
 		ancestorRef:               ancestorRef,
 	}
@@ -85,12 +85,12 @@ func (p *DefaultPolicyStatusObject) Mutate(obj client.Object) client.Object {
 
 // ---------------------------------------------------------------------------
 
-type DefaultPolicyAncestorStatusUpdate struct {
+type DefaultPolicyAncestorStatusObject struct {
 	*DefaultPolicyStatusObject
 	ancestorRef gwv1.ParentReference
 }
 
-func (p *DefaultPolicyAncestorStatusUpdate) ConditionExists(conditionType gwv1alpha2.PolicyConditionType) bool {
+func (p *DefaultPolicyAncestorStatusObject) ConditionExists(conditionType gwv1alpha2.PolicyConditionType) bool {
 	for _, c := range p.ConditionsForAncestorRef(p.ancestorRef) {
 		if c.Type == string(conditionType) {
 			return true
@@ -99,7 +99,7 @@ func (p *DefaultPolicyAncestorStatusUpdate) ConditionExists(conditionType gwv1al
 	return false
 }
 
-func (p *DefaultPolicyAncestorStatusUpdate) AddCondition(conditionType gwv1alpha2.PolicyConditionType, status metav1.ConditionStatus, reason gwv1alpha2.PolicyConditionReason, message string) metav1.Condition {
+func (p *DefaultPolicyAncestorStatusObject) AddCondition(conditionType gwv1alpha2.PolicyConditionType, status metav1.ConditionStatus, reason gwv1alpha2.PolicyConditionReason, message string) metav1.Condition {
 	var pas *gwv1alpha2.PolicyAncestorStatus
 
 	for _, v := range p.policyAncestorStatuses {
@@ -132,18 +132,18 @@ func (p *DefaultPolicyAncestorStatusUpdate) AddCondition(conditionType gwv1alpha
 	return cond
 }
 
-func (p *DefaultPolicyAncestorStatusUpdate) GetPolicyStatusObject() status.PolicyStatusObject {
+func (p *DefaultPolicyAncestorStatusObject) GetPolicyStatusObject() status.PolicyStatusObject {
 	return p.DefaultPolicyStatusObject
 }
 
-func (p *DefaultPolicyAncestorStatusUpdate) GetAncestorRef() gwv1.ParentReference {
+func (p *DefaultPolicyAncestorStatusObject) GetAncestorRef() gwv1.ParentReference {
 	return p.ancestorRef
 }
 
 // ---------------------------------------------------------------------------
 
 type PolicyStatusUpdate struct {
-	DefaultPolicyStatusObject
+	*DefaultPolicyStatusObject
 }
 
 func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
@@ -215,7 +215,7 @@ func NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(resource client.Ob
 
 func newPolicyStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	return &PolicyStatusUpdate{
-		DefaultPolicyStatusObject: DefaultPolicyStatusObject{
+		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{
 			objectMeta:             meta,
 			typeMeta:               typeMeta,
 			targetRefs:             targetRefs,
@@ -230,4 +230,72 @@ func newPolicyStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, type
 
 // ---------------------------------------------------------------------------
 
+type PolicyStatusHolder struct {
+	*DefaultPolicyStatusObject
+}
+
+func NewPolicyStatusHolderWithLocalPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+	refs := make([]PolicyTargetReference, len(targetRefs))
+	for i, ref := range targetRefs {
+		refs[i] = PolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+		}
+	}
+
+	return newPolicyStatusHolder(resource, meta, typeMeta, refs, policyAncestorStatuses)
+}
+
+func NewPolicyStatusHolderWithLocalPolicyTargetReferenceWithSectionName(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+	refs := make([]PolicyTargetReference, len(targetRefs))
+	for i, ref := range targetRefs {
+		refs[i] = PolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+		}
+	}
+
+	return newPolicyStatusHolder(resource, meta, typeMeta, refs, policyAncestorStatuses)
+}
+
+func NewPolicyStatusHolderWithNamespacedPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+	return newPolicyStatusHolder(resource, meta, typeMeta, targetRefs, policyAncestorStatuses)
+}
+
+func newPolicyStatusHolder(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+	return &PolicyStatusHolder{
+		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{
+			objectMeta:             meta,
+			typeMeta:               typeMeta,
+			targetRefs:             targetRefs,
+			policyAncestorStatuses: policyAncestorStatuses,
+			resource:               resource,
+			transitionTime:         metav1.Time{Time: time.Now()},
+			fullName:               types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
+			generation:             meta.Generation,
+		},
+	}
+}
+
+func (r *PolicyStatusHolder) StatusUpdateFor(ancestorRef gwv1.ParentReference) status.PolicyAncestorStatusObject {
+	return &PolicyAncestorStatusHolder{
+		DefaultPolicyAncestorStatusObject: &DefaultPolicyAncestorStatusObject{
+			DefaultPolicyStatusObject: r.DefaultPolicyStatusObject,
+			ancestorRef:               ancestorRef,
+		},
+	}
+}
+
 // ---------------------------------------------------------------------------
+
+type PolicyAncestorStatusHolder struct {
+	*DefaultPolicyAncestorStatusObject
+}
+
+func (p *PolicyAncestorStatusHolder) AddCondition(_ gwv1alpha2.PolicyConditionType, _ metav1.ConditionStatus, _ gwv1alpha2.PolicyConditionReason, _ string) metav1.Condition {
+	return metav1.Condition{}
+}
