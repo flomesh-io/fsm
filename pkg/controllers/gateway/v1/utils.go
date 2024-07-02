@@ -3,12 +3,13 @@ package v1
 import (
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 

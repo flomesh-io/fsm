@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -9,7 +10,6 @@ import (
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	policyv2 "github.com/flomesh-io/fsm/pkg/gateway/status/policy/v2"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
@@ -40,7 +40,7 @@ func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.
 		return
 	}
 
-	psh := policyv2.NewPolicyStatusHolderWithNamespacedPolicyTargetReference(
+	psh := policies.NewPolicyStatusHolderWithNamespacedPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,

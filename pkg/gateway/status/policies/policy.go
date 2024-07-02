@@ -1,14 +1,14 @@
-package v2
+package policies
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"k8s.io/utils/ptr"
 

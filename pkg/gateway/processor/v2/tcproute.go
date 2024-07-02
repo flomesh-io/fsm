@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
+
 	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -13,7 +15,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -28,7 +29,7 @@ func (c *ConfigGenerator) processTCPRoutes() []interface{} {
 
 	routes := make([]interface{}, 0)
 	for _, tcpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
-		rsh := route.NewRouteStatusHolder(
+		rsh := routestatus.NewRouteStatusHolder(
 			tcpRoute,
 			&tcpRoute.ObjectMeta,
 			&tcpRoute.TypeMeta,

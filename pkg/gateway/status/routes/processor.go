@@ -22,12 +22,16 @@
  * SOFTWARE.
  */
 
-package route
+package routes
 
 import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -46,13 +50,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	policyv2 "github.com/flomesh-io/fsm/pkg/gateway/status/policy/v2"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -297,7 +298,7 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 		return
 	}
 
-	psu := policyv2.NewPolicyStatusUpdateWithLocalPolicyTargetReferenceWithSectionName(
+	psu := policies.NewPolicyStatusUpdateWithLocalPolicyTargetReferenceWithSectionName(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
@@ -370,7 +371,7 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 		return
 	}
 
-	psu := policyv2.NewPolicyStatusUpdateWithLocalPolicyTargetReference(
+	psu := policies.NewPolicyStatusUpdateWithLocalPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
@@ -409,7 +410,7 @@ func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Objec
 		return
 	}
 
-	psu := policyv2.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
+	psu := policies.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,
@@ -448,7 +449,7 @@ func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, bac
 		return
 	}
 
-	psu := policyv2.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
+	psu := policies.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
 		&policy.TypeMeta,

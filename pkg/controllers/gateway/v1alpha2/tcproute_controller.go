@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -39,8 +41,6 @@ import (
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -64,7 +64,7 @@ import (
 type tcpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *routes.RouteStatusProcessor
 	webhook         whtypes.Register
 }
 
@@ -77,7 +77,7 @@ func NewTCPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register
 	return &tcpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TCPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
 		webhook:         webhook,
 	}
 }
@@ -100,7 +100,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
+	rsu := routes.NewRouteStatusUpdate(
 		tcpRoute,
 		&tcpRoute.ObjectMeta,
 		&tcpRoute.TypeMeta,

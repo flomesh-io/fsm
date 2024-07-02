@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/utils/ptr"
-
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -14,7 +13,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -29,7 +28,7 @@ func (c *ConfigGenerator) processTLSRoutes() []interface{} {
 
 	resources := make([]interface{}, 0)
 	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
-		rsh := route.NewRouteStatusHolder(
+		rsh := routestatus.NewRouteStatusHolder(
 			tlsRoute,
 			&tlsRoute.ObjectMeta,
 			&tlsRoute.TypeMeta,

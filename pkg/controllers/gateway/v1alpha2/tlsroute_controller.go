@@ -27,13 +27,13 @@ package v1alpha2
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
@@ -58,7 +58,7 @@ import (
 type tlsRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *routes.RouteStatusProcessor
 	webhook         whtypes.Register
 }
 
@@ -71,7 +71,7 @@ func NewTLSRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register
 	return &tlsRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
 		webhook:         webhook,
 	}
 }
@@ -94,7 +94,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
+	rsu := routes.NewRouteStatusUpdate(
 		tlsRoute,
 		&tlsRoute.ObjectMeta,
 		&tlsRoute.TypeMeta,

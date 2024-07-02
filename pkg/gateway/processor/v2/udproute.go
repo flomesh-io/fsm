@@ -8,6 +8,7 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -30,7 +30,7 @@ func (c *ConfigGenerator) processUDPRoutes() []interface{} {
 
 	routes := make([]interface{}, 0)
 	for _, udpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
-		rsh := route.NewRouteStatusHolder(
+		rsh := routestatus.NewRouteStatusHolder(
 			udpRoute,
 			&udpRoute.ObjectMeta,
 			&udpRoute.TypeMeta,

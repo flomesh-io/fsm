@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
+
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
@@ -43,8 +45,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 
 	ghodssyaml "github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"

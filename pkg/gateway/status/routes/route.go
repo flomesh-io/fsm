@@ -1,12 +1,12 @@
-package route
+package routes
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
+	"github.com/google/go-cmp/cmp"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
