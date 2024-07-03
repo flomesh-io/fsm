@@ -366,7 +366,7 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 		Name:  backendRef.Name,
 	}
 
-	policy, found := gwutils.FindBackendLBPolicy(p.client, route, targetRef)
+	policy, found := gwutils.FindBackendLBPolicy(p.client, targetRef, route.GetNamespace())
 	if !found {
 		return
 	}

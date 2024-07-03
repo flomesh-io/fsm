@@ -60,7 +60,7 @@ func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentRef
 		Name:  backendRef.Name,
 	}
 
-	policy, found := gwutils.FindBackendLBPolicy(p.generator.client, route, targetRef)
+	policy, found := gwutils.FindBackendLBPolicy(p.generator.client, targetRef, route.GetNamespace())
 	if !found {
 		return
 	}
