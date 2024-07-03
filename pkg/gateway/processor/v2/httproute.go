@@ -84,7 +84,7 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule.BackendRefs, holder)
+	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule, holder)
 	if len(r2.BackendRefs) == 0 {
 		return nil
 	}
@@ -96,9 +96,9 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, refs []gwv1.HTTPBackendRef, holder status.RouteParentStatusObject) []v2.HTTPBackendRef {
+func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []v2.HTTPBackendRef {
 	backendRefs := make([]v2.HTTPBackendRef, 0)
-	for _, bk := range refs {
+	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
 			b2 := v2.NewHTTPBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
 
@@ -109,7 +109,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, refs []
 			backendRefs = append(backendRefs, b2)
 
 			for _, processor := range c.getBackendPolicyProcessors(httpRoute) {
-				processor.Process(httpRoute, holder.GetParentRef(), bk.BackendObjectReference, svcPort)
+				processor.Process(httpRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

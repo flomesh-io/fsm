@@ -89,7 +89,7 @@ func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule g
 		return nil, nil
 	}
 
-	backendRefs, bks := c.toV2TLSBackendRefs(tlsRoute, rule.BackendRefs, holder)
+	backendRefs, bks := c.toV2TLSBackendRefs(tlsRoute, rule, holder)
 	if len(backendRefs) == 0 {
 		return nil, nil
 	}
@@ -99,11 +99,11 @@ func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule g
 	return r2, bks
 }
 
-func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, refs []gwv1alpha2.BackendRef, _ status.RouteParentStatusObject) ([]v2.BackendRef, []interface{}) {
+func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, _ status.RouteParentStatusObject) ([]v2.BackendRef, []interface{}) {
 	backendRefs := make([]v2.BackendRef, 0)
 	backends := make([]interface{}, 0)
 
-	for _, backend := range refs {
+	for _, backend := range rule.BackendRefs {
 		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
 
 		backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(name, backendWeight(backend)))

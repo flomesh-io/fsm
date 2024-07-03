@@ -85,7 +85,7 @@ func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule g
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2TCPBackendRefs(tcpRoute, rule.BackendRefs, holder)
+	r2.BackendRefs = c.toV2TCPBackendRefs(tcpRoute, rule, holder)
 	if len(r2.BackendRefs) == 0 {
 		return nil
 	}
@@ -93,15 +93,15 @@ func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule g
 	return r2
 }
 
-func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, refs []gwv1alpha2.BackendRef, holder status.RouteParentStatusObject) []v2.BackendRef {
+func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule gwv1alpha2.TCPRouteRule, holder status.RouteParentStatusObject) []v2.BackendRef {
 	backendRefs := make([]v2.BackendRef, 0)
-	for _, backend := range refs {
+	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference, holder); svcPort != nil {
 			backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
 
 			for _, processor := range c.getBackendPolicyProcessors(tcpRoute) {
-				processor.Process(tcpRoute, holder.GetParentRef(), backend.BackendObjectReference, svcPort)
+				processor.Process(tcpRoute, holder.GetParentRef(), rule, backend.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

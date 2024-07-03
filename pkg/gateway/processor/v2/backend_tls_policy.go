@@ -29,7 +29,7 @@ func NewBackendTLSPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendTLSPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *BackendTLSPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReferenceWithSectionName{
 		LocalPolicyTargetReference: gwv1alpha2.LocalPolicyTargetReference{
 			Group: ptr.Deref(backendRef.Group, corev1.GroupName),

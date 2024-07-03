@@ -28,7 +28,7 @@ func NewRetryPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
 	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
 		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),

@@ -86,7 +86,7 @@ func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule g
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2UDPBackendRefs(udpRoute, rule.BackendRefs, holder)
+	r2.BackendRefs = c.toV2UDPBackendRefs(udpRoute, rule, holder)
 	if len(r2.BackendRefs) == 0 {
 		return nil
 	}
@@ -94,9 +94,9 @@ func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule g
 	return r2
 }
 
-func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, refs []gwv1alpha2.BackendRef, holder status.RouteParentStatusObject) []v2.BackendRef {
+func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) []v2.BackendRef {
 	backendRefs := make([]v2.BackendRef, 0)
-	for _, backend := range refs {
+	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference, holder); svcPort != nil {
 			backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))

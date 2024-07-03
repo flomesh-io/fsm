@@ -84,7 +84,7 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule.BackendRefs, holder)
+	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule, holder)
 	if len(r2.BackendRefs) == 0 {
 		return nil
 	}
@@ -96,9 +96,9 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, refs []gwv1.GRPCBackendRef, holder status.RouteParentStatusObject) []v2.GRPCBackendRef {
+func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []v2.GRPCBackendRef {
 	backendRefs := make([]v2.GRPCBackendRef, 0)
-	for _, bk := range refs {
+	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
 			b2 := v2.NewGRPCBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
 
@@ -109,7 +109,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, refs []
 			backendRefs = append(backendRefs, b2)
 
 			for _, processor := range c.getBackendPolicyProcessors(grpcRoute) {
-				processor.Process(grpcRoute, holder.GetParentRef(), bk.BackendObjectReference, svcPort)
+				processor.Process(grpcRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
 
 			c.services[svcPort.String()] = serviceContext{

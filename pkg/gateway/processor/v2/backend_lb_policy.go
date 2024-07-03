@@ -24,14 +24,43 @@ func NewBackendLBPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+	// Any configuration that is specified at Route Rule level MUST override configuration
+	// that is attached at the backend level because route rule have a more global view and
+	// responsibility for the overall traffic routing.
+	// https://gateway-api.sigs.k8s.io/geps/gep-1619/#route-rule-api
+	switch route.(type) {
+	case *gwv1.HTTPRoute:
+		rule, ok := routeRule.(*gwv1.HTTPRouteRule)
+		if !ok {
+			log.Error().Msgf("Unexpected route rule type %T", routeRule)
+			return
+		}
+
+		if rule.SessionPersistence != nil {
+			return
+		}
+	case *gwv1.GRPCRoute:
+		rule, ok := routeRule.(*gwv1.GRPCRouteRule)
+		if !ok {
+			log.Error().Msgf("Unexpected route rule type %T", routeRule)
+			return
+		}
+
+		if rule.SessionPersistence != nil {
+			return
+		}
+	default:
+		return
+	}
+
 	targetRef := gwv1alpha2.LocalPolicyTargetReference{
 		Group: ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:  ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
 		Name:  backendRef.Name,
 	}
 
-	policy, found := gwutils.FindBackendLBPolicy(p.generator.client, targetRef, route.GetNamespace())
+	policy, found := gwutils.FindBackendLBPolicy(p.generator.client, route, targetRef)
 	if !found {
 		return
 	}
