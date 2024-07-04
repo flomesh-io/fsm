@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: pipy
-          image: flomesh/pipy:1.2.0
+          image: flomesh/pipy:1.3.0
           ports:
             - containerPort: 8080
           command:
