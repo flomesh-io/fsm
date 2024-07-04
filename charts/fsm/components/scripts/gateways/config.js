@@ -1,3 +1,5 @@
+import { log } from './log.js'
+
 var DEFAULT_CONFIG_PATH = '/etc/fgw'
 
 function load(filename) {
@@ -51,10 +53,13 @@ function loadConfigDir(dirname) {
     var filename = os.path.join(dirname, name)
     if (isSecret(name)) {
       secrets[name] = pipy.load(filename).toString()
+      log?.(`Loaded resource ${filename}`)
     } else if (isJSON(name)) {
       resources.push(JSON.decode(pipy.load(filename)))
+      log?.(`Loaded resource ${filename}`)
     } else if (isYAML(name)) {
       resources.push(YAML.decode(pipy.load(filename)))
+      log?.(`Loaded resource ${filename}`)
     }
   })
   config.resources = resources

@@ -5,6 +5,7 @@ import { stringifyHTTPHeaders } from '../utils.js'
 import { log } from '../log.js'
 
 var $ctx
+var $basePath
 var $selection
 
 export default function (config, listener, routeResources) {
@@ -151,11 +152,17 @@ export default function (config, listener, routeResources) {
       var value = match.value
       switch (type) {
         case 'Exact':
-          var patterns = new algo.URLRouter({ [value]: true, '/*': false })
+          var patterns = new algo.URLRouter({ [value]: true })
           return path => patterns.find(path)
         case 'PathPrefix':
-          var patterns = new algo.URLRouter({ [value + '/*']: true, '/*': false })
-          return path => patterns.find(path)
+          var base = (value.endsWith('/') ? value.substring(0, value.length - 1) : value) || '/'
+          var patterns = new algo.URLRouter({ [base]: true, [base + '/*']: true })
+          return path => {
+            if (patterns.find(path)) {
+              $basePath = base
+              return true
+            }
+          }
         case 'RegularExpression':
           var re = new RegExp(value)
           return path => re.test(path)
@@ -253,6 +260,7 @@ export default function (config, listener, routeResources) {
               tail: null,
               tailTime: 0,
             },
+            basePath: $basePath,
             backendResource: $selection?.target?.backendResource,
           }
         }

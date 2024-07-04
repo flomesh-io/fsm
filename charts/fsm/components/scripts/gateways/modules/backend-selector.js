@@ -58,6 +58,7 @@ export default function (config, protocol, rule, makeForwarder) {
 }
 
 function importFilter(pathname) {
+  if (!pipy.load(pathname)) return null
   try {
     var filter = pipy.import(pathname)
     return filter.default
