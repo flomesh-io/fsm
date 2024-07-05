@@ -651,6 +651,8 @@ const (
 	HostnamePolicyAttachmentIndex                = "hostnamePolicyAttachmentIndex"
 	HTTPRoutePolicyAttachmentIndex               = "httpRoutePolicyAttachmentIndex"
 	GRPCRoutePolicyAttachmentIndex               = "grpcRoutePolicyAttachmentIndex"
+	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"
+	ExtensionFilterGRPCRouteIndex                = "filterGRPCRouteIndex"
 )
 
 // PIPY Repo constants

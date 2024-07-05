@@ -19,7 +19,7 @@ func (p *FilterTrigger) Insert(obj interface{}, processor processor.Processor) b
 		return false
 	}
 
-	return processor.IsEffectiveFilter(client.ObjectKeyFromObject(filter), filter.Spec.TargetRefs)
+	return processor.IsFilterReferred(client.ObjectKeyFromObject(filter))
 }
 
 // Delete removes a Filter object from the processor and returns true if the processor is changed
@@ -30,5 +30,5 @@ func (p *FilterTrigger) Delete(obj interface{}, processor processor.Processor) b
 		return false
 	}
 
-	return processor.IsEffectiveFilter(client.ObjectKeyFromObject(filter), filter.Spec.TargetRefs)
+	return processor.IsFilterReferred(client.ObjectKeyFromObject(filter))
 }

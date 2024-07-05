@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
@@ -29,6 +31,7 @@ type ConfigGenerator struct {
 	gateway             *gwv1.Gateway
 	secretFiles         map[string]string
 	services            map[string]serviceContext
+	filters             map[extv1alpha1.FilterType]map[string]string
 	upstreams           calculateBackendTargetsFunc
 	backendTLSPolicies  map[string]*fgwv2.BackendTLSPolicy
 	backendLBPolicies   map[string]*fgwv2.BackendLBPolicy
@@ -43,6 +46,7 @@ func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Proces
 		gateway:     gateway,
 		secretFiles: map[string]string{},
 		services:    map[string]serviceContext{},
+		filters:     map[extv1alpha1.FilterType]map[string]string{},
 	}
 
 	if processor.UseEndpointSlices() {
@@ -58,6 +62,7 @@ func (c *ConfigGenerator) Generate() fgwv2.Config {
 	cfg := &fgwv2.ConfigSpec{
 		Resources: c.processResources(),
 		Secrets:   c.secretFiles,
+		Filters:   c.filters,
 	}
 	cfg.Version = utils.SimpleHash(cfg)
 
@@ -76,6 +81,18 @@ func (c *ConfigGenerator) processResources() []interface{} {
 	resources = append(resources, c.processBackends()...)
 
 	for _, policy := range c.backendTLSPolicies {
+		resources = append(resources, policy)
+	}
+
+	for _, policy := range c.backendLBPolicies {
+		resources = append(resources, policy)
+	}
+
+	for _, policy := range c.healthCheckPolicies {
+		resources = append(resources, policy)
+	}
+
+	for _, policy := range c.retryPolicies {
 		resources = append(resources, policy)
 	}
 

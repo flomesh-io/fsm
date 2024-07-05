@@ -3,6 +3,8 @@ package fgw
 import (
 	"fmt"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	"k8s.io/utils/ptr"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,10 +19,10 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []interface{}                  `json:"resources" hash:"set"`
-	Secrets   map[string]string              `json:"secrets"`
-	Filters   map[string][]map[string]string `json:"filters"`
-	Version   string                         `json:"version" hash:"ignore"`
+	Resources []interface{}                                `json:"resources" hash:"set"`
+	Secrets   map[string]string                            `json:"secrets"`
+	Filters   map[extv1alpha1.FilterType]map[string]string `json:"filters"`
+	Version   string                                       `json:"version" hash:"ignore"`
 }
 
 func (c *ConfigSpec) GetVersion() string {
@@ -470,4 +472,12 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 	} else {
 		p.Spec.Ports = []gwpav1alpha2.PortHealthCheck{port}
 	}
+}
+
+// ---
+
+type Filter struct {
+	Type   extv1alpha1.FilterType `json:"type"`
+	Name   string                 `json:"name"`
+	Script string                 `json:"script"`
 }

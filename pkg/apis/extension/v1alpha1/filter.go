@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // FilterType defines the type of filter
@@ -18,11 +17,6 @@ const (
 
 // FilterSpec defines the desired state of Filter
 type FilterSpec struct {
-	// TargetRefs identifies an API object to attach the Filter to. Usually is the Gateway.
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:MaxItems=16
-	TargetRefs []gwv1.LocalObjectReference `json:"targetRefs"`
-
 	// Type is the type of filter
 	// +kubebuilder:default=http
 	// +kubebuilder:validation:Enum=http;tcp
@@ -93,13 +87,9 @@ const (
 	FilterReasonTargetNotFound FilterConditionReason = "TargetNotFound"
 )
 
-// FilterAncestorStatus describes the status of a filter with respect to an
-// associated Ancestor(Gateway).
-type FilterAncestorStatus struct {
-	// AncestorRef corresponds with a ParentRef in the spec that this
-	// FilterStatus struct describes the status of.
-	AncestorRef gwv1.ParentReference `json:"ancestorRef"`
-
+// FilterStatus defines the common attributes that all filters should include within
+// their status.
+type FilterStatus struct {
 	// Conditions describes the status of the Filter with respect to the given Ancestor.
 	//
 	// +listType=map
@@ -107,16 +97,6 @@ type FilterAncestorStatus struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=8
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-
-// FilterStatus defines the common attributes that all filters should include within
-// their status.
-type FilterStatus struct {
-	// Ancestors is a list of ancestor resources (usually Gateways) that are
-	// associated with the filter, and the status of the filter with respect to
-	// each ancestor.
-	// +kubebuilder:validation:MaxItems=16
-	Ancestors []FilterAncestorStatus `json:"ancestors"`
 }
 
 // +kubebuilder:object:root=true

@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
@@ -142,6 +144,21 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 					svcPortName: *svcPort,
 				}
 			}
+		case gwv1.GRPCRouteFilterExtensionRef:
+			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
+
+			if filter.Type != extv1alpha1.FilterTypeHTTP {
+				continue
+			}
+
+			filters = append(filters, fgwv2.GRPCRouteFilter{
+				Type: gwv1.GRPCRouteFilterType(filter.Name),
+			})
+
+			if c.filters[filter.Type] == nil {
+				c.filters[filter.Type] = map[string]string{}
+			}
+			c.filters[filter.Type][filter.Name] = filter.Script
 		default:
 			f2 := fgwv2.GRPCRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {

@@ -248,24 +248,43 @@ func (c *GatewayProcessor) IsConfigMapReferred(cm client.ObjectKey) bool {
 	return len(policies.Items) > 0
 }
 
-// IsEffectiveFilter checks if the configMap is referred by Gateway to store the configuration of gateway or CA certificates
+// IsFilterReferred checks if the configMap is referred by Gateway to store the configuration of gateway or CA certificates
 
-func (c *GatewayProcessor) IsEffectiveFilter(filter client.ObjectKey, targetRefs []gwv1.LocalObjectReference) bool {
-	gateways := gwutils.GetActiveGatewaysInNamespace(c.client, filter.Namespace)
-
-	if len(gateways) == 0 {
-		return false
-	}
-
-	for _, parentRef := range targetRefs {
-		for _, gw := range gateways {
-			if gwutils.IsLocalObjRefToGateway(parentRef, client.ObjectKeyFromObject(gw)) {
-				return true
-			}
+func (c *GatewayProcessor) IsFilterReferred(filter client.ObjectKey) bool {
+	for _, fn := range []func(client.ObjectKey) bool{
+		c.isFilterReferredByHTTPRoute,
+		c.isFilterReferredByGRPCRoute,
+	} {
+		if fn(filter) {
+			return true
 		}
 	}
 
 	return false
+}
+
+func (c *GatewayProcessor) isFilterReferredByHTTPRoute(filter client.ObjectKey) bool {
+	list := &gwv1.HTTPRouteList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ExtensionFilterHTTPRouteIndex, filter.String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+		return false
+	}
+
+	return len(list.Items) > 0
+}
+
+func (c *GatewayProcessor) isFilterReferredByGRPCRoute(filter client.ObjectKey) bool {
+	list := &gwv1.GRPCRouteList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ExtensionFilterGRPCRouteIndex, filter.String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		return false
+	}
+
+	return len(list.Items) > 0
 }
 
 func (c *GatewayProcessor) IsHeadlessService(key client.ObjectKey) bool {

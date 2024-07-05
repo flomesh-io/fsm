@@ -27,6 +27,8 @@ package v1
 import (
 	"context"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -289,6 +291,10 @@ func addGRPCRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.ExtensionFilterGRPCRouteIndex, extensionFilterGRPCRouteIndexFunc); err != nil {
+		return err
+	}
+
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.BackendGRPCRouteIndex, backendGRPCRouteIndexFunc); err != nil {
 		return err
 	}
@@ -316,6 +322,45 @@ func gatewayGRPCRouteIndexFunc(obj client.Object) []string {
 		}
 	}
 	return gateways
+}
+
+func extensionFilterGRPCRouteIndexFunc(obj client.Object) []string {
+	grpcRoute := obj.(*gwv1.GRPCRoute)
+
+	var filters []string
+	for _, rule := range grpcRoute.Spec.Rules {
+		for _, filter := range rule.Filters {
+			if filter.Type != gwv1.GRPCRouteFilterExtensionRef {
+				continue
+			}
+			if filter.ExtensionRef.Kind == constants.GatewayAPIExtensionFilterKind && filter.ExtensionRef.Group == extv1alpha1.GroupName {
+				filters = append(filters,
+					types.NamespacedName{
+						Namespace: grpcRoute.Namespace,
+						Name:      string(filter.ExtensionRef.Name),
+					}.String(),
+				)
+			}
+		}
+
+		for _, bk := range rule.BackendRefs {
+			for _, filter := range bk.Filters {
+				if filter.Type != gwv1.GRPCRouteFilterExtensionRef {
+					continue
+				}
+				if filter.ExtensionRef.Kind == constants.GatewayAPIExtensionFilterKind && filter.ExtensionRef.Group == extv1alpha1.GroupName {
+					filters = append(filters,
+						types.NamespacedName{
+							Namespace: grpcRoute.Namespace,
+							Name:      string(filter.ExtensionRef.Name),
+						}.String(),
+					)
+				}
+			}
+		}
+	}
+
+	return filters
 }
 
 func backendGRPCRouteIndexFunc(obj client.Object) []string {
