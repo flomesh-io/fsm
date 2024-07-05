@@ -193,3 +193,6 @@ generate_client "namespacedingress" "v1alpha1"
 
 echo "##### Generating gateway.flomesh.io PolicyAttachment client ######"
 generate_client "policyattachment" "v1alpha1,v1alpha2"
+
+echo "##### Generating extension.gateway.flomesh.io extension client ######"
+generate_client "extension" "v1alpha1"

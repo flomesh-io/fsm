@@ -17,9 +17,10 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []interface{}     `json:"resources" hash:"set"`
-	Secrets   map[string]string `json:"secrets"`
-	Version   string            `json:"version" hash:"ignore"`
+	Resources []interface{}                  `json:"resources" hash:"set"`
+	Secrets   map[string]string              `json:"secrets"`
+	Filters   map[string][]map[string]string `json:"filters"`
+	Version   string                         `json:"version" hash:"ignore"`
 }
 
 func (c *ConfigSpec) GetVersion() string {
