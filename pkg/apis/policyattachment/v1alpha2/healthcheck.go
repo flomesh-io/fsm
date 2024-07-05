@@ -8,6 +8,8 @@ import (
 
 // HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
 type HealthCheckPolicySpec struct {
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the policy is applied
 	TargetRefs []gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
 
