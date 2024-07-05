@@ -154,6 +154,17 @@ rules:
     resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status", "backendlbpolicies/status", "backendtlspolicies/status" ]
     verbs: [ "get", "patch", "update" ]
 
+  # GatewayAPI Extension
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters/status"]
+    verbs: [ "get", "patch", "update" ]
+
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
     resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies" ]
