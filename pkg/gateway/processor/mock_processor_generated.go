@@ -119,6 +119,20 @@ func (mr *MockProcessorMockRecorder) IsEffectiveTargetRef(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEffectiveTargetRef", reflect.TypeOf((*MockProcessor)(nil).IsEffectiveTargetRef), arg0, arg1)
 }
 
+// IsFilterReferred mocks base method.
+func (m *MockProcessor) IsFilterReferred(arg0 types.NamespacedName) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFilterReferred", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFilterReferred indicates an expected call of IsFilterReferred.
+func (mr *MockProcessorMockRecorder) IsFilterReferred(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFilterReferred", reflect.TypeOf((*MockProcessor)(nil).IsFilterReferred), arg0)
+}
+
 // IsHeadlessService mocks base method.
 func (m *MockProcessor) IsHeadlessService(arg0 types.NamespacedName) bool {
 	m.ctrl.T.Helper()
@@ -131,6 +145,34 @@ func (m *MockProcessor) IsHeadlessService(arg0 types.NamespacedName) bool {
 func (mr *MockProcessorMockRecorder) IsHeadlessService(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeadlessService", reflect.TypeOf((*MockProcessor)(nil).IsHeadlessService), arg0)
+}
+
+// IsRoutableLocalTargetServices mocks base method.
+func (m *MockProcessor) IsRoutableLocalTargetServices(arg0 client.Object, arg1 []v1alpha2.LocalPolicyTargetReference) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRoutableLocalTargetServices", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRoutableLocalTargetServices indicates an expected call of IsRoutableLocalTargetServices.
+func (mr *MockProcessorMockRecorder) IsRoutableLocalTargetServices(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableLocalTargetServices", reflect.TypeOf((*MockProcessor)(nil).IsRoutableLocalTargetServices), arg0, arg1)
+}
+
+// IsRoutableNamespacedTargetServices mocks base method.
+func (m *MockProcessor) IsRoutableNamespacedTargetServices(arg0 client.Object, arg1 []v1alpha2.NamespacedPolicyTargetReference) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRoutableNamespacedTargetServices", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRoutableNamespacedTargetServices indicates an expected call of IsRoutableNamespacedTargetServices.
+func (mr *MockProcessorMockRecorder) IsRoutableNamespacedTargetServices(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableNamespacedTargetServices", reflect.TypeOf((*MockProcessor)(nil).IsRoutableNamespacedTargetServices), arg0, arg1)
 }
 
 // IsRoutableService mocks base method.
@@ -159,20 +201,6 @@ func (m *MockProcessor) IsRoutableTargetService(arg0 client.Object, arg1 v1alpha
 func (mr *MockProcessorMockRecorder) IsRoutableTargetService(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableTargetService", reflect.TypeOf((*MockProcessor)(nil).IsRoutableTargetService), arg0, arg1)
-}
-
-// IsRoutableTargetServices mocks base method.
-func (m *MockProcessor) IsRoutableTargetServices(arg0 client.Object, arg1 []v1alpha2.NamespacedPolicyTargetReference) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRoutableNamespacedTargetServices", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsRoutableTargetServices indicates an expected call of IsRoutableTargetServices.
-func (mr *MockProcessorMockRecorder) IsRoutableTargetServices(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableNamespacedTargetServices", reflect.TypeOf((*MockProcessor)(nil).IsRoutableTargetServices), arg0, arg1)
 }
 
 // IsSecretReferred mocks base method.
