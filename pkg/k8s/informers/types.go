@@ -142,6 +142,8 @@ const (
 	InformerKeyHealthCheckPolicyV1alpha2 InformerKey = "HealthCheckPolicy-v1alpha2"
 	// InformerKeyRetryPolicyV1alpha2 is the InformerKey for a RetryPolicy informer
 	InformerKeyRetryPolicyV1alpha2 InformerKey = "RetryPolicy-v1alpha2"
+	// InformerKeyFilter is the InformerKey for a Filter informer
+	InformerKeyFilter InformerKey = "Filter"
 )
 
 const (
@@ -243,4 +245,7 @@ const (
 
 	// BackendLBPoliciesResourceType is the type used to represent the backend lb policies resource
 	BackendLBPoliciesResourceType ResourceType = "backendlbs"
+
+	// FiltersResourceType is the type used to represent the filters resource
+	FiltersResourceType ResourceType = "filters"
 )

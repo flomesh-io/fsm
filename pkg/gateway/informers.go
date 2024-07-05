@@ -8,6 +8,8 @@ import (
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
@@ -53,6 +55,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyHealthCheckPolicyV1alpha2)
 	case *gwpav1alpha2.RetryPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRetryPolicyV1alpha2)
+	case *extv1alpha1.Filter:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyFilter)
 	}
 
 	return nil
@@ -168,6 +172,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.RetryPolicyAttachmentAdded,
 			Update: announcements.RetryPolicyAttachmentUpdated,
 			Delete: announcements.RetryPolicyAttachmentDeleted,
+		}
+	case fsminformers.InformerKeyFilter:
+		return &k8s.EventTypes{
+			Add:    announcements.FilterAdded,
+			Update: announcements.FilterUpdated,
+			Delete: announcements.FilterDeleted,
 		}
 	}
 

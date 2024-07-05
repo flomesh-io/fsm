@@ -11,8 +11,8 @@ import (
 // EndpointSlicesTrigger is responsible for processing EndpointSlices
 type EndpointSlicesTrigger struct{}
 
-// Insert adds the EndpointSlice object to the cache and returns true if the cache was modified
-func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache processor.Processor) bool {
+// Insert adds the EndpointSlice object to the processor and returns true if the processor was modified
+func (p *EndpointSlicesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -30,11 +30,11 @@ func (p *EndpointSlicesTrigger) Insert(obj interface{}, cache processor.Processo
 
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: svcName}
 
-	return cache.IsRoutableService(svcKey)
+	return processor.IsRoutableService(svcKey)
 }
 
-// Delete removes the EndpointSlice object from the cache and returns true if the cache was modified
-func (p *EndpointSlicesTrigger) Delete(obj interface{}, cache processor.Processor) bool {
+// Delete removes the EndpointSlice object from the processor and returns true if the processor was modified
+func (p *EndpointSlicesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	eps, ok := obj.(*discoveryv1.EndpointSlice)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
@@ -48,5 +48,5 @@ func (p *EndpointSlicesTrigger) Delete(obj interface{}, cache processor.Processo
 
 	svcKey := client.ObjectKey{Namespace: eps.Namespace, Name: owner.Name}
 
-	return cache.IsRoutableService(svcKey)
+	return processor.IsRoutableService(svcKey)
 }

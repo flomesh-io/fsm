@@ -9,7 +9,7 @@ import (
 // ReferenceGrantTrigger is responsible for processing ReferenceGrant objects
 type ReferenceGrantTrigger struct{}
 
-// Insert adds a ReferenceGrant to the cache and returns true if the ReferenceGrant is effective
+// Insert adds a ReferenceGrant to the processor and returns true if the ReferenceGrant is effective
 func (p *ReferenceGrantTrigger) Insert(obj interface{}, _ processor.Processor) bool {
 	_, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
@@ -20,7 +20,7 @@ func (p *ReferenceGrantTrigger) Insert(obj interface{}, _ processor.Processor) b
 	return true
 }
 
-// Delete removes a ReferenceGrant from the cache and returns true if the ReferenceGrant was found
+// Delete removes a ReferenceGrant from the processor and returns true if the ReferenceGrant was found
 func (p *ReferenceGrantTrigger) Delete(obj interface{}, _ processor.Processor) bool {
 	_, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {

@@ -135,16 +135,6 @@ func IsTargetRefToGVK(targetRef gwv1alpha2.NamespacedPolicyTargetReference, gvk 
 	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
 }
 
-// ObjectKey returns the object key for the given object
-func ObjectKey(obj client.Object) client.ObjectKey {
-	ns := obj.GetNamespace()
-	if ns == "" {
-		ns = metav1.NamespaceDefault
-	}
-
-	return client.ObjectKey{Namespace: ns, Name: obj.GetName()}
-}
-
 // GroupPointer returns a pointer to the given group
 func GroupPointer(group string) *gwv1.Group {
 	result := gwv1.Group(group)

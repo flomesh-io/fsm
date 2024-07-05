@@ -27,6 +27,7 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	cctx "github.com/flomesh-io/fsm/pkg/context"
 	gwprocessorv2 "github.com/flomesh-io/fsm/pkg/gateway/processor/v2"
@@ -94,6 +95,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyBackendTLSPolicy:          &gwv1alpha3.BackendTLSPolicy{},
 		fsminformers.InformerKeyBackendLBPolicy:           &gwv1alpha2.BackendLBPolicy{},
 		fsminformers.InformerKeyNamespace:                 &corev1.Namespace{},
+		fsminformers.InformerKeyFilter:                    &extv1alpha1.Filter{},
 	}
 
 	if version.IsEndpointSliceEnabled(ctx.KubeClient) {

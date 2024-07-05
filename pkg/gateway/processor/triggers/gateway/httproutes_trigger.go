@@ -9,24 +9,24 @@ import (
 // HTTPRoutesTrigger is responsible for processing HTTPRoute objects
 type HTTPRoutesTrigger struct{}
 
-// Insert adds a HTTPRoute to the cache and returns true if the route is effective
-func (p *HTTPRoutesTrigger) Insert(obj interface{}, cache processor.Processor) bool {
+// Insert adds a HTTPRoute to the processor and returns true if the route is effective
+func (p *HTTPRoutesTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1.HTTPRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	return cache.IsEffectiveRoute(route.Spec.ParentRefs)
+	return processor.IsEffectiveRoute(route.Spec.ParentRefs)
 }
 
-// Delete removes a HTTPRoute from the cache and returns true if the route was found
-func (p *HTTPRoutesTrigger) Delete(obj interface{}, cache processor.Processor) bool {
+// Delete removes a HTTPRoute from the processor and returns true if the route was found
+func (p *HTTPRoutesTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	route, ok := obj.(*gwv1.HTTPRoute)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	return cache.IsEffectiveRoute(route.Spec.ParentRefs)
+	return processor.IsEffectiveRoute(route.Spec.ParentRefs)
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	gatewaytrigger "github.com/flomesh-io/fsm/pkg/gateway/processor/triggers/gateway"
@@ -74,6 +76,7 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.RetryPoliciesResourceType:       &policytriggerv2.RetryPoliciesTrigger{},
 			informers.BackendLBPoliciesResourceType:   &policytriggerv2.BackendLBPoliciesTrigger{},
 			informers.BackendTLSPoliciesResourceType:  &policytriggerv2.BackendTLSPoliciesTrigger{},
+			informers.FiltersResourceType:             &gatewaytrigger.FilterTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -139,6 +142,8 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.BackendLBPoliciesResourceType]
 	case *gwv1alpha3.BackendTLSPolicy:
 		return c.triggers[informers.BackendTLSPoliciesResourceType]
+	case *extv1alpha1.Filter:
+		return c.triggers[informers.FiltersResourceType]
 	}
 
 	return nil

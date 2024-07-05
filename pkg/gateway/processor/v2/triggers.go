@@ -248,6 +248,20 @@ func (c *GatewayProcessor) IsConfigMapReferred(cm client.ObjectKey) bool {
 	return len(policies.Items) > 0
 }
 
+// IsFilterReferred checks if the configMap is referred by Gateway to store the configuration of gateway or CA certificates
+
+func (c *GatewayProcessor) IsFilterReferred(filter client.ObjectKey) bool {
+	list := &gwv1.GatewayList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.FilterGatewayIndex, filter.String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list Gateways: %v", err)
+		return false
+	}
+
+	return len(list.Items) > 0
+}
+
 func (c *GatewayProcessor) IsHeadlessService(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
@@ -267,12 +281,28 @@ func (c *GatewayProcessor) getServiceFromCache(key client.ObjectKey) (*corev1.Se
 	return obj, nil
 }
 
-func (c *GatewayProcessor) IsRoutableTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool {
+func (c *GatewayProcessor) IsRoutableNamespacedTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	for _, targetRef := range targetRefs {
 		if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
 			(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
-			if c.IsRoutableService(client.ObjectKey{
+			if c.IsRoutableService(types.NamespacedName{
 				Namespace: gwutils.NamespaceDerefOr(targetRef.Namespace, policy.GetNamespace()),
+				Name:      string(targetRef.Name),
+			}) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (c *GatewayProcessor) IsRoutableLocalTargetServices(policy client.Object, targetRefs []gwv1alpha2.LocalPolicyTargetReference) bool {
+	for _, targetRef := range targetRefs {
+		if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
+			(targetRef.Group == constants.FlomeshMCSAPIGroup && targetRef.Kind == constants.FlomeshAPIServiceImportKind) {
+			if c.IsRoutableService(types.NamespacedName{
+				Namespace: policy.GetNamespace(),
 				Name:      string(targetRef.Name),
 			}) {
 				return true

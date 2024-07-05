@@ -49,9 +49,11 @@ type Processor interface {
 	IsHeadlessService(key client.ObjectKey) bool
 	IsEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool
 	IsRoutableTargetService(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool
-	IsRoutableTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool
+	IsRoutableNamespacedTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool
+	IsRoutableLocalTargetServices(policy client.Object, targetRefs []gwv1alpha2.LocalPolicyTargetReference) bool
 	IsConfigMapReferred(cm client.ObjectKey) bool
 	IsSecretReferred(secret client.ObjectKey) bool
+	IsFilterReferred(filter client.ObjectKey) bool
 	UseEndpointSlices() bool
 }
 

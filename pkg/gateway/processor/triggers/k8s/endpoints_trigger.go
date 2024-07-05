@@ -2,44 +2,44 @@ package triggers
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // EndpointsTrigger is responsible for processing Endpoints objects
 type EndpointsTrigger struct{}
 
-// Insert adds the Endpoints object to the cache and returns true if the cache was modified
-func (p *EndpointsTrigger) Insert(obj interface{}, cache processor.Processor) bool {
+// Insert adds the Endpoints object to the processor and returns true if the processor was modified
+func (p *EndpointsTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	key := utils.ObjectKey(ep)
+	key := client.ObjectKeyFromObject(ep)
 
-	if cache.UseEndpointSlices() {
-		return cache.IsHeadlessService(key) && cache.IsRoutableService(key)
+	if processor.UseEndpointSlices() {
+		return processor.IsHeadlessService(key) && processor.IsRoutableService(key)
 	} else {
-		return cache.IsRoutableService(key)
+		return processor.IsRoutableService(key)
 	}
 }
 
-// Delete removes the Endpoints object from the cache and returns true if the cache was modified
-func (p *EndpointsTrigger) Delete(obj interface{}, cache processor.Processor) bool {
+// Delete removes the Endpoints object from the processor and returns true if the processor was modified
+func (p *EndpointsTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	ep, ok := obj.(*corev1.Endpoints)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	key := utils.ObjectKey(ep)
+	key := client.ObjectKeyFromObject(ep)
 
-	if cache.UseEndpointSlices() {
-		return cache.IsHeadlessService(key) && cache.IsRoutableService(key)
+	if processor.UseEndpointSlices() {
+		return processor.IsHeadlessService(key) && processor.IsRoutableService(key)
 	} else {
-		return cache.IsRoutableService(key)
+		return processor.IsRoutableService(key)
 	}
 }

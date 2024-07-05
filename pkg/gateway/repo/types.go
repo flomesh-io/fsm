@@ -22,18 +22,18 @@ type Server struct {
 	workQueues *workerpool.WorkerPool
 	//kubeController  k8s.Controller
 	msgBroker *messaging.Broker
-	cache     processor.Processor
+	processor processor.Processor
 	//retryProxiesJob func()
 }
 
 // NewServer creates a new gateway server
-func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, cache processor.Processor) *Server {
+func NewServer(cfg configurator.Configurator, msgBroker *messaging.Broker, processor processor.Processor) *Server {
 	return &Server{
 		//fsmNamespace: fsmNamespace,
 		cfg: cfg,
 		//certManager: certManager,
 		workQueues: workerpool.NewWorkerPool(workerPoolSize),
 		msgBroker:  msgBroker,
-		cache:      cache,
+		processor:  processor,
 	}
 }

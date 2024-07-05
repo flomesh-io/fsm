@@ -164,7 +164,7 @@ func (mr *MockProcessorMockRecorder) IsRoutableTargetService(arg0, arg1 interfac
 // IsRoutableTargetServices mocks base method.
 func (m *MockProcessor) IsRoutableTargetServices(arg0 client.Object, arg1 []v1alpha2.NamespacedPolicyTargetReference) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRoutableTargetServices", arg0, arg1)
+	ret := m.ctrl.Call(m, "IsRoutableNamespacedTargetServices", arg0, arg1)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
@@ -172,7 +172,7 @@ func (m *MockProcessor) IsRoutableTargetServices(arg0 client.Object, arg1 []v1al
 // IsRoutableTargetServices indicates an expected call of IsRoutableTargetServices.
 func (mr *MockProcessorMockRecorder) IsRoutableTargetServices(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableTargetServices", reflect.TypeOf((*MockProcessor)(nil).IsRoutableTargetServices), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRoutableNamespacedTargetServices", reflect.TypeOf((*MockProcessor)(nil).IsRoutableTargetServices), arg0, arg1)
 }
 
 // IsSecretReferred mocks base method.

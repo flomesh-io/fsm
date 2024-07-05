@@ -627,6 +627,7 @@ const (
 	GatewayUDPRouteIndex                         = "gatewayUDPRouteIndex"
 	SecretGatewayIndex                           = "secretGatewayIndex"
 	ConfigMapGatewayIndex                        = "configMapGatewayIndex"
+	FilterGatewayIndex                           = "filterGatewayIndex"
 	CrossNamespaceSecretNamespaceGatewayIndex    = "crossNamespaceSecretNamespaceGatewayIndex"
 	CrossNamespaceConfigMapNamespaceGatewayIndex = "crossNamespaceConfigMapNamespaceGatewayIndex"
 	TargetKindRefGrantIndex                      = "targetRefGrantRouteIndex"

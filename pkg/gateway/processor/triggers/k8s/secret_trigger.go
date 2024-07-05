@@ -26,36 +26,32 @@ package triggers
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
-	"github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 // SecretTrigger is a processor for Secret objects
 type SecretTrigger struct{}
 
-// Insert adds a Secret object to the cache and returns true if the cache is changed
-func (p *SecretTrigger) Insert(obj interface{}, cache processor.Processor) bool {
+// Insert adds a Secret object to the processor and returns true if the processor is changed
+func (p *SecretTrigger) Insert(obj interface{}, processor processor.Processor) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	key := utils.ObjectKey(secret)
-
-	return cache.IsSecretReferred(key)
+	return processor.IsSecretReferred(client.ObjectKeyFromObject(secret))
 }
 
-// Delete removes a Secret object from the cache and returns true if the cache is changed
-func (p *SecretTrigger) Delete(obj interface{}, cache processor.Processor) bool {
+// Delete removes a Secret object from the processor and returns true if the processor is changed
+func (p *SecretTrigger) Delete(obj interface{}, processor processor.Processor) bool {
 	secret, ok := obj.(*corev1.Secret)
 	if !ok {
 		log.Error().Msgf("unexpected object type %T", obj)
 		return false
 	}
 
-	key := utils.ObjectKey(secret)
-
-	return cache.IsSecretReferred(key)
+	return processor.IsSecretReferred(client.ObjectKeyFromObject(secret))
 }
