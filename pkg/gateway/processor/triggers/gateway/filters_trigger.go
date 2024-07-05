@@ -1,8 +1,9 @@
 package gateway
 
 import (
-	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
 )
