@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -11,7 +13,6 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -57,15 +58,15 @@ func (c *ConfigGenerator) processTLSRoutes() []interface{} {
 	return resources
 }
 
-func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder status.RouteParentStatusObject) (*v2.TLSRoute, []interface{}) {
-	t2 := &v2.TLSRoute{}
+func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder status.RouteParentStatusObject) (*fgwv2.TLSRoute, []interface{}) {
+	t2 := &fgwv2.TLSRoute{}
 	if err := gwutils.DeepCopy(t2, tlsRoute); err != nil {
 		log.Error().Msgf("Failed to copy TLSRoute: %v", err)
 		return nil, nil
 	}
 
 	backends := make([]interface{}, 0)
-	t2.Spec.Rules = make([]v2.TLSRouteRule, 0)
+	t2.Spec.Rules = make([]fgwv2.TLSRouteRule, 0)
 	for _, rule := range tlsRoute.Spec.Rules {
 		rule := rule
 		r2, bks := c.toV2TLSRouteRule(tlsRoute, rule, holder)
@@ -82,8 +83,8 @@ func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder sta
 	return t2, backends
 }
 
-func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, holder status.RouteParentStatusObject) (*v2.TLSRouteRule, []interface{}) {
-	r2 := &v2.TLSRouteRule{}
+func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, holder status.RouteParentStatusObject) (*fgwv2.TLSRouteRule, []interface{}) {
+	r2 := &fgwv2.TLSRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
 		return nil, nil
@@ -99,16 +100,16 @@ func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule g
 	return r2, bks
 }
 
-func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, _ status.RouteParentStatusObject) ([]v2.BackendRef, []interface{}) {
-	backendRefs := make([]v2.BackendRef, 0)
+func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, _ status.RouteParentStatusObject) ([]fgwv2.BackendRef, []interface{}) {
+	backendRefs := make([]fgwv2.BackendRef, 0)
 	backends := make([]interface{}, 0)
 
 	for _, backend := range rule.BackendRefs {
 		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
 
-		backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(name, backendWeight(backend)))
+		backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(name, backendWeight(backend)))
 
-		backends = append(backends, v2.NewBackend(name, []v2.BackendTarget{
+		backends = append(backends, fgwv2.NewBackend(name, []fgwv2.BackendTarget{
 			{
 				Address: string(backend.Name),
 				Port:    tlsBackendPort(backend.Port),

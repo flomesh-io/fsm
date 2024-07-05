@@ -3,16 +3,17 @@ package v2
 import (
 	"fmt"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	corev1 "k8s.io/api/core/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processGateway() *v2.Gateway {
-	g2 := &v2.Gateway{}
+func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
+	g2 := &fgwv2.Gateway{}
 
 	if err := gwutils.DeepCopy(g2, c.gateway); err != nil {
 		log.Error().Msgf("Failed to copy gateway: %v", err)
@@ -20,9 +21,9 @@ func (c *ConfigGenerator) processGateway() *v2.Gateway {
 	}
 
 	// replace listeners with valid listeners
-	g2.Spec.Listeners = make([]v2.Listener, 0)
+	g2.Spec.Listeners = make([]fgwv2.Listener, 0)
 	for _, l := range gwutils.GetValidListenersForGateway(c.gateway) {
-		v2l := &v2.Listener{
+		v2l := &fgwv2.Listener{
 			Name:     l.Name,
 			Hostname: l.Hostname,
 			Port:     l.Port,
@@ -30,14 +31,14 @@ func (c *ConfigGenerator) processGateway() *v2.Gateway {
 		}
 
 		if l.TLS != nil {
-			v2l.TLS = &v2.GatewayTLSConfig{
+			v2l.TLS = &fgwv2.GatewayTLSConfig{
 				Mode:         l.TLS.Mode,
 				Certificates: []map[string]string{},
 				Options:      l.TLS.Options,
 			}
 
 			if l.TLS.FrontendValidation != nil {
-				v2l.TLS.FrontendValidation = &v2.FrontendTLSValidation{CACertificates: []map[string]string{}}
+				v2l.TLS.FrontendValidation = &fgwv2.FrontendTLSValidation{CACertificates: []map[string]string{}}
 			}
 		}
 
@@ -79,7 +80,7 @@ func (c *ConfigGenerator) tls(l gwtypes.Listener) bool {
 	return false
 }
 
-func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *v2.Listener) {
+func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Listener) {
 	for index, ref := range l.TLS.CertificateRefs {
 		secret, err := c.secretRefToSecret(c.gateway, ref)
 
@@ -108,7 +109,7 @@ func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *v2.Listen
 	}
 }
 
-func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *v2.Listener) {
+func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *fgwv2.Listener) {
 	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
 		for index, ref := range l.TLS.FrontendValidation.CACertificateRefs {
 			ca := c.objectRefToCACertificate(c.gateway, ref)

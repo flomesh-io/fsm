@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 )
 
@@ -41,13 +42,13 @@ func (c *ConfigGenerator) processBackends() []interface{} {
 		//    enricher.Enrich(svcPortName, svcCfg)
 		//}
 
-		backends = append(backends, v2.NewBackend(svcPortName, targets))
+		backends = append(backends, fgwv2.NewBackend(svcPortName, targets))
 	}
 
 	return backends
 }
 
-func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) []v2.BackendTarget {
+func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
 	// If the Service is headless, use the Endpoints to get the list of backends
 	if k8s.IsHeadlessService(*svc) {
 		return c.upstreamsByEndpoints(svc, port)
@@ -56,7 +57,7 @@ func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) [
 	return c.upstreams(svc, port)
 }
 
-func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32) []v2.BackendTarget {
+func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
 	eps := &corev1.Endpoints{}
 	if err := c.client.Get(context.TODO(), client.ObjectKeyFromObject(svc), eps); err != nil {
 		log.Error().Msgf("Failed to get Endpoints of Service %s/%s: %s", svc.Namespace, svc.Name, err)
@@ -86,7 +87,7 @@ func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32)
 	return toFGWBackendTargets(endpointSet)
 }
 
-func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) []v2.BackendTarget {
+func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			discoveryv1.LabelServiceName: svc.Name,

@@ -9,7 +9,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,7 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -31,10 +30,10 @@ type ConfigGenerator struct {
 	secretFiles         map[string]string
 	services            map[string]serviceContext
 	upstreams           calculateBackendTargetsFunc
-	backendTLSPolicies  map[string]*v2.BackendTLSPolicy
-	backendLBPolicies   map[string]*v2.BackendLBPolicy
-	healthCheckPolicies map[string]*v2.HealthCheckPolicy
-	retryPolicies       map[string]*v2.RetryPolicy
+	backendTLSPolicies  map[string]*fgwv2.BackendTLSPolicy
+	backendLBPolicies   map[string]*fgwv2.BackendLBPolicy
+	healthCheckPolicies map[string]*fgwv2.HealthCheckPolicy
+	retryPolicies       map[string]*fgwv2.RetryPolicy
 }
 
 func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache) processor.Generator {
@@ -55,8 +54,8 @@ func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Proces
 	return p
 }
 
-func (c *ConfigGenerator) Generate() fgw.Config {
-	cfg := &v2.ConfigSpec{
+func (c *ConfigGenerator) Generate() fgwv2.Config {
+	cfg := &fgwv2.ConfigSpec{
 		Resources: c.processResources(),
 		Secrets:   c.secretFiles,
 	}
@@ -83,7 +82,7 @@ func (c *ConfigGenerator) processResources() []interface{} {
 	return resources
 }
 
-func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *v2.ServicePortName {
+func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
 	return gwutils.BackendRefToServicePortName(c.client, route, backendRef, rps)
 }
 

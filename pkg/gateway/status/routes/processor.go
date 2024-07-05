@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"strings"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -37,8 +39,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 
 	"github.com/rs/zerolog/log"
 
@@ -283,7 +283,7 @@ func (p *RouteStatusProcessor) processHTTPRouteStatus(route *gwv1.HTTPRoute, rps
 	return true
 }
 
-func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReferenceWithSectionName{
 		LocalPolicyTargetReference: gwv1alpha2.LocalPolicyTargetReference{
 			Group: ptr.Deref(backendRef.Group, corev1.GroupName),
@@ -359,7 +359,7 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 	})
 }
 
-func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, _ *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, _ *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
 	targetRef := gwv1alpha2.LocalPolicyTargetReference{
 		Group: ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:  ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -397,7 +397,7 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 	})
 }
 
-func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
 	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
 		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -436,7 +436,7 @@ func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Objec
 	})
 }
 
-func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName, routeParentRef gwv1.ParentReference) {
+func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
 	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
 		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -475,6 +475,6 @@ func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, bac
 	})
 }
 
-func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *v2.ServicePortName {
+func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *fgwv2.ServicePortName {
 	return gwutils.BackendRefToServicePortName(p.client, route, backendRef, rps)
 }

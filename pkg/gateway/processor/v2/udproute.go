@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"k8s.io/utils/ptr"
 
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -15,7 +17,6 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -57,14 +58,14 @@ func (c *ConfigGenerator) processUDPRoutes() []interface{} {
 	return routes
 }
 
-func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder status.RouteParentStatusObject) *v2.UDPRoute {
-	u2 := &v2.UDPRoute{}
+func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder status.RouteParentStatusObject) *fgwv2.UDPRoute {
+	u2 := &fgwv2.UDPRoute{}
 	if err := gwutils.DeepCopy(u2, udpRoute); err != nil {
 		log.Error().Msgf("Failed to copy UDPRoute: %v", err)
 		return nil
 	}
 
-	u2.Spec.Rules = make([]v2.UDPRouteRule, 0)
+	u2.Spec.Rules = make([]fgwv2.UDPRouteRule, 0)
 	for _, rule := range udpRoute.Spec.Rules {
 		rule := rule
 		if r2 := c.toV2UDPRouteRule(udpRoute, rule, holder); r2 != nil {
@@ -79,8 +80,8 @@ func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder sta
 	return u2
 }
 
-func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) *v2.UDPRouteRule {
-	r2 := &v2.UDPRouteRule{}
+func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) *fgwv2.UDPRouteRule {
+	r2 := &fgwv2.UDPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy UDPRouteRule: %v", err)
 		return nil
@@ -94,12 +95,12 @@ func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule g
 	return r2
 }
 
-func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) []v2.BackendRef {
-	backendRefs := make([]v2.BackendRef, 0)
+func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) []fgwv2.BackendRef {
+	backendRefs := make([]fgwv2.BackendRef, 0)
 	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference, holder); svcPort != nil {
-			backendRefs = append(backendRefs, v2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
+			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
 
 			c.services[svcPort.String()] = serviceContext{
 				svcPortName: *svcPort,

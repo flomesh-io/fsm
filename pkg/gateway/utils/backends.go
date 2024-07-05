@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,13 +25,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
 // BackendRefToServicePortName converts a BackendRef to a ServicePortName for a given Route if the referent is a Kubernetes Service and the port is valid.
-func BackendRefToServicePortName(client cache.Cache, route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *v2.ServicePortName {
+func BackendRefToServicePortName(client cache.Cache, route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
 	if !IsValidBackendRefToGroupKindOfService(backendRef) {
 		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *backendRef.Group, *backendRef.Kind)
 		rps.AddCondition(
@@ -152,7 +153,7 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 		fmt.Sprintf("References of %s is resolved", gvk.Kind),
 	)
 
-	return &v2.ServicePortName{
+	return &fgwv2.ServicePortName{
 		NamespacedName: key,
 		SectionName:    svcPort.Name,
 		Port:           ptr.To(int32(*backendRef.Port)),
@@ -226,7 +227,7 @@ func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetRe
 	return nil, false
 }
 
-func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *v2.ServicePortName) (*gwpav1alpha2.HealthCheckPolicy, *gwpav1alpha2.PortHealthCheck, bool) {
+func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *fgwv2.ServicePortName) (*gwpav1alpha2.HealthCheckPolicy, *gwpav1alpha2.PortHealthCheck, bool) {
 	if svcPort == nil {
 		return nil, nil, false
 	}
@@ -260,7 +261,7 @@ func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyT
 	return nil, nil, false
 }
 
-func FindRetryPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *v2.ServicePortName) (*gwpav1alpha2.RetryPolicy, *gwpav1alpha2.PortRetry, bool) {
+func FindRetryPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *fgwv2.ServicePortName) (*gwpav1alpha2.RetryPolicy, *gwpav1alpha2.PortRetry, bool) {
 	if svcPort == nil {
 		return nil, nil, false
 	}

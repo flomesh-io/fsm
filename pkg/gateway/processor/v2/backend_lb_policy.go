@@ -7,8 +7,9 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
@@ -24,7 +25,7 @@ func NewBackendLBPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
 	// Any configuration that is specified at Route Rule level MUST override configuration
 	// that is attached at the backend level because route rule have a more global view and
 	// responsibility for the overall traffic routing.
@@ -70,10 +71,10 @@ func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentRef
 		return
 	}
 
-	p2.AddTargetRef(v2.NewBackendRef(svcPort.String()))
+	p2.AddTargetRef(fgwv2.NewBackendRef(svcPort.String()))
 }
 
-func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwv1alpha2.BackendLBPolicy) *v2.BackendLBPolicy {
+func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwv1alpha2.BackendLBPolicy) *fgwv2.BackendLBPolicy {
 	key := client.ObjectKeyFromObject(policy).String()
 
 	p2, ok := p.generator.backendLBPolicies[key]
@@ -81,7 +82,7 @@ func (p *BackendLBPolicyProcessor) getOrCreateBackendLBPolicy(policy *gwv1alpha2
 		return p2
 	}
 
-	p2 = &v2.BackendLBPolicy{}
+	p2 = &fgwv2.BackendLBPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
 		log.Error().Err(err).Msgf("Failed to copy BackendLBPolicy %s", key)
 		return nil

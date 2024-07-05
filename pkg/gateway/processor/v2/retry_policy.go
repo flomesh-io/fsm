@@ -7,13 +7,13 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
-
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 )
 
 // ---
@@ -28,7 +28,7 @@ func NewRetryPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *v2.ServicePortName) {
+func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
 	targetRef := gwv1alpha2.NamespacedPolicyTargetReference{
 		Group:     ptr.Deref(backendRef.Group, corev1.GroupName),
 		Kind:      ptr.Deref(backendRef.Kind, constants.KubernetesServiceKind),
@@ -67,10 +67,10 @@ func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.
 	}
 
 	p2.AddPort(*port2)
-	p2.AddTargetRef(v2.NewBackendRef(svcPort.String()))
+	p2.AddTargetRef(fgwv2.NewBackendRef(svcPort.String()))
 }
 
-func (p *RetryPolicyProcessor) getOrCreateRetryPolicy(policy *gwpav1alpha2.RetryPolicy) *v2.RetryPolicy {
+func (p *RetryPolicyProcessor) getOrCreateRetryPolicy(policy *gwpav1alpha2.RetryPolicy) *fgwv2.RetryPolicy {
 	key := client.ObjectKeyFromObject(policy).String()
 
 	p2, ok := p.generator.retryPolicies[key]
@@ -78,7 +78,7 @@ func (p *RetryPolicyProcessor) getOrCreateRetryPolicy(policy *gwpav1alpha2.Retry
 		return p2
 	}
 
-	p2 = &v2.RetryPolicy{}
+	p2 = &fgwv2.RetryPolicy{}
 	if err := gwutils.DeepCopy(p2, policy); err != nil {
 		log.Error().Err(err).Msgf("Failed to copy RetryPolicy %s", key)
 		return nil

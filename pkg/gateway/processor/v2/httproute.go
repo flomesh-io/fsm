@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/utils/ptr"
@@ -12,7 +14,6 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
@@ -55,14 +56,14 @@ func (c *ConfigGenerator) processHTTPRoutes() []interface{} {
 	return routes
 }
 
-func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status.RouteParentStatusObject) *v2.HTTPRoute {
-	h2 := &v2.HTTPRoute{}
+func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status.RouteParentStatusObject) *fgwv2.HTTPRoute {
+	h2 := &fgwv2.HTTPRoute{}
 	if err := gwutils.DeepCopy(h2, httpRoute); err != nil {
 		log.Error().Msgf("Failed to copy HTTPRoute: %v", err)
 		return nil
 	}
 
-	h2.Spec.Rules = make([]v2.HTTPRouteRule, 0)
+	h2.Spec.Rules = make([]fgwv2.HTTPRouteRule, 0)
 	for _, rule := range httpRoute.Spec.Rules {
 		rule := rule
 		if r2 := c.toV2HTTPRouteRule(httpRoute, rule, holder); r2 != nil {
@@ -77,8 +78,8 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 	return h2
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) *v2.HTTPRouteRule {
-	r2 := &v2.HTTPRouteRule{}
+func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
+	r2 := &fgwv2.HTTPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
 		return nil
@@ -96,11 +97,11 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []v2.HTTPBackendRef {
-	backendRefs := make([]v2.HTTPBackendRef, 0)
+func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
+	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
-			b2 := v2.NewHTTPBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
+			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters, holder)
@@ -121,17 +122,17 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule gw
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter, holder status.RouteParentStatusObject) []v2.HTTPRouteFilter {
-	filters := make([]v2.HTTPRouteFilter, 0)
+func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter, holder status.RouteParentStatusObject) []fgwv2.HTTPRouteFilter {
+	filters := make([]fgwv2.HTTPRouteFilter, 0)
 	for _, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
-				filters = append(filters, v2.HTTPRouteFilter{
+				filters = append(filters, fgwv2.HTTPRouteFilter{
 					Type: gwv1.HTTPRouteFilterRequestMirror,
-					RequestMirror: &v2.HTTPRequestMirrorFilter{
-						BackendRef: v2.NewBackendRefWithWeight(svcPort.String(), 1),
+					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
+						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
 					},
 				})
 
@@ -141,7 +142,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				}
 			}
 		default:
-			f2 := v2.HTTPRouteFilter{}
+			f2 := fgwv2.HTTPRouteFilter{}
 			if err := gwutils.DeepCopy(f2, f); err != nil {
 				continue
 			}

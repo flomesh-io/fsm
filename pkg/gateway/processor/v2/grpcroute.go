@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+
 	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/utils/ptr"
@@ -12,7 +14,6 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
-	v2 "github.com/flomesh-io/fsm/pkg/gateway/fgw/v2"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
@@ -55,14 +56,14 @@ func (c *ConfigGenerator) processGRPCRoutes() []interface{} {
 	return routes
 }
 
-func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status.RouteParentStatusObject) *v2.GRPCRoute {
-	g2 := &v2.GRPCRoute{}
+func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status.RouteParentStatusObject) *fgwv2.GRPCRoute {
+	g2 := &fgwv2.GRPCRoute{}
 	if err := gwutils.DeepCopy(g2, grpcRoute); err != nil {
 		log.Error().Msgf("Failed to copy GRPCRoute: %v", err)
 		return nil
 	}
 
-	g2.Spec.Rules = make([]v2.GRPCRouteRule, 0)
+	g2.Spec.Rules = make([]fgwv2.GRPCRouteRule, 0)
 	for _, rule := range grpcRoute.Spec.Rules {
 		rule := rule
 		if r2 := c.toV2GRPCRouteRule(grpcRoute, rule, holder); r2 != nil {
@@ -77,8 +78,8 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 	return g2
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) *v2.GRPCRouteRule {
-	r2 := &v2.GRPCRouteRule{}
+func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
+	r2 := &fgwv2.GRPCRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
 		return nil
@@ -96,11 +97,11 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []v2.GRPCBackendRef {
-	backendRefs := make([]v2.GRPCBackendRef, 0)
+func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
+	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
-			b2 := v2.NewGRPCBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
+			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters, holder)
@@ -121,17 +122,17 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule gw
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []v2.GRPCRouteFilter {
-	filters := make([]v2.GRPCRouteFilter, 0)
+func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []fgwv2.GRPCRouteFilter {
+	filters := make([]fgwv2.GRPCRouteFilter, 0)
 	for _, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
-				filters = append(filters, v2.GRPCRouteFilter{
+				filters = append(filters, fgwv2.GRPCRouteFilter{
 					Type: gwv1.GRPCRouteFilterRequestMirror,
-					RequestMirror: &v2.HTTPRequestMirrorFilter{
-						BackendRef: v2.NewBackendRefWithWeight(svcPort.String(), 1),
+					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
+						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
 					},
 				})
 
@@ -142,7 +143,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				}
 			}
 		default:
-			f2 := v2.GRPCRouteFilter{}
+			f2 := fgwv2.GRPCRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
 				continue
 			}
