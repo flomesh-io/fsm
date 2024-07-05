@@ -144,44 +144,7 @@ func addHealthCheckPolicyIndexer(ctx context.Context, mgr manager.Manager) error
 	return nil
 }
 
-//func (r *healthCheckPolicyReconciler) getAttachedHealthChecks(svc client.Object) ([]client.Object, *metav1.Condition) {
-//	c := r.fctx.Manager.GetCache()
-//	key := client.ObjectKeyFromObject(svc).String()
-//	selector := fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, key)
-//
-//	return gwutils.GetHealthChecks(c, selector), nil
-//}
-//
-//func (r *healthCheckPolicyReconciler) findConflict(healthCheckPolicy client.Object, allHealthCheckPolicies []client.Object, port int32) *types.NamespacedName {
-//	currentPolicy := healthCheckPolicy.(*gwpav1alpha2.HealthCheckPolicy)
-//
-//	for _, policy := range allHealthCheckPolicies {
-//		policy := policy.(*gwpav1alpha2.HealthCheckPolicy)
-//
-//		c1 := healthcheck.GetHealthCheckConfigIfPortMatchesPolicy(port, *policy)
-//		if c1 == nil {
-//			continue
-//		}
-//
-//		c2 := healthcheck.GetHealthCheckConfigIfPortMatchesPolicy(port, *currentPolicy)
-//		if c2 == nil {
-//			continue
-//		}
-//
-//		if reflect.DeepEqual(c1, c2) {
-//			continue
-//		}
-//
-//		return &types.NamespacedName{
-//			Name:      policy.Name,
-//			Namespace: policy.Namespace,
-//		}
-//	}
-//
-//	return nil
-//}
-
-func (r *healthCheckPolicyReconciler) referenceGrantToPolicyAttachment(_ context.Context, obj client.Object) []reconcile.Request {
+func (r *healthCheckPolicyReconciler) referenceGrantToPolicyAttachment(ctx context.Context, obj client.Object) []reconcile.Request {
 	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
 	if !ok {
 		log.Error().Msgf("unexpected object type: %T", obj)
@@ -199,7 +162,7 @@ func (r *healthCheckPolicyReconciler) referenceGrantToPolicyAttachment(_ context
 	items := make([]gwpav1alpha2.HealthCheckPolicy, 0)
 	for ns := range namespaces {
 		list := &gwpav1alpha2.HealthCheckPolicyList{}
-		if err := c.List(context.Background(), list, client.InNamespace(ns)); err != nil {
+		if err := c.List(ctx, list, client.InNamespace(ns)); err != nil {
 			log.Error().Msgf("Failed to list HealthCheckPolicyList: %v", err)
 			continue
 		}

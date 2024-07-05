@@ -67,6 +67,7 @@ func IsListenerValid(s gwv1.ListenerStatus) bool {
 	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
 }
 
+// GetActiveGateways returns the active gateways
 func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
 	classes, err := findFSMGatewayClasses(cache)
 	if err != nil {
@@ -79,6 +80,31 @@ func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
 		list := &gwv1.GatewayList{}
 		if err := cache.List(context.Background(), list, &client.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, ToSlicePtr(list.Items)...)
+	}
+
+	return filterActiveGateways(gateways)
+}
+
+// GetActiveGatewaysInNamespace returns the active gateways in the namespace
+func GetActiveGatewaysInNamespace(cache cache.Cache, namespace string) []*gwv1.Gateway {
+	classes, err := findFSMGatewayClasses(cache)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil
+	}
+
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := cache.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+			Namespace:     namespace,
 		}); err != nil {
 			log.Error().Msgf("Failed to list Gateways: %v", err)
 			continue

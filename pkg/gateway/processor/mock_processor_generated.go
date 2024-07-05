@@ -91,6 +91,20 @@ func (mr *MockProcessorMockRecorder) IsConfigMapReferred(arg0 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsConfigMapReferred", reflect.TypeOf((*MockProcessor)(nil).IsConfigMapReferred), arg0)
 }
 
+// IsEffectiveFilter mocks base method.
+func (m *MockProcessor) IsEffectiveFilter(arg0 types.NamespacedName, arg1 []v1.LocalObjectReference) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEffectiveFilter", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEffectiveFilter indicates an expected call of IsEffectiveFilter.
+func (mr *MockProcessorMockRecorder) IsEffectiveFilter(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEffectiveFilter", reflect.TypeOf((*MockProcessor)(nil).IsEffectiveFilter), arg0, arg1)
+}
+
 // IsEffectiveRoute mocks base method.
 func (m *MockProcessor) IsEffectiveRoute(arg0 []v1.ParentReference) bool {
 	m.ctrl.T.Helper()
@@ -117,20 +131,6 @@ func (m *MockProcessor) IsEffectiveTargetRef(arg0 client.Object, arg1 v1alpha2.N
 func (mr *MockProcessorMockRecorder) IsEffectiveTargetRef(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEffectiveTargetRef", reflect.TypeOf((*MockProcessor)(nil).IsEffectiveTargetRef), arg0, arg1)
-}
-
-// IsFilterReferred mocks base method.
-func (m *MockProcessor) IsFilterReferred(arg0 types.NamespacedName) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsFilterReferred", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsFilterReferred indicates an expected call of IsFilterReferred.
-func (mr *MockProcessorMockRecorder) IsFilterReferred(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFilterReferred", reflect.TypeOf((*MockProcessor)(nil).IsFilterReferred), arg0)
 }
 
 // IsHeadlessService mocks base method.

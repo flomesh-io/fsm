@@ -49,6 +49,7 @@ import (
 	gatewayv1beta1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1beta1"
 
 	clusterv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/cluster/v1alpha1"
+	extensionv1alpha1 "github.com/flomesh-io/fsm/pkg/controllers/extension/v1alpha1"
 	gatewayv1 "github.com/flomesh-io/fsm/pkg/controllers/gateway/v1"
 
 	"github.com/flomesh-io/fsm/pkg/controllers"
@@ -65,6 +66,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
+	extwhv1alpha1 "github.com/flomesh-io/fsm/pkg/webhook/extension/v1alpha1"
 	flbwh "github.com/flomesh-io/fsm/pkg/webhook/flb"
 	gwwhv1 "github.com/flomesh-io/fsm/pkg/webhook/gatewayapi/v1"
 	gwwhv1alpha2 "github.com/flomesh-io/fsm/pkg/webhook/gatewayapi/v1alpha2"
@@ -294,6 +296,9 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		webhooks[PolicyAttachmentBackendTLS] = pawhv1alpha3.NewBackendTLSPolicyWebhook(regCfg)
 		reconcilers[PolicyAttachmentBackendTLS] = pav1alpha3.NewBackendTLSPolicyReconciler(ctx, webhooks[PolicyAttachmentBackendTLS])
+
+		webhooks[GatewayAPIExtensionFilter] = extwhv1alpha1.NewFilterWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionFilter] = extensionv1alpha1.NewFilterReconciler(ctx)
 	}
 
 	if mc.IsServiceLBEnabled() {

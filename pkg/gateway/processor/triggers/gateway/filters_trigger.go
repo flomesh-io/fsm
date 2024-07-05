@@ -1,9 +1,8 @@
 package gateway
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/processor"
 )
@@ -19,7 +18,7 @@ func (p *FilterTrigger) Insert(obj interface{}, processor processor.Processor) b
 		return false
 	}
 
-	return processor.IsFilterReferred(client.ObjectKeyFromObject(filter))
+	return processor.IsEffectiveFilter(client.ObjectKeyFromObject(filter), filter.Spec.TargetRefs)
 }
 
 // Delete removes a Filter object from the processor and returns true if the processor is changed
@@ -30,5 +29,5 @@ func (p *FilterTrigger) Delete(obj interface{}, processor processor.Processor) b
 		return false
 	}
 
-	return processor.IsFilterReferred(client.ObjectKeyFromObject(filter))
+	return processor.IsEffectiveFilter(client.ObjectKeyFromObject(filter), filter.Spec.TargetRefs)
 }

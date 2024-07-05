@@ -22,6 +22,7 @@ const (
 	GatewayAPITLSRoute          ResourceType = "GatewayAPI(TLSRoute)"
 	GatewayAPIUDPRoute          ResourceType = "GatewayAPI(UDPRoute)"
 	GatewayAPIReferenceGrant    ResourceType = "GatewayAPI(ReferenceGrant)"
+	GatewayAPIExtensionFilter   ResourceType = "GatewayAPIExtension(Filter)"
 	PolicyAttachmentHealthCheck ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentRetry       ResourceType = "PolicyAttachment(Retry)"
 	PolicyAttachmentBackendLB   ResourceType = "PolicyAttachment(BackendLB)"

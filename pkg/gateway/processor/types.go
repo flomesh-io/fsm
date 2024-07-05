@@ -53,7 +53,7 @@ type Processor interface {
 	IsRoutableLocalTargetServices(policy client.Object, targetRefs []gwv1alpha2.LocalPolicyTargetReference) bool
 	IsConfigMapReferred(cm client.ObjectKey) bool
 	IsSecretReferred(secret client.ObjectKey) bool
-	IsFilterReferred(filter client.ObjectKey) bool
+	IsEffectiveFilter(filter client.ObjectKey, targetRefs []gwv1.LocalObjectReference) bool
 	UseEndpointSlices() bool
 }
 

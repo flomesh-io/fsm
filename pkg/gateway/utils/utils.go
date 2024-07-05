@@ -89,6 +89,18 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway types.NamespacedName
 	return string(parentRef.Name) == gateway.Name
 }
 
+func IsLocalObjRefToGateway(targetRef gwv1.LocalObjectReference, gateway types.NamespacedName) bool {
+	if string(targetRef.Group) != gwv1.GroupName {
+		return false
+	}
+
+	if string(targetRef.Kind) != constants.GatewayAPIGatewayKind {
+		return false
+	}
+
+	return string(targetRef.Name) == gateway.Name
+}
+
 // IsTargetRefToTarget returns true if the target reference is to the target resource
 func IsTargetRefToTarget(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
 	gvk := target.GetObjectKind().GroupVersionKind()

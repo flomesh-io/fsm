@@ -997,6 +997,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			})),
 		).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
+		//Watches(&extv1alpha1.Filter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -1246,6 +1247,28 @@ func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj cl
 
 	return requests
 }
+
+//func (r *gatewayReconciler) filterToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
+//	filter, ok := obj.(*extv1alpha1.Filter)
+//	if !ok {
+//		log.Error().Msgf("unexpected object type: %T", obj)
+//		return nil
+//	}
+//
+//	requests := make([]reconcile.Request, 0)
+//	for _, targetRef := range filter.Spec.TargetRefs {
+//		if targetRef.Group == gwv1.GroupName && targetRef.Kind == constants.GatewayAPIGatewayKind {
+//			requests = append(requests, reconcile.Request{
+//				NamespacedName: types.NamespacedName{
+//					Namespace: filter.Namespace,
+//					Name:      string(targetRef.Name),
+//				},
+//			})
+//		}
+//	}
+//
+//	return requests
+//}
 
 func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretGatewayIndex, secretGatewayIndexFunc); err != nil {
