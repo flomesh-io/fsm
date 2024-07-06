@@ -291,7 +291,7 @@ func addGRPCRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.HTTPRoute{}, constants.ExtensionFilterGRPCRouteIndex, extensionFilterGRPCRouteIndexFunc); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.GRPCRoute{}, constants.ExtensionFilterGRPCRouteIndex, extensionFilterGRPCRouteIndexFunc); err != nil {
 		return err
 	}
 
@@ -308,6 +308,7 @@ func addGRPCRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 
 func gatewayGRPCRouteIndexFunc(obj client.Object) []string {
 	grpcRoute := obj.(*gwv1.GRPCRoute)
+
 	var gateways []string
 	for _, parent := range grpcRoute.Spec.ParentRefs {
 		if parent.Kind == nil || string(*parent.Kind) == constants.GatewayAPIGatewayKind {
@@ -321,6 +322,7 @@ func gatewayGRPCRouteIndexFunc(obj client.Object) []string {
 			)
 		}
 	}
+
 	return gateways
 }
 
@@ -365,6 +367,7 @@ func extensionFilterGRPCRouteIndexFunc(obj client.Object) []string {
 
 func backendGRPCRouteIndexFunc(obj client.Object) []string {
 	grpcRoute := obj.(*gwv1.GRPCRoute)
+
 	var backendRefs []string
 	for _, rule := range grpcRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
@@ -412,6 +415,7 @@ func backendGRPCRouteIndexFunc(obj client.Object) []string {
 
 func crossNamespaceBackendNamespaceGRPCRouteIndexFunc(obj client.Object) []string {
 	grpcRoute := obj.(*gwv1.GRPCRoute)
+
 	namespaces := sets.New[string]()
 	for _, rule := range grpcRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
