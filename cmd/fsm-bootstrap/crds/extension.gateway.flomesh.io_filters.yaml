@@ -54,12 +54,12 @@ spec:
                 description: Config is the list of configurations to be used by the
                   filter
                 type: object
-              name:
-                description: Name is the name of the filter in PascalCase, it should
-                  be unique within the namespace
-                maxLength: 63
-                minLength: 1
-                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
+              protocol:
+                default: http
+                description: Protocol is the protocol of filter
+                enum:
+                - http
+                - tcp
                 type: string
               script:
                 description: Script is the list of scripts to be executed, key is
@@ -67,13 +67,15 @@ spec:
                 minLength: 1
                 type: string
               type:
-                default: http
-                description: Type is the type of filter
-                enum:
-                - http
-                - tcp
+                description: Type is the type of the filter in PascalCase, it should
+                  be unique within the namespace
+                maxLength: 63
+                minLength: 1
+                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
                 type: string
             required:
+            - protocol
+            - script
             - type
             type: object
           status:

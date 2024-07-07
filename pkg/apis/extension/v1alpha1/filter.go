@@ -4,33 +4,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// FilterType defines the type of filter
-type FilterType string
+// FilterProtocol defines the protocol of filter
+type FilterProtocol string
 
 const (
-	// FilterTypeHTTP is the type of filter for HTTP/HTTPS/GRPC/GRPCS protocols
-	FilterTypeHTTP FilterType = "http"
+	// FilterProtocolHTTP is the type of filter for HTTP/HTTPS/GRPC/GRPCS protocols
+	FilterProtocolHTTP FilterProtocol = "http"
 
-	// FilterTypeTCP is the type of filter for TCP protocol
-	FilterTypeTCP FilterType = "tcp"
+	// FilterProtocolTCP is the type of filter for TCP protocol
+	FilterProtocolTCP FilterProtocol = "tcp"
 )
 
 // FilterSpec defines the desired state of Filter
 type FilterSpec struct {
-	// Type is the type of filter
+	// Protocol is the protocol of filter
 	// +kubebuilder:default=http
 	// +kubebuilder:validation:Enum=http;tcp
-	Type FilterType `json:"type"`
+	Protocol FilterProtocol `json:"protocol"`
 
-	// Name is the name of the filter in PascalCase, it should be unique within the namespace
+	// Type is the type of the filter in PascalCase, it should be unique within the namespace
 	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
 	// +kubebuilder:validation:MinLength=1
 	// +kubebuilder:validation:MaxLength=63
-	Name string `json:"name,omitempty"`
+	Type string `json:"type"`
 
 	// Script is the list of scripts to be executed, key is the script name and value is the script content
 	// +kubebuilder:validation:MinLength=1
-	Script string `json:"script,omitempty"`
+	Script string `json:"script"`
 
 	// Config is the list of configurations to be used by the filter
 	Config map[string]string `json:"config,omitempty"`

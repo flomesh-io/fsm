@@ -81,9 +81,9 @@ func (r *FilterWebhook) doValidation(ctx context.Context, obj runtime.Object) (w
 			continue
 		}
 
-		if f.Spec.Name == filter.Spec.Name {
-			path := field.NewPath("spec").Child("name")
-			errs = append(errs, field.Invalid(path, filter.Spec.Name, "filter name must be unique within the namespace"))
+		if f.Spec.Type == filter.Spec.Type {
+			path := field.NewPath("spec").Child("type")
+			errs = append(errs, field.Invalid(path, filter.Spec.Type, "filter type must be unique within the namespace"))
 			break
 		}
 	}

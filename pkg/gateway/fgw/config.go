@@ -19,10 +19,10 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []interface{}                                `json:"resources" hash:"set"`
-	Secrets   map[string]string                            `json:"secrets"`
-	Filters   map[extv1alpha1.FilterType]map[string]string `json:"filters"`
-	Version   string                                       `json:"version" hash:"ignore"`
+	Resources []interface{}                                    `json:"resources" hash:"set"`
+	Secrets   map[string]string                                `json:"secrets"`
+	Filters   map[extv1alpha1.FilterProtocol]map[string]string `json:"filters"`
+	Version   string                                           `json:"version" hash:"ignore"`
 }
 
 func (c *ConfigSpec) GetVersion() string {
@@ -477,8 +477,8 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 // ---
 
 type Filter struct {
-	Type   extv1alpha1.FilterType `json:"type"`
-	Name   string                 `json:"name"`
-	Script string                 `json:"script"`
+	Type   extv1alpha1.FilterProtocol `json:"type"`
+	Name   string                     `json:"name"`
+	Script string                     `json:"script"`
 	Config
 }
