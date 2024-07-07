@@ -48,12 +48,23 @@ spec:
           spec:
             description: Spec defines the desired state of Filter.
             properties:
-              scripts:
+              config:
                 additionalProperties:
                   type: string
-                description: Scripts is the list of scripts to be executed, key is
-                  the script name and value is the script content
+                description: Config is the list of configurations to be used by the
+                  filter
                 type: object
+              name:
+                description: Name is the name of the filter in PascalCase, it should
+                  be unique within the namespace
+                maxLength: 63
+                minLength: 1
+                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
+                type: string
+              script:
+                description: Script is the list of scripts to be executed, key is
+                  the script name and value is the script content
+                type: string
               type:
                 default: http
                 description: Type is the type of filter

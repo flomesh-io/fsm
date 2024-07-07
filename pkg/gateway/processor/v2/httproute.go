@@ -146,18 +146,21 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
 
-			if filter.Type != extv1alpha1.FilterTypeHTTP {
+			filterType := filter.Spec.Type
+			if filterType != extv1alpha1.FilterTypeHTTP {
 				continue
 			}
 
+			filterName := filter.Name
 			filters = append(filters, fgwv2.HTTPRouteFilter{
-				Type: gwv1.HTTPRouteFilterType(filter.Name),
+				Type:            gwv1.HTTPRouteFilterType(filterName),
+				ExtensionConfig: filter.Spec.Config,
 			})
 
-			if c.filters[filter.Type] == nil {
-				c.filters[filter.Type] = map[string]string{}
+			if c.filters[filterType] == nil {
+				c.filters[filterType] = map[string]string{}
 			}
-			c.filters[filter.Type][filter.Name] = filter.Script
+			c.filters[filterType][filterName] = filter.Spec.Script
 		default:
 			f2 := fgwv2.HTTPRouteFilter{}
 			if err := gwutils.DeepCopy(f2, f); err != nil {

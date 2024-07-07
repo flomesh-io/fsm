@@ -22,8 +22,17 @@ type FilterSpec struct {
 	// +kubebuilder:validation:Enum=http;tcp
 	Type FilterType `json:"type"`
 
-	// Scripts is the list of scripts to be executed, key is the script name and value is the script content
-	Scripts map[string]string `json:"scripts,omitempty"`
+	// Name is the name of the filter in PascalCase, it should be unique within the namespace
+	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	Name string `json:"name,omitempty"`
+
+	// Script is the list of scripts to be executed, key is the script name and value is the script content
+	Script string `json:"script,omitempty"`
+
+	// Config is the list of configurations to be used by the filter
+	Config map[string]string `json:"config,omitempty"`
 }
 
 // Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols

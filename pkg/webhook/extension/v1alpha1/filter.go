@@ -4,6 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/utils"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,12 +64,33 @@ func (r *FilterWebhook) ValidateUpdate(ctx context.Context, _, newObj runtime.Ob
 }
 
 func (r *FilterWebhook) doValidation(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	_, ok := obj.(*extv1alpha1.Filter)
+	filter, ok := obj.(*extv1alpha1.Filter)
 	if !ok {
 		return nil, fmt.Errorf("unexpected type: %T", obj)
 	}
 
-	// Add validation logic here
+	var errs field.ErrorList
+
+	list := &extv1alpha1.FilterList{}
+	if err := r.Manager.GetCache().List(ctx, list, client.InNamespace(filter.Namespace)); err != nil {
+		return nil, err
+	}
+
+	for _, f := range list.Items {
+		if f.Name == filter.Name {
+			continue
+		}
+
+		if f.Spec.Name == filter.Spec.Name {
+			path := field.NewPath("spec").Child("name")
+			errs = append(errs, field.Invalid(path, filter.Spec.Name, "filter name must be unique within the namespace"))
+			break
+		}
+	}
+
+	if len(errs) > 0 {
+		return nil, utils.ErrorListToError(errs)
+	}
 
 	return nil, nil
 }

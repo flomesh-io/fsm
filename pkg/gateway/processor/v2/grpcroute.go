@@ -147,18 +147,21 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
 
-			if filter.Type != extv1alpha1.FilterTypeHTTP {
+			filterType := filter.Spec.Type
+			if filterType != extv1alpha1.FilterTypeHTTP {
 				continue
 			}
 
+			filterName := filter.Name
 			filters = append(filters, fgwv2.GRPCRouteFilter{
-				Type: gwv1.GRPCRouteFilterType(filter.Name),
+				Type:            gwv1.GRPCRouteFilterType(filterName),
+				ExtensionConfig: filter.Spec.Config,
 			})
 
-			if c.filters[filter.Type] == nil {
-				c.filters[filter.Type] = map[string]string{}
+			if c.filters[filterType] == nil {
+				c.filters[filterType] = map[string]string{}
 			}
-			c.filters[filter.Type][filter.Name] = filter.Script
+			c.filters[filterType][filterName] = filter.Spec.Script
 		default:
 			f2 := fgwv2.GRPCRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {

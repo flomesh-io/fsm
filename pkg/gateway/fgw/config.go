@@ -197,7 +197,7 @@ type HTTPRouteFilter struct {
 	RequestMirror          *HTTPRequestMirrorFilter        `json:"requestMirror,omitempty"`
 	RequestRedirect        *gwv1.HTTPRequestRedirectFilter `json:"requestRedirect,omitempty"`
 	URLRewrite             *gwv1.HTTPURLRewriteFilter      `json:"urlRewrite,omitempty"`
-	ExtensionRef           *gwv1.LocalObjectReference      `json:"extensionRef,omitempty"`
+	ExtensionConfig        map[string]string               `json:"extensionConfig,omitempty"`
 }
 
 // ---
@@ -226,11 +226,11 @@ func NewGRPCBackendRef(name string, weight int32) GRPCBackendRef {
 // ---
 
 type GRPCRouteFilter struct {
-	Type                   gwv1.GRPCRouteFilterType   `json:"type"`
-	RequestHeaderModifier  *gwv1.HTTPHeaderFilter     `json:"requestHeaderModifier,omitempty"`
-	ResponseHeaderModifier *gwv1.HTTPHeaderFilter     `json:"responseHeaderModifier,omitempty"`
-	RequestMirror          *HTTPRequestMirrorFilter   `json:"requestMirror,omitempty"`
-	ExtensionRef           *gwv1.LocalObjectReference `json:"extensionRef,omitempty"`
+	Type                   gwv1.GRPCRouteFilterType `json:"type"`
+	RequestHeaderModifier  *gwv1.HTTPHeaderFilter   `json:"requestHeaderModifier,omitempty"`
+	ResponseHeaderModifier *gwv1.HTTPHeaderFilter   `json:"responseHeaderModifier,omitempty"`
+	RequestMirror          *HTTPRequestMirrorFilter `json:"requestMirror,omitempty"`
+	ExtensionConfig        map[string]string        `json:"extensionConfig,omitempty"`
 }
 
 // ---
@@ -480,4 +480,5 @@ type Filter struct {
 	Type   extv1alpha1.FilterType `json:"type"`
 	Name   string                 `json:"name"`
 	Script string                 `json:"script"`
+	Config
 }
