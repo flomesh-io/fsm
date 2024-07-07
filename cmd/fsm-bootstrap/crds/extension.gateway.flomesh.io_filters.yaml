@@ -64,6 +64,7 @@ spec:
               script:
                 description: Script is the list of scripts to be executed, key is
                   the script name and value is the script content
+                minLength: 1
                 type: string
               type:
                 default: http

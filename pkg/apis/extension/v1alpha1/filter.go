@@ -29,6 +29,7 @@ type FilterSpec struct {
 	Name string `json:"name,omitempty"`
 
 	// Script is the list of scripts to be executed, key is the script name and value is the script content
+	// +kubebuilder:validation:MinLength=1
 	Script string `json:"script,omitempty"`
 
 	// Config is the list of configurations to be used by the filter
