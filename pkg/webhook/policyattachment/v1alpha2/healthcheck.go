@@ -92,15 +92,6 @@ func (r *HealthCheckPolicyWebhook) validateTargetRefs(refs []gwv1alpha2.Namespac
 		}
 	}
 
-	// TODO: validate ports exist in the referenced service
-	//if ref.Group == constants.KubernetesCoreGroup && ref.Kind == constants.KubernetesServiceKind {
-	//
-	//}
-	//
-	//if ref.Group == constants.FlomeshMCSAPIGroup && ref.Kind == constants.FlomeshAPIServiceImportKind {
-	//
-	//}
-
 	return errs
 }
 
