@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// GetServicePort returns the ServicePort for the given port.
 func GetServicePort(svc *corev1.Service, port *int32) (corev1.ServicePort, error) {
 	if port == nil && len(svc.Spec.Ports) == 1 {
 		return svc.Spec.Ports[0], nil
@@ -23,12 +24,10 @@ func GetServicePort(svc *corev1.Service, port *int32) (corev1.ServicePort, error
 	return corev1.ServicePort{}, fmt.Errorf("no matching port for Service %s and port %d", svc.Name, port)
 }
 
+// GetDefaultPort returns the default port for the given ServicePort.
 func GetDefaultPort(svcPort corev1.ServicePort) int32 {
-	switch svcPort.TargetPort.Type {
-	case intstr.Int:
-		if svcPort.TargetPort.IntVal != 0 {
-			return svcPort.TargetPort.IntVal
-		}
+	if svcPort.TargetPort.Type == intstr.Int && svcPort.TargetPort.IntVal != 0 {
+		return svcPort.TargetPort.IntVal
 	}
 
 	return svcPort.Port

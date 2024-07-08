@@ -11,6 +11,7 @@ import (
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 )
 
+// ExtensionRefToFilter converts a LocalObjectReference to a Filter.
 func ExtensionRefToFilter(client cache.Cache, route client.Object, extensionRef *gwv1.LocalObjectReference) *extv1alpha1.Filter {
 	key := types.NamespacedName{
 		Namespace: route.GetNamespace(),

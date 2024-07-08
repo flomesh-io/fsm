@@ -9,6 +9,7 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+// MetadataAccessor is an interface to access metadata of a resource.
 type MetadataAccessor interface {
 	GetObjectMeta() *metav1.ObjectMeta
 	GetTypeMeta() *metav1.TypeMeta
@@ -18,11 +19,13 @@ type MetadataAccessor interface {
 	GetGeneration() int64
 }
 
+// RouteConditionAccessor is an interface to access conditions of a Route.
 type RouteConditionAccessor interface {
 	ConditionExists(conditionType gwv1.RouteConditionType) bool
 	AddCondition(conditionType gwv1.RouteConditionType, status metav1.ConditionStatus, reason gwv1.RouteConditionReason, message string) metav1.Condition
 }
 
+// RouteStatusObject is an interface to access the status of a Route.
 type RouteStatusObject interface {
 	Mutator
 	MetadataAccessor
@@ -32,17 +35,20 @@ type RouteStatusObject interface {
 	ConditionsForParentRef(parentRef gwv1.ParentReference) []metav1.Condition
 }
 
+// RouteParentStatusObject is an interface to access the status of a RouteParent.
 type RouteParentStatusObject interface {
 	RouteConditionAccessor
 	GetRouteStatusObject() RouteStatusObject
 	GetParentRef() gwv1.ParentReference
 }
 
+// PolicyConditionAccessor is an interface to access conditions of a Policy.
 type PolicyConditionAccessor interface {
 	ConditionExists(conditionType gwv1alpha2.PolicyConditionType) bool
 	AddCondition(conditionType gwv1alpha2.PolicyConditionType, status metav1.ConditionStatus, reason gwv1alpha2.PolicyConditionReason, message string) metav1.Condition
 }
 
+// PolicyStatusObject is an interface to access the status of a Policy.
 type PolicyStatusObject interface {
 	Mutator
 	MetadataAccessor
@@ -50,6 +56,7 @@ type PolicyStatusObject interface {
 	ConditionsForAncestorRef(parentRef gwv1.ParentReference) []metav1.Condition
 }
 
+// PolicyAncestorStatusObject is an interface to access the status of a Policy Ancestor.
 type PolicyAncestorStatusObject interface {
 	PolicyConditionAccessor
 	GetPolicyStatusObject() PolicyStatusObject

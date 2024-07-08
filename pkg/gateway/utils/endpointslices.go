@@ -5,12 +5,13 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 )
 
+// FilterEndpointSliceList filters the given EndpointSliceList to only include EndpointSlices that have a matching port.
 func FilterEndpointSliceList(endpointSliceList *discoveryv1.EndpointSliceList, port corev1.ServicePort) []*discoveryv1.EndpointSlice {
 	filtered := make([]*discoveryv1.EndpointSlice, 0, len(endpointSliceList.Items))
 
 	for _, endpointSlice := range endpointSliceList.Items {
 		endpointSlice := endpointSlice
-		if !IgnoreEndpointSlice(&endpointSlice, port) {
+		if !ignoreEndpointSlice(&endpointSlice, port) {
 			filtered = append(filtered, &endpointSlice)
 		}
 	}
@@ -18,7 +19,7 @@ func FilterEndpointSliceList(endpointSliceList *discoveryv1.EndpointSliceList, p
 	return filtered
 }
 
-func IgnoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.ServicePort) bool {
+func ignoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.ServicePort) bool {
 	if endpointSlice.AddressType != discoveryv1.AddressTypeIPv4 {
 		return true
 	}
@@ -27,6 +28,7 @@ func IgnoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.S
 	return FindEndpointSlicePort(endpointSlice.Ports, port) == 0
 }
 
+// FindEndpointSlicePort finds the port in the EndpointSlice that matches the ServicePort.
 func FindEndpointSlicePort(ports []discoveryv1.EndpointPort, svcPort corev1.ServicePort) int32 {
 	portName := svcPort.Name
 	for _, p := range ports {
@@ -42,6 +44,7 @@ func FindEndpointSlicePort(ports []discoveryv1.EndpointPort, svcPort corev1.Serv
 	return 0
 }
 
+// IsEndpointReady returns true if the given Endpoint is ready.
 func IsEndpointReady(ep discoveryv1.Endpoint) bool {
 	return ep.Conditions.Ready != nil && *ep.Conditions.Ready
 }

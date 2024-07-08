@@ -5,6 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// FindEndpointPort finds the port in the EndpointPort slice that matches the ServicePort.
 func FindEndpointPort(ports []corev1.EndpointPort, svcPort corev1.ServicePort) int32 {
 	for i, epPort := range ports {
 		if svcPort.Name == "" {

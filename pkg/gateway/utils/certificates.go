@@ -21,6 +21,8 @@ import (
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
+// ObjectRefToCACertificate converts an ObjectReference to a CA Certificate.
+// It supports Kubernetes Secret and ConfigMap as the referent.
 func ObjectRefToCACertificate(client cache.Cache, referer client.Object, ref gwv1.ObjectReference, ancestorStatus status.PolicyAncestorStatusObject) []byte {
 	if !IsValidRefToGroupKindOfCA(ref) {
 		addAncestorStatusCondition(
