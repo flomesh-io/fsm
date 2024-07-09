@@ -473,12 +473,3 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 		p.Spec.Ports = []gwpav1alpha2.PortHealthCheck{port}
 	}
 }
-
-// ---
-
-type Filter struct {
-	Type   extv1alpha1.FilterProtocol `json:"type"`
-	Name   string                     `json:"name"`
-	Script string                     `json:"script"`
-	Config
-}
