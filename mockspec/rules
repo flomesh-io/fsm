@@ -38,14 +38,13 @@ configurator; pkg/configurator/mock_client_generated.go; github.com/flomesh-io/f
 # pkg/gateway
 gateway; pkg/gateway/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/gateway/types; Controller
 
-# pkg/gateway/cache
-cache; pkg/gateway/cache/mock_cache_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Cache
-
-# pkg/gateway/cache
-cache; pkg/gateway/cache/mock_trigger_generated.go; github.com/flomesh-io/fsm/pkg/gateway/cache; Trigger
+# pkg/gateway/processor
+processor; pkg/gateway/processor/mock_processor_generated.go; github.com/flomesh-io/fsm/pkg/gateway/processor; Processor
+processor; pkg/gateway/processor/mock_generator_generated.go; github.com/flomesh-io/fsm/pkg/gateway/processor; Generator
+processor; pkg/gateway/processor/mock_trigger_generated.go; github.com/flomesh-io/fsm/pkg/gateway/processor; Trigger
 
 # pkg/ingress/providers/pipy
 pipy; pkg/ingress/providers/pipy/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/ingress/providers/pipy; Controller
 
 # pkg/webhook
-webhook; pkg/webhook/mock_register_generated.go; github.com/flomesh-io/fsm/pkg/webhook; Register
+types; pkg/webhook/types/mock_register_generated.go; github.com/flomesh-io/fsm/pkg/webhook/types; Register

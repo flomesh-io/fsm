@@ -27,7 +27,18 @@ package v1alpha2
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/sets"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
 
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +61,8 @@ import (
 type udpRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *routes.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *udpRouteReconciler) NeedLeaderElection() bool {
@@ -58,11 +70,12 @@ func (r *udpRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewUDPRouteReconciler returns a new UDPRoute Reconciler
-func NewUDPRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewUDPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &udpRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("UDPRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -84,14 +97,14 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
+	rsu := routes.NewRouteStatusUpdate(
 		udpRoute,
 		&udpRoute.ObjectMeta,
 		&udpRoute.TypeMeta,
 		nil,
 		gwutils.ToSlicePtr(udpRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, udpRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, udpRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -102,13 +115,87 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1alpha2.UDPRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.UDPRoute{}).
+		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToUDPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
 
 	return addUDPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj client.Object) []reconcile.Request {
+	refGrant, ok := obj.(*gwv1beta1.ReferenceGrant)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
+
+	isConcerned := false
+	for _, target := range refGrant.Spec.To {
+		if target.Kind == constants.KubernetesServiceKind {
+			isConcerned = true
+		}
+	}
+
+	// Not target for Service
+	if !isConcerned {
+		return nil
+	}
+
+	fromNamespaces := sets.New[string]()
+	for _, from := range refGrant.Spec.From {
+		if from.Group == gwv1.GroupName && from.Kind == constants.GatewayAPIUDPRouteKind {
+			fromNamespaces.Insert(string(from.Namespace))
+		}
+	}
+
+	// Not for UDPRoute
+	if fromNamespaces.Len() == 0 {
+		return nil
+	}
+
+	list := &gwv1alpha2.UDPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(ctx, list, &client.ListOptions{
+		// This index implies that the UDPRoute has a backend of type Service in the same namespace as the ReferenceGrant
+		FieldSelector: fields.OneTermEqualSelector(constants.CrossNamespaceBackendNamespaceUDPRouteIndex, refGrant.Namespace),
+	}); err != nil {
+		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		return nil
+	}
+
+	if len(list.Items) == 0 {
+		return nil
+	}
+
+	requests := make([]reconcile.Request, 0)
+	for _, ns := range fromNamespaces.UnsortedList() {
+		for _, h := range list.Items {
+			// not controlled by this ReferenceGrant
+			if h.Namespace != ns {
+				continue
+			}
+
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: h.Namespace,
+					Name:      h.Name,
+				},
+			})
+		}
+	}
+
+	return requests
 }
 
 func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
@@ -133,18 +220,23 @@ func addUDPRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.BackendUDPRouteIndex, backendUDPRouteIndexFunc); err != nil {
 		return err
 	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.UDPRoute{}, constants.CrossNamespaceBackendNamespaceUDPRouteIndex, crossNamespaceBackendNamespaceUDPRouteIndexFunc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func backendUDPRouteIndexFunc(obj client.Object) []string {
-	udproute := obj.(*gwv1alpha2.UDPRoute)
+	udpRoute := obj.(*gwv1alpha2.UDPRoute)
 	var backendRefs []string
-	for _, rule := range udproute.Spec.Rules {
+	for _, rule := range udpRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udproute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, udpRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)
@@ -153,4 +245,20 @@ func backendUDPRouteIndexFunc(obj client.Object) []string {
 	}
 
 	return backendRefs
+}
+
+func crossNamespaceBackendNamespaceUDPRouteIndexFunc(obj client.Object) []string {
+	udpRoute := obj.(*gwv1alpha2.UDPRoute)
+	namespaces := sets.New[string]()
+	for _, rule := range udpRoute.Spec.Rules {
+		for _, backend := range rule.BackendRefs {
+			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
+				if backend.Namespace != nil && string(*backend.Namespace) != udpRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
+			}
+		}
+	}
+
+	return namespaces.UnsortedList()
 }

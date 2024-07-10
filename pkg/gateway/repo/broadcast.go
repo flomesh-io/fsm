@@ -30,8 +30,8 @@ func (s *Server) BroadcastListener() {
 			//metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
 			newJob := func() *GatewayConfGeneratorJob {
 				return &GatewayConfGeneratorJob{
-					cache: s.cache,
-					done:  make(chan struct{}),
+					processor: s.processor,
+					done:      make(chan struct{}),
 				}
 			}
 			<-s.workQueues.AddJob(newJob())

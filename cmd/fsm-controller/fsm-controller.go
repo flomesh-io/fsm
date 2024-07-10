@@ -15,6 +15,8 @@ import (
 
 	"github.com/go-logr/zerologr"
 
+	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
+
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
@@ -26,9 +28,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/manager/basic"
 	"github.com/flomesh-io/fsm/pkg/manager/listeners"
 	"github.com/flomesh-io/fsm/pkg/manager/logging"
-	recon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
-	"github.com/flomesh-io/fsm/pkg/manager/webhook"
 	"github.com/flomesh-io/fsm/pkg/repo"
 
 	smiAccessClient "github.com/servicemeshinterface/smi-sdk-go/pkg/gen/client/access/clientset/versioned"
@@ -42,6 +42,7 @@ import (
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 
 	connectorscheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
+	extscheme "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned/scheme"
 	machinescheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	mcscheme "github.com/flomesh-io/fsm/pkg/gen/client/multicluster/clientset/versioned/scheme"
 	nsigscheme "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned/scheme"
@@ -172,6 +173,7 @@ func init() {
 	_ = pascheme.AddToScheme(scheme)
 	_ = machinescheme.AddToScheme(scheme)
 	_ = connectorscheme.AddToScheme(scheme)
+	_ = extscheme.AddToScheme(scheme)
 }
 
 // TODO(#4502): This function can be deleted once we get rid of cert options.
@@ -265,7 +267,7 @@ func main() {
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
-		informers.WithPolicyAttachmentClient(policyAttachmentClient),
+		informers.WithPolicyAttachmentClientV2(gatewayAPIClient, policyAttachmentClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
@@ -425,9 +427,9 @@ func main() {
 		basic.SetupHTTP,
 		basic.SetupTLS,
 		logging.SetupLogging,
-		webhook.RegisterWebHooks,
-		recon.RegisterControllers,
-		recon.RegisterReconcilers,
+		//webhook.RegisterWebHooks,
+		mgrecon.RegisterControllers,
+		mgrecon.RegisterWebhooksAndReconcilers,
 	} {
 		if err := f(ctx); err != nil {
 			log.Error().Msgf("Failed to startup: %s", err)

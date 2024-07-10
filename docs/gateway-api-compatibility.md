@@ -33,8 +33,7 @@ For a description of each field, visit the [Gateway API documentation](https://g
 
 > Status: Partially supported. 
 
-FSM supports only GatewayClass resource whose ControllerName is `flomesh.io/gateway-controller`. If multiple valid GatewayClasses are created, the oldest is active and take effect.
-
+FSM supports only GatewayClass resource whose ControllerName is `flomesh.io/gateway-controller`.
 
 Fields:
 - `spec`
@@ -42,16 +41,13 @@ Fields:
 	- `parametersRef` - not supported.
 	- `description` - supported.
 - `status`
-	- `conditions` - partially supported. Support `Accepted` type and added ConditionType `Active`.
+	- `conditions` - supported.
 
 ### Gateway
 
 > Status: Partially supported.
 
-FSM supports only a single Gateway resource per namespace. 
-The Gateway resource must reference FSM's corresponding effective GatewayClass, whose controller name is `flomesh.io/gateway-controller`. 
-In case of multiple Gateway resources created in the same namespace, FSM will choose the oldest ONE by creation timestamp. If the timestamps are equal, FSM will choose the resource that appears first in alphabetical order by “{name}”. We might support multiple Gateway resources.
-Due to the limitation of Kubernetes Service of type LoadBalancer, the UDP gateway cannot coexist with gateways of other protocols. If you want to use UDP gateway, you need to create a new one.
+FSM supports only Gateway resource whose GatewayClass's ControllerName is `flomesh.io/gateway-controller`.
 
 Fields:
 - `spec`
@@ -59,11 +55,11 @@ Fields:
 	* `listeners`
 		* `name` - supported.
 		* `hostname` - supported.
-		* `port` - supported, must be LTE 60000, all priviliged ports will be mapped to 60000 + port.
+		* `port` - supported. Privileged ports need to be enabled in the container security context.
 		* `protocol` - supported. Allowed values: `HTTP`, `HTTPS`, `TLS`, `TCP`, `UDP`.
 		* `tls`
 		  * `mode` - supported. Allowed value: `Terminate`, `Passthrough`.
-		  * `certificateRefs` - partially supported. The TLS certificate and key must be stored in a Secret of type `kubernetes.io/tls`. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is **supported**.
+		  * `certificateRefs` - supported. The TLS certificate and key must be stored in a Secret of type `kubernetes.io/tls`. Multiple references are supported. You must deploy the Secrets before the Gateway resource. Secret rotation (watching for updates) is **supported**.
 		  * `options` - partially supported, only ONE annotation for enable/disable mTLS.
       * `frontendValidation` - supported. Core: ConfigMap and Implementation-specific: Secret are supported. A single reference to a Kubernetes ConfigMap/Secret with the CA certificate in a key named `ca.crt`.
     * `allowedRoutes` - supported. 
@@ -79,7 +75,7 @@ Fields:
 	  * `name` - supported.
     * `supportedKinds` - supported.
 	  * `attachedRoutes` - supported.
-	  * `conditions` - partially supported.
+	  * `conditions` - supported.
 
 ### HTTPRoute
 
@@ -103,10 +99,7 @@ Fields:
   * `parents`
 	* `parentRef` - supported.
 	* `controllerName` - supported.
-	* `conditions` - partially supported. Supported (Condition/Status/Reason):
-    	*  `Accepted/True/Accepted`
-    	*  `Accepted/False/NoMatchingListenerHostname`
-    	*  `ResolvedRefs/True/ResolvedRefs`
+	* `conditions` - supported.
 
 
 ### TLSRoute
@@ -122,10 +115,7 @@ Fields:
   * `parents`
     * `parentRef` - supported.
     * `controllerName` - supported.
-    * `conditions` - partially supported. Supported (Condition/Status/Reason):
-      *  `Accepted/True/Accepted`
-      *  `Accepted/False/NoMatchingListenerHostname`
-      *  `ResolvedRefs/True/ResolvedRefs`
+    * `conditions` - supported. 
 
 ### GRPCRoute
 
@@ -152,10 +142,7 @@ Fields:
   * `parents`
     * `parentRef` - supported.
     * `controllerName` - supported.
-    * `conditions` - partially supported. Supported (Condition/Status/Reason):
-      *  `Accepted/True/Accepted`
-      *  `Accepted/False/NoMatchingListenerHostname`
-      *  `ResolvedRefs/True/ResolvedRefs`
+    * `conditions` - supported.
       
 ### TCPRoute
 
@@ -169,9 +156,7 @@ Fields:
   * `parents`
     * `parentRef` - supported.
     * `controllerName` - supported.
-    * `conditions` - partially supported. Supported (Condition/Status/Reason):
-      *  `Accepted/True/Accepted`
-      *  `ResolvedRefs/True/ResolvedRefs`
+    * `conditions` - supported.
       
 ### UDPRoute
 
@@ -185,10 +170,8 @@ Fields:
   * `parents`
     * `parentRef` - supported.
     * `controllerName` - supported.
-    * `conditions` - partially supported. Supported (Condition/Status/Reason):
-      *  `Accepted/True/Accepted`
-      *  `ResolvedRefs/True/ResolvedRefs`
- 
+    * `conditions` - supported.
+    
 ### ReferenceGrant
 
 > Status: supported.

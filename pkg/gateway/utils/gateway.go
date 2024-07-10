@@ -37,6 +37,11 @@ func IsActiveGateway(gateway *gwv1.Gateway) bool {
 	return IsAcceptedGateway(gateway) && IsProgrammedGateway(gateway)
 }
 
+func IsActiveGatewayByConditions(conditions []metav1.Condition) bool {
+	return metautil.IsStatusConditionTrue(conditions, string(gwv1.GatewayConditionAccepted)) &&
+		metautil.IsStatusConditionTrue(conditions, string(gwv1.GatewayConditionProgrammed))
+}
+
 // IsListenerProgrammed returns true if the listener is programmed
 func IsListenerProgrammed(listenerStatus gwv1.ListenerStatus) bool {
 	return metautil.IsStatusConditionTrue(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed))
@@ -62,6 +67,7 @@ func IsListenerValid(s gwv1.ListenerStatus) bool {
 	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
 }
 
+// GetActiveGateways returns the active gateways
 func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
 	classes, err := findFSMGatewayClasses(cache)
 	if err != nil {
@@ -74,6 +80,31 @@ func GetActiveGateways(cache cache.Cache) []*gwv1.Gateway {
 		list := &gwv1.GatewayList{}
 		if err := cache.List(context.Background(), list, &client.ListOptions{
 			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+		}); err != nil {
+			log.Error().Msgf("Failed to list Gateways: %v", err)
+			continue
+		}
+
+		gateways = append(gateways, ToSlicePtr(list.Items)...)
+	}
+
+	return filterActiveGateways(gateways)
+}
+
+// GetActiveGatewaysInNamespace returns the active gateways in the namespace
+func GetActiveGatewaysInNamespace(cache cache.Cache, namespace string) []*gwv1.Gateway {
+	classes, err := findFSMGatewayClasses(cache)
+	if err != nil {
+		log.Error().Msgf("Failed to find GatewayClass: %v", err)
+		return nil
+	}
+
+	gateways := make([]*gwv1.Gateway, 0)
+	for _, cls := range classes {
+		list := &gwv1.GatewayList{}
+		if err := cache.List(context.Background(), list, &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(constants.ClassGatewayIndex, cls.Name),
+			Namespace:     namespace,
 		}); err != nil {
 			log.Error().Msgf("Failed to list Gateways: %v", err)
 			continue
@@ -123,10 +154,10 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 }
 
 // GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RouteParentStatusObject) []gwtypes.Listener {
-	routeGvk := u.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
-	routeNs := u.GetRouteStatusObject().GetObjectMeta().Namespace
-	parentRef := u.GetParentRef()
+func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteParentStatusObject) []gwtypes.Listener {
+	routeGvk := rps.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
+	routeNs := rps.GetRouteStatusObject().GetObjectMeta().Namespace
+	parentRef := rps.GetParentRef()
 	validListeners := GetValidListenersForGateway(gw)
 
 	selectedListeners := make([]gwtypes.Listener, 0)
@@ -138,7 +169,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 	}
 
 	if len(selectedListeners) == 0 {
-		u.AddCondition(
+		rps.AddCondition(
 			gwv1.RouteConditionAccepted,
 			metav1.ConditionFalse,
 			gwv1.RouteReasonNoMatchingParent,
@@ -163,7 +194,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, u status.RoutePar
 	}
 
 	if len(allowedListeners) == 0 {
-		u.AddCondition(
+		rps.AddCondition(
 			gwv1.RouteConditionAccepted,
 			metav1.ConditionFalse,
 			gwv1.RouteReasonNotAllowedByListeners,
@@ -204,4 +235,12 @@ func NamespaceMatches(client cache.Cache, namespaces *gwv1.RouteNamespaces, gate
 	}
 
 	return true
+}
+
+// IsEffectiveRouteForParent returns true if the route is accepted and all references are resolved
+func IsEffectiveRouteForParent(rsh status.RouteStatusObject, parentRef gwv1.ParentReference) bool {
+	conditions := rsh.ConditionsForParentRef(parentRef)
+
+	return metautil.IsStatusConditionTrue(conditions, string(gwv1.RouteConditionAccepted)) &&
+		metautil.IsStatusConditionTrue(conditions, string(gwv1.RouteConditionResolvedRefs))
 }

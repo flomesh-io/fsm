@@ -31,6 +31,10 @@ import (
 	"sync"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -61,6 +65,7 @@ type reconciler struct {
 	stopCh   chan struct{}
 	mu       sync.Mutex
 	server   *cp.ControlPlaneServer
+	webhook  whtypes.Register
 }
 
 func (r *reconciler) NeedLeaderElection() bool {
@@ -72,12 +77,13 @@ var (
 )
 
 // NewReconciler returns a new reconciler for Cluster objects
-func NewReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	r := &reconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("Cluster"),
 		fctx:     ctx,
 		stopCh:   utils.RegisterOSExitHandlers(),
 		server:   cp.NewControlPlaneServer(ctx.Configurator, ctx.MsgBroker),
+		webhook:  webhook,
 	}
 
 	go r.server.Run(r.stopCh)
@@ -292,6 +298,15 @@ func (r *reconciler) failedJoinClusterSet(ctx context.Context, cluster *mcsv1alp
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&mcsv1alpha1.Cluster{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&mcsv1alpha1.Cluster{}).
 		Owns(&corev1.Secret{}).

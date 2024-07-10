@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: fsm-gateway-role
+  name: {{ printf "fsm-gateway-%s-%s-role" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
   labels:
     {{- include "fsm.labels" . | nindent 4 }}
@@ -17,10 +17,8 @@ rules:
       - get
       - list
       - watch
-      - create
       - update
       - patch
-      - delete
   - apiGroups:
       - "apps"
     resources:
@@ -29,8 +27,30 @@ rules:
       - get
       - list
       - watch
-      - create
       - update
       - patch
-      - delete
+  - apiGroups:
+      - "gateway.networking.k8s.io"
+    resources:
+      - gateways
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - "gateway.networking.k8s.io"
+    resources:
+      - "gateways/status"
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - "gateway.networking.k8s.io"
+    resources:
+      - "gateways/finalizers"
+    verbs:
+      - update
 {{- end }}

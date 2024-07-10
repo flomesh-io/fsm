@@ -35,6 +35,10 @@ import (
 	"strings"
 	"time"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"github.com/flomesh-io/fsm/pkg/version"
 
 	k8scache "k8s.io/client-go/tools/cache"
@@ -75,6 +79,7 @@ type serviceReconciler struct {
 	fctx       *fctx.ControllerContext
 	settingMgr *SettingManager
 	cache      map[types.NamespacedName]*corev1.Service
+	webhook    whtypes.Register
 }
 
 func (r *serviceReconciler) NeedLeaderElection() bool {
@@ -93,7 +98,7 @@ type serviceTag struct {
 }
 
 // NewServiceReconciler returns a new reconciler for Service
-func NewServiceReconciler(ctx *fctx.ControllerContext, settingManager *SettingManager) controllers.Reconciler {
+func NewServiceReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register, settingManager *SettingManager) controllers.Reconciler {
 	log.Info().Msgf("Creating FLB service reconciler ...")
 
 	recon := &serviceReconciler{
@@ -101,6 +106,7 @@ func NewServiceReconciler(ctx *fctx.ControllerContext, settingManager *SettingMa
 		fctx:       ctx,
 		settingMgr: settingManager,
 		cache:      make(map[types.NamespacedName]*corev1.Service),
+		webhook:    webhook,
 	}
 
 	ctx.InformerCollection.AddEventHandler(informers.InformerKeyService, k8scache.ResourceEventHandlerFuncs{
@@ -706,6 +712,16 @@ func (r *serviceReconciler) hasFinalizer(_ context.Context, svc *corev1.Service)
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *serviceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&corev1.Service{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		WithCategoryProvider(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	bd := ctrl.NewControllerManagedBy(mgr).
 		For(
 			&corev1.Service{},

@@ -222,10 +222,10 @@ func (p *PipyRepoClient) upsertFile(path string, content interface{}) error {
 //}
 
 // Commit the codebase, version is the current vesion of the codebase, it will be increased by 1 when committing
-func (p *PipyRepoClient) commit(path string, version int64) error {
+func (p *PipyRepoClient) commit(path string, _ int64) error {
 	resp, err := p.httpClient.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(Codebase{Version: version + 1}).
+		SetBody(Codebase{Version: time.Now().UnixNano()}).
 		SetResult(&Codebase{}).
 		Patch(fullRepoApiPath(path))
 
