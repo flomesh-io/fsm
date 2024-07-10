@@ -11,7 +11,7 @@ type RetryPolicySpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the policy is applied
-	TargetRefs []gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRef"`
+	TargetRefs []gwv1alpha2.NamespacedPolicyTargetReference `json:"targetRefs"`
 
 	// +listType=map
 	// +listMapKey=port

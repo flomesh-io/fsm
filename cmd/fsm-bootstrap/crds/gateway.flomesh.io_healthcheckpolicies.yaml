@@ -250,7 +250,7 @@ spec:
                 x-kubernetes-list-map-keys:
                 - port
                 x-kubernetes-list-type: map
-              targetRef:
+              targetRefs:
                 description: TargetRefs is the references to the target resources
                   to which the policy is applied
                 items:
@@ -297,7 +297,7 @@ spec:
                 minItems: 1
                 type: array
             required:
-            - targetRef
+            - targetRefs
             type: object
           status:
             description: Status defines the current state of HealthCheckPolicy.
