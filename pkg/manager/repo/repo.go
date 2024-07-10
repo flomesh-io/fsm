@@ -30,6 +30,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -177,13 +178,15 @@ func listFiles(root string) (files []string) {
 }
 
 func visit(files *[]string) filepath.WalkFunc {
+	regex := regexp.MustCompile(`^\._?`)
+
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Error().Msgf("prevent panic by handling failure accessing a path %q: %v\n", path, err)
 			return err
 		}
 
-		if !info.IsDir() {
+		if !info.IsDir() && !regex.MatchString(info.Name()) {
 			*files = append(*files, path)
 		}
 

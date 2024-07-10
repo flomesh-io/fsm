@@ -145,13 +145,24 @@ rules:
 
   # GatewayAPI
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses", "gateways", "httproutes", "grpcroutes", "referencegrants", "tcproutes", "tlsroutes", "udproutes" ]
+    resources: [ "gatewayclasses", "gateways", "httproutes", "grpcroutes", "referencegrants", "tcproutes", "tlsroutes", "udproutes", "backendlbpolicies", "backendtlspolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses/finalizers", "gateways/finalizers", "httproutes/finalizers", "grpcroutes/finalizers", "referencegrants/finalizers", "tcproutes/finalizers", "tlsroutes/finalizers", "udproutes/finalizers" ]
+    resources: [ "gatewayclasses/finalizers", "gateways/finalizers", "httproutes/finalizers", "grpcroutes/finalizers", "referencegrants/finalizers", "tcproutes/finalizers", "tlsroutes/finalizers", "udproutes/finalizers", "backendlbpolicies/finalizers", "backendtlspolicies/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status" ]
+    resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status", "backendlbpolicies/status", "backendtlspolicies/status" ]
+    verbs: [ "get", "patch", "update" ]
+
+  # GatewayAPI Extension
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters" ]
+    verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters/finalizers" ]
+    verbs: [ "update" ]
+  - apiGroups: [ "extension.gateway.flomesh.io" ]
+    resources: [ "filters/status"]
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment

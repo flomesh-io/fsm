@@ -247,11 +247,11 @@ fsm:
 								Name:      "grpc-cert",
 							},
 						},
-						FrontendValidation: &gwv1.FrontendTLSValidation{
-							CACertificateRefs: []gwv1.ObjectReference{
-								{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
-							},
-						},
+						//FrontendValidation: &gwv1.FrontendTLSValidation{
+						//	CACertificateRefs: []gwv1.ObjectReference{
+						//		{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
+						//	},
+						//},
 						Options: map[gwv1.AnnotationKey]gwv1.AnnotationValue{},
 					},
 				},
@@ -284,11 +284,11 @@ fsm:
 								Name:      "grpc-cert",
 							},
 						},
-						FrontendValidation: &gwv1.FrontendTLSValidation{
-							CACertificateRefs: []gwv1.ObjectReference{
-								{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
-							},
-						},
+						//FrontendValidation: &gwv1.FrontendTLSValidation{
+						//	CACertificateRefs: []gwv1.ObjectReference{
+						//		{Group: corev1.GroupName, Kind: "ConfigMap", Name: "https-ca"},
+						//	},
+						//},
 						Options: map[gwv1.AnnotationKey]gwv1.AnnotationValue{},
 					},
 				},
@@ -726,6 +726,7 @@ func testFSMGatewayGRPCTrafficSameNamespace() {
 		Destination: "grpctest.localhost:8090",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 
@@ -886,6 +887,7 @@ func testFSMGatewayGRPCTrafficCrossNamespace() {
 		Destination: "grpctest.localhost:9090",
 		Symbol:      "hello.HelloService/SayHello",
 		JSONRequest: `{"greeting":"Flomesh"}`,
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 
@@ -1534,6 +1536,7 @@ func testFSMGatewayGRPCSTraffic() {
 		JSONRequest: `{"greeting":"Flomesh"}`,
 		UseTLS:      true,
 		CertFile:    "grpc.crt",
+		ProtoFile:   "../../scripts/hello.proto",
 	}
 	srcToDestStr := fmt.Sprintf("%s -> %s/%s", "grpcurl", grpcReq.Destination, grpcReq.Symbol)
 

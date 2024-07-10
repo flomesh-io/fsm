@@ -27,7 +27,13 @@ package v1alpha2
 import (
 	"context"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status/route"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
@@ -52,7 +58,8 @@ import (
 type tlsRouteReconciler struct {
 	recorder        record.EventRecorder
 	fctx            *fctx.ControllerContext
-	statusProcessor *route.RouteStatusProcessor
+	statusProcessor *routes.RouteStatusProcessor
+	webhook         whtypes.Register
 }
 
 func (r *tlsRouteReconciler) NeedLeaderElection() bool {
@@ -60,11 +67,12 @@ func (r *tlsRouteReconciler) NeedLeaderElection() bool {
 }
 
 // NewTLSRouteReconciler returns a new TLSRoute.Reconciler
-func NewTLSRouteReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewTLSRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &tlsRouteReconciler{
 		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
 		fctx:            ctx,
-		statusProcessor: route.NewRouteStatusProcessor(ctx.Manager.GetCache()),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		webhook:         webhook,
 	}
 }
 
@@ -86,14 +94,14 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	rsu := route.NewRouteStatusUpdate(
+	rsu := routes.NewRouteStatusUpdate(
 		tlsRoute,
 		&tlsRoute.ObjectMeta,
 		&tlsRoute.TypeMeta,
 		tlsRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(tlsRoute.Status.Parents),
 	)
-	if err := r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, rsu, tlsRoute.Spec.ParentRefs); err != nil {
+	if err := r.statusProcessor.Process(ctx, rsu, tlsRoute.Spec.ParentRefs); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -104,6 +112,15 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *tlsRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&gwv1alpha2.TLSRoute{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TLSRoute{}).
 		Complete(r); err != nil {
@@ -135,18 +152,23 @@ func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.BackendTLSRouteIndex, backendTLSRouteIndexFunc); err != nil {
 		return err
 	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.TLSRoute{}, constants.CrossNamespaceBackendNamespaceTLSRouteIndex, crossNamespaceBackendNamespaceTLSRouteIndexFunc); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func backendTLSRouteIndexFunc(obj client.Object) []string {
-	tlsroute := obj.(*gwv1alpha2.TLSRoute)
+	tlsRoute := obj.(*gwv1alpha2.TLSRoute)
 	var backendRefs []string
-	for _, rule := range tlsroute.Spec.Rules {
+	for _, rule := range tlsRoute.Spec.Rules {
 		for _, backend := range rule.BackendRefs {
 			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
 				backendRefs = append(backendRefs,
 					types.NamespacedName{
-						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tlsroute.Namespace),
+						Namespace: gwutils.NamespaceDerefOr(backend.Namespace, tlsRoute.Namespace),
 						Name:      string(backend.Name),
 					}.String(),
 				)
@@ -155,4 +177,20 @@ func backendTLSRouteIndexFunc(obj client.Object) []string {
 	}
 
 	return backendRefs
+}
+
+func crossNamespaceBackendNamespaceTLSRouteIndexFunc(obj client.Object) []string {
+	tlsRoute := obj.(*gwv1alpha2.TLSRoute)
+	namespaces := sets.New[string]()
+	for _, rule := range tlsRoute.Spec.Rules {
+		for _, backend := range rule.BackendRefs {
+			if backend.Kind == nil || string(*backend.Kind) == constants.KubernetesServiceKind {
+				if backend.Namespace != nil && string(*backend.Namespace) != tlsRoute.Namespace {
+					namespaces.Insert(string(*backend.Namespace))
+				}
+			}
+		}
+	}
+
+	return namespaces.UnsortedList()
 }

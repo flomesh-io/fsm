@@ -32,11 +32,15 @@ import (
 	"os"
 	"os/exec"
 
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -48,7 +52,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/utils"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -60,8 +63,9 @@ type metadata struct {
 }
 
 var (
-	flags = pflag.NewFlagSet(`fsm-gateway`, pflag.ExitOnError)
-	log   = logger.New("fsm-gateway/main")
+	flags  = pflag.NewFlagSet(`fsm-gateway`, pflag.ExitOnError)
+	log    = logger.New("fsm-gateway/main")
+	scheme = runtime.NewScheme()
 )
 
 var (
@@ -72,6 +76,7 @@ var (
 	fsmVersion        string
 	gatewayNamespace  string
 	gatewayName       string
+	serviceName       string
 
 	meta metadata
 )
@@ -84,8 +89,12 @@ func init() {
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&gatewayNamespace, "gateway-namespace", "", "Namespace of Gateway")
 	flags.StringVar(&gatewayName, "gateway-name", "", "Name of Gateway")
+	flags.StringVar(&serviceName, "service-name", "", "Name of Gateway Service")
 
 	meta = getMetadata()
+
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = gwscheme.AddToScheme(scheme)
 }
 
 func getMetadata() metadata {
@@ -129,7 +138,7 @@ func main() {
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
 	)
 	if err != nil {
-		log.Error().Msgf("")
+		log.Error().Msgf("Error creating informer collection: %s", err)
 	}
 
 	cfg := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, msgBroker)
@@ -147,9 +156,9 @@ func main() {
 	spawn := calcPipySpawn(kubeClient)
 	log.Info().Msgf("PIPY SPAWN = %d", spawn)
 
-	startPipy(spawn, url)
-
 	startHTTPServer()
+
+	startPipy(spawn, url)
 
 	<-stop
 	cancel()
@@ -219,8 +228,16 @@ func startPipy(spawn int64, url string) {
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
 	}
+
 	if verbosity != "disabled" {
 		args = append([]string{fmt.Sprintf("--log-level=%s", utils.PipyLogLevelByVerbosity(verbosity))}, args...)
+	}
+
+	args = append(args, fmt.Sprintf("--admin-port=%d", constants.FSMGatewayAdminPort))
+
+	// arguments for FGW
+	if verbosity == "debug" || verbosity == "trace" {
+		args = append(args, "--args", "--debug")
 	}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
@@ -229,17 +246,28 @@ func startPipy(spawn int64, url string) {
 
 	log.Info().Msgf("cmd = %v", cmd)
 
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Run(); err != nil {
 		log.Fatal().Err(err)
 		os.Exit(1)
+	}
+
+	if cmd.ProcessState != nil {
+		log.Info().Msgf("PIPY process state: %v", cmd.ProcessState.String())
+	}
+
+	if cmd.Process != nil {
+		// detach it from the go process
+		if err := cmd.Process.Release(); err != nil {
+			log.Fatal().Err(err)
+		}
 	}
 }
 
 func startHTTPServer() {
 	// Initialize FSM's http service server
-	httpServer := httpserver.NewHTTPServer(constants.FSMHTTPServerPort)
+	httpServer := httpserver.NewHTTPServer(constants.FSMGatewayHTTPServerPort)
 	// Metrics
-	httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
+	// httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
 	// Version
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
 

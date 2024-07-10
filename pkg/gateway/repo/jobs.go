@@ -1,12 +1,10 @@
 package repo
 
-import (
-	"github.com/flomesh-io/fsm/pkg/gateway/cache"
-)
+import "github.com/flomesh-io/fsm/pkg/gateway/processor"
 
 // GatewayConfGeneratorJob is the job to generate pipy policy json
 type GatewayConfGeneratorJob struct {
-	cache cache.Cache
+	processor processor.Processor
 
 	// Optional waiter
 	done chan struct{}
@@ -21,7 +19,7 @@ func (job *GatewayConfGeneratorJob) GetDoneCh() <-chan struct{} {
 func (job *GatewayConfGeneratorJob) Run() {
 	defer close(job.done)
 
-	job.cache.BuildConfigs()
+	job.processor.BuildConfigs()
 }
 
 // JobName implementation for this job, for logging purposes

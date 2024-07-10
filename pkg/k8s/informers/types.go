@@ -126,14 +126,24 @@ const (
 	InformerKeyCircuitBreakingPolicy InformerKey = "CircuitBreakingPolicy"
 	// InformerKeyAccessControlPolicy is the InformerKey for a AccessControlPolicy informer
 	InformerKeyAccessControlPolicy InformerKey = "AccessControlPolicy"
-	// InformerKeyHealthCheckPolicy is the InformerKey for a HealthCheckPolicy informer
-	InformerKeyHealthCheckPolicy InformerKey = "HealthCheckPolicy"
+	// InformerKeyHealthCheckPolicyV1alpha1 is the InformerKey for a HealthCheckPolicy informer
+	InformerKeyHealthCheckPolicyV1alpha1 InformerKey = "HealthCheckPolicy-v1alpha1"
 	// InformerKeyFaultInjectionPolicy is the InformerKey for a FaultInjectionPolicy informer
 	InformerKeyFaultInjectionPolicy InformerKey = "FaultInjectionPolicy"
 	// InformerKeyUpstreamTLSPolicy is the InformerKey for a UpstreamTLSPolicy informer
 	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
-	// InformerKeyRetryPolicy is the InformerKey for a RetryPolicy informer
-	InformerKeyRetryPolicy InformerKey = "RetryPolicy"
+	// InformerKeyRetryPolicyV1alpha1 is the InformerKey for a RetryPolicy informer
+	InformerKeyRetryPolicyV1alpha1 InformerKey = "RetryPolicy-v1alpha1"
+	// InformerKeyBackendTLSPolicy is the InformerKey for a BackendTLSPolicy informer
+	InformerKeyBackendTLSPolicy InformerKey = "BackendTLSPolicy"
+	// InformerKeyBackendLBPolicy is the InformerKey for a BackendLBPolicy informer
+	InformerKeyBackendLBPolicy InformerKey = "BackendLBPolicy"
+	// InformerKeyHealthCheckPolicyV1alpha2 is the InformerKey for a HealthCheckPolicy informer
+	InformerKeyHealthCheckPolicyV1alpha2 InformerKey = "HealthCheckPolicy-v1alpha2"
+	// InformerKeyRetryPolicyV1alpha2 is the InformerKey for a RetryPolicy informer
+	InformerKeyRetryPolicyV1alpha2 InformerKey = "RetryPolicy-v1alpha2"
+	// InformerKeyFilter is the InformerKey for a Filter informer
+	InformerKeyFilter InformerKey = "Filter"
 )
 
 const (
@@ -156,37 +166,6 @@ type InformerCollection struct {
 	//listers   *Lister
 	meshName string
 }
-
-// Lister is the listers for the informers in the collection
-//type Lister struct {
-//	Service               v1.ServiceLister
-//	ServiceImport         mcsv1alpha1.ServiceImportLister
-//	Endpoints             v1.EndpointsLister
-//	EndpointSlice         discoveryv1.EndpointSliceLister
-//	Secret                v1.SecretLister
-//	ConfigMap             v1.ConfigMapLister
-//	GatewayClass          gwv1lister.GatewayClassLister
-//	Gateway               gwv1lister.GatewayLister
-//	HTTPRoute             gwv1lister.HTTPRouteLister
-//	GRPCRoute             gwv1lister.GRPCRouteLister
-//	TLSRoute              gwv1alpha2lister.TLSRouteLister
-//	TCPRoute              gwv1alpha2lister.TCPRouteLister
-//	UDPRoute              gwv1alpha2lister.UDPRouteLister
-//	K8sIngressClass       networkingv1.IngressClassLister
-//	K8sIngress            networkingv1.IngressLister
-//	NamespacedIngress     nsigv1alpha1.NamespacedIngressLister
-//	RateLimitPolicy       gwpav1alpha1lister.RateLimitPolicyLister
-//	SessionStickyPolicy   gwpav1alpha1lister.SessionStickyPolicyLister
-//	LoadBalancerPolicy    gwpav1alpha1lister.LoadBalancerPolicyLister
-//	CircuitBreakingPolicy gwpav1alpha1lister.CircuitBreakingPolicyLister
-//	AccessControlPolicy   gwpav1alpha1lister.AccessControlPolicyLister
-//	HealthCheckPolicy     gwpav1alpha1lister.HealthCheckPolicyLister
-//	FaultInjectionPolicy  gwpav1alpha1lister.FaultInjectionPolicyLister
-//	UpstreamTLSPolicy     gwpav1alpha1lister.UpstreamTLSPolicyLister
-//	RetryPolicy           gwpav1alpha1lister.RetryPolicyLister
-//	ReferenceGrant        gwv1beta1lister.ReferenceGrantLister
-//	Namespace             v1.NamespaceLister
-//}
 
 // ResourceType is the type used to represent the type of resource
 type ResourceType string
@@ -260,17 +239,13 @@ const (
 
 	// RetryPoliciesResourceType is the type used to represent the retry policies resource
 	RetryPoliciesResourceType ResourceType = "retries"
+
+	// BackendTLSPoliciesResourceType is the type used to represent the backend tls policies resource
+	BackendTLSPoliciesResourceType ResourceType = "backendtls"
+
+	// BackendLBPoliciesResourceType is the type used to represent the backend lb policies resource
+	BackendLBPoliciesResourceType ResourceType = "backendlbs"
+
+	// FiltersResourceType is the type used to represent the filters resource
+	FiltersResourceType ResourceType = "filters"
 )
-
-// GatewayAPIResource is the type used to represent the Gateway API resource
-//type GatewayAPIResource interface {
-//	*gwv1.GatewayClass | *gwv1.Gateway |
-//		*gwv1.HTTPRoute | *gwv1.GRPCRoute | *gwv1alpha2.TLSRoute | *gwv1alpha2.TCPRoute | *gwv1alpha2.UDPRoute | *gwv1beta1.ReferenceGrant |
-//		*gwpav1alpha1.RateLimitPolicy | *gwpav1alpha1.SessionStickyPolicy | *gwpav1alpha1.LoadBalancerPolicy |
-//		*gwpav1alpha1.CircuitBreakingPolicy | *gwpav1alpha1.AccessControlPolicy | *gwpav1alpha1.HealthCheckPolicy |
-//		*gwpav1alpha1.FaultInjectionPolicy | *gwpav1alpha1.UpstreamTLSPolicy | *gwpav1alpha1.RetryPolicy
-//}
-
-//var (
-//	selectAll = labels.Set{}.AsSelector()
-//)

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -14,13 +16,14 @@ type GatewayStatusUpdate struct {
 	conditions         map[gwv1.GatewayConditionType]metav1.Condition
 	existingConditions map[gwv1.GatewayConditionType]metav1.Condition
 	listenerStatus     map[string]*gwv1.ListenerStatus
-	addresses          []gwv1.GatewayStatusAddress
 	objectMeta         *metav1.ObjectMeta
 	typeMeta           *metav1.TypeMeta
 	resource           client.Object
 	transitionTime     metav1.Time
 	fullName           types.NamespacedName
 	generation         int64
+	addresses          []gwv1.GatewayStatusAddress
+	existingAddresses  []gwv1.GatewayStatusAddress
 }
 
 func NewGatewayStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, gs *gwv1.GatewayStatus) *GatewayStatusUpdate {
@@ -32,6 +35,7 @@ func NewGatewayStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typ
 		fullName:           types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
 		generation:         meta.Generation,
 		existingConditions: getGatewayConditions(gs),
+		existingAddresses:  gs.Addresses,
 	}
 }
 
@@ -46,10 +50,6 @@ func (g *GatewayStatusUpdate) AddCondition(
 		g.conditions = make(map[gwv1.GatewayConditionType]metav1.Condition)
 	}
 
-	if c, ok := g.conditions[conditionType]; ok {
-		message = fmt.Sprintf("%s, %s", c.Message, message)
-	}
-
 	newCond := metav1.Condition{
 		Reason:             string(reason),
 		Status:             status,
@@ -58,6 +58,7 @@ func (g *GatewayStatusUpdate) AddCondition(
 		LastTransitionTime: metav1.NewTime(time.Now()),
 		ObservedGeneration: g.generation,
 	}
+
 	g.conditions[conditionType] = newCond
 
 	return newCond
@@ -68,6 +69,15 @@ func (g *GatewayStatusUpdate) ConditionExists(conditionType gwv1.GatewayConditio
 	return ok
 }
 
+func (g *GatewayStatusUpdate) IsStatusConditionTrue(conditionType gwv1.GatewayConditionType) bool {
+	cond, ok := g.conditions[conditionType]
+	if !ok {
+		return false
+	}
+
+	return cond.Status == metav1.ConditionTrue
+}
+
 func (g *GatewayStatusUpdate) SetAddresses(addresses []gwv1.GatewayStatusAddress) {
 	g.addresses = addresses
 }
@@ -76,6 +86,7 @@ func (g *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, gro
 	if g.listenerStatus == nil {
 		g.listenerStatus = map[string]*gwv1.ListenerStatus{}
 	}
+
 	if g.listenerStatus[listenerName] == nil {
 		g.listenerStatus[listenerName] = &gwv1.ListenerStatus{
 			Name: gwv1.SectionName(listenerName),
@@ -109,6 +120,7 @@ func (g *GatewayStatusUpdate) AddListenerCondition(
 	if g.listenerStatus == nil {
 		g.listenerStatus = map[string]*gwv1.ListenerStatus{}
 	}
+
 	if g.listenerStatus[listenerName] == nil {
 		g.listenerStatus[listenerName] = &gwv1.ListenerStatus{
 			Name: gwv1.SectionName(listenerName),
@@ -117,16 +129,7 @@ func (g *GatewayStatusUpdate) AddListenerCondition(
 
 	listenerStatus := g.listenerStatus[listenerName]
 
-	idx := -1
-	for i, existing := range listenerStatus.Conditions {
-		if existing.Type == string(cond) {
-			idx = i
-			message = fmt.Sprintf("%s, %s", existing.Message, message)
-			break
-		}
-	}
-
-	newCond := metav1.Condition{
+	condition := metav1.Condition{
 		Reason:             string(reason),
 		Status:             status,
 		Type:               string(cond),
@@ -135,13 +138,9 @@ func (g *GatewayStatusUpdate) AddListenerCondition(
 		ObservedGeneration: g.generation,
 	}
 
-	if idx > -1 {
-		listenerStatus.Conditions[idx] = newCond
-	} else {
-		listenerStatus.Conditions = append(listenerStatus.Conditions, newCond)
-	}
+	metautil.SetStatusCondition(&listenerStatus.Conditions, condition)
 
-	return newCond
+	return condition
 }
 
 func getGatewayConditions(gs *gwv1.GatewayStatus) map[gwv1.GatewayConditionType]metav1.Condition {
@@ -223,7 +222,11 @@ func (g *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
 	updated.Status.Listeners = listenerStatusToWrite
 
 	// Gateway addresses
-	updated.Status.Addresses = g.addresses
+	if len(g.addresses) > 0 {
+		updated.Status.Addresses = g.addresses
+	} else {
+		updated.Status.Addresses = g.existingAddresses
+	}
 
 	return updated
 }

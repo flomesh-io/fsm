@@ -1,0 +1,185 @@
+package gateway
+
+import (
+	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
+	"github.com/flomesh-io/fsm/pkg/announcements"
+	mcsv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/k8s"
+	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
+)
+
+func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
+	switch obj.(type) {
+	case *corev1.Service:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyService)
+	case *mcsv1alpha1.ServiceImport:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyServiceImport)
+	case *corev1.Endpoints:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpoints)
+	case *discoveryv1.EndpointSlice:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyEndpointSlices)
+	case *corev1.Secret:
+		return getEventTypesByInformerKey(fsminformers.InformerKeySecret)
+	case *corev1.ConfigMap:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyConfigMap)
+	case *gwv1.GatewayClass:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGatewayClass)
+	case *gwv1.Gateway:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGateway)
+	case *gwv1.HTTPRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIHTTPRoute)
+	case *gwv1.GRPCRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIGRPCRoute)
+	case *gwv1alpha2.TLSRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITLSRoute)
+	case *gwv1alpha2.TCPRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPITCPRoute)
+	case *gwv1alpha2.UDPRoute:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIUDPRoute)
+	case *gwv1beta1.ReferenceGrant:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIReferenceGrant)
+	case *gwv1alpha2.BackendLBPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyBackendLBPolicy)
+	case *gwv1alpha3.BackendTLSPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyBackendTLSPolicy)
+	case *gwpav1alpha2.HealthCheckPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyHealthCheckPolicyV1alpha2)
+	case *gwpav1alpha2.RetryPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyRetryPolicyV1alpha2)
+	case *extv1alpha1.Filter:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyFilter)
+	}
+
+	return nil
+}
+
+func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.EventTypes {
+	switch informerKey {
+	case fsminformers.InformerKeyService:
+		return &k8s.EventTypes{
+			Add:    announcements.ServiceAdded,
+			Update: announcements.ServiceUpdated,
+			Delete: announcements.ServiceDeleted,
+		}
+	case fsminformers.InformerKeyServiceImport:
+		return &k8s.EventTypes{
+			Add:    announcements.ServiceImportAdded,
+			Update: announcements.ServiceImportUpdated,
+			Delete: announcements.ServiceImportDeleted,
+		}
+	case fsminformers.InformerKeyEndpointSlices:
+		return &k8s.EventTypes{
+			Add:    announcements.EndpointSlicesAdded,
+			Update: announcements.EndpointSlicesUpdated,
+			Delete: announcements.EndpointSlicesDeleted,
+		}
+	case fsminformers.InformerKeyEndpoints:
+		return &k8s.EventTypes{
+			Add:    announcements.EndpointAdded,
+			Update: announcements.EndpointUpdated,
+			Delete: announcements.EndpointDeleted,
+		}
+	case fsminformers.InformerKeySecret:
+		return &k8s.EventTypes{
+			Add:    announcements.SecretAdded,
+			Update: announcements.SecretUpdated,
+			Delete: announcements.SecretDeleted,
+		}
+	case fsminformers.InformerKeyConfigMap:
+		return &k8s.EventTypes{
+			Add:    announcements.ConfigMapAdded,
+			Update: announcements.ConfigMapUpdated,
+			Delete: announcements.ConfigMapDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIGatewayClass:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIGatewayClassAdded,
+			Update: announcements.GatewayAPIGatewayClassUpdated,
+			Delete: announcements.GatewayAPIGatewayClassDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIGateway:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIGatewayAdded,
+			Update: announcements.GatewayAPIGatewayUpdated,
+			Delete: announcements.GatewayAPIGatewayDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIHTTPRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIHTTPRouteAdded,
+			Update: announcements.GatewayAPIHTTPRouteUpdated,
+			Delete: announcements.GatewayAPIHTTPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIGRPCRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIGRPCRouteAdded,
+			Update: announcements.GatewayAPIGRPCRouteUpdated,
+			Delete: announcements.GatewayAPIGRPCRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPITLSRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPITLSRouteAdded,
+			Update: announcements.GatewayAPITLSRouteUpdated,
+			Delete: announcements.GatewayAPITLSRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPITCPRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPITCPRouteAdded,
+			Update: announcements.GatewayAPITCPRouteUpdated,
+			Delete: announcements.GatewayAPITCPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIUDPRoute:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIUDPRouteAdded,
+			Update: announcements.GatewayAPIUDPRouteUpdated,
+			Delete: announcements.GatewayAPIUDPRouteDeleted,
+		}
+	case fsminformers.InformerKeyGatewayAPIReferenceGrant:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayAPIReferenceGrantAdded,
+			Update: announcements.GatewayAPIReferenceGrantUpdated,
+			Delete: announcements.GatewayAPIReferenceGrantDeleted,
+		}
+
+	case fsminformers.InformerKeyBackendLBPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.BackendLBPolicyAdded,
+			Update: announcements.BackendLBPolicyUpdated,
+			Delete: announcements.BackendLBPolicyDeleted,
+		}
+	case fsminformers.InformerKeyBackendTLSPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.BackendTLSPolicyAdded,
+			Update: announcements.BackendTLSPolicyUpdated,
+			Delete: announcements.BackendTLSPolicyDeleted,
+		}
+	case fsminformers.InformerKeyHealthCheckPolicyV1alpha2:
+		return &k8s.EventTypes{
+			Add:    announcements.HealthCheckPolicyAdded,
+			Update: announcements.HealthCheckPolicyUpdated,
+			Delete: announcements.HealthCheckPolicyDeleted,
+		}
+	case fsminformers.InformerKeyRetryPolicyV1alpha2:
+		return &k8s.EventTypes{
+			Add:    announcements.RetryPolicyAttachmentAdded,
+			Update: announcements.RetryPolicyAttachmentUpdated,
+			Delete: announcements.RetryPolicyAttachmentDeleted,
+		}
+	case fsminformers.InformerKeyFilter:
+		return &k8s.EventTypes{
+			Add:    announcements.FilterAdded,
+			Update: announcements.FilterUpdated,
+			Delete: announcements.FilterDeleted,
+		}
+	}
+
+	return nil
+}

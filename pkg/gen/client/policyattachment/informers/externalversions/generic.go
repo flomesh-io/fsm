@@ -18,7 +18,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
+	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -49,25 +49,11 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=gateway.flomesh.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("accesscontrolpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().AccessControlPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("circuitbreakingpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().CircuitBreakingPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("faultinjectionpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().FaultInjectionPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("healthcheckpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().HealthCheckPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("loadbalancerpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().LoadBalancerPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("ratelimitpolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RateLimitPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("retrypolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().RetryPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("sessionstickypolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().SessionStickyPolicies().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("upstreamtlspolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha1().UpstreamTLSPolicies().Informer()}, nil
+	// Group=gateway.flomesh.io, Version=v1alpha2
+	case v1alpha2.SchemeGroupVersion.WithResource("healthcheckpolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().HealthCheckPolicies().Informer()}, nil
+	case v1alpha2.SchemeGroupVersion.WithResource("retrypolicies"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().RetryPolicies().Informer()}, nil
 
 	}
 

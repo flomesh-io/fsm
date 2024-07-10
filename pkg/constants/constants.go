@@ -7,12 +7,12 @@ import (
 	"text/template"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
-	gwpav1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha1"
 
 	"helm.sh/helm/v3/pkg/chartutil"
 )
@@ -87,9 +87,18 @@ const (
 	// FSMWebhookPort is the port mutating and validating webhook listens
 	FSMWebhookPort = 9443
 
+	// FSMGatewayHTTPServerPort is the port on which the FSM Gateway serves health and version requests
+	FSMGatewayHTTPServerPort = 59091
+
+	// FSMGatewayAdminPort is the port on which the FSM Gateway serves metrics requests
+	FSMGatewayAdminPort = 59092
+
 	// FSMControllerLeaderElectionID is the name of the resource that leader election
 	// 	will use for holding the leader lock.
 	FSMControllerLeaderElectionID = "fsm-controller.flomesh.io"
+
+	// FSMGatewayLeaderElectionID is the name of the resource that leader election will use for holding the leader lock.
+	FSMGatewayLeaderElectionID = "fsm-gateway.flomesh.io"
 
 	// FSMControllerName is the name of the FSM Controller (formerly ADS service).
 	FSMControllerName = "fsm-controller"
@@ -429,6 +438,9 @@ const (
 	// GatewayAPIReferenceGrantKind is the kind name of ReferenceGrant used in Gateway API
 	GatewayAPIReferenceGrantKind = "ReferenceGrant"
 
+	// GatewayAPIExtensionFilterKind is the kind name of Filter used in Gateway API
+	GatewayAPIExtensionFilterKind = "Filter"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 
@@ -479,6 +491,9 @@ const (
 
 	// GatewayNamespaceLabel is the label used to indicate the namespace of the gateway
 	GatewayNamespaceLabel = GatewayLabelPrefix + "/ns"
+
+	// GatewayNameLabel is the label used to indicate the name of the gateway
+	GatewayNameLabel = GatewayLabelPrefix + "/name"
 
 	// GatewayListenersHashAnnotation is the annotation used to indicate the hash value of gateway listener spec
 	GatewayListenersHashAnnotation = GatewayAnnotationPrefix + "/listeners-hash"
@@ -606,27 +621,38 @@ const (
 
 // GatewayAPI Resources Indexer constants
 const (
-	ControllerGatewayClassIndex    = "controllerGatewayClassIndex"
-	ClassGatewayIndex              = "classGatewayIndex"
-	GatewayTLSRouteIndex           = "gatewayTLSRouteIndex"
-	GatewayHTTPRouteIndex          = "gatewayHTTPRouteIndex"
-	GatewayGRPCRouteIndex          = "gatewayGRPCRouteIndex"
-	GatewayTCPRouteIndex           = "gatewayTCPRouteIndex"
-	GatewayUDPRouteIndex           = "gatewayUDPRouteIndex"
-	SecretGatewayIndex             = "secretGatewayIndex"
-	ConfigMapGatewayIndex          = "configMapGatewayIndex"
-	TargetKindRefGrantIndex        = "targetRefGrantRouteIndex"
-	BackendHTTPRouteIndex          = "backendHTTPRouteIndex"
-	BackendGRPCRouteIndex          = "backendGRPCRouteIndex"
-	BackendTLSRouteIndex           = "backendTLSRouteIndex"
-	BackendTCPRouteIndex           = "backendTCPRouteIndex"
-	BackendUDPRouteIndex           = "backendUDPRouteIndex"
-	ServicePolicyAttachmentIndex   = "servicePolicyAttachmentIndex"
-	SecretUpstreamTLSPolicyIndex   = "secretUpstreamTLSPolicyIndex"
-	PortPolicyAttachmentIndex      = "portPolicyAttachmentIndex"
-	HostnamePolicyAttachmentIndex  = "hostnamePolicyAttachmentIndex"
-	HTTPRoutePolicyAttachmentIndex = "httpRoutePolicyAttachmentIndex"
-	GRPCRoutePolicyAttachmentIndex = "grpcRoutePolicyAttachmentIndex"
+	ControllerGatewayClassIndex                  = "controllerGatewayClassIndex"
+	ClassGatewayIndex                            = "classGatewayIndex"
+	GatewayTLSRouteIndex                         = "gatewayTLSRouteIndex"
+	GatewayHTTPRouteIndex                        = "gatewayHTTPRouteIndex"
+	GatewayGRPCRouteIndex                        = "gatewayGRPCRouteIndex"
+	GatewayTCPRouteIndex                         = "gatewayTCPRouteIndex"
+	GatewayUDPRouteIndex                         = "gatewayUDPRouteIndex"
+	SecretGatewayIndex                           = "secretGatewayIndex"
+	ConfigMapGatewayIndex                        = "configMapGatewayIndex"
+	GatewayFilterIndex                           = "gatewayFilterIndex"
+	CrossNamespaceSecretNamespaceGatewayIndex    = "crossNamespaceSecretNamespaceGatewayIndex"
+	CrossNamespaceConfigMapNamespaceGatewayIndex = "crossNamespaceConfigMapNamespaceGatewayIndex"
+	TargetKindRefGrantIndex                      = "targetRefGrantRouteIndex"
+	BackendHTTPRouteIndex                        = "backendHTTPRouteIndex"
+	CrossNamespaceBackendNamespaceHTTPRouteIndex = "crossNamespaceBackendNamespaceHTTPRouteIndex"
+	BackendGRPCRouteIndex                        = "backendGRPCRouteIndex"
+	CrossNamespaceBackendNamespaceGRPCRouteIndex = "crossNamespaceBackendNamespaceGRPCRouteIndex"
+	BackendTLSRouteIndex                         = "backendTLSRouteIndex"
+	CrossNamespaceBackendNamespaceTLSRouteIndex  = "crossNamespaceBackendNamespaceTLSRouteIndex"
+	BackendTCPRouteIndex                         = "backendTCPRouteIndex"
+	CrossNamespaceBackendNamespaceTCPRouteIndex  = "crossNamespaceBackendNamespaceTCPRouteIndex"
+	BackendUDPRouteIndex                         = "backendUDPRouteIndex"
+	CrossNamespaceBackendNamespaceUDPRouteIndex  = "crossNamespaceBackendNamespaceUDPRouteIndex"
+	ServicePolicyAttachmentIndex                 = "servicePolicyAttachmentIndex"
+	SecretBackendTLSPolicyIndex                  = "secretBackendTLSPolicyIndex"
+	ConfigmapBackendTLSPolicyIndex               = "cmBackendTLSPolicyIndex"
+	PortPolicyAttachmentIndex                    = "portPolicyAttachmentIndex"
+	HostnamePolicyAttachmentIndex                = "hostnamePolicyAttachmentIndex"
+	HTTPRoutePolicyAttachmentIndex               = "httpRoutePolicyAttachmentIndex"
+	GRPCRoutePolicyAttachmentIndex               = "grpcRoutePolicyAttachmentIndex"
+	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"
+	ExtensionFilterGRPCRouteIndex                = "filterGRPCRouteIndex"
 )
 
 // PIPY Repo constants
@@ -935,24 +961,30 @@ var (
 
 // GroupVersionKind variables
 var (
-	GatewayClassGVK          = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
-	GatewayGVK               = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
-	HTTPRouteGVK             = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
-	TLSRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
-	TCPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
-	UDPRouteGVK              = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
-	GRPCRouteGVK             = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
-	ReferenceGrantGVK        = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
-	SecretGVK                = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
-	ConfigMapGVK             = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
-	ServiceGVK               = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
-	RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RateLimitPolicyKind)
-	SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), SessionStickyPolicyKind)
-	LoadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), LoadBalancerPolicyKind)
-	CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), CircuitBreakingPolicyKind)
-	AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), AccessControlPolicyKind)
-	HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), HealthCheckPolicyKind)
-	FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), FaultInjectionPolicyKind)
-	UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), UpstreamTLSPolicyKind)
-	RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.SchemeGroupVersion.String(), RetryPolicyKind)
+	GatewayClassGVK   = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
+	GatewayGVK        = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
+	HTTPRouteGVK      = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
+	TLSRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
+	TCPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
+	UDPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
+	GRPCRouteGVK      = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
+	ReferenceGrantGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
+	SecretGVK         = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
+	ConfigMapGVK      = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
+	ServiceGVK        = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
+	//RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RateLimitPolicyKind)
+	//SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), SessionStickyPolicyKind)
+	//LoadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), LoadBalancerPolicyKind)
+	//CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), CircuitBreakingPolicyKind)
+	//AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), AccessControlPolicyKind)
+	//HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), HealthCheckPolicyKind)
+	//FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionPolicyKind)
+	//UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), UpstreamTLSPolicyKind)
+	//RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RetryPolicyKind)
+)
+
+// GatewayAPI resources variables
+
+var (
+	ReservedGatewayPorts = sets.NewInt32(FSMGatewayHTTPServerPort, FSMGatewayAdminPort)
 )

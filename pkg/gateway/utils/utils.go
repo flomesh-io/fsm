@@ -29,6 +29,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/webhook"
+
+	"github.com/jinzhu/copier"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -85,6 +89,18 @@ func IsRefToGateway(parentRef gwv1.ParentReference, gateway types.NamespacedName
 	return string(parentRef.Name) == gateway.Name
 }
 
+func IsLocalObjRefToGateway(targetRef gwv1.LocalObjectReference, gateway types.NamespacedName) bool {
+	if string(targetRef.Group) != gwv1.GroupName {
+		return false
+	}
+
+	if string(targetRef.Kind) != constants.GatewayAPIGatewayKind {
+		return false
+	}
+
+	return string(targetRef.Name) == gateway.Name
+}
+
 // IsTargetRefToTarget returns true if the target reference is to the target resource
 func IsTargetRefToTarget(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference, target client.Object) bool {
 	gvk := target.GetObjectKind().GroupVersionKind()
@@ -129,16 +145,6 @@ func HasAccessToTargetRef(policy client.Object, ref gwv1alpha2.NamespacedPolicyT
 // IsTargetRefToGVK returns true if the target reference is to the given group version kind
 func IsTargetRefToGVK(targetRef gwv1alpha2.NamespacedPolicyTargetReference, gvk schema.GroupVersionKind) bool {
 	return string(targetRef.Group) == gvk.Group && string(targetRef.Kind) == gvk.Kind
-}
-
-// ObjectKey returns the object key for the given object
-func ObjectKey(obj client.Object) client.ObjectKey {
-	ns := obj.GetNamespace()
-	if ns == "" {
-		ns = metav1.NamespaceDefault
-	}
-
-	return client.ObjectKey{Namespace: ns, Name: obj.GetName()}
 }
 
 // GroupPointer returns a pointer to the given group
@@ -244,6 +250,47 @@ func ValidCrossNamespaceRef(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNam
 	return false
 }
 
+// FindMatchedReferenceGrant returns if the reference is valid across namespaces based on the reference grants
+func FindMatchedReferenceGrant(from gwtypes.CrossNamespaceFrom, to gwtypes.CrossNamespaceTo, referenceGrants []*gwv1beta1.ReferenceGrant) *gwv1beta1.ReferenceGrant {
+	if len(referenceGrants) == 0 {
+		return nil
+	}
+
+	for _, refGrant := range referenceGrants {
+		if refGrant.Namespace != to.Namespace {
+			continue
+		}
+
+		var fromAllowed bool
+		for _, refGrantFrom := range refGrant.Spec.From {
+			if string(refGrantFrom.Namespace) == from.Namespace && string(refGrantFrom.Group) == from.Group && string(refGrantFrom.Kind) == from.Kind {
+				fromAllowed = true
+				break
+			}
+		}
+
+		if !fromAllowed {
+			continue
+		}
+
+		var toAllowed bool
+		for _, refGrantTo := range refGrant.Spec.To {
+			if string(refGrantTo.Group) == to.Group && string(refGrantTo.Kind) == to.Kind && (refGrantTo.Name == nil || *refGrantTo.Name == "" || string(*refGrantTo.Name) == to.Name) {
+				toAllowed = true
+				break
+			}
+		}
+
+		if !toAllowed {
+			continue
+		}
+
+		return refGrant
+	}
+
+	return nil
+}
+
 // SortResources sorts the resources by creation timestamp and name
 func SortResources[T client.Object](resources []T) []T {
 	sort.Slice(resources, func(i, j int) bool {
@@ -323,3 +370,10 @@ func IsValidTargetRefToGroupKindOfService(ref gwv1alpha2.NamespacedPolicyTargetR
 
 	return false
 }
+
+// DeepCopy copy all fields from source to destination
+func DeepCopy(dst any, src any) error {
+	return copier.CopyWithOption(dst, src, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+}
+
+var IsValidHostname = webhook.IsValidHostname
