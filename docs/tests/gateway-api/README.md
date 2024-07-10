@@ -1345,7 +1345,7 @@ date: Thu, 06 Jul 2023 04:44:06 GMT
 </body></html>
 * Connection #0 to host bing.com left intact
 ```
-
+<del>
 ### Test RateLimitPolicy
 
 #### Test Port Based Rate Limit - refer to target in the same namespace
@@ -1366,7 +1366,7 @@ spec:
       bps: 100000
 EOF
 ```
-
+~~
 
 #### Test Hostname Based Rate Limit - refer to target in the same namespace
 ```shell
@@ -1536,7 +1536,6 @@ EOF
 
 ##### ReferenceGrant
 If you have created the ReferenceGrant in previous step, you can skip this step. 
-
 
 
 ### Test SessionStickyPolicy - refer to target in the same namespace
@@ -1963,24 +1962,25 @@ EOF
 ##### ReferenceGrant
 If you have created the ReferenceGrant in previous step, you can skip this step.
 
+</del>
 
 ### Test HealthCheckPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
+apiVersion: gateway.flomesh.io/v1alpha2
 kind: HealthCheckPolicy
 metadata:
   namespace: test
   name: health-check-policy
 spec:
-  targetRef:
-    group: ""
+  targetRefs:
+  - group: ""
     kind: Service
     name: httpbin
   ports:
   - port: 8080
-    config: 
+    healthCheck: 
       interval: 10
       maxFails: 3
       failTimeout: 1
@@ -2001,20 +2001,20 @@ EOF
 #### Create a HealthCheckPolicy
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
+apiVersion: gateway.flomesh.io/v1alpha2
 kind: HealthCheckPolicy
 metadata:
   namespace: test
   name: health-check-cross
 spec:
-  targetRef:
-    group: ""
+  targetRefs:
+  - group: ""
     kind: Service
     namespace: http
     name: httpbin-cross
   ports:
   - port: 8080
-    config: 
+    healthCheck: 
       interval: 6
       maxFails: 5
       failTimeout: 10
@@ -2050,8 +2050,8 @@ spec:
 EOF
 ```
 
+<del>
 ### Test FaultInjectionPolicy
-
 
 #### Test Hostname Based Fault Injection - refer to target in the same namespace
 ```shell
@@ -2369,25 +2369,25 @@ spec:
       name: https-cert
 EOF
 ```
-
+</del>
 
 ### Test RetryPolicy - refer to target in the same namespace
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
+apiVersion: gateway.flomesh.io/v1alpha2
 kind: RetryPolicy
 metadata:
   namespace: test
   name: retry-policy
 spec:
-  targetRef:
-    group: ""
+  targetRefs:
+  - group: ""
     kind: Service
     name: httpbin
   ports:
   - port: 8080
-    config:
+    retry:
       retryOn:
         - 5xx
       numRetries: 5
@@ -2400,20 +2400,20 @@ EOF
 #### Create a RetryPolicy
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: gateway.flomesh.io/v1alpha1
+apiVersion: gateway.flomesh.io/v1alpha2
 kind: RetryPolicy
 metadata:
   namespace: test
   name: retry-policy-cross
 spec:
-  targetRef:
-    group: ""
+  targetRefs:
+  - group: ""
     kind: Service
     namespace: http
     name: httpbin-cross
   ports:
   - port: 8080
-    config:
+    retry:
       retryOn:
         - "500"
       numRetries: 7
