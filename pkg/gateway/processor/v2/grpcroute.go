@@ -68,7 +68,7 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 	g2.Spec.Rules = make([]fgwv2.GRPCRouteRule, 0)
 	for _, rule := range grpcRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2GRPCRouteRule(grpcRoute, rule, holder); r2 != nil {
+		if r2 := c.toV2GRPCRouteRule(grpcRoute, &rule, holder); r2 != nil {
 			g2.Spec.Rules = append(g2.Spec.Rules, *r2)
 		}
 	}
@@ -80,9 +80,9 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 	return g2
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
+func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
 	r2 := &fgwv2.GRPCRouteRule{}
-	if err := gwutils.DeepCopy(r2, &rule); err != nil {
+	if err := gwutils.DeepCopy(r2, rule); err != nil {
 		log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
 		return nil
 	}
@@ -99,7 +99,7 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
+func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {

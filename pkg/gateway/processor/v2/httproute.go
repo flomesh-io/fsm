@@ -68,7 +68,7 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 	h2.Spec.Rules = make([]fgwv2.HTTPRouteRule, 0)
 	for _, rule := range httpRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2HTTPRouteRule(httpRoute, rule, holder); r2 != nil {
+		if r2 := c.toV2HTTPRouteRule(httpRoute, &rule, holder); r2 != nil {
 			h2.Spec.Rules = append(h2.Spec.Rules, *r2)
 		}
 	}
@@ -80,9 +80,9 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 	return h2
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
+func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
 	r2 := &fgwv2.HTTPRouteRule{}
-	if err := gwutils.DeepCopy(r2, &rule); err != nil {
+	if err := gwutils.DeepCopy(r2, rule); err != nil {
 		log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
 		return nil
 	}
@@ -99,7 +99,7 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule gwv1
 	return r2
 }
 
-func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
+func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
