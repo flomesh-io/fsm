@@ -41,12 +41,16 @@ type ConfigGenerator struct {
 
 func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache) processor.Generator {
 	p := &ConfigGenerator{
-		client:      client,
-		processor:   processor,
-		gateway:     gateway,
-		secretFiles: map[string]string{},
-		services:    map[string]serviceContext{},
-		filters:     map[extv1alpha1.FilterProtocol]map[string]string{},
+		client:              client,
+		processor:           processor,
+		gateway:             gateway,
+		secretFiles:         map[string]string{},
+		services:            map[string]serviceContext{},
+		filters:             map[extv1alpha1.FilterProtocol]map[string]string{},
+		backendTLSPolicies:  map[string]*fgwv2.BackendTLSPolicy{},
+		backendLBPolicies:   map[string]*fgwv2.BackendLBPolicy{},
+		healthCheckPolicies: map[string]*fgwv2.HealthCheckPolicy{},
+		retryPolicies:       map[string]*fgwv2.RetryPolicy{},
 	}
 
 	if processor.UseEndpointSlices() {
