@@ -132,7 +132,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "irate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container=\"sidecar\"}[1m])",
+            "expr": "irate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\"}[1m])",
             "interval": "",
             "legendFormat": "{{pod}}:{{container}}",
             "refId": "A"
@@ -226,7 +226,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "container_memory_rss{namespace=~\"$namespace\", pod=~\"$pod\", container=\"sidecar\"}",
+            "expr": "container_memory_rss{namespace=~\"$namespace\", pod=~\"$pod\"}",
             "interval": "",
             "legendFormat": "{{pod}}:{{container}}",
             "refId": "A"
@@ -334,7 +334,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "irate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\"}[1m])",
+            "expr": "irate(container_cpu_usage_seconds_total{namespace=~\"$namespace\", pod=~\"$pod\"}[1m])",
             "interval": "",
             "legendFormat": "{{pod}}:{{container}}",
             "refId": "A"
@@ -428,7 +428,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "container_memory_rss{namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\"}",
+            "expr": "container_memory_rss{namespace=~\"$namespace\", pod=~\"$pod\"}",
             "interval": "",
             "legendFormat": "{{pod}}:{{container}}",
             "refId": "A"
