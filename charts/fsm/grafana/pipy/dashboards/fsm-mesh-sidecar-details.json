@@ -302,7 +302,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(container_cpu_usage_seconds_total{namespace=\"${CONTROL_PLANE_NAMESPACE}\", container!~\"POD\", container!~\"\"}[1m])",
+          "expr": "irate(container_cpu_usage_seconds_total{namespace=\"${CONTROL_PLANE_NAMESPACE}\"}[1m])",
           "interval": "",
           "legendFormat": "{{pod}}",
           "refId": "A"
@@ -420,7 +420,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "container_memory_rss{namespace=\"${CONTROL_PLANE_NAMESPACE}\", container!=\"\", container!=\"POD\"}",
+          "expr": "container_memory_rss{namespace=\"${CONTROL_PLANE_NAMESPACE}\"}",
           "interval": "",
           "legendFormat": "{{pod}}",
           "refId": "A"
@@ -784,95 +784,6 @@
       "timeShift": null
     },
     {
-      "cards": {
-        "cardPadding": null,
-        "cardRound": null
-      },
-      "color": {
-        "cardColor": "#73BF69",
-        "colorScale": "sqrt",
-        "colorScheme": "interpolateOranges",
-        "exponent": 0.5,
-        "mode": "opacity"
-      },
-      "dataFormat": "tsbuckets",
-      "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": null
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 18,
-        "x": 0,
-        "y": 36
-      },
-      "heatmap": {},
-      "hideZeroBuckets": true,
-      "highlightCards": true,
-      "id": 28,
-      "interval": "10s",
-      "legend": {
-        "show": false
-      },
-      "pluginVersion": "8.2.2",
-      "reverseYBuckets": false,
-      "targets": [
-        {
-          "expr": "sum(rate(fsm_proxy_config_update_time_bucket{resource_type=\"$xds_path\", source_pod_name=~\"$fsm_controller_instance\"}[1m])) by (le)",
-          "format": "heatmap",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "{{le}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "xDS Path histogram",
-      "tooltip": {
-        "show": true,
-        "showHistogram": false
-      },
-      "type": "heatmap",
-      "xAxis": {
-        "show": true
-      },
-      "xBucketNumber": null,
-      "xBucketSize": null,
-      "yAxis": {
-        "decimals": null,
-        "format": "short",
-        "logBase": 1,
-        "max": null,
-        "min": null,
-        "show": true,
-        "splitFactor": null
-      },
-      "yBucketBound": "auto",
-      "yBucketNumber": null,
-      "yBucketSize": null
-    },
-    {
       "aliasColors": {},
       "bars": true,
       "dashLength": 10,
@@ -952,122 +863,6 @@
       "timeRegions": [],
       "timeShift": null,
       "title": "Injector Webhooks",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "timeseries",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": "count",
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {},
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 9,
-        "w": 9,
-        "x": 9,
-        "y": 46
-      },
-      "hiddenSeries": false,
-      "id": 37,
-      "interval": "10s",
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pluginVersion": "8.2.2",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "idelta(fsm_proxy_config_update_time_count{success=\"true\", resource_type=~\"$xds_path\", source_pod_name=~\"$fsm_controller_instance\"}[1m])\n",
-          "interval": "",
-          "legendFormat": "{{resource_type}}-{{source_pod_name}}-Success",
-          "refId": "A"
-        },
-        {
-          "expr": "idelta(fsm_proxy_config_update_time_count{success=\"false\", resource_type=~\"$xds_path\", source_pod_name=~\"$fsm_controller_instance\"}[1m])",
-          "interval": "",
-          "legendFormat": "{{resource_type}}-{{source_pod_name}}-Failure",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "xDS Updates",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1468,32 +1263,6 @@
         "name": "fsm_injector_instance",
         "options": [],
         "query": "label_values(fsm_cert_issued_count, source_pod_name)",
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": "ADS",
-          "value": "ADS"
-        },
-        "datasource": "${DS_PROMETHEUS}",
-        "definition": "label_values(fsm_proxy_config_update_time_bucket, resource_type)",
-        "hide": 0,
-        "includeAll": false,
-        "label": "xDS Path",
-        "multi": false,
-        "name": "xds_path",
-        "options": [],
-        "query": "label_values(fsm_proxy_config_update_time_bucket, resource_type)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
