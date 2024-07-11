@@ -161,8 +161,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: FSM_DEFAULT_SIDECAR_CLASS
-              value: "{{ .Values.fsm.sidecarClass }}"
           volumeMounts:
             - mountPath: /repo
               name: shared-repo

@@ -145,7 +145,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "irate(sidecar_cluster_upstream_rq_xx{sidecar_response_code_class=\"2\",source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m])",
+            "expr": "irate(sidecar_cluster_upstream_rq_xx{sidecar_response_code_class=\"2\",source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m])",
             "interval": "1m",
             "legendFormat": "Time (per minute)",
             "refId": "A"
@@ -252,7 +252,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "irate(sidecar_cluster_upstream_rq_xx{sidecar_response_code_class!=\"2\",source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m])",
+            "expr": "irate(sidecar_cluster_upstream_rq_xx{sidecar_response_code_class!=\"2\",source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m])",
             "interval": "1m",
             "legendFormat": "Time (per minute)",
             "refId": "A"
@@ -347,7 +347,7 @@
         "pluginVersion": "8.2.2",
         "targets": [
           {
-            "expr": "sum(sidecar_cluster_upstream_cx_active{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"})",
+            "expr": "sum(sidecar_cluster_upstream_cx_active{source_service=\"$source_service\",source_namespace=\"$source_namespace\"})",
             "legendFormat": "Connections",
             "refId": "A"
           }
@@ -468,12 +468,12 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_cx_tx_bytes_total{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_cx_tx_bytes_total{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Bytes sent",
             "refId": "A"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_cx_rx_bytes_total{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_cx_rx_bytes_total{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Bytes received",
             "refId": "B"
           }
@@ -570,42 +570,42 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_cx_destroy_remote_with_active_rq{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_cx_destroy_remote_with_active_rq{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Connection destroyed by the client",
             "refId": "A"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_cx_connect_timeout{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_cx_connect_timeout{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Connection timeout",
             "refId": "B"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_cx_destroy_local_with_active_rq{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_cx_destroy_local_with_active_rq{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Connection destroyed by local Sidecar",
             "refId": "C"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_rq_pending_failure_eject{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_rq_pending_failure_eject{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Pending failure ejection",
             "refId": "D"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_rq_pending_overflow{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_rq_pending_overflow{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Pending overflow",
             "refId": "E"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_rq_timeout{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_rq_timeout{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Request timeout",
             "refId": "F"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_rq_rx_reset{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_rq_rx_reset{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Response reset",
             "refId": "G"
           },
           {
-            "expr": "sum(irate(sidecar_cluster_upstream_rq_tx_reset{source_service=\"$source_service\",source_namespace=\"$source_namespace\",sidecar_cluster_name=\"fsm-controller\"}[1m]))",
+            "expr": "sum(irate(sidecar_cluster_upstream_rq_tx_reset{source_service=\"$source_service\",source_namespace=\"$source_namespace\"}[1m]))",
             "legendFormat": "Request reset",
             "refId": "H"
           }

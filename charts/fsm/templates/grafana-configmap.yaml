@@ -70,25 +70,15 @@ metadata:
     app: fsm-grafana
 data:
   fsm-pod.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-pod-to-service.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
   fsm-workload.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-workload-to-service.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
   fsm-service-to-service.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-service-to-service.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
   fsm-data-plane-container.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-data-plane-performance.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
   fsm-workload-to-workload.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-workload-to-workload.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
 ---
 
 apiVersion: v1
@@ -101,13 +91,9 @@ metadata:
     app: fsm-grafana
 data:
   fsm-control-plane.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-control-plane.json" | replace "${DS_PROMETHEUS}" "Prometheus" | indent 4 }}
-{{- end }}
   fsm-mesh-sidecar-details.json: |
-{{- if eq .Values.fsm.sidecarClass "pipy" }}
 {{ .Files.Get "grafana/pipy/dashboards/fsm-mesh-sidecar-details.json" | replace "${DS_PROMETHEUS}" "Prometheus" | replace "${CONTROL_PLANE_NAMESPACE}" (include "fsm.namespace" .) | indent 4 }}
-{{- end }}
 ---
 
 apiVersion: v1
