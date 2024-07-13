@@ -3,6 +3,10 @@ package utils
 import (
 	"fmt"
 
+	"github.com/google/go-cmp/cmp"
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +59,16 @@ func HasAccessToBackendTargetRef(client cache.Cache, policy client.Object, targe
 	}
 
 	return true
+}
+
+func IsPolicyAcceptedForAncestor(ancestorRef gwv1.ParentReference, ancestors []gwv1alpha2.PolicyAncestorStatus) bool {
+	for _, ancestor := range ancestors {
+		if cmp.Equal(ancestor.AncestorRef, ancestorRef) {
+			return metautil.IsStatusConditionTrue(ancestor.Conditions, string(gwv1alpha2.PolicyConditionAccepted))
+		}
+	}
+
+	return false
 }
 
 // ---------------------------- Access Control ----------------------------
