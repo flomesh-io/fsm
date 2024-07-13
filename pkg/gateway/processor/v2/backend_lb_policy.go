@@ -25,7 +25,7 @@ func NewBackendLBPolicyProcessor(c *ConfigGenerator) BackendPolicyProcessor {
 	}
 }
 
-func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
+func (p *BackendLBPolicyProcessor) Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName) {
 	// Any configuration that is specified at Route Rule level MUST override configuration
 	// that is attached at the backend level because route rule have a more global view and
 	// responsibility for the overall traffic routing.
@@ -63,6 +63,10 @@ func (p *BackendLBPolicyProcessor) Process(route client.Object, _ gwv1.ParentRef
 
 	policy, found := gwutils.FindBackendLBPolicy(p.generator.client, targetRef, route.GetNamespace())
 	if !found {
+		return
+	}
+
+	if !gwutils.IsPolicyAcceptedForAncestor(routeParentRef, policy.Status.Ancestors) {
 		return
 	}
 

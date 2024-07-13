@@ -41,6 +41,10 @@ func (p *HealthCheckPolicyProcessor) Process(route client.Object, routeParentRef
 		return
 	}
 
+	if !gwutils.IsPolicyAcceptedForAncestor(routeParentRef, policy.Status.Ancestors) {
+		return
+	}
+
 	psu := policies.NewPolicyStatusHolderWithNamespacedPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
