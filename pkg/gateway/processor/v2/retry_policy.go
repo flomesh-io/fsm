@@ -41,6 +41,10 @@ func (p *RetryPolicyProcessor) Process(route client.Object, routeParentRef gwv1.
 		return
 	}
 
+	if !gwutils.IsPolicyAcceptedForAncestor(routeParentRef, policy.Status.Ancestors) {
+		return
+	}
+
 	psh := policies.NewPolicyStatusHolderWithNamespacedPolicyTargetReference(
 		policy,
 		&policy.ObjectMeta,
