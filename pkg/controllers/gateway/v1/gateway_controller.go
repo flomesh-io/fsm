@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
@@ -50,8 +52,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
-
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -182,22 +182,9 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if r.compute(gateway) {
-		update := gw.NewGatewayStatusUpdate(
-			gateway,
-			&gateway.ObjectMeta,
-			&gateway.TypeMeta,
-			&gateway.Status,
-		)
-
-		if result, err := r.computeGatewayStatus(ctx, gateway, update); err != nil || result.RequeueAfter > 0 || result.Requeue {
+		if result, err := r.computeGatewayStatus(ctx, gateway); err != nil || result.RequeueAfter > 0 || result.Requeue {
 			return result, err
 		}
-
-		r.fctx.StatusUpdater.Send(status.Update{
-			Resource:       &gwv1.Gateway{},
-			NamespacedName: client.ObjectKeyFromObject(gateway),
-			Mutator:        update,
-		})
 	}
 
 	r.fctx.GatewayEventHandler.OnAdd(gateway, false)
@@ -214,18 +201,33 @@ func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
 		return true
 	}
 
-	if !metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionProgrammed)) {
+	if !gwutils.IsProgrammedGateway(gateway) {
 		return true
 	}
 
-	if !metautil.IsStatusConditionTrue(gateway.Status.Conditions, string(gwv1.GatewayConditionAccepted)) {
+	if !gwutils.IsAcceptedGateway(gateway) {
 		return true
 	}
 
 	return !cmp.Equal(old.spec, gateway.Spec)
 }
 
-func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) (ctrl.Result, error) {
+func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway) (ctrl.Result, error) {
+	update := gw.NewGatewayStatusUpdate(
+		gateway,
+		&gateway.ObjectMeta,
+		&gateway.TypeMeta,
+		&gateway.Status,
+	)
+
+	defer func() {
+		r.fctx.StatusUpdater.Send(status.Update{
+			Resource:       &gwv1.Gateway{},
+			NamespacedName: client.ObjectKeyFromObject(gateway),
+			Mutator:        update,
+		})
+	}()
+
 	// 1. compute listener status & accepted status
 	r.computeListenerStatus(ctx, gateway, update)
 

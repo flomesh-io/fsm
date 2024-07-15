@@ -16,6 +16,8 @@ package status
 import (
 	"context"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
@@ -166,15 +168,11 @@ func (u *UpdateWriter) Send(update Update) {
 //	TCPRoute
 //	UDPRoute
 //	GRPCRoute
-//  AccessControlPolicy
-//  RateLimitPolicy
-//  FaultInjectionPolicy
-//  SessionStickyPolicy
-//  CircuitBreakingPolicy
-//  LoadBalancerPolicy
+//  Filter
+//  BackendLBPolicy
+//  BackendTLSPolicy
 //  HealthCheckPolicy
 //  RetryPolicy
-//  UpstreamTLSPolicy
 
 //gocyclo:ignore
 func isStatusEqual(objA, objB interface{}) bool {
@@ -246,60 +244,12 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-		//case *gwpav1alpha1.AccessControlPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.AccessControlPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.RateLimitPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.RateLimitPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.FaultInjectionPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.FaultInjectionPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.SessionStickyPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.SessionStickyPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.CircuitBreakingPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.CircuitBreakingPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.LoadBalancerPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.LoadBalancerPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.HealthCheckPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.HealthCheckPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.RetryPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.RetryPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
-		//case *gwpav1alpha1.UpstreamTLSPolicy:
-		//	if b, ok := objB.(*gwpav1alpha1.UpstreamTLSPolicy); ok {
-		//		if cmp.Equal(a.Status, b.Status, opts) {
-		//			return true
-		//		}
-		//	}
+	case *extv1alpha1.Filter:
+		if b, ok := objB.(*extv1alpha1.Filter); ok {
+			if cmp.Equal(a.Status, b.Status, opts) {
+				return true
+			}
+		}
 	}
 
 	return false

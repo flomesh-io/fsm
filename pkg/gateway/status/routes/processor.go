@@ -307,8 +307,26 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 	)
 
 	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
-	hostname := string(policy.Spec.Validation.Hostname)
 
+	defer func() {
+		p.statusUpdater.Send(status.Update{
+			Resource:       psu.GetResource(),
+			NamespacedName: psu.GetFullName(),
+			Mutator:        psu,
+		})
+	}()
+
+	if policy.Spec.Validation.WellKnownCACertificates != nil && *policy.Spec.Validation.WellKnownCACertificates != "" {
+		ancestorStatus.AddCondition(
+			gwv1alpha2.PolicyConditionAccepted,
+			metav1.ConditionFalse,
+			gwv1alpha2.PolicyReasonInvalid,
+			".spec.validation.wellKnownCACertificates is unsupported.",
+		)
+		return
+	}
+
+	hostname := string(policy.Spec.Validation.Hostname)
 	if err := gwutils.IsValidHostname(hostname); err != nil {
 		ancestorStatus.AddCondition(
 			gwv1alpha2.PolicyConditionAccepted,
@@ -351,12 +369,6 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
 		)
 	}
-
-	p.statusUpdater.Send(status.Update{
-		Resource:       psu.GetResource(),
-		NamespacedName: psu.GetFullName(),
-		Mutator:        psu,
-	})
 }
 
 func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, _ *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
@@ -380,6 +392,13 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 	)
 
 	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
+	defer func() {
+		p.statusUpdater.Send(status.Update{
+			Resource:       psu.GetResource(),
+			NamespacedName: psu.GetFullName(),
+			Mutator:        psu,
+		})
+	}()
 
 	if !ancestorStatus.ConditionExists(gwv1alpha2.PolicyConditionAccepted) {
 		ancestorStatus.AddCondition(
@@ -389,12 +408,6 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
 		)
 	}
-
-	p.statusUpdater.Send(status.Update{
-		Resource:       psu.GetResource(),
-		NamespacedName: psu.GetFullName(),
-		Mutator:        psu,
-	})
 }
 
 func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
@@ -419,6 +432,13 @@ func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Objec
 	)
 
 	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
+	defer func() {
+		p.statusUpdater.Send(status.Update{
+			Resource:       psu.GetResource(),
+			NamespacedName: psu.GetFullName(),
+			Mutator:        psu,
+		})
+	}()
 
 	if gwutils.HasAccessToBackendTargetRef(p.client, policy, targetRef, ancestorStatus) {
 		ancestorStatus.AddCondition(
@@ -428,12 +448,6 @@ func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Objec
 			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
 		)
 	}
-
-	p.statusUpdater.Send(status.Update{
-		Resource:       psu.GetResource(),
-		NamespacedName: psu.GetFullName(),
-		Mutator:        psu,
-	})
 }
 
 func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName, routeParentRef gwv1.ParentReference) {
@@ -458,6 +472,13 @@ func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, bac
 	)
 
 	ancestorStatus := psu.StatusUpdateFor(routeParentRef)
+	defer func() {
+		p.statusUpdater.Send(status.Update{
+			Resource:       psu.GetResource(),
+			NamespacedName: psu.GetFullName(),
+			Mutator:        psu,
+		})
+	}()
 
 	if gwutils.HasAccessToBackendTargetRef(p.client, policy, targetRef, ancestorStatus) {
 		ancestorStatus.AddCondition(
@@ -467,12 +488,6 @@ func (p *RouteStatusProcessor) computeRetryPolicyStatus(route client.Object, bac
 			fmt.Sprintf("Policy is accepted for ancestor %s/%s", gwutils.NamespaceDerefOr(routeParentRef.Namespace, route.GetNamespace()), routeParentRef.Name),
 		)
 	}
-
-	p.statusUpdater.Send(status.Update{
-		Resource:       psu.GetResource(),
-		NamespacedName: psu.GetFullName(),
-		Mutator:        psu,
-	})
 }
 
 func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *fgwv2.ServicePortName {
