@@ -2,7 +2,6 @@ package v2
 
 import (
 	"fmt"
-	"strings"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
@@ -46,14 +45,6 @@ func (p *BackendTLSPolicyProcessor) Process(route client.Object, routeParentRef 
 	}
 
 	if !gwutils.IsPolicyAcceptedForAncestor(routeParentRef, policy.Status.Ancestors) {
-		return
-	}
-
-	hostname := string(policy.Spec.Validation.Hostname)
-	if err := gwutils.IsValidHostname(hostname); err != nil {
-		return
-	}
-	if strings.Contains(hostname, "*") {
 		return
 	}
 
