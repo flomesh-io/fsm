@@ -40,7 +40,7 @@ ROOT_PACKAGE="github.com/flomesh-io/fsm"
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
 # get code-generator version from go.sum
-CODEGEN_VERSION="v0.30.1" # Must match k8s.io/client-go version defined in go.mod
+CODEGEN_VERSION="v0.30.2" # Must match k8s.io/client-go version defined in go.mod
 go get k8s.io/code-generator@${CODEGEN_VERSION}
 CODEGEN_PKG="$(echo `go env GOPATH`/pkg/mod/k8s.io/code-generator@${CODEGEN_VERSION})"
 
