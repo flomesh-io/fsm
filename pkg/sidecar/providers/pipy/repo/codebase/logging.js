@@ -29,7 +29,7 @@
     initTracingHeaders = (headers) => (
       (
         uuid = algo.uuid(),
-        id = uuid.substring(0, 18).replaceAll('-', ''),
+        id = uuid.replaceAll('-', ''),
       ) => (
         headers['x-forwarded-proto'] = 'http',
         headers['x-b3-spanid'] && (
