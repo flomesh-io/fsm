@@ -34,7 +34,7 @@
         (
           sampled = true,
           uuid = algo.uuid(),
-          id = uuid.substring(0, 18).replaceAll('-', ''),
+          id = uuid.replaceAll('-', ''),
         ) => (
           proto && (headers['x-forwarded-proto'] = proto),
           headers['x-b3-spanid'] && (
