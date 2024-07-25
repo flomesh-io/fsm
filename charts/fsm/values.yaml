@@ -545,8 +545,6 @@ fsm:
     # -- Tracing collector's API path where the spans will be sent to
     endpoint: "/api/v2/spans"
     # -- Sampled Fraction
-    sampledFraction: "1.0"
-    # -- Image used for tracing
     image:
       # -- Registry for Tracing image
       registry: jaegertracing
