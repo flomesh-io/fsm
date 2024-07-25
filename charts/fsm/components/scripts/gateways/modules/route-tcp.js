@@ -9,7 +9,7 @@ export default function (config, listener, routeResources) {
   var shutdown = pipeline($=>$.replaceStreamStart(new StreamEnd))
 
   var selector = makeBackendSelector(
-    config, 'tcp',
+    config, 'tcp', listener,
     routeResources[0]?.spec?.rules?.[0],
     function (backendRef, backendResource, filters) {
       var forwarder = backendResource ? makeForwarder(config, backendRef, backendResource) : shutdown
