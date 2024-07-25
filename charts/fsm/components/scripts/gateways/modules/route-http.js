@@ -5,7 +5,10 @@ import { stringifyHTTPHeaders } from '../utils.js'
 import { log } from '../log.js'
 
 var $ctx
+var $hostname
 var $basePath
+var $matchedRoute
+var $matchedRule
 var $selection
 
 export default function (config, listener, routeResources) {
@@ -51,6 +54,7 @@ export default function (config, listener, routeResources) {
       )
       if (selector) $selection = selector(head)
     }
+    $hostname = host
     log?.(
       `Inb #${$ctx.inbound.id} Req #${$ctx.messageCount+1}`, head.method, head.path,
       `backend ${$selection?.target?.backendRef?.name}`,
@@ -60,12 +64,14 @@ export default function (config, listener, routeResources) {
 
   function makeRuleSelector(routeResources) {
     var kind = routeResources[0].kind
-    var rules = routeResources.flatMap(r => r.spec.rules).map(r => [r, makeBackendSelectorForRule(r, kind === 'GRPCRoute')])
-    var matches = rules.flatMap(([rule, backendSelector]) => {
+    var rules = routeResources.flatMap(resource => resource.spec.rules.map(
+      r => [r, makeBackendSelectorForRule(r, kind === 'GRPCRoute'), resource]
+    ))
+    var matches = rules.flatMap(([rule, backendSelector, resource]) => {
       if (rule.matches) {
-        return rule.matches.map(m => [m, backendSelector])
+        return rule.matches.map(m => [m, backendSelector, resource, rule])
       } else {
-        return [[{}, backendSelector]]
+        return [[{}, backendSelector, resource, rule]]
       }
     })
 
@@ -105,7 +111,7 @@ export default function (config, listener, routeResources) {
 
     switch (kind) {
       case 'HTTPRoute':
-        matches = matches.map(([m, backendSelector], i) => {
+        matches = matches.map(([m, backendSelector, resource, rule], i) => {
           var matchMethod = makeMethodMatcher(m.method)
           var matchPath = makePathMatcher(m.path)
           var matchHeaders = makeObjectMatcher(m.headers)
@@ -115,6 +121,8 @@ export default function (config, listener, routeResources) {
             if (matchPath && !matchPath(head.path)) return false
             if (matchHeaders && !matchHeaders(head.headers)) return false
             if (matchParams && !matchParams(new URL(head.path).searchParams.toObject())) return false
+            $matchedRoute = resource
+            $matchedRule = rule
             return true
           }
           return [matchFunc, backendSelector]
@@ -213,7 +221,7 @@ export default function (config, listener, routeResources) {
     var sessionPersistenceConfig = rule.sessionPersistence
     var sessionPersistence = sessionPersistenceConfig && makeSessionPersistence(sessionPersistenceConfig)
     var selector = makeBackendSelector(
-      config, 'http', rule,
+      config, 'http', listener, rule,
       function (backendRef, backendResource, filters) {
         if (!backendResource) return response500
         var forwarder = makeForwarder(config, backendRef, backendResource, isHTTP2)
@@ -250,10 +258,13 @@ export default function (config, listener, routeResources) {
           $ctx = {
             parent: $ctx,
             id: ++$ctx.messageCount,
+            host: $hostname,
+            path: msg.head.path,
             head: msg.head,
             headTime: Date.now(),
             tail: null,
             tailTime: 0,
+            sendTime: 0,
             response: {
               head: null,
               headTime: 0,
@@ -261,7 +272,12 @@ export default function (config, listener, routeResources) {
               tailTime: 0,
             },
             basePath: $basePath,
+            routeResource: $matchedRoute,
+            routeRule: $matchedRule,
             backendResource: $selection?.target?.backendResource,
+            backend: null,
+            target: '',
+            retries: [],
           }
         }
       )

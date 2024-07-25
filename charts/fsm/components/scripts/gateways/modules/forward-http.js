@@ -4,10 +4,13 @@ import makeSessionPersistence from './session-persistence.js'
 import { stringifyHTTPHeaders, findPolicies } from '../utils.js'
 import { log } from '../log.js'
 
+var backends = {}
+
 var $ctx
-var $selection
+var $session
 
 export default function (config, backendRef, backendResource, isHTTP2) {
+  var name = backendResource.metadata.name
   var hc = makeHealthCheck(config, backendRef, backendResource)
   var tls = makeBackendTLS(config, backendRef, backendResource)
 
@@ -16,6 +19,19 @@ export default function (config, backendRef, backendResource, isHTTP2) {
     var address = `${t.address}:${port}`
     var weight = t.weight
     return { address, weight }
+  })
+
+  var backend = (backends[name] ??= {
+    name,
+    concurrency: 0,
+    targets: Object.fromEntries(
+      targets.map(({ address, weight }) => [
+        address, {
+          weight,
+          concurrency: 0,
+        }
+      ])
+    )
   })
 
   var loadBalancer = new algo.LoadBalancer(
@@ -35,29 +51,40 @@ export default function (config, backendRef, backendResource, isHTTP2) {
   if (sessionPersistence) {
     var restoreSession = sessionPersistence.restore
     var targetSelector = function (req) {
-      $selection = loadBalancer.allocate(
+      $session = loadBalancer.allocate(
         restoreSession(req.head),
         target => hc.isHealthy(target.address)
       )
     }
   } else {
     var targetSelector = function () {
-      $selection = loadBalancer.allocate(null, target => hc.isHealthy(target.address))
+      $session = loadBalancer.allocate(null, target => hc.isHealthy(target.address))
     }
   }
 
   return pipeline($=>{
-    $.onStart(c => void ($ctx = c))
+    $.onStart(c => { $ctx = c })
     $.pipe(evt => {
       if (evt instanceof MessageStart) {
+        $ctx.backend = backend
         targetSelector(evt)
         log?.(
           `Inb #${$ctx.parent.inbound.id} Req #${$ctx.id}`, evt.head.method, evt.head.path,
-          `forward ${$selection?.target?.address}`,
+          `forward ${$session?.target?.address}`,
           `headers ${stringifyHTTPHeaders(evt.head.headers)}`,
         )
-        return $selection ? forward : reject
+        return $session ? forward : reject
       }
+    })
+    $.handleMessageStart(res => {
+      var r = $ctx.response
+      r.head = res.head
+      r.headTime = Date.now()
+    })
+    $.handleMessageEnd(res => {
+      var r = $ctx.response
+      r.tail = res.tail
+      r.tailTime = res.tailTime
     })
 
     if (log) {
@@ -77,7 +104,11 @@ export default function (config, backendRef, backendResource, isHTTP2) {
     )
 
     var forward = pipeline($=>{
-      $.muxHTTP(() => $selection, { version: isHTTP2 ? 2 : 1 }).to($=>{
+      $.onStart(() => {
+        $ctx.sendTime = Date.now()
+        $ctx.target = $session.target.address
+      })
+      $.muxHTTP(() => $session, { version: isHTTP2 ? 2 : 1 }).to($=>{
         if (tls) {
           $.connectTLS({
             ...tls,
@@ -95,11 +126,11 @@ export default function (config, backendRef, backendResource, isHTTP2) {
       if (sessionPersistence) {
         var preserveSession = sessionPersistence.preserve
         $.handleMessageStart(
-          res => preserveSession(res.head, $selection.target.address)
+          res => preserveSession(res.head, $session.target.address)
         )
       }
 
-      $.onEnd(() => $selection.free())
+      $.onEnd(() => $session.free())
     })
 
     if (retryConfig) {
@@ -123,26 +154,49 @@ export default function (config, backendRef, backendResource, isHTTP2) {
           }
         }).to($=>$
           .pipe(forward)
-          .replaceMessageStart(
-            function (msg) {
-              if (retryCodes[msg.head.status]) {
-                if (++$retryCounter < retryConfig.numRetries) {
-                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${msg.head.status}`)
-                  return new StreamEnd
-                } else {
-                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${msg.head.status} gave up`)
-                  $retryCounter = 0
-                }
+          .pipe(evt => {
+            if (evt instanceof MessageStart) {
+              var needRetry = (evt.head.status in retryCodes)
+              var wasRetry = ($retryCounter > 0)
+              if (wasRetry) {
+                $ctx.retries.push({
+                  target: $ctx.target,
+                  succeeded: !needRetry,
+                })
               }
-              return msg
+              if (needRetry) {
+                if (++$retryCounter < retryConfig.numRetries) {
+                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${evt.head.status}`)
+                  return 'retry'
+                } else {
+                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${evt.head.status} gave up`)
+                  $retryCounter = 0
+                  return 'conclude'
+                }
+              } else {
+                return 'conclude'
+              }
             }
-          )
+          }, {
+            'retry': $=>$.replaceData().replaceMessage(new StreamEnd),
+            'conclude': $=>$,
+          })
         )
       )
     }
 
     function connect($) {
-      $.connect(() => $selection.target.address)
+      $.onStart(() => {
+        var t = backends[$session.target.address]
+        if (t) t.concurrency++
+        backend.concurrency++
+      })
+      $.connect(() => $session.target.address)
+      $.onEnd(() => {
+        var t = backends[$session.target.address]
+        if (t) t.concurrency--
+        backend.concurrency--
+      })
     }
   })
 }
