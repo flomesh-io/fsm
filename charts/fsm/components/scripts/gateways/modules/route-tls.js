@@ -16,7 +16,7 @@ export default function (config, listener, routeResources) {
     var hostnames = r.spec.hostnames || ['*']
     hostnames.forEach(name => {
       var selector = makeBackendSelector(
-        config, 'tcp', r.spec.rules?.[0],
+        config, 'tcp', listener, r.spec.rules?.[0],
         function (backendRef, backendResource, filters) {
           var forwarder = backendResource ? makeForwarder(config, backendRef, backendResource) : shutdown
           return pipeline($=>$
