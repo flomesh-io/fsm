@@ -2213,15 +2213,6 @@ spec:
                     description: LogLevel defines the logging level for the sidecar's
                       logs. Non developers should generally never set this value.
                       In production environments the LogLevel should be set to error.
-                    enum:
-                    - trace
-                    - debug
-                    - info
-                    - warn
-                    - error
-                    - fatal
-                    - panic
-                    - disabled
                     type: string
                   maxDataPlaneConnections:
                     description: MaxDataPlaneConnections defines the maximum allowed
