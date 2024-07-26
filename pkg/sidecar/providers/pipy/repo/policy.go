@@ -80,11 +80,11 @@ func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Confi
 func (p *PipyConf) setObservabilityRemoteLogging(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.Observability.RemoteLogging = &RemoteLoggingSpec{
-			Level:           (*conf).GetRemoteLoggingLevel(),
-			Address:         fmt.Sprintf("%s:%d", (*conf).GetRemoteLoggingHost(), (*conf).GetRemoteLoggingPort()),
-			Endpoint:        (*conf).GetRemoteLoggingEndpoint(),
-			Authorization:   (*conf).GetRemoteLoggingAuthorization(),
-			SampledFraction: fmt.Sprintf("%0.2f", (*conf).GetRemoteLoggingSampledFraction()),
+			Level:         (*conf).GetRemoteLoggingLevel(),
+			Address:       fmt.Sprintf("%s:%d", (*conf).GetRemoteLoggingHost(), (*conf).GetRemoteLoggingPort()),
+			Endpoint:      (*conf).GetRemoteLoggingEndpoint(),
+			Authorization: (*conf).GetRemoteLoggingAuthorization(),
+			//SampledFraction: fmt.Sprintf("%0.2f", (*conf).GetRemoteLoggingSampledFraction()),
 		}
 	} else {
 		p.Spec.Observability.RemoteLogging = nil
