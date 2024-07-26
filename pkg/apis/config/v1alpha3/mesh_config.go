@@ -137,7 +137,6 @@ type SidecarSpec struct {
 	// EnablePrivilegedInitContainer defines a boolean indicating whether the init container for a meshed pod should run as privileged.
 	EnablePrivilegedInitContainer bool `json:"enablePrivilegedInitContainer"`
 
-	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 	// LogLevel defines the logging level for the sidecar's logs. Non developers should generally never set this value. In production environments the LogLevel should be set to error.
 	LogLevel string `json:"logLevel,omitempty"`
 
