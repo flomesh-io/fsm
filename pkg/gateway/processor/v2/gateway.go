@@ -1,7 +1,15 @@
 package v2
 
 import (
+	"context"
 	"fmt"
+
+	"k8s.io/utils/ptr"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
@@ -47,6 +55,9 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 			c.processCertificates(l, v2l)
 			c.processCACerts(l, v2l)
 		}
+
+		// process listener filters
+		c.processListenerFilters(l, v2l)
 
 		g2.Spec.Listeners = append(g2.Spec.Listeners, *v2l)
 	}
@@ -126,5 +137,57 @@ func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *fgwv2.Listener
 
 			c.secretFiles[caName] = string(ca)
 		}
+	}
+}
+
+func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.Listener) {
+	list := &extv1alpha1.FilterList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayFilterIndex, fmt.Sprintf("%s/%d", c.gateway.Name, l.Port)),
+		Namespace:     c.gateway.Namespace,
+	}); err != nil {
+		return
+	}
+
+	if len(list.Items) == 0 {
+		return
+	}
+
+	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
+	for _, f := range list.Items {
+		scope := ptr.Deref(f.Spec.Scope, extv1alpha1.FilterScopeRoute)
+		if scope != extv1alpha1.FilterScopeListener {
+			continue
+		}
+
+		protocol := toFilterProtocol(l.Protocol)
+		if protocol == nil {
+			continue
+		}
+
+		filterType := f.Spec.Type
+
+		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
+			Type:            filterType,
+			ExtensionConfig: f.Spec.Config,
+		})
+
+		if c.filters[*protocol] == nil {
+			c.filters[*protocol] = map[string]string{}
+		}
+		c.filters[*protocol][filterType] = f.Spec.Script
+	}
+}
+
+func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
+	switch protocol {
+	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+		return ptr.To(extv1alpha1.FilterProtocolHTTP)
+	case gwv1.TCPProtocolType:
+		return ptr.To(extv1alpha1.FilterProtocolTCP)
+	case gwv1.UDPProtocolType:
+		return ptr.To(extv1alpha1.FilterProtocolUDP)
+	default:
+		return nil
 	}
 }

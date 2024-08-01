@@ -146,7 +146,12 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
 
-			filterProtocol := filter.Spec.Protocol
+			scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.FilterScopeRoute)
+			if scope != extv1alpha1.FilterScopeRoute {
+				continue
+			}
+
+			filterProtocol := ptr.Deref(filter.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
 			if filterProtocol != extv1alpha1.FilterProtocolHTTP {
 				continue
 			}

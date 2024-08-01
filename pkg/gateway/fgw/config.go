@@ -62,6 +62,12 @@ type Listener struct {
 	Port     gwv1.PortNumber   `json:"port"`
 	Protocol gwv1.ProtocolType `json:"protocol"`
 	TLS      *GatewayTLSConfig `json:"tls,omitempty" copier:"-"`
+	Filters  []ListenerFilter  `json:"filters,omitempty" hash:"set" copier:"-"`
+}
+
+type ListenerFilter struct {
+	Type            string            `json:"type"`
+	ExtensionConfig map[string]string `json:"extensionConfig,omitempty"`
 }
 
 type GatewayTLSConfig struct {

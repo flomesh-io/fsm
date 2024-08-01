@@ -4,23 +4,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// FilterProtocol defines the protocol of filter
-type FilterProtocol string
-
-const (
-	// FilterProtocolHTTP is the type of filter for HTTP/HTTPS/GRPC/GRPCS protocols
-	FilterProtocolHTTP FilterProtocol = "http"
-
-	// FilterProtocolTCP is the type of filter for TCP protocol
-	FilterProtocolTCP FilterProtocol = "tcp"
-)
-
 // FilterSpec defines the desired state of Filter
 type FilterSpec struct {
+	// +optional
+	// +kubebuilder:validation:MaxItems=16
+	// TargetRefs is the references to the target resources to which the filter is applied
+	TargetRefs []LocalPolicyTargetReferenceWithPort `json:"targetRefs"`
+
+	// Scope is the scope of filter
+	// +optional
+	// +kubebuilder:default=Route
+	// +kubebuilder:validation:Enum=Route;Listener
+	Scope *FilterScope `json:"scope"`
+
 	// Protocol is the protocol of filter
+	// +optional
 	// +kubebuilder:default=http
 	// +kubebuilder:validation:Enum=http;tcp
-	Protocol FilterProtocol `json:"protocol"`
+	Protocol *FilterProtocol `json:"protocol"`
 
 	// Type is the type of the filter in PascalCase, it should be unique within the namespace
 	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
@@ -55,47 +56,6 @@ type Filter struct {
 	// Status defines the current state of Filter.
 	Status FilterStatus `json:"status,omitempty"`
 }
-
-// FilterConditionType is a type of condition for a filter. This type should be
-// used with a Filter resource Status.Conditions field.
-type FilterConditionType string
-
-// FilterConditionReason is a reason for a policy condition.
-type FilterConditionReason string
-
-const (
-	// FilterConditionAccepted indicates whether the filter has been accepted or
-	// rejected by a targeted resource, and why.
-	//
-	// Possible reasons for this condition to be True are:
-	//
-	// * "Accepted"
-	//
-	// Possible reasons for this condition to be False are:
-	//
-	// * "Conflicted"
-	// * "Invalid"
-	// * "TargetNotFound"
-	//
-	FilterConditionAccepted FilterConditionType = "Accepted"
-
-	// FilterReasonAccepted is used with the "Accepted" condition when the policy
-	// has been accepted by the targeted resource.
-	FilterReasonAccepted FilterConditionReason = "Accepted"
-
-	// FilterReasonConflicted is used with the "Accepted" condition when the
-	// policy has not been accepted by a targeted resource because there is
-	// another policy that targets the same resource and a merge is not possible.
-	FilterReasonConflicted FilterConditionReason = "Conflicted"
-
-	// FilterReasonInvalid is used with the "Accepted" condition when the policy
-	// is syntactically or semantically invalid.
-	FilterReasonInvalid FilterConditionReason = "Invalid"
-
-	// FilterReasonTargetNotFound is used with the "Accepted" condition when the
-	// policy is attached to an invalid target resource.
-	FilterReasonTargetNotFound FilterConditionReason = "TargetNotFound"
-)
 
 // FilterStatus defines the common attributes that all filters should include within
 // their status.
