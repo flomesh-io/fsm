@@ -6,10 +6,11 @@ import (
 
 	"k8s.io/utils/ptr"
 
-	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
