@@ -1,8 +1,11 @@
+import resources from '../resources.js'
 import makeBackendSelector from './backend-selector.js'
-import makeForwarder from './forward-http.js'
+import makeBalancer from './balancer-http.js'
 import makeSessionPersistence from './session-persistence.js'
-import { stringifyHTTPHeaders } from '../utils.js'
-import { log } from '../log.js'
+import { log, stringifyHTTPHeaders } from '../utils.js'
+
+var response404 = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
+var response500 = pipeline($=>$.replaceMessage(new Message({ status: 500 })))
 
 var $ctx
 var $hostname
@@ -11,10 +14,77 @@ var $matchedRoute
 var $matchedRule
 var $selection
 
-export default function (config, listener, routeResources) {
-  var response404 = pipeline($=>$.replaceMessage(new Message({ status: 404 })))
-  var response500 = pipeline($=>$.replaceMessage(new Message({ status: 500 })))
+export default function (routerKey, listener, routeResources) {
+  var router = makeRouter(listener, routeResources)
 
+  resources.addUpdater(routerKey, (listener, routeResources) => {
+    router = makeRouter(listener, routeResources)
+  })
+
+  var handleRequest = pipeline($=>$
+    .handleMessageStart(
+      function (msg) {
+        router(msg)
+        $ctx = {
+          parent: $ctx,
+          id: ++$ctx.messageCount,
+          host: $hostname,
+          path: msg.head.path,
+          head: msg.head,
+          headTime: Date.now(),
+          tail: null,
+          tailTime: 0,
+          sendTime: 0,
+          response: {
+            head: null,
+            headTime: 0,
+            tail: null,
+            tailTime: 0,
+          },
+          basePath: $basePath,
+          routeResource: $matchedRoute,
+          routeRule: $matchedRule,
+          backendResource: $selection?.target?.backendResource,
+          backend: null,
+          target: '',
+          retries: [],
+        }
+      }
+    )
+    .handleMessageEnd(
+      function (msg) {
+        $ctx.tail = msg.tail
+        $ctx.tailTime = Date.now()
+      }
+    )
+    .pipe(() => $selection ? $selection.target.pipeline : response404)
+    .handleMessageStart(
+      function (msg) {
+        var r = $ctx.response
+        r.head = msg.head
+        r.headTime = Date.now()
+      }
+    )
+    .handleMessageEnd(
+      function (msg) {
+        var r = $ctx.response
+        r.tail = msg.tail
+        r.tailTime = Date.now()
+      }
+    )
+  )
+
+  var handleStream = pipeline($=>$
+    .demuxHTTP().to(handleRequest)
+  )
+
+  return pipeline($=>$
+    .onStart(c => void ($ctx = c))
+    .pipe(evt => evt instanceof MessageStart ? handleRequest : handleStream)
+  )
+}
+
+function makeRouter(listener, routeResources) {
   var hostFullnames = {}
   var hostPostfixes = {}
 
@@ -40,7 +110,7 @@ export default function (config, listener, routeResources) {
     .sort((a, b) => b[0].length - a[0].length)
     .map(([k, v]) => [k, makeRuleSelector(v)])
 
-  function route(msg) {
+  return function (msg) {
     var head = msg.head
     var host = head.headers.host
     if (host) {
@@ -111,7 +181,7 @@ export default function (config, listener, routeResources) {
 
     switch (kind) {
       case 'HTTPRoute':
-        matches = matches.map(([m, backendSelector, resource, rule], i) => {
+        matches = matches.map(([m, backendSelector, resource, rule]) => {
           var matchMethod = makeMethodMatcher(m.method)
           var matchPath = makePathMatcher(m.path)
           var matchHeaders = makeObjectMatcher(m.headers)
@@ -221,14 +291,14 @@ export default function (config, listener, routeResources) {
     var sessionPersistenceConfig = rule.sessionPersistence
     var sessionPersistence = sessionPersistenceConfig && makeSessionPersistence(sessionPersistenceConfig)
     var selector = makeBackendSelector(
-      config, 'http', listener, rule,
+      'http', listener, rule,
       function (backendRef, backendResource, filters) {
-        if (!backendResource) return response500
-        var forwarder = makeForwarder(config, backendRef, backendResource, isHTTP2)
+        if (!backendResource && filters.length === 0) return response500
+        var forwarder = backendResource ? [makeBalancer(backendRef, backendResource, isHTTP2)] : []
         if (sessionPersistence) {
           var preserveSession = sessionPersistence.preserve
           return pipeline($=>$
-            .pipe([...filters, forwarder], () => $ctx)
+            .pipe([...filters, ...forwarder], () => $ctx)
             .handleMessageStart(
               msg => preserveSession(msg.head, $selection?.target?.backendRef?.name)
             )
@@ -236,7 +306,7 @@ export default function (config, listener, routeResources) {
           )
         } else {
           return pipeline($=>$
-            .pipe([...filters, forwarder], () => $ctx)
+            .pipe([...filters, ...forwarder], () => $ctx)
             .onEnd(() => $selection.free?.())
           )
         }
@@ -248,60 +318,4 @@ export default function (config, listener, routeResources) {
     }
     return () => selector()
   }
-
-  return pipeline($=>$
-    .onStart(c => void ($ctx = c))
-    .demuxHTTP().to($=>$
-      .handleMessageStart(
-        function (msg) {
-          route(msg)
-          $ctx = {
-            parent: $ctx,
-            id: ++$ctx.messageCount,
-            host: $hostname,
-            path: msg.head.path,
-            head: msg.head,
-            headTime: Date.now(),
-            tail: null,
-            tailTime: 0,
-            sendTime: 0,
-            response: {
-              head: null,
-              headTime: 0,
-              tail: null,
-              tailTime: 0,
-            },
-            basePath: $basePath,
-            routeResource: $matchedRoute,
-            routeRule: $matchedRule,
-            backendResource: $selection?.target?.backendResource,
-            backend: null,
-            target: '',
-            retries: [],
-          }
-        }
-      )
-      .handleMessageEnd(
-        function (msg) {
-          $ctx.tail = msg.tail
-          $ctx.tailTime = Date.now()
-        }
-      )
-      .pipe(() => $selection ? $selection.target.pipeline : response404)
-      .handleMessageStart(
-        function (msg) {
-          var r = $ctx.response
-          r.head = msg.head
-          r.headTime = Date.now()
-        }
-      )
-      .handleMessageEnd(
-        function (msg) {
-          var r = $ctx.response
-          r.tail = msg.tail
-          r.tailTime = Date.now()
-        }
-      )
-    )
-  )
 }

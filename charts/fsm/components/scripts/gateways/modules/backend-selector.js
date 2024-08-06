@@ -1,10 +1,13 @@
+import resources from '../resources.js'
+import { makeFilters } from '../utils.js'
+
 var listenerFilterCaches = new algo.Cache(
   protocol => new algo.Cache(
-    listener => makeFilters(protocol, listener?.filters)
+    listener => makeFilters(protocol, listener?.routeFilters)
   )
 )
 
-export default function (config, protocol, listener, rule, makeForwarder) {
+export default function (protocol, listener, rule, makeBalancer) {
   var ruleFilters = [
     ...listenerFilterCaches.get(protocol).get(listener),
     ...makeFilters(protocol, rule?.filters),
@@ -36,7 +39,7 @@ export default function (config, protocol, listener, rule, makeForwarder) {
       backendRef,
       backendResource,
       weight: backendRef?.weight || 1,
-      pipeline: makeForwarder(backendRef, backendResource, filters)
+      pipeline: makeBalancer(backendRef, backendResource, filters)
     }
   }
 
@@ -44,34 +47,9 @@ export default function (config, protocol, listener, rule, makeForwarder) {
     if (backendRef) {
       var kind = backendRef.kind || 'Backend'
       var name = backendRef.name
-      return config.resources.find(
-        r => r.kind === kind && r.metadata.name === name
+      return resources.list(kind).find(
+        r => r.metadata.name === name
       )
     }
-  }
-}
-
-function makeFilters(protocol, filters) {
-  if (!filters) return []
-  return filters.map(
-    config => {
-      var maker = (
-        importFilter(`../config/filters/${protocol}/${config.type}.js`) ||
-        importFilter(`../filters/${protocol}/${config.type}.js`)
-      )
-      if (!maker) throw `${protocol} filter not found: ${config.type}`
-      if (typeof maker !== 'function') throw `filter ${config.type} is not a function`
-      return maker(config)
-    }
-  )
-}
-
-function importFilter(pathname) {
-  if (!pipy.load(pathname)) return null
-  try {
-    var filter = pipy.import(pathname)
-    return filter.default
-  } catch {
-    return null
   }
 }

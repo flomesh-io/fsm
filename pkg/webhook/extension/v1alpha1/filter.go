@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/utils/ptr"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -69,11 +71,29 @@ func (r *FilterWebhook) doValidation(ctx context.Context, obj runtime.Object) (w
 		return nil, fmt.Errorf("unexpected type: %T", obj)
 	}
 
+	_, errs := r.validateDuplicateFilterType(ctx, filter)
+
+	scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.FilterScopeRoute)
+	switch scope {
+	case extv1alpha1.FilterScopeListener:
+		errs = append(errs, r.validateListenerFilter(ctx, filter)...)
+	case extv1alpha1.FilterScopeRoute:
+		errs = append(errs, r.validateRouteFilter(ctx, filter)...)
+	}
+
+	if len(errs) > 0 {
+		return nil, utils.ErrorListToError(errs)
+	}
+
+	return nil, nil
+}
+
+func (r *FilterWebhook) validateDuplicateFilterType(ctx context.Context, filter *extv1alpha1.Filter) (admission.Warnings, field.ErrorList) {
 	var errs field.ErrorList
 
 	list := &extv1alpha1.FilterList{}
 	if err := r.Manager.GetCache().List(ctx, list, client.InNamespace(filter.Namespace)); err != nil {
-		return nil, err
+		return nil, nil
 	}
 
 	for _, f := range list.Items {
@@ -88,9 +108,27 @@ func (r *FilterWebhook) doValidation(ctx context.Context, obj runtime.Object) (w
 		}
 	}
 
-	if len(errs) > 0 {
-		return nil, utils.ErrorListToError(errs)
+	return nil, errs
+}
+
+func (r *FilterWebhook) validateListenerFilter(_ context.Context, filter *extv1alpha1.Filter) field.ErrorList {
+	var errs field.ErrorList
+
+	if len(filter.Spec.TargetRefs) == 0 {
+		path := field.NewPath("spec").Child("targetRefs")
+		errs = append(errs, field.Required(path, "targetRefs must be specified for filter with listener scope"))
 	}
 
-	return nil, nil
+	return errs
+}
+
+func (r *FilterWebhook) validateRouteFilter(_ context.Context, filter *extv1alpha1.Filter) field.ErrorList {
+	var errs field.ErrorList
+
+	if len(filter.Spec.TargetRefs) > 0 {
+		path := field.NewPath("spec").Child("targetRefs")
+		errs = append(errs, field.Invalid(path, filter.Spec.TargetRefs, "targetRefs must not be specified for filter with route scope"))
+	}
+
+	return errs
 }
