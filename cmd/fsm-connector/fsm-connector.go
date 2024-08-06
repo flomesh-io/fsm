@@ -68,6 +68,8 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
+	kubeConfig.QPS = float32(cli.Cfg.Limit)
+	kubeConfig.Burst = int(cli.Cfg.Burst)
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)

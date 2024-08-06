@@ -2,7 +2,9 @@ package ctok
 
 import (
 	"context"
+	"fmt"
 	"sync"
+	"time"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +33,7 @@ type DeleteSyncJob struct {
 	ctx         context.Context
 	svcClient   typedcorev1.ServiceInterface
 	wg          *sync.WaitGroup
+	syncer      *CtoKSyncer
 	serviceName string
 }
 
@@ -39,8 +42,15 @@ func (job *DeleteSyncJob) Run() {
 	defer job.wg.Done()
 	defer close(job.done)
 
-	if err := job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
+	_, exists, err := job.syncer.informer.GetIndexer().GetByKey(fmt.Sprintf("%s/%s", job.syncer.namespace(), job.serviceName))
+	if err == nil && !exists {
+		return
+	}
+
+	if err = job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
 		log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
+	} else {
+		fmt.Printf("deleted service, name:%s %v\n", job.serviceName, time.Now())
 	}
 }
 
@@ -49,6 +59,7 @@ type CreateSyncJob struct {
 	*SyncJob
 	ctx       context.Context
 	wg        *sync.WaitGroup
+	syncer    *CtoKSyncer
 	svcClient typedcorev1.ServiceInterface
 	service   apiv1.Service
 }
@@ -58,7 +69,23 @@ func (job *CreateSyncJob) Run() {
 	defer job.wg.Done()
 	defer close(job.done)
 
-	if _, err := job.svcClient.Create(job.ctx, &job.service, metav1.CreateOptions{}); err != nil {
+	item, exists, err := job.syncer.informer.GetIndexer().GetByKey(fmt.Sprintf("%s/%s", job.syncer.namespace(), job.service.Name))
+	if err == nil && exists {
+		existsService := item.(*apiv1.Service)
+		preHash := job.syncer.serviceHash(existsService)
+		curHash := job.syncer.serviceHash(&job.service)
+		if preHash == curHash {
+			return
+		} else {
+			if err = job.svcClient.Delete(job.ctx, job.service.Name, metav1.DeleteOptions{}); err != nil {
+				log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.service.Name, err)
+			}
+		}
+	}
+
+	if _, err = job.svcClient.Create(job.ctx, &job.service, metav1.CreateOptions{}); err != nil {
 		log.Error().Msgf("creating service, name:%s error:%v", job.service.Name, err)
+	} else {
+		fmt.Printf("created service, name:%s %v\n", job.service.Name, time.Now())
 	}
 }
