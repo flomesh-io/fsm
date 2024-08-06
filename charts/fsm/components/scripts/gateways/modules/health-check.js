@@ -1,8 +1,7 @@
-import { findPolicies } from '../utils.js'
-import { log } from '../log.js'
+import { log, findPolicies } from '../utils.js'
 
-export default function (config, backendRef, backendResource) {
-  var healthCheckPolicies = findPolicies(config, 'HealthCheckPolicy', backendResource)
+export default function (backendRef, backendResource) {
+  var healthCheckPolicies = findPolicies('HealthCheckPolicy', backendResource)
   if (healthCheckPolicies.length === 0) {
     return { isHealthy: () => true }
   }

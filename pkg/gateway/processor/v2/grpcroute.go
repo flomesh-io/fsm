@@ -147,7 +147,12 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
 
-			filterProtocol := filter.Spec.Protocol
+			scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.FilterScopeRoute)
+			if scope != extv1alpha1.FilterScopeRoute {
+				continue
+			}
+
+			filterProtocol := ptr.Deref(filter.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
 			if filterProtocol != extv1alpha1.FilterProtocolHTTP {
 				continue
 			}

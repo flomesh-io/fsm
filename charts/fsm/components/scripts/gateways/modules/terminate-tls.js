@@ -1,16 +1,17 @@
-import { log } from '../log.js'
+import resources from '../resources.js'
+import { log } from '../utils.js'
 
 var $ctx
 var $proto
 var $hello = false
 
-export default function (config, listener) {
+export default function (listener) {
   var fullnames = {}
   var postfixes = []
 
   listener.tls?.certificates?.forEach?.(c => {
-    var crtFile = config.secrets[c['tls.crt']]
-    var keyFile = config.secrets[c['tls.key']]
+    var crtFile = resources.secrets[c['tls.crt']]
+    var keyFile = resources.secrets[c['tls.key']]
     var crt = new crypto.Certificate(crtFile)
     var key = new crypto.PrivateKey(keyFile)
     var certificate = { cert: crt, key }
@@ -30,7 +31,7 @@ export default function (config, listener) {
   if (frontendValidation) {
     trusted = []
     frontendValidation.caCertificates?.forEach?.(c => {
-      var crtFile = config.secrets[c['ca.crt']]
+      var crtFile = resources.secrets[c['ca.crt']]
       var crt = new crypto.Certificate(crtFile)
       trusted.push(crt)
     })
