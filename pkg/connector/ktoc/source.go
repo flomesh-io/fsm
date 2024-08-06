@@ -599,7 +599,15 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 
 			r := baseNode
 			rs := baseService
-			if overridePortNumber > 0 {
+
+			if len(overridePortName) > 0 {
+				for _, p := range svc.Spec.Ports {
+					if overridePortName == p.Name {
+						rs.HTTPPort = int(p.Port)
+						break
+					}
+				}
+			} else if overridePortNumber > 0 {
 				rs.HTTPPort = overridePortNumber
 			}
 			r.Service = &rs
