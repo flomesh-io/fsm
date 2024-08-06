@@ -256,6 +256,9 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 			var wg sync.WaitGroup
 			for _, serviceName := range deletes {
 				syncJob := &DeleteSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
 					ctx:         s.ctx,
 					wg:          &wg,
 					svcClient:   svcClient,
@@ -271,6 +274,9 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 			var wg sync.WaitGroup
 			for _, service := range creates {
 				syncJob := &CreateSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
 					ctx:       s.ctx,
 					wg:        &wg,
 					svcClient: svcClient,
