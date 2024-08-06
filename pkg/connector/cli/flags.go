@@ -67,6 +67,7 @@ type Config struct {
 	FsmMeshConfigName string
 	FsmVersion        string
 	TrustDomain       string
+	CtoKWorkers       int
 	SdrProvider       string
 	SdrConnector      string
 }
@@ -79,7 +80,7 @@ func init() {
 	flags.StringVar(&Cfg.FsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
-
+	flags.IntVar(&Cfg.CtoKWorkers, "ctok-workers", 50, "Number of CtoK workers")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
 	flags.StringVar(&Cfg.SdrConnector, "sdr-connector", "", "connector name")
 }

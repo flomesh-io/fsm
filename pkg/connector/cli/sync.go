@@ -28,7 +28,7 @@ func (c *client) syncCtoK() {
 		c.waitViaGatewayReady(ctx, c.configClient)
 	}
 
-	syncer := ctok.NewCtoKSyncer(c, c.discClient, c.kubeClient, ctx, Cfg.FsmNamespace)
+	syncer := ctok.NewCtoKSyncer(c, c.discClient, c.kubeClient, ctx, Cfg.FsmNamespace, Cfg.CtoKWorkers)
 	source := ctok.NewCtoKSource(c, syncer, c.discClient, Cfg.TrustDomain)
 
 	syncer.SetMicroAggregator(source)

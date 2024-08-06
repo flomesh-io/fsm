@@ -22,6 +22,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 const (
@@ -62,6 +63,8 @@ type CtoKSyncer struct {
 	lock sync.Mutex
 
 	triggerCh chan struct{}
+
+	syncWorkQueues *workerpool.WorkerPool
 }
 
 // NewCtoKSyncer creates a new mesh syncer
@@ -70,13 +73,15 @@ func NewCtoKSyncer(
 	discClient connector.ServiceDiscoveryClient,
 	kubeClient kubernetes.Interface,
 	ctx context.Context,
-	fsmNamespace string) *CtoKSyncer {
+	fsmNamespace string,
+	nWorkers int) *CtoKSyncer {
 	syncer := CtoKSyncer{
-		controller:   controller,
-		discClient:   discClient,
-		kubeClient:   kubeClient,
-		ctx:          ctx,
-		fsmNamespace: fsmNamespace,
+		controller:     controller,
+		discClient:     discClient,
+		kubeClient:     kubeClient,
+		ctx:            ctx,
+		fsmNamespace:   fsmNamespace,
+		syncWorkQueues: workerpool.NewWorkerPool(nWorkers),
 	}
 	return &syncer
 }
@@ -222,6 +227,8 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	}
 	s.lock.Unlock()
 
+	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
+
 	for {
 		select {
 		case <-ch:
@@ -244,17 +251,35 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		if len(creates) > 0 || len(deletes) > 0 {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
 		}
-		svcClient := s.kubeClient.CoreV1().Services(s.namespace())
-		for _, name := range deletes {
-			if err := svcClient.Delete(s.ctx, name, metav1.DeleteOptions{}); err != nil {
-				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
+
+		if len(deletes) > 0 {
+			var wg sync.WaitGroup
+			for _, serviceName := range deletes {
+				syncJob := &DeleteSyncJob{
+					ctx:         s.ctx,
+					wg:          &wg,
+					svcClient:   svcClient,
+					serviceName: serviceName,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
+				wg.Add(1)
 			}
+			wg.Wait()
 		}
 
-		for _, svc := range creates {
-			if _, err := svcClient.Create(s.ctx, svc, metav1.CreateOptions{}); err != nil {
-				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
+		if len(creates) > 0 {
+			var wg sync.WaitGroup
+			for _, service := range creates {
+				syncJob := &CreateSyncJob{
+					ctx:       s.ctx,
+					wg:        &wg,
+					svcClient: svcClient,
+					service:   *service,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
+				wg.Add(1)
 			}
+			wg.Wait()
 		}
 	}
 }
