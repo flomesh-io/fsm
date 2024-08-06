@@ -7,6 +7,7 @@ import (
 
 	eureka "github.com/hudl/fargo"
 	"github.com/op/go-logging"
+	"k8s.io/utils/env"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -259,6 +260,11 @@ func (dc *EurekaDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServicePro
 func GetEurekaDiscoveryClient(connectController connector.ConnectController) (*EurekaDiscoveryClient, error) {
 	eurekaDiscoveryClient := new(EurekaDiscoveryClient)
 	eurekaDiscoveryClient.connectController = connectController
-	logging.SetLevel(logging.CRITICAL, "fargo")
+	level := env.GetString("LOG_LEVEL", "CRITICAL")
+	if logLevel, err := logging.LogLevel(strings.ToUpper(level)); err == nil {
+		logging.SetLevel(logLevel, "fargo")
+	} else {
+		logging.SetLevel(logging.CRITICAL, "fargo")
+	}
 	return eurekaDiscoveryClient, nil
 }
