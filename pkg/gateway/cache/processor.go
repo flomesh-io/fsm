@@ -3,8 +3,6 @@ package cache
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/k8s"
-
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/utils/ptr"
 
@@ -295,7 +293,7 @@ func (c *GatewayProcessor) serviceConfigs() map[string]fgw.ServiceConfig {
 
 func (c *GatewayProcessor) calculateEndpoints(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
 	// If the Service is headless, use the Endpoints to get the list of backends
-	if k8s.IsHeadlessService(*svc) {
+	if isHeadlessServiceWithoutSelector(svc) {
 		return c.upstreamsByEndpoints(svc, port)
 	}
 
