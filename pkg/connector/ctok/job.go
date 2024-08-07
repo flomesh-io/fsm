@@ -48,6 +48,11 @@ func (job *DeleteSyncJob) Run() {
 
 	if err = job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
 		log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
+	} else {
+		job.syncer.lock.Lock()
+		defer job.syncer.lock.Unlock()
+		delete(job.syncer.controller.GetC2KContext().ServiceHashMap, job.serviceName)
+		delete(job.syncer.controller.GetC2KContext().ServiceMapCache, job.serviceName)
 	}
 }
 
@@ -80,7 +85,13 @@ func (job *CreateSyncJob) Run() {
 		}
 	}
 
-	if _, err = job.svcClient.Create(job.ctx, &job.service, metav1.CreateOptions{}); err != nil {
+	if svc, err := job.svcClient.Create(job.ctx, &job.service, metav1.CreateOptions{}); err != nil {
 		log.Error().Msgf("creating service, name:%s error:%v", job.service.Name, err)
+	} else {
+		job.syncer.lock.Lock()
+		defer job.syncer.lock.Unlock()
+		curHash := job.syncer.serviceHash(svc)
+		job.syncer.controller.GetC2KContext().ServiceHashMap[job.service.Name] = curHash
+		job.syncer.controller.GetC2KContext().ServiceMapCache[job.service.Name] = svc
 	}
 }

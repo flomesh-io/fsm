@@ -233,7 +233,7 @@ func (t *endpointsResource) updateGatewayEndpointSlice(ctx context.Context, endp
 
 		_, err = eptSliceClient.Update(syncer.ctx, newEpSlice, metav1.UpdateOptions{})
 		if err != nil {
-			log.Error().Msgf("error updating EndpointSlice, name:%s warn:%v", newEpSlice.Name, err)
+			log.Debug().Msgf("error updating EndpointSlice, name:%s warn:%v", newEpSlice.Name, err)
 		}
 		return err
 	})
