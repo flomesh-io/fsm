@@ -7,8 +7,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/flomesh-io/fsm/pkg/k8s"
-
 	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -287,14 +285,14 @@ func (c *GatewayProcessor) isFilterReferredByGRPCRoute(filter client.ObjectKey) 
 	return len(list.Items) > 0
 }
 
-func (c *GatewayProcessor) IsHeadlessService(key client.ObjectKey) bool {
+func (c *GatewayProcessor) IsHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
 		log.Error().Msgf("failed to get service from processor: %v", err)
 		return false
 	}
 
-	return k8s.IsHeadlessService(*service)
+	return isHeadlessServiceWithoutSelector(service)
 }
 
 func (c *GatewayProcessor) getServiceFromCache(key client.ObjectKey) (*corev1.Service, error) {
