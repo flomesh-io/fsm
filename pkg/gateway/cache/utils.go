@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/flomesh-io/fsm/pkg/k8s"
+
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
 	"github.com/flomesh-io/fsm/pkg/utils"
@@ -582,4 +584,8 @@ func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.End
 	}
 
 	return endpoints
+}
+
+func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
+	return k8s.IsHeadlessService(*service) && len(service.Spec.Selector) == 0
 }

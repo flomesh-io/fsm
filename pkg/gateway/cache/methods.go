@@ -3,8 +3,6 @@ package cache
 import (
 	"k8s.io/utils/ptr"
 
-	"github.com/flomesh-io/fsm/pkg/k8s"
-
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
@@ -370,14 +368,14 @@ func (c *GatewayCache) getServiceFromCache(key client.ObjectKey) (*corev1.Servic
 	return obj, nil
 }
 
-func (c *GatewayCache) isHeadlessService(key client.ObjectKey) bool {
+func (c *GatewayCache) isHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
 		log.Error().Msgf("failed to get service from cache: %v", err)
 		return false
 	}
 
-	return k8s.IsHeadlessService(*service)
+	return isHeadlessServiceWithoutSelector(service)
 }
 
 func (c *GatewayCache) isRefToService(referer client.Object, ref gwv1.BackendObjectReference, service client.ObjectKey) bool {

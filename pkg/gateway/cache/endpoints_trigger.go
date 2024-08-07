@@ -20,7 +20,7 @@ func (p *EndpointsTrigger) Insert(obj interface{}, cache *GatewayCache) bool {
 	key := utils.ObjectKey(ep)
 
 	if cache.useEndpointSlices {
-		return cache.isHeadlessService(key) && cache.isRoutableService(key)
+		return cache.isHeadlessServiceWithoutSelector(key) && cache.isRoutableService(key)
 	} else {
 		return cache.isRoutableService(key)
 	}
@@ -37,7 +37,7 @@ func (p *EndpointsTrigger) Delete(obj interface{}, cache *GatewayCache) bool {
 	key := utils.ObjectKey(ep)
 
 	if cache.useEndpointSlices {
-		return cache.isHeadlessService(key) && cache.isRoutableService(key)
+		return cache.isHeadlessServiceWithoutSelector(key) && cache.isRoutableService(key)
 	} else {
 		return cache.isRoutableService(key)
 	}
