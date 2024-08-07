@@ -202,7 +202,7 @@ func (c *CacheController) processSingle(queue workqueue.RateLimitingInterface, i
 		} else {
 			log.Debug().Msgf("failed processing item, no more retries key:%s error:%v", key, err)
 			queue.Forget(rawEvent)
-			utilruntime.HandleError(err)
+			//utilruntime.HandleError(err)
 		}
 	}
 

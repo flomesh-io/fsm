@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -70,6 +71,7 @@ func main() {
 	}
 	kubeConfig.QPS = float32(cli.Cfg.Limit)
 	kubeConfig.Burst = int(cli.Cfg.Burst)
+	kubeConfig.Timeout = time.Second * time.Duration(cli.Cfg.Timeout)
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)

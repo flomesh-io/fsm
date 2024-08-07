@@ -70,6 +70,7 @@ type Config struct {
 	Workers           uint
 	Limit             uint
 	Burst             uint
+	Timeout           uint
 	SdrProvider       string
 	SdrConnector      string
 }
@@ -85,6 +86,7 @@ func init() {
 	flags.UintVar(&Cfg.Workers, "ctok-workers", 75, "Number of CtoK workers")
 	flags.UintVar(&Cfg.Limit, "k8s-client-limit", 1000, "k8s request limit")
 	flags.UintVar(&Cfg.Burst, "k8s-client-burst", 1500, "k8s request burst")
+	flags.UintVar(&Cfg.Timeout, "k8s-client-timeout", 15, "k8s request timeout")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
 	flags.StringVar(&Cfg.SdrConnector, "sdr-connector", "", "connector name")
 }

@@ -47,7 +47,7 @@ func (job *DeleteSyncJob) Run() {
 	}
 
 	if err = job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
-		log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
+		log.Debug().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
 	} else {
 		job.syncer.lock.Lock()
 		defer job.syncer.lock.Unlock()
@@ -80,7 +80,7 @@ func (job *CreateSyncJob) Run() {
 			return
 		} else {
 			if err = job.svcClient.Delete(job.ctx, job.service.Name, metav1.DeleteOptions{}); err != nil {
-				log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.service.Name, err)
+				log.Debug().Msgf("warn deleting service, name:%s warn:%v", job.service.Name, err)
 			}
 		}
 	}
