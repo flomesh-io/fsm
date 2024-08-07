@@ -250,15 +250,16 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 				})
 		}
 
-		fromTs := time.Now()
-
 		s.lock.Lock()
 		creates, deletes := s.crudList()
 		s.lock.Unlock()
 		if len(creates) > 0 || len(deletes) > 0 {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
+		} else {
+			continue
 		}
 
+		fromTs := time.Now()
 		if len(deletes) > 0 {
 			var wg sync.WaitGroup
 			wg.Add(len(deletes))
