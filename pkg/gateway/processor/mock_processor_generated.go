@@ -133,18 +133,18 @@ func (mr *MockProcessorMockRecorder) IsFilterReferred(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFilterReferred", reflect.TypeOf((*MockProcessor)(nil).IsFilterReferred), arg0)
 }
 
-// IsHeadlessService mocks base method.
-func (m *MockProcessor) IsHeadlessService(arg0 types.NamespacedName) bool {
+// IsHeadlessServiceWithoutSelector mocks base method.
+func (m *MockProcessor) IsHeadlessServiceWithoutSelector(arg0 types.NamespacedName) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsHeadlessService", arg0)
+	ret := m.ctrl.Call(m, "IsHeadlessServiceWithoutSelector", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsHeadlessService indicates an expected call of IsHeadlessService.
-func (mr *MockProcessorMockRecorder) IsHeadlessService(arg0 interface{}) *gomock.Call {
+// IsHeadlessServiceWithoutSelector indicates an expected call of IsHeadlessServiceWithoutSelector.
+func (mr *MockProcessorMockRecorder) IsHeadlessServiceWithoutSelector(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeadlessService", reflect.TypeOf((*MockProcessor)(nil).IsHeadlessService), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeadlessServiceWithoutSelector", reflect.TypeOf((*MockProcessor)(nil).IsHeadlessServiceWithoutSelector), arg0)
 }
 
 // IsRoutableLocalTargetServices mocks base method.

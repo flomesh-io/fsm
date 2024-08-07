@@ -11,8 +11,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/flomesh-io/fsm/pkg/k8s"
 )
 
 func (c *ConfigGenerator) processBackends() []interface{} {
@@ -49,8 +47,8 @@ func (c *ConfigGenerator) processBackends() []interface{} {
 }
 
 func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
-	// If the Service is headless, use the Endpoints to get the list of backends
-	if k8s.IsHeadlessService(*svc) {
+	// If the Service is headless and has no selector, use Endpoints to get the list of backends
+	if isHeadlessServiceWithoutSelector(svc) {
 		return c.upstreamsByEndpoints(svc, port)
 	}
 
