@@ -128,7 +128,7 @@ func (t *endpointsResource) Upsert(key string, raw interface{}) error {
 				eptClient := syncer.kubeClient.CoreV1().Endpoints(syncer.namespace())
 				return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 					if updatedEpt, err := eptClient.Update(syncer.ctx, endpoints, metav1.UpdateOptions{}); err != nil {
-						log.Warn().Err(err).Msgf("error update endpoints, name:%s", service.Name)
+						log.Debug().Err(err).Msgf("error update endpoints, name:%s", service.Name)
 						return err
 					} else {
 						t.updateGatewayEndpointSlice(syncer.ctx, updatedEpt)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,8 +48,6 @@ func (job *DeleteSyncJob) Run() {
 
 	if err = job.svcClient.Delete(job.ctx, job.serviceName, metav1.DeleteOptions{}); err != nil {
 		log.Warn().Msgf("warn deleting service, name:%s warn:%v", job.serviceName, err)
-	} else {
-		fmt.Printf("deleted service, name:%s %v\n", job.serviceName, time.Now())
 	}
 }
 
@@ -85,7 +82,5 @@ func (job *CreateSyncJob) Run() {
 
 	if _, err = job.svcClient.Create(job.ctx, &job.service, metav1.CreateOptions{}); err != nil {
 		log.Error().Msgf("creating service, name:%s error:%v", job.service.Name, err)
-	} else {
-		fmt.Printf("created service, name:%s %v\n", job.service.Name, time.Now())
 	}
 }

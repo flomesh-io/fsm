@@ -250,7 +250,7 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 				})
 		}
 
-		fmt.Println("k8s service sync START", time.Now())
+		fromTs := time.Now()
 
 		s.lock.Lock()
 		creates, deletes := s.crudList()
@@ -296,8 +296,9 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 			}
 			wg.Wait()
 		}
-
-		fmt.Println("k8s service sync DONE ", time.Now())
+		toTs := time.Now()
+		duration := toTs.Sub(fromTs)
+		fmt.Printf("k8s service sync deletes:%4d creates:%4d from %v escape %v\n", len(deletes), len(creates), fromTs, duration)
 	}
 }
 
