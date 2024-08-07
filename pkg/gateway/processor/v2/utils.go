@@ -1,7 +1,10 @@
 package v2
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/k8s"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
@@ -27,4 +30,8 @@ func backendWeight(bk gwv1.BackendRef) int32 {
 	}
 
 	return 1
+}
+
+func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
+	return k8s.IsHeadlessService(*service) && len(service.Spec.Selector) == 0
 }
