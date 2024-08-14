@@ -207,6 +207,9 @@ const (
 	// SidecarInjectionAnnotation is the annotation used for sidecar injection
 	SidecarInjectionAnnotation = "flomesh.io/sidecar-injection"
 
+	// SidecarImageAnnotation is the annotation used for sidecar injection
+	SidecarImageAnnotation = "flomesh.io/sidecar-image"
+
 	// MetricsAnnotation is the annotation used for enabling/disabling metrics
 	MetricsAnnotation = "flomesh.io/metrics"
 
