@@ -41,7 +41,7 @@ spec:
         imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         command:
           - curl
-          - {{ printf "http://fsm-controller.%s.svc.cluster.local:9091/health/ready" .Values.fsm.fsmNamespace }}
+          - {{ printf "http://fsm-controller.%s:9091/health/ready" .Values.fsm.fsmNamespace }}
           - --connect-timeout
           - "2"
           - --retry
