@@ -1359,7 +1359,7 @@
                       "title": "The address schema for tracing",
                       "description": "Address of the tracing collector",
                       "examples": [
-                        "jaeger.<fsm-namespace>.svc.cluster.local"
+                        "jaeger.<fsm-namespace>"
                       ]
                     },
                     "port": {
@@ -1476,7 +1476,7 @@
                             "title": "The address schema for remote logging service",
                             "description": "Address of the remote logging service",
                             "examples": [
-                                "remote-logging-service.<fsm-namespace>.svc.cluster.local"
+                                "remote-logging-service.<fsm-namespace>"
                             ]
                         },
                         "port": {
@@ -2646,7 +2646,7 @@
                     },
                     "examples": [
                         {
-                            "host": "vault.default.svc.cluster.local",
+                            "host": "vault.default",
                             "protocol": "http",
                             "token": "some-token",
                             "role": "flomesh"
