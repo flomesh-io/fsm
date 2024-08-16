@@ -44,7 +44,7 @@ spec:
         {{- end }}
         command:
           - curl
-          - http://fsm-controller.{{ include "fsm.namespace" . }}.svc.cluster.local:9091/health/ready
+          - http://fsm-controller.{{ include "fsm.namespace" . }}:9091/health/ready
           - --connect-timeout
           - "2"
           - --retry
