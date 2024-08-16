@@ -5,7 +5,7 @@
 
 {{/* Default tracing address */}}
 {{- define "fsm.tracingAddress" -}}
-{{- $address := printf "jaeger.%s.svc.cluster.local" (include "fsm.namespace" .) -}}
+{{- $address := printf "jaeger.%s" (include "fsm.namespace" .) -}}
 {{ default $address .Values.fsm.tracing.address}}
 {{- end -}}
 

@@ -538,7 +538,7 @@ fsm:
   tracing:
     # -- Toggles Sidecar's tracing functionality on/off for all sidecar proxies in the mesh
     enable: false
-    # -- Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md
+    # -- Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>". Please override for BYO-tracing as documented in tracing.md
     address: ""
     # -- Port of the tracing collector service
     port: 9411
@@ -590,7 +590,7 @@ fsm:
     enable: false
     # -- Level of the remote logging service
     level: 2
-    # -- Address of the remote logging service (must contain the namespace). When left empty, this is computed in helper template to "remote-logging-service.<fsm-namespace>.svc.cluster.local".
+    # -- Address of the remote logging service (must contain the namespace). When left empty, this is computed in helper template to "remote-logging-service.<fsm-namespace>".
     address: ""
     # -- Port of the remote logging service
     port: 30514
