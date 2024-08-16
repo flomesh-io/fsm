@@ -34,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
@@ -81,7 +83,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if len(routeStatus) > 0 {
+	if len(routeStatus) > 0 && gwutils.RouteStatusChanged(httpRoute.Status.Parents, routeStatus) {
 		httpRoute.Status.Parents = routeStatus
 		if err := r.fctx.Status().Update(ctx, httpRoute); err != nil {
 			return ctrl.Result{}, err

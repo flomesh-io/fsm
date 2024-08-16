@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -81,7 +83,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if len(routeStatus) > 0 {
+	if len(routeStatus) > 0 && gwutils.RouteStatusChanged(udpRoute.Status.Parents, routeStatus) {
 		udpRoute.Status.Parents = routeStatus
 		if err := r.fctx.Status().Update(ctx, udpRoute); err != nil {
 			return ctrl.Result{}, err
