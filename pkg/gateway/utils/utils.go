@@ -30,6 +30,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -516,4 +519,9 @@ func GetActiveGateways(allGateways []client.Object) []*gwv1.Gateway {
 	}
 
 	return gateways
+}
+
+func RouteStatusChanged(oldStatus, newStatus []gwv1.RouteParentStatus) bool {
+	opts := cmpopts.IgnoreFields(metav1.Condition{}, "LastTransitionTime")
+	return !cmp.Equal(oldStatus, newStatus, opts)
 }

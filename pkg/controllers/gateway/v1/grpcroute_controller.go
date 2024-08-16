@@ -27,6 +27,8 @@ package v1
 import (
 	"context"
 
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -82,7 +84,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	if len(routeStatus) > 0 {
+	if len(routeStatus) > 0 && gwutils.RouteStatusChanged(grpcRoute.Status.Parents, routeStatus) {
 		grpcRoute.Status.Parents = routeStatus
 		if err := r.fctx.Status().Update(ctx, grpcRoute); err != nil {
 			return ctrl.Result{}, err
