@@ -65,9 +65,9 @@ require (
 	github.com/hashicorp/vault/sdk v0.13.0
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	golang.org/x/net v0.26.0
+	golang.org/x/net v0.27.0
 	golang.org/x/sync v0.7.0
-	golang.org/x/sys v0.21.0
+	golang.org/x/sys v0.22.0
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
 	honnef.co/go/tools v0.1.3 // indirect
 )
@@ -87,7 +87,7 @@ require (
 	github.com/go-co-op/gocron v1.31.0
 	github.com/go-logr/logr v1.4.1
 	github.com/go-logr/zerologr v1.2.3
-	github.com/go-resty/resty/v2 v2.7.0
+	github.com/go-resty/resty/v2 v2.14.0
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/consul/api v1.27.0
 	github.com/hudl/fargo v1.4.0
@@ -99,7 +99,7 @@ require (
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
-	golang.org/x/time v0.5.0
+	golang.org/x/time v0.6.0
 	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.30.2
@@ -489,10 +489,10 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/oauth2 v0.19.0 // indirect
-	golang.org/x/term v0.21.0 // indirect
+	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/api v0.163.0 // indirect
