@@ -123,6 +123,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateHTTPRouteHostnames | bool | `true` | Enable validate HTTP route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateTLSRouteHostnames | bool | `true` | Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address |
+| fsm.featureFlags.generateSingleConfigForFGW | bool | `false` | Defines if generate ONLY one config.json for FGW or one folder with multiple yaml files |
 | fsm.featureFlags.useEndpointSlicesForGateway | bool | `true` | Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later |
 | fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
 | fsm.flb.defaultAddressPool | string | `"default"` |  |
@@ -444,11 +445,11 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.remoteLogging.port | int | `30514` | Port of the remote logging service |
 | fsm.remoteLogging.sampledFraction | string | `"1.0"` | Sampled Fraction |
 | fsm.remoteLogging.secretName | string | `"fsm-remote-logging-secret"` | Secret Name |
-| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"1.3.0"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
+| fsm.repoServer | object | `{"codebase":"","image":{"name":"pipy-repo","registry":"flomesh","tag":"1.4.0"},"ipaddr":"127.0.0.1","port":6060,"standalone":false}` | Pipy RepoServer |
 | fsm.repoServer.codebase | string | `""` | codebase is the folder used by fsmController. |
 | fsm.repoServer.image.name | string | `"pipy-repo"` | Repo server image name |
 | fsm.repoServer.image.registry | string | `"flomesh"` | Registry for repo server image |
-| fsm.repoServer.image.tag | string | `"1.3.0"` | Repo server image tag |
+| fsm.repoServer.image.tag | string | `"1.4.0"` | Repo server image tag |
 | fsm.repoServer.ipaddr | string | `"127.0.0.1"` | ipaddr of host/service where Pipy RepoServer is installed |
 | fsm.repoServer.port | int | `6060` | port of pipy RepoServer |
 | fsm.repoServer.standalone | bool | `false` | if false , Pipy RepoServer is installed within fsmController pod. |
@@ -457,10 +458,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
 | fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
 | fsm.serviceLB.image.tag | string | `"v0.4.7"` | service-lb image tag |
-| fsm.sidecar | object | `{"image":{"name":"pipy","registry":"flomesh","tag":"1.3.0"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar | object | `{"image":{"name":"pipy","registry":"flomesh","tag":"1.4.0"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
 | fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
 | fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
-| fsm.sidecar.image.tag | string | `"1.3.0"` | Sidecar image tag |
+| fsm.sidecar.image.tag | string | `"1.4.0"` | Sidecar image tag |
 | fsm.sidecar.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
 | fsm.sidecar.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.sidecar.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |

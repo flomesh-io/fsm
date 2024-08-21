@@ -15,9 +15,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/k8s"
 )
 
-func (c *ConfigGenerator) processBackends() []interface{} {
+func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 	//configs := make(map[string]fgw.ServiceConfig)
-	backends := make([]interface{}, 0)
+	backends := make([]fgwv2.Resource, 0)
 	for svcPortName, svcInfo := range c.services {
 		svcKey := svcInfo.svcPortName.NamespacedName
 		svc, err := c.getServiceFromCache(svcKey)

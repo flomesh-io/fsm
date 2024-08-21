@@ -20,7 +20,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processUDPRoutes() []interface{} {
+func (c *ConfigGenerator) processUDPRoutes() []fgwv2.Resource {
 	list := &gwv1alpha2.UDPRouteList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayUDPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
@@ -29,7 +29,7 @@ func (c *ConfigGenerator) processUDPRoutes() []interface{} {
 		return nil
 	}
 
-	routes := make([]interface{}, 0)
+	routes := make([]fgwv2.Resource, 0)
 	for _, udpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			udpRoute,

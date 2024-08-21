@@ -18,7 +18,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processTLSRoutes() []interface{} {
+func (c *ConfigGenerator) processTLSRoutes() []fgwv2.Resource {
 	list := &gwv1alpha2.TLSRouteList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
@@ -27,7 +27,7 @@ func (c *ConfigGenerator) processTLSRoutes() []interface{} {
 		return nil
 	}
 
-	resources := make([]interface{}, 0)
+	resources := make([]fgwv2.Resource, 0)
 	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			tlsRoute,
@@ -58,14 +58,14 @@ func (c *ConfigGenerator) processTLSRoutes() []interface{} {
 	return resources
 }
 
-func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder status.RouteParentStatusObject) (*fgwv2.TLSRoute, []interface{}) {
+func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder status.RouteParentStatusObject) (*fgwv2.TLSRoute, []fgwv2.Resource) {
 	t2 := &fgwv2.TLSRoute{}
 	if err := gwutils.DeepCopy(t2, tlsRoute); err != nil {
 		log.Error().Msgf("Failed to copy TLSRoute: %v", err)
 		return nil, nil
 	}
 
-	backends := make([]interface{}, 0)
+	backends := make([]fgwv2.Resource, 0)
 	t2.Spec.Rules = make([]fgwv2.TLSRouteRule, 0)
 	for _, rule := range tlsRoute.Spec.Rules {
 		rule := rule
@@ -83,7 +83,7 @@ func (c *ConfigGenerator) toV2TLSRoute(tlsRoute *gwv1alpha2.TLSRoute, holder sta
 	return t2, backends
 }
 
-func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, holder status.RouteParentStatusObject) (*fgwv2.TLSRouteRule, []interface{}) {
+func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, holder status.RouteParentStatusObject) (*fgwv2.TLSRouteRule, []fgwv2.Resource) {
 	r2 := &fgwv2.TLSRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
@@ -100,9 +100,9 @@ func (c *ConfigGenerator) toV2TLSRouteRule(tlsRoute *gwv1alpha2.TLSRoute, rule g
 	return r2, bks
 }
 
-func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, _ status.RouteParentStatusObject) ([]fgwv2.BackendRef, []interface{}) {
+func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1alpha2.TLSRouteRule, _ status.RouteParentStatusObject) ([]fgwv2.BackendRef, []fgwv2.Resource) {
 	backendRefs := make([]fgwv2.BackendRef, 0)
-	backends := make([]interface{}, 0)
+	backends := make([]fgwv2.Resource, 0)
 
 	for _, backend := range rule.BackendRefs {
 		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))

@@ -19,7 +19,7 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []interface{}                                    `json:"resources" hash:"set"`
+	Resources []Resource                                       `json:"resources" hash:"set"`
 	Secrets   map[string]string                                `json:"secrets"`
 	Filters   map[extv1alpha1.FilterProtocol]map[string]string `json:"filters"`
 	Version   string                                           `json:"version" hash:"ignore"`
@@ -27,6 +27,18 @@ type ConfigSpec struct {
 
 func (c *ConfigSpec) GetVersion() string {
 	return c.Version
+}
+
+func (c *ConfigSpec) GetResources() []Resource {
+	return c.Resources
+}
+
+func (c *ConfigSpec) GetSecrets() map[string]string {
+	return c.Secrets
+}
+
+func (c *ConfigSpec) GetFilters() map[extv1alpha1.FilterProtocol]map[string]string {
+	return c.Filters
 }
 
 // ---
@@ -44,10 +56,28 @@ type CommonRouteSpec struct {
 
 // ---
 
+type CommonResource struct {
+	Kind       string     `json:"kind"`
+	ObjectMeta ObjectMeta `json:"metadata"`
+}
+
+func (r *CommonResource) GetKind() string {
+	return r.Kind
+}
+
+func (r *CommonResource) GetNamespace() string {
+	return r.ObjectMeta.Namespace
+}
+
+func (r *CommonResource) GetName() string {
+	return r.ObjectMeta.Name
+}
+
+// ---
+
 type Gateway struct {
-	Kind       string      `json:"kind"`
-	ObjectMeta ObjectMeta  `json:"metadata"`
-	Spec       GatewaySpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           GatewaySpec `json:"spec"`
 }
 
 type GatewaySpec struct {
@@ -84,9 +114,8 @@ type FrontendTLSValidation struct {
 // ---
 
 type HTTPRoute struct {
-	Kind       string        `json:"kind"`
-	ObjectMeta ObjectMeta    `json:"metadata"`
-	Spec       HTTPRouteSpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           HTTPRouteSpec `json:"spec"`
 }
 
 type HTTPRouteSpec struct {
@@ -105,9 +134,8 @@ type HTTPRouteRule struct {
 // ---
 
 type GRPCRoute struct {
-	Kind       string        `json:"kind"`
-	ObjectMeta ObjectMeta    `json:"metadata"`
-	Spec       GRPCRouteSpec `json:"spec,omitempty"`
+	CommonResource `json:",inline"`
+	Spec           GRPCRouteSpec `json:"spec,omitempty"`
 }
 
 type GRPCRouteSpec struct {
@@ -126,9 +154,8 @@ type GRPCRouteRule struct {
 // ---
 
 type TCPRoute struct {
-	Kind       string       `json:"kind"`
-	ObjectMeta ObjectMeta   `json:"metadata"`
-	Spec       TCPRouteSpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           TCPRouteSpec `json:"spec"`
 }
 
 // TCPRouteSpec defines the desired state of TCPRoute
@@ -144,9 +171,8 @@ type TCPRouteRule struct {
 // ---
 
 type TLSRoute struct {
-	Kind       string       `json:"kind"`
-	ObjectMeta ObjectMeta   `json:"metadata"`
-	Spec       TLSRouteSpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           TLSRouteSpec `json:"spec"`
 }
 
 // TLSRouteSpec defines the desired state of a TLSRoute resource.
@@ -163,9 +189,8 @@ type TLSRouteRule struct {
 // ---
 
 type UDPRoute struct {
-	Kind       string       `json:"kind"`
-	ObjectMeta ObjectMeta   `json:"metadata"`
-	Spec       UDPRouteSpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           UDPRouteSpec `json:"spec"`
 }
 
 type UDPRouteSpec struct {
@@ -263,17 +288,18 @@ func NewBackendRefWithWeight(name string, weight int32) BackendRef {
 }
 
 type Backend struct {
-	Kind       string      `json:"kind"`
-	ObjectMeta ObjectMeta  `json:"metadata"`
-	Spec       BackendSpec `json:"spec"`
-	Port       int32       `json:"-"` // store the port for the backend temporarily
+	CommonResource `json:",inline"`
+	Spec           BackendSpec `json:"spec"`
+	Port           int32       `json:"-"` // store the port for the backend temporarily
 }
 
 func NewBackend(svcPortName string, targets []BackendTarget) *Backend {
 	return &Backend{
-		Kind: "Backend",
-		ObjectMeta: ObjectMeta{
-			Name: svcPortName,
+		CommonResource: CommonResource{
+			Kind: "Backend",
+			ObjectMeta: ObjectMeta{
+				Name: svcPortName,
+			},
 		},
 		Spec: BackendSpec{
 			Targets: targets,
@@ -315,9 +341,8 @@ func fmtPortName(in *int32) string {
 // ---
 
 type BackendTLSPolicy struct {
-	Kind       string               `json:"kind"`
-	ObjectMeta ObjectMeta           `json:"metadata"`
-	Spec       BackendTLSPolicySpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           BackendTLSPolicySpec `json:"spec"`
 }
 
 type BackendTLSPolicySpec struct {
@@ -352,9 +377,8 @@ func (p *BackendTLSPolicy) AddTargetRef(ref BackendRef) {
 // ---
 
 type BackendLBPolicy struct {
-	Kind       string              `json:"kind"`
-	ObjectMeta ObjectMeta          `json:"metadata"`
-	Spec       BackendLBPolicySpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           BackendLBPolicySpec `json:"spec"`
 }
 
 type BackendLBPolicySpec struct {
@@ -383,9 +407,8 @@ func (p *BackendLBPolicy) AddTargetRef(ref BackendRef) {
 // ---
 
 type RetryPolicy struct {
-	Kind       string          `json:"kind"`
-	ObjectMeta ObjectMeta      `json:"metadata"`
-	Spec       RetryPolicySpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           RetryPolicySpec `json:"spec"`
 }
 
 type RetryPolicySpec struct {
@@ -433,9 +456,8 @@ func (p *RetryPolicy) AddPort(port gwpav1alpha2.PortRetry) {
 // ---
 
 type HealthCheckPolicy struct {
-	Kind       string                `json:"kind"`
-	ObjectMeta ObjectMeta            `json:"metadata"`
-	Spec       HealthCheckPolicySpec `json:"spec"`
+	CommonResource `json:",inline"`
+	Spec           HealthCheckPolicySpec `json:"spec"`
 }
 
 type HealthCheckPolicySpec struct {

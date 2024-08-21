@@ -95,7 +95,8 @@ data:
         "enableValidateTLSRouteHostnames": {{.Values.fsm.featureFlags.enableValidateTLSRouteHostnames | mustToJson}},
         "enableGatewayAgentService": {{.Values.fsm.featureFlags.enableGatewayAgentService | mustToJson}},
         "enableGatewayProxyTag": {{.Values.fsm.featureFlags.enableGatewayProxyTag | mustToJson}},
-        "useEndpointSlicesForGateway": {{ (and .Values.fsm.featureFlags.useEndpointSlicesForGateway (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion)) | mustToJson }}
+        "useEndpointSlicesForGateway": {{ (and .Values.fsm.featureFlags.useEndpointSlicesForGateway (semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion)) | mustToJson }},
+        "generateSingleConfigForFGW": {{.Values.fsm.featureFlags.generateSingleConfigForFGW | mustToJson}}
       },
       "pluginChains": {{.Values.fsm.pluginChains | mustToJson }},
       "ingress": {

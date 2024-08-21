@@ -402,6 +402,9 @@ type FeatureFlags struct {
 
 	// UseEndpointSlicesForGateway defines if endpoint slices are enabled for calculating gateway routes.
 	UseEndpointSlicesForGateway bool `json:"useEndpointSlicesForGateway"`
+
+	// GenerateSingleConfigForFGW defines if generate ONLY one config.json for FGW.
+	GenerateSingleConfigForFGW bool `json:"generateSingleConfigForFGW"`
 }
 
 // RepoServerSpec is the type to represent repo server.
@@ -729,7 +732,7 @@ type ImageSpec struct {
 
 // MiscSpec is the type to represent misc configs.
 type MiscSpec struct {
-	// +kubebuilder:default="flomesh/pipy-repo:1.3.0"
+	// +kubebuilder:default="flomesh/pipy-repo:1.4.0"
 	// RepoServerImage defines the image of repo server.
 	RepoServerImage string `json:"repoServerImage"`
 }

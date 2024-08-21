@@ -2151,7 +2151,8 @@
                         "enableValidateTLSRouteHostnames",
                         "enableGatewayAgentService",
                         "enableGatewayProxyTag",
-                        "useEndpointSlicesForGateway"
+                        "useEndpointSlicesForGateway",
+                        "generateSingleConfigForFGW"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2321,6 +2322,15 @@
                           "type": "boolean",
                           "title": "UseEndpointSlicesForGateway",
                           "description": "Use EndpointSlices for calculating Gateway routes",
+                          "examples": [
+                            true
+                          ]
+                        },
+                        "generateSingleConfigForFGW": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/generateSingleConfigForFGW",
+                          "type": "boolean",
+                          "title": "generateSingleConfigForFGW",
+                          "description": "Defines if generate ONLY one config.json for FGW",
                           "examples": [
                             true
                           ]

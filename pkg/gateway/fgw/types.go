@@ -1,9 +1,20 @@
 // Package fgw contains types for the gateway route
 package fgw
 
+import extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 // Config is the configuration for the gateway
 type Config interface {
 	GetVersion() string
+	GetResources() []Resource
+	GetSecrets() map[string]string
+	GetFilters() map[extv1alpha1.FilterProtocol]map[string]string
+}
+
+type Resource interface {
+	GetKind() string
+	GetNamespace() string
+	GetName() string
 }
 
 //// ServicePortName is a combination of a service name, namespace, and port

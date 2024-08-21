@@ -20,7 +20,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processGRPCRoutes() []interface{} {
+func (c *ConfigGenerator) processGRPCRoutes() []fgwv2.Resource {
 	list := &gwv1.GRPCRouteList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
@@ -29,7 +29,7 @@ func (c *ConfigGenerator) processGRPCRoutes() []interface{} {
 		return nil
 	}
 
-	routes := make([]interface{}, 0)
+	routes := make([]fgwv2.Resource, 0)
 	for _, grpcRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			grpcRoute,

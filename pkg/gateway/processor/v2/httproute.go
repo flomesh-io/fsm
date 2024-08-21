@@ -20,7 +20,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processHTTPRoutes() []interface{} {
+func (c *ConfigGenerator) processHTTPRoutes() []fgwv2.Resource {
 	list := &gwv1.HTTPRouteList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayHTTPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
@@ -29,7 +29,7 @@ func (c *ConfigGenerator) processHTTPRoutes() []interface{} {
 		return nil
 	}
 
-	routes := make([]interface{}, 0)
+	routes := make([]fgwv2.Resource, 0)
 	for _, httpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			httpRoute,
