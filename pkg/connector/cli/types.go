@@ -32,6 +32,12 @@ const (
 	MachineConnectors InformerKey = "MachineConnectors"
 	// GatewayConnectors lookup identifier
 	GatewayConnectors InformerKey = "GatewayConnectors"
+	// GatewayHTTPRoutes lookup identifier
+	GatewayHTTPRoutes InformerKey = "GatewayHTTPRoutes"
+	// GatewayGRPCRoutes lookup identifier
+	GatewayGRPCRoutes InformerKey = "GatewayGRPCRoutes"
+	// GatewayTCPRoutes lookup identifier
+	GatewayTCPRoutes InformerKey = "GatewayTCPRoutes"
 )
 
 // client is the type used to represent the k8s client for the connector resources

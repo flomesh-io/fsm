@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
@@ -23,7 +21,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
-	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // PipyConfGeneratorJob is the job to generate pipy policy json
@@ -73,7 +70,7 @@ func (job *PipyConfGeneratorJob) Run() {
 
 	desiredSuffix := ""
 	if proxy.Metadata != nil && len(proxy.Metadata.Namespace) > 0 {
-		desiredSuffix = fmt.Sprintf("%s.svc.%s", proxy.Metadata.Namespace, k8s.GetTrustDomain())
+		desiredSuffix = fmt.Sprintf("%s.svc.%s", proxy.Metadata.Namespace, service.GetTrustDomain())
 		metrics, _ := injector.IsMetricsEnabled(s.kubeController, proxy.Metadata.Namespace)
 		pipyConf.Metrics = metrics
 	}
@@ -310,8 +307,9 @@ func certs(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf, proxyServices []ser
 
 				var sans []string
 				if len(proxyServices) > 0 {
+					san := (*meshConf).GetServiceAccessNames()
 					for _, proxySvc := range proxyServices {
-						sans = append(sans, k8s.GetHostnamesForService(proxySvc, true)...)
+						sans = append(sans, k8s.GetHostnamesForService(proxySvc, san, true)...)
 					}
 				}
 				for {
@@ -394,17 +392,12 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 				pipyConf.DNSResolveDB = make(map[string][]interface{})
 			}
 			resolvableIPSet := mapset.NewSet()
-			for anno := range svc.Annotations {
-				if !strings.HasPrefix(anno, connector.AnnotationMeshEndpointAddr) {
-					continue
+			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta := new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+				for addr := range svcMeta.Endpoints {
+					resolvableIPSet.Add(string(addr))
 				}
-				ipStr := strings.TrimPrefix(anno, fmt.Sprintf("%s-", connector.AnnotationMeshEndpointAddr))
-				ipNum, err := strconv.Atoi(ipStr)
-				if err != nil {
-					continue
-				}
-				ip := utils.Int2IP4(uint32(ipNum))
-				resolvableIPSet.Add(ip.To4().String())
 			}
 			if resolvableIPSet.Cardinality() > 0 {
 				if addrs, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
@@ -421,8 +414,8 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 					return addr1 < addr2
 				})
 				pipyConf.DNSResolveDB[svc.Name] = addrItems
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, k8s.GetTrustDomain())] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s", svc.Name, service.GetTrustDomain())] = addrItems
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.svc.%s", svc.Name, service.GetTrustDomain())] = addrItems
 			}
 		}
 	}

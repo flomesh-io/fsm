@@ -56,6 +56,12 @@ spec:
                 type: boolean
               deriveNamespace:
                 type: string
+              leaderElection:
+                default: true
+                type: boolean
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32
@@ -125,6 +131,14 @@ spec:
                     type: string
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   filterLabel:
                     default: ""
                     type: string
