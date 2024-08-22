@@ -40,6 +40,7 @@ fsm:
   # -- FSM's cloud connector parameters
   cloudConnector:
     enable: false
+    leaderElection: false
     connectorProvider: ""
     connectorName: ""
     # -- Sidecar injector's replica count (ignored when autoscale.enable is true)

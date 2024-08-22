@@ -399,7 +399,7 @@ func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, r
 		}
 		if clen < plen {
 			itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
-		} else if strings.Compare(string(ruleName), string(preRuleName)) < 0 {
+		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
 			itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
 		}
 	} else {
@@ -427,7 +427,7 @@ func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, 
 			}
 		} else if clen < plen {
 			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
-		} else if strings.Compare(string(ruleName), string(preRuleName)) < 0 {
+		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
 			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
 		}
 	} else {

@@ -64,6 +64,7 @@ type Connector interface {
 	GetProvider() DiscoveryServiceProvider
 	GetReplicas() *int32
 	GetResources() *corev1.ResourceRequirements
+	GetLeaderElection() *bool
 }
 
 type DiscoveryServiceProvider string

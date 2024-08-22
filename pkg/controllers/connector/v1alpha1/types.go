@@ -112,6 +112,8 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 		fmt.Sprintf("fsm.cloudConnector.resource.requests.memory=%s", requestsMem(connector, resource.MustParse("128M")).String()),
 		fmt.Sprintf("fsm.cloudConnector.resource.limits.cpu='%s'", limitsCpu(connector, resource.MustParse("1")).String()),
 		fmt.Sprintf("fsm.cloudConnector.resource.limits.memory=%s", limitsMem(connector, resource.MustParse("1G")).String()),
+
+		fmt.Sprintf("fsm.cloudConnector.leaderElection=%t", leaderElection(connector, true)),
 	}
 
 	for _, ov := range overrides {
@@ -192,4 +194,11 @@ func limitsMem(connector ctv1.Connector, defVal resource.Quantity) *resource.Qua
 	}
 
 	return connector.GetResources().Limits.Memory()
+}
+
+func leaderElection(connector ctv1.Connector, defVal bool) bool {
+	if connector.GetLeaderElection() == nil {
+		return defVal
+	}
+	return *connector.GetLeaderElection()
 }

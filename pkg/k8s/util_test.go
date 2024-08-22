@@ -13,21 +13,27 @@ import (
 	"k8s.io/client-go/kubernetes"
 	fakeclient "k8s.io/client-go/kubernetes/fake"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/tests"
 )
 
 func TestGetHostnamesForServicePort(t *testing.T) {
 	testCases := []struct {
-		name              string
-		service           service.MeshService
-		localNamespace    bool
-		expectedHostnames []string
+		name               string
+		service            service.MeshService
+		localNamespace     bool
+		serviceAccessNames *configv1alpha3.ServiceAccessNames
+		expectedHostnames  []string
 	}{
 		{
 			name:           "hostnames corresponding to a service in the same namespace",
 			service:        service.MeshService{Namespace: "ns1", Name: "s1", Port: 90},
 			localNamespace: true,
+			serviceAccessNames: &configv1alpha3.ServiceAccessNames{
+				MustWithServicePort: false,
+				WithTrustDomain:     true,
+			},
 			expectedHostnames: []string{
 				"s1",
 				"s1:90",
@@ -45,6 +51,10 @@ func TestGetHostnamesForServicePort(t *testing.T) {
 			name:           "hostnames corresponding to a service in different namespace",
 			service:        service.MeshService{Namespace: "ns1", Name: "s1", Port: 90},
 			localNamespace: false,
+			serviceAccessNames: &configv1alpha3.ServiceAccessNames{
+				MustWithServicePort: false,
+				WithTrustDomain:     true,
+			},
 			expectedHostnames: []string{
 				"s1.ns1",
 				"s1.ns1:90",
@@ -61,8 +71,7 @@ func TestGetHostnamesForServicePort(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			assert := tassert.New(t)
-
-			actual := GetHostnamesForService(tc.service, tc.localNamespace)
+			actual := GetHostnamesForService(tc.service, tc.serviceAccessNames, tc.localNamespace)
 			assert.ElementsMatch(actual, tc.expectedHostnames)
 			assert.Len(actual, len(tc.expectedHostnames))
 		})

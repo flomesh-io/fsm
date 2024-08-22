@@ -45,6 +45,10 @@ func (c *MachineConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *MachineConnector) GetLeaderElection() *bool {
+	return c.Spec.LeaderElection
+}
+
 // MachineSyncToK8SSpec is the type used to represent the sync from Machine to K8S specification.
 type MachineSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -56,6 +60,13 @@ type MachineSyncToK8SSpec struct {
 	// +kubebuilder:default=true
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
+
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
 
 	// +kubebuilder:default=""
 	// +optional
@@ -80,6 +91,10 @@ type MachineSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
+	Purge bool `json:"purge,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
 	SyncToK8S MachineSyncToK8SSpec `json:"syncToK8S"`
@@ -92,6 +107,10 @@ type MachineSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
 // MachineStatus is the type used to represent the status of a Machine Connector resource.

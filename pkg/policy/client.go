@@ -219,7 +219,9 @@ func (c *Client) GetUpstreamTrafficSetting(options UpstreamTrafficSettingGetOpt)
 		}
 
 		if upstreamTrafficSetting.Namespace == options.MeshService.Namespace &&
-			upstreamTrafficSetting.Spec.Host == options.MeshService.FQDN() {
+			(upstreamTrafficSetting.Spec.Host == options.MeshService.PolicyName(true) ||
+				upstreamTrafficSetting.Spec.Host == options.MeshService.PolicyName(false) ||
+				upstreamTrafficSetting.Spec.Host == options.MeshService.FQDN()) {
 			return upstreamTrafficSetting
 		}
 	}

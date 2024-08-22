@@ -67,8 +67,13 @@ type Config struct {
 	FsmMeshConfigName string
 	FsmVersion        string
 	TrustDomain       string
+	Workers           uint
+	Limit             uint
+	Burst             uint
+	Timeout           uint
 	SdrProvider       string
 	SdrConnector      string
+	LeaderElection    bool
 }
 
 func init() {
@@ -79,9 +84,13 @@ func init() {
 	flags.StringVar(&Cfg.FsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
 	flags.StringVar(&Cfg.FsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&Cfg.TrustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
-
+	flags.UintVar(&Cfg.Workers, "ctok-workers", 75, "Number of CtoK workers")
+	flags.UintVar(&Cfg.Limit, "k8s-client-limit", 1000, "k8s request limit")
+	flags.UintVar(&Cfg.Burst, "k8s-client-burst", 1500, "k8s request burst")
+	flags.UintVar(&Cfg.Timeout, "k8s-client-timeout", 15, "k8s request timeout")
 	flags.StringVar(&Cfg.SdrProvider, "sdr-provider", "", "service discovery and registration (consul, eureka, nacos, machine, gateway)")
 	flags.StringVar(&Cfg.SdrConnector, "sdr-connector", "", "connector name")
+	flags.BoolVar(&Cfg.LeaderElection, "leader-election", true, "leader election mode")
 }
 
 // ValidateCLIParams contains all checks necessary that various permutations of the CLI flags are consistent

@@ -44,6 +44,10 @@ func (c *GatewayConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *GatewayConnector) GetLeaderElection() *bool {
+	return c.Spec.LeaderElection
+}
+
 // IngressSelectorSpec is the type used to represent the ingress selector specification.
 type IngressSelectorSpec struct {
 	// +kubebuilder:default=ExternalIP
@@ -75,6 +79,10 @@ type EgressSelectorSpec struct {
 // SyncToFgwSpec is the type used to represent the sync to Gateway specification.
 type SyncToFgwSpec struct {
 	Enable bool `json:"enable"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:validation:Format="duration"
 	// +kubebuilder:default="5s"
@@ -112,6 +120,10 @@ type GatewaySpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
 // GatewayStatus is the type used to represent the status of a Gateway Connector resource.

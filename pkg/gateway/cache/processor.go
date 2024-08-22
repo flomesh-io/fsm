@@ -2,12 +2,15 @@ package cache
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/types"
 
+	"github.com/flomesh-io/fsm/pkg/connector"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -331,6 +334,44 @@ func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32
 }
 
 func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
+	if len(svc.Annotations) > 0 {
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := new(connector.MicroSvcMeta)
+			svcMeta.Decode(v)
+			found := false
+			for portMeta := range svcMeta.Ports {
+				if uint16(portMeta) == uint16(*port) {
+					found = true
+					break
+				}
+			}
+			if found {
+				endpointSet := make(map[endpointContext]struct{})
+				for address, metadata := range svcMeta.Endpoints {
+					if len(metadata.Native.ViaGatewayHTTP) == 0 {
+						ep := endpointContext{address: string(address), port: *port}
+						endpointSet[ep] = struct{}{}
+					} else {
+						if segs := strings.Split(metadata.Native.ViaGatewayHTTP, ":"); len(segs) == 2 {
+							if portStr, convErr := strconv.Atoi(segs[1]); convErr == nil {
+								viaPort := int32(portStr & 0xFFFF)
+								viaAddr := segs[0]
+								ep := endpointContext{address: viaAddr, port: viaPort}
+								endpointSet[ep] = struct{}{}
+							}
+						}
+					}
+				}
+				if len(endpointSet) > 0 {
+					return toFGWEndpoints(endpointSet)
+				} else {
+					log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
+					return nil
+				}
+			}
+		}
+	}
+
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			discoveryv1.LabelServiceName: svc.Name,

@@ -124,7 +124,7 @@ func (mc *MeshCatalog) getInboundTrafficPoliciesForUpstream(upstreamSvc service.
 		endpoints := mc.getDNSResolvableServiceEndpoints(upstreamSvc)
 		// Add a wildcard HTTP route that allows any downstream client to access the upstream service
 		hostnames := mc.getHostnamesForService(upstreamSvc, true /* local namespace FQDN should always be allowed for inbound routes*/, endpoints)
-		inboundPolicyForUpstreamSvc = trafficpolicy.NewInboundTrafficPolicy(upstreamSvc.FQDN(), hostnames, upstreamTrafficSetting)
+		inboundPolicyForUpstreamSvc = trafficpolicy.NewInboundTrafficPolicy(upstreamSvc.PolicyName(false), hostnames, upstreamTrafficSetting)
 		localCluster := service.WeightedCluster{
 			ClusterName: service.ClusterName(upstreamSvc.SidecarLocalClusterName()),
 			Weight:      constants.ClusterWeightAcceptAll,
@@ -146,8 +146,9 @@ func (mc *MeshCatalog) getInboundTrafficPoliciesForUpstream(upstreamSvc service.
 
 func (mc *MeshCatalog) buildInboundHTTPPolicyFromTrafficTarget(upstreamSvc service.MeshService, trafficTargets []*access.TrafficTarget,
 	upstreamTrafficSetting *policyv1alpha1.UpstreamTrafficSetting) *trafficpolicy.InboundTrafficPolicy {
-	hostnames := k8s.GetHostnamesForService(upstreamSvc, true /* local namespace FQDN should always be allowed for inbound routes*/)
-	inboundPolicy := trafficpolicy.NewInboundTrafficPolicy(upstreamSvc.FQDN(), hostnames, upstreamTrafficSetting)
+	san := mc.configurator.GetServiceAccessNames()
+	hostnames := k8s.GetHostnamesForService(upstreamSvc, san, true)
+	inboundPolicy := trafficpolicy.NewInboundTrafficPolicy(upstreamSvc.PolicyName(false), hostnames, upstreamTrafficSetting)
 
 	localCluster := service.WeightedCluster{
 		ClusterName: service.ClusterName(upstreamSvc.SidecarLocalClusterName()),

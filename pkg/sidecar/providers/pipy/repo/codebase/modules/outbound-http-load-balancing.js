@@ -139,7 +139,9 @@
       ) => (
         attrs?.ViaGateway && (
           __isEgress = true,
-          msg.head.headers['fgw-target'] = __target,
+          msg.head.headers['fgw-forwarded-host'] = msg.head.headers.host,
+          msg.head.headers['fgw-forwarded-target'] = __target,
+          msg.head.headers['fgw-forwarded-service'] = __service.name.split('.')[0],
           __target = attrs.ViaGateway
         ),
         attrs?.Path && (

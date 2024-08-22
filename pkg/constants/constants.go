@@ -383,17 +383,6 @@ const (
 	TrafficInterceptionModeNone = "none"
 )
 
-const (
-	//ServiceAccessModeIP defines the ip service access mode
-	ServiceAccessModeIP = "ip"
-
-	//ServiceAccessModeDomain defines the domain service access mode
-	ServiceAccessModeDomain = "domain"
-
-	//ServiceAccessModeMixed defines the mixed service access mode
-	ServiceAccessModeMixed = "mixed"
-)
-
 // GatewayAPI Group and Kinds
 const (
 	// GatewayAPIGroup is the group name used in Gateway API
