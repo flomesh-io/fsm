@@ -411,25 +411,26 @@ type WeightedZoneEndpoint struct {
 // WeightedEndpoints is a wrapper type of map[HTTPHostPort]WeightedZoneEndpoint
 type WeightedEndpoints map[HTTPHostPort]*WeightedZoneEndpoint
 
-// ClusterConfigs represents the configs of Cluster
-type ClusterConfigs struct {
+// ClusterConfig represents the configs of Cluster
+type ClusterConfig struct {
 	Endpoints          *WeightedEndpoints  `json:"Endpoints"`
 	ConnectionSettings *ConnectionSettings `json:"ConnectionSettings,omitempty"`
 	RetryPolicy        *RetryPolicy        `json:"RetryPolicy,omitempty"`
 	SourceCert         *Certificate        `json:"SourceCert,omitempty"`
+	Hash               uint64              `json:"Hash,omitempty"`
 }
 
 // EgressGatewayClusterConfigs represents the configs of Egress Gateway Cluster
 type EgressGatewayClusterConfigs struct {
-	ClusterConfigs
+	ClusterConfig
 	Mode string `json:"Mode"`
 }
 
 // OutboundTrafficPolicy represents the policy of OutboundTraffic
 type OutboundTrafficPolicy struct {
 	namedTrafficMatches namedOutboundTrafficMatches
-	TrafficMatches      OutboundTrafficMatches          `json:"TrafficMatches"`
-	ClustersConfigs     map[ClusterName]*ClusterConfigs `json:"ClustersConfigs"`
+	TrafficMatches      OutboundTrafficMatches         `json:"TrafficMatches"`
+	ClustersConfigs     map[ClusterName]*ClusterConfig `json:"ClustersConfigs"`
 }
 
 // ForwardTrafficMatches is a wrapper type of map[Port]WeightedClusters

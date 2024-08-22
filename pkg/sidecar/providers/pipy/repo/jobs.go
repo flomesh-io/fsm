@@ -463,6 +463,11 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 			IssuingCA:  string(proxy.SidecarCert.IssuingCA),
 		}
 	}
+
+	if !prettyConfig() {
+		pipyConf.Pack()
+	}
+
 	bytes, jsonErr := json.Marshal(pipyConf)
 
 	if jsonErr == nil {
