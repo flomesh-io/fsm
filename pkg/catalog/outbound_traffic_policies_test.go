@@ -17,7 +17,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/policy"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -310,7 +309,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.OutboundTrafficPolicy{
 					8080: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:8080",
@@ -334,7 +333,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s3.ns3.svc.cluster.local",
+							Name: "s3.ns3",
 							Hostnames: []string{
 								"s3.ns3",
 								"s3.ns3:8080",
@@ -359,7 +358,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s3-v1.ns3.svc.cluster.local",
+							Name: "s3-v1.ns3",
 							Hostnames: []string{
 								"s3-v1.ns3",
 								"s3-v1.ns3:8080",
@@ -381,7 +380,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s3-v2.ns3.svc.cluster.local",
+							Name: "s3-v2.ns3",
 							Hostnames: []string{
 								"s3-v2.ns3",
 								"s3-v2.ns3:8080",
@@ -405,7 +404,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 					},
 					9090: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:9090",
@@ -599,7 +598,8 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 
 			// Mock calls to k8s client caches
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode).AnyTimes()
-			mockCfg.EXPECT().GetServiceAccessMode().Return(constants.ServiceAccessModeDomain).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true}).AnyTimes()
 			mockCfg.EXPECT().IsEgressEnabled().Return(false).AnyTimes()
 			mockCfg.EXPECT().IsLocalDNSProxyEnabled().Return(false).AnyTimes()
 			mockCfg.EXPECT().IsWildcardDNSProxyEnabled().Return(false).AnyTimes()

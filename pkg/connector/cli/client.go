@@ -96,6 +96,9 @@ func newClient(provider, connectorName string,
 		NacosConnectors:   c.initNacosConnectorMonitor,
 		MachineConnectors: c.initMachineConnectorMonitor,
 		GatewayConnectors: c.initGatewayConnectorMonitor,
+		GatewayHTTPRoutes: c.initGatewayHTTPRouteMonitor,
+		GatewayGRPCRoutes: c.initGatewayGRPCRouteMonitor,
+		GatewayTCPRoutes:  c.initGatewayTCPRouteMonitor,
 	}
 
 	// If specific informers are not selected to be initialized, initialize all informers
@@ -105,7 +108,10 @@ func newClient(provider, connectorName string,
 			EurekaConnectors,
 			NacosConnectors,
 			MachineConnectors,
-			GatewayConnectors}
+			GatewayConnectors,
+			GatewayHTTPRoutes,
+			GatewayGRPCRoutes,
+			GatewayTCPRoutes}
 	}
 
 	for _, informer := range selectInformers {
@@ -163,6 +169,36 @@ func (c *client) initGatewayConnectorMonitor() {
 	}
 	c.informers.AddEventHandler(fsminformers.InformerKeyGatewayConnector,
 		k8s.GetEventHandlerFuncs(nil, gatewayConnectorEventTypes, c.msgBroker))
+}
+
+func (c *client) initGatewayHTTPRouteMonitor() {
+	gatewayHTTPRouteEventTypes := k8s.EventTypes{
+		Add:    announcements.GatewayAPIHTTPRouteAdded,
+		Update: announcements.GatewayAPIHTTPRouteDeleted,
+		Delete: announcements.GatewayAPIHTTPRouteUpdated,
+	}
+	c.informers.AddEventHandler(fsminformers.InformerKeyGatewayAPIHTTPRoute,
+		k8s.GetEventHandlerFuncs(nil, gatewayHTTPRouteEventTypes, c.msgBroker))
+}
+
+func (c *client) initGatewayGRPCRouteMonitor() {
+	gatewayGRPCRouteEventTypes := k8s.EventTypes{
+		Add:    announcements.GatewayAPIGRPCRouteAdded,
+		Update: announcements.GatewayAPIGRPCRouteDeleted,
+		Delete: announcements.GatewayAPIGRPCRouteUpdated,
+	}
+	c.informers.AddEventHandler(fsminformers.InformerKeyGatewayAPIGRPCRoute,
+		k8s.GetEventHandlerFuncs(nil, gatewayGRPCRouteEventTypes, c.msgBroker))
+}
+
+func (c *client) initGatewayTCPRouteMonitor() {
+	gatewayTCPRouteEventTypes := k8s.EventTypes{
+		Add:    announcements.GatewayAPITCPRouteAdded,
+		Update: announcements.GatewayAPITCPRouteDeleted,
+		Delete: announcements.GatewayAPITCPRouteUpdated,
+	}
+	c.informers.AddEventHandler(fsminformers.InformerKeyGatewayAPITCPRoute,
+		k8s.GetEventHandlerFuncs(nil, gatewayTCPRouteEventTypes, c.msgBroker))
 }
 
 // GetConsulConnector returns a ConsulConnector resource if found, nil otherwise.

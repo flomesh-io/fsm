@@ -17,11 +17,11 @@ import (
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
 	pluginv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	pluginv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyv1alpha1Client "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
-	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/identity"
@@ -344,19 +344,52 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 // MeshService objects per port.
 func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshService {
 	var meshServices []service.MeshService
+	var svcMeta *connector.MicroSvcMeta
+	var cloudInheritedFrom string
+	var cloudAttachedTo string
+
+	if len(svc.Annotations) > 0 {
+		if inheritedFrom, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
+			cloudInheritedFrom = inheritedFrom
+
+			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta = new(connector.MicroSvcMeta)
+				svcMeta.Decode(v)
+			}
+
+			ns := c.GetNamespace(svc.Namespace)
+			if len(ns.Annotations) > 0 {
+				if attachedNs, exists := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; exists {
+					cloudAttachedTo = attachedNs
+				}
+			}
+		}
+	}
 
 	for _, portSpec := range svc.Spec.Ports {
 		meshSvc := service.MeshService{
-			Namespace: svc.Namespace,
-			Name:      svc.Name,
-			Port:      uint16(portSpec.Port),
+			Namespace:              svc.Namespace,
+			Name:                   svc.Name,
+			Port:                   uint16(portSpec.Port),
+			CloudInheritedFrom:     cloudInheritedFrom,
+			CloudAttachedNamespace: cloudAttachedTo,
 		}
-		if len(svc.Annotations) > 0 {
-			if inheritedFrom, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedFrom]; ok {
-				meshSvc.CloudInheritedFrom = inheritedFrom
-			}
-			if clusterId, ok := svc.Annotations[connector.AnnotationCloudServiceInheritedClusterID]; ok {
-				meshSvc.ClusterID = clusterId
+
+		if svcMeta != nil {
+			if len(svcMeta.Ports) > 0 {
+				found := false
+				for port, protocol := range svcMeta.Ports {
+					if uint16(portSpec.Port) == uint16(port) {
+						meshSvc.TargetPort = uint16(port)
+						meshSvc.Protocol = string(protocol)
+						meshServices = append(meshServices, meshSvc)
+						found = true
+						break
+					}
+				}
+				if found {
+					continue
+				}
 			}
 		}
 

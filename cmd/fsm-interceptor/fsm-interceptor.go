@@ -18,9 +18,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/cni/controller/cniserver"
 	"github.com/flomesh-io/fsm/pkg/cni/controller/helpers"
 	"github.com/flomesh-io/fsm/pkg/cni/controller/podwatcher"
-	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
+	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/version"
 )
 
@@ -102,7 +102,7 @@ func main() {
 	}
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 
-	k8s.SetTrustDomain(trustDomain)
+	service.SetTrustDomain(trustDomain)
 
 	if err = helpers.LoadProgs(config.EnableCNI, config.KernelTracing); err != nil {
 		log.Fatal().Msgf("failed to load ebpf programs: %v", err)

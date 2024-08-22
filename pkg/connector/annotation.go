@@ -9,12 +9,14 @@ var (
 
 	// CloudK8SNS is the key used in the meta to record the namespace
 	// of the service/node registration.
-	CloudK8SNS       = "fsm.connector.service.k8s.ns"
-	CloudK8SRefKind  = "fsm.connector.service.k8s.ref.kind"
-	CloudK8SRefValue = "fsm.connector.service.k8s.ref.name"
-	CloudK8SNodeName = "fsm.connector.service.k8s.node.name"
-	CloudK8SPort     = "fsm.connector.service.k8s.port"
-	CloudK8SVia      = "fsm.connector.service.via.gateway"
+	CloudK8SNS          = "fsm.connector.service.k8s.ns"
+	CloudK8SRefKind     = "fsm.connector.service.k8s.ref.kind"
+	CloudK8SRefValue    = "fsm.connector.service.k8s.ref.name"
+	CloudK8SNodeName    = "fsm.connector.service.k8s.node.name"
+	CloudK8SPort        = "fsm.connector.service.k8s.port"
+	CloudHTTPViaGateway = "fsm.connector.service.http.via.gateway"
+	CloudGRPCViaGateway = "fsm.connector.service.grpc.via.gateway"
+	CloudViaGatewayMode = "fsm.connector.service.via.gateway.mode"
 )
 
 const (
@@ -27,20 +29,11 @@ const (
 	// AnnotationCloudServiceInheritedFrom defines cloud service inherited annotation
 	AnnotationCloudServiceInheritedFrom = "flomesh.io/cloud-service-inherited-from"
 
+	// AnnotationCloudServiceAttachedTo defines cloud service attached to namespace
+	AnnotationCloudServiceAttachedTo = "flomesh.io/cloud-service-attached-to"
+
 	// AnnotationCloudServiceInheritedClusterID defines cloud service cluster id annotation
 	AnnotationCloudServiceInheritedClusterID = "flomesh.io/cloud-service-inherited-cluster-id"
-
-	// AnnotationCloudServiceWithGateway defines cloud service with gateway annotation
-	AnnotationCloudServiceWithGateway = "flomesh.io/cloud-service-with-gateway"
-
-	// AnnotationCloudServiceWithMultiGateways defines cloud service with multi gateways annotation
-	AnnotationCloudServiceWithMultiGateways = "flomesh.io/cloud-service-with-multi-gateways"
-
-	// AnnotationCloudServiceViaGateway defines cloud service via gateway annotation
-	AnnotationCloudServiceViaGateway = "flomesh.io/cloud-service-via-gateway"
-
-	// AnnotationCloudServiceClusterSet defines cloud service cluster set annotation
-	AnnotationCloudServiceClusterSet = "flomesh.io/cloud-service-cluster-set"
 
 	// AnnotationMeshEndpointAddr defines mesh endpoint addr annotation
 	AnnotationMeshEndpointAddr = "flomesh.io/cloud-endpoint-addr"
@@ -54,6 +47,9 @@ const (
 	// AnnotationServiceSyncK8sToFgw is the key of the annotation that determines
 	// whether to sync the k8s Service to fsm gateway.
 	AnnotationServiceSyncK8sToFgw = "flomesh.io/service-sync-k8s-to-fgw"
+
+	// AnnotationCloudHealthCheckService defines health check service annotation
+	AnnotationCloudHealthCheckService = "flomesh.io/cloud-health-check-service"
 
 	// AnnotationServiceName is set to override the name of the service
 	// registered. By default this will be the name of the CatalogService resource.

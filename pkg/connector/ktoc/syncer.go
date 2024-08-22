@@ -222,7 +222,7 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 			queryOpts.Namespace = namespace
 		}
 
-		services, err := s.discClient.RegisteredInstances(name, queryOpts)
+		instances, err := s.discClient.RegisteredInstances(name, queryOpts)
 		if err != nil {
 			log.Debug().Msgf("error querying service, will retry service-name:%s service-namespace:%s err:%v",
 				name,
@@ -234,16 +234,16 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 		// Lock so we can modify the set of actions to take
 		s.Lock()
 
-		for _, svc := range services {
-			if len(svc.ServiceID) == 0 {
+		for _, instance := range instances {
+			if len(instance.ServiceID) == 0 {
 				continue
 			}
 			// Make sure the namespace exists before we run checks against it
 			if set, ok := s.controller.GetK2CContext().ServiceNames.Get(namespace); ok {
 				// If the service is valid and its info isn't nil, we don't deregister it
-				if set.Contains(svc.ServiceName) {
+				if set.Contains(instance.ServiceName) {
 					if nsSet, nsOk := s.controller.GetK2CContext().Namespaces.Get(namespace); nsOk {
-						if nsSet.Has(svc.ServiceID) {
+						if nsSet.Has(instance.ServiceID) {
 							continue
 						}
 					}
@@ -251,20 +251,20 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 			}
 
 			deregistration := &connector.CatalogDeregistration{
-				Node:      svc.Node,
-				ServiceID: svc.ServiceID,
+				Node:      instance.Node,
+				ServiceID: instance.ServiceID,
 				MicroService: connector.MicroService{
-					Service: svc.ServiceName,
+					Service: instance.ServiceName,
 				},
 			}
 			if s.discClient.EnableNamespaces() {
 				deregistration.Namespace = namespace
 			}
-			s.controller.GetK2CContext().Deregs.Set(svc.ServiceID, deregistration)
+			s.controller.GetK2CContext().Deregs.Set(instance.ServiceID, deregistration)
 			log.Debug().Msgf("[watchService] service being scheduled for deregistration namespace:%s service name:%s service id:%s service dereg:%v",
 				namespace,
-				svc.ServiceName,
-				svc.ServiceID,
+				instance.ServiceName,
+				instance.ServiceID,
 				deregistration)
 		}
 
@@ -320,6 +320,12 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 func (s *KtoCSyncer) syncFull(ctx context.Context) {
 	s.Lock()
 	defer s.Unlock()
+
+	if s.controller.Purge() {
+		s.controller.GetK2CContext().ServiceMap.Clear()
+		s.controller.GetK2CContext().EndpointsMap.Clear()
+		s.controller.GetK2CContext().RegisteredServiceMap.Clear()
+	}
 
 	log.Info().Msg("registering services")
 
