@@ -83,7 +83,7 @@
       ),
 
       makeHostHandler = (portConfig, host) => (
-        serviceHandlers.get(portConfig?.HttpHostPort2Service?.[host])
+        serviceHandlers.get(portConfig?.HttpHostPort2Service?.[host].RuleName)
       ),
 
       hostHandlers = new algo.Cache(

@@ -49,12 +49,12 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 					continue
 				}
 
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 				}
 
 				for _, rule := range httpRouteConfig.Rules {
@@ -167,12 +167,12 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 			}
 
 			for _, httpRouteConfig := range httpRouteConfigs {
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setServiceIdentity(proxyIdentity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
 				}
 
 				for _, route := range httpRouteConfig.Routes {
@@ -281,11 +281,11 @@ func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ i
 			}
 
 			for _, httpRouteConfig := range httpRouteConfigs {
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setEgressForwardGateway(trafficMatch.EgressGateWay)
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
 				}
 				for _, rule := range httpRouteConfig.RoutingRules {
 					route := rule.Route
@@ -524,10 +524,10 @@ func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.S
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
@@ -682,10 +682,10 @@ func generatePipyAccessControlTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
@@ -783,10 +783,10 @@ func generatePipyServiceExportTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
 					if len(rule.Route.HTTPRouteMatch.Path) == 0 {

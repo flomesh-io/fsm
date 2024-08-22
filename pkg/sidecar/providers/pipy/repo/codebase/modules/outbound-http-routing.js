@@ -87,11 +87,11 @@
       hostHandlers = new algo.Cache(
         (host) => (
           (
-            vh = portConfig?.HttpHostPort2Service?.[host],
+            vh = portConfig?.HttpHostPort2Service?.[host].RuleName,
             newHost,
           ) => (
             !vh && config?.Spec?.FeatureFlags?.EnableAutoDefaultRoute && (
-              newHost = vh = portConfig?.HttpHostPort2Service?.[Object.keys(portConfig.HttpHostPort2Service)[0]]
+              newHost = vh = portConfig?.HttpHostPort2Service?.[Object.keys(portConfig.HttpHostPort2Service)[0]].RuleName
             ),
             { handler: serviceHandlers.get(vh), newHost }
           )

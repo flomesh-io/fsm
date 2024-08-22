@@ -294,8 +294,8 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 	return ready
 }
 
-func (p *PipyConf) hashName(hash uint64) string {
-	return fmt.Sprintf("%X", hash)
+func (p *PipyConf) hashName(hash uint64) HTTPRouteRuleName {
+	return HTTPRouteRuleName(fmt.Sprintf("%X", hash))
 }
 
 func (p *PipyConf) Pack() {
@@ -362,16 +362,16 @@ func (p *PipyConf) packInbound() {
 					})
 				if _, exists := httpServiceRouteRulesByHashMap[hashcode]; !exists {
 					httpServiceRouteRulesByHashMap[hashcode] = httpServiceRouteRules
-					newHTTPServiceRouteRules[HTTPRouteRuleName(p.hashName(hashcode))] = httpServiceRouteRules
+					newHTTPServiceRouteRules[p.hashName(hashcode)] = httpServiceRouteRules
 				}
 				httpServiceRouteRulesHashByNameMap[httpRouteRuleName] = hashcode
 				delete(trafficMatch.HTTPServiceRouteRules, httpRouteRuleName)
 			}
 			trafficMatch.HTTPServiceRouteRules = newHTTPServiceRouteRules
 
-			for httpHostPort, httpRouteRuleName := range trafficMatch.HTTPHostPort2Service {
-				if hashcode, exists := httpServiceRouteRulesHashByNameMap[httpRouteRuleName]; exists {
-					trafficMatch.HTTPHostPort2Service[httpHostPort] = HTTPRouteRuleName(p.hashName(hashcode))
+			for httpHostPort, ruleRef := range trafficMatch.HTTPHostPort2Service {
+				if hashcode, exists := httpServiceRouteRulesHashByNameMap[ruleRef.RuleName]; exists {
+					trafficMatch.HTTPHostPort2Service[httpHostPort] = &HTTPRouteRuleRef{RuleName: p.hashName(hashcode), Service: string(ruleRef.RuleName)}
 				}
 			}
 		}
@@ -451,16 +451,16 @@ func (p *PipyConf) packOutbound() {
 						})
 					if _, exists := httpServiceRouteRulesByHashMap[hashcode]; !exists {
 						httpServiceRouteRulesByHashMap[hashcode] = httpServiceRouteRules
-						newHTTPServiceRouteRules[HTTPRouteRuleName(p.hashName(hashcode))] = httpServiceRouteRules
+						newHTTPServiceRouteRules[p.hashName(hashcode)] = httpServiceRouteRules
 					}
 					httpServiceRouteRulesHashByNameMap[httpRouteRuleName] = hashcode
 					delete(trafficMatch.HTTPServiceRouteRules, httpRouteRuleName)
 				}
 				trafficMatch.HTTPServiceRouteRules = newHTTPServiceRouteRules
 
-				for httpHostPort, httpRouteRuleName := range trafficMatch.HTTPHostPort2Service {
-					if hashcode, exists := httpServiceRouteRulesHashByNameMap[httpRouteRuleName]; exists {
-						trafficMatch.HTTPHostPort2Service[httpHostPort] = HTTPRouteRuleName(p.hashName(hashcode))
+				for httpHostPort, ruleRef := range trafficMatch.HTTPHostPort2Service {
+					if hashcode, exists := httpServiceRouteRulesHashByNameMap[ruleRef.RuleName]; exists {
+						trafficMatch.HTTPHostPort2Service[httpHostPort] = &HTTPRouteRuleRef{RuleName: p.hashName(hashcode), Service: string(ruleRef.RuleName)}
 					}
 				}
 			}
@@ -569,76 +569,76 @@ func (srr *OutboundTCPServiceRouteRules) setEgressForwardGateway(egresssGateway 
 	srr.EgressForwardGateway = egresssGateway
 }
 
-func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName) {
+func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleRef *HTTPRouteRuleRef) {
 	if itm.HTTPHostPort2Service == nil {
 		itm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
-	if preRuleName, exist := itm.HTTPHostPort2Service[hostPort]; exist {
-		clen := len(ruleName)
-		plen := len(preRuleName)
+	if preRuleRef, exist := itm.HTTPHostPort2Service[hostPort]; exist {
+		clen := len(ruleRef.RuleName)
+		plen := len(preRuleRef.RuleName)
 		if clen < plen {
-			itm.HTTPHostPort2Service[hostPort] = ruleName
-		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
-			itm.HTTPHostPort2Service[hostPort] = ruleName
+			itm.HTTPHostPort2Service[hostPort] = ruleRef
+		} else if clen == plen && strings.Compare(string(ruleRef.RuleName), string(preRuleRef.RuleName)) < 0 {
+			itm.HTTPHostPort2Service[hostPort] = ruleRef
 		}
 	} else {
-		itm.HTTPHostPort2Service[hostPort] = ruleName
+		itm.HTTPHostPort2Service[hostPort] = ruleRef
 	}
 }
 
-func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName, desiredSuffix string) {
+func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleRef *HTTPRouteRuleRef, desiredSuffix string) {
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
 
-	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
-		clen := len(ruleName)
-		plen := len(preRuleName)
+	if preRuleRef, exist := otm.HTTPHostPort2Service[hostPort]; exist {
+		clen := len(ruleRef.RuleName)
+		plen := len(preRuleRef.RuleName)
 		if len(desiredSuffix) > 0 &&
-			strings.HasSuffix(string(ruleName), desiredSuffix) &&
-			strings.HasSuffix(string(preRuleName), desiredSuffix) {
+			strings.HasSuffix(string(ruleRef.RuleName), desiredSuffix) &&
+			strings.HasSuffix(string(preRuleRef.RuleName), desiredSuffix) {
 			if clen < plen {
-				otm.HTTPHostPort2Service[hostPort] = ruleName
+				otm.HTTPHostPort2Service[hostPort] = ruleRef
 			}
 		} else if clen < plen {
-			otm.HTTPHostPort2Service[hostPort] = ruleName
-		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
-			otm.HTTPHostPort2Service[hostPort] = ruleName
+			otm.HTTPHostPort2Service[hostPort] = ruleRef
+		} else if clen == plen && strings.Compare(string(ruleRef.RuleName), string(preRuleRef.RuleName)) < 0 {
+			otm.HTTPHostPort2Service[hostPort] = ruleRef
 		}
 	} else {
-		otm.HTTPHostPort2Service[hostPort] = ruleName
+		otm.HTTPHostPort2Service[hostPort] = ruleRef
 	}
 }
 
-func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPRouteRuleName) *InboundHTTPRouteRules {
+func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(ruleRef *HTTPRouteRuleRef) *InboundHTTPRouteRules {
 	if itm.HTTPServiceRouteRules == nil {
 		itm.HTTPServiceRouteRules = make(InboundHTTPServiceRouteRules)
 	}
-	if len(httpRouteRuleName) == 0 {
+	if len(ruleRef.RuleName) == 0 {
 		return nil
 	}
 
-	rules, exist := itm.HTTPServiceRouteRules[httpRouteRuleName]
+	rules, exist := itm.HTTPServiceRouteRules[ruleRef.RuleName]
 	if !exist || rules == nil {
 		newCluster := new(InboundHTTPRouteRules)
-		itm.HTTPServiceRouteRules[httpRouteRuleName] = newCluster
+		itm.HTTPServiceRouteRules[ruleRef.RuleName] = newCluster
 		return newCluster
 	}
 	return rules
 }
 
-func (otm *OutboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPRouteRuleName) *OutboundHTTPRouteRules {
+func (otm *OutboundTrafficMatch) newHTTPServiceRouteRules(ruleRef *HTTPRouteRuleRef) *OutboundHTTPRouteRules {
 	if otm.HTTPServiceRouteRules == nil {
 		otm.HTTPServiceRouteRules = make(OutboundHTTPServiceRouteRules)
 	}
-	if len(httpRouteRuleName) == 0 {
+	if len(ruleRef.RuleName) == 0 {
 		return nil
 	}
 
-	rules, exist := otm.HTTPServiceRouteRules[httpRouteRuleName]
+	rules, exist := otm.HTTPServiceRouteRules[ruleRef.RuleName]
 	if !exist || rules == nil {
 		newCluster := new(OutboundHTTPRouteRules)
-		otm.HTTPServiceRouteRules[httpRouteRuleName] = newCluster
+		otm.HTTPServiceRouteRules[ruleRef.RuleName] = newCluster
 		return newCluster
 	}
 	return rules

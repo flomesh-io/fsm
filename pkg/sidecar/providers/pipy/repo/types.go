@@ -149,11 +149,17 @@ type HTTPRouteRule struct {
 // HTTPRouteRuleName is a string wrapper type
 type HTTPRouteRuleName string
 
+// HTTPRouteRuleRef http route rule name
+type HTTPRouteRuleRef struct {
+	RuleName HTTPRouteRuleName `json:"RuleName"`
+	Service  string            `json:"Service,omitempty"`
+}
+
 // HTTPHostPort is a string wrapper type
 type HTTPHostPort string
 
-// HTTPHostPort2Service is a wrapper type of map[HTTPHostPort]HTTPRouteRuleName
-type HTTPHostPort2Service map[HTTPHostPort]HTTPRouteRuleName
+// HTTPHostPort2Service is a wrapper type of map[HTTPHostPort]HTTPRouteRuleRef
+type HTTPHostPort2Service map[HTTPHostPort]*HTTPRouteRuleRef
 
 // DestinationIPRange is a string wrapper type
 type DestinationIPRange string
