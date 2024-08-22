@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	consul "github.com/hashicorp/consul/api"
+	"k8s.io/apimachinery/pkg/util/validation"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -69,9 +70,14 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
 		dc.connectController.GetClusterSet())}
-	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+	if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 		for _, meta := range filterMetadatas {
 			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
+		}
+	}
+	if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+		for _, meta := range excludeMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s != `%s`", meta.Key, meta.Value))
 		}
 	}
 	servicesMap, meta, err := dc.consulClient().Catalog().Services(opts)
@@ -86,6 +92,10 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 			if strings.EqualFold(svc, consulServiceName) {
 				continue
 			}
+			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
+				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
+				continue
+			}
 			catalogServices = append(catalogServices, connector.MicroService{Service: svc})
 		}
 	}
@@ -97,31 +107,61 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
 		dc.connectController.GetClusterSet())}
-	if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+	if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 		for _, meta := range filterMetadatas {
 			filters = append(filters, fmt.Sprintf("Service.Meta.%s == `%s`", meta.Key, meta.Value))
 		}
 	}
+	if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+		for _, meta := range excludeMetadatas {
+			filters = append(filters, fmt.Sprintf("Service.Meta.%s != `%s`", meta.Key, meta.Value))
+		}
+	}
 	opts.Filter = strings.Join(filters, " and ")
-	services, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetFilterTag(), false, opts)
+	instances, _, err := dc.consulClient().Health().Service(service, dc.connectController.GetC2KFilterTag(), false, opts)
 	if err != nil {
 		return nil, err
 	}
 
 	agentServices := make([]*connector.AgentService, 0)
-	for _, svc := range services {
+	for _, instance := range instances {
 		if !dc.connectController.GetPassingOnly() {
 			agentService := new(connector.AgentService)
-			agentService.FromConsul(svc.Service)
+			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 			continue
 		}
 
+		if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+			include := false
+			for _, cidr := range filterIPRanges {
+				if cidr.Contains(instance.Service.Address) {
+					include = true
+					break
+				}
+			}
+			if !include {
+				continue
+			}
+		}
+		if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+			exclude := false
+			for _, cidr := range excludeIPRanges {
+				if cidr.Contains(instance.Service.Address) {
+					exclude = true
+					break
+				}
+			}
+			if exclude {
+				continue
+			}
+		}
+
 		healthPassing := false
-		if len(svc.Checks) > 0 {
-			for _, chk := range svc.Checks {
-				if strings.EqualFold(chk.ServiceID, svc.Service.ID) {
+		if len(instance.Checks) > 0 {
+			for _, chk := range instance.Checks {
+				if strings.EqualFold(chk.ServiceID, instance.Service.ID) {
 					if strings.EqualFold(chk.Status, consul.HealthPassing) {
 						healthPassing = true
 					}
@@ -132,19 +172,21 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 
 		if healthPassing {
 			agentService := new(connector.AgentService)
-			agentService.FromConsul(svc.Service)
+			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 		}
 
-		checkService := new(connector.AgentService)
-		checkService.FromConsul(svc.Service)
-		checkService.ClusterId = dc.connectController.GetClusterId()
-		checkService.Service = fmt.Sprintf("%s-check", svc.Service.Service)
-		checkService.HealthCheck = true
-		checkService.Tags = nil
-		checkService.Meta = nil
-		agentServices = append(agentServices, checkService)
+		if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
+			checkService := new(connector.AgentService)
+			checkService.FromConsul(instance.Service)
+			checkService.ClusterId = dc.connectController.GetClusterId()
+			checkService.Service = fmt.Sprintf("%s-health-check", instance.Service.Service)
+			checkService.HealthCheck = true
+			checkService.Tags = nil
+			checkService.Meta = nil
+			agentServices = append(agentServices, checkService)
+		}
 	}
 	return agentServices, nil
 }
@@ -317,6 +359,9 @@ func (dc *ConsulDiscoveryClient) GetConnectorUidTag() string {
 	return fmt.Sprintf("flomesh_connector_uid=%s", dc.connectController.GetConnectorUID())
 }
 
+func (dc *ConsulDiscoveryClient) Close() {
+}
+
 func GetConsulDiscoveryClient(connectController connector.ConnectController) (*ConsulDiscoveryClient, error) {
 	consulDiscoveryClient := new(ConsulDiscoveryClient)
 	consulDiscoveryClient.connectController = connectController
@@ -329,7 +374,9 @@ func GetConsulDiscoveryClient(connectController connector.ConnectController) (*C
 	connector.CloudK8SRefValue = "fsm_connector_service_k8s_ref_name"
 	connector.CloudK8SNodeName = "fsm_connector_service_k8s_node_name"
 	connector.CloudK8SPort = "fsm_connector_service_k8s_port"
-	connector.CloudK8SVia = "fsm_connector_service_via_gateway"
+	connector.CloudHTTPViaGateway = "fsm_connector_service_http_via_gateway"
+	connector.CloudGRPCViaGateway = "fsm_connector_service_grpc_via_gateway"
+	connector.CloudViaGatewayMode = "fsm_connector_service_via_gateway_mode"
 
 	return consulDiscoveryClient, nil
 }

@@ -82,6 +82,12 @@ spec:
                 type: string
               httpAddr:
                 type: string
+              leaderElection:
+                default: true
+                type: boolean
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32
@@ -171,6 +177,9 @@ spec:
                       - value
                       type: object
                     type: array
+                  checkServiceInstanceId:
+                    default: true
+                    type: boolean
                   defaultSync:
                     default: true
                     type: boolean
@@ -183,6 +192,21 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  heartBeatInstance:
+                    default: true
+                    type: boolean
+                  heartBeatPeriod:
+                    default: 3s
+                    format: duration
+                    type: string
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -233,6 +257,26 @@ spec:
                     type: string
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  excludeMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   filterMetadatas:
                     items:
                       properties:

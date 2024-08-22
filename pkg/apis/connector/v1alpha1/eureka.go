@@ -48,6 +48,10 @@ func (c *EurekaConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *EurekaConnector) GetLeaderElection() *bool {
+	return c.Spec.LeaderElection
+}
+
 // EurekaSyncToK8SSpec is the type used to represent the sync from Eureka to K8S specification.
 type EurekaSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -57,7 +61,17 @@ type EurekaSyncToK8SSpec struct {
 	ClusterId string `json:"clusterId,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
 
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
@@ -73,6 +87,15 @@ type EurekaSyncToK8SSpec struct {
 // EurekaSyncFromK8SSpec is the type used to represent the sync from K8S to Eureka specification.
 type EurekaSyncFromK8SSpec struct {
 	Enable bool `json:"enable"`
+
+	// +kubebuilder:default=true
+	// +optional
+	HeartBeatInstance bool `json:"heartBeatInstance,omitempty"`
+
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="3s"
+	// +optional
+	HeartBeatPeriod metav1.Duration `json:"heartBeatPeriod"`
 
 	// +kubebuilder:default=true
 	// +optional
@@ -119,6 +142,17 @@ type EurekaSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	CheckServiceInstanceID bool `json:"checkServiceInstanceId,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -128,6 +162,10 @@ type EurekaSyncFromK8SSpec struct {
 type EurekaSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional
@@ -152,6 +190,10 @@ type EurekaSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
 // EurekaStatus is the type used to represent the status of a Eureka Connector resource.

@@ -314,6 +314,7 @@
                   "description": "Consul connector configurations",
                   "required": [
                     "enable",
+                    "leaderElection",
                     "connectorProvider",
                     "connectorName",
                     "replicaCount",
@@ -326,6 +327,12 @@
                       "type": "boolean",
                       "title": "enable",
                       "description": "enable"
+                    },
+                    "leaderElection": {
+                      "$id": "#/properties/fsm/properties/cloudConnector/properties/properties/leaderElection",
+                      "type": "boolean",
+                      "title": "enable",
+                      "description": "leader election mode"
                     },
                     "connectorProvider": {
                       "$id": "#/properties/fsm/properties/cloudConnector/properties/connectorProvider",

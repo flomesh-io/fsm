@@ -7,15 +7,15 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	tassert "github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	testclient "k8s.io/client-go/kubernetes/fake"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
@@ -36,7 +36,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	mockCtrl = gomock.NewController(GinkgoT())
 	mockKubeController = k8s.NewMockController(mockCtrl)
 	mockConfigurator = configurator.NewMockConfigurator(mockCtrl)
-	mockConfigurator.EXPECT().GetServiceAccessMode().Return(constants.ServiceAccessModeDomain).AnyTimes()
+	mockConfigurator.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()
 
 	mockKubeController.EXPECT().IsMonitoredNamespace(tests.BookbuyerService.Namespace).Return(true).AnyTimes()
 
@@ -55,6 +55,12 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	}
 
 	It("should correctly return a list of endpoints for a service", func() {
+		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      meshSvc.Name,
+				Namespace: meshSvc.Namespace,
+			},
+		})
 		// Should be empty for now
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -93,6 +99,12 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 			Namespace:  "default",
 			TargetPort: 90,
 		}
+		mockKubeController.EXPECT().GetService(subdomainedSvc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      subdomainedSvc.Name,
+				Namespace: subdomainedSvc.Namespace,
+			},
+		})
 		// Should be empty for now
 		mockKubeController.EXPECT().GetEndpoints(subdomainedSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -136,7 +148,12 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 			Namespace: "default",
 			// No TargetPort
 		}
-
+		mockKubeController.EXPECT().GetService(svc).Return(&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      svc.Name,
+				Namespace: svc.Namespace,
+			},
+		})
 		mockKubeController.EXPECT().GetEndpoints(svc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: svc.Namespace,
@@ -217,7 +234,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 					"some-label": "test",
 				},
 			},
-		})
+		}).MaxTimes(2)
 
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{
@@ -250,7 +267,6 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 	})
 
 	It("GetResolvableEndpoints should properly return actual endpoints when ClusterIP is none", func() {
-
 		// If the service has cluster IP set to none, expect the individual pod endpoints
 		mockKubeController.EXPECT().GetService(meshSvc).Return(&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
@@ -269,7 +285,7 @@ var _ = Describe("Test Kube client Provider (w/o kubecontroller)", func() {
 					"some-label": "test",
 				},
 			},
-		})
+		}).MaxTimes(2)
 
 		mockKubeController.EXPECT().GetEndpoints(meshSvc).Return(&corev1.Endpoints{
 			ObjectMeta: metav1.ObjectMeta{

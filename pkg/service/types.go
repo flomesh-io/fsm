@@ -58,8 +58,8 @@ type MeshService struct {
 	// CloudInheritedFrom is the cloud service Inherited From
 	CloudInheritedFrom string
 
-	// ClusterID is the cluster id
-	ClusterID string
+	// CloudAttachedNamespace is the cloud service attached to namespace
+	CloudAttachedNamespace string
 }
 
 // NamespacedKey is the key (i.e. namespace + ProviderKey()) with which to lookup the backing service within the provider
@@ -69,7 +69,7 @@ func (ms MeshService) NamespacedKey() string {
 
 // Subdomain is an optional subdomain for this MeshService
 // TODO: possibly memoize if performance suffers
-func (ms *MeshService) Subdomain() string {
+func (ms MeshService) Subdomain() string {
 	nameComponents := strings.Split(ms.Name, ".")
 	if len(nameComponents) == 1 {
 		return ""
@@ -79,14 +79,14 @@ func (ms *MeshService) Subdomain() string {
 
 // ProviderKey represents the name of the original entity from which this MeshService was created (e.g. a Kubernetes service name)
 // TODO: possibly memoize if performance suffers
-func (ms *MeshService) ProviderKey() string {
+func (ms MeshService) ProviderKey() string {
 	nameComponents := strings.Split(ms.Name, ".")
 
 	return nameComponents[len(nameComponents)-1]
 }
 
 // IsMultiClusterService checks whether it is a multi cluster service
-func (ms *MeshService) IsMultiClusterService() bool {
+func (ms MeshService) IsMultiClusterService() bool {
 	return len(ms.ServiceImportUID) > 0
 }
 
@@ -104,6 +104,14 @@ func (ms MeshService) String() string {
 
 // SidecarClusterName is the name of the cluster corresponding to the MeshService in Sidecar
 func (ms MeshService) SidecarClusterName() string {
+	if len(ms.CloudAttachedNamespace) > 0 {
+		return fmt.Sprintf("%s/%s|%d", ms.CloudAttachedNamespace, ms.Name, ms.TargetPort)
+	}
+	return fmt.Sprintf("%s/%s|%d", ms.Namespace, ms.Name, ms.TargetPort)
+}
+
+// ClusterName is the name of the cluster corresponding to the MeshService in Sidecar
+func (ms MeshService) ClusterName() string {
 	return fmt.Sprintf("%s/%s|%d", ms.Namespace, ms.Name, ms.TargetPort)
 }
 
@@ -114,17 +122,25 @@ func (ms MeshService) SidecarLocalClusterName() string {
 
 // FQDN is similar to String(), but uses a dot separator and is in a different order.
 func (ms MeshService) FQDN() string {
-	return fmt.Sprintf("%s.%s.svc.cluster.local", ms.Name, ms.Namespace)
+	return fmt.Sprintf("%s.%s.svc.%s", ms.Name, ms.Namespace, GetTrustDomain())
+}
+
+// PolicyName is similar to String(), but uses a dot separator and is in a different order.
+func (ms MeshService) PolicyName(attachedNamespace bool) string {
+	if attachedNamespace && len(ms.CloudAttachedNamespace) > 0 {
+		return fmt.Sprintf("%s.%s", ms.Name, ms.CloudAttachedNamespace)
+	}
+	return fmt.Sprintf("%s.%s", ms.Name, ms.Namespace)
 }
 
 // OutboundTrafficMatchName returns the MeshService outbound traffic match name
 func (ms MeshService) OutboundTrafficMatchName() string {
-	return fmt.Sprintf("outbound_%s_%d_%s", ms, ms.Port, ms.Protocol)
+	return fmt.Sprintf("outbound_%s_%d_%s_%s", ms, ms.Port, ms.Protocol, ms.CloudAttachedNamespace)
 }
 
 // InboundTrafficMatchName returns the MeshService inbound traffic match name
 func (ms MeshService) InboundTrafficMatchName() string {
-	return fmt.Sprintf("inbound_%s_%d_%s", ms, ms.TargetPort, ms.Protocol)
+	return fmt.Sprintf("inbound_%s_%d_%s_%s", ms, ms.TargetPort, ms.Protocol, ms.CloudAttachedNamespace)
 }
 
 // IngressTrafficMatchName returns the ingress traffic match name

@@ -52,6 +52,8 @@ func (c *client) startSync() {
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 			log.Fatal().Msg("Error creating service discovery and registration client")
+		} else {
+			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
 		}
 	} else if eurekaSpec, eurekaOk := c.connectorSpec.(ctv1.EurekaSpec); eurekaOk {
 		c.initEurekaConnectorConfig(eurekaSpec)
@@ -60,6 +62,8 @@ func (c *client) startSync() {
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 			log.Fatal().Msg("Error creating service discovery and registration client")
+		} else {
+			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
 		}
 	} else if nacosSpec, nacosOk := c.connectorSpec.(ctv1.NacosSpec); nacosOk {
 		c.initNacosConnectorConfig(nacosSpec)
@@ -68,6 +72,8 @@ func (c *client) startSync() {
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 			log.Fatal().Msg("Error creating service discovery and registration client")
+		} else {
+			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
 		}
 	} else if machineSpec, machineOk := c.connectorSpec.(ctv1.MachineSpec); machineOk {
 		c.initMachineConnectorConfig(machineSpec)
@@ -76,6 +82,8 @@ func (c *client) startSync() {
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
 			log.Fatal().Msg("Error creating service discovery and registration client")
+		} else {
+			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
 		}
 	} else if gatewaySpec, gatewayOk := c.connectorSpec.(ctv1.GatewaySpec); gatewayOk {
 		c.initGatewayConnectorConfig(gatewaySpec)

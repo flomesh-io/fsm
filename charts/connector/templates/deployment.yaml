@@ -59,6 +59,7 @@ spec:
             "-fsm-version", "{{ .Chart.AppVersion }}",
             "-mesh-name", "{{.Values.fsm.meshName}}",
             "-trust-domain", "{{.Values.fsm.trustDomain}}",
+            "-leader-election={{.Values.fsm.cloudConnector.leaderElection}}",
             "-sdr-provider={{.Values.fsm.cloudConnector.connectorProvider}}",
             "-sdr-connector={{.Values.fsm.cloudConnector.connectorName}}",
           ]

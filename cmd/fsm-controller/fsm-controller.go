@@ -216,7 +216,7 @@ func main() {
 	multiclusterClient := multiclusterClientset.NewForConfigOrDie(kubeConfig)
 	networkingClient := networkingClientset.NewForConfigOrDie(kubeConfig)
 
-	k8s.SetTrustDomain(trustDomain)
+	service.SetTrustDomain(trustDomain)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-controller pod resource
 	controllerPod, err := getFSMControllerPod(kubeClient)

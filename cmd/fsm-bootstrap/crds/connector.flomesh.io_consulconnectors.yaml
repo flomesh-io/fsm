@@ -88,6 +88,9 @@ spec:
                 type: string
               httpAddr:
                 type: string
+              leaderElection:
+                default: true
+                type: boolean
               limiter:
                 default:
                   burst: 750
@@ -103,6 +106,9 @@ spec:
                 - burst
                 - limit
                 type: object
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32
@@ -225,6 +231,14 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -275,6 +289,26 @@ spec:
                     type: string
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  excludeMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   filterMetadatas:
                     items:
                       properties:
@@ -289,6 +323,9 @@ spec:
                     type: array
                   filterTag:
                     type: string
+                  generateInternalServiceHealthCheck:
+                    default: true
+                    type: boolean
                   passingOnly:
                     default: true
                     type: boolean

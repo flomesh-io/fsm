@@ -67,6 +67,30 @@ func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.
 			if len(vm.Spec.Services) == 0 {
 				continue
 			}
+			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(vm.Spec.MachineIP) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
+			}
+			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+				exclude := false
+				for _, cidr := range excludeIPRanges {
+					if cidr.Contains(vm.Spec.MachineIP) {
+						exclude = true
+						break
+					}
+				}
+				if exclude {
+					continue
+				}
+			}
 			for _, svc := range vm.Spec.Services {
 				if strings.EqualFold(svc.ServiceName, service) {
 					agentService := new(connector.AgentService)
@@ -92,6 +116,30 @@ func (dc *MachineDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]co
 		for _, vm := range vms.Items {
 			if len(vm.Spec.Services) == 0 {
 				continue
+			}
+			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(vm.Spec.MachineIP) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
+			}
+			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+				exclude := false
+				for _, cidr := range excludeIPRanges {
+					if cidr.Contains(vm.Spec.MachineIP) {
+						exclude = true
+						break
+					}
+				}
+				if exclude {
+					continue
+				}
 			}
 			for _, svc := range vm.Spec.Services {
 				catalogServices = append(catalogServices, connector.MicroService{Service: svc.ServiceName})
@@ -142,6 +190,9 @@ func (dc *MachineDiscoveryClient) RegisteredNamespace(string) string {
 
 func (dc *MachineDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProvider {
 	return ctv1.MachineDiscoveryService
+}
+
+func (dc *MachineDiscoveryClient) Close() {
 }
 
 func GetMachineDiscoveryClient(connectController connector.ConnectController,

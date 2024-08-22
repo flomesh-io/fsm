@@ -10,6 +10,7 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
+	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 )
 
 const (
@@ -40,6 +41,7 @@ type config struct {
 
 	httpAddr           string
 	deriveNamespace    string
+	purge              bool
 	asInternalServices bool
 
 	// syncPeriod is the interval between full catalog syncs. These will
@@ -48,11 +50,14 @@ type config struct {
 	syncPeriod time.Duration
 
 	c2kCfg struct {
-		enable          bool
-		clusterId       string
-		passingOnly     bool
-		filterTag       string
-		filterMetadatas []ctv1.Metadata
+		enable           bool
+		clusterId        string
+		passingOnly      bool
+		filterTag        string
+		filterMetadatas  []ctv1.Metadata
+		filterIPRanges   []string
+		excludeMetadatas []ctv1.Metadata
+		excludeIPRanges  []string
 
 		prefix         string // prefix is a prefix to prepend to services
 		prefixTag      string
@@ -121,6 +126,9 @@ type config struct {
 		// takes precedence over allowK8sNamespacesSet.
 		denyK8sNamespacesSet mapset.Set
 
+		filterIPRanges  []string
+		excludeIPRanges []string
+
 		withGateway bool
 
 		withGatewayMode ctv1.WithGatewayMode
@@ -155,6 +163,14 @@ type config struct {
 			// any created Consul namespaces to allow cross namespace service discovery.
 			// Only necessary if ACLs are enabled.
 			consulCrossNamespaceACLPolicy string
+
+			consulGenerateInternalServiceHealthCheck bool
+		}
+
+		eurekaCfg struct {
+			heartBeatInstance      bool
+			heartBeatPeriod        time.Duration
+			checkServiceInstanceID bool
 		}
 
 		nacosCfg struct {
@@ -418,6 +434,30 @@ func (c *config) GetConsulCrossNamespaceACLPolicy() string {
 	return c.k2cCfg.consulCfg.consulCrossNamespaceACLPolicy
 }
 
+func (c *config) GetConsulGenerateInternalServiceHealthCheck() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck
+}
+
+func (c *config) GetEurekaHeartBeatInstance() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.heartBeatInstance
+}
+
+func (c *config) GetEurekaHeartBeatPeriod() time.Duration {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.heartBeatPeriod
+}
+
+func (c *config) GetEurekaCheckServiceInstanceID() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.eurekaCfg.checkServiceInstanceID
+}
+
 func (c *config) GetNacosGroupId() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -442,16 +482,79 @@ func (c *config) GetPassingOnly() bool {
 	return c.c2kCfg.passingOnly
 }
 
-func (c *config) GetFilterTag() string {
+func (c *config) GetC2KFilterTag() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.filterTag
 }
 
-func (c *config) GetFilterMetadatas() []ctv1.Metadata {
+func (c *config) GetC2KFilterMetadatas() []ctv1.Metadata {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.filterMetadatas
+}
+
+func (c *config) GetC2KFilterIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.c2kCfg.filterIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetK2CFilterIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.k2cCfg.filterIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetC2KExcludeMetadatas() []ctv1.Metadata {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.c2kCfg.excludeMetadatas
+}
+
+func (c *config) GetC2KExcludeIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.c2kCfg.excludeIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
+}
+
+func (c *config) GetK2CExcludeIPRanges() []*cidr.CIDR {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	var cidrs []*cidr.CIDR
+	for _, ipRange := range c.k2cCfg.excludeIPRanges {
+		if len(ipRange) > 0 {
+			if net, err := cidr.ParseCIDR(ipRange); err == nil {
+				cidrs = append(cidrs, net)
+			}
+		}
+	}
+	return cidrs
 }
 
 func (c *config) GetPrefix() string {
@@ -562,6 +665,12 @@ func (c *config) GetDeriveNamespace() string {
 	return c.deriveNamespace
 }
 
+func (c *config) Purge() bool {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.purge
+}
+
 func (c *config) AsInternalServices() bool {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -595,6 +704,7 @@ func (c *client) initGatewayConnectorConfig(spec ctv1.GatewaySpec) {
 	c.flock.Lock()
 	defer c.flock.Unlock()
 
+	c.purge = spec.SyncToFgw.Purge
 	c.syncPeriod = spec.SyncToFgw.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
 		c.syncPeriod = MinSyncPeriod
@@ -619,12 +729,16 @@ func (c *client) initMachineConnectorConfig(spec ctv1.MachineSpec) {
 	defer c.flock.Unlock()
 
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterLabel
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixLabel
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixLabel
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -637,6 +751,7 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
@@ -653,6 +768,9 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -680,6 +798,8 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
@@ -696,6 +816,7 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
@@ -705,6 +826,9 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -722,8 +846,16 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
+	c.k2cCfg.eurekaCfg.checkServiceInstanceID = spec.SyncFromK8S.CheckServiceInstanceID
+	c.k2cCfg.eurekaCfg.heartBeatInstance = spec.SyncFromK8S.HeartBeatInstance
+	c.k2cCfg.eurekaCfg.heartBeatPeriod = spec.SyncFromK8S.HeartBeatPeriod.Duration
+	if c.k2cCfg.eurekaCfg.heartBeatPeriod < MinSyncPeriod {
+		c.k2cCfg.eurekaCfg.heartBeatPeriod = MinSyncPeriod
+	}
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))
@@ -735,6 +867,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 
 	c.httpAddr = spec.HTTPAddr
 	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
 	c.asInternalServices = spec.AsInternalServices
 	c.syncPeriod = spec.SyncPeriod.Duration
 	if c.syncPeriod < MinSyncPeriod {
@@ -745,9 +878,12 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
 	c.config.c2kCfg.passingOnly = spec.SyncToK8S.PassingOnly
 	c.config.c2kCfg.filterTag = spec.SyncToK8S.FilterTag
+	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
 	c.config.c2kCfg.prefixTag = spec.SyncToK8S.PrefixTag
 	c.config.c2kCfg.suffixTag = spec.SyncToK8S.SuffixTag
-	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
@@ -766,6 +902,8 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
 	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
 	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
 
@@ -775,6 +913,7 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.consulCfg.consulEnableK8SNSMirroring = spec.SyncFromK8S.ConsulEnableK8SNSMirroring
 	c.k2cCfg.consulCfg.consulK8SNSMirroringPrefix = spec.SyncFromK8S.ConsulK8SNSMirroringPrefix
 	c.k2cCfg.consulCfg.consulCrossNamespaceACLPolicy = spec.SyncFromK8S.ConsulCrossNamespaceACLPolicy
+	c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck = spec.SyncToK8S.GenerateInternalServiceHealthCheck
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))

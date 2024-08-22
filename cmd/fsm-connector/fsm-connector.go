@@ -5,14 +5,20 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	gwapi "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 	gwscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
+
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -26,11 +32,11 @@ import (
 	machinescheme "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned/scheme"
 	"github.com/flomesh-io/fsm/pkg/health"
 	"github.com/flomesh-io/fsm/pkg/httpserver"
-	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
+	"github.com/flomesh-io/fsm/pkg/service"
 	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/version"
@@ -68,10 +74,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating kube config (kubeconfig=%s)", cli.Cfg.KubeConfigFile)
 	}
+	kubeConfig.QPS = float32(cli.Cfg.Limit)
+	kubeConfig.Burst = int(cli.Cfg.Burst)
+	kubeConfig.Timeout = time.Second * time.Duration(cli.Cfg.Timeout)
 	kubeClient := kubernetes.NewForConfigOrDie(kubeConfig)
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	gatewayClient := gwapi.NewForConfigOrDie(kubeConfig)
 	connectorClient := connectorClientset.NewForConfigOrDie(kubeConfig)
+	gatewayApiClient := gatewayApiClientset.NewForConfigOrDie(kubeConfig)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-connector pod resource
 	connectorPod, err := cli.GetConnectorPod(kubeClient)
@@ -86,7 +96,7 @@ func main() {
 		log.Fatal().Msg("Error initializing generic event recorder")
 	}
 
-	k8s.SetTrustDomain(cli.Cfg.TrustDomain)
+	service.SetTrustDomain(cli.Cfg.TrustDomain)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -98,6 +108,7 @@ func main() {
 		informers.WithConfigClient(configClient, cli.Cfg.FsmMeshConfigName, cli.Cfg.FsmNamespace),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),
+		informers.WithGatewayAPIClient(gatewayApiClient),
 	)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
@@ -113,8 +124,45 @@ func main() {
 	clusterSet := cfg.GetMeshConfig().Spec.ClusterSet
 	connectController.SetClusterSet(clusterSet.Name, clusterSet.Group, clusterSet.Zone, clusterSet.Region)
 
-	go connectController.BroadcastListener(stop)
-	go connectController.CacheCleaner(stop)
+	if cli.Cfg.LeaderElection {
+		lock := &resourcelock.LeaseLock{
+			LeaseMeta: metav1.ObjectMeta{
+				Name:      cli.Cfg.SdrConnector,
+				Namespace: connectorPod.Namespace,
+			},
+			Client: kubeClient.CoordinationV1(),
+			LockConfig: resourcelock.ResourceLockConfig{
+				Identity: connectorPod.Name,
+			},
+		}
+
+		go func() {
+			leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+				Lock:            lock,
+				ReleaseOnCancel: true,
+				LeaseDuration:   10 * time.Second,
+				RenewDeadline:   8 * time.Second,
+				RetryPeriod:     5 * time.Second,
+				Callbacks: leaderelection.LeaderCallbacks{
+					OnStartedLeading: func(ctx context.Context) {
+						go connectController.BroadcastListener(stop)
+						go connectController.CacheCleaner(stop)
+					},
+					OnStoppedLeading: func() {
+					},
+					OnNewLeader: func(identity string) {
+						log.Info().Msgf("new leader %s", identity)
+					},
+				},
+			})
+		}()
+	} else {
+		go connectController.BroadcastListener(stop)
+		go connectController.CacheCleaner(stop)
+	}
+
+	// Start the global log level watcher that updates the log level dynamically
+	go connector.WatchMeshConfigUpdated(connectController, msgBroker, stop)
 
 	version.SetMetric()
 	/*
@@ -131,9 +179,6 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start FSM metrics/probes HTTP server")
 	}
-
-	// Start the global log level watcher that updates the log level dynamically
-	go connector.WatchMeshConfigUpdated(connectController, msgBroker, stop)
 
 	<-stop
 	log.Info().Msgf("Stopping fsm-connector %s; %s; %s", version.Version, version.GitCommit, version.BuildDate)

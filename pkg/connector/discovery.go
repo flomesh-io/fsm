@@ -31,6 +31,10 @@ const (
 	NACOS_DEFAULT_CLUSTER    = "DEFAULT"
 )
 
+var (
+	DiscoveryGRPCMicroService = false
+)
+
 type MicroService struct {
 	Service   string
 	Namespace string
@@ -92,7 +96,8 @@ type AgentService struct {
 	HTTPPort    int
 	GRPCPort    int
 	ViaAddress  string
-	ViaPort     int
+	ViaHTTPPort int
+	ViaGRPCPort int
 	Weights     AgentWeights
 	Tags        []string
 	Meta        map[string]interface{}
@@ -132,7 +137,7 @@ func (as *AgentService) FromConsul(agentService *consul.AgentService) {
 	as.Weights.FromConsul(agentService.Weights)
 	if len(agentService.Tags) > 0 {
 		for _, tag := range agentService.Tags {
-			if strings.HasPrefix(tag, CONSUL_METADATA_GRPC_PORT) {
+			if DiscoveryGRPCMicroService && strings.HasPrefix(tag, CONSUL_METADATA_GRPC_PORT) {
 				if segs := strings.Split(tag, "="); len(segs) == 2 {
 					if grpcPort, convErr := strconv.Atoi(segs[1]); convErr == nil {
 						as.GRPCPort = grpcPort
@@ -163,7 +168,7 @@ func (as *AgentService) FromEureka(ins *eureka.Instance) {
 	if len(metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range metadata {
-			if strings.EqualFold(k, EUREKA_METADATA_GRPC_PORT) {
+			if DiscoveryGRPCMicroService && strings.EqualFold(k, EUREKA_METADATA_GRPC_PORT) {
 				if grpcPort, ok := v.(float64); ok {
 					as.GRPCPort = int(grpcPort)
 				}
@@ -185,7 +190,7 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	if len(ins.Metadata) > 0 {
 		as.Meta = make(map[string]interface{})
 		for k, v := range ins.Metadata {
-			if strings.EqualFold(k, NACOS_METADATA_GRPC_PORT) {
+			if DiscoveryGRPCMicroService && strings.EqualFold(k, NACOS_METADATA_GRPC_PORT) {
 				if grpcPort, err := strconv.ParseInt(v, 10, 32); err == nil {
 					as.GRPCPort = int(grpcPort)
 				}
@@ -450,6 +455,7 @@ type ServiceDiscoveryClient interface {
 	RegisteredNamespace(kubeNS string) string
 	MicroServiceProvider() ctv1.DiscoveryServiceProvider
 	IsInternalServices() bool
+	Close()
 }
 
 const (

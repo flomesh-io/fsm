@@ -103,6 +103,12 @@ spec:
                 type: string
               httpAddr:
                 type: string
+              leaderElection:
+                default: true
+                type: boolean
+              purge:
+                default: false
+                type: boolean
               replicas:
                 default: 1
                 format: int32
@@ -207,6 +213,14 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   groupId:
                     default: DEFAULT_GROUP
                     type: string
@@ -267,6 +281,26 @@ spec:
                     type: array
                   enable:
                     type: boolean
+                  excludeIpRanges:
+                    items:
+                      type: string
+                    type: array
+                  excludeMetadatas:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - key
+                      - value
+                      type: object
+                    type: array
+                  filterIpRanges:
+                    items:
+                      type: string
+                    type: array
                   filterMetadatas:
                     items:
                       properties:

@@ -84,6 +84,9 @@ spec:
                     - ClusterIP
                     type: string
                 type: object
+              leaderElection:
+                default: true
+                type: boolean
               replicas:
                 default: 1
                 format: int32
@@ -166,6 +169,9 @@ spec:
                     minItems: 1
                     type: array
                   enable:
+                    type: boolean
+                  purge:
+                    default: false
                     type: boolean
                   syncPeriod:
                     default: 5s
