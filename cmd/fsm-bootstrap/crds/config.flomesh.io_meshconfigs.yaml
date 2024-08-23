@@ -2417,6 +2417,14 @@ spec:
                       mustWithServicePort: false
                       withTrustDomain: true
                     properties:
+                      cloud:
+                        default:
+                          withNamespace: true
+                        properties:
+                          withNamespace:
+                            default: true
+                            type: boolean
+                        type: object
                       mustWithServicePort:
                         default: false
                         type: boolean

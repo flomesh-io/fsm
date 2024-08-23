@@ -247,6 +247,12 @@ const (
 	ServiceAccessModeMixed ServiceAccessMode = "mixed"
 )
 
+type CloudServiceAccessNames struct {
+	// +kubebuilder:default=true
+	// +optional
+	WithNamespace bool `json:"withNamespace,omitempty"`
+}
+
 type ServiceAccessNames struct {
 	// +kubebuilder:default=false
 	// +optional
@@ -255,6 +261,10 @@ type ServiceAccessNames struct {
 	// +kubebuilder:default=true
 	// +optional
 	WithTrustDomain bool `json:"withTrustDomain,omitempty"`
+
+	// +kubebuilder:default={withNamespace: true}
+	// +optional
+	CloudServiceAccessNames *CloudServiceAccessNames `json:"cloud,omitempty"`
 }
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.
