@@ -137,7 +137,6 @@
       (
         attrs = _clusterConfig?.endpointAttributes?.[__target]
       ) => (
-        console.log(__service),
         attrs?.ViaGateway && (
           __isEgress = true,
           msg.head.headers['fgw-forwarded-host'] = msg.head.headers.host,
