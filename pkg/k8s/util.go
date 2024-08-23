@@ -25,7 +25,7 @@ func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.Service
 	if len(svc.CloudInheritedFrom) > 0 {
 		if !san.CloudServiceAccessNames.WithNamespace {
 			if !san.MustWithServicePort {
-				hostnames = append(hostnames, fmt.Sprintf("%s", svc.Name)) // service
+				hostnames = append(hostnames, svc.Name) // service
 			}
 			hostnames = append(hostnames, fmt.Sprintf("%s:%d", svc.Name, svc.Port)) // service:port
 			return
