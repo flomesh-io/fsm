@@ -336,8 +336,7 @@ func (c *GatewayProcessor) upstreamsByEndpoints(svc *corev1.Service, port *int32
 func (c *GatewayProcessor) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) map[string]fgw.Endpoint {
 	if len(svc.Annotations) > 0 {
 		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-			svcMeta := new(connector.MicroSvcMeta)
-			svcMeta.Decode(v)
+			svcMeta := connector.Decode(svc, v)
 			found := false
 			for portMeta := range svcMeta.Ports {
 				if uint16(portMeta) == uint16(*port) {

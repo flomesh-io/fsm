@@ -8,15 +8,16 @@ import (
 	"time"
 
 	"github.com/cskr/pubsub"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 
-	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
-
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
+	"github.com/flomesh-io/fsm/pkg/lru"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
 )
 
@@ -60,21 +61,26 @@ const (
 // NewBroker returns a new message broker instance and starts the internal goroutine
 // to process events added to the workqueue.
 func NewBroker(stopCh <-chan struct{}) *Broker {
+	rateLimiter := workqueue.NewMaxOfRateLimiter(
+		workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 1000*time.Second),
+		// 1024*5 qps, 1024*8 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(1024*8), 1024*9)},
+	)
 	b := &Broker{
-		queue:                 workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
-		proxyUpdatePubSub:     pubsub.New(10240),
+		queue:                 workqueue.NewRateLimitingQueue(rateLimiter),
+		proxyUpdatePubSub:     pubsub.New(1024 * 10),
 		proxyUpdateCh:         make(chan proxyUpdateEvent),
-		ingressUpdatePubSub:   pubsub.New(10240),
+		ingressUpdatePubSub:   pubsub.New(1024 * 10),
 		ingressUpdateCh:       make(chan ingressUpdateEvent),
-		gatewayUpdatePubSub:   pubsub.New(10240),
+		gatewayUpdatePubSub:   pubsub.New(1024 * 10),
 		gatewayUpdateCh:       make(chan gatewayUpdateEvent),
-		serviceUpdatePubSub:   pubsub.New(10240),
+		serviceUpdatePubSub:   pubsub.New(1024 * 10),
 		serviceUpdateCh:       make(chan serviceUpdateEvent),
-		connectorUpdatePubSub: pubsub.New(10240),
+		connectorUpdatePubSub: pubsub.New(1024 * 10),
 		connectorUpdateCh:     make(chan connectorUpdateEvent),
-		kubeEventPubSub:       pubsub.New(10240),
-		certPubSub:            pubsub.New(10240),
-		mcsEventPubSub:        pubsub.New(10240),
+		kubeEventPubSub:       pubsub.New(1024 * 10),
+		certPubSub:            pubsub.New(1024 * 10),
+		mcsEventPubSub:        pubsub.New(1024 * 10),
 		//mcsUpdateCh:         make(chan mcsUpdateEvent),
 	}
 
@@ -867,11 +873,55 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		announcements.NamespaceUpdated:
 		return namespaceUpdated(msg)
 	case
+		// Endpoint event
+		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated:
+		if msg.NewObj != nil {
+			if endpoints, ok := msg.NewObj.(*corev1.Endpoints); ok {
+				if len(endpoints.Labels) > 0 {
+					if _, exists := endpoints.Labels[constants.CloudSourcedServiceLabel]; exists {
+						return nil
+					}
+				}
+			}
+		}
+		return &proxyUpdateEvent{
+			msg:   msg,
+			topic: announcements.ProxyUpdate.String(),
+		}
+	case
+		// Service event
+		announcements.ServiceAdded, announcements.ServiceDeleted, announcements.ServiceUpdated:
+		if msg.NewObj != nil {
+			if service, ok := msg.NewObj.(*corev1.Service); ok {
+				if len(service.Labels) > 0 {
+					if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
+						if !lru.MicroSvcMetaExists(service) {
+							return &proxyUpdateEvent{
+								msg:   msg,
+								topic: announcements.ProxyUpdate.String(),
+							}
+						}
+					}
+				}
+			}
+		}
+		if msg.OldObj != nil {
+			if service, ok := msg.OldObj.(*corev1.Service); ok {
+				if len(service.Labels) > 0 {
+					if _, exists := service.Labels[constants.CloudSourcedServiceLabel]; exists {
+						return &proxyUpdateEvent{
+							msg:   msg,
+							topic: announcements.ProxyUpdate.String(),
+						}
+					}
+				}
+			}
+		}
+		return nil
+	case
 		//
 		// K8s native resource events
 		//
-		// Endpoint event
-		announcements.EndpointAdded, announcements.EndpointDeleted, announcements.EndpointUpdated,
 		// k8s Ingress event
 		announcements.IngressAdded, announcements.IngressDeleted, announcements.IngressUpdated,
 		// k8s IngressClass event
@@ -937,7 +987,7 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 	case announcements.MeshConfigUpdated:
 		return meshConfigUpdated(msg)
 
-	case announcements.PodUpdated:
+	case announcements.PodAdded, announcements.PodDeleted, announcements.PodUpdated:
 		return podUpdated(msg)
 
 	default:
@@ -1005,24 +1055,39 @@ func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 
 func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 	// Only trigger a proxy update for proxies associated with this pod based on the proxy UUID
-	prevPod, okPrevCast := msg.OldObj.(*corev1.Pod)
+	prePod, okPreCast := msg.OldObj.(*corev1.Pod)
 	newPod, okNewCast := msg.NewObj.(*corev1.Pod)
-	if !okPrevCast || !okNewCast {
-		log.Error().Msgf("Expected *Pod type, got previous=%T, new=%T", okPrevCast, okNewCast)
+
+	if !okPreCast && !okNewCast {
+		log.Error().Msgf("Expected *Pod type, got previous=%T, new=%T", okPreCast, okNewCast)
 		return nil
 	}
-	prevMetricAnnotation := prevPod.Annotations[constants.PrometheusScrapeAnnotation]
-	newMetricAnnotation := newPod.Annotations[constants.PrometheusScrapeAnnotation]
-	if prevMetricAnnotation != newMetricAnnotation {
-		proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]
-		return &proxyUpdateEvent{
-			msg:   msg,
-			topic: GetPubSubTopicForProxyUUID(proxyUUID),
+
+	if okPreCast && okNewCast {
+		prevMetricAnnotation := prePod.Annotations[constants.PrometheusScrapeAnnotation]
+		newMetricAnnotation := newPod.Annotations[constants.PrometheusScrapeAnnotation]
+		if prevMetricAnnotation != newMetricAnnotation {
+			proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]
+			return &proxyUpdateEvent{
+				msg:   msg,
+				topic: GetPubSubTopicForProxyUUID(proxyUUID),
+			}
 		}
-	} else if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
-		return &proxyUpdateEvent{
-			msg:   msg,
-			topic: announcements.ProxyUpdate.String(),
+	}
+	if okNewCast {
+		if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
+			return &proxyUpdateEvent{
+				msg:   msg,
+				topic: announcements.ProxyUpdate.String(),
+			}
+		}
+	}
+	if okPreCast {
+		if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
+			return &proxyUpdateEvent{
+				msg:   msg,
+				topic: announcements.ProxyUpdate.String(),
+			}
 		}
 	}
 	return nil

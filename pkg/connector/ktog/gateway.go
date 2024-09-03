@@ -201,8 +201,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 
 func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool) {
 	if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-		svcMeta := new(connector.MicroSvcMeta)
-		svcMeta.Decode(v)
+		svcMeta := connector.Decode(k8sSvc, v)
 		for _, endpointMeta := range svcMeta.Endpoints {
 			if !endpointMeta.Local.WithGateway {
 				continue
@@ -442,8 +441,7 @@ func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Servic
 	if len(k8sSvc.Annotations) > 0 {
 		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 			cloudService = true
-			svcMeta := new(connector.MicroSvcMeta)
-			svcMeta.Decode(v)
+			svcMeta := connector.Decode(k8sSvc, v)
 			for addr := range svcMeta.Endpoints {
 				hostnames = append(hostnames, gwv1.Hostname(addr))
 			}

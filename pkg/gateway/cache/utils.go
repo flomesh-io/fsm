@@ -587,5 +587,5 @@ func toFGWEndpoints(endpointSet map[endpointContext]struct{}) map[string]fgw.End
 }
 
 func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
-	return k8s.IsHeadlessService(*service) && len(service.Spec.Selector) == 0
+	return k8s.IsHeadlessService(service) && len(service.Spec.Selector) == 0
 }

@@ -3,11 +3,16 @@ package connector
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"hash/fnv"
 	"net"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/lru"
 )
 
 // MicroSvcName defines string as microservice name
@@ -97,19 +102,6 @@ type MicroSvcMeta struct {
 	HealthCheck bool
 }
 
-func (m *MicroSvcMeta) Decode(str string) {
-	if bytes, err := base64.StdEncoding.DecodeString(str); err == nil {
-		_ = json.Unmarshal(bytes, m)
-	}
-}
-
-func (m *MicroSvcMeta) Encode() string {
-	if bytes, err := json.Marshal(m); err == nil {
-		return base64.StdEncoding.EncodeToString(bytes)
-	}
-	return ""
-}
-
 func (m *MicroSvcMeta) Unmarshal(str string) {
 	_ = json.Unmarshal([]byte(str), m)
 }
@@ -119,4 +111,29 @@ func (m *MicroSvcMeta) Marshal() string {
 		return string(bytes)
 	}
 	return ""
+}
+
+func Encode(m *MicroSvcMeta) (string, uint64) {
+	if bytes, err := json.Marshal(m); err == nil {
+		h := fnv.New64()
+		_, _ = h.Write(bytes)
+		return base64.StdEncoding.EncodeToString(bytes), h.Sum64()
+	}
+	return "", 0
+}
+
+func Decode(svc *corev1.Service, enc string) *MicroSvcMeta {
+	hash := svc.Annotations[constants.AnnotationMeshEndpointHash]
+	key := fmt.Sprintf("%s.%s.%s", svc.Namespace, svc.Name, hash)
+	if meta, ok := lru.Get(key); ok {
+		lru.Add(key, meta)
+		return meta.(*MicroSvcMeta)
+	}
+	meta := new(MicroSvcMeta)
+	if bytes, err := base64.StdEncoding.DecodeString(enc); err == nil {
+		if err = json.Unmarshal(bytes, meta); err == nil {
+			lru.Add(key, meta)
+		}
+	}
+	return meta
 }

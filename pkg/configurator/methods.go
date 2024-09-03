@@ -108,16 +108,6 @@ func (c *Client) IsLocalDNSProxyEnabled() bool {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.Enable
 }
 
-// IsSearchesWithNamespace returns whether dns searches contains namespace
-func (c *Client) IsSearchesWithNamespace() bool {
-	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SearchesWithNamespace
-}
-
-// IsSearchesWithTrustDomain returns whether dns searches contains trust domain
-func (c *Client) IsSearchesWithTrustDomain() bool {
-	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SearchesWithTrustDomain
-}
-
 // IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled
 func (c *Client) IsWildcardDNSProxyEnabled() bool {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.Enable

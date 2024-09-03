@@ -18,6 +18,8 @@ import (
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/multicluster"
+	"github.com/flomesh-io/fsm/pkg/providers/fsm"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlwh "sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -82,10 +84,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
-	"github.com/flomesh-io/fsm/pkg/multicluster"
 	"github.com/flomesh-io/fsm/pkg/plugin"
 	"github.com/flomesh-io/fsm/pkg/policy"
-	"github.com/flomesh-io/fsm/pkg/providers/fsm"
 	"github.com/flomesh-io/fsm/pkg/providers/kube"
 	"github.com/flomesh-io/fsm/pkg/reconciler"
 	"github.com/flomesh-io/fsm/pkg/service"
@@ -119,6 +119,7 @@ var (
 	certManagerOptions providers.CertManagerOptions
 
 	enableReconciler      bool
+	enableMultiClusters   bool
 	validateTrafficTarget bool
 
 	scheme = runtime.NewScheme()
@@ -162,6 +163,9 @@ func init() {
 
 	// Reconciler options
 	flags.BoolVar(&enableReconciler, "enable-reconciler", false, "Enable reconciler for CDRs, mutating webhook and validating webhook")
+
+	flags.BoolVar(&enableMultiClusters, "enable-multi-clusters", false, "Enable multi-clusters")
+
 	flags.BoolVar(&validateTrafficTarget, "validate-traffic-target", true, "Enable traffic target validation")
 
 	_ = clientgoscheme.AddToScheme(scheme)
@@ -253,7 +257,7 @@ func main() {
 	namespacedIngressClient := nsigClientset.NewForConfigOrDie(kubeConfig)
 	policyAttachmentClient := policyAttachmentClientset.NewForConfigOrDie(kubeConfig)
 
-	informerCollection, err := informers.NewInformerCollection(meshName, stop,
+	opts := []informers.InformerCollectionOption{
 		informers.WithKubeClient(kubeClient),
 		informers.WithSMIClients(smiTrafficSplitClientSet, smiTrafficSpecClientSet, smiTrafficTargetClientSet),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
@@ -261,12 +265,17 @@ func main() {
 		informers.WithPluginClient(pluginClient),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),
-		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
 		informers.WithPolicyAttachmentClient(policyAttachmentClient),
-	)
+	}
+
+	if enableMultiClusters {
+		opts = append(opts, informers.WithMultiClusterClient(multiclusterClient))
+	}
+
+	informerCollection, err := informers.NewInformerCollection(meshName, stop, opts...)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
@@ -310,10 +319,15 @@ func main() {
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
 
 	kubeProvider := kube.NewClient(k8sClient, cfg)
-	multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
 
-	endpointsProviders := []endpoint.Provider{kubeProvider, multiclusterProvider}
-	serviceProviders := []service.Provider{kubeProvider, multiclusterProvider}
+	endpointsProviders := []endpoint.Provider{kubeProvider}
+	serviceProviders := []service.Provider{kubeProvider}
+
+	if enableMultiClusters {
+		multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
+		endpointsProviders = append(endpointsProviders, multiclusterProvider)
+		serviceProviders = append(serviceProviders, multiclusterProvider)
+	}
 
 	if err := ingress.Initialize(kubeClient, k8sClient, stop, cfg, certManager, msgBroker); err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Ingress client")
