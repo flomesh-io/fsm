@@ -1103,34 +1103,6 @@ func (mr *MockConfiguratorMockRecorder) IsRemoteLoggingEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRemoteLoggingEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsRemoteLoggingEnabled))
 }
 
-// IsSearchesWithNamespace mocks base method.
-func (m *MockConfigurator) IsSearchesWithNamespace() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSearchesWithNamespace")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsSearchesWithNamespace indicates an expected call of IsSearchesWithNamespace.
-func (mr *MockConfiguratorMockRecorder) IsSearchesWithNamespace() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSearchesWithNamespace", reflect.TypeOf((*MockConfigurator)(nil).IsSearchesWithNamespace))
-}
-
-// IsSearchesWithTrustDomain mocks base method.
-func (m *MockConfigurator) IsSearchesWithTrustDomain() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsSearchesWithTrustDomain")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsSearchesWithTrustDomain indicates an expected call of IsSearchesWithTrustDomain.
-func (mr *MockConfiguratorMockRecorder) IsSearchesWithTrustDomain() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSearchesWithTrustDomain", reflect.TypeOf((*MockConfigurator)(nil).IsSearchesWithTrustDomain))
-}
-
 // IsServiceLBEnabled mocks base method.
 func (m *MockConfigurator) IsServiceLBEnabled() bool {
 	m.ctrl.T.Helper()

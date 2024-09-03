@@ -772,6 +772,12 @@ var (
 	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
 )
 
+const (
+	CloudSourcedServiceLabel = "fsm-connector-cloud-sourced-service"
+
+	AnnotationMeshEndpointHash = "flomesh.io/cloud-endpoint-hash"
+)
+
 // Webhook constants
 const (
 	// KubernetesEndpointSliceServiceNameLabel is the label used to indicate the name of the service

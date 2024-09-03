@@ -74,7 +74,8 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.Mes
 
 func kubernetesServicesToMeshServices(kubeController k8s.Controller, kubernetesServices []v1.Service, subdomainFilter string) (meshServices []service.MeshService) {
 	for _, svc := range kubernetesServices {
-		for _, meshSvc := range k8s.ServiceToMeshServices(kubeController, svc) {
+		svc := svc
+		for _, meshSvc := range k8s.ServiceToMeshServices(kubeController, &svc) {
 			if meshSvc.Subdomain() == subdomainFilter || meshSvc.Subdomain() == "" {
 				meshServices = append(meshServices, meshSvc)
 			}
@@ -109,8 +110,7 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 			}
 			if len(svc.Annotations) > 0 {
 				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-					svcMeta := new(connector.MicroSvcMeta)
-					svcMeta.Decode(v)
+					svcMeta := connector.Decode(svc, v)
 					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(pod.Status.PodIP)]; ok {
 						serviceList = append(serviceList, *svc)
 						attachedToServices[svc.Name] = svc.Namespace
@@ -171,8 +171,7 @@ func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Co
 		if ctok.IsSyncCloudNamespace(ns) {
 			if len(svc.Annotations) > 0 {
 				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-					svcMeta := new(connector.MicroSvcMeta)
-					svcMeta.Decode(v)
+					svcMeta := connector.Decode(svc, v)
 					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(vm.Spec.MachineIP)]; ok {
 						serviceList = append(serviceList, *svc)
 					}

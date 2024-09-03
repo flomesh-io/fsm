@@ -14,9 +14,7 @@ import (
 )
 
 // GetHostnamesForService returns the hostnames over which the service is accessible
-func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.ServiceAccessNames, localNamespace bool) []string {
-	var hostnames []string
-
+func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.ServiceAccessNames, localNamespace bool) (hostnames []string) {
 	if localNamespace {
 		if !san.MustWithServicePort {
 			hostnames = append(hostnames, svc.Name) // service
@@ -24,17 +22,27 @@ func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.Service
 		hostnames = append(hostnames, fmt.Sprintf("%s:%d", svc.Name, svc.Port)) // service:port
 	}
 
+	if len(svc.CloudInheritedFrom) > 0 {
+		if !san.CloudServiceAccessNames.WithNamespace {
+			if !san.MustWithServicePort {
+				hostnames = append(hostnames, svc.Name) // service
+			}
+			hostnames = append(hostnames, fmt.Sprintf("%s:%d", svc.Name, svc.Port)) // service:port
+			return
+		}
+	}
+
 	if !san.MustWithServicePort {
 		hostnames = append(hostnames, fmt.Sprintf("%s.%s", svc.Name, svc.Namespace)) // service.namespace
 	}
 	hostnames = append(hostnames, fmt.Sprintf("%s.%s:%d", svc.Name, svc.Namespace, svc.Port)) // service.namespace:port
 
-	if !san.MustWithServicePort {
-		hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)) // service.namespace.svc
-	}
-	hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Port)) // service.namespace.svc:port
-
 	if san.WithTrustDomain {
+		if !san.MustWithServicePort {
+			hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)) // service.namespace.svc
+		}
+		hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Port)) // service.namespace.svc:port
+
 		segs := strings.Split(service.GetTrustDomain(), ".")
 		if len(segs) > 0 {
 			hostname := fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)
@@ -51,7 +59,7 @@ func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.Service
 		}
 	}
 
-	return hostnames
+	return
 }
 
 // splitHostName takes a k8s FQDN (i.e. host) and retrieves the service name
@@ -191,6 +199,6 @@ func NamespacedNameFrom(name string) (types.NamespacedName, error) {
 }
 
 // IsHeadlessService determines whether or not a corev1.Service is a headless service
-func IsHeadlessService(svc corev1.Service) bool {
+func IsHeadlessService(svc *corev1.Service) bool {
 	return len(svc.Spec.ClusterIP) == 0 || svc.Spec.ClusterIP == corev1.ClusterIPNone
 }

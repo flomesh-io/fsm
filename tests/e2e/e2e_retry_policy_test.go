@@ -117,7 +117,7 @@ var _ = FSMDescribe("Test Retry Policy",
 					_, err = Td.PolicyClient.PolicyV1alpha1().Retries(client).Create(context.TODO(), retry, metav1.CreateOptions{})
 					Expect(err).ToNot((HaveOccurred()))
 
-					time.Sleep(30 * time.Second)
+					time.Sleep(90 * time.Second)
 
 					req := HTTPRequestDef{
 						SourceNs:        client,

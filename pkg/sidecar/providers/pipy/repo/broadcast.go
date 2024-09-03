@@ -4,6 +4,7 @@ package repo
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,48 +27,63 @@ func (s *Server) broadcastListener() {
 	proxyUpdateChan := proxyUpdatePubSub.Sub(announcements.ProxyUpdate.String())
 	defer s.msgBroker.Unsub(proxyUpdatePubSub, proxyUpdateChan)
 
-	// Wait for two informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 20)
+	timerDuration := time.Second * 20
+
+	slidingTimer := time.NewTimer(timerDuration * 2)
 	defer slidingTimer.Stop()
 
 	slidingTimerReset := func() {
-		slidingTimer.Reset(time.Second * 5)
+		slidingTimer.Reset(time.Second * 10)
 	}
 
 	s.retryProxiesJob = slidingTimerReset
 	s.proxyRegistry.UpdateProxies = slidingTimerReset
 
-	reconfirm := true
+	reconfirm := false
+	pending := false
+	blockChan := true
+
+	timerLock := new(sync.Mutex)
 
 	for {
 		select {
 		case <-proxyUpdateChan:
-			// Wait for an informer synchronization period
-			slidingTimer.Reset(time.Second * 5)
-			// Avoid data omission
-			reconfirm = true
-
+			timerLock.Lock()
+			if !reconfirm {
+				// Wait for an informer synchronization period
+				slidingTimer.Reset(timerDuration)
+				// Avoid data omission
+				reconfirm = true
+			} else if !pending {
+				pending = true
+			}
+			timerLock.Unlock()
+			blockChan = false
+			timerDuration = time.Second * 10
 		case <-slidingTimer.C:
 			connectedProxies := make(map[string]*pipy.Proxy)
 			disconnectedProxies := make(map[string]*pipy.Proxy)
 			proxies := s.fireExistProxies()
 			metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
+
+			missing := false
+
 			for _, proxy := range proxies {
 				if proxy.Metadata == nil {
 					if proxy.VM {
 						if err := s.recordVmMetadata(proxy); err != nil {
-							slidingTimer.Reset(time.Second * 5)
+							missing = true
 							continue
 						}
 					} else {
 						if err := s.recordPodMetadata(proxy); err != nil {
-							slidingTimer.Reset(time.Second * 5)
+							missing = true
 							continue
 						}
 					}
 				}
 				if proxy.Metadata == nil || proxy.Addr == nil || len(proxy.GetAddr()) == 0 {
-					slidingTimer.Reset(time.Second * 5)
+					missing = true
 					continue
 				}
 				connectedProxies[proxy.UUID.String()] = proxy
@@ -83,6 +99,9 @@ func (s *Server) broadcastListener() {
 
 			if len(connectedProxies) > 0 {
 				for _, proxy := range connectedProxies {
+					if backlogs := atomic.LoadInt32(&proxy.Backlogs); backlogs > 0 {
+						continue
+					}
 					newJob := func() *PipyConfGeneratorJob {
 						return &PipyConfGeneratorJob{
 							proxy:      proxy,
@@ -94,10 +113,13 @@ func (s *Server) broadcastListener() {
 				}
 			}
 
-			if reconfirm {
+			timerLock.Lock()
+			if reconfirm || pending || missing || blockChan {
 				reconfirm = false
-				slidingTimer.Reset(time.Second * 10)
+				pending = false
+				slidingTimer.Reset(timerDuration)
 			}
+			timerLock.Unlock()
 
 			go func() {
 				if len(disconnectedProxies) > 0 {

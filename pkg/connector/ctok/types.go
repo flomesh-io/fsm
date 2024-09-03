@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	// CloudSourcedServiceLabel defines cloud-sourced service label
-	CloudSourcedServiceLabel = "fsm-connector-cloud-sourced-service"
 	// CloudServiceLabel defines cloud service label
 	CloudServiceLabel = "fsm-connector-cloud-service"
 )

@@ -37,7 +37,7 @@ func (s *Server) updatePlugins() (pluginSet mapset.Set, pluginPri map[string]flo
 			Filename: uri,
 			Content:  bytes,
 		})
-		pluginVers = append(pluginVers, fmt.Sprintf("%s:%f:%d", uri, pluginItem.Priority, hash(bytes)))
+		pluginVers = append(pluginVers, fmt.Sprintf("%s:%f:%d", uri, pluginItem.Priority, Hash(bytes)))
 	}
 
 	diffSet := s.pluginSet.Difference(pluginSet)
@@ -50,7 +50,7 @@ func (s *Server) updatePlugins() (pluginSet mapset.Set, pluginPri map[string]flo
 	}
 	if len(pluginItems) > 0 {
 		sort.Strings(pluginVers)
-		pluginSetHash := hash([]byte(strings.Join(pluginVers, "")))
+		pluginSetHash := Hash([]byte(strings.Join(pluginVers, "")))
 		pluginSetVersion := fmt.Sprintf("%d", pluginSetHash)
 
 		s.pluginMutex.Lock()

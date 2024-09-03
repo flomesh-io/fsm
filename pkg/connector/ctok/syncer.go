@@ -178,7 +178,7 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
+	if service.Labels != nil && service.Labels[constants.CloudSourcedServiceLabel] == True {
 		s.controller.GetC2KContext().ServiceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
@@ -322,7 +322,6 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
 				extendServices[string(microSvcName)] = cloudSvcName
 			}
-			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
@@ -342,6 +341,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
 				s.fillService(svcMeta, svc)
+				preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
@@ -354,7 +354,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(microSvcName),
-					Labels: map[string]string{CloudSourcedServiceLabel: True},
+					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
@@ -378,6 +378,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			s.fillService(svcMeta, createSvc)
+			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 				continue
@@ -405,7 +406,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 
 func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
 	for port, appProtocol := range svcMeta.Ports {
-		if exists := s.existPort(createSvc, connector.MicroSvcPort(port), appProtocol); !exists {
+		if exists := s.existPort(createSvc, port, appProtocol); !exists {
 			specPort := apiv1.ServicePort{
 				Name:       fmt.Sprintf("%s%d", appProtocol, port),
 				Protocol:   apiv1.ProtocolTCP,
@@ -424,8 +425,10 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 	for _, endpointMeta := range svcMeta.Endpoints {
 		endpointMeta.Init(s.controller, s.discClient)
 	}
-	base64Enc := svcMeta.Encode()
-	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = base64Enc
+
+	enc, hash := connector.Encode(svcMeta)
+	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = enc
+	createSvc.ObjectMeta.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
 }
 
 func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {

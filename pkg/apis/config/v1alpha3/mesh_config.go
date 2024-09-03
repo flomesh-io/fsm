@@ -110,14 +110,6 @@ type LocalDNSProxy struct {
 	// Enable defines a boolean indicating if the sidecars are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
 
-	// +kubebuilder:default=true
-	// +optional
-	SearchesWithNamespace bool `json:"searchesWithNamespace,omitempty"`
-
-	// +kubebuilder:default=true
-	// +optional
-	SearchesWithTrustDomain bool `json:"searchesWithTrustDomain,omitempty"`
-
 	// PrimaryUpstreamDNSServerIPAddr defines a primary upstream DNS server for local DNS Proxy.
 	// +optional
 	PrimaryUpstreamDNSServerIPAddr string `json:"primaryUpstreamDNSServerIPAddr,omitempty"`
@@ -247,6 +239,12 @@ const (
 	ServiceAccessModeMixed ServiceAccessMode = "mixed"
 )
 
+type CloudServiceAccessNames struct {
+	// +kubebuilder:default=true
+	// +optional
+	WithNamespace bool `json:"withNamespace,omitempty"`
+}
+
 type ServiceAccessNames struct {
 	// +kubebuilder:default=false
 	// +optional
@@ -255,6 +253,10 @@ type ServiceAccessNames struct {
 	// +kubebuilder:default=true
 	// +optional
 	WithTrustDomain bool `json:"withTrustDomain,omitempty"`
+
+	// +kubebuilder:default={withNamespace: true}
+	// +optional
+	CloudServiceAccessNames *CloudServiceAccessNames `json:"cloud,omitempty"`
 }
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.
