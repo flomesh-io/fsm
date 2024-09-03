@@ -2180,12 +2180,6 @@ spec:
                         description: PrimaryUpstreamDNSServerIPAddr defines a primary
                           upstream DNS server for local DNS Proxy.
                         type: string
-                      searchesWithNamespace:
-                        default: true
-                        type: boolean
-                      searchesWithTrustDomain:
-                        default: true
-                        type: boolean
                       secondaryUpstreamDNSServerIPAddr:
                         description: SecondaryUpstreamDNSServerIPAddr defines a secondary
                           upstream DNS server for local DNS Proxy.
@@ -2417,6 +2411,14 @@ spec:
                       mustWithServicePort: false
                       withTrustDomain: true
                     properties:
+                      cloud:
+                        default:
+                          withNamespace: true
+                        properties:
+                          withNamespace:
+                            default: true
+                            type: boolean
+                        type: object
                       mustWithServicePort:
                         default: false
                         type: boolean

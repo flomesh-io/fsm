@@ -185,6 +185,7 @@
                 "maxDataPlaneConnections",
                 "controllerLogLevel",
                 "enforceSingleMesh",
+                "enableMultiClusters",
                 "deployJaeger",
                 "tracing",
                 "remoteLogging",
@@ -1316,6 +1317,15 @@
                     "examples": [
                         false
                     ]
+                },
+                "enableMultiClusters": {
+                  "$id": "#/properties/fsm/properties/enableMultiClusters",
+                  "type": "boolean",
+                  "title": "The enableMultiClusters schema",
+                  "description": "Enable Multi Clusters.",
+                  "examples": [
+                    false
+                  ]
                 },
                 "deployJaeger": {
                     "$id": "#/properties/fsm/properties/deployJaeger",

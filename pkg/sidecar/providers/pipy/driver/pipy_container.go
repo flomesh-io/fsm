@@ -174,36 +174,24 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 
 		pod.Spec.DNSPolicy = "None"
 		trustDomain := injCtx.CertManager.GetTrustDomain()
-		ndots := "1"
+		dots := "4"
 		searches := make([]string, 0)
-		if injCtx.Configurator.IsSearchesWithTrustDomain() {
-			ndots = "4"
-			if injCtx.Configurator.IsSearchesWithNamespace() {
-				if len(pod.Namespace) > 0 {
-					ndots = "5"
-					searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
-				} else if len(injCtx.PodNamespace) > 0 {
-					ndots = "5"
-					searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
-				}
-			}
-			searches = append(searches, fmt.Sprintf("svc.%s", trustDomain))
-			searches = append(searches, trustDomain)
-		} else if injCtx.Configurator.IsSearchesWithNamespace() {
-			if len(pod.Namespace) > 0 {
-				ndots = "2"
-				searches = append(searches, pod.Namespace)
-			} else if len(injCtx.PodNamespace) > 0 {
-				ndots = "2"
-				searches = append(searches, injCtx.PodNamespace)
-			}
+		if len(pod.Namespace) > 0 {
+			dots = "5"
+			searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
+		} else if len(injCtx.PodNamespace) > 0 {
+			dots = "5"
+			searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
 		}
+
+		searches = append(searches, fmt.Sprintf("svc.%s", trustDomain))
+		searches = append(searches, trustDomain)
 
 		pod.Spec.DNSConfig = &corev1.PodDNSConfig{
 			Nameservers: []string{"127.0.0.153"},
 			Searches:    searches,
 			Options: []corev1.PodDNSConfigOption{
-				{Name: "ndots", Value: &ndots},
+				{Name: "ndots", Value: &dots},
 			},
 		}
 	}

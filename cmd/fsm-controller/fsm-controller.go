@@ -120,6 +120,7 @@ var (
 	certManagerOptions providers.CertManagerOptions
 
 	enableReconciler      bool
+	enableMultiClusters   bool
 	validateTrafficTarget bool
 
 	scheme = runtime.NewScheme()
@@ -163,6 +164,7 @@ func init() {
 
 	// Reconciler options
 	flags.BoolVar(&enableReconciler, "enable-reconciler", false, "Enable reconciler for CDRs, mutating webhook and validating webhook")
+	flags.BoolVar(&enableMultiClusters, "enable-multi-clusters", false, "Enable multi-clusters")
 	flags.BoolVar(&validateTrafficTarget, "validate-traffic-target", true, "Enable traffic target validation")
 
 	_ = clientgoscheme.AddToScheme(scheme)
@@ -255,7 +257,7 @@ func main() {
 	namespacedIngressClient := nsigClientset.NewForConfigOrDie(kubeConfig)
 	policyAttachmentClient := policyAttachmentClientset.NewForConfigOrDie(kubeConfig)
 
-	informerCollection, err := informers.NewInformerCollection(meshName, stop,
+	opts := []informers.InformerCollectionOption{
 		informers.WithKubeClient(kubeClient),
 		informers.WithSMIClients(smiTrafficSplitClientSet, smiTrafficSpecClientSet, smiTrafficTargetClientSet),
 		informers.WithConfigClient(configClient, fsmMeshConfigName, fsmNamespace),
@@ -268,7 +270,13 @@ func main() {
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
 		informers.WithPolicyAttachmentClientV2(gatewayAPIClient, policyAttachmentClient),
-	)
+	}
+
+	if enableMultiClusters {
+		opts = append(opts, informers.WithMultiClusterClient(multiclusterClient))
+	}
+
+	informerCollection, err := informers.NewInformerCollection(meshName, stop, opts...)
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating informer collection")
 	}
@@ -312,10 +320,15 @@ func main() {
 	multiclusterController := multicluster.NewMultiClusterController(informerCollection, kubeClient, k8sClient, msgBroker)
 
 	kubeProvider := kube.NewClient(k8sClient, cfg)
-	multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
 
-	endpointsProviders := []endpoint.Provider{kubeProvider, multiclusterProvider}
-	serviceProviders := []service.Provider{kubeProvider, multiclusterProvider}
+	endpointsProviders := []endpoint.Provider{kubeProvider}
+	serviceProviders := []service.Provider{kubeProvider}
+
+	if enableMultiClusters {
+		multiclusterProvider := fsm.NewClient(multiclusterController, cfg)
+		endpointsProviders = append(endpointsProviders, multiclusterProvider)
+		serviceProviders = append(serviceProviders, multiclusterProvider)
+	}
 
 	if err := ingress.Initialize(kubeClient, k8sClient, stop, cfg, certManager, msgBroker); err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating Ingress client")

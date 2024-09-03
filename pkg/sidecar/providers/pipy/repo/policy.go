@@ -2,13 +2,12 @@ package repo
 
 import (
 	"fmt"
-	"hash/fnv"
 	"reflect"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
@@ -295,6 +294,193 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 	return ready
 }
 
+func (p *PipyConf) hashName(hash uint64) HTTPRouteRuleName {
+	return HTTPRouteRuleName(fmt.Sprintf("%X", hash))
+}
+
+func (p *PipyConf) Pack() {
+	p.packInbound()
+	p.packOutbound()
+}
+
+func (p *PipyConf) packInbound() {
+	inboundPolicy := p.Inbound
+	if inboundPolicy == nil {
+		return
+	}
+
+	if len(inboundPolicy.TrafficMatches) == 0 {
+		return
+	}
+
+	if len(inboundPolicy.ClustersConfigs) == 0 {
+		return
+	}
+
+	clustersConfigByHashMap := make(map[uint64]*WeightedEndpoint)
+	clustersHashByNameMap := make(map[ClusterName]uint64)
+	newClustersConfigs := make(map[ClusterName]*WeightedEndpoint)
+
+	for clustersName, weightedEndpoint := range inboundPolicy.ClustersConfigs {
+		hashcode, _ := hashstructure.Hash(weightedEndpoint, hashstructure.FormatV2,
+			&hashstructure.HashOptions{
+				ZeroNil:         true,
+				IgnoreZeroValue: true,
+				SlicesAsSets:    true,
+			})
+		if _, exists := clustersConfigByHashMap[hashcode]; !exists {
+			clustersConfigByHashMap[hashcode] = weightedEndpoint
+			newClustersConfigs[ClusterName(p.hashName(hashcode))] = weightedEndpoint
+		}
+		clustersHashByNameMap[clustersName] = hashcode
+		delete(inboundPolicy.ClustersConfigs, clustersName)
+	}
+	inboundPolicy.ClustersConfigs = newClustersConfigs
+
+	for _, trafficMatch := range inboundPolicy.TrafficMatches {
+		if len(trafficMatch.HTTPServiceRouteRules) > 0 {
+			httpServiceRouteRulesByHashMap := make(map[uint64]*InboundHTTPRouteRules)
+			httpServiceRouteRulesHashByNameMap := make(map[HTTPRouteRuleName]uint64)
+			newHTTPServiceRouteRules := make(InboundHTTPServiceRouteRules)
+
+			for httpRouteRuleName, httpServiceRouteRules := range trafficMatch.HTTPServiceRouteRules {
+				for _, routeRules := range httpServiceRouteRules.RouteRules {
+					newTargetClusters := make(WeightedClusters)
+					for clusterName, weight := range routeRules.TargetClusters {
+						if hashcode, exists := clustersHashByNameMap[clusterName]; exists {
+							newTargetClusters[ClusterName(p.hashName(hashcode))] = weight
+						}
+					}
+					routeRules.TargetClusters = newTargetClusters
+				}
+
+				hashcode, _ := hashstructure.Hash(httpServiceRouteRules, hashstructure.FormatV2,
+					&hashstructure.HashOptions{
+						ZeroNil:         true,
+						IgnoreZeroValue: true,
+						SlicesAsSets:    true,
+					})
+				if _, exists := httpServiceRouteRulesByHashMap[hashcode]; !exists {
+					httpServiceRouteRulesByHashMap[hashcode] = httpServiceRouteRules
+					newHTTPServiceRouteRules[p.hashName(hashcode)] = httpServiceRouteRules
+				}
+				httpServiceRouteRulesHashByNameMap[httpRouteRuleName] = hashcode
+				delete(trafficMatch.HTTPServiceRouteRules, httpRouteRuleName)
+			}
+			trafficMatch.HTTPServiceRouteRules = newHTTPServiceRouteRules
+
+			for httpHostPort, ruleRef := range trafficMatch.HTTPHostPort2Service {
+				if hashcode, exists := httpServiceRouteRulesHashByNameMap[ruleRef.RuleName]; exists {
+					trafficMatch.HTTPHostPort2Service[httpHostPort] = &HTTPRouteRuleRef{RuleName: p.hashName(hashcode), Service: string(ruleRef.RuleName)}
+				}
+			}
+		}
+
+		if trafficMatch.TCPServiceRouteRules != nil {
+			targetClusters := trafficMatch.TCPServiceRouteRules.TargetClusters
+			if len(targetClusters) > 0 {
+				newTargetClusters := make(WeightedClusters)
+				for clusterName, weight := range targetClusters {
+					if hashcode, exists := clustersHashByNameMap[clusterName]; exists {
+						newTargetClusters[ClusterName(p.hashName(hashcode))] = weight
+					}
+				}
+				trafficMatch.TCPServiceRouteRules.TargetClusters = newTargetClusters
+			}
+		}
+	}
+}
+
+func (p *PipyConf) packOutbound() {
+	outboundPolicy := p.Outbound
+	if outboundPolicy == nil {
+		return
+	}
+
+	if len(outboundPolicy.TrafficMatches) == 0 {
+		return
+	}
+
+	if len(outboundPolicy.ClustersConfigs) == 0 {
+		return
+	}
+
+	clustersConfigByHashMap := make(map[uint64]*ClusterConfig)
+	clustersHashByNameMap := make(map[ClusterName]uint64)
+	newClustersConfigs := make(map[ClusterName]*ClusterConfig)
+
+	for clustersName, clustersConfig := range outboundPolicy.ClustersConfigs {
+		hashcode, _ := hashstructure.Hash(clustersConfig, hashstructure.FormatV2,
+			&hashstructure.HashOptions{
+				ZeroNil:         true,
+				IgnoreZeroValue: true,
+				SlicesAsSets:    true,
+			})
+		if _, exists := clustersConfigByHashMap[hashcode]; !exists {
+			clustersConfigByHashMap[hashcode] = clustersConfig
+			newClustersConfigs[ClusterName(p.hashName(hashcode))] = clustersConfig
+		}
+		clustersHashByNameMap[clustersName] = hashcode
+		delete(outboundPolicy.ClustersConfigs, clustersName)
+	}
+	outboundPolicy.ClustersConfigs = newClustersConfigs
+
+	for _, trafficMatches := range outboundPolicy.TrafficMatches {
+		for _, trafficMatch := range trafficMatches {
+			if len(trafficMatch.HTTPServiceRouteRules) > 0 {
+				httpServiceRouteRulesByHashMap := make(map[uint64]*OutboundHTTPRouteRules)
+				httpServiceRouteRulesHashByNameMap := make(map[HTTPRouteRuleName]uint64)
+				newHTTPServiceRouteRules := make(OutboundHTTPServiceRouteRules)
+
+				for httpRouteRuleName, httpServiceRouteRules := range trafficMatch.HTTPServiceRouteRules {
+					for _, routeRules := range httpServiceRouteRules.RouteRules {
+						newTargetClusters := make(WeightedClusters)
+						for clusterName, weight := range routeRules.TargetClusters {
+							if hashcode, exists := clustersHashByNameMap[clusterName]; exists {
+								newTargetClusters[ClusterName(p.hashName(hashcode))] = weight
+							}
+						}
+						routeRules.TargetClusters = newTargetClusters
+					}
+
+					hashcode, _ := hashstructure.Hash(httpServiceRouteRules, hashstructure.FormatV2,
+						&hashstructure.HashOptions{
+							ZeroNil:         true,
+							IgnoreZeroValue: true,
+							SlicesAsSets:    true,
+						})
+					if _, exists := httpServiceRouteRulesByHashMap[hashcode]; !exists {
+						httpServiceRouteRulesByHashMap[hashcode] = httpServiceRouteRules
+						newHTTPServiceRouteRules[p.hashName(hashcode)] = httpServiceRouteRules
+					}
+					httpServiceRouteRulesHashByNameMap[httpRouteRuleName] = hashcode
+					delete(trafficMatch.HTTPServiceRouteRules, httpRouteRuleName)
+				}
+				trafficMatch.HTTPServiceRouteRules = newHTTPServiceRouteRules
+
+				for httpHostPort, ruleRef := range trafficMatch.HTTPHostPort2Service {
+					if hashcode, exists := httpServiceRouteRulesHashByNameMap[ruleRef.RuleName]; exists {
+						trafficMatch.HTTPHostPort2Service[httpHostPort] = &HTTPRouteRuleRef{RuleName: p.hashName(hashcode), Service: string(ruleRef.RuleName)}
+					}
+				}
+			}
+
+			if trafficMatch.TCPServiceRouteRules != nil {
+				targetClusters := trafficMatch.TCPServiceRouteRules.TargetClusters
+				if len(targetClusters) > 0 {
+					newTargetClusters := make(WeightedClusters)
+					for clusterName, weight := range targetClusters {
+						if hashcode, exists := clustersHashByNameMap[clusterName]; exists {
+							newTargetClusters[ClusterName(p.hashName(hashcode))] = weight
+						}
+					}
+					trafficMatch.TCPServiceRouteRules.TargetClusters = newTargetClusters
+				}
+			}
+		}
+	}
+}
+
 func (itm *InboundTrafficMatch) addSourceIPRange(ipRange SourceIPRange, sourceSpec *SourceSecuritySpec) {
 	if itm.SourceIPRanges == nil {
 		itm.SourceIPRanges = make(map[SourceIPRange]*SourceSecuritySpec)
@@ -365,16 +551,14 @@ func (srr *InboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterNa
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
+	srr.TargetClusters[clusterName] = weight
 }
 
 func (srr *OutboundTCPServiceRouteRules) addWeightedCluster(clusterName ClusterName, weight Weight) {
 	if srr.TargetClusters == nil {
 		srr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	srr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
+	srr.TargetClusters[clusterName] = weight
 }
 
 func (srr *OutboundTCPServiceRouteRules) setAllowedEgressTraffic(allowedEgressTraffic bool) {
@@ -385,89 +569,76 @@ func (srr *OutboundTCPServiceRouteRules) setEgressForwardGateway(egresssGateway 
 	srr.EgressForwardGateway = egresssGateway
 }
 
-func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName) {
+func (itm *InboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleRef *HTTPRouteRuleRef) {
 	if itm.HTTPHostPort2Service == nil {
 		itm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
-
-	fnv32aRuleName := fnv32a(string(ruleName))
-	if preRuleName, exist := itm.HTTPHostPort2Service[hostPort]; exist {
-		clen := len(ruleName)
-		plen := len(preRuleName)
-		if idx := strings.Index(string(preRuleName), "|"); idx > 0 {
-			plen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
-		}
+	if preRuleRef, exist := itm.HTTPHostPort2Service[hostPort]; exist {
+		clen := len(ruleRef.RuleName)
+		plen := len(preRuleRef.RuleName)
 		if clen < plen {
-			itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
-		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
-			itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+			itm.HTTPHostPort2Service[hostPort] = ruleRef
+		} else if clen == plen && strings.Compare(string(ruleRef.RuleName), string(preRuleRef.RuleName)) < 0 {
+			itm.HTTPHostPort2Service[hostPort] = ruleRef
 		}
 	} else {
-		itm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+		itm.HTTPHostPort2Service[hostPort] = ruleRef
 	}
 }
 
-func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleName HTTPRouteRuleName, desiredSuffix string) {
+func (otm *OutboundTrafficMatch) addHTTPHostPort2Service(hostPort HTTPHostPort, ruleRef *HTTPRouteRuleRef, desiredSuffix string) {
 	if otm.HTTPHostPort2Service == nil {
 		otm.HTTPHostPort2Service = make(HTTPHostPort2Service)
 	}
 
-	fnv32aRuleName := fnv32a(string(ruleName))
-	if preRuleName, exist := otm.HTTPHostPort2Service[hostPort]; exist {
-		clen := len(ruleName)
-		plen := len(preRuleName)
-		if idx := strings.Index(string(preRuleName), "|"); idx >= 0 {
-			plen, _ = strconv.Atoi(string(preRuleName)[idx+1:])
-		}
+	if preRuleRef, exist := otm.HTTPHostPort2Service[hostPort]; exist {
+		clen := len(ruleRef.RuleName)
+		plen := len(preRuleRef.RuleName)
 		if len(desiredSuffix) > 0 &&
-			strings.HasSuffix(string(ruleName), desiredSuffix) &&
-			strings.HasSuffix(string(preRuleName), desiredSuffix) {
+			strings.HasSuffix(string(ruleRef.RuleName), desiredSuffix) &&
+			strings.HasSuffix(string(preRuleRef.RuleName), desiredSuffix) {
 			if clen < plen {
-				otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+				otm.HTTPHostPort2Service[hostPort] = ruleRef
 			}
 		} else if clen < plen {
-			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
-		} else if clen == plen && strings.Compare(string(ruleName), string(preRuleName)) < 0 {
-			otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+			otm.HTTPHostPort2Service[hostPort] = ruleRef
+		} else if clen == plen && strings.Compare(string(ruleRef.RuleName), string(preRuleRef.RuleName)) < 0 {
+			otm.HTTPHostPort2Service[hostPort] = ruleRef
 		}
 	} else {
-		otm.HTTPHostPort2Service[hostPort] = HTTPRouteRuleName(fnv32aRuleName)
+		otm.HTTPHostPort2Service[hostPort] = ruleRef
 	}
 }
 
-func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPRouteRuleName) *InboundHTTPRouteRules {
+func (itm *InboundTrafficMatch) newHTTPServiceRouteRules(ruleRef *HTTPRouteRuleRef) *InboundHTTPRouteRules {
 	if itm.HTTPServiceRouteRules == nil {
 		itm.HTTPServiceRouteRules = make(InboundHTTPServiceRouteRules)
 	}
-	if len(httpRouteRuleName) == 0 {
+	if len(ruleRef.RuleName) == 0 {
 		return nil
 	}
 
-	fnv32aRuleName := fnv32a(string(httpRouteRuleName))
-
-	rules, exist := itm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)]
+	rules, exist := itm.HTTPServiceRouteRules[ruleRef.RuleName]
 	if !exist || rules == nil {
 		newCluster := new(InboundHTTPRouteRules)
-		itm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)] = newCluster
+		itm.HTTPServiceRouteRules[ruleRef.RuleName] = newCluster
 		return newCluster
 	}
 	return rules
 }
 
-func (otm *OutboundTrafficMatch) newHTTPServiceRouteRules(httpRouteRuleName HTTPRouteRuleName) *OutboundHTTPRouteRules {
+func (otm *OutboundTrafficMatch) newHTTPServiceRouteRules(ruleRef *HTTPRouteRuleRef) *OutboundHTTPRouteRules {
 	if otm.HTTPServiceRouteRules == nil {
 		otm.HTTPServiceRouteRules = make(OutboundHTTPServiceRouteRules)
 	}
-	if len(httpRouteRuleName) == 0 {
+	if len(ruleRef.RuleName) == 0 {
 		return nil
 	}
 
-	fnv32aRuleName := fnv32a(string(httpRouteRuleName))
-
-	rules, exist := otm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)]
+	rules, exist := otm.HTTPServiceRouteRules[ruleRef.RuleName]
 	if !exist || rules == nil {
 		newCluster := new(OutboundHTTPRouteRules)
-		otm.HTTPServiceRouteRules[HTTPRouteRuleName(fnv32aRuleName)] = newCluster
+		otm.HTTPServiceRouteRules[ruleRef.RuleName] = newCluster
 		return newCluster
 	}
 	return rules
@@ -594,8 +765,7 @@ func (hrr *HTTPRouteRule) addWeightedCluster(clusterName ClusterName, weight Wei
 	if hrr.TargetClusters == nil {
 		hrr.TargetClusters = make(WeightedClusters)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	hrr.TargetClusters[ClusterName(fnv32aClusterName)] = weight
+	hrr.TargetClusters[clusterName] = weight
 }
 
 func (hrr *HTTPRouteRule) addAllowedService(serviceName ServiceName) {
@@ -620,31 +790,29 @@ func (itp *InboundTrafficPolicy) newClusterConfigs(clusterName ClusterName) *Wei
 	if itp.ClustersConfigs == nil {
 		itp.ClustersConfigs = make(map[ClusterName]*WeightedEndpoint)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	cluster, exist := itp.ClustersConfigs[ClusterName(fnv32aClusterName)]
+	cluster, exist := itp.ClustersConfigs[clusterName]
 	if !exist || cluster == nil {
 		newCluster := make(WeightedEndpoint, 0)
-		itp.ClustersConfigs[ClusterName(fnv32aClusterName)] = &newCluster
+		itp.ClustersConfigs[clusterName] = &newCluster
 		return &newCluster
 	}
 	return cluster
 }
 
-func (otp *OutboundTrafficPolicy) newClusterConfigs(clusterName ClusterName) *ClusterConfigs {
+func (otp *OutboundTrafficPolicy) newClusterConfigs(clusterName ClusterName) *ClusterConfig {
 	if otp.ClustersConfigs == nil {
-		otp.ClustersConfigs = make(map[ClusterName]*ClusterConfigs)
+		otp.ClustersConfigs = make(map[ClusterName]*ClusterConfig)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	cluster, exist := otp.ClustersConfigs[ClusterName(fnv32aClusterName)]
+	cluster, exist := otp.ClustersConfigs[clusterName]
 	if !exist || cluster == nil {
-		newCluster := new(ClusterConfigs)
-		otp.ClustersConfigs[ClusterName(fnv32aClusterName)] = newCluster
+		newCluster := new(ClusterConfig)
+		otp.ClustersConfigs[clusterName] = newCluster
 		return newCluster
 	}
 	return cluster
 }
 
-func (otp *ClusterConfigs) addWeightedEndpoint(address Address, port Port, weight Weight) {
+func (otp *ClusterConfig) addWeightedEndpoint(address Address, port Port, weight Weight) {
 	if otp.Endpoints == nil {
 		weightedEndpoints := make(WeightedEndpoints)
 		otp.Endpoints = &weightedEndpoints
@@ -652,7 +820,7 @@ func (otp *ClusterConfigs) addWeightedEndpoint(address Address, port Port, weigh
 	otp.Endpoints.addWeightedEndpoint(address, port, weight)
 }
 
-func (otp *ClusterConfigs) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
+func (otp *ClusterConfig) addWeightedZoneEndpoint(address Address, port Port, weight Weight, cluster, lbType, contextPath, viaGw string) {
 	if otp.Endpoints == nil {
 		weightedEndpoints := make(WeightedEndpoints)
 		otp.Endpoints = &weightedEndpoints
@@ -706,7 +874,7 @@ func (we *WeightedEndpoint) addWeightedEndpoint(address Address, port Port, weig
 	}
 }
 
-func (otp *ClusterConfigs) setConnectionSettings(connectionSettings *policyv1alpha1.ConnectionSettingsSpec) {
+func (otp *ClusterConfig) setConnectionSettings(connectionSettings *policyv1alpha1.ConnectionSettingsSpec) {
 	if connectionSettings == nil {
 		otp.ConnectionSettings = nil
 		return
@@ -751,7 +919,7 @@ func (otp *ClusterConfigs) setConnectionSettings(connectionSettings *policyv1alp
 	}
 }
 
-func (otp *ClusterConfigs) setRetryPolicy(retryPolicy *policyv1alpha1.RetryPolicySpec) {
+func (otp *ClusterConfig) setRetryPolicy(retryPolicy *policyv1alpha1.RetryPolicySpec) {
 	if retryPolicy == nil {
 		otp.RetryPolicy = nil
 		return
@@ -782,12 +950,11 @@ func (ftp *ForwardTrafficPolicy) newEgressGateway(clusterName ClusterName, mode 
 	if ftp.EgressGateways == nil {
 		ftp.EgressGateways = make(map[ClusterName]*EgressGatewayClusterConfigs)
 	}
-	fnv32aClusterName := fnv32a(string(clusterName))
-	cluster, exist := ftp.EgressGateways[ClusterName(fnv32aClusterName)]
+	cluster, exist := ftp.EgressGateways[clusterName]
 	if !exist || cluster == nil {
 		newCluster := new(EgressGatewayClusterConfigs)
 		newCluster.Mode = mode
-		ftp.EgressGateways[ClusterName(fnv32aClusterName)] = newCluster
+		ftp.EgressGateways[clusterName] = newCluster
 		return newCluster
 	}
 	return cluster
@@ -938,17 +1105,4 @@ func (ps *PluginSlice) Swap(i, j int) {
 func (ps *PluginSlice) Less(i, j int) bool {
 	a, b := (*ps)[i], (*ps)[j]
 	return a.Priority > b.Priority
-}
-
-func fnv32a(ruleName string) string {
-	if prettyConfig() {
-		return ruleName
-	}
-	algorithm := fnv.New32a()
-	if _, err := algorithm.Write([]byte(ruleName)); err == nil {
-		return fmt.Sprintf("%d|%d", algorithm.Sum32(), len(ruleName))
-	} else {
-		log.Err(err).Msgf("fnv32a[%s]", ruleName)
-	}
-	return ruleName
 }

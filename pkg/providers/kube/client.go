@@ -43,6 +43,37 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 
 	var endpoints []endpoint.Endpoint
 
+	k8sSvc := c.kubeController.GetService(svc)
+	if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
+		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := connector.Decode(k8sSvc, v)
+			if len(svcMeta.Endpoints) > 0 {
+				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.LbType
+				for addr, endpointMeta := range svcMeta.Endpoints {
+					for port, protocol := range endpointMeta.Ports {
+						ept := endpoint.Endpoint{
+							IP:                net.ParseIP(string(addr)),
+							Port:              endpoint.Port(port),
+							AppProtocol:       string(protocol),
+							ClusterID:         endpointMeta.Native.ClusterId,
+							ViaGatewayHTTP:    endpointMeta.Native.ViaGatewayHTTP,
+							ViaGatewayGRPC:    endpointMeta.Native.ViaGatewayGRPC,
+							ViaGatewayMode:    string(endpointMeta.Native.ViaGatewayMode),
+							WithGateway:       endpointMeta.Local.WithGateway,
+							WithMultiGateways: endpointMeta.Local.WithMultiGateways,
+						}
+						if !endpointMeta.Local.InternalService {
+							ept.ClusterKey = endpointMeta.Native.ClusterSet
+							ept.LBType = string(lbType)
+						}
+						endpoints = append(endpoints, ept)
+					}
+				}
+			}
+			return endpoints
+		}
+	}
+
 	kubernetesEndpoints, err := c.kubeController.GetEndpoints(svc)
 	if err != nil || kubernetesEndpoints == nil {
 		log.Info().Msgf("No k8s endpoints found for MeshService %s", svc)
@@ -82,37 +113,6 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					}
 				}
 				endpoints = append(endpoints, ept)
-			}
-		}
-	}
-
-	k8sSvc := c.kubeController.GetService(svc)
-	if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
-		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-			svcMeta := new(connector.MicroSvcMeta)
-			svcMeta.Decode(v)
-			if len(svcMeta.Endpoints) > 0 {
-				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.LbType
-				for addr, endpointMeta := range svcMeta.Endpoints {
-					for port, protocol := range endpointMeta.Ports {
-						ept := endpoint.Endpoint{
-							IP:                net.ParseIP(string(addr)),
-							Port:              endpoint.Port(port),
-							AppProtocol:       string(protocol),
-							ClusterID:         endpointMeta.Native.ClusterId,
-							ViaGatewayHTTP:    endpointMeta.Native.ViaGatewayHTTP,
-							ViaGatewayGRPC:    endpointMeta.Native.ViaGatewayGRPC,
-							ViaGatewayMode:    string(endpointMeta.Native.ViaGatewayMode),
-							WithGateway:       endpointMeta.Local.WithGateway,
-							WithMultiGateways: endpointMeta.Local.WithMultiGateways,
-						}
-						if !endpointMeta.Local.InternalService {
-							ept.ClusterKey = endpointMeta.Native.ClusterSet
-							ept.LBType = string(lbType)
-						}
-						endpoints = append(endpoints, ept)
-					}
-				}
 			}
 		}
 	}
@@ -237,7 +237,7 @@ func (c *client) getServicesByLabels(podLabels map[string]string, targetNamespac
 		}
 		selector := labels.Set(svcRawSelector).AsSelector()
 		if selector.Matches(labels.Set(podLabels)) {
-			finalList = append(finalList, k8s.ServiceToMeshServices(c.kubeController, *svc)...)
+			finalList = append(finalList, k8s.ServiceToMeshServices(c.kubeController, svc)...)
 		}
 	}
 
@@ -307,7 +307,7 @@ func (c *client) ListServices() []service.MeshService {
 				continue
 			}
 		}
-		services = append(services, k8s.ServiceToMeshServices(c.kubeController, *svc)...)
+		services = append(services, k8s.ServiceToMeshServices(c.kubeController, svc)...)
 	}
 	return services
 }

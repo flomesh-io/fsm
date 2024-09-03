@@ -515,13 +515,15 @@ fsm:
   maxDataPlaneConnections: 0
 
   # -- Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync
-  configResyncInterval: "90s"
+  configResyncInterval: "0s"
 
   # -- Controller log verbosity
   controllerLogLevel: info
 
   # -- Enforce only deploying one mesh in the cluster
   enforceSingleMesh: true
+
+  enableMultiClusters: false
 
   # -- Prefix used in name of the webhook configuration resources
   webhookConfigNamePrefix: fsm-webhook

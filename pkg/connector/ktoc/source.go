@@ -141,8 +141,7 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 		if len(svc.Annotations) > 0 {
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 				cloudService = true
-				svcMeta := new(connector.MicroSvcMeta)
-				svcMeta.Decode(v)
+				svcMeta := connector.Decode(svc, v)
 				endpoints := new(corev1.Endpoints)
 				endpointSubset := corev1.EndpointSubset{}
 				for port, protocol := range svcMeta.Ports {
@@ -256,8 +255,7 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 	if len(svc.Annotations) > 0 {
 		hasLocalInstance := false
 		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-			svcMeta := new(connector.MicroSvcMeta)
-			svcMeta.Decode(v)
+			svcMeta := connector.Decode(svc, v)
 			for _, endpointMeta := range svcMeta.Endpoints {
 				if endpointMeta.Local.InternalService {
 					hasLocalInstance = true

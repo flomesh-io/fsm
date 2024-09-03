@@ -49,12 +49,12 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 					continue
 				}
 
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 				}
 
 				for _, rule := range httpRouteConfig.Rules {
@@ -131,13 +131,15 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 	}
 }
 
-func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
+func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, cfg configurator.Configurator, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(outboundPolicy.TrafficMatches) == 0 {
 		return nil
 	}
 
 	otp := pipyConf.newOutboundTrafficPolicy()
 	dependClusters := make(map[service.ClusterName]*WeightedCluster)
+
+	wildcardIPRange := generatePipyWildcardIPRanges(cfg)
 
 	for _, trafficMatch := range outboundPolicy.TrafficMatches {
 		destinationProtocol := strings.ToLower(trafficMatch.DestinationProtocol)
@@ -151,9 +153,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 			tm.setPort(Port(trafficMatch.DestinationPort))
 		}
 
-		for _, ipRange := range trafficMatch.DestinationIPRanges {
-			tm.addDestinationIPRange(DestinationIPRange(ipRange), nil)
-		}
+		generatePipyOutboundDestinationIPRanges(trafficMatch, tm, wildcardIPRange)
 
 		if destinationProtocol == constants.ProtocolHTTP ||
 			destinationProtocol == constants.ProtocolGRPC {
@@ -167,12 +167,12 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 			}
 
 			for _, httpRouteConfig := range httpRouteConfigs {
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setServiceIdentity(proxyIdentity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
 				}
 
 				for _, route := range httpRouteConfig.Routes {
@@ -199,10 +199,11 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 					hsrr, _ := hsrrs.newHTTPServiceRouteRule(httpMatch)
 					for cluster := range route.WeightedClusters.Iter() {
 						serviceCluster := cluster.(service.WeightedCluster)
-						weightedCluster := new(WeightedCluster)
-						weightedCluster.WeightedCluster = serviceCluster
-						weightedCluster.RetryPolicy = route.RetryPolicy
-						if _, exist := dependClusters[weightedCluster.ClusterName]; !exist {
+						weightedCluster := &WeightedCluster{
+							WeightedCluster: serviceCluster,
+							RetryPolicy:     route.RetryPolicy,
+						}
+						if _, exists := dependClusters[weightedCluster.ClusterName]; !exists {
 							dependClusters[weightedCluster.ClusterName] = weightedCluster
 						}
 						hsrr.addWeightedCluster(ClusterName(weightedCluster.ClusterName), Weight(weightedCluster.Weight))
@@ -214,9 +215,10 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 			tsrr := tm.newTCPServiceRouteRules()
 			tsrr.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 			for _, serviceCluster := range trafficMatch.WeightedClusters {
-				weightedCluster := new(WeightedCluster)
-				weightedCluster.WeightedCluster = serviceCluster
-				if _, exist := dependClusters[weightedCluster.ClusterName]; !exist {
+				weightedCluster := &WeightedCluster{
+					WeightedCluster: serviceCluster,
+				}
+				if _, exists := dependClusters[weightedCluster.ClusterName]; !exists {
 					dependClusters[weightedCluster.ClusterName] = weightedCluster
 				}
 				tsrr.addWeightedCluster(ClusterName(weightedCluster.ClusterName), Weight(weightedCluster.Weight))
@@ -237,10 +239,11 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 				for _, route := range httpRouteConfig.Routes {
 					for cluster := range route.WeightedClusters.Iter() {
 						serviceCluster := cluster.(service.WeightedCluster)
-						weightedCluster := new(WeightedCluster)
-						weightedCluster.WeightedCluster = serviceCluster
-						weightedCluster.RetryPolicy = route.RetryPolicy
-						if _, exist := dependClusters[weightedCluster.ClusterName]; !exist {
+						weightedCluster := &WeightedCluster{
+							WeightedCluster: serviceCluster,
+							RetryPolicy:     route.RetryPolicy,
+						}
+						if _, exists := dependClusters[weightedCluster.ClusterName]; !exists {
 							dependClusters[weightedCluster.ClusterName] = weightedCluster
 						}
 						tsrr.addWeightedCluster(ClusterName(weightedCluster.ClusterName), Weight(weightedCluster.Weight))
@@ -251,6 +254,31 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 	}
 
 	return dependClusters
+}
+
+func generatePipyOutboundDestinationIPRanges(trafficMatch *trafficpolicy.TrafficMatch, tm *OutboundTrafficMatch, wildcardIPRange []string) {
+	for _, ipRange := range trafficMatch.DestinationIPRanges {
+		tm.addDestinationIPRange(DestinationIPRange(ipRange), nil)
+	}
+
+	if len(wildcardIPRange) > 0 {
+		for _, ipRange := range wildcardIPRange {
+			tm.addDestinationIPRange(DestinationIPRange(ipRange), nil)
+		}
+	}
+}
+
+func generatePipyWildcardIPRanges(cfg configurator.Configurator) []string {
+	var wildcardIPv4 []string
+	if cfg.IsLocalDNSProxyEnabled() {
+		dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
+		if cfg.IsWildcardDNSProxyEnabled() {
+			for _, ipv4 := range dnsProxy.Wildcard.IPv4 {
+				wildcardIPv4 = append(wildcardIPv4, fmt.Sprintf("%s/32", ipv4))
+			}
+		}
+	}
+	return wildcardIPv4
 }
 
 func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
@@ -281,11 +309,11 @@ func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ i
 			}
 
 			for _, httpRouteConfig := range httpRouteConfigs {
-				ruleName := HTTPRouteRuleName(httpRouteConfig.Name)
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setEgressForwardGateway(trafficMatch.EgressGateWay)
 				for _, hostname := range httpRouteConfig.Hostnames {
-					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName, desiredSuffix)
+					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
 				}
 				for _, rule := range httpRouteConfig.RoutingRules {
 					route := rule.Route
@@ -392,8 +420,20 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 	ready := true
 	viaGateway := cfg.GetMeshConfig().Spec.Connector.ViaGateway
 	otp := pipyConf.newOutboundTrafficPolicy()
+	clustersConfigsMap := make(map[string][]*trafficpolicy.MeshClusterConfig)
+	if len(outboundPolicy.ClustersConfigs) > 0 {
+		for _, clustersConfig := range outboundPolicy.ClustersConfigs {
+			items := clustersConfigsMap[clustersConfig.Service.SidecarClusterName()]
+			items = append(items, clustersConfig)
+			clustersConfigsMap[clustersConfig.Service.SidecarClusterName()] = items
+
+			items = clustersConfigsMap[clustersConfig.Service.SidecarLocalClusterName()]
+			items = append(items, clustersConfig)
+			clustersConfigsMap[clustersConfig.Service.SidecarLocalClusterName()] = items
+		}
+	}
 	for _, cluster := range dependClusters {
-		meshClusterConfigs := getMeshClusterConfigs(outboundPolicy.ClustersConfigs, cluster.ClusterName)
+		meshClusterConfigs := clustersConfigsMap[string(cluster.ClusterName)]
 		if len(meshClusterConfigs) == 0 {
 			ready = false
 			continue
@@ -426,14 +466,14 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 					}
 				}
 				clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)
-				if clusterConfig.UpstreamTrafficSetting != nil {
-					if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
-						clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)
-					}
+			}
+			if clusterConfig.UpstreamTrafficSetting != nil {
+				if clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings != nil {
+					clusterConfigs.setConnectionSettings(clusterConfig.UpstreamTrafficSetting.Spec.ConnectionSettings)
 				}
-				if cluster.RetryPolicy != nil {
-					clusterConfigs.setRetryPolicy(cluster.RetryPolicy)
-				}
+			}
+			if cluster.RetryPolicy != nil {
+				clusterConfigs.setRetryPolicy(cluster.RetryPolicy)
 			}
 		}
 	}
@@ -524,10 +564,10 @@ func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.S
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
@@ -682,10 +722,10 @@ func generatePipyAccessControlTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setHTTPServiceRateLimit(trafficMatch.RateLimit)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
@@ -783,10 +823,10 @@ func generatePipyServiceExportTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 				continue
 			}
 			for _, hostname := range httpRouteConfig.Hostnames {
-				ruleName := HTTPRouteRuleName(hostname)
-				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleName)
+				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(hostname)}
+				tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef)
 
-				hsrrs := tm.newHTTPServiceRouteRules(ruleName)
+				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, rule := range httpRouteConfig.Rules {
 					if len(rule.Route.HTTPRouteMatch.Path) == 0 {
@@ -1091,7 +1131,7 @@ func arrayEqual(a []service.WeightedCluster, set mapset.Set) bool {
 	return false
 }
 
-func hash(bytes []byte) uint64 {
+func Hash(bytes []byte) uint64 {
 	if hashCode, err := utils.HashFromString(string(bytes)); err == nil {
 		return hashCode
 	}
