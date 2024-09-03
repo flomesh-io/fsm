@@ -11,9 +11,9 @@
     )())
   ),
 
-  makeServiceHandler = (portConfig, serviceName) => (
+  makeServiceHandler = (portConfig, serviceInfo) => (
     (
-      rules = portConfig?.HttpServiceRouteRules?.[serviceName]?.RouteRules || [],
+      rules = portConfig?.HttpServiceRouteRules?.[serviceInfo.RuleName]?.RouteRules || [],
       tree = {},
     ) => (
       rules.forEach(
@@ -33,7 +33,7 @@
             ),
             headerRules = config.Headers ? Object.entries(config.Headers).map(([k, v]) => [k, new RegExp(v)]) : null,
             balancer = new algo.RoundRobinLoadBalancer(config.TargetClusters || {}),
-            service = Object.assign({ name: serviceName }, portConfig?.HttpServiceRouteRules?.[serviceName]),
+            service = Object.assign({ name: serviceInfo.Service || serviceInfo.RuleName }, portConfig?.HttpServiceRouteRules?.[serviceInfo.RuleName]),
             rule = headerRules ? (
               (path, headers) => matchPath(path) && headerRules.every(([k, v]) => v.test(headers[k] || '')) && (
                 __route = config,
@@ -79,7 +79,7 @@
       ingressRanges = Object.keys(portConfig?.SourceIPRanges || {}).map(k => new Netmask(k)),
 
       serviceHandlers = new algo.Cache(
-        serviceName => makeServiceHandler(portConfig, serviceName)
+        serviceInfo => makeServiceHandler(portConfig, serviceInfo)
       ),
 
       makeHostHandler = (portConfig, host) => (

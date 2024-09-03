@@ -60,12 +60,6 @@ type Configurator interface {
 	// IsLocalDNSProxyEnabled returns whether local DNS proxy is enabled
 	IsLocalDNSProxyEnabled() bool
 
-	// IsSearchesWithNamespace returns whether dns searches contains namespace
-	IsSearchesWithNamespace() bool
-
-	// IsSearchesWithTrustDomain returns whether dns searches contains trust domain
-	IsSearchesWithTrustDomain() bool
-
 	// IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled
 	IsWildcardDNSProxyEnabled() bool
 

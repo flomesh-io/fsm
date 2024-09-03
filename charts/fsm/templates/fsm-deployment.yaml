@@ -132,6 +132,7 @@ spec:
             "--cert-manager-issuer-kind", "{{.Values.fsm.certmanager.issuerKind}}",
             "--cert-manager-issuer-group", "{{.Values.fsm.certmanager.issuerGroup}}",
             "--enable-reconciler={{.Values.fsm.enableReconciler}}",
+            "--enable-multi-clusters={{.Values.fsm.enableMultiClusters}}",
             "--validate-traffic-target={{.Values.smi.validateTrafficTarget}}",
           ]
           resources:

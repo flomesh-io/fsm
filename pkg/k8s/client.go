@@ -342,7 +342,7 @@ func (c *client) UpdateStatus(resource interface{}) (metav1.Object, error) {
 
 // ServiceToMeshServices translates a k8s service with one or more ports to one or more
 // MeshService objects per port.
-func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshService {
+func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshService {
 	var meshServices []service.MeshService
 	var svcMeta *connector.MicroSvcMeta
 	var cloudInheritedFrom string
@@ -353,8 +353,7 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 			cloudInheritedFrom = inheritedFrom
 
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-				svcMeta = new(connector.MicroSvcMeta)
-				svcMeta.Decode(v)
+				svcMeta = connector.Decode(svc, v)
 			}
 
 			ns := c.GetNamespace(svc.Namespace)
@@ -414,9 +413,10 @@ func ServiceToMeshServices(c Controller, svc corev1.Service) []service.MeshServi
 		endpoints, _ := c.GetEndpoints(meshSvc)
 		if endpoints != nil {
 			meshSvc.TargetPort = GetTargetPortFromEndpoints(portSpec.Name, *endpoints)
-		} else {
-			log.Warn().Msgf("k8s service %s/%s does not have endpoints but is being represented as a MeshService", svc.Namespace, svc.Name)
 		}
+		//else {
+		//	log.Warn().Msgf("k8s service %s/%s does not have endpoints but is being represented as a MeshService", svc.Namespace, svc.Name)
+		//}
 
 		if !IsHeadlessService(svc) || endpoints == nil {
 			meshServices = append(meshServices, meshSvc)

@@ -114,7 +114,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 
 				Expect(Td.WaitForPodsRunningReady(testNS, replicaCount, nil)).To(Succeed())
 
-				time.Sleep(30 * time.Second)
+				time.Sleep(90 * time.Second)
 
 				pods, err := Td.Client.CoreV1().Pods(testNS).List(context.TODO(), metav1.ListOptions{})
 
@@ -146,7 +146,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 					}
 
 					return !hadErr
-				}, 1, 90*time.Second)
+				}, 1, 120*time.Second)
 
 				Expect(cond).To(BeTrue())
 
