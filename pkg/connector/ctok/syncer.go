@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/utils"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 const (
@@ -51,6 +51,8 @@ type CtoKSyncer struct {
 
 	kubeClient kubernetes.Interface
 
+	informer cache.SharedIndexInformer
+
 	microAggregator Aggregator
 
 	// ctx is used to cancel the CtoKSyncer.
@@ -62,6 +64,8 @@ type CtoKSyncer struct {
 	lock sync.Mutex
 
 	triggerCh chan struct{}
+
+	syncWorkQueues *workerpool.WorkerPool
 }
 
 // NewCtoKSyncer creates a new mesh syncer
@@ -70,13 +74,15 @@ func NewCtoKSyncer(
 	discClient connector.ServiceDiscoveryClient,
 	kubeClient kubernetes.Interface,
 	ctx context.Context,
-	fsmNamespace string) *CtoKSyncer {
+	fsmNamespace string,
+	nWorkers uint) *CtoKSyncer {
 	syncer := CtoKSyncer{
-		controller:   controller,
-		discClient:   discClient,
-		kubeClient:   kubeClient,
-		ctx:          ctx,
-		fsmNamespace: fsmNamespace,
+		controller:     controller,
+		discClient:     discClient,
+		kubeClient:     kubeClient,
+		ctx:            ctx,
+		fsmNamespace:   fsmNamespace,
+		syncWorkQueues: workerpool.NewWorkerPool(int(nWorkers)),
 	}
 	return &syncer
 }
@@ -96,7 +102,7 @@ func (s *CtoKSyncer) SetMicroAggregator(microAggregator Aggregator) {
 // SetServices is called with the services that should be created.
 // The key is the service name and the destination is the external DNS
 // entry to point to.
-func (s *CtoKSyncer) SetServices(svcs map[MicroSvcName]MicroSvcDomainName) {
+func (s *CtoKSyncer) SetServices(svcs map[connector.MicroSvcName]connector.MicroSvcDomainName) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -127,27 +133,30 @@ func (s *CtoKSyncer) Ready() {
 // Informer implements the controller.Resource interface.
 // It tells Kubernetes that we want to watch for changes to Services.
 func (s *CtoKSyncer) Informer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-				serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
-				if err != nil {
-					log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
-				}
-				return serviceList, err
+	if s.informer == nil {
+		s.informer = cache.NewSharedIndexInformer(
+			&cache.ListWatch{
+				ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+					serviceList, err := s.kubeClient.CoreV1().Services(s.namespace()).List(s.ctx, options)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Services ListFunc:%v", err)
+					}
+					return serviceList, err
+				},
+				WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+					service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
+					if err != nil {
+						log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
+					}
+					return service, err
+				},
 			},
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-				service, err := s.kubeClient.CoreV1().Services(s.namespace()).Watch(s.ctx, options)
-				if err != nil {
-					log.Error().Msgf("cache.NewSharedIndexInformer Services WatchFunc:%v", err)
-				}
-				return service, err
-			},
-		},
-		&apiv1.Service{},
-		0,
-		cache.Indexers{},
-	)
+			&apiv1.Service{},
+			0,
+			cache.Indexers{},
+		)
+	}
+	return s.informer
 }
 
 // Upsert implements the controller.Resource interface.
@@ -169,7 +178,7 @@ func (s *CtoKSyncer) Upsert(key string, raw interface{}) error {
 
 	// If the service is a Cloud-sourced service, then keep track of it
 	// separately for a quick lookup.
-	if service.Labels != nil && service.Labels[CloudSourcedServiceLabel] == True {
+	if service.Labels != nil && service.Labels[constants.CloudSourcedServiceLabel] == True {
 		s.controller.GetC2KContext().ServiceMapCache[service.Name] = service
 		s.trigger() // Always trigger sync
 	}
@@ -222,6 +231,8 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 	}
 	s.lock.Unlock()
 
+	svcClient := s.kubeClient.CoreV1().Services(s.namespace())
+
 	for {
 		select {
 		case <-ch:
@@ -243,19 +254,51 @@ func (s *CtoKSyncer) Run(ch <-chan struct{}) {
 		s.lock.Unlock()
 		if len(creates) > 0 || len(deletes) > 0 {
 			log.Info().Msgf("sync triggered, create:%d delete:%d", len(creates), len(deletes))
-		}
-		svcClient := s.kubeClient.CoreV1().Services(s.namespace())
-		for _, name := range deletes {
-			if err := svcClient.Delete(s.ctx, name, metav1.DeleteOptions{}); err != nil {
-				log.Warn().Msgf("warn deleting service, name:%s warn:%v", name, err)
-			}
+		} else {
+			continue
 		}
 
-		for _, svc := range creates {
-			if _, err := svcClient.Create(s.ctx, svc, metav1.CreateOptions{}); err != nil {
-				log.Error().Msgf("creating service, name:%s error:%v", svc.Name, err)
+		fromTs := time.Now()
+		if len(deletes) > 0 {
+			var wg sync.WaitGroup
+			wg.Add(len(deletes))
+			for _, serviceName := range deletes {
+				syncJob := &DeleteSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
+					ctx:         s.ctx,
+					wg:          &wg,
+					syncer:      s,
+					svcClient:   svcClient,
+					serviceName: serviceName,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
 			}
+			wg.Wait()
 		}
+
+		if len(creates) > 0 {
+			var wg sync.WaitGroup
+			wg.Add(len(creates))
+			for _, service := range creates {
+				syncJob := &CreateSyncJob{
+					SyncJob: &SyncJob{
+						done: make(chan struct{}),
+					},
+					ctx:       s.ctx,
+					wg:        &wg,
+					syncer:    s,
+					svcClient: svcClient,
+					service:   *service,
+				}
+				s.syncWorkQueues.AddJob(syncJob)
+			}
+			wg.Wait()
+		}
+		toTs := time.Now()
+		duration := toTs.Sub(fromTs)
+		fmt.Printf("k8s service sync deletes:%4d creates:%4d from %v escape %v\n", len(deletes), len(creates), fromTs, duration)
 	}
 }
 
@@ -267,18 +310,19 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	ipFamilyPolicy := apiv1.IPFamilyPolicySingleStack
 	// Determine what needs to be created or updated
 	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
-		svcMetaMap := s.microAggregator.Aggregate(s.ctx, MicroSvcName(k8sSvcName))
+		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
 		if len(svcMetaMap) == 0 {
 			continue
 		}
 		for microSvcName, svcMeta := range svcMetaMap {
-			if len(svcMeta.Addresses) == 0 {
+			if len(svcMeta.Endpoints) == 0 {
+				deleteSvcs = append(deleteSvcs, string(microSvcName))
 				continue
 			}
 			if !strings.EqualFold(string(microSvcName), k8sSvcName) {
 				extendServices[string(microSvcName)] = cloudSvcName
 			}
-			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
+
 			// If this is an already registered service, then update it
 			if svc, ok := s.controller.GetC2KContext().ServiceMapCache[string(microSvcName)]; ok {
 				if svc.Spec.ExternalName == cloudSvcName {
@@ -291,16 +335,13 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
 					connector.AnnotationCloudServiceInheritedFrom: cloudSvcName,
 				}
-				if s.controller.GetC2KWithGateway() {
-					if s.discClient.IsInternalServices() {
-						svc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
-					}
-				}
 				if svcMeta.HealthCheck {
+					svc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 					svc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 				}
 				s.fillService(svcMeta, svc)
+				preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 				if preHv == s.serviceHash(svc) {
 					log.Trace().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 					continue
@@ -313,7 +354,7 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 			createSvc := &apiv1.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   string(microSvcName),
-					Labels: map[string]string{CloudSourcedServiceLabel: True},
+					Labels: map[string]string{constants.CloudSourcedServiceLabel: True},
 					Annotations: map[string]string{
 						// Ensure we don't sync the service back to Cloud
 						connector.AnnotationMeshServiceSync:           string(s.discClient.MicroServiceProvider()),
@@ -331,16 +372,13 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 					IPFamilyPolicy: &ipFamilyPolicy,
 				},
 			}
-			if s.controller.GetC2KWithGateway() {
-				if s.discClient.IsInternalServices() {
-					createSvc.ObjectMeta.Annotations[connector.AnnotationMeshServiceInternalSync] = True
-				}
-			}
 			if svcMeta.HealthCheck {
+				createSvc.ObjectMeta.Annotations[connector.AnnotationCloudHealthCheckService] = True
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToFgw] = False
 				createSvc.ObjectMeta.Annotations[connector.AnnotationServiceSyncK8sToCloud] = False
 			}
 			s.fillService(svcMeta, createSvc)
+			preHv := s.controller.GetC2KContext().ServiceHashMap[string(microSvcName)]
 			if preHv == s.serviceHash(createSvc) {
 				log.Debug().Msgf("service already registered in K8S, not registering, name:%s", string(microSvcName))
 				continue
@@ -366,15 +404,14 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	return createSvcs, deleteSvcs
 }
 
-func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service) {
-	ports := make([]int, 0)
+func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
 	for port, appProtocol := range svcMeta.Ports {
-		if exists := s.existPort(createSvc, MicroSvcPort(port), appProtocol); !exists {
+		if exists := s.existPort(createSvc, port, appProtocol); !exists {
 			specPort := apiv1.ServicePort{
 				Name:       fmt.Sprintf("%s%d", appProtocol, port),
 				Protocol:   apiv1.ProtocolTCP,
 				Port:       int32(port),
-				TargetPort: intstr.FromInt(int(port)),
+				TargetPort: intstr.FromInt32(int32(port)),
 			}
 			if appProtocol == constants.ProtocolHTTP {
 				specPort.AppProtocol = &protocolHTTP
@@ -384,23 +421,17 @@ func (s *CtoKSyncer) fillService(svcMeta *MicroSvcMeta, createSvc *apiv1.Service
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}
-		ports = append(ports, int(port))
 	}
-	sort.Ints(ports)
-	createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceInheritedClusterID] = svcMeta.ClusterId
-	if len(svcMeta.ViaGateway) > 0 {
-		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceViaGateway] = svcMeta.ViaGateway
+	for _, endpointMeta := range svcMeta.Endpoints {
+		endpointMeta.Init(s.controller, s.discClient)
 	}
-	if len(svcMeta.ViaGateway) > 0 && !strings.EqualFold(svcMeta.ClusterSet, s.controller.GetClusterSet()) {
-		createSvc.ObjectMeta.Annotations[connector.AnnotationCloudServiceClusterSet] = svcMeta.ClusterSet
-		delete(createSvc.ObjectMeta.Annotations, connector.AnnotationMeshServiceInternalSync)
-	}
-	for addr := range svcMeta.Addresses {
-		createSvc.ObjectMeta.Annotations[fmt.Sprintf("%s-%d", connector.AnnotationMeshEndpointAddr, utils.IP2Int(addr.To4()))] = fmt.Sprintf("%v", ports)
-	}
+
+	enc, hash := connector.Encode(svcMeta)
+	createSvc.ObjectMeta.Annotations[connector.AnnotationMeshEndpointAddr] = enc
+	createSvc.ObjectMeta.Annotations[constants.AnnotationMeshEndpointHash] = fmt.Sprintf("%d", hash)
 }
 
-func (s *CtoKSyncer) existPort(svc *apiv1.Service, port MicroSvcPort, appProtocol MicroSvcAppProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||

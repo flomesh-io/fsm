@@ -21,7 +21,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/bootstrap"
 )
 
-func getPlatformSpecificSpecComponents(cfg configurator.Configurator, _ string) (podSecurityContext *corev1.SecurityContext, pipyContainer string) {
+func getPlatformSpecificSpecComponents(injCtx *driver.InjectorContext, cfg configurator.Configurator, pod *corev1.Pod) (podSecurityContext *corev1.SecurityContext, pipyContainer string) {
 	podSecurityContext = &corev1.SecurityContext{
 		AllowPrivilegeEscalation: pointer.BoolPtr(false),
 		RunAsUser: func() *int64 {
@@ -29,12 +29,33 @@ func getPlatformSpecificSpecComponents(cfg configurator.Configurator, _ string) 
 			return &uid
 		}(),
 	}
+
+	if podAnnotations := pod.GetAnnotations(); len(podAnnotations) > 0 {
+		if podSidecarImage, exists := podAnnotations[constants.SidecarImageAnnotation]; exists {
+			if len(podSidecarImage) > 0 {
+				pipyContainer = podSidecarImage
+				return
+			}
+		}
+	}
+
+	if ns, err := injCtx.KubeClient.CoreV1().Namespaces().Get(context.Background(), injCtx.PodNamespace, metav1.GetOptions{}); err == nil {
+		if nsAnnotations := ns.GetAnnotations(); len(nsAnnotations) > 0 {
+			if nsSidecarImage, exists := nsAnnotations[constants.SidecarImageAnnotation]; exists {
+				if len(nsSidecarImage) > 0 {
+					pipyContainer = nsSidecarImage
+					return
+				}
+			}
+		}
+	}
+
 	pipyContainer = cfg.GetSidecarImage()
 	return
 }
 
 func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg configurator.Configurator, cnPrefix string, originalHealthProbes models.HealthProbes, podOS string) corev1.Container {
-	securityContext, containerImage := getPlatformSpecificSpecComponents(cfg, podOS)
+	securityContext, containerImage := getPlatformSpecificSpecComponents(injCtx, cfg, pod)
 
 	podControllerKind := ""
 	podControllerName := ""
@@ -153,36 +174,24 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 
 		pod.Spec.DNSPolicy = "None"
 		trustDomain := injCtx.CertManager.GetTrustDomain()
-		ndots := "1"
+		dots := "4"
 		searches := make([]string, 0)
-		if injCtx.Configurator.IsSearchesWithTrustDomain() {
-			ndots = "4"
-			if injCtx.Configurator.IsSearchesWithNamespace() {
-				if len(pod.Namespace) > 0 {
-					ndots = "5"
-					searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
-				} else if len(injCtx.PodNamespace) > 0 {
-					ndots = "5"
-					searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
-				}
-			}
-			searches = append(searches, fmt.Sprintf("svc.%s", trustDomain))
-			searches = append(searches, trustDomain)
-		} else if injCtx.Configurator.IsSearchesWithNamespace() {
-			if len(pod.Namespace) > 0 {
-				ndots = "2"
-				searches = append(searches, pod.Namespace)
-			} else if len(injCtx.PodNamespace) > 0 {
-				ndots = "2"
-				searches = append(searches, injCtx.PodNamespace)
-			}
+		if len(pod.Namespace) > 0 {
+			dots = "5"
+			searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
+		} else if len(injCtx.PodNamespace) > 0 {
+			dots = "5"
+			searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
 		}
+
+		searches = append(searches, fmt.Sprintf("svc.%s", trustDomain))
+		searches = append(searches, trustDomain)
 
 		pod.Spec.DNSConfig = &corev1.PodDNSConfig{
 			Nameservers: []string{"127.0.0.153"},
 			Searches:    searches,
 			Options: []corev1.PodDNSConfigOption{
-				{Name: "ndots", Value: &ndots},
+				{Name: "ndots", Value: &dots},
 			},
 		}
 	}

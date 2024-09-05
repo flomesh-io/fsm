@@ -9,6 +9,7 @@ import (
 	split "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha4"
 	"k8s.io/apimachinery/pkg/types"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/errcode"
@@ -71,7 +72,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		}
 
 		if mc.configurator.IsLocalDNSProxyEnabled() && !mc.configurator.IsWildcardDNSProxyEnabled() {
-			if !existIntraEndpoints || len(meshSvc.CloudInheritedFrom) > 0 {
+			if !existIntraEndpoints {
 				resolvableIPSet := mapset.NewSet()
 				for _, endp := range endpoints {
 					resolvableIPSet.Add(endp.IP.String())
@@ -83,7 +84,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 						addr2 := addrItems[j].(string)
 						return addr1 < addr2
 					})
-					servicesResolvableSet[meshSvc.FQDN()] = addrItems
+					servicesResolvableSet[meshSvc.PolicyName(true)] = addrItems
 				}
 			}
 		}
@@ -94,8 +95,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 			Name:                            meshSvc.SidecarClusterName(),
 			Service:                         meshSvc,
 			EnableSidecarActiveHealthChecks: mc.configurator.GetFeatureFlags().EnableSidecarActiveHealthChecks,
-			UpstreamTrafficSetting: mc.policyController.GetUpstreamTrafficSetting(
-				policy.UpstreamTrafficSettingGetOpt{MeshService: &meshSvc}),
+			UpstreamTrafficSetting:          mc.policyController.GetUpstreamTrafficSetting(policy.UpstreamTrafficSettingGetOpt{MeshService: &meshSvc}),
 		}
 		clusterConfigs = append(clusterConfigs, clusterConfigForServicePort)
 
@@ -152,8 +152,9 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		}
 
 		// Create a route to access the upstream service via it's hostnames and upstream weighted clusters
-		httpHostNamesForServicePort := mc.getHostnamesForService(meshSvc, downstreamSvcAccount.Namespace == meshSvc.Namespace || len(meshSvc.CloudInheritedFrom) > 0, endpoints)
-		outboundTrafficPolicy := trafficpolicy.NewOutboundTrafficPolicy(meshSvc.FQDN(), httpHostNamesForServicePort)
+		localNamespace := downstreamSvcAccount.Namespace == meshSvc.Namespace || len(meshSvc.CloudInheritedFrom) > 0
+		httpHostNamesForServicePort := mc.getHostnamesForService(meshSvc, localNamespace, endpoints)
+		outboundTrafficPolicy := trafficpolicy.NewOutboundTrafficPolicy(meshSvc.PolicyName(true), httpHostNamesForServicePort)
 		retryPolicy := mc.GetRetryPolicy(downstreamIdentity, meshSvc)
 
 		hasWildCardRoute := false
@@ -191,12 +192,15 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 func (mc *MeshCatalog) getHostnamesForService(meshSvc service.MeshService, localNamespace bool, endpoints []endpoint.Endpoint) []string {
 	var httpHostNamesForServicePort []string
 	sam := mc.configurator.GetServiceAccessMode()
-	if len(sam) == 0 || sam == constants.ServiceAccessModeDomain || sam == constants.ServiceAccessModeMixed {
-		httpHostNamesForServicePort = k8s.GetHostnamesForService(meshSvc, localNamespace)
+	san := mc.configurator.GetServiceAccessNames()
+	if sam == configv1alpha3.ServiceAccessModeDomain || sam == configv1alpha3.ServiceAccessModeMixed {
+		httpHostNamesForServicePort = k8s.GetHostnamesForService(meshSvc, san, localNamespace)
 	}
-	if len(sam) == 0 || sam == constants.ServiceAccessModeIP || sam == constants.ServiceAccessModeMixed {
+	if sam == configv1alpha3.ServiceAccessModeIP || sam == configv1alpha3.ServiceAccessModeMixed {
 		for _, endp := range endpoints {
-			httpHostNamesForServicePort = append(httpHostNamesForServicePort, endp.IP.String())
+			if !san.MustWithServicePort {
+				httpHostNamesForServicePort = append(httpHostNamesForServicePort, endp.IP.String())
+			}
 			httpHostNamesForServicePort = append(httpHostNamesForServicePort, fmt.Sprintf("%s:%d", endp.IP.String(), meshSvc.Port))
 		}
 	}
@@ -382,7 +386,8 @@ func failOverUpstreamClusters(fos []service.ClusterName, upstreamClusters []serv
 
 func (mc *MeshCatalog) isEgressService(meshSvc service.MeshService, egressPolicy *trafficpolicy.EgressTrafficPolicy) bool {
 	egressEnabled := false
-	hostnames := k8s.GetHostnamesForService(meshSvc, true)
+	san := mc.configurator.GetServiceAccessNames()
+	hostnames := k8s.GetHostnamesForService(meshSvc, san, true)
 	for _, routeConfigs := range egressPolicy.HTTPRouteConfigsPerPort {
 		if egressEnabled {
 			break

@@ -48,6 +48,10 @@ func (c *NacosConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *NacosConnector) GetLeaderElection() *bool {
+	return c.Spec.LeaderElection
+}
+
 // NacosSyncToK8SSpec is the type used to represent the sync from Nacos to K8S specification.
 type NacosSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -61,7 +65,17 @@ type NacosSyncToK8SSpec struct {
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
 	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
+	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
+
+	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
 
 	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
@@ -141,6 +155,13 @@ type NacosSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -150,6 +171,10 @@ type NacosSyncFromK8SSpec struct {
 type NacosSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	// +kubebuilder:default=false
+	// +optional
+	Purge bool `json:"purge,omitempty"`
 
 	// +kubebuilder:default=false
 	// +optional
@@ -178,6 +203,10 @@ type NacosSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
 // NacosAuthSpec is the type used to represent the Nacos auth specification.

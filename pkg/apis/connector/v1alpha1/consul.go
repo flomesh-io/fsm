@@ -48,6 +48,10 @@ func (c *ConsulConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *ConsulConnector) GetLeaderElection() *bool {
+	return c.Spec.LeaderElection
+}
+
 // ConsulSyncToK8SSpec is the type used to represent the sync from Consul to K8S specification.
 type ConsulSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -59,6 +63,13 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default=true
 	// +optional
 	PassingOnly bool `json:"passingOnly,omitempty"`
+
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
 
 	// +optional
 	FilterTag string `json:"filterTag,omitempty"`
@@ -73,6 +84,9 @@ type ConsulSyncToK8SSpec struct {
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
 
 	// +optional
+	ExcludeMetadatas []Metadata `json:"excludeMetadatas,omitempty"`
+
+	// +optional
 	PrefixMetadata string `json:"prefixMetadata,omitempty"`
 
 	// +optional
@@ -81,6 +95,10 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 }
 
 // ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
@@ -135,6 +153,13 @@ type ConsulSyncFromK8SSpec struct {
 	// +optional
 	DenyK8sNamespaces []string `json:"denyK8sNamespaces,omitempty"`
 
+	// +optional
+	// +optional
+	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
+
+	// +optional
+	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
+
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
@@ -170,6 +195,10 @@ type ConsulSpec struct {
 
 	// +kubebuilder:default=false
 	// +optional
+	Purge bool `json:"purge,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
 	AsInternalServices bool `json:"asInternalServices,omitempty"`
 
 	// +kubebuilder:default={}
@@ -195,6 +224,10 @@ type ConsulSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
 // ConsulAuthSpec is the type used to represent the Consul auth specification.

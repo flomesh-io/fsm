@@ -57,8 +57,14 @@ type Endpoint struct {
 	// WithMultiGateways with multi gateways.
 	WithMultiGateways bool `json:"withMultiGateways,omitempty"`
 
-	// ViaGateway via gateway.
-	ViaGateway string `json:"viaGateway,omitempty"`
+	// ViaGatewayHTTP via gateway.
+	ViaGatewayHTTP string `json:"viaGatewayHTTP,omitempty"`
+
+	// ViaGatewayGRPC via gateway.
+	ViaGatewayGRPC string `json:"viaGatewayGRPC,omitempty"`
+
+	// ViaGatewayMode via gateway mode.
+	ViaGatewayMode string `json:"viaGatewayMode,omitempty"`
 }
 
 func (ep Endpoint) String() string {

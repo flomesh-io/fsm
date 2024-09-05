@@ -79,8 +79,13 @@ func (c *Client) IsPermissiveTrafficPolicyMode() bool {
 }
 
 // GetServiceAccessMode tells us which service access mode,
-func (c *Client) GetServiceAccessMode() string {
+func (c *Client) GetServiceAccessMode() configv1alpha3.ServiceAccessMode {
 	return c.getMeshConfig().Spec.Traffic.ServiceAccessMode
+}
+
+// GetServiceAccessNames returns the service access names
+func (c *Client) GetServiceAccessNames() *configv1alpha3.ServiceAccessNames {
+	return c.getMeshConfig().Spec.Traffic.ServiceAccessNames
 }
 
 // IsEgressEnabled determines whether egress is globally enabled in the mesh or not.
@@ -101,16 +106,6 @@ func (c *Client) IsTracingEnabled() bool {
 // IsLocalDNSProxyEnabled returns whether local DNS proxy is enabled
 func (c *Client) IsLocalDNSProxyEnabled() bool {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.Enable
-}
-
-// IsSearchesWithNamespace returns whether dns searches contains namespace
-func (c *Client) IsSearchesWithNamespace() bool {
-	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SearchesWithNamespace
-}
-
-// IsSearchesWithTrustDomain returns whether dns searches contains trust domain
-func (c *Client) IsSearchesWithTrustDomain() bool {
-	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SearchesWithTrustDomain
 }
 
 // IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled

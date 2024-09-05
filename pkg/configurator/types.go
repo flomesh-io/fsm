@@ -43,7 +43,10 @@ type Configurator interface {
 	IsPermissiveTrafficPolicyMode() bool
 
 	// GetServiceAccessMode returns the service access mode
-	GetServiceAccessMode() string
+	GetServiceAccessMode() configv1alpha3.ServiceAccessMode
+
+	// GetServiceAccessNames returns the service access names
+	GetServiceAccessNames() *configv1alpha3.ServiceAccessNames
 
 	// IsEgressEnabled determines whether egress is globally enabled in the mesh or not
 	IsEgressEnabled() bool
@@ -56,12 +59,6 @@ type Configurator interface {
 
 	// IsLocalDNSProxyEnabled returns whether local DNS proxy is enabled
 	IsLocalDNSProxyEnabled() bool
-
-	// IsSearchesWithNamespace returns whether dns searches contains namespace
-	IsSearchesWithNamespace() bool
-
-	// IsSearchesWithTrustDomain returns whether dns searches contains trust domain
-	IsSearchesWithTrustDomain() bool
 
 	// IsWildcardDNSProxyEnabled returns whether wildcard DNS proxy is enabled
 	IsWildcardDNSProxyEnabled() bool

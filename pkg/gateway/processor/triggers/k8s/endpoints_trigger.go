@@ -21,7 +21,7 @@ func (p *EndpointsTrigger) Insert(obj interface{}, processor processor.Processor
 	key := client.ObjectKeyFromObject(ep)
 
 	if processor.UseEndpointSlices() {
-		return processor.IsHeadlessService(key) && processor.IsRoutableService(key)
+		return processor.IsHeadlessServiceWithoutSelector(key) && processor.IsRoutableService(key)
 	} else {
 		return processor.IsRoutableService(key)
 	}
@@ -38,7 +38,7 @@ func (p *EndpointsTrigger) Delete(obj interface{}, processor processor.Processor
 	key := client.ObjectKeyFromObject(ep)
 
 	if processor.UseEndpointSlices() {
-		return processor.IsHeadlessService(key) && processor.IsRoutableService(key)
+		return processor.IsHeadlessServiceWithoutSelector(key) && processor.IsRoutableService(key)
 	} else {
 		return processor.IsRoutableService(key)
 	}

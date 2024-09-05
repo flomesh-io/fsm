@@ -37,11 +37,11 @@ import (
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/health"
+	"github.com/flomesh-io/fsm/pkg/service"
 
 	"github.com/flomesh-io/fsm/pkg/certificate/providers"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/httpserver"
-	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
@@ -157,7 +157,7 @@ func main() {
 		return
 	}
 
-	k8s.SetTrustDomain(trustDomain)
+	service.SetTrustDomain(trustDomain)
 
 	bootstrap := bootstrap{
 		kubeClient:   kubeClient,

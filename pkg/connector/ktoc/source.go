@@ -28,6 +28,9 @@ import (
 
 var (
 	log = logger.New("connector-k2c")
+
+	ProtocolHTTP = constants.ProtocolHTTP
+	ProtocolGRPC = constants.ProtocolGRPC
 )
 
 const (
@@ -108,7 +111,7 @@ func (t *KtoCSource) Informer() cache.SharedIndexInformer {
 // Upsert implements the controller.Resource interface.
 func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	// We expect a RegisteredInstances. If it isn't a service then just ignore it.
-	service, ok := raw.(*corev1.Service)
+	svc, ok := raw.(*corev1.Service)
 	if !ok {
 		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
 		return nil
@@ -117,7 +120,7 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	t.Lock()
 	defer t.Unlock()
 
-	if !t.shouldSync(service) {
+	if !t.shouldSync(svc) {
 		// Check if its in our map and delete it.
 		if _, ok = t.controller.GetK2CContext().ServiceMap.Get(key); ok {
 			log.Info().Msgf("service should no longer be synced service:%s", key)
@@ -129,19 +132,49 @@ func (t *KtoCSource) Upsert(key string, raw interface{}) error {
 	}
 
 	// Syncing is enabled, let's keep track of this service.
-	t.controller.GetK2CContext().ServiceMap.Set(key, service)
-	log.Debug().Msgf("[KtoCSource.Upsert] adding service to serviceMap key:%s service:%v", key, service)
+	t.controller.GetK2CContext().ServiceMap.Set(key, svc)
+	log.Debug().Msgf("[KtoCSource.Upsert] adding service to serviceMap key:%s service:%v", key, svc)
 
 	// If we care about endpoints, we should do the initial endpoints load.
 	if t.shouldTrackEndpoints(key) {
-		endpoints, err := t.endpointsResource.getEndpoints(key)
-		if err != nil {
-			log.Debug().Msgf("error loading initial endpoints key%s err:%v",
-				key,
-				err)
-		} else {
-			t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
-			log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, service, endpoints)
+		cloudService := false
+		if len(svc.Annotations) > 0 {
+			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				cloudService = true
+				svcMeta := connector.Decode(svc, v)
+				endpoints := new(corev1.Endpoints)
+				endpointSubset := corev1.EndpointSubset{}
+				for port, protocol := range svcMeta.Ports {
+					endpointPort := corev1.EndpointPort{}
+					endpointPort.Port = int32(port)
+					endpointPort.Protocol = constants.ProtocolTCP
+					if strings.EqualFold(string(protocol), constants.ProtocolHTTP) {
+						endpointPort.AppProtocol = &ProtocolHTTP
+					} else if strings.EqualFold(string(protocol), constants.ProtocolGRPC) {
+						endpointPort.AppProtocol = &ProtocolGRPC
+					}
+					endpointSubset.Ports = append(endpointSubset.Ports, endpointPort)
+				}
+				for ip := range svcMeta.Endpoints {
+					endpointAddress := corev1.EndpointAddress{}
+					endpointAddress.IP = string(ip)
+					endpointSubset.Addresses = append(endpointSubset.Addresses, endpointAddress)
+				}
+				endpoints.Subsets = append(endpoints.Subsets, endpointSubset)
+				t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
+				log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, svc, endpoints)
+			}
+		}
+		if !cloudService {
+			endpoints, err := t.endpointsResource.getEndpoints(key)
+			if err != nil {
+				log.Debug().Msgf("error loading initial endpoints key%s err:%v",
+					key,
+					err)
+			} else {
+				t.controller.GetK2CContext().EndpointsMap.Set(key, endpoints)
+				log.Debug().Msgf("[KtoCSource.Upsert] adding service's endpoints to endpointsMap key:%s service:%v endpoints:%v", key, svc, endpoints)
+			}
 		}
 	}
 
@@ -219,8 +252,20 @@ func (t *KtoCSource) shouldSync(svc *corev1.Service) bool {
 		return false
 	}
 
-	if clusterSet, ok := svc.Annotations[connector.AnnotationCloudServiceClusterSet]; ok {
-		if len(clusterSet) > 0 && !strings.EqualFold(clusterSet, t.controller.GetClusterSet()) {
+	if len(svc.Annotations) > 0 {
+		hasLocalInstance := false
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := connector.Decode(svc, v)
+			for _, endpointMeta := range svcMeta.Endpoints {
+				if endpointMeta.Local.InternalService {
+					hasLocalInstance = true
+					break
+				}
+			}
+		} else {
+			hasLocalInstance = true
+		}
+		if !hasLocalInstance {
 			return false
 		}
 	}
@@ -519,6 +564,10 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			var found bool
 			for _, address := range node.Status.Addresses {
 				if address.Type == expectedType {
+					if !t.filterIPRanges(address.Address) || t.excludeIPRanges(address.Address) {
+						continue
+					}
+
 					found = true
 					r := baseNode
 					rs := baseService
@@ -549,6 +598,14 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 			if t.controller.GetNodePortSyncType() == ctv1.ExternalFirst && !found {
 				for _, address := range node.Status.Addresses {
 					if address.Type == corev1.NodeInternalIP {
+						if !t.filterIPRanges(address.Address) {
+							continue
+						}
+
+						if t.excludeIPRanges(address.Address) {
+							continue
+						}
+
 						r := baseNode
 						rs := baseService
 						r.Service = &rs
@@ -592,6 +649,10 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 				continue
 			}
 
+			if !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
+				continue
+			}
+
 			if _, ok := seen[addr]; ok {
 				continue
 			}
@@ -599,6 +660,17 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 
 			r := baseNode
 			rs := baseService
+
+			if len(overridePortName) > 0 {
+				for _, p := range svc.Spec.Ports {
+					if overridePortName == p.Name {
+						rs.HTTPPort = int(p.Port)
+						break
+					}
+				}
+			} else if overridePortNumber > 0 {
+				rs.HTTPPort = overridePortNumber
+			}
 			r.Service = &rs
 			r.Service.ID = t.controller.GetServiceInstanceID(r.Service.Service, addr, rs.HTTPPort, rs.GRPCPort)
 			r.Service.Address = addr
@@ -652,52 +724,35 @@ func (t *KtoCSource) registerServiceInstance(
 		// as a separate service instance.
 		httpPort := baseService.HTTPPort
 		grpcPort := baseService.GRPCPort
-		if overridePortName != "" {
-			// If we're supposed to use a specific named port, find it.
-			for _, p := range subset.Ports {
-				if overridePortName == p.Name {
-					httpPort = int(p.Port)
-					break
-				}
-			}
-		} else if overridePortNumber == 0 {
-			// Otherwise we'll just use the first port in the list
-			// (unless the port number was overridden by an annotation).
-			for _, p := range subset.Ports {
-				if httpPort == 0 &&
-					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
-					p.AppProtocol != nil &&
-					strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolHTTP)) {
-					httpPort = int(p.Port)
-				}
-				if grpcPort == 0 &&
-					strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
-					p.AppProtocol != nil &&
-					strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					grpcPort = int(p.Port)
-				}
-				if httpPort > 0 && grpcPort > 0 {
-					break
-				}
-			}
-		}
+		httpPort, grpcPort = t.choosePorts(subset, overridePortName, overridePortNumber, httpPort, grpcPort)
 		for _, subsetAddr := range subset.Addresses {
 			var addr string
 			var viaAddr string
-			var viaPort int
+			var viaHTTPPort, viaGRPCPort int
 			addr, httpPort = t.chooseServiceAddrPort(key, httpPort, subsetAddr, useHostname)
 			if len(addr) == 0 {
+				continue
+			}
+
+			if !t.filterIPRanges(addr) || t.excludeIPRanges(addr) {
 				continue
 			}
 
 			if t.controller.GetK2CWithGateway() {
 				if t.controller.GetK2CWithGatewayMode() == ctv1.Forward {
 					viaAddr = t.controller.GetViaIngressAddr()
-					viaPort = int(t.controller.GetViaIngressHTTPPort())
+					viaHTTPPort = int(t.controller.GetViaIngressHTTPPort())
+					if grpcPort > 0 {
+						viaGRPCPort = int(t.controller.GetViaIngressGRPCPort())
+					}
 				}
 				if t.controller.GetK2CWithGatewayMode() == ctv1.Proxy {
 					addr = t.controller.GetViaIngressAddr()
-					httpPort = int(t.controller.GetViaIngressHTTPPort())
+					viaAddr = t.controller.GetViaIngressAddr()
+					viaHTTPPort = int(t.controller.GetViaIngressHTTPPort())
+					if grpcPort > 0 {
+						viaGRPCPort = int(t.controller.GetViaIngressGRPCPort())
+					}
 				}
 			}
 
@@ -710,7 +765,7 @@ func (t *KtoCSource) registerServiceInstance(
 			seen[addr] = struct{}{}
 
 			r := baseNode
-			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaPort)
+			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaHTTPPort, viaGRPCPort)
 			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
 			// between all nodes of a service
 			for k, v := range baseService.Meta {
@@ -742,6 +797,65 @@ func (t *KtoCSource) registerServiceInstance(
 	}
 }
 
+func (t *KtoCSource) choosePorts(subset corev1.EndpointSubset, overridePortName string, overridePortNumber int, httpPort, grpcPort int) (int, int) {
+	if overridePortName != "" {
+		// If we're supposed to use a specific named port, find it.
+		for _, p := range subset.Ports {
+			if overridePortName == p.Name {
+				httpPort = int(p.Port)
+				break
+			}
+		}
+	} else if overridePortNumber == 0 {
+		// Otherwise we'll just use the first port in the list
+		// (unless the port number was overridden by an annotation).
+		for _, p := range subset.Ports {
+			if httpPort == 0 &&
+				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
+				p.AppProtocol != nil &&
+				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolHTTP)) {
+				httpPort = int(p.Port)
+			}
+			if grpcPort == 0 &&
+				strings.EqualFold(string(p.Protocol), strings.ToUpper(constants.ProtocolTCP)) &&
+				p.AppProtocol != nil &&
+				strings.EqualFold(*p.AppProtocol, strings.ToUpper(constants.ProtocolGRPC)) {
+				grpcPort = int(p.Port)
+			}
+			if httpPort > 0 && grpcPort > 0 {
+				break
+			}
+		}
+	}
+	return httpPort, grpcPort
+}
+
+func (t *KtoCSource) excludeIPRanges(addr string) (exclude bool) {
+	if ipRanges := t.controller.GetK2CExcludeIPRanges(); len(ipRanges) > 0 {
+		for _, cidr := range ipRanges {
+			if cidr.Contains(addr) {
+				exclude = true
+				break
+			}
+		}
+	}
+	return
+}
+
+func (t *KtoCSource) filterIPRanges(addr string) (include bool) {
+	if ipRanges := t.controller.GetK2CFilterIPRanges(); len(ipRanges) > 0 {
+		for _, cidr := range ipRanges {
+			if cidr.Contains(addr) {
+				include = true
+				break
+			}
+		}
+	} else {
+		include = true
+	}
+	return
+}
+
 func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr corev1.EndpointAddress, useHostname bool) (addr string, httpPort int) {
 	// Use the address and port from the Ingress resource if
 	// ingress-sync is enabled and the service has an ingress
@@ -763,17 +877,22 @@ func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr core
 
 func (t *KtoCSource) bindService(baseService connector.AgentService,
 	service, addr string, httpPort, grpcPort int,
-	viaAddr string, viaPort int) *connector.AgentService {
+	viaAddr string, viaHTTPPort, viaGRPCPort int) *connector.AgentService {
 	rs := baseService
 	rs.ID = t.controller.GetServiceInstanceID(service, addr, httpPort, grpcPort)
 	rs.Address = addr
 	rs.HTTPPort = httpPort
 	rs.GRPCPort = grpcPort
 	rs.ViaAddress = viaAddr
-	rs.ViaPort = viaPort
+	rs.ViaHTTPPort = viaHTTPPort
+	rs.ViaGRPCPort = viaGRPCPort
 	rs.Meta = make(map[string]interface{})
-	if len(viaAddr) > 0 && viaPort > 0 {
-		rs.Meta[connector.CloudK8SVia] = fmt.Sprintf("%s:%d", viaAddr, viaPort)
+	rs.Meta[connector.CloudViaGatewayMode] = string(t.controller.GetK2CWithGatewayMode())
+	if len(viaAddr) > 0 && viaHTTPPort > 0 {
+		rs.Meta[connector.CloudHTTPViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaHTTPPort)
+	}
+	if len(viaAddr) > 0 && viaGRPCPort > 0 {
+		rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaGRPCPort)
 	}
 	return &rs
 }
@@ -854,6 +973,10 @@ func (t *serviceEndpointsSource) Upsert(key string, raw interface{}) error {
 	endpoints, ok := raw.(*corev1.Endpoints)
 	if !ok {
 		log.Warn().Msgf("upsert got invalid type raw:%v", raw)
+		return nil
+	}
+
+	if len(endpoints.Subsets) == 0 {
 		return nil
 	}
 

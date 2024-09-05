@@ -3,13 +3,13 @@ package kube
 
 import (
 	"net"
-	"strconv"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -41,13 +41,45 @@ func (c *client) GetID() string {
 func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.Endpoint {
 	log.Trace().Msgf("Getting Endpoints for MeshService %s on Kubernetes", svc)
 
+	var endpoints []endpoint.Endpoint
+
+	k8sSvc := c.kubeController.GetService(svc)
+	if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
+		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := connector.Decode(k8sSvc, v)
+			if len(svcMeta.Endpoints) > 0 {
+				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.LbType
+				for addr, endpointMeta := range svcMeta.Endpoints {
+					for port, protocol := range endpointMeta.Ports {
+						ept := endpoint.Endpoint{
+							IP:                net.ParseIP(string(addr)),
+							Port:              endpoint.Port(port),
+							AppProtocol:       string(protocol),
+							ClusterID:         endpointMeta.Native.ClusterId,
+							ViaGatewayHTTP:    endpointMeta.Native.ViaGatewayHTTP,
+							ViaGatewayGRPC:    endpointMeta.Native.ViaGatewayGRPC,
+							ViaGatewayMode:    string(endpointMeta.Native.ViaGatewayMode),
+							WithGateway:       endpointMeta.Local.WithGateway,
+							WithMultiGateways: endpointMeta.Local.WithMultiGateways,
+						}
+						if !endpointMeta.Local.InternalService {
+							ept.ClusterKey = endpointMeta.Native.ClusterSet
+							ept.LBType = string(lbType)
+						}
+						endpoints = append(endpoints, ept)
+					}
+				}
+			}
+			return endpoints
+		}
+	}
+
 	kubernetesEndpoints, err := c.kubeController.GetEndpoints(svc)
 	if err != nil || kubernetesEndpoints == nil {
 		log.Info().Msgf("No k8s endpoints found for MeshService %s", svc)
 		return nil
 	}
 
-	var endpoints []endpoint.Endpoint
 	for _, kubernetesEndpoint := range kubernetesEndpoints.Subsets {
 		for _, port := range kubernetesEndpoint.Ports {
 			// If a TargetPort is specified for the service, filter the endpoint by this port.
@@ -79,12 +111,6 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 					} else if strings.Contains(port.Name, constants.ProtocolGRPC) {
 						ept.AppProtocol = constants.ProtocolGRPC
 					}
-				}
-				if len(kubernetesEndpoints.Annotations) > 0 {
-					ept.ClusterID = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceInheritedClusterID]
-					ept.ViaGateway = kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceViaGateway]
-					ept.WithGateway, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithGateway])
-					ept.WithMultiGateways, _ = strconv.ParseBool(kubernetesEndpoints.Annotations[connector.AnnotationCloudServiceWithMultiGateways])
 				}
 				endpoints = append(endpoints, ept)
 			}
@@ -211,7 +237,7 @@ func (c *client) getServicesByLabels(podLabels map[string]string, targetNamespac
 		}
 		selector := labels.Set(svcRawSelector).AsSelector()
 		if selector.Matches(labels.Set(podLabels)) {
-			finalList = append(finalList, k8s.ServiceToMeshServices(c.kubeController, *svc)...)
+			finalList = append(finalList, k8s.ServiceToMeshServices(c.kubeController, svc)...)
 		}
 	}
 
@@ -246,7 +272,7 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 	ips = append(ips, ip)
 
 	sam := c.meshConfigurator.GetServiceAccessMode()
-	if len(sam) == 0 || sam == constants.ServiceAccessModeIP || sam == constants.ServiceAccessModeMixed {
+	if sam == configv1alpha3.ServiceAccessModeIP || sam == configv1alpha3.ServiceAccessModeMixed {
 		if eps, err := c.kubeController.GetEndpoints(svc); err == nil && eps != nil {
 			if len(eps.Subsets) > 0 {
 				for _, ep := range eps.Subsets {
@@ -276,7 +302,12 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 func (c *client) ListServices() []service.MeshService {
 	var services []service.MeshService
 	for _, svc := range c.kubeController.ListServices() {
-		services = append(services, k8s.ServiceToMeshServices(c.kubeController, *svc)...)
+		if len(svc.Annotations) > 0 {
+			if _, exists := svc.Annotations[connector.AnnotationCloudHealthCheckService]; exists {
+				continue
+			}
+		}
+		services = append(services, k8s.ServiceToMeshServices(c.kubeController, svc)...)
 	}
 	return services
 }

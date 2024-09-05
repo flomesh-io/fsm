@@ -17,7 +17,7 @@ data:
         "controlPlaneUID": {{.Values.clusterSet.controlPlaneUID | mustToJson}}
       },
       "connector": {
-        "DO_NOT_EDIT": "Managed by fsm-connector-gateway."
+        "DO_NOT_EDIT_viaGateway": "viaGateway Managed by fsm-connector-gateway."
       },
       "sidecar": {
         "enablePrivilegedInitContainer": {{.Values.fsm.enablePrivilegedInitContainer | mustToJson}},

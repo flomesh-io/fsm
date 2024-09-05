@@ -9,61 +9,57 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/service"
 )
 
-var (
-	trustDomain = `cluster.local`
-)
-
-// SetTrustDomain sets the trust domain
-func SetTrustDomain(domain string) {
-	if len(domain) > 0 {
-		trustDomain = domain
-	}
-}
-
-// GetTrustDomain returns the trust domain
-func GetTrustDomain() string {
-	return trustDomain
-}
-
 // GetHostnamesForService returns the hostnames over which the service is accessible
-func GetHostnamesForService(svc service.MeshService, localNamespace bool) []string {
-	var hostnames []string
-
+func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.ServiceAccessNames, localNamespace bool) (hostnames []string) {
 	if localNamespace {
-		hostnames = append(hostnames, []string{
-			svc.Name,                                 // service
-			fmt.Sprintf("%s:%d", svc.Name, svc.Port), // service:port
-		}...)
+		if !san.MustWithServicePort {
+			hostnames = append(hostnames, svc.Name) // service
+		}
+		hostnames = append(hostnames, fmt.Sprintf("%s:%d", svc.Name, svc.Port)) // service:port
 	}
 
-	hostnames = append(hostnames, []string{
-		fmt.Sprintf("%s.%s", svc.Name, svc.Namespace),                  // service.namespace
-		fmt.Sprintf("%s.%s:%d", svc.Name, svc.Namespace, svc.Port),     // service.namespace:port
-		fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace),              // service.namespace.svc
-		fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Port), // service.namespace.svc:port
-		//fmt.Sprintf("%s.%s.svc.cluster", svc.Name, svc.Namespace),                    // service.namespace.svc.cluster
-		//fmt.Sprintf("%s.%s.svc.cluster:%d", svc.Name, svc.Namespace, svc.Port),       // service.namespace.svc.cluster:port
-		//fmt.Sprintf("%s.%s.svc.cluster.local", svc.Name, svc.Namespace),              // service.namespace.svc.cluster.local
-		//fmt.Sprintf("%s.%s.svc.cluster.local:%d", svc.Name, svc.Namespace, svc.Port), // service.namespace.svc.cluster.local:port
-	}...)
-
-	segs := strings.Split(trustDomain, ".")
-	if len(segs) > 0 {
-		hostname := fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)
-		for _, seg := range segs {
-			if len(seg) == 0 {
-				continue
+	if len(svc.CloudInheritedFrom) > 0 {
+		if !san.CloudServiceAccessNames.WithNamespace {
+			if !san.MustWithServicePort {
+				hostnames = append(hostnames, svc.Name) // service
 			}
-			hostname = fmt.Sprintf("%s.%s", hostname, seg)
-			hostnames = append(hostnames, hostname)
-			hostnames = append(hostnames, fmt.Sprintf("%s:%d", hostname, svc.Port))
+			hostnames = append(hostnames, fmt.Sprintf("%s:%d", svc.Name, svc.Port)) // service:port
+			return
 		}
 	}
 
-	return hostnames
+	if !san.MustWithServicePort {
+		hostnames = append(hostnames, fmt.Sprintf("%s.%s", svc.Name, svc.Namespace)) // service.namespace
+	}
+	hostnames = append(hostnames, fmt.Sprintf("%s.%s:%d", svc.Name, svc.Namespace, svc.Port)) // service.namespace:port
+
+	if san.WithTrustDomain {
+		if !san.MustWithServicePort {
+			hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)) // service.namespace.svc
+		}
+		hostnames = append(hostnames, fmt.Sprintf("%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Port)) // service.namespace.svc:port
+
+		segs := strings.Split(service.GetTrustDomain(), ".")
+		if len(segs) > 0 {
+			hostname := fmt.Sprintf("%s.%s.svc", svc.Name, svc.Namespace)
+			for _, seg := range segs {
+				if len(seg) == 0 {
+					continue
+				}
+				hostname = fmt.Sprintf("%s.%s", hostname, seg)
+				if !san.MustWithServicePort {
+					hostnames = append(hostnames, hostname)
+				}
+				hostnames = append(hostnames, fmt.Sprintf("%s:%d", hostname, svc.Port))
+			}
+		}
+	}
+
+	return
 }
 
 // splitHostName takes a k8s FQDN (i.e. host) and retrieves the service name
@@ -203,6 +199,6 @@ func NamespacedNameFrom(name string) (types.NamespacedName, error) {
 }
 
 // IsHeadlessService determines whether or not a corev1.Service is a headless service
-func IsHeadlessService(svc corev1.Service) bool {
+func IsHeadlessService(svc *corev1.Service) bool {
 	return len(svc.Spec.ClusterIP) == 0 || svc.Spec.ClusterIP == corev1.ClusterIPNone
 }

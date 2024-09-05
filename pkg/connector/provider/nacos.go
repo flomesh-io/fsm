@@ -12,6 +12,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	"k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/utils/env"
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -150,7 +152,7 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 					continue
 				}
 			}
-			if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+			if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 				matched := true
 				for _, meta := range filterMetadatas {
 					if metaSet, metaExist := ins.Metadata[meta.Key]; metaExist {
@@ -164,6 +166,44 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 					break
 				}
 				if !matched {
+					continue
+				}
+			}
+			if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+				matched := false
+				for _, meta := range excludeMetadatas {
+					if metaSet, metaExist := ins.Metadata[meta.Key]; metaExist {
+						if strings.EqualFold(metaSet, meta.Value) {
+							matched = true
+							break
+						}
+					}
+				}
+				if matched {
+					continue
+				}
+			}
+			if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+				include := false
+				for _, cidr := range filterIPRanges {
+					if cidr.Contains(ins.Ip) {
+						include = true
+						break
+					}
+				}
+				if !include {
+					continue
+				}
+			}
+			if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+				exclude := false
+				for _, cidr := range excludeIPRanges {
+					if cidr.Contains(ins.Ip) {
+						exclude = true
+						break
+					}
+				}
+				if exclude {
 					continue
 				}
 			}
@@ -184,6 +224,10 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 	var catalogServices []connector.MicroService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
+			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
+				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
+				continue
+			}
 			instances, _ := dc.selectInstances(svc)
 			if len(instances) == 0 {
 				continue
@@ -194,7 +238,7 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 						continue
 					}
 				}
-				if filterMetadatas := dc.connectController.GetFilterMetadatas(); len(filterMetadatas) > 0 {
+				if filterMetadatas := dc.connectController.GetC2KFilterMetadatas(); len(filterMetadatas) > 0 {
 					matched := true
 					for _, meta := range filterMetadatas {
 						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
@@ -208,6 +252,44 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 						break
 					}
 					if !matched {
+						continue
+					}
+				}
+				if excludeMetadatas := dc.connectController.GetC2KExcludeMetadatas(); len(excludeMetadatas) > 0 {
+					matched := false
+					for _, meta := range excludeMetadatas {
+						if metaSet, metaExist := svcIns.Metadata[meta.Key]; metaExist {
+							if strings.EqualFold(metaSet, meta.Value) {
+								matched = true
+								break
+							}
+						}
+					}
+					if matched {
+						continue
+					}
+				}
+				if filterIPRanges := dc.connectController.GetC2KFilterIPRanges(); len(filterIPRanges) > 0 {
+					include := false
+					for _, cidr := range filterIPRanges {
+						if cidr.Contains(svcIns.Ip) {
+							include = true
+							break
+						}
+					}
+					if !include {
+						continue
+					}
+				}
+				if excludeIPRanges := dc.connectController.GetC2KExcludeIPRanges(); len(excludeIPRanges) > 0 {
+					exclude := false
+					for _, cidr := range excludeIPRanges {
+						if cidr.Contains(svcIns.Ip) {
+							exclude = true
+							break
+						}
+					}
+					if exclude {
 						continue
 					}
 				}
@@ -347,7 +429,11 @@ func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort
 		addr, httpPort, k2cClusterId, k2cGroupId, name)
 }
 
+func (dc *NacosDiscoveryClient) Close() {
+}
+
 func GetNacosDiscoveryClient(connectController connector.ConnectController) (*NacosDiscoveryClient, error) {
+	level := env.GetString("LOG_LEVEL", "warn")
 	nacosDiscoveryClient := new(NacosDiscoveryClient)
 	nacosDiscoveryClient.connectController = connectController
 	nacosDiscoveryClient.clientConfig = constant.ClientConfig{
@@ -357,7 +443,7 @@ func GetNacosDiscoveryClient(connectController connector.ConnectController) (*Na
 		DisableUseSnapShot:   false,
 		LogDir:               "/tmp/nacos/log",
 		CacheDir:             "/tmp/nacos/cache",
-		LogLevel:             "warn",
+		LogLevel:             level,
 	}
 
 	nacosDiscoveryClient.connectController.SetServiceInstanceIDFunc(nacosDiscoveryClient.getServiceInstanceID)

@@ -107,7 +107,13 @@ func (c *client) IsPermissiveTrafficPolicyMode() bool {
 	panic("implement me")
 }
 
-func (c *client) GetServiceAccessMode() string {
+func (c *client) GetServiceAccessMode() configv1alpha3.ServiceAccessMode {
+	//TODO implement me
+	panic("implement me")
+}
+
+// GetServiceAccessNames returns the service access names
+func (c *client) GetServiceAccessNames() *configv1alpha3.ServiceAccessNames {
 	//TODO implement me
 	panic("implement me")
 }
@@ -128,16 +134,6 @@ func (c *client) IsTracingEnabled() bool {
 }
 
 func (c *client) IsLocalDNSProxyEnabled() bool {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *client) IsSearchesWithNamespace() bool {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *client) IsSearchesWithTrustDomain() bool {
 	//TODO implement me
 	panic("implement me")
 }

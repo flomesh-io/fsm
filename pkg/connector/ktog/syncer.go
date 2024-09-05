@@ -65,10 +65,12 @@ func (s *KtoGSyncer) Sync(rs []*corev1.Service) {
 
 	s.controller.GetK2GContext().Services = make(map[string]*corev1.Service)
 
-	for _, svc := range rs {
-		shadowSvc := svc
-		s.controller.GetK2GContext().Services[string(shadowSvc.UID)] = shadowSvc
-		delete(s.controller.GetK2GContext().Deregs, string(shadowSvc.UID))
+	if !s.controller.Purge() {
+		for _, svc := range rs {
+			shadowSvc := svc
+			s.controller.GetK2GContext().Services[string(shadowSvc.UID)] = shadowSvc
+			delete(s.controller.GetK2GContext().Deregs, string(shadowSvc.UID))
+		}
 	}
 
 	// Signal that the initial sync is complete and our maps have been populated.

@@ -2,6 +2,10 @@ package v2
 
 import (
 	"context"
+	"strconv"
+	"strings"
+
+	"github.com/flomesh-io/fsm/pkg/connector"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
@@ -11,8 +15,6 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/flomesh-io/fsm/pkg/k8s"
 )
 
 func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
@@ -49,8 +51,8 @@ func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 }
 
 func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
-	// If the Service is headless, use the Endpoints to get the list of backends
-	if k8s.IsHeadlessService(*svc) {
+	// If the Service is headless and has no selector, use Endpoints to get the list of backends
+	if isHeadlessServiceWithoutSelector(svc) {
 		return c.upstreamsByEndpoints(svc, port)
 	}
 
@@ -88,6 +90,45 @@ func (c *ConfigGenerator) upstreamsByEndpoints(svc *corev1.Service, port *int32)
 }
 
 func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {
+	// cross cluster endpoints
+	if len(svc.Annotations) > 0 {
+		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+			svcMeta := connector.Decode(svc, v)
+			found := false
+			for portMeta := range svcMeta.Ports {
+				if uint16(portMeta) == uint16(*port) {
+					found = true
+					break
+				}
+			}
+			if found {
+				endpointSet := make(map[endpointContext]struct{})
+				for address, metadata := range svcMeta.Endpoints {
+					if len(metadata.Native.ViaGatewayHTTP) == 0 {
+						ep := endpointContext{address: string(address), port: *port}
+						endpointSet[ep] = struct{}{}
+					} else {
+						if segs := strings.Split(metadata.Native.ViaGatewayHTTP, ":"); len(segs) == 2 {
+							if portStr, convErr := strconv.Atoi(segs[1]); convErr == nil {
+								viaPort := int32(portStr & 0xFFFF)
+								viaAddr := segs[0]
+								ep := endpointContext{address: viaAddr, port: viaPort}
+								endpointSet[ep] = struct{}{}
+							}
+						}
+					}
+				}
+				if len(endpointSet) > 0 {
+					return toFGWBackendTargets(endpointSet)
+				} else {
+					log.Error().Msgf("no valid endpoints found for Service %s/%s and port %v", svc.Namespace, svc.Name, *port)
+					return nil
+				}
+			}
+		}
+	}
+
+	// in-cluster endpoints
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
 			discoveryv1.LabelServiceName: svc.Name,

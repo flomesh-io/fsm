@@ -28,7 +28,7 @@ func (c *client) syncCtoK() {
 		c.waitViaGatewayReady(ctx, c.configClient)
 	}
 
-	syncer := ctok.NewCtoKSyncer(c, c.discClient, c.kubeClient, ctx, Cfg.FsmNamespace)
+	syncer := ctok.NewCtoKSyncer(c, c.discClient, c.kubeClient, ctx, Cfg.FsmNamespace, Cfg.Workers)
 	source := ctok.NewCtoKSource(c, syncer, c.discClient, Cfg.TrustDomain)
 
 	syncer.SetMicroAggregator(source)
@@ -118,6 +118,7 @@ func (c *client) syncKtoG() {
 		ctx)
 
 	gatewaySource.SetServiceResource(serviceResource)
+	gatewaySource.SetInformers(c.informers)
 
 	// Build the controller and start it
 	gwCtl := &connector.CacheController{Resource: gatewaySource}

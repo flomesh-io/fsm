@@ -77,6 +77,7 @@ type MeshConfigSpec struct {
 }
 
 // LocalProxyMode is a type alias representing the way the sidecar proxies to the main application
+// +kubebuilder:validation:Enum=Localhost;PodIP
 type LocalProxyMode string
 
 const (
@@ -108,14 +109,6 @@ type ResolveDN struct {
 type LocalDNSProxy struct {
 	// Enable defines a boolean indicating if the sidecars are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
-
-	// +kubebuilder:default=true
-	// +optional
-	SearchesWithNamespace bool `json:"searchesWithNamespace,omitempty"`
-
-	// +kubebuilder:default=true
-	// +optional
-	SearchesWithTrustDomain bool `json:"searchesWithTrustDomain,omitempty"`
 
 	// PrimaryUpstreamDNSServerIPAddr defines a primary upstream DNS server for local DNS Proxy.
 	// +optional
@@ -207,9 +200,6 @@ type TrafficSpec struct {
 	// EnablePermissiveTrafficPolicyMode defines a boolean indicating if permissive traffic policy mode is enabled mesh-wide.
 	EnablePermissiveTrafficPolicyMode bool `json:"enablePermissiveTrafficPolicyMode"`
 
-	// ServiceAccessMode defines a string indicating service access mode.
-	ServiceAccessMode string `json:"serviceAccessMode"`
-
 	// InboundExternalAuthorization defines a ruleset that, if enabled, will configure a remote external authorization endpoint
 	// for all inbound and ingress traffic in the mesh.
 	InboundExternalAuthorization ExternalAuthzSpec `json:"inboundExternalAuthorization,omitempty"`
@@ -224,6 +214,49 @@ type TrafficSpec struct {
 
 	// HTTP1PerRequestLoadBalancing defines a boolean indicating if load balancing based on request is enabled for http2.
 	HTTP2PerRequestLoadBalancing bool `json:"http2PerRequestLoadBalancing"`
+
+	// ServiceAccessMode defines a string indicating service access mode.
+	// +kubebuilder:default=mixed
+	ServiceAccessMode ServiceAccessMode `json:"serviceAccessMode"`
+
+	// +kubebuilder:default={mustWithServicePort: false, withTrustDomain: true}
+	// +optional
+	ServiceAccessNames *ServiceAccessNames `json:"serviceAccessNames,omitempty"`
+}
+
+// ServiceAccessMode is a type alias representing the mode service accessed.
+// +kubebuilder:validation:Enum=ip;domain;mixed
+type ServiceAccessMode string
+
+const (
+	//ServiceAccessModeIP defines the ip service access mode
+	ServiceAccessModeIP ServiceAccessMode = "ip"
+
+	//ServiceAccessModeDomain defines the domain service access mode
+	ServiceAccessModeDomain ServiceAccessMode = "domain"
+
+	//ServiceAccessModeMixed defines the mixed service access mode
+	ServiceAccessModeMixed ServiceAccessMode = "mixed"
+)
+
+type CloudServiceAccessNames struct {
+	// +kubebuilder:default=true
+	// +optional
+	WithNamespace bool `json:"withNamespace,omitempty"`
+}
+
+type ServiceAccessNames struct {
+	// +kubebuilder:default=false
+	// +optional
+	MustWithServicePort bool `json:"mustWithServicePort,omitempty"`
+
+	// +kubebuilder:default=true
+	// +optional
+	WithTrustDomain bool `json:"withTrustDomain,omitempty"`
+
+	// +kubebuilder:default={withNamespace: true}
+	// +optional
+	CloudServiceAccessNames *CloudServiceAccessNames `json:"cloud,omitempty"`
 }
 
 // ObservabilitySpec is the type to represent FSM's observability configurations.
@@ -751,10 +784,26 @@ type ConnectorGatewaySpec struct {
 	EgressGRPCPort uint   `json:"egressGRPCPort"`
 }
 
+// LoadBalancerType defines the type of load balancer
+type LoadBalancerType string
+
+const (
+	// ActiveActiveLbType is the type of load balancer that distributes traffic to all targets
+	ActiveActiveLbType LoadBalancerType = "ActiveActive"
+
+	// FailOverLbType is the type of load balancer that distributes traffic to the first available target
+	FailOverLbType LoadBalancerType = "FailOver"
+)
+
 // ConnectorSpec is the type to represent connector configs.
 type ConnectorSpec struct {
-	// +kubebuilder:default="Managed by fsm-connector-gateway."
-	Notice string `json:"DO_NOT_EDIT"`
+	// +kubebuilder:default=FailOver
+	// +kubebuilder:validation:Enum=ActiveActive;FailOver
+	// Type of global load distribution
+	LbType LoadBalancerType `json:"lbType,omitempty"`
+
+	// +kubebuilder:default="viaGateway Managed by fsm-connector-gateway."
+	Notice string `json:"DO_NOT_EDIT_viaGateway"`
 
 	// ViaGateway defines gateway settings
 	ViaGateway ConnectorGatewaySpec `json:"viaGateway"`

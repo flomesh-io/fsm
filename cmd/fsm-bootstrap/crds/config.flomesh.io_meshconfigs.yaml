@@ -1320,8 +1320,15 @@ spec:
               connector:
                 description: Connector defines the configurations of connector info
                 properties:
-                  DO_NOT_EDIT:
-                    default: Managed by fsm-connector-gateway.
+                  DO_NOT_EDIT_viaGateway:
+                    default: viaGateway Managed by fsm-connector-gateway.
+                    type: string
+                  lbType:
+                    default: FailOver
+                    description: Type of global load distribution
+                    enum:
+                    - ActiveActive
+                    - FailOver
                     type: string
                   viaGateway:
                     description: ViaGateway defines gateway settings
@@ -1353,7 +1360,7 @@ spec:
                     - ingressHTTPPort
                     type: object
                 required:
-                - DO_NOT_EDIT
+                - DO_NOT_EDIT_viaGateway
                 - viaGateway
                 type: object
               egressGateway:
@@ -2178,12 +2185,6 @@ spec:
                         description: PrimaryUpstreamDNSServerIPAddr defines a primary
                           upstream DNS server for local DNS Proxy.
                         type: string
-                      searchesWithNamespace:
-                        default: true
-                        type: boolean
-                      searchesWithTrustDomain:
-                        default: true
-                        type: boolean
                       secondaryUpstreamDNSServerIPAddr:
                         description: SecondaryUpstreamDNSServerIPAddr defines a secondary
                           upstream DNS server for local DNS Proxy.
@@ -2213,6 +2214,9 @@ spec:
                       proxy will use to send traffic to the backend service application.
                       Acceptable values are [`Localhost`, `PodIP`]. The default is
                       `Localhost`
+                    enum:
+                    - Localhost
+                    - PodIP
                     type: string
                   logLevel:
                     description: LogLevel defines the logging level for the sidecar's
@@ -2399,9 +2403,34 @@ spec:
                       type: integer
                     type: array
                   serviceAccessMode:
+                    default: mixed
                     description: ServiceAccessMode defines a string indicating service
                       access mode.
+                    enum:
+                    - ip
+                    - domain
+                    - mixed
                     type: string
+                  serviceAccessNames:
+                    default:
+                      mustWithServicePort: false
+                      withTrustDomain: true
+                    properties:
+                      cloud:
+                        default:
+                          withNamespace: true
+                        properties:
+                          withNamespace:
+                            default: true
+                            type: boolean
+                        type: object
+                      mustWithServicePort:
+                        default: false
+                        type: boolean
+                      withTrustDomain:
+                        default: true
+                        type: boolean
+                    type: object
                 required:
                 - enableEgress
                 - enablePermissiveTrafficPolicyMode

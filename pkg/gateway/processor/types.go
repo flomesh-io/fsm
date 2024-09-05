@@ -46,7 +46,7 @@ type Processor interface {
 	BuildConfigs()
 	IsEffectiveRoute(parentRefs []gwv1.ParentReference) bool
 	IsRoutableService(service client.ObjectKey) bool
-	IsHeadlessService(key client.ObjectKey) bool
+	IsHeadlessServiceWithoutSelector(key client.ObjectKey) bool
 	IsEffectiveTargetRef(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool
 	IsRoutableTargetService(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool
 	IsRoutableNamespacedTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool

@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
+	"github.com/flomesh-io/fsm/pkg/service"
 
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
@@ -159,7 +160,7 @@ func main() {
 	machineClient := machineClientset.NewForConfigOrDie(kubeConfig)
 	configClient := configClientset.NewForConfigOrDie(kubeConfig)
 
-	k8s.SetTrustDomain(trustDomain)
+	service.SetTrustDomain(trustDomain)
 
 	// Initialize the generic Kubernetes event recorder and associate it with the fsm-injector pod resource
 	injectorPod, err := getInjectorPod(kubeClient)

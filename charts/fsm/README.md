@@ -82,7 +82,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.cleanup.nodeSelector | object | `{}` |  |
 | fsm.cleanup.resources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM cleanup hook's container resource parameters. |
 | fsm.cleanup.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.configResyncInterval | string | `"90s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
+| fsm.configResyncInterval | string | `"0s"` | Sets the resync interval for regular proxy broadcast updates, set to 0s to not enforce any resync |
 | fsm.controlPlaneTolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.controllerLogLevel | string | `"info"` | Controller log verbosity |
 | fsm.deployGrafana | bool | `false` | Deploy Grafana with FSM installation |
@@ -101,6 +101,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.enableDebugServer | bool | `false` | Enable the debug HTTP server on FSM controller |
 | fsm.enableEgress | bool | `true` | Enable egress in the mesh |
 | fsm.enableFluentbit | bool | `false` | Enable Fluent Bit sidecar deployment on FSM controller's pod |
+| fsm.enableMultiClusters | bool | `false` |  |
 | fsm.enablePermissiveTrafficPolicy | bool | `true` | Enable permissive traffic policy mode |
 | fsm.enablePrivilegedInitContainer | bool | `false` | Run init container in privileged mode |
 | fsm.enableReconciler | bool | `false` | Enable reconciler for FSM's CRDs and mutating webhook |
@@ -437,7 +438,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.prometheus.retention | object | `{"time":"15d"}` | Prometheus data rentention configuration |
 | fsm.prometheus.retention.time | string | `"15d"` | Prometheus data retention time |
 | fsm.prometheus.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.remoteLogging.address | string | `""` | Address of the remote logging service (must contain the namespace). When left empty, this is computed in helper template to "remote-logging-service.<fsm-namespace>.svc.cluster.local". |
+| fsm.remoteLogging.address | string | `""` | Address of the remote logging service (must contain the namespace). When left empty, this is computed in helper template to "remote-logging-service.<fsm-namespace>". |
 | fsm.remoteLogging.authorization | string | `""` | The authorization for remote logging service |
 | fsm.remoteLogging.enable | bool | `false` | Toggles Sidecar's remote logging functionality on/off for all sidecar proxies in the mesh |
 | fsm.remoteLogging.endpoint | string | `""` | Remote logging's API path where the spans will be sent to |
@@ -465,7 +466,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.sidecar.sidecarDisabledMTLS | bool | `false` | Sidecar runs without mTLS |
 | fsm.sidecar.sidecarLogLevel | string | `"error"` | Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error` |
 | fsm.sidecar.sidecarTimeout | int | `60` | Sets connect/idle/read/write timeout |
-| fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>.svc.cluster.local". Please override for BYO-tracing as documented in tracing.md |
+| fsm.tracing.address | string | `""` | Address of the tracing collector service (must contain the namespace). When left empty, this is computed in helper template to "jaeger.<fsm-namespace>". Please override for BYO-tracing as documented in tracing.md |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.tracing.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |

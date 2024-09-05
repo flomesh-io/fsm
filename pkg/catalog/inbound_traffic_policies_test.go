@@ -15,11 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	tresorFake "github.com/flomesh-io/fsm/pkg/certificate/providers/tresor/fake"
 
 	"github.com/flomesh-io/fsm/pkg/configurator"
-	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
@@ -142,7 +142,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					8080: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -181,7 +181,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					9090: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -307,14 +307,14 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 			expectedInboundMeshPolicy: &trafficpolicy.InboundMeshTrafficPolicy{
 				TrafficMatches: []*trafficpolicy.TrafficMatch{
 					{
-						Name:                "inbound_ns1/mysql-0.mysql_3306_tcp",
+						Name:                "inbound_ns1/mysql-0.mysql_3306_tcp_",
 						DestinationPort:     3306,
 						DestinationProtocol: "tcp",
 						ServerNames:         []string{"mysql-0.mysql.ns1.svc.cluster.local"},
 						Cluster:             "ns1/mysql-0.mysql|3306|local",
 					},
 					{
-						Name:                "inbound_ns1/s2_9090_http",
+						Name:                "inbound_ns1/s2_9090_http_",
 						DestinationPort:     9090,
 						DestinationProtocol: "http",
 						ServerNames:         []string{"s2.ns1.svc.cluster.local"},
@@ -447,7 +447,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -506,7 +506,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -695,7 +695,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -732,7 +732,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s1-apex.ns1.svc.cluster.local",
+							Name: "s1-apex.ns1",
 							Hostnames: []string{
 								"s1-apex",
 								"s1-apex:80",
@@ -771,7 +771,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -895,7 +895,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -922,7 +922,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s1-apex.ns1.svc.cluster.local",
+							Name: "s1-apex.ns1",
 							Hostnames: []string{
 								"s1-apex",
 								"s1-apex:80",
@@ -951,7 +951,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -1090,7 +1090,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1258,7 +1258,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1302,7 +1302,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -1474,7 +1474,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1513,7 +1513,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -1631,7 +1631,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1658,7 +1658,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 							},
 						},
 						{
-							Name: "s2-apex.ns1.svc.cluster.local",
+							Name: "s2-apex.ns1",
 							Hostnames: []string{
 								"s2-apex",
 								"s2-apex:80",
@@ -1794,7 +1794,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					8080: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1835,7 +1835,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					9090: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -1929,7 +1929,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 				HTTPRouteConfigsPerPort: map[int][]*trafficpolicy.InboundTrafficPolicy{
 					80: {
 						{
-							Name: "s1.ns1.svc.cluster.local",
+							Name: "s1.ns1",
 							Hostnames: []string{
 								"s1",
 								"s1:80",
@@ -1960,7 +1960,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 					},
 					90: {
 						{
-							Name: "s2.ns1.svc.cluster.local",
+							Name: "s2.ns1",
 							Hostnames: []string{
 								"s2",
 								"s2:90",
@@ -2035,7 +2035,8 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 			mockEndpointProvider.EXPECT().GetResolvableEndpointsForService(gomock.Any()).Return(nil).AnyTimes()
 			mockPolicyController.EXPECT().GetUpstreamTrafficSetting(gomock.Any()).Return(tc.upstreamTrafficSetting).AnyTimes()
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode)
-			mockCfg.EXPECT().GetServiceAccessMode().Return(constants.ServiceAccessModeDomain).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true}).AnyTimes()
 			mockMeshSpec.EXPECT().ListTrafficTargets(gomock.Any()).Return(tc.trafficTargets).AnyTimes()
 			mockMeshSpec.EXPECT().ListHTTPTrafficSpecs().Return(tc.httpRouteGroups).AnyTimes()
 			tc.prepare(mockMeshSpec, tc.trafficSplits)

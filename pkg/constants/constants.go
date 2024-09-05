@@ -216,6 +216,9 @@ const (
 	// SidecarInjectionAnnotation is the annotation used for sidecar injection
 	SidecarInjectionAnnotation = "flomesh.io/sidecar-injection"
 
+	// SidecarImageAnnotation is the annotation used for sidecar injection
+	SidecarImageAnnotation = "flomesh.io/sidecar-image"
+
 	// MetricsAnnotation is the annotation used for enabling/disabling metrics
 	MetricsAnnotation = "flomesh.io/metrics"
 
@@ -387,17 +390,6 @@ const (
 
 	//TrafficInterceptionModeNone defines the none traffic interception mode
 	TrafficInterceptionModeNone = "none"
-)
-
-const (
-	//ServiceAccessModeIP defines the ip service access mode
-	ServiceAccessModeIP = "ip"
-
-	//ServiceAccessModeDomain defines the domain service access mode
-	ServiceAccessModeDomain = "domain"
-
-	//ServiceAccessModeMixed defines the mixed service access mode
-	ServiceAccessModeMixed = "mixed"
 )
 
 // GatewayAPI Group and Kinds
@@ -829,6 +821,12 @@ const (
 var (
 	// ClusterIDTemplate is a template for cluster ID
 	ClusterIDTemplate = template.Must(template.New("ClusterIDTemplate").Parse(ClusterTpl))
+)
+
+const (
+	CloudSourcedServiceLabel = "fsm-connector-cloud-sourced-service"
+
+	AnnotationMeshEndpointHash = "flomesh.io/cloud-endpoint-hash"
 )
 
 // Webhook constants
