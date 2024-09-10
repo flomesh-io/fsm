@@ -124,7 +124,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateHTTPRouteHostnames | bool | `true` | Enable validate HTTP route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateTLSRouteHostnames | bool | `true` | Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address |
-| fsm.featureFlags.generateSingleConfigForFGW | bool | `false` | Defines if generate ONLY one config.json for FGW or one folder with multiple yaml files |
 | fsm.featureFlags.useEndpointSlicesForGateway | bool | `true` | Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later |
 | fsm.flb.baseUrl | string | `"http://localhost:1337"` |  |
 | fsm.flb.defaultAddressPool | string | `"default"` |  |
