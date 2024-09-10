@@ -158,7 +158,7 @@ func main() {
 
 	startHTTPServer()
 
-	startPipy(spawn, url)
+	startPipy(spawn, url, cfg)
 
 	<-stop
 	cancel()
@@ -223,7 +223,7 @@ func parseFlags() error {
 	return nil
 }
 
-func startPipy(spawn int64, url string) {
+func startPipy(spawn int64, url string, mc configurator.Configurator) {
 	args := []string{url}
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
@@ -236,9 +236,17 @@ func startPipy(spawn int64, url string) {
 	args = append(args, fmt.Sprintf("--admin-port=%d", constants.FSMGatewayAdminPort))
 
 	// arguments for FGW
+	args = append(args, "--args", "--watch")
+
 	if verbosity == "debug" || verbosity == "trace" {
-		args = append(args, "--args", "--debug")
+		args = append(args, "--debug")
 	}
+
+	//if mc.GetFeatureFlags().GenerateSingleConfigForFGW {
+	//	args = append(args, "--config", "/config.json")
+	//} else {
+	//	args = append(args, "--config", "/config")
+	//}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout

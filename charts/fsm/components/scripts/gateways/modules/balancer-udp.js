@@ -2,11 +2,11 @@ import makeBackend from './backend.js'
 import { log } from '../utils.js'
 
 var $ctx
-var $selection
+var $session
+var $conn
 
 export default function (backendRef, backendResource) {
-  var name = backendResource.metadata.name
-  var backend = makeBackend(name)
+  var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
 
   var isHealthy = (target) => true
@@ -14,14 +14,15 @@ export default function (backendRef, backendResource) {
   return pipeline($=>$
     .onStart(c => {
       $ctx = c
-      $selection = balancer.allocate(null, isHealthy)
+      $session = balancer.allocate(null, isHealthy)
+      $conn = { protocol: 'udp', target: $session?.target }
       log?.(
         `Inb #${$ctx.inbound.id}`,
-        `target ${$selection?.target?.address}`
+        `target ${$session?.target?.address}`
       )
     })
-    .pipe(() => $selection ? 'pass' : 'deny', {
-      'pass': $=>$.connect(() => $selection.target.address, { protocol: 'udp' }).onEnd(() => $selection.free()),
+    .pipe(() => $session ? 'pass' : 'deny', {
+      'pass': $=>$.pipe(backend.connect, () => $conn).onEnd(() => $session.free()),
       'deny': $=>$.replaceStreamStart(new StreamEnd),
     })
   )
