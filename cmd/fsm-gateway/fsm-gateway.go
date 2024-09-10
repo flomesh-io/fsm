@@ -239,7 +239,7 @@ func startPipy(spawn int64, url string, mc configurator.Configurator) {
 	args = append(args, "--args", "--watch")
 
 	if verbosity == "debug" || verbosity == "trace" {
-		args = append(args, "--args", "--debug")
+		args = append(args, "--debug")
 	}
 
 	if mc.GetFeatureFlags().GenerateSingleConfigForFGW {
