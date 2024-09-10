@@ -30,39 +30,39 @@ func (c *GatewayProcessor) BuildConfigs() {
 	}
 }
 
-func (c *GatewayProcessor) syncConfig(gateway *gwv1.Gateway, config fgw.Config) {
-	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
-	if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
-		return
-	}
-
-	jsonVersion, err := c.getVersion(gatewayPath, "config.json")
-	if err != nil {
-		return
-	}
-
-	log.Debug().Msgf("jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
-
-	if jsonVersion == config.GetVersion() {
-		// config not changed, ignore updating
-		log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
-		return
-	}
-
-	batches := []repo.Batch{
-		{
-			Basepath: gatewayPath,
-			Items: []repo.BatchItem{
-				{Path: "", Filename: "config.json", Content: config},
-			},
-		},
-	}
-
-	if err := c.repoClient.Batch(batches); err != nil {
-		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
-		return
-	}
-}
+//func (c *GatewayProcessor) syncConfig(gateway *gwv1.Gateway, config fgw.Config) {
+//	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
+//	if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
+//		return
+//	}
+//
+//	jsonVersion, err := c.getVersion(gatewayPath, "config.json")
+//	if err != nil {
+//		return
+//	}
+//
+//	log.Debug().Msgf("jsonVersion: %q, config version: %q", jsonVersion, config.GetVersion())
+//
+//	if jsonVersion == config.GetVersion() {
+//		// config not changed, ignore updating
+//		log.Debug().Msgf("%s/config.json doesn't change, ignore updating...", gatewayPath)
+//		return
+//	}
+//
+//	batches := []repo.Batch{
+//		{
+//			Basepath: gatewayPath,
+//			Items: []repo.BatchItem{
+//				{Path: "", Filename: "config.json", Content: config},
+//			},
+//		},
+//	}
+//
+//	if err := c.repoClient.Batch(batches); err != nil {
+//		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+//		return
+//	}
+//}
 
 func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Config) {
 	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
