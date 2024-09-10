@@ -61,7 +61,6 @@ type EurekaSyncToK8SSpec struct {
 	ClusterId string `json:"clusterId,omitempty"`
 
 	// +optional
-	// +optional
 	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
 
 	// +optional

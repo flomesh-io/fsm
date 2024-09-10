@@ -231,16 +231,22 @@ func inbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 				if ingressTrafficPolicy != nil {
 					generatePipyIngressTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, ingressTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(ingressErr).Msg(ingressErr.Error())
 			}
 			if aclTrafficPolicy, aclErr := cataloger.GetAccessControlTrafficPolicy(svc); aclErr == nil {
 				if aclTrafficPolicy != nil {
 					generatePipyAccessControlTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, aclTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(aclErr).Msg(aclErr.Error())
 			}
 			if expTrafficPolicy, expErr := cataloger.GetExportTrafficPolicy(svc); expErr == nil {
 				if expTrafficPolicy != nil {
 					generatePipyServiceExportTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, expTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(expErr).Msg(expErr.Error())
 			}
 		}
 	}

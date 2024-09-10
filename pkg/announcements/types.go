@@ -303,6 +303,15 @@ const (
 	// GlobalTrafficPolicyUpdated is the type of announcement emitted when we observe an update to serviceimports.flomesh.io
 	GlobalTrafficPolicyUpdated Kind = "globaltrafficpolicy-updated"
 
+	// IsolationPolicyAdded is the type of announcement emitted when we observe an addition of isolations.policy.flomesh.io
+	IsolationPolicyAdded Kind = "isolation-added"
+
+	// IsolationPolicyDeleted the type of announcement emitted when we observe a deletion of isolations.policy.flomesh.io
+	IsolationPolicyDeleted Kind = "isolation-deleted"
+
+	// IsolationPolicyUpdated is the type of announcement emitted when we observe an update to isolations.policy.flomesh.io
+	IsolationPolicyUpdated Kind = "isolation-updated"
+
 	// RetryPolicyAdded is the type of announcement emitted when we observe an addition of retries.policy.flomesh.io
 	RetryPolicyAdded Kind = "retry-added"
 

@@ -18,6 +18,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
+	"github.com/flomesh-io/fsm/pkg/policy"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/smi"
 	"github.com/flomesh-io/fsm/pkg/tests"
@@ -141,6 +142,7 @@ func TestListAllowedUpstreamEndpointsForService(t *testing.T) {
 			mockKubeController := k8s.NewMockController(mockCtrl)
 			mockEndpointProvider := endpoint.NewMockProvider(mockCtrl)
 			mockServiceProvider := service.NewMockProvider(mockCtrl)
+			mockPolicyController := policy.NewMockController(mockCtrl)
 			mockMeshSpec := smi.NewMockMeshSpec(mockCtrl)
 
 			mc := MeshCatalog{
@@ -148,10 +150,12 @@ func TestListAllowedUpstreamEndpointsForService(t *testing.T) {
 				meshSpec:           mockMeshSpec,
 				endpointsProviders: []endpoint.Provider{mockEndpointProvider},
 				serviceProviders:   []service.Provider{mockServiceProvider},
+				policyController:   mockPolicyController,
 				configurator:       mockConfigurator,
 			}
 
 			mockConfigurator.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode).AnyTimes()
+			mockPolicyController.EXPECT().ListIsolationPolicies().Return(nil).AnyTimes()
 
 			for svc, endpoints := range tc.outboundServiceEndpoints {
 				mockEndpointProvider.EXPECT().ListEndpointsForService(svc).Return(endpoints).AnyTimes()

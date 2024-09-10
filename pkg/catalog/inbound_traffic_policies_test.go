@@ -2033,6 +2033,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 			}
 
 			mockEndpointProvider.EXPECT().GetResolvableEndpointsForService(gomock.Any()).Return(nil).AnyTimes()
+			mockPolicyController.EXPECT().ListIsolationPolicies().Return(nil).AnyTimes()
 			mockPolicyController.EXPECT().GetUpstreamTrafficSetting(gomock.Any()).Return(tc.upstreamTrafficSetting).AnyTimes()
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode)
 			mockCfg.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()

@@ -63,6 +63,8 @@ const (
 	// InformerKeyMeshRootCertificate is the InformerKey for a MeshRootCertificate informer
 	InformerKeyMeshRootCertificate InformerKey = "MeshRootCertificate"
 
+	// InformerKeyIsolation is the InformerKey for a Isolation informer
+	InformerKeyIsolation InformerKey = "Isolation"
 	// InformerKeyEgress is the InformerKey for an Egress informer
 	InformerKeyEgress InformerKey = "Egress"
 	// InformerKeyEgressGateway is the InformerKey for an EgressGateway informer

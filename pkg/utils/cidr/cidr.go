@@ -56,6 +56,11 @@ func (c CIDR) Contains(ip string) bool {
 	return c.ipnet.Contains(net.ParseIP(ip))
 }
 
+// Has reports whether the CIDR includes ip
+func (c CIDR) Has(ip net.IP) bool {
+	return c.ipnet.Contains(ip)
+}
+
 // CIDR returns the CIDR string. If the IP prefix of the input CIDR string is inaccurate, it returns the string which be corrected by the mask length. For example, "192.0.2.10/24" return "192.0.2.0/24"
 func (c CIDR) CIDR() string {
 	return c.ipnet.String()
