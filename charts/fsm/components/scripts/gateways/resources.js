@@ -1,16 +1,17 @@
-import { log } from './utils.js'
+import { log, isIdentical } from './utils.js'
 
 var DEFAULT_CONFIG_PATH = '/etc/fgw'
 
+var resources = null
 var files = {}
-var kinds = {}
 var secrets = {}
+var updaters = {}
 
 var notifyCreate = () => {}
 var notifyDelete = () => {}
 var notifyUpdate = () => {}
 
-function init(pathname, onChange) {
+function init(pathname, onResourceChange) {
   var configFile = pipy.load('/config.json') || pipy.load('/config.yaml')
   var configDir = pipy.list('/config')
   var hasBuiltinConfig = (configDir.length > 0 || Boolean(configFile))
@@ -41,27 +42,38 @@ function init(pathname, onChange) {
       throw 'cannot parse configuration file as JSON or YAML'
     }
 
-    config.resources.forEach(r => {
-      if (r.kind) {
-        list(r.kind).push(r)
-      }
-    })
-
+    resources = config.resources
     Object.entries(config.secrets || {}).forEach(([k, v]) => secrets[k] = v)
 
   } else {
-    notifyCreate = function (resource) { onChange(resource, null) }
-    notifyDelete = function (resource) { onChange(null, resource) }
-    notifyUpdate = function (resource, old) { onChange(resource, old) }
-
     pipy.list('/config').forEach(
-      pathname => addFile(pathname)
+      pathname => {
+        var pathname = os.path.join('/config', pathname)
+        var data = readFile(pathname)
+        if (data && data.kind && data.spec) {
+          log?.(`Load resource file: ${pathname}`)
+          files[pathname] = data
+        }
+      }
     )
-  }
-}
 
-function list(kind) {
-  return (kinds[kind] ??= [])
+    function watch() {
+      pipy.watch('/config/').then(pathnames => {
+        log?.('Resource files changed:', pathnames)
+        pathnames.forEach(pathname => {
+          changeFile(pathname, readFile(pathname))
+        })
+        watch()
+      })
+    }
+
+    if (onResourceChange) {
+      notifyCreate = function (resource) { onResourceChange(resource, null) }
+      notifyDelete = function (resource) { onResourceChange(null, resource) }
+      notifyUpdate = function (resource, old) { onResourceChange(resource, old) }
+      watch()
+    }
+  }
 }
 
 function readFile(pathname) {
@@ -79,27 +91,24 @@ function readFile(pathname) {
   }
 }
 
-function addFile(pathname) {
-  var data = readFile(pathname)
-  if (data && data.kind && data.spec) {
-    log?.(`Load resource file: ${pathname}`)
-    files[pathname] = data
-    var resources = list(data.kind)
-    var name = data.metadata?.name
-    if (name) {
-      var i = resources.find(r => r.metadata?.name === name)
-      if (i >= 0) {
-        var old = resources[i]
-        resources[i] = data
-        notifyUpdate(data, old)
-      } else {
-        resources.push(data)
-        notifyCreate(data)
-      }
-    } else {
-      resources.push(data)
-      notifyCreate(data)
-    }
+function changeFile(pathname, data) {
+  var old = files[pathname]
+  var cur = data
+  var oldKind = old?.kind
+  var curKind = cur?.kind
+  if (curKind && curKind === oldKind) {
+    files[pathname] = cur
+    notifyUpdate(cur, old)
+  } else if (curKind && oldKind) {
+    files[pathname] = cur
+    notifyDelete(old)
+    notifyCreate(cur)
+  } else if (cur) {
+    files[pathname] = cur
+    notifyCreate(cur)
+  } else if (old) {
+    delete files[pathname]
+    notifyDelete(old)
   }
 }
 
@@ -115,39 +124,105 @@ function isSecret(filename) {
   return filename.endsWith('.crt') || filename.endsWith('.key')
 }
 
-var updaterLists = []
-
-function findUpdaterKey(key) {
-  if (key instanceof Array) {
-    updaterLists.findIndex(([k]) => (
-      k.length === key.length &&
-      !k.some((v, i) => (v !== key[i]))
-    ))
+function list(kind) {
+  if (resources) {
+    return resources.filter(r => r.kind === kind)
   } else {
-    updaterLists.findIndex(([k]) => (k === key))
+    return Object.values(files).filter(r => r.kind === kind)
   }
 }
 
-function addUpdater(key, updater) {
-  var i = findUpdaterKey(key)
-  if (i >= 0) {
-    updaterLists[i][1].push(updater)
-  } else {
-    if (key instanceof Array) key = [...key]
-    updaterLists.push([key, [updater]])
+function setUpdater(kind, key, cb) {
+  var listMap = (updaters[kind] ??= {})
+  listMap[key] = cb ? [cb] : []
+}
+
+function addUpdater(kind, key, cb) {
+  var listMap = (updaters[kind] ??= {})
+  var list = (listMap[key] ??= [])
+  if (!list.includes(cb)) list.push(cb)
+}
+
+function runUpdaters(kind, key, a, b, c) {
+  var listMap = updaters[kind]
+  if (listMap) {
+    var list = listMap[key]
+    if (list) {
+      delete listMap[key]
+      list.forEach(f => f(a, b, c))
+      return true
+    }
   }
+  return false
 }
 
-function getUpdaters(key) {
-  var i = findUpdaterKey(key)
-  if (i >= 0) return updaterLists[i][1]
-  return []
+function initZTM({ mesh, app }, onResourceChange) {
+  allExports.ztm = { mesh, app }
+  var resourceDir = `/users/${app.username}/resources/`
+  return mesh.dir(resourceDir).then(
+    paths => Promise.all(paths.map(
+      pathname => readFileZTM(mesh, app, pathname).then(
+        data => {
+          if (data && data.kind && data.spec) {
+            app.log(`Load resource file: ${pathname}`)
+            files[pathname] = data
+          }
+        }
+      )
+    )).then(() => {
+      function watch() {
+        mesh.watch(resourceDir).then(pathnames => {
+          Promise.all(pathnames.map(
+            pathname => readFileZTM(mesh, app, pathname).then(
+              data => {
+                app.log(`Resource file changed: ${pathname}`)
+                changeFile(pathname, data)
+              }
+            )
+          ))
+        }).then(() => {
+          watch()
+        })
+      }
+
+      if (onResourceChange) {
+        notifyCreate = function (resource) { onResourceChange(resource, null) }
+        notifyDelete = function (resource) { onResourceChange(null, resource) }
+        notifyUpdate = function (resource, old) { onResourceChange(resource, old) }
+        watch()
+      }
+    })
+  )
 }
 
-export default {
+function readFileZTM(mesh, app, pathname) {
+  return mesh.read(pathname).then(
+    data => {
+      try {
+        if (isJSON(pathname)) {
+          return JSON.decode(data)
+        } else if (isYAML(pathname)) {
+          return YAML.decode(data)
+        } else if (isSecret(pathname)) {
+          var name = os.path.basename(pathname)
+          secrets[name] = data
+        }
+      } catch {
+        app.log(`Cannot load or parse file: ${pathname}, skpped.`)
+      }
+    }
+  )
+}
+
+var allExports = {
   init,
+  initZTM,
   list,
   secrets,
+  setUpdater,
   addUpdater,
-  getUpdaters,
+  runUpdaters,
+  ztm: null,
 }
+
+export default allExports

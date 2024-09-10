@@ -1,18 +1,35 @@
+import resources from '../resources.js'
 import { log, findPolicies } from '../utils.js'
 
-export default function (backendRef, backendResource) {
-  var healthCheckPolicies = findPolicies('HealthCheckPolicy', backendResource)
-  if (healthCheckPolicies.length === 0) {
-    return { isHealthy: () => true }
+var cache = new algo.Cache(backendName => {
+  var healthCheckPolicy = null
+  var backendResource = null
+  var allTargets = []
+  var unhealthySet = new algo.SharedMap('HealthCheck:' + backendName)
+
+  function watch() {
+    resources.setUpdater('HealthCheckPolicy', backendName, update)
+    resources.addUpdater('Backend', backendName, update)
   }
 
-  var targets = backendResource.spec.targets
-  var ports = healthCheckPolicies[0].spec.ports
+  function update() {
+    healthCheckPolicy = null
+    backendResource = findBackendResource(backendName)
+    if (backendResource) {
+      var policies = findPolicies('HealthCheckPolicy', backendResource)
+      healthCheckPolicy = policies[0]
+      allTargets = []
+      findTargets()
+      watch()
+    } else {
+      cache.remove(backendName)
+    }
+  }
 
-  var unhealthyCache = new algo.Cache
-  var allTargets = []
-
-  if (pipy.thread.id === 0) {
+  function findTargets() {
+    if (!healthCheckPolicy) return
+    var targets = backendResource.spec.targets
+    var ports = healthCheckPolicy.spec.ports
     ports.forEach(({ port, healthCheck }) => {
       var checkPort = port
       targets.forEach(({ address, port }) => {
@@ -79,7 +96,7 @@ export default function (backendRef, backendResource) {
           isHealthy = true
           failCount = 0
           failTime = 0
-          unhealthyCache.remove(targetAddress, true)
+          unhealthySet.delete(targetAddress)
         }
 
         function fail() {
@@ -87,7 +104,7 @@ export default function (backendRef, backendResource) {
           failTime = Date.now() / 1000
           if (failCount >= healthCheck.maxFails) {
             isHealthy = false
-            unhealthyCache.set(targetAddress, true)
+            unhealthySet.set(targetAddress, true)
             log?.(`Health backend ${backendResource.metadata.name} down ${targetAddress}`)
           } else {
             log?.(`Health backend ${backendResource.metadata.name} fail ${targetAddress}`)
@@ -115,21 +132,35 @@ export default function (backendRef, backendResource) {
         })
       })
     })
-  
-    function healthCheckAll() {
-      Promise.all(allTargets.map(
-        target => target.check(Date.now() / 1000)
-      )).then(
-        () => new Timeout(1).wait()
-      ).then(healthCheckAll)
-    }
-  
+  }
+
+  function healthCheckAll() {
+    if (!healthCheckPolicy) return
+    Promise.all(allTargets.map(
+      target => target.check(Date.now() / 1000)
+    )).then(
+      () => new Timeout(1).wait()
+    ).then(healthCheckAll)
+  }
+
+  if (pipy.thread.id === 0) {
+    update()
     healthCheckAll()
   }
 
   function isHealthy(target) {
-    return !unhealthyCache.has(target)
+    return !healthCheckPolicy || !unhealthySet.has(target)
   }
 
   return { isHealthy }
+})
+
+function findBackendResource(backendName) {
+  return resources.list('Backend').find(
+    r => r.metadata?.name === backendName
+  )
+}
+
+export default function(backendRef, backendResource) {
+  return cache.get(backendResource.metadata.name)
 }

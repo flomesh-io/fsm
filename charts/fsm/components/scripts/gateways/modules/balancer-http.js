@@ -6,10 +6,10 @@ import { log, stringifyHTTPHeaders, findPolicies } from '../utils.js'
 
 var $ctx
 var $session
+var $conn
 
 export default function (backendRef, backendResource, isHTTP2) {
-  var name = backendResource.metadata.name
-  var backend = makeBackend(name)
+  var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
   var hc = makeHealthCheck(backendRef, backendResource)
   var tls = makeBackendTLS(backendRef, backendResource)
@@ -80,6 +80,10 @@ export default function (backendRef, backendResource, isHTTP2) {
       $.onStart(() => {
         $ctx.sendTime = Date.now()
         $ctx.target = $session.target.address
+        $conn = {
+          protocol: 'tcp',
+          target: $session.target,
+        }
       })
       $.muxHTTP(() => $session, { version: isHTTP2 ? 2 : 1 }).to($=>{
         if (tls) {
@@ -90,9 +94,11 @@ export default function (backendRef, backendResource, isHTTP2) {
                 log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} tls error:`, session.error)
               }
             }
-          }).to(connect)
+          }).to($=>$
+            .pipe(backend.connect, () => $conn)
+          )
         } else {
-          connect($)
+          $.pipe(backend.connect, () => $conn)
         }
       })
 
@@ -156,18 +162,6 @@ export default function (backendRef, backendResource, isHTTP2) {
           })
         )
       )
-    }
-
-    function connect($) {
-      $.onStart(() => {
-        var t = (backend.targets[$session.target.address] ??= { concurrency: 0 })
-        t.concurrency++
-      })
-      $.connect(() => $session.target.address)
-      $.onEnd(() => {
-        backend.targets[$session.target.address].concurrency--
-        backend.concurrency--
-      })
     }
   })
 }

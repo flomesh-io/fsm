@@ -25,6 +25,14 @@ export function logEnable(on) {
   log = on ? logFunc : null
 }
 
+export function isIdentical(a, b) {
+  if (a instanceof Array && b instanceof Array) {
+    return a.length === b.length && !a.some((v, i) => v !== b[i])
+  } else {
+    return a === b
+  }
+}
+
 export function stringifyHTTPHeaders(headers) {
   return Object.entries(headers).flatMap(
     ([k, v]) => {
@@ -47,6 +55,7 @@ export function findPolicies(kind, targetResource) {
     )
   )
 }
+
 export function makeFilters(protocol, filters) {
   if (!filters) return []
   return filters.map(

@@ -15,11 +15,18 @@ var $matchedRule
 var $selection
 
 export default function (routerKey, listener, routeResources) {
-  var router = makeRouter(listener, routeResources)
+  var router = null
 
-  resources.addUpdater(routerKey, (listener, routeResources) => {
+  function watch() {
+    resources.setUpdater('Route', routerKey, update)
+  }
+
+  function update(listener, routeResources) {
     router = makeRouter(listener, routeResources)
-  })
+    watch()
+  }
+
+  update(listener, routeResources)
 
   var handleRequest = pipeline($=>$
     .handleMessageStart(
@@ -46,6 +53,7 @@ export default function (routerKey, listener, routeResources) {
           routeRule: $matchedRule,
           backendResource: $selection?.target?.backendResource,
           backend: null,
+          consumer: '',
           target: '',
           retries: [],
         }

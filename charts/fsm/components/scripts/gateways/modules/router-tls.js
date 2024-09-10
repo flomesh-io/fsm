@@ -10,11 +10,18 @@ var $proto
 var $selection
 
 export default function (routerKey, listener, routeResources) {
-  var router = makeRouter(listener, routeResources)
+  var router = null
 
-  resources.addUpdater(routerKey, (listener, routeResources) => {
+  function watch() {
+    resources.setUpdater('Route', routerKey, update)
+  }
+
+  function update(listener, routeResources) {
     router = makeRouter(listener, routeResources)
-  })
+    watch()
+  }
+
+  update(listener, routeResources)
 
   return pipeline($=>$
     .onStart(c => void ($ctx = c))

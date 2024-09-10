@@ -19,7 +19,7 @@ import (
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
-func (c *ConfigGenerator) processTCPRoutes() []interface{} {
+func (c *ConfigGenerator) processTCPRoutes() []fgwv2.Resource {
 	list := &gwv1alpha2.TCPRouteList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(c.gateway).String()),
@@ -28,7 +28,7 @@ func (c *ConfigGenerator) processTCPRoutes() []interface{} {
 		return nil
 	}
 
-	routes := make([]interface{}, 0)
+	routes := make([]fgwv2.Resource, 0)
 	for _, tcpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			tcpRoute,

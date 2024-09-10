@@ -3,11 +3,11 @@ import makeBackendTLS from './backend-tls.js'
 import { log } from '../utils.js'
 
 var $ctx
-var $selection
+var $session
+var $conn
 
 export default function (backendRef, backendResource) {
-  var name = backendResource.metadata.name
-  var backend = makeBackend(name)
+  var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
   var tls = makeBackendTLS(backendRef, backendResource)
 
@@ -16,13 +16,14 @@ export default function (backendRef, backendResource) {
   return pipeline($=>$
     .onStart(c => {
       $ctx = c
-      $selection = balancer.allocate(null, isHealthy)
+      $session = balancer.allocate(null, isHealthy)
+      $conn = { protocol: 'tcp', target: $session?.target }
       log?.(
         `Inb #${$ctx.inbound.id}`,
-        `target ${$selection?.target?.address}`
+        `target ${$session?.target?.address}`
       )
     })
-    .pipe(() => $selection ? 'pass' : 'deny', {
+    .pipe(() => $session ? 'pass' : 'deny', {
       'pass': (
         tls ? (
           $=>$.connectTLS({
@@ -33,10 +34,12 @@ export default function (backendRef, backendResource) {
               }
             }
           }).to($=>$
-            .connect(() => $selection.target.address).onEnd(() => $selection.free())
+            .pipe(backend.connect, () => $conn)
+            .onEnd(() => $session.free())
           )
-        ) : (
-          $=>$.connect(() => $selection.target.address).onEnd(() => $selection.free())
+        ) : ($=>$
+          .pipe(backend.connect, () => $conn)
+          .onEnd(() => $session.free())
         )
       ),
       'deny': $=>$.replaceStreamStart(new StreamEnd),

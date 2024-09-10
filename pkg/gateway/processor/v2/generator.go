@@ -73,8 +73,8 @@ func (c *ConfigGenerator) Generate() fgwv2.Config {
 	return cfg
 }
 
-func (c *ConfigGenerator) processResources() []interface{} {
-	resources := make([]interface{}, 0)
+func (c *ConfigGenerator) processResources() []fgwv2.Resource {
+	resources := make([]fgwv2.Resource, 0)
 
 	resources = append(resources, c.processGateway())
 	resources = append(resources, c.processHTTPRoutes()...)
