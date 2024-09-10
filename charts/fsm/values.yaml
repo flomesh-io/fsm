@@ -76,7 +76,7 @@ fsm:
       # -- Sidecar image name
       name: pipy
       # -- Sidecar image tag
-      tag: 1.4.0
+      tag: 1.4.1
     # -- Sidecar runs without mTLS
     sidecarDisabledMTLS: false
     # -- Log level for the proxy sidecar. Non developers should generally never set this value. In production environments the LogLevel should be set to `error`
@@ -92,7 +92,7 @@ fsm:
       # -- Repo server image name
       name: pipy-repo
       # -- Repo server image tag
-      tag: 1.4.0
+      tag: 1.4.1
     # -- if false , Pipy RepoServer is installed within fsmController pod.
     standalone: false
     # -- ipaddr of host/service where Pipy RepoServer is installed
