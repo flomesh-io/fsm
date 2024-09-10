@@ -242,11 +242,11 @@ func startPipy(spawn int64, url string, mc configurator.Configurator) {
 		args = append(args, "--debug")
 	}
 
-	if mc.GetFeatureFlags().GenerateSingleConfigForFGW {
-		args = append(args, "--config", "./config.json")
-	} else {
-		args = append(args, "--config", "./config")
-	}
+	//if mc.GetFeatureFlags().GenerateSingleConfigForFGW {
+	//	args = append(args, "--config", "/config.json")
+	//} else {
+	//	args = append(args, "--config", "/config")
+	//}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout

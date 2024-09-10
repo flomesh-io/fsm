@@ -435,9 +435,6 @@ type FeatureFlags struct {
 
 	// UseEndpointSlicesForGateway defines if endpoint slices are enabled for calculating gateway routes.
 	UseEndpointSlicesForGateway bool `json:"useEndpointSlicesForGateway"`
-
-	// GenerateSingleConfigForFGW defines if generate ONLY one config.json for FGW.
-	GenerateSingleConfigForFGW bool `json:"generateSingleConfigForFGW"`
 }
 
 // RepoServerSpec is the type to represent repo server.

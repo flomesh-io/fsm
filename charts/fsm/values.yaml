@@ -750,8 +750,6 @@ fsm:
     enableGatewayProxyTag: false
     # -- Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later
     useEndpointSlicesForGateway: true
-    # -- Defines if generate ONLY one config.json for FGW or one folder with multiple yaml files
-    generateSingleConfigForFGW: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.

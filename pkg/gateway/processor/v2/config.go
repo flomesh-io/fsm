@@ -26,11 +26,7 @@ func (c *GatewayProcessor) BuildConfigs() {
 	for _, gw := range gwutils.GetActiveGateways(c.client) {
 		cfg := NewGatewayConfigGenerator(gw, c, c.client).Generate()
 
-		if c.cfg.GetFeatureFlags().GenerateSingleConfigForFGW {
-			go c.syncConfig(gw, cfg)
-		} else {
-			go c.syncConfigDir(gw, cfg)
-		}
+		go c.syncConfigDir(gw, cfg)
 	}
 }
 
@@ -74,7 +70,7 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		return
 	}
 
-	jsonVersion, err := c.getVersion(gatewayPath, "version.json")
+	jsonVersion, err := c.getVersion(gatewayPath, "config/version.json")
 	if err != nil {
 		return
 	}
@@ -83,14 +79,14 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 
 	if jsonVersion == config.GetVersion() {
 		// config not changed, ignore updating
-		log.Debug().Msgf("%s/version.json doesn't change, ignore updating...", gatewayPath)
+		log.Debug().Msgf("%s/config/version.json doesn't change, ignore updating...", gatewayPath)
 		return
 	}
 
 	batch := repo.Batch{
 		Basepath: gatewayPath,
 		Items: []repo.BatchItem{
-			{Path: "", Filename: "version.json", Content: fmt.Sprintf(`{"version": "%s"}`, config.GetVersion())},
+			{Path: "/config", Filename: "version.json", Content: fmt.Sprintf(`{"version": "%s"}`, config.GetVersion())},
 		},
 	}
 

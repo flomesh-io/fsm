@@ -1487,10 +1487,6 @@ spec:
                     description: EnableValidateTCPRouteHostnames defines if validate
                       tcp route hostnames is enabled.
                     type: boolean
-                  generateSingleConfigForFGW:
-                    description: GenerateSingleConfigForFGW defines if generate ONLY
-                      one config.json for FGW.
-                    type: boolean
                   useEndpointSlicesForGateway:
                     description: UseEndpointSlicesForGateway defines if endpoint slices
                       are enabled for calculating gateway routes.
@@ -1513,7 +1509,6 @@ spec:
                 - enableValidateGatewayListenerHostname
                 - enableValidateHTTPRouteHostnames
                 - enableValidateTLSRouteHostnames
-                - generateSingleConfigForFGW
                 - useEndpointSlicesForGateway
                 type: object
               flb:
