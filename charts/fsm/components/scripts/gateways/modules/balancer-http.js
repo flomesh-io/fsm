@@ -9,8 +9,7 @@ var $session
 var $conn
 
 export default function (backendRef, backendResource, isHTTP2) {
-  var name = backendResource.metadata.name
-  var backend = makeBackend(name)
+  var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
   var hc = makeHealthCheck(backendRef, backendResource)
   var tls = makeBackendTLS(backendRef, backendResource)

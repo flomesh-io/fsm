@@ -1,13 +1,23 @@
 import resources from '../resources.js'
+import { findPolicies } from '../utils.js'
 
 var cache = new algo.Cache(
   backendName => {
     var ztm = resources.ztm
     var backendResource = findBackendResource(backendName)
+    var backendLBPolicies = findPolicies('BackendLBPolicy', backendResource)
+    var algorithm = backendLBPolicies.find(r => r.spec.algorithm)?.spec?.algorithm
     var targets = getTargets(backendResource)
+
+    if (algorithm === 'LeastLoad') {
+      algorithm = 'least-load'
+    } else {
+      algorithm = 'round-robin'
+    }
 
     var balancer = new algo.LoadBalancer(
       targets, {
+        algorithm,
         key: t => t.address,
         weight: t => t.weight,
       }

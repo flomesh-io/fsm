@@ -105,8 +105,8 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 	for _, r := range config.GetResources() {
 		batch.Items = append(batch.Items,
 			repo.BatchItem{
-				Path:     "/resources",
-				Filename: resourceName(r),
+				Path:     "/config/resources",
+				Filename: strings.ToLower(resourceName(r)),
 				Content:  toYAML(r),
 			},
 		)
@@ -115,7 +115,7 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 	for k, v := range config.GetSecrets() {
 		batch.Items = append(batch.Items,
 			repo.BatchItem{
-				Path:     "/secrets",
+				Path:     "/config/secrets",
 				Filename: k,
 				Content:  v,
 			},
@@ -126,7 +126,7 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		for k, v := range filters {
 			batch.Items = append(batch.Items,
 				repo.BatchItem{
-					Path:     fmt.Sprintf("/filters/%s", strings.ToLower(string(t))),
+					Path:     fmt.Sprintf("/config/filters/%s", strings.ToLower(string(t))),
 					Filename: fmt.Sprintf("%s.js", k),
 					Content:  v,
 				},

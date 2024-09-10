@@ -53,6 +53,7 @@ export default function (routerKey, listener, routeResources) {
           routeRule: $matchedRule,
           backendResource: $selection?.target?.backendResource,
           backend: null,
+          consumer: '',
           target: '',
           retries: [],
         }
