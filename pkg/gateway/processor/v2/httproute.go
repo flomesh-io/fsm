@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -136,6 +138,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
 						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
 					},
+					Key: uuid.NewString(),
 				})
 
 				// TODO: process backend level policies here??? TBD
@@ -160,6 +163,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			filters = append(filters, fgwv2.HTTPRouteFilter{
 				Type:            gwv1.HTTPRouteFilterType(filterType),
 				ExtensionConfig: filter.Spec.Config,
+				Key:             uuid.NewString(),
 			})
 
 			if c.filters[filterProtocol] == nil {
@@ -167,7 +171,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 			c.filters[filterProtocol][filterType] = filter.Spec.Script
 		default:
-			f2 := fgwv2.HTTPRouteFilter{}
+			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
 			if err := gwutils.DeepCopy(f2, f); err != nil {
 				continue
 			}
