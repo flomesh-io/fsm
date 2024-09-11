@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -171,6 +173,7 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
 			Type:            filterType,
 			ExtensionConfig: f.Spec.Config,
+			Key:             uuid.NewString(),
 		})
 
 		if c.filters[*protocol] == nil {
