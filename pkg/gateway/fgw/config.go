@@ -98,6 +98,7 @@ type Listener struct {
 type ListenerFilter struct {
 	Type            string            `json:"type"`
 	ExtensionConfig map[string]string `json:"extensionConfig,omitempty"`
+	Key             string            `json:"key,omitempty"`
 }
 
 type GatewayTLSConfig struct {
@@ -229,6 +230,7 @@ type HTTPRouteFilter struct {
 	RequestRedirect        *gwv1.HTTPRequestRedirectFilter `json:"requestRedirect,omitempty"`
 	URLRewrite             *gwv1.HTTPURLRewriteFilter      `json:"urlRewrite,omitempty"`
 	ExtensionConfig        map[string]string               `json:"extensionConfig,omitempty"`
+	Key                    string                          `json:"key,omitempty"`
 }
 
 // ---
@@ -262,6 +264,7 @@ type GRPCRouteFilter struct {
 	ResponseHeaderModifier *gwv1.HTTPHeaderFilter   `json:"responseHeaderModifier,omitempty"`
 	RequestMirror          *HTTPRequestMirrorFilter `json:"requestMirror,omitempty"`
 	ExtensionConfig        map[string]string        `json:"extensionConfig,omitempty"`
+	Key                    string                   `json:"key,omitempty"`
 }
 
 // ---
