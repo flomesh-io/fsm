@@ -1,0 +1,51 @@
+name: build-pipy-euler-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'pipy release tag'
+        required: true
+        type: string
+
+jobs:
+  debian:
+    name: Build pipy euler image
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.6.1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v5.5.1
+        with:
+          images: flomesh/pipy
+          tags: |
+            type=raw,${{ inputs.tag }}-euler
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6.7.0
+        with:
+          context: .
+          file: ./dockerfiles/Dockerfile.euler
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            PIPY_VERSION=${{ inputs.tag }}

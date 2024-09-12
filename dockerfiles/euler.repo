@@ -1,0 +1,6 @@
+[openEuler] # openEuler 22.03-LTS-SP1 官方发布源
+name=openEuler
+baseurl=http://repo.openeuler.org/openEuler-22.03-LTS-SP1/everything/$basearch/ 
+enabled=1
+gpgcheck=1
+gpgkey=http://repo.openeuler.org/openEuler-22.03-LTS-SP1/everything/$basearch/RPM-GPG-KEY-openEuler
