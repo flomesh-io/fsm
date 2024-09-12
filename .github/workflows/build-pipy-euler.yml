@@ -1,4 +1,4 @@
-name: build-pipy-nonroot-image
+name: build-pipy-euler-image
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   debian:
-    name: Build pipy debian image
+    name: Build pipy euler image
     runs-on: ubuntu-22.04
     steps:
       - name: Set up QEMU

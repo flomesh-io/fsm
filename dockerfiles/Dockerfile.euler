@@ -6,8 +6,8 @@ LABEL maintainer="reaver@flomesh.io"
 ARG PIPY_GUI
 ENV PIPY_GUI=${PIPY_GUI:-OFF}
 
-ARG PIPY_TAG
-ENV PIPY_TAG=${PIPY_TAG:-0.90.3-33}
+ARG PIPY_VERSION
+ENV PIPY_VERSION=${PIPY_VERSION:-1.0.0}
 
 #执行下面命令，安装基础环境
 RUN mv /etc/yum.repos.d/openEuler.repo /etc/yum.repos.d/openEuler.repo.bak
@@ -25,7 +25,7 @@ RUN    yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-
 RUN cd /tmp/ && \
     git clone https://github.com/flomesh-io/pipy.git && \
     cd pipy && \
-    ./build.sh -t $PIPY_TAG
+    ./build.sh -t $PIPY_VERSION
 
 FROM flomesh/euler:22.03 as prod
 
