@@ -1,0 +1,42 @@
+# 基础镜像
+FROM flomesh/euler:22.03 as builder
+
+LABEL maintainer="reaver@flomesh.io"
+
+ARG PIPY_GUI
+ENV PIPY_GUI=${PIPY_GUI:-OFF}
+
+ARG PIPY_TAG
+ENV PIPY_TAG=${PIPY_TAG:-0.90.3-33}
+
+#执行下面命令，安装基础环境
+RUN mv /etc/yum.repos.d/openEuler.repo /etc/yum.repos.d/openEuler.repo.bak
+
+COPY euler.repo /etc/yum.repos.d/euler.repo
+RUN yum update
+
+RUN yum install -y cmake clang zlib git make && \
+    yum clean all && \
+    rm -rf /var/cache/yum/*
+
+RUN    yum install https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm -y && \
+    yum install nodejs -y --setopt=nodesource-nodejs.module_hotfixes=1
+
+RUN cd /tmp/ && \
+    git clone https://github.com/flomesh-io/pipy.git && \
+    cd pipy && \
+    ./build.sh -t $PIPY_TAG
+
+FROM flomesh/euler:22.03 as prod
+
+COPY --from=builder /tmp/pipy/bin/pipy /usr/local/bin/pipy
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+#设置环境变量
+ENV PATH $PATH:/usr/local/bin
+
+#暴露端口
+EXPOSE 6060
+#运行这个镜像，默认执行的命令
+CMD ["pipy"]
