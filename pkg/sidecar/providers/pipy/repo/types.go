@@ -560,4 +560,5 @@ type PipyConf struct {
 
 	PluginSetV     string `json:"-"`
 	pluginPolicies map[string]map[string]*map[string]*runtime.RawExtension
+	hashNameSet    map[uint64]int
 }

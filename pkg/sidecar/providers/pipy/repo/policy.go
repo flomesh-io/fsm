@@ -295,7 +295,15 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 }
 
 func (p *PipyConf) hashName(hash uint64) HTTPRouteRuleName {
-	return HTTPRouteRuleName(fmt.Sprintf("%X", hash))
+	if p.hashNameSet == nil {
+		p.hashNameSet = make(map[uint64]int)
+	}
+	flowcode, exists := p.hashNameSet[hash]
+	if !exists {
+		flowcode = len(p.hashNameSet) + 1
+		p.hashNameSet[hash] = flowcode
+	}
+	return HTTPRouteRuleName(fmt.Sprintf("%05X", flowcode))
 }
 
 func (p *PipyConf) Pack() {

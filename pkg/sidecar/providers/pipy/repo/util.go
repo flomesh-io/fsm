@@ -23,7 +23,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
-func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string, proxy *pipy.Proxy) {
+func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, pipyConf *PipyConf, inboundPolicy *trafficpolicy.InboundMeshTrafficPolicy, trustDomain string, proxy *pipy.Proxy) {
 	itp := pipyConf.newInboundTrafficPolicy()
 
 	for _, trafficMatch := range inboundPolicy.TrafficMatches {
@@ -131,7 +131,9 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, _ ident
 	}
 }
 
-func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdentity identity.ServiceIdentity, pipyConf *PipyConf, cfg configurator.Configurator, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
+func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator,
+	proxy *pipy.Proxy, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
+	desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(outboundPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -169,7 +171,7 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, proxyIdenti
 			for _, httpRouteConfig := range httpRouteConfigs {
 				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
 				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
-				hsrrs.setServiceIdentity(proxyIdentity)
+				hsrrs.setServiceIdentity(proxy.Identity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
 					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
@@ -281,7 +283,7 @@ func generatePipyWildcardIPRanges(cfg configurator.Configurator) []string {
 	return wildcardIPv4
 }
 
-func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
+func generatePipyEgressTrafficRoutePolicy(meshCatalog catalog.MeshCataloger, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(egressPolicy.TrafficMatches) == 0 {
 		return nil
 	}
@@ -414,8 +416,7 @@ func getEgressClusterDestinationSpec(meshCatalog catalog.MeshCataloger, egressPo
 }
 
 func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, cfg configurator.Configurator,
-	proxy *pipy.Proxy, proxyIdentity identity.ServiceIdentity,
-	pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
+	proxy *pipy.Proxy, pipyConf *PipyConf, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
 	dependClusters map[service.ClusterName]*WeightedCluster) bool {
 	ready := true
 	viaGateway := cfg.GetMeshConfig().Spec.Connector.ViaGateway
@@ -440,7 +441,7 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 		}
 		for _, clusterConfig := range meshClusterConfigs {
 			clusterConfigs := otp.newClusterConfigs(ClusterName(cluster.ClusterName.String()))
-			upstreamEndpoints := getUpstreamEndpoints(meshCatalog, proxyIdentity, service.ClusterName(clusterConfig.Service.ClusterName()))
+			upstreamEndpoints := getUpstreamEndpoints(meshCatalog, proxy.Identity, service.ClusterName(clusterConfig.Service.ClusterName()))
 			if len(upstreamEndpoints) == 0 {
 				ready = false
 				continue
@@ -517,7 +518,7 @@ func generatePipyViaGateway(appProtocol, clusterID string, proxy *pipy.Proxy, vi
 	return viaGw
 }
 
-func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, ingressPolicy *trafficpolicy.IngressTrafficPolicy) {
+func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, ingressPolicy *trafficpolicy.IngressTrafficPolicy) {
 	if len(ingressPolicy.TrafficMatches) == 0 {
 		return
 	}
@@ -619,7 +620,7 @@ func generatePipyIngressTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.S
 	}
 }
 
-func generatePipyEgressTrafficForwardPolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, egressGatewayPolicy *trafficpolicy.EgressGatewayPolicy) bool {
+func generatePipyEgressTrafficForwardPolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, egressGatewayPolicy *trafficpolicy.EgressGatewayPolicy) bool {
 	if egressGatewayPolicy == nil || (egressGatewayPolicy.Global == nil && (egressGatewayPolicy.Rules == nil || len(egressGatewayPolicy.Rules) == 0)) {
 		return true
 	}
@@ -675,7 +676,7 @@ func generatePipyEgressTrafficForwardPolicy(_ catalog.MeshCataloger, _ identity.
 	return success
 }
 
-func generatePipyAccessControlTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, aclPolicy *trafficpolicy.AccessControlTrafficPolicy) {
+func generatePipyAccessControlTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, aclPolicy *trafficpolicy.AccessControlTrafficPolicy) {
 	if len(aclPolicy.TrafficMatches) == 0 {
 		return
 	}
@@ -777,7 +778,7 @@ func generatePipyAccessControlTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 	}
 }
 
-func generatePipyServiceExportTrafficRoutePolicy(_ catalog.MeshCataloger, _ identity.ServiceIdentity, pipyConf *PipyConf, expPolicy *trafficpolicy.ServiceExportTrafficPolicy) {
+func generatePipyServiceExportTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, expPolicy *trafficpolicy.ServiceExportTrafficPolicy) {
 	if len(expPolicy.TrafficMatches) == 0 {
 		return
 	}
@@ -876,7 +877,7 @@ func generatePipyServiceExportTrafficRoutePolicy(_ catalog.MeshCataloger, _ iden
 	}
 }
 
-func generatePipyEgressTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, _ *pipy.Proxy, serviceIdentity identity.ServiceIdentity, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, dependClusters map[service.ClusterName]*WeightedCluster) bool {
+func generatePipyEgressTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, proxy *pipy.Proxy, pipyConf *PipyConf, egressPolicy *trafficpolicy.EgressTrafficPolicy, dependClusters map[service.ClusterName]*WeightedCluster) bool {
 	ready := true
 	otp := pipyConf.newOutboundTrafficPolicy()
 	for _, cluster := range dependClusters {
@@ -922,7 +923,7 @@ func generatePipyEgressTrafficBalancePolicy(meshCatalog catalog.MeshCataloger, _
 		if cluster.RetryPolicy != nil {
 			clusterConfigs.setRetryPolicy(cluster.RetryPolicy)
 		} else if upstreamSvc, err := hostToMeshSvc(cluster.ClusterName.String()); err == nil {
-			if retryPolicy := meshCatalog.GetRetryPolicy(serviceIdentity, upstreamSvc); retryPolicy != nil {
+			if retryPolicy := meshCatalog.GetRetryPolicy(proxy.Identity, upstreamSvc); retryPolicy != nil {
 				clusterConfigs.setRetryPolicy(retryPolicy)
 			}
 		}
