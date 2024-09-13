@@ -21,8 +21,14 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// CircuitBreakers returns a CircuitBreakerInformer.
+	CircuitBreakers() CircuitBreakerInformer
 	// Filters returns a FilterInformer.
 	Filters() FilterInformer
+	// FilterDefinitions returns a FilterDefinitionInformer.
+	FilterDefinitions() FilterDefinitionInformer
+	// ListenerFilters returns a ListenerFilterInformer.
+	ListenerFilters() ListenerFilterInformer
 }
 
 type version struct {
@@ -36,7 +42,22 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// CircuitBreakers returns a CircuitBreakerInformer.
+func (v *version) CircuitBreakers() CircuitBreakerInformer {
+	return &circuitBreakerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // Filters returns a FilterInformer.
 func (v *version) Filters() FilterInformer {
 	return &filterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// FilterDefinitions returns a FilterDefinitionInformer.
+func (v *version) FilterDefinitions() FilterDefinitionInformer {
+	return &filterDefinitionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ListenerFilters returns a ListenerFilterInformer.
+func (v *version) ListenerFilters() ListenerFilterInformer {
+	return &listenerFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

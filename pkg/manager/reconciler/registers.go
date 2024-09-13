@@ -299,6 +299,12 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		webhooks[GatewayAPIExtensionFilter] = extwhv1alpha1.NewFilterWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFilter] = extensionv1alpha1.NewFilterReconciler(ctx)
+
+		webhooks[GatewayAPIExtensionListenerFilter] = extwhv1alpha1.NewListenerFilterWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionListenerFilter] = extensionv1alpha1.NewListenerFilterReconciler(ctx)
+
+		webhooks[GatewayAPIExtensionFilterDefinition] = extwhv1alpha1.NewFilterDefinitionWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
 	}
 
 	if mc.IsServiceLBEnabled() {

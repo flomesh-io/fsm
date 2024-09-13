@@ -163,7 +163,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 			filterType := filter.Spec.Type
 			filters = append(filters, fgwv2.GRPCRouteFilter{
 				Type:            gwv1.GRPCRouteFilterType(filterType),
-				ExtensionConfig: filter.Spec.Config,
+				ExtensionConfig: parseFilterConfig(filter.Spec.Config),
 				Key:             uuid.NewString(),
 			})
 

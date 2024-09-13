@@ -162,7 +162,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			filterType := filter.Spec.Type
 			filters = append(filters, fgwv2.HTTPRouteFilter{
 				Type:            gwv1.HTTPRouteFilterType(filterType),
-				ExtensionConfig: filter.Spec.Config,
+				ExtensionConfig: parseFilterConfig(filter.Spec.Config),
 				Key:             uuid.NewString(),
 			})
 

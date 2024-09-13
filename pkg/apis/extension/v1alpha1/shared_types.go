@@ -2,7 +2,7 @@ package v1alpha1
 
 import gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-type LocalPolicyTargetReferenceWithPort struct {
+type LocalTargetReferenceWithPort struct {
 	// Group is the group of the target resource.
 	Group gwv1.Group `json:"group"`
 

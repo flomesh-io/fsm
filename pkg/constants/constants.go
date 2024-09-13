@@ -433,6 +433,12 @@ const (
 	// GatewayAPIExtensionFilterKind is the kind name of Filter used in Gateway API
 	GatewayAPIExtensionFilterKind = "Filter"
 
+	// GatewayAPIExtensionListenerFilterKind is the kind name of Filter used in Gateway API
+	GatewayAPIExtensionListenerFilterKind = "ListenerFilter"
+
+	// GatewayAPIExtensionFilterDefinitionKind is the kind name of Filter used in Gateway API
+	GatewayAPIExtensionFilterDefinitionKind = "FilterDefinition"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 
@@ -622,7 +628,7 @@ const (
 	GatewayUDPRouteIndex                         = "gatewayUDPRouteIndex"
 	SecretGatewayIndex                           = "secretGatewayIndex"
 	ConfigMapGatewayIndex                        = "configMapGatewayIndex"
-	GatewayFilterIndex                           = "gatewayFilterIndex"
+	GatewayListenerFilterIndex                   = "gatewayListenerFilterIndex"
 	CrossNamespaceSecretNamespaceGatewayIndex    = "crossNamespaceSecretNamespaceGatewayIndex"
 	CrossNamespaceConfigMapNamespaceGatewayIndex = "crossNamespaceConfigMapNamespaceGatewayIndex"
 	TargetKindRefGrantIndex                      = "targetRefGrantRouteIndex"

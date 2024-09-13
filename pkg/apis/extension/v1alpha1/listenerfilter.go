@@ -5,8 +5,13 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
-// FilterSpec defines the desired state of Filter
-type FilterSpec struct {
+// ListenerFilterSpec defines the desired state of ListenerFilter
+type ListenerFilterSpec struct {
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=16
+	// TargetRefs is the references to the target resources to which the ListenerFilter is applied
+	TargetRefs []LocalTargetReferenceWithPort `json:"targetRefs"`
+
 	// DefinitionRef is the reference to the FilterDefinition
 	DefinitionRef gwv1.LocalObjectReference `json:"definitionRef"`
 
@@ -14,7 +19,7 @@ type FilterSpec struct {
 	ConfigRef gwv1.LocalObjectReference `json:"configRef"`
 }
 
-// Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols
+// ListenerFilter provides a way to configure ListenerFilters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:storageversion
@@ -23,21 +28,21 @@ type FilterSpec struct {
 // +kubebuilder:resource:scope=Namespaced,categories=gateway-api
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io}
-type Filter struct {
+type ListenerFilter struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec defines the desired state of Filter.
-	Spec FilterSpec `json:"spec,omitempty"`
+	// Spec defines the desired state of ListenerFilter.
+	Spec ListenerFilterSpec `json:"spec,omitempty"`
 
-	// Status defines the current state of Filter.
-	Status FilterStatus `json:"status,omitempty"`
+	// Status defines the current state of ListenerFilter.
+	Status ListenerFilterStatus `json:"status,omitempty"`
 }
 
-// FilterStatus defines the common attributes that all filters should include within
+// ListenerFilterStatus defines the common attributes that all ListenerFilters should include within
 // their status.
-type FilterStatus struct {
-	// Conditions describes the status of the Filter with respect to the given Ancestor.
+type ListenerFilterStatus struct {
+	// Conditions describes the status of the ListenerFilter with respect to the given Ancestor.
 	//
 	// +listType=map
 	// +listMapKey=type
@@ -49,9 +54,9 @@ type FilterStatus struct {
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// FilterList contains a list of Filter
-type FilterList struct {
+// ListenerFilterList contains a list of ListenerFilter
+type ListenerFilterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Filter `json:"items"`
+	Items           []ListenerFilter `json:"items"`
 }

@@ -15,6 +15,14 @@ limitations under the License.
 
 package v1alpha1
 
+// CircuitBreakerListerExpansion allows custom methods to be added to
+// CircuitBreakerLister.
+type CircuitBreakerListerExpansion interface{}
+
+// CircuitBreakerNamespaceListerExpansion allows custom methods to be added to
+// CircuitBreakerNamespaceLister.
+type CircuitBreakerNamespaceListerExpansion interface{}
+
 // FilterListerExpansion allows custom methods to be added to
 // FilterLister.
 type FilterListerExpansion interface{}
@@ -22,3 +30,19 @@ type FilterListerExpansion interface{}
 // FilterNamespaceListerExpansion allows custom methods to be added to
 // FilterNamespaceLister.
 type FilterNamespaceListerExpansion interface{}
+
+// FilterDefinitionListerExpansion allows custom methods to be added to
+// FilterDefinitionLister.
+type FilterDefinitionListerExpansion interface{}
+
+// FilterDefinitionNamespaceListerExpansion allows custom methods to be added to
+// FilterDefinitionNamespaceLister.
+type FilterDefinitionNamespaceListerExpansion interface{}
+
+// ListenerFilterListerExpansion allows custom methods to be added to
+// ListenerFilterLister.
+type ListenerFilterListerExpansion interface{}
+
+// ListenerFilterNamespaceListerExpansion allows custom methods to be added to
+// ListenerFilterNamespaceLister.
+type ListenerFilterNamespaceListerExpansion interface{}

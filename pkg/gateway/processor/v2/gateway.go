@@ -172,7 +172,7 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 
 		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
 			Type:            filterType,
-			ExtensionConfig: f.Spec.Config,
+			ExtensionConfig: parseFilterConfig(f.Spec.Config),
 			Key:             uuid.NewString(),
 		})
 

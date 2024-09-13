@@ -15,4 +15,10 @@ limitations under the License.
 
 package v1alpha1
 
+type CircuitBreakerExpansion interface{}
+
 type FilterExpansion interface{}
+
+type FilterDefinitionExpansion interface{}
+
+type ListenerFilterExpansion interface{}

@@ -25,7 +25,10 @@ import (
 
 type ExtensionV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	CircuitBreakersGetter
 	FiltersGetter
+	FilterDefinitionsGetter
+	ListenerFiltersGetter
 }
 
 // ExtensionV1alpha1Client is used to interact with features provided by the extension.gateway.flomesh.io group.
@@ -33,8 +36,20 @@ type ExtensionV1alpha1Client struct {
 	restClient rest.Interface
 }
 
+func (c *ExtensionV1alpha1Client) CircuitBreakers(namespace string) CircuitBreakerInterface {
+	return newCircuitBreakers(c, namespace)
+}
+
 func (c *ExtensionV1alpha1Client) Filters(namespace string) FilterInterface {
 	return newFilters(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) FilterDefinitions(namespace string) FilterDefinitionInterface {
+	return newFilterDefinitions(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilterInterface {
+	return newListenerFilters(c, namespace)
 }
 
 // NewForConfig creates a new ExtensionV1alpha1Client for the given config.
