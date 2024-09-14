@@ -307,6 +307,7 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
 
 		reconcilers[GatewayAPIExtensionCircuitBreaker] = extensionv1alpha1.NewCircuitBreakerReconciler(ctx)
+		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx)
 	}
 
 	if mc.IsServiceLBEnabled() {

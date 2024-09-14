@@ -156,24 +156,24 @@ rules:
 
   # GatewayAPI Extension
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers" ]
+    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers", "faultinjections" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers" ]
+    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers", "faultinjections/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status" ]
+    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status", "faultinjections/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies", "sessionstickypolicies", "loadbalancerpolicies", "circuitbreakingpolicies", "accesscontrolpolicies", "healthcheckpolicies", "faultinjectionpolicies", "upstreamtlspolicies", "retrypolicies" ]
+    resources: [  "healthcheckpolicies", "retrypolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/finalizers", "sessionstickypolicies/finalizers", "loadbalancerpolicies/finalizers", "circuitbreakingpolicies/finalizers", "accesscontrolpolicies/finalizers", "healthcheckpolicies/finalizers", "faultinjectionpolicies/finalizers", "upstreamtlspolicies/finalizers", "retrypolicies/finalizers"]
+    resources: [ "healthcheckpolicies/finalizers", "retrypolicies/finalizers"]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "ratelimitpolicies/status", "sessionstickypolicies/status", "loadbalancerpolicies/status", "circuitbreakingpolicies/status", "accesscontrolpolicies/status", "healthcheckpolicies/status", "faultinjectionpolicies/status", "upstreamtlspolicies/status", "retrypolicies/status"]
+    resources: [  "healthcheckpolicies/status", "retrypolicies/status"]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

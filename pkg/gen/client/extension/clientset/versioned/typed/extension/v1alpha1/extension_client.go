@@ -26,6 +26,7 @@ import (
 type ExtensionV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CircuitBreakersGetter
+	FaultInjectionsGetter
 	FiltersGetter
 	FilterDefinitionsGetter
 	ListenerFiltersGetter
@@ -38,6 +39,10 @@ type ExtensionV1alpha1Client struct {
 
 func (c *ExtensionV1alpha1Client) CircuitBreakers(namespace string) CircuitBreakerInterface {
 	return newCircuitBreakers(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) FaultInjections(namespace string) FaultInjectionInterface {
+	return newFaultInjections(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) Filters(namespace string) FilterInterface {

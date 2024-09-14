@@ -60,6 +60,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&CircuitBreaker{},
 		&CircuitBreakerList{},
+		&FaultInjection{},
+		&FaultInjectionList{},
 		&Filter{},
 		&FilterDefinition{},
 		&FilterDefinitionList{},

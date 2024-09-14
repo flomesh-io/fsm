@@ -23,6 +23,14 @@ type CircuitBreakerListerExpansion interface{}
 // CircuitBreakerNamespaceLister.
 type CircuitBreakerNamespaceListerExpansion interface{}
 
+// FaultInjectionListerExpansion allows custom methods to be added to
+// FaultInjectionLister.
+type FaultInjectionListerExpansion interface{}
+
+// FaultInjectionNamespaceListerExpansion allows custom methods to be added to
+// FaultInjectionNamespaceLister.
+type FaultInjectionNamespaceListerExpansion interface{}
+
 // FilterListerExpansion allows custom methods to be added to
 // FilterLister.
 type FilterListerExpansion interface{}
