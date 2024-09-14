@@ -35,5 +35,5 @@ func IPv4Tov6(ipv41 string) string {
 	copy(ipv6[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff})
 	copy(ipv6[12:], ipv4.To4())
 
-	return netip.AddrFrom16(ipv6).String()
+	return netip.AddrFrom16(ipv6).StringExpanded()
 }
