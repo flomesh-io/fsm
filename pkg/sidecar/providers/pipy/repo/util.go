@@ -275,8 +275,10 @@ func generatePipyWildcardIPRanges(cfg configurator.Configurator) []string {
 	if cfg.IsLocalDNSProxyEnabled() {
 		dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
 		if cfg.IsWildcardDNSProxyEnabled() {
-			for _, ipv4 := range dnsProxy.Wildcard.IPv4 {
-				wildcardIPv4 = append(wildcardIPv4, fmt.Sprintf("%s/32", ipv4))
+			for _, ipAddr := range dnsProxy.Wildcard.IPs {
+				if len(ipAddr.IPv4) > 0 {
+					wildcardIPv4 = append(wildcardIPv4, fmt.Sprintf("%s/32", ipAddr.IPv4))
+				}
 			}
 		}
 	}

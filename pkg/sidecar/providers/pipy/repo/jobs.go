@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	corev1 "k8s.io/api/core/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -23,6 +24,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // PipyConfGeneratorJob is the job to generate pipy policy json
@@ -194,10 +196,18 @@ func outbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pr
 	if cfg.IsLocalDNSProxyEnabled() && !cfg.IsWildcardDNSProxyEnabled() {
 		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
 			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]interface{})
+				pipyConf.DNSResolveDB = make(map[string][]configv1alpha3.ResolveAddr)
 			}
-			for k, v := range outboundTrafficPolicy.ServicesResolvableSet {
-				pipyConf.DNSResolveDB[k] = v
+			for dn, ipv4s := range outboundTrafficPolicy.ServicesResolvableSet {
+				ipAddrs := make([]configv1alpha3.ResolveAddr, 0)
+				for _, ipv4 := range ipv4s {
+					resolveAddr := configv1alpha3.ResolveAddr{IPv4: ipv4.(string)}
+					if cfg.GenerateIPv6BasedOnIPv4() {
+						resolveAddr.IPv6 = utils.IPv4Tov6(resolveAddr.IPv4)
+					}
+					ipAddrs = append(ipAddrs, resolveAddr)
+				}
+				pipyConf.DNSResolveDB[dn] = ipAddrs
 			}
 		}
 	}
@@ -417,7 +427,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 		}
 		if len(svc.Annotations) > 0 {
 			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]interface{})
+				pipyConf.DNSResolveDB = make(map[string][]configv1alpha3.ResolveAddr)
 			}
 			resolvableIPSet := mapset.NewSet()
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
@@ -434,13 +444,21 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 						}
 					}
 				}
-				addrItems := resolvableIPSet.ToSlice()
-				sort.SliceStable(addrItems, func(i, j int) bool {
-					addr1 := addrItems[i].(string)
-					addr2 := addrItems[j].(string)
+				ipv4s := resolvableIPSet.ToSlice()
+				sort.SliceStable(ipv4s, func(i, j int) bool {
+					addr1 := ipv4s[i].(string)
+					addr2 := ipv4s[j].(string)
 					return addr1 < addr2
 				})
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())] = addrItems
+				ipAddrs := make([]configv1alpha3.ResolveAddr, 0)
+				for _, ipv4 := range ipv4s {
+					resolveAddr := configv1alpha3.ResolveAddr{IPv4: ipv4.(string)}
+					if cfg.GenerateIPv6BasedOnIPv4() {
+						resolveAddr.IPv6 = utils.IPv4Tov6(resolveAddr.IPv4)
+					}
+					ipAddrs = append(ipAddrs, resolveAddr)
+				}
+				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())] = ipAddrs
 				delete(pipyConf.DNSResolveDB, svc.Name)
 			}
 		}
@@ -452,24 +470,30 @@ func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 		return
 	}
 	if pipyConf.DNSResolveDB == nil {
-		pipyConf.DNSResolveDB = make(map[string][]interface{})
+		pipyConf.DNSResolveDB = make(map[string][]configv1alpha3.ResolveAddr)
 	}
 	dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
 	if cfg.IsWildcardDNSProxyEnabled() {
-		ipv4s := make([]interface{}, 0)
-		for _, ipv4 := range dnsProxy.Wildcard.IPv4 {
-			ipv4s = append(ipv4s, ipv4)
+		ipAddrs := make([]configv1alpha3.ResolveAddr, 0)
+		for _, ipAddr := range dnsProxy.Wildcard.IPs {
+			if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
+				ipAddr.IPv6 = utils.IPv4Tov6(ipAddr.IPv4)
+			}
+			ipAddrs = append(ipAddrs, ipAddr)
 		}
-		pipyConf.DNSResolveDB["*"] = ipv4s
+		pipyConf.DNSResolveDB["*"] = ipAddrs
 	} else {
 		if len(dnsProxy.DB) > 0 {
 			for _, db := range dnsProxy.DB {
-				if len(db.IPv4) > 0 {
-					ipv4s := make([]interface{}, 0)
-					for _, ipv4 := range db.IPv4 {
-						ipv4s = append(ipv4s, ipv4)
+				if len(db.IPs) > 0 {
+					ipAddrs := make([]configv1alpha3.ResolveAddr, 0)
+					for _, ipAddr := range db.IPs {
+						if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
+							ipAddr.IPv6 = utils.IPv4Tov6(ipAddr.IPv4)
+						}
+						ipAddrs = append(ipAddrs, ipAddr)
 					}
-					pipyConf.DNSResolveDB[db.DN] = ipv4s
+					pipyConf.DNSResolveDB[db.DN] = ipAddrs
 				}
 			}
 		}

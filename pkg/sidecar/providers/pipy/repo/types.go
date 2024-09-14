@@ -8,6 +8,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -551,12 +552,12 @@ type PipyConf struct {
 	Metrics          bool
 	Spec             MeshConfigSpec
 	Certificate      *Certificate
-	Inbound          *InboundTrafficPolicy    `json:"Inbound"`
-	Outbound         *OutboundTrafficPolicy   `json:"Outbound"`
-	Forward          *ForwardTrafficPolicy    `json:"Forward,omitempty"`
-	AllowedEndpoints map[string]string        `json:"AllowedEndpoints"`
-	Chains           map[string][]string      `json:"Chains,omitempty"`
-	DNSResolveDB     map[string][]interface{} `json:"DNSResolveDB,omitempty"`
+	Inbound          *InboundTrafficPolicy                   `json:"Inbound"`
+	Outbound         *OutboundTrafficPolicy                  `json:"Outbound"`
+	Forward          *ForwardTrafficPolicy                   `json:"Forward,omitempty"`
+	AllowedEndpoints map[string]string                       `json:"AllowedEndpoints"`
+	Chains           map[string][]string                     `json:"Chains,omitempty"`
+	DNSResolveDB     map[string][]configv1alpha3.ResolveAddr `json:"DNSResolveDB,omitempty"`
 
 	PluginSetV     string `json:"-"`
 	pluginPolicies map[string]map[string]*map[string]*runtime.RawExtension
