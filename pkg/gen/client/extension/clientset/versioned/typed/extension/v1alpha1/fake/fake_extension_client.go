@@ -29,6 +29,10 @@ func (c *FakeExtensionV1alpha1) CircuitBreakers(namespace string) v1alpha1.Circu
 	return &FakeCircuitBreakers{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) FaultInjections(namespace string) v1alpha1.FaultInjectionInterface {
+	return &FakeFaultInjections{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) Filters(namespace string) v1alpha1.FilterInterface {
 	return &FakeFilters{c, namespace}
 }

@@ -1170,14 +1170,14 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		//announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
 		// LoadBalancerPolicy event
 		//announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
-		// CircuitBreakingPolicy event
-		//announcements.CircuitBreakingPolicyAdded, announcements.CircuitBreakingPolicyDeleted, announcements.CircuitBreakingPolicyUpdated,
+		// CircuitBreaking event
+		announcements.CircuitBreakerAdded, announcements.CircuitBreakerDeleted, announcements.CircuitBreakerUpdated,
 		// AccessControlPolicy event
 		//announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
 		// HealthCheckPolicy event
 		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
-		// FaultInjectionPolicy event
-		//announcements.FaultInjectionPolicyAdded, announcements.FaultInjectionPolicyDeleted, announcements.FaultInjectionPolicyUpdated,
+		// FaultInjection event
+		announcements.FaultInjectionAdded, announcements.FaultInjectionDeleted, announcements.FaultInjectionUpdated,
 		// UpstreamTLSPolicy event
 		//announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
@@ -1188,6 +1188,10 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.BackendLBPolicyAdded, announcements.BackendLBPolicyDeleted, announcements.BackendLBPolicyUpdated,
 		// Filter event
 		announcements.FilterAdded, announcements.FilterDeleted, announcements.FilterUpdated,
+		// ListenerFilter event
+		announcements.ListenerFilterAdded, announcements.ListenerFilterDeleted, announcements.ListenerFilterUpdated,
+		// FilterDefinition event
+		announcements.FilterDefinitionAdded, announcements.FilterDefinitionDeleted, announcements.FilterDefinitionUpdated,
 
 		//
 		// MultiCluster events

@@ -63,6 +63,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyListenerFilter)
 	case *extv1alpha1.CircuitBreaker:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyCircuitBreaker)
+	case *extv1alpha1.FaultInjection:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyFaultInjection)
 	}
 
 	return nil
@@ -202,6 +204,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.CircuitBreakerAdded,
 			Update: announcements.CircuitBreakerUpdated,
 			Delete: announcements.CircuitBreakerDeleted,
+		}
+	case fsminformers.InformerKeyFaultInjection:
+		return &k8s.EventTypes{
+			Add:    announcements.FaultInjectionAdded,
+			Update: announcements.FaultInjectionUpdated,
+			Delete: announcements.FaultInjectionDeleted,
 		}
 	}
 

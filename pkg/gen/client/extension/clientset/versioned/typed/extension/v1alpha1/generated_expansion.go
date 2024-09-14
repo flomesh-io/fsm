@@ -17,6 +17,8 @@ package v1alpha1
 
 type CircuitBreakerExpansion interface{}
 
+type FaultInjectionExpansion interface{}
+
 type FilterExpansion interface{}
 
 type FilterDefinitionExpansion interface{}

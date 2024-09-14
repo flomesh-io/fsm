@@ -128,8 +128,8 @@ const (
 	InformerKeyAccessControlPolicy InformerKey = "AccessControlPolicy"
 	// InformerKeyHealthCheckPolicyV1alpha1 is the InformerKey for a HealthCheckPolicy informer
 	InformerKeyHealthCheckPolicyV1alpha1 InformerKey = "HealthCheckPolicy-v1alpha1"
-	// InformerKeyFaultInjectionPolicy is the InformerKey for a FaultInjectionPolicy informer
-	InformerKeyFaultInjectionPolicy InformerKey = "FaultInjectionPolicy"
+	// InformerKeyFaultInjection is the InformerKey for a FaultInjection informer
+	InformerKeyFaultInjection InformerKey = "FaultInjection"
 	// InformerKeyUpstreamTLSPolicy is the InformerKey for a UpstreamTLSPolicy informer
 	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
 	// InformerKeyRetryPolicyV1alpha1 is the InformerKey for a RetryPolicy informer
@@ -235,8 +235,8 @@ const (
 	// HealthCheckPoliciesResourceType is the type used to represent the health check policies resource
 	HealthCheckPoliciesResourceType ResourceType = "healthchecks"
 
-	// FaultInjectionPoliciesResourceType is the type used to represent the fault injection policies resource
-	FaultInjectionPoliciesResourceType ResourceType = "faultinjections"
+	// FaultInjectionsResourceType is the type used to represent the fault injections resource
+	FaultInjectionsResourceType ResourceType = "faultinjections"
 
 	// UpstreamTLSPoliciesResourceType is the type used to represent the upstream tls policies resource
 	UpstreamTLSPoliciesResourceType ResourceType = "upstreamtls"
