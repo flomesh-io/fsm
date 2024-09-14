@@ -469,8 +469,8 @@ const (
 	// HealthCheckPolicyKind is the kind name of HealthCheckPolicy used in Flomesh API
 	HealthCheckPolicyKind = "HealthCheckPolicy"
 
-	// FaultInjectionPolicyKind is the kind name of FaultInjectionPolicy used in Flomesh API
-	FaultInjectionPolicyKind = "FaultInjectionPolicy"
+	// FaultInjectionKind is the kind name of FaultInjection used in Flomesh API
+	FaultInjectionKind = "FaultInjection"
 
 	// UpstreamTLSPolicyKind is the kind name of UpstreamTLSPolicy used in Flomesh API
 	UpstreamTLSPolicyKind = "UpstreamTLSPolicy"
@@ -861,7 +861,7 @@ var (
 	//CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), CircuitBreakingPolicyKind)
 	//AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), AccessControlPolicyKind)
 	//HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), HealthCheckPolicyKind)
-	//FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionPolicyKind)
+	//FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionKind)
 	//UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), UpstreamTLSPolicyKind)
 	//RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RetryPolicyKind)
 )

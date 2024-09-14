@@ -550,14 +550,14 @@ const (
 
 	// ---
 
-	// FaultInjectionPolicyAdded is the type of announcement emitted when we observe an addition of faultinjectionpolicies.gateway.flomesh.io
-	FaultInjectionPolicyAdded Kind = "faultinjectionpolicy-added"
+	// FaultInjectionAdded is the type of announcement emitted when we observe an addition of faultinjectionpolicies.extension.gateway.flomesh.io
+	FaultInjectionAdded Kind = "FaultInjection-added"
 
-	// FaultInjectionPolicyDeleted the type of announcement emitted when we observe a deletion of faultinjectionpolicies.gateway.flomesh.io
-	FaultInjectionPolicyDeleted Kind = "faultinjectionpolicy-deleted"
+	// FaultInjectionDeleted the type of announcement emitted when we observe a deletion of faultinjectionpolicies.extension.gateway.flomesh.io
+	FaultInjectionDeleted Kind = "FaultInjection-deleted"
 
-	// FaultInjectionPolicyUpdated is the type of announcement emitted when we observe an update to faultinjectionpolicies.gateway.flomesh.io
-	FaultInjectionPolicyUpdated Kind = "faultinjectionpolicy-updated"
+	// FaultInjectionUpdated is the type of announcement emitted when we observe an update to faultinjectionpolicies.extension.gateway.flomesh.io
+	FaultInjectionUpdated Kind = "FaultInjection-updated"
 
 	// ---
 
