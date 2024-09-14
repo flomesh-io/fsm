@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"net"
 	"net/netip"
+	"strings"
 )
 
 // IP2Int converts ip addr to int.
@@ -35,5 +36,7 @@ func IPv4Tov6(ipv41 string) string {
 	copy(ipv6[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff})
 	copy(ipv6[12:], ipv4.To4())
 
-	return netip.AddrFrom16(ipv6).StringExpanded()
+	str := netip.AddrFrom16(ipv6).StringExpanded()
+
+	return strings.Replace(str, "0000:0000:0000:0000:0000:ffff", "::ffff", 1)
 }
