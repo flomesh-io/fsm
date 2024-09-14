@@ -26,12 +26,21 @@ func (c *ConfigGenerator) resolveFilterDefinition(ref gwv1.LocalObjectReference)
 
 func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map[string]interface{} {
 	key := types.NamespacedName{Namespace: c.gateway.Namespace, Name: string(ref.Name)}
+	ctx := context.Background()
 
 	switch ref.Kind {
 	case constants.CircuitBreakerKind:
 		obj := &extv1alpha1.CircuitBreaker{}
-		if err := c.client.Get(context.Background(), key, obj); err != nil {
+		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve CircuitBreaker: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap(&obj.Spec)
+	case constants.FaultInjectionKind:
+		obj := &extv1alpha1.FaultInjection{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve FaultInjection: %s", err)
 			return map[string]interface{}{}
 		}
 
