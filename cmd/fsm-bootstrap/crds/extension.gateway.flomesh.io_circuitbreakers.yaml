@@ -6,16 +6,16 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
-  name: filters.extension.gateway.flomesh.io
+  name: circuitbreakers.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io
   names:
     categories:
     - gateway-api
-    kind: Filter
-    listKind: FilterList
-    plural: filters
-    singular: filter
+    kind: CircuitBreaker
+    listKind: CircuitBreakerList
+    plural: circuitbreakers
+    singular: circuitbreaker
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -25,8 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP
-          protocols
+        description: CircuitBreaker is the Schema for the CircuitBreaker API
         properties:
           apiVersion:
             description: |-
@@ -46,72 +45,82 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of Filter.
+            description: CircuitBreakerSpec defines the desired state of CircuitBreaker
             properties:
-              configRef:
-                description: ConfigRef is the reference to the Configurations
+              circuitBreak:
+                description: Config is the circuit breaking configuration
                 properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  breakInterval:
+                    default: 30s
+                    description: BreakInterval is the interval to break the service,
+                      default is 30s
                     type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                  checkInterval:
+                    default: 5s
+                    description: CheckInterval is the interval to check the health
+                      of the service, default is 5s
                     type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
+                  concurrencyThreshold:
+                    default: 0
+                    description: ConcurrencyThreshold is the threshold of concurrent
+                      requests to trigger circuit breaking, default is 0
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  errorCountThreshold:
+                    default: 10
+                    description: ErrorCountThreshold is the threshold of error requests
+                      in the StatTimeWindow to trigger circuit breaking, default is
+                      10
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  errorRatioThreshold:
+                    default: 0.5
+                    description: ErrorRatioThreshold is the threshold of error requests
+                      ratio in the StatTimeWindow to trigger circuit breaking, default
+                      is 0.5(50%)
+                    maximum: 1
+                    minimum: 0
+                    type: number
+                  latencyThreshold:
+                    default: 1s
+                    description: LatencyThreshold is the threshold in milliseconds
+                      to determine a slow request, default is 1s
                     type: string
-                required:
-                - group
-                - kind
-                - name
+                  response:
+                    default:
+                      body: Circuit breaker triggered
+                      status: 429
+                    description: CircuitBreakerResponse is the response when circuit
+                      breaker triggered
+                    properties:
+                      body:
+                        default: Circuit breaker triggered
+                        description: Body is the content of response body, default
+                          is "Circuit breaker triggered"
+                        type: string
+                      headers:
+                        additionalProperties:
+                          type: string
+                        description: Headers is the HTTP headers of response
+                        type: object
+                      status:
+                        default: 429
+                        description: StatusCode is the HTTP status code of the response,
+                          default is 429
+                        format: int32
+                        maximum: 600
+                        minimum: 0
+                        type: integer
+                    type: object
                 type: object
-              definitionRef:
-                description: DefinitionRef is the reference to the FilterDefinition
-                properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                    type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
-                    type: string
-                required:
-                - group
-                - kind
-                - name
-                type: object
-            required:
-            - configRef
-            - definitionRef
             type: object
           status:
-            description: Status defines the current state of Filter.
+            description: CircuitBreakerStatus defines the observed state of CircuitBreaker
             properties:
               conditions:
-                description: Conditions describes the status of the Filter with respect
-                  to the given Ancestor.
+                description: Conditions describe the current conditions of the CircuitBreaker.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource.\n---\nThis struct is intended for
@@ -180,7 +189,6 @@ spec:
                   - type
                   type: object
                 maxItems: 8
-                minItems: 1
                 type: array
                 x-kubernetes-list-map-keys:
                 - type

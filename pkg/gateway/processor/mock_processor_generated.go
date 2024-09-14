@@ -119,6 +119,34 @@ func (mr *MockProcessorMockRecorder) IsEffectiveTargetRef(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEffectiveTargetRef", reflect.TypeOf((*MockProcessor)(nil).IsEffectiveTargetRef), arg0, arg1)
 }
 
+// IsFilterConfigReferred mocks base method.
+func (m *MockProcessor) IsFilterConfigReferred(arg0 string, arg1 types.NamespacedName) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFilterConfigReferred", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFilterConfigReferred indicates an expected call of IsFilterConfigReferred.
+func (mr *MockProcessorMockRecorder) IsFilterConfigReferred(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFilterConfigReferred", reflect.TypeOf((*MockProcessor)(nil).IsFilterConfigReferred), arg0, arg1)
+}
+
+// IsFilterDefinitionReferred mocks base method.
+func (m *MockProcessor) IsFilterDefinitionReferred(arg0 types.NamespacedName) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsFilterDefinitionReferred", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsFilterDefinitionReferred indicates an expected call of IsFilterDefinitionReferred.
+func (mr *MockProcessorMockRecorder) IsFilterDefinitionReferred(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFilterDefinitionReferred", reflect.TypeOf((*MockProcessor)(nil).IsFilterDefinitionReferred), arg0)
+}
+
 // IsFilterReferred mocks base method.
 func (m *MockProcessor) IsFilterReferred(arg0 types.NamespacedName) bool {
 	m.ctrl.T.Helper()
@@ -145,6 +173,20 @@ func (m *MockProcessor) IsHeadlessServiceWithoutSelector(arg0 types.NamespacedNa
 func (mr *MockProcessorMockRecorder) IsHeadlessServiceWithoutSelector(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHeadlessServiceWithoutSelector", reflect.TypeOf((*MockProcessor)(nil).IsHeadlessServiceWithoutSelector), arg0)
+}
+
+// IsListenerFilterReferred mocks base method.
+func (m *MockProcessor) IsListenerFilterReferred(arg0 types.NamespacedName) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsListenerFilterReferred", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsListenerFilterReferred indicates an expected call of IsListenerFilterReferred.
+func (mr *MockProcessorMockRecorder) IsListenerFilterReferred(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsListenerFilterReferred", reflect.TypeOf((*MockProcessor)(nil).IsListenerFilterReferred), arg0)
 }
 
 // IsRoutableLocalTargetServices mocks base method.

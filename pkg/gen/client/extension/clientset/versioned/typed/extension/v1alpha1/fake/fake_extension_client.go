@@ -25,8 +25,20 @@ type FakeExtensionV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeExtensionV1alpha1) CircuitBreakers(namespace string) v1alpha1.CircuitBreakerInterface {
+	return &FakeCircuitBreakers{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) Filters(namespace string) v1alpha1.FilterInterface {
 	return &FakeFilters{c, namespace}
+}
+
+func (c *FakeExtensionV1alpha1) FilterDefinitions() v1alpha1.FilterDefinitionInterface {
+	return &FakeFilterDefinitions{c}
+}
+
+func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.ListenerFilterInterface {
+	return &FakeListenerFilters{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

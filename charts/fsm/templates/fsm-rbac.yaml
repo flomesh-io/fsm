@@ -156,13 +156,13 @@ rules:
 
   # GatewayAPI Extension
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters" ]
+    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/finalizers" ]
+    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/status"]
+    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment

@@ -31,6 +31,8 @@ import (
 	"sync"
 	"time"
 
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
@@ -999,12 +1001,12 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			})),
 		).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
-		//Watches(&extv1alpha1.Filter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways)).
+		Watches(&extv1alpha1.ListenerFilter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways)).
 		Complete(r); err != nil {
 		return err
 	}
 
-	return addGatewayIndexers(context.TODO(), mgr)
+	return r.addGatewayIndexers(context.TODO(), mgr)
 }
 
 func (r *gatewayReconciler) gatewayClassToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
@@ -1250,29 +1252,29 @@ func (r *gatewayReconciler) referenceGrantToGateways(ctx context.Context, obj cl
 	return requests
 }
 
-//func (r *gatewayReconciler) filterToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
-//	filter, ok := obj.(*extv1alpha1.Filter)
-//	if !ok {
-//		log.Error().Msgf("unexpected object type: %T", obj)
-//		return nil
-//	}
-//
-//	requests := make([]reconcile.Request, 0)
-//	for _, targetRef := range filter.Spec.TargetRefs {
-//		if targetRef.Group == gwv1.GroupName && targetRef.Kind == constants.GatewayAPIGatewayKind {
-//			requests = append(requests, reconcile.Request{
-//				NamespacedName: types.NamespacedName{
-//					Namespace: filter.Namespace,
-//					Name:      string(targetRef.Name),
-//				},
-//			})
-//		}
-//	}
-//
-//	return requests
-//}
+func (r *gatewayReconciler) filterToGateways(ctx context.Context, obj client.Object) []reconcile.Request {
+	filter, ok := obj.(*extv1alpha1.ListenerFilter)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", obj)
+		return nil
+	}
 
-func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
+	requests := make([]reconcile.Request, 0)
+	for _, targetRef := range filter.Spec.TargetRefs {
+		if targetRef.Group == gwv1.GroupName && targetRef.Kind == constants.GatewayAPIGatewayKind {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: filter.Namespace,
+					Name:      string(targetRef.Name),
+				},
+			})
+		}
+	}
+
+	return requests
+}
+
+func (r *gatewayReconciler) addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.SecretGatewayIndex, secretGatewayIndexFunc); err != nil {
 		return err
 	}
@@ -1286,6 +1288,10 @@ func addGatewayIndexers(ctx context.Context, mgr manager.Manager) error {
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.CrossNamespaceConfigMapNamespaceGatewayIndex, crossNamespaceConfigMapNamespaceGatewayIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1.Gateway{}, constants.ListenerFilterGatewayIndex, r.listenerFilterGatewayIndexFunc); err != nil {
 		return err
 	}
 
@@ -1447,4 +1453,29 @@ func crossNamespaceConfigMapNamespaceGatewayIndexFunc(obj client.Object) []strin
 	}
 
 	return namespaces.UnsortedList()
+}
+
+func (r *gatewayReconciler) listenerFilterGatewayIndexFunc(obj client.Object) []string {
+	gateway := obj.(*gwv1.Gateway)
+
+	list := &extv1alpha1.ListenerFilterList{}
+	if err := r.fctx.List(context.TODO(), list, &client.ListOptions{Namespace: gateway.Namespace}); err != nil {
+		log.Error().Msgf("Failed to list ListenerFilters: %v", err)
+		return nil
+	}
+
+	var filters []string
+
+	for _, filter := range list.Items {
+		for _, targetRef := range filter.Spec.TargetRefs {
+			if targetRef.Group == gwv1.GroupName && targetRef.Kind == constants.GatewayAPIGatewayKind && string(targetRef.Name) == gateway.Name {
+				filters = append(filters, types.NamespacedName{
+					Namespace: filter.Namespace,
+					Name:      filter.Name,
+				}.String())
+			}
+		}
+	}
+
+	return filters
 }

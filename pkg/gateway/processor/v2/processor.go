@@ -3,12 +3,14 @@ package v2
 
 import (
 	"fmt"
+
 	"sync"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
+	extensiontrigger "github.com/flomesh-io/fsm/pkg/gateway/processor/triggers/extension"
 	gatewaytrigger "github.com/flomesh-io/fsm/pkg/gateway/processor/triggers/gateway"
 	k8strigger "github.com/flomesh-io/fsm/pkg/gateway/processor/triggers/k8s"
 	policytriggerv2 "github.com/flomesh-io/fsm/pkg/gateway/processor/triggers/policy/v2"
@@ -76,7 +78,10 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.RetryPoliciesResourceType:       &policytriggerv2.RetryPoliciesTrigger{},
 			informers.BackendLBPoliciesResourceType:   &policytriggerv2.BackendLBPoliciesTrigger{},
 			informers.BackendTLSPoliciesResourceType:  &policytriggerv2.BackendTLSPoliciesTrigger{},
-			informers.FiltersResourceType:             &gatewaytrigger.FilterTrigger{},
+			informers.FiltersResourceType:             &extensiontrigger.FilterTrigger{},
+			informers.ListenerFiltersResourceType:     &extensiontrigger.ListenerFilterTrigger{},
+			informers.FilterDefinitionsResourceType:   &extensiontrigger.FilterDefinitionTrigger{},
+			informers.CircuitBreakersResourceType:     &extensiontrigger.CircuitBreakerTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -144,6 +149,12 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.BackendTLSPoliciesResourceType]
 	case *extv1alpha1.Filter:
 		return c.triggers[informers.FiltersResourceType]
+	case *extv1alpha1.ListenerFilter:
+		return c.triggers[informers.ListenerFiltersResourceType]
+	case *extv1alpha1.FilterDefinition:
+		return c.triggers[informers.FilterDefinitionsResourceType]
+	case *extv1alpha1.CircuitBreaker:
+		return c.triggers[informers.CircuitBreakersResourceType]
 	}
 
 	return nil

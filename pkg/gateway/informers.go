@@ -57,6 +57,12 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRetryPolicyV1alpha2)
 	case *extv1alpha1.Filter:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyFilter)
+	case *extv1alpha1.FilterDefinition:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyFilterDefinition)
+	case *extv1alpha1.ListenerFilter:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyListenerFilter)
+	case *extv1alpha1.CircuitBreaker:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyCircuitBreaker)
 	}
 
 	return nil
@@ -178,6 +184,24 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.FilterAdded,
 			Update: announcements.FilterUpdated,
 			Delete: announcements.FilterDeleted,
+		}
+	case fsminformers.InformerKeyFilterDefinition:
+		return &k8s.EventTypes{
+			Add:    announcements.FilterDefinitionAdded,
+			Update: announcements.FilterDefinitionUpdated,
+			Delete: announcements.FilterDefinitionDeleted,
+		}
+	case fsminformers.InformerKeyListenerFilter:
+		return &k8s.EventTypes{
+			Add:    announcements.ListenerFilterAdded,
+			Update: announcements.ListenerFilterUpdated,
+			Delete: announcements.ListenerFilterDeleted,
+		}
+	case fsminformers.InformerKeyCircuitBreaker:
+		return &k8s.EventTypes{
+			Add:    announcements.CircuitBreakerAdded,
+			Update: announcements.CircuitBreakerUpdated,
+			Delete: announcements.CircuitBreakerDeleted,
 		}
 	}
 
