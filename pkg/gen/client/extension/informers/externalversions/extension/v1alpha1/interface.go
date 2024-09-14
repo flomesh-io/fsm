@@ -54,7 +54,7 @@ func (v *version) Filters() FilterInformer {
 
 // FilterDefinitions returns a FilterDefinitionInformer.
 func (v *version) FilterDefinitions() FilterDefinitionInformer {
-	return &filterDefinitionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &filterDefinitionInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // ListenerFilters returns a ListenerFilterInformer.

@@ -149,27 +149,34 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
 
-			scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.FilterScopeRoute)
+			definition := c.resolveFilterDefinition(filter.Spec.DefinitionRef)
+			if definition == nil {
+				continue
+			}
+
+			scope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
 			if scope != extv1alpha1.FilterScopeRoute {
 				continue
 			}
 
-			filterProtocol := ptr.Deref(filter.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
+			filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
 			if filterProtocol != extv1alpha1.FilterProtocolHTTP {
 				continue
 			}
 
-			filterType := filter.Spec.Type
+			filterType := definition.Spec.Type
 			filters = append(filters, fgwv2.HTTPRouteFilter{
 				Type:            gwv1.HTTPRouteFilterType(filterType),
-				ExtensionConfig: parseFilterConfig(filter.Spec.Config),
+				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
 				Key:             uuid.NewString(),
 			})
 
 			if c.filters[filterProtocol] == nil {
 				c.filters[filterProtocol] = map[string]string{}
 			}
-			c.filters[filterProtocol][filterType] = filter.Spec.Script
+			if _, ok := c.filters[filterProtocol][filterType]; !ok {
+				c.filters[filterProtocol][filterType] = definition.Spec.Script
+			}
 		default:
 			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
 			if err := gwutils.DeepCopy(f2, f); err != nil {

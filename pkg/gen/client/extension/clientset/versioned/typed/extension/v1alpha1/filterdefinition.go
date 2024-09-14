@@ -30,7 +30,7 @@ import (
 // FilterDefinitionsGetter has a method to return a FilterDefinitionInterface.
 // A group's client should implement this interface.
 type FilterDefinitionsGetter interface {
-	FilterDefinitions(namespace string) FilterDefinitionInterface
+	FilterDefinitions() FilterDefinitionInterface
 }
 
 // FilterDefinitionInterface has methods to work with FilterDefinition resources.
@@ -50,14 +50,12 @@ type FilterDefinitionInterface interface {
 // filterDefinitions implements FilterDefinitionInterface
 type filterDefinitions struct {
 	client rest.Interface
-	ns     string
 }
 
 // newFilterDefinitions returns a FilterDefinitions
-func newFilterDefinitions(c *ExtensionV1alpha1Client, namespace string) *filterDefinitions {
+func newFilterDefinitions(c *ExtensionV1alpha1Client) *filterDefinitions {
 	return &filterDefinitions{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -65,7 +63,6 @@ func newFilterDefinitions(c *ExtensionV1alpha1Client, namespace string) *filterD
 func (c *filterDefinitions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FilterDefinition, err error) {
 	result = &v1alpha1.FilterDefinition{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -82,7 +79,6 @@ func (c *filterDefinitions) List(ctx context.Context, opts v1.ListOptions) (resu
 	}
 	result = &v1alpha1.FilterDefinitionList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -99,7 +95,6 @@ func (c *filterDefinitions) Watch(ctx context.Context, opts v1.ListOptions) (wat
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -110,7 +105,6 @@ func (c *filterDefinitions) Watch(ctx context.Context, opts v1.ListOptions) (wat
 func (c *filterDefinitions) Create(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.CreateOptions) (result *v1alpha1.FilterDefinition, err error) {
 	result = &v1alpha1.FilterDefinition{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(filterDefinition).
@@ -123,7 +117,6 @@ func (c *filterDefinitions) Create(ctx context.Context, filterDefinition *v1alph
 func (c *filterDefinitions) Update(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (result *v1alpha1.FilterDefinition, err error) {
 	result = &v1alpha1.FilterDefinition{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		Name(filterDefinition.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -138,7 +131,6 @@ func (c *filterDefinitions) Update(ctx context.Context, filterDefinition *v1alph
 func (c *filterDefinitions) UpdateStatus(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (result *v1alpha1.FilterDefinition, err error) {
 	result = &v1alpha1.FilterDefinition{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		Name(filterDefinition.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *filterDefinitions) UpdateStatus(ctx context.Context, filterDefinition *
 // Delete takes name of the filterDefinition and deletes it. Returns an error if one occurs.
 func (c *filterDefinitions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		Name(name).
 		Body(&opts).
@@ -167,7 +158,6 @@ func (c *filterDefinitions) DeleteCollection(ctx context.Context, opts v1.Delete
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *filterDefinitions) DeleteCollection(ctx context.Context, opts v1.Delete
 func (c *filterDefinitions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FilterDefinition, err error) {
 	result = &v1alpha1.FilterDefinition{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("filterdefinitions").
 		Name(name).
 		SubResource(subresources...).

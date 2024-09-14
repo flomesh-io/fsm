@@ -122,8 +122,8 @@ const (
 	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
 	// InformerKeyLoadBalancerPolicy is the InformerKey for a LoadBalancerPolicy informer
 	InformerKeyLoadBalancerPolicy InformerKey = "LoadBalancerPolicy"
-	// InformerKeyCircuitBreakingPolicy is the InformerKey for a CircuitBreakingPolicy informer
-	InformerKeyCircuitBreakingPolicy InformerKey = "CircuitBreakingPolicy"
+	// InformerKeyCircuitBreaker is the InformerKey for a CircuitBreaker informer
+	InformerKeyCircuitBreaker InformerKey = "CircuitBreaker"
 	// InformerKeyAccessControlPolicy is the InformerKey for a AccessControlPolicy informer
 	InformerKeyAccessControlPolicy InformerKey = "AccessControlPolicy"
 	// InformerKeyHealthCheckPolicyV1alpha1 is the InformerKey for a HealthCheckPolicy informer
@@ -144,6 +144,10 @@ const (
 	InformerKeyRetryPolicyV1alpha2 InformerKey = "RetryPolicy-v1alpha2"
 	// InformerKeyFilter is the InformerKey for a Filter informer
 	InformerKeyFilter InformerKey = "Filter"
+	// InformerKeyListenerFilter is the InformerKey for a ListenerFilter informer
+	InformerKeyListenerFilter InformerKey = "ListenerFilter"
+	// InformerKeyFilterDefinition is the InformerKey for a FilterDefinition informer
+	InformerKeyFilterDefinition InformerKey = "FilterDefinition"
 )
 
 const (
@@ -222,8 +226,8 @@ const (
 	// LoadBalancerPoliciesResourceType is the type used to represent the load balancer policies resource
 	LoadBalancerPoliciesResourceType ResourceType = "loadbalancers"
 
-	// CircuitBreakingPoliciesResourceType is the type used to represent the circuit breaking policies resource
-	CircuitBreakingPoliciesResourceType ResourceType = "circuitbreakings"
+	// CircuitBreakersResourceType is the type used to represent the circuit breakers  resource
+	CircuitBreakersResourceType ResourceType = "circuitbreakers"
 
 	// AccessControlPoliciesResourceType is the type used to represent the access control policies resource
 	AccessControlPoliciesResourceType ResourceType = "accesscontrols"
@@ -248,4 +252,10 @@ const (
 
 	// FiltersResourceType is the type used to represent the filters resource
 	FiltersResourceType ResourceType = "filters"
+
+	// ListenerFiltersResourceType is the type used to represent the listener filters resource
+	ListenerFiltersResourceType ResourceType = "listenerfilters"
+
+	// FilterDefinitionsResourceType is the type used to represent the filter definitions resource
+	FilterDefinitionsResourceType ResourceType = "filterdefinitions"
 )

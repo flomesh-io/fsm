@@ -19,8 +19,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	time "time"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -58,7 +56,7 @@ func (in *CircuitBreakerConfig) DeepCopyInto(out *CircuitBreakerConfig) {
 	*out = *in
 	if in.LatencyThreshold != nil {
 		in, out := &in.LatencyThreshold, &out.LatencyThreshold
-		*out = new(time.Duration)
+		*out = new(v1.Duration)
 		**out = **in
 	}
 	if in.ErrorCountThreshold != nil {

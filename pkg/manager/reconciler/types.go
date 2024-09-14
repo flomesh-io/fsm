@@ -25,6 +25,7 @@ const (
 	GatewayAPIExtensionFilter           ResourceType = "GatewayAPIExtension(Filter)"
 	GatewayAPIExtensionListenerFilter   ResourceType = "GatewayAPIExtension(ListenerFilter)"
 	GatewayAPIExtensionFilterDefinition ResourceType = "GatewayAPIExtension(FilterDefinition)"
+	GatewayAPIExtensionCircuitBreaker   ResourceType = "GatewayAPIExtension(CircuitBreaker)"
 	PolicyAttachmentHealthCheck         ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentRetry               ResourceType = "PolicyAttachment(Retry)"
 	PolicyAttachmentBackendLB           ResourceType = "PolicyAttachment(BackendLB)"

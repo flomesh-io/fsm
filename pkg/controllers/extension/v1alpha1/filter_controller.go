@@ -4,18 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/flomesh-io/fsm/pkg/constants"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	fctx "github.com/flomesh-io/fsm/pkg/context"
@@ -76,26 +73,38 @@ func (r *filterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func addFilterIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.Filter{}, constants.GatewayFilterIndex, func(obj client.Object) []string {
-		filter := obj.(*extv1alpha1.Filter)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.Filter{}, constants.FilterDefinitionFilterIndex, filterDefinitionFilterIndex); err != nil {
+		return err
+	}
 
-		scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.FilterScopeRoute)
-		if scope != extv1alpha1.FilterScopeListener {
-			return nil
-		}
-
-		var gateways []string
-		for _, targetRef := range filter.Spec.TargetRefs {
-			if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
-				string(targetRef.Group) == gwv1.GroupName {
-				gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
-			}
-		}
-
-		return gateways
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.Filter{}, constants.ConfigFilterIndex, configFilterIndex); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func filterDefinitionFilterIndex(obj client.Object) []string {
+	filter := obj.(*extv1alpha1.Filter)
+
+	var definitions []string
+
+	if filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
+		filter.Spec.DefinitionRef.Kind == constants.GatewayAPIExtensionFilterDefinitionKind {
+		definitions = append(definitions, fmt.Sprintf("%s/%s", filter.Namespace, filter.Spec.DefinitionRef.Name))
+	}
+
+	return definitions
+}
+
+func configFilterIndex(obj client.Object) []string {
+	filter := obj.(*extv1alpha1.Filter)
+
+	var configs []string
+
+	if filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
+		configs = append(configs, fmt.Sprintf("%s/%s/%s", filter.Spec.ConfigRef.Kind, filter.Namespace, filter.Spec.ConfigRef.Name))
+	}
+
+	return configs
 }

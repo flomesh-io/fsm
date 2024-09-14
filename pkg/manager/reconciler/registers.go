@@ -305,6 +305,8 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		webhooks[GatewayAPIExtensionFilterDefinition] = extwhv1alpha1.NewFilterDefinitionWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
+
+		reconcilers[GatewayAPIExtensionCircuitBreaker] = extensionv1alpha1.NewCircuitBreakerReconciler(ctx)
 	}
 
 	if mc.IsServiceLBEnabled() {

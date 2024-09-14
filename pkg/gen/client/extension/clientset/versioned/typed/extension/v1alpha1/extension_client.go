@@ -44,8 +44,8 @@ func (c *ExtensionV1alpha1Client) Filters(namespace string) FilterInterface {
 	return newFilters(c, namespace)
 }
 
-func (c *ExtensionV1alpha1Client) FilterDefinitions(namespace string) FilterDefinitionInterface {
-	return newFilterDefinitions(c, namespace)
+func (c *ExtensionV1alpha1Client) FilterDefinitions() FilterDefinitionInterface {
+	return newFilterDefinitions(c)
 }
 
 func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilterInterface {

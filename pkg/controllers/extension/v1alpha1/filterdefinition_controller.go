@@ -2,13 +2,6 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
-
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,26 +69,26 @@ func (r *filterDefinitionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func addFilterDefinitionIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.FilterDefinition{}, constants.GatewayFilterDefinitionIndex, func(obj client.Object) []string {
-		filterDefinition := obj.(*extv1alpha1.FilterDefinition)
-
-		scope := ptr.Deref(filterDefinition.Spec.Scope, extv1alpha1.FilterDefinitionScopeRoute)
-		if scope != extv1alpha1.FilterDefinitionScopeListener {
-			return nil
-		}
-
-		var gateways []string
-		for _, targetRef := range filterDefinition.Spec.TargetRefs {
-			if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
-				string(targetRef.Group) == gwv1.GroupName {
-				gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
-			}
-		}
-
-		return gateways
-	}); err != nil {
-		return err
-	}
+	//if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.FilterDefinition{}, constants.GatewayFilterDefinitionIndex, func(obj client.Object) []string {
+	//	filterDefinition := obj.(*extv1alpha1.FilterDefinition)
+	//
+	//	scope := ptr.Deref(filterDefinition.Spec.Scope, extv1alpha1.FilterDefinitionScopeRoute)
+	//	if scope != extv1alpha1.FilterDefinitionScopeListener {
+	//		return nil
+	//	}
+	//
+	//	var gateways []string
+	//	for _, targetRef := range filterDefinition.Spec.TargetRefs {
+	//		if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
+	//			string(targetRef.Group) == gwv1.GroupName {
+	//			gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
+	//		}
+	//	}
+	//
+	//	return gateways
+	//}); err != nil {
+	//	return err
+	//}
 
 	return nil
 }

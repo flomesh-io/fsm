@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -76,26 +75,56 @@ func (r *listenerListenerFilterReconciler) SetupWithManager(mgr ctrl.Manager) er
 }
 
 func addListenerFilterIndexers(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.ListenerFilter{}, constants.GatewayListenerFilterIndex, func(obj client.Object) []string {
-		filter := obj.(*extv1alpha1.ListenerFilter)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.ListenerFilter{}, constants.GatewayListenerFilterIndex, gatewayPortListenerFilterIndexFunc); err != nil {
+		return err
+	}
 
-		scope := ptr.Deref(filter.Spec.Scope, extv1alpha1.ListenerFilterScopeRoute)
-		if scope != extv1alpha1.ListenerFilterScopeListener {
-			return nil
-		}
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.ListenerFilter{}, constants.FilterDefinitionListenerFilterIndex, filterDefinitionListenerFilterIndex); err != nil {
+		return err
+	}
 
-		var gateways []string
-		for _, targetRef := range filter.Spec.TargetRefs {
-			if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
-				string(targetRef.Group) == gwv1.GroupName {
-				gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
-			}
-		}
-
-		return gateways
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.ListenerFilter{}, constants.ConfigListenerFilterIndex, configListenerFilterIndex); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func configListenerFilterIndex(obj client.Object) []string {
+	filter := obj.(*extv1alpha1.ListenerFilter)
+
+	var configs []string
+
+	if filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
+		configs = append(configs, fmt.Sprintf("%s/%s/%s", filter.Spec.ConfigRef.Kind, filter.Namespace, filter.Spec.ConfigRef.Name))
+	}
+
+	return configs
+}
+
+func filterDefinitionListenerFilterIndex(obj client.Object) []string {
+	filter := obj.(*extv1alpha1.ListenerFilter)
+
+	var definitions []string
+
+	if filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
+		filter.Spec.DefinitionRef.Kind == constants.GatewayAPIExtensionFilterDefinitionKind {
+		definitions = append(definitions, fmt.Sprintf("%s/%s", filter.Namespace, filter.Spec.DefinitionRef.Name))
+	}
+
+	return definitions
+}
+
+func gatewayPortListenerFilterIndexFunc(obj client.Object) []string {
+	filter := obj.(*extv1alpha1.ListenerFilter)
+
+	var gateways []string
+	for _, targetRef := range filter.Spec.TargetRefs {
+		if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
+			string(targetRef.Group) == gwv1.GroupName {
+			gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
+		}
+	}
+
+	return gateways
 }

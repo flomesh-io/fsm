@@ -29,7 +29,6 @@ import (
 // FakeFilterDefinitions implements FilterDefinitionInterface
 type FakeFilterDefinitions struct {
 	Fake *FakeExtensionV1alpha1
-	ns   string
 }
 
 var filterdefinitionsResource = v1alpha1.SchemeGroupVersion.WithResource("filterdefinitions")
@@ -39,8 +38,7 @@ var filterdefinitionsKind = v1alpha1.SchemeGroupVersion.WithKind("FilterDefiniti
 // Get takes name of the filterDefinition, and returns the corresponding filterDefinition object, and an error if there is any.
 func (c *FakeFilterDefinitions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FilterDefinition, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(filterdefinitionsResource, c.ns, name), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootGetAction(filterdefinitionsResource, name), &v1alpha1.FilterDefinition{})
 	if obj == nil {
 		return nil, err
 	}
@@ -50,8 +48,7 @@ func (c *FakeFilterDefinitions) Get(ctx context.Context, name string, options v1
 // List takes label and field selectors, and returns the list of FilterDefinitions that match those selectors.
 func (c *FakeFilterDefinitions) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.FilterDefinitionList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(filterdefinitionsResource, filterdefinitionsKind, c.ns, opts), &v1alpha1.FilterDefinitionList{})
-
+		Invokes(testing.NewRootListAction(filterdefinitionsResource, filterdefinitionsKind, opts), &v1alpha1.FilterDefinitionList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -72,15 +69,13 @@ func (c *FakeFilterDefinitions) List(ctx context.Context, opts v1.ListOptions) (
 // Watch returns a watch.Interface that watches the requested filterDefinitions.
 func (c *FakeFilterDefinitions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(filterdefinitionsResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(filterdefinitionsResource, opts))
 }
 
 // Create takes the representation of a filterDefinition and creates it.  Returns the server's representation of the filterDefinition, and an error, if there is any.
 func (c *FakeFilterDefinitions) Create(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.CreateOptions) (result *v1alpha1.FilterDefinition, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(filterdefinitionsResource, c.ns, filterDefinition), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootCreateAction(filterdefinitionsResource, filterDefinition), &v1alpha1.FilterDefinition{})
 	if obj == nil {
 		return nil, err
 	}
@@ -90,8 +85,7 @@ func (c *FakeFilterDefinitions) Create(ctx context.Context, filterDefinition *v1
 // Update takes the representation of a filterDefinition and updates it. Returns the server's representation of the filterDefinition, and an error, if there is any.
 func (c *FakeFilterDefinitions) Update(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (result *v1alpha1.FilterDefinition, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(filterdefinitionsResource, c.ns, filterDefinition), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootUpdateAction(filterdefinitionsResource, filterDefinition), &v1alpha1.FilterDefinition{})
 	if obj == nil {
 		return nil, err
 	}
@@ -102,8 +96,7 @@ func (c *FakeFilterDefinitions) Update(ctx context.Context, filterDefinition *v1
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeFilterDefinitions) UpdateStatus(ctx context.Context, filterDefinition *v1alpha1.FilterDefinition, opts v1.UpdateOptions) (*v1alpha1.FilterDefinition, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(filterdefinitionsResource, "status", c.ns, filterDefinition), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootUpdateSubresourceAction(filterdefinitionsResource, "status", filterDefinition), &v1alpha1.FilterDefinition{})
 	if obj == nil {
 		return nil, err
 	}
@@ -113,14 +106,13 @@ func (c *FakeFilterDefinitions) UpdateStatus(ctx context.Context, filterDefiniti
 // Delete takes name of the filterDefinition and deletes it. Returns an error if one occurs.
 func (c *FakeFilterDefinitions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(filterdefinitionsResource, c.ns, name, opts), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootDeleteActionWithOptions(filterdefinitionsResource, name, opts), &v1alpha1.FilterDefinition{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeFilterDefinitions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(filterdefinitionsResource, c.ns, listOpts)
+	action := testing.NewRootDeleteCollectionAction(filterdefinitionsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.FilterDefinitionList{})
 	return err
@@ -129,8 +121,7 @@ func (c *FakeFilterDefinitions) DeleteCollection(ctx context.Context, opts v1.De
 // Patch applies the patch and returns the patched filterDefinition.
 func (c *FakeFilterDefinitions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FilterDefinition, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(filterdefinitionsResource, c.ns, name, pt, data, subresources...), &v1alpha1.FilterDefinition{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(filterdefinitionsResource, name, pt, data, subresources...), &v1alpha1.FilterDefinition{})
 	if obj == nil {
 		return nil, err
 	}

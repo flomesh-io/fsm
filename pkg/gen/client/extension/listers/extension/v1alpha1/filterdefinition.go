@@ -28,8 +28,9 @@ type FilterDefinitionLister interface {
 	// List lists all FilterDefinitions in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.FilterDefinition, err error)
-	// FilterDefinitions returns an object that can list and get FilterDefinitions.
-	FilterDefinitions(namespace string) FilterDefinitionNamespaceLister
+	// Get retrieves the FilterDefinition from the index for a given name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.FilterDefinition, error)
 	FilterDefinitionListerExpansion
 }
 
@@ -51,41 +52,9 @@ func (s *filterDefinitionLister) List(selector labels.Selector) (ret []*v1alpha1
 	return ret, err
 }
 
-// FilterDefinitions returns an object that can list and get FilterDefinitions.
-func (s *filterDefinitionLister) FilterDefinitions(namespace string) FilterDefinitionNamespaceLister {
-	return filterDefinitionNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// FilterDefinitionNamespaceLister helps list and get FilterDefinitions.
-// All objects returned here must be treated as read-only.
-type FilterDefinitionNamespaceLister interface {
-	// List lists all FilterDefinitions in the indexer for a given namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.FilterDefinition, err error)
-	// Get retrieves the FilterDefinition from the indexer for a given namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.FilterDefinition, error)
-	FilterDefinitionNamespaceListerExpansion
-}
-
-// filterDefinitionNamespaceLister implements the FilterDefinitionNamespaceLister
-// interface.
-type filterDefinitionNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all FilterDefinitions in the indexer for a given namespace.
-func (s filterDefinitionNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.FilterDefinition, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.FilterDefinition))
-	})
-	return ret, err
-}
-
-// Get retrieves the FilterDefinition from the indexer for a given namespace and name.
-func (s filterDefinitionNamespaceLister) Get(name string) (*v1alpha1.FilterDefinition, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
+// Get retrieves the FilterDefinition from the index for a given name.
+func (s *filterDefinitionLister) Get(name string) (*v1alpha1.FilterDefinition, error) {
+	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}

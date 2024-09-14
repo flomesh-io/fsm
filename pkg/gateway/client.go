@@ -96,6 +96,9 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyBackendLBPolicy:           &gwv1alpha2.BackendLBPolicy{},
 		fsminformers.InformerKeyNamespace:                 &corev1.Namespace{},
 		fsminformers.InformerKeyFilter:                    &extv1alpha1.Filter{},
+		fsminformers.InformerKeyFilterDefinition:          &extv1alpha1.FilterDefinition{},
+		fsminformers.InformerKeyListenerFilter:            &extv1alpha1.ListenerFilter{},
+		fsminformers.InformerKeyCircuitBreaker:            &extv1alpha1.CircuitBreaker{},
 	}
 
 	if version.IsEndpointSliceEnabled(ctx.KubeClient) {
