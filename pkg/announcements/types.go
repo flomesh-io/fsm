@@ -517,14 +517,14 @@ const (
 
 	// ---
 
-	// CircuitBreakingPolicyAdded is the type of announcement emitted when we observe an addition of circuitbreakingpolicies.gateway.flomesh.io
-	CircuitBreakingPolicyAdded Kind = "circuitbreaking-added"
+	// CircuitBreakerAdded is the type of announcement emitted when we observe an addition of circuitbreakers.extension.gateway.flomesh.io
+	CircuitBreakerAdded Kind = "circuitbreaking-added"
 
-	// CircuitBreakingPolicyDeleted the type of announcement emitted when we observe a deletion of circuitbreakingpolicies.gateway.flomesh.io
-	CircuitBreakingPolicyDeleted Kind = "circuitbreaking-deleted"
+	// CircuitBreakerDeleted the type of announcement emitted when we observe a deletion of circuitbreakers.extension.gateway.flomesh.io
+	CircuitBreakerDeleted Kind = "circuitbreaking-deleted"
 
-	// CircuitBreakingPolicyUpdated is the type of announcement emitted when we observe an update to circuitbreakingpolicies.gateway.flomesh.io
-	CircuitBreakingPolicyUpdated Kind = "circuitbreaking-updated"
+	// CircuitBreakerUpdated is the type of announcement emitted when we observe an update to circuitbreakers.extension.gateway.flomesh.io
+	CircuitBreakerUpdated Kind = "circuitbreaking-updated"
 
 	// ---
 
@@ -613,6 +613,28 @@ const (
 
 	// FilterUpdated is the type of announcement emitted when we observe an update to filters.extension.gateway.flomesh.io
 	FilterUpdated Kind = "filter-updated"
+
+	// --
+
+	// FilterDefinitionAdded is the type of announcement emitted when we observe an addition of filterdefinitions.extension.gateway.flomesh.io
+	FilterDefinitionAdded Kind = "filterdefinition-added"
+
+	// FilterDefinitionDeleted the type of announcement emitted when we observe a deletion of filterdefinitions.extension.gateway.flomesh.io
+	FilterDefinitionDeleted Kind = "filterdefinition-deleted"
+
+	// FilterDefinitionUpdated is the type of announcement emitted when we observe an update to filterdefinitions.extension.gateway.flomesh.io
+	FilterDefinitionUpdated Kind = "filterdefinition-updated"
+
+	// --
+
+	// ListenerFilterAdded is the type of announcement emitted when we observe an addition of listenerfilters.extension.gateway.flomesh.io
+	ListenerFilterAdded Kind = "listenerfilter-added"
+
+	// ListenerFilterDeleted the type of announcement emitted when we observe a deletion of listenerfilters.extension.gateway.flomesh.io
+	ListenerFilterDeleted Kind = "listenerfilter-deleted"
+
+	// ListenerFilterUpdated is the type of announcement emitted when we observe an update to listenerfilters.extension.gateway.flomesh.io
+	ListenerFilterUpdated Kind = "listenerfilter-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

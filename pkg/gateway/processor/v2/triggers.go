@@ -2,6 +2,9 @@ package v2
 
 import (
 	"context"
+	"fmt"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
@@ -211,7 +214,7 @@ func (c *GatewayProcessor) IsSecretReferred(secret client.ObjectKey) bool {
 	if err := c.client.List(context.Background(), policies, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.SecretBackendTLSPolicyIndex, secret.String()),
 	}); err != nil {
-		log.Error().Msgf("Failed to list UpstreamTLSPolicyList: %v", err)
+		log.Error().Msgf("Failed to list BackendTLSPolicyList: %v", err)
 		return false
 	}
 
@@ -279,6 +282,64 @@ func (c *GatewayProcessor) isFilterReferredByGRPCRoute(filter client.ObjectKey) 
 		FieldSelector: fields.OneTermEqualSelector(constants.ExtensionFilterGRPCRouteIndex, filter.String()),
 	}); err != nil {
 		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		return false
+	}
+
+	return len(list.Items) > 0
+}
+
+// IsListenerFilterReferred checks if the ListenerFilter is referred by Gateway
+
+func (c *GatewayProcessor) IsListenerFilterReferred(filter client.ObjectKey) bool {
+	list := &gwv1.GatewayList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ListenerFilterGatewayIndex, filter.String()),
+		Namespace:     filter.Namespace,
+	}); err != nil {
+		return false
+	}
+
+	return len(list.Items) > 0
+}
+
+func (c *GatewayProcessor) IsFilterDefinitionReferred(def client.ObjectKey) bool {
+	filters := &extv1alpha1.FilterList{}
+	if err := c.client.List(context.Background(), filters, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.FilterDefinitionFilterIndex, def.String()),
+	}); err != nil {
+		return false
+	}
+
+	if len(filters.Items) > 0 {
+		return true
+	}
+
+	list := &extv1alpha1.ListenerFilterList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.FilterDefinitionListenerFilterIndex, def.String()),
+	}); err != nil {
+		return false
+	}
+
+	return len(list.Items) > 0
+}
+
+func (c *GatewayProcessor) IsFilterConfigReferred(kind string, config client.ObjectKey) bool {
+	filters := &extv1alpha1.FilterList{}
+	if err := c.client.List(context.Background(), filters, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ConfigFilterIndex, fmt.Sprintf("%s/%s/%s", kind, config.Namespace, config.Name)),
+	}); err != nil {
+		return false
+	}
+
+	if len(filters.Items) > 0 {
+		return true
+	}
+
+	list := &extv1alpha1.ListenerFilterList{}
+	if err := c.client.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.ConfigListenerFilterIndex, fmt.Sprintf("%s/%s/%s", kind, config.Namespace, config.Name)),
+	}); err != nil {
 		return false
 	}
 

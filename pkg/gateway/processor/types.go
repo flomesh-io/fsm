@@ -54,6 +54,9 @@ type Processor interface {
 	IsConfigMapReferred(cm client.ObjectKey) bool
 	IsSecretReferred(secret client.ObjectKey) bool
 	IsFilterReferred(filter client.ObjectKey) bool
+	IsListenerFilterReferred(filter client.ObjectKey) bool
+	IsFilterDefinitionReferred(filter client.ObjectKey) bool
+	IsFilterConfigReferred(kind string, config client.ObjectKey) bool
 	UseEndpointSlices() bool
 }
 

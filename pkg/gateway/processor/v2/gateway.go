@@ -144,9 +144,9 @@ func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *fgwv2.Listener
 }
 
 func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.Listener) {
-	list := &extv1alpha1.FilterList{}
+	list := &extv1alpha1.ListenerFilterList{}
 	if err := c.client.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.GatewayFilterIndex, fmt.Sprintf("%s/%d", c.gateway.Name, l.Port)),
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayListenerFilterIndex, fmt.Sprintf("%s/%d", c.gateway.Name, l.Port)),
 		Namespace:     c.gateway.Namespace,
 	}); err != nil {
 		return
@@ -158,40 +158,40 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 
 	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
 	for _, f := range list.Items {
-		scope := ptr.Deref(f.Spec.Scope, extv1alpha1.FilterScopeRoute)
+		definition := c.resolveFilterDefinition(f.Spec.DefinitionRef)
+		if definition == nil {
+			continue
+		}
+
+		scope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
 		if scope != extv1alpha1.FilterScopeListener {
 			continue
 		}
 
-		protocol := toFilterProtocol(l.Protocol)
-		if protocol == nil {
+		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
+		listenerProtocol := toFilterProtocol(l.Protocol)
+
+		if listenerProtocol == nil {
 			continue
 		}
 
-		filterType := f.Spec.Type
+		if *listenerProtocol != filterProtocol {
+			continue
+		}
+
+		filterType := definition.Spec.Type
 
 		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
 			Type:            filterType,
-			ExtensionConfig: f.Spec.Config,
+			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
 			Key:             uuid.NewString(),
 		})
 
-		if c.filters[*protocol] == nil {
-			c.filters[*protocol] = map[string]string{}
+		if c.filters[filterProtocol] == nil {
+			c.filters[filterProtocol] = map[string]string{}
 		}
-		c.filters[*protocol][filterType] = f.Spec.Script
-	}
-}
-
-func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
-	switch protocol {
-	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolHTTP)
-	case gwv1.TCPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolTCP)
-	case gwv1.UDPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolUDP)
-	default:
-		return nil
+		if _, ok := c.filters[filterProtocol][filterType]; !ok {
+			c.filters[filterProtocol][filterType] = definition.Spec.Script
+		}
 	}
 }

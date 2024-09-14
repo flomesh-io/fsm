@@ -433,6 +433,12 @@ const (
 	// GatewayAPIExtensionFilterKind is the kind name of Filter used in Gateway API
 	GatewayAPIExtensionFilterKind = "Filter"
 
+	// GatewayAPIExtensionListenerFilterKind is the kind name of Filter used in Gateway API
+	GatewayAPIExtensionListenerFilterKind = "ListenerFilter"
+
+	// GatewayAPIExtensionFilterDefinitionKind is the kind name of Filter used in Gateway API
+	GatewayAPIExtensionFilterDefinitionKind = "FilterDefinition"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 
@@ -454,8 +460,8 @@ const (
 	// LoadBalancerPolicyKind is the kind name of LoadBalancerPolicy used in Flomesh API
 	LoadBalancerPolicyKind = "LoadBalancerPolicy"
 
-	// CircuitBreakingPolicyKind is the kind name of CircuitBreakingPolicy used in Flomesh API
-	CircuitBreakingPolicyKind = "CircuitBreakingPolicy"
+	// CircuitBreakerKind is the kind name of CircuitBreaker used in Flomesh API
+	CircuitBreakerKind = "CircuitBreaker"
 
 	// AccessControlPolicyKind is the kind name of AccessControlPolicy used in Flomesh API
 	AccessControlPolicyKind = "AccessControlPolicy"
@@ -504,111 +510,6 @@ const (
 
 	// GatewayController is the name of the FSM gateway controller
 	GatewayController = "flomesh.io/gateway-controller"
-
-	// GatewayMutatingWebhookPath is the path at which the gateway mutating webhook is served
-	GatewayMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gateway"
-
-	// GatewayValidatingWebhookPath is the path at which the gateway validating webhook is served
-	GatewayValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gateway"
-
-	// GatewayClassMutatingWebhookPath is the path at which the gateway class mutating webhook is served
-	GatewayClassMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-gatewayclass"
-
-	// GatewayClassValidatingWebhookPath is the path at which the gateway class validating webhook is served
-	GatewayClassValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-gatewayclass"
-
-	// HTTPRouteMutatingWebhookPath is the path at which the HTTP route mutating webhook is served
-	HTTPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-httproute"
-
-	// HTTPRouteValidatingWebhookPath is the path at which the HTTP route validating webhook is served
-	HTTPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-httproute"
-
-	// GRPCRouteMutatingWebhookPath is the path at which the gRPC route mutating webhook is served
-	GRPCRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1-grpcroute"
-
-	// GRPCRouteValidatingWebhookPath is the path at which the gRPC route validating webhook is served
-	GRPCRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1-grpcroute"
-
-	// TCPRouteMutatingWebhookPath is the path at which the TCP route mutating webhook is served
-	TCPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tcproute"
-
-	// TCPRouteValidatingWebhookPath is the path at which the TCP route validating webhook is served
-	TCPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tcproute"
-
-	// TLSRouteMutatingWebhookPath is the path at which the TLS route mutating webhook is served
-	TLSRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-tlsroute"
-
-	// TLSRouteValidatingWebhookPath is the path at which the TLS route validating webhook is served
-	TLSRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-tlsroute"
-
-	// UDPRouteMutatingWebhookPath is the path at which the UDP route mutating webhook is served
-	UDPRouteMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1alpha2-udproute"
-
-	// UDPRouteValidatingWebhookPath is the path at which the UDP route validating webhook is served
-	UDPRouteValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1alpha2-udproute"
-
-	// ReferenceGrantMutatingWebhookPath is the path at which the ReferenceGrant mutating webhook is served
-	ReferenceGrantMutatingWebhookPath = "/mutate-gateway-networking-k8s-io-v1beta1-referencegrant"
-
-	// ReferenceGrantValidatingWebhookPath is the path at which the ReferenceGrant validating webhook is served
-	ReferenceGrantValidatingWebhookPath = "/validate-gateway-networking-k8s-io-v1beta1-referencegrant"
-)
-
-// PolicyAttachment constants
-const (
-	// RateLimitPolicyMutatingWebhookPath is the path at which the RateLimitPolicy mutating webhook is served
-	RateLimitPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
-
-	// RateLimitPolicyValidatingWebhookPath is the path at which the RateLimitPolicy validating webhook is served
-	RateLimitPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-ratelimitpolicy"
-
-	// SessionStickyPolicyMutatingWebhookPath is the path at which the SessionStickyPolicy mutating webhook is served
-	SessionStickyPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
-
-	// SessionStickyPolicyValidatingWebhookPath is the path at which the SessionStickyPolicy validating webhook is served
-	SessionStickyPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-sessionstickypolicy"
-
-	// LoadBalancerPolicyMutatingWebhookPath is the path at which the LoadBalancerPolicy mutating webhook is served
-	LoadBalancerPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-loadbalancerpolicy"
-
-	// LoadBalancerPolicyValidatingWebhookPath is the path at which the LoadBalancerPolicy validating webhook is served
-	LoadBalancerPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-loadbalancerpolicy"
-
-	// CircuitBreakingPolicyMutatingWebhookPath is the path at which the CircuitBreakingPolicy mutating webhook is served
-	CircuitBreakingPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-circuitbreakingpolicy"
-
-	// CircuitBreakingPolicyValidatingWebhookPath is the path at which the CircuitBreakingPolicy validating webhook is served
-	CircuitBreakingPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-circuitbreakingpolicy"
-
-	// AccessControlPolicyMutatingWebhookPath is the path at which the AccessControlPolicy mutating webhook is served
-	AccessControlPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-accesscontrolpolicy"
-
-	// AccessControlPolicyValidatingWebhookPath is the path at which the AccessControlPolicy validating webhook is served
-	AccessControlPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-accesscontrolpolicy"
-
-	// HealthCheckPolicyMutatingWebhookPath is the path at which the HealthCheckPolicy mutating webhook is served
-	HealthCheckPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-healthcheckpolicy"
-
-	// HealthCheckPolicyValidatingWebhookPath is the path at which the HealthCheckPolicy validating webhook is served
-	HealthCheckPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-healthcheckpolicy"
-
-	// FaultInjectionPolicyMutatingWebhookPath is the path at which the FaultInjectionPolicy mutating webhook is served
-	FaultInjectionPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-faultinjectionpolicy"
-
-	// FaultInjectionPolicyValidatingWebhookPath is the path at which the FaultInjectionPolicy validating webhook is served
-	FaultInjectionPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-faultinjectionpolicy"
-
-	// UpstreamTLSPolicyMutatingWebhookPath is the path at which the UpstreamTLSPolicy mutating webhook is served
-	UpstreamTLSPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-upstreamtlspolicy"
-
-	// UpstreamTLSPolicyValidatingWebhookPath is the path at which the UpstreamTLSPolicy validating webhook is served
-	UpstreamTLSPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-upstreamtlspolicy"
-
-	// RetryPolicyMutatingWebhookPath is the path at which the RetryPolicy mutating webhook is served
-	RetryPolicyMutatingWebhookPath = "/mutate-gateway-flomesh-io-v1alpha1-retrypolicy"
-
-	// RetryPolicyValidatingWebhookPath is the path at which the RetryPolicy validating webhook is served
-	RetryPolicyValidatingWebhookPath = "/validate-gateway-flomesh-io-v1alpha1-retrypolicy"
 )
 
 // GatewayAPI Resources Indexer constants
@@ -622,7 +523,6 @@ const (
 	GatewayUDPRouteIndex                         = "gatewayUDPRouteIndex"
 	SecretGatewayIndex                           = "secretGatewayIndex"
 	ConfigMapGatewayIndex                        = "configMapGatewayIndex"
-	GatewayFilterIndex                           = "gatewayFilterIndex"
 	CrossNamespaceSecretNamespaceGatewayIndex    = "crossNamespaceSecretNamespaceGatewayIndex"
 	CrossNamespaceConfigMapNamespaceGatewayIndex = "crossNamespaceConfigMapNamespaceGatewayIndex"
 	TargetKindRefGrantIndex                      = "targetRefGrantRouteIndex"
@@ -645,6 +545,12 @@ const (
 	GRPCRoutePolicyAttachmentIndex               = "grpcRoutePolicyAttachmentIndex"
 	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"
 	ExtensionFilterGRPCRouteIndex                = "filterGRPCRouteIndex"
+	GatewayListenerFilterIndex                   = "gatewayListenerFilterIndex"
+	ListenerFilterGatewayIndex                   = "listenerFilterGatewayIndex"
+	FilterDefinitionFilterIndex                  = "filterDefinitionFilterIndex"
+	FilterDefinitionListenerFilterIndex          = "filterDefinitionListenerFilterIndex"
+	ConfigFilterIndex                            = "configFilterIndex"
+	ConfigListenerFilterIndex                    = "configListenerFilterIndex"
 )
 
 // PIPY Repo constants
@@ -689,30 +595,6 @@ const (
 
 	// ClusterTpl is the template for cluster name
 	ClusterTpl = "{{ .Region }}/{{ .Zone }}/{{ .Group }}/{{ .Cluster }}"
-
-	// ClusterMutatingWebhookPath is the path at which the cluster mutating webhook is served
-	ClusterMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-cluster"
-
-	// ClusterValidatingWebhookPath is the path at which the cluster validating webhook is served
-	ClusterValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-cluster"
-
-	// ServiceImportMutatingWebhookPath is the path at which the service import mutating webhook is served
-	ServiceImportMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-serviceimport"
-
-	// ServiceImportValidatingWebhookPath is the path at which the service import validating webhook is served
-	ServiceImportValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-serviceimport"
-
-	// ServiceExportMutatingWebhookPath is the path at which the service export mutating webhook is served
-	ServiceExportMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-serviceexport"
-
-	// ServiceExportValidatingWebhookPath is the path at which the service export validating webhook is served
-	ServiceExportValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-serviceexport"
-
-	// GlobalTrafficPolicyMutatingWebhookPath is the path at which the global traffic policy mutating webhook is served
-	GlobalTrafficPolicyMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-globaltrafficpolicy"
-
-	// GlobalTrafficPolicyValidatingWebhookPath is the path at which the global traffic policy validating webhook is served
-	GlobalTrafficPolicyValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-globaltrafficpolicy"
 )
 
 // FLB constants
