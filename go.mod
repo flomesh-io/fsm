@@ -2,7 +2,7 @@ module github.com/flomesh-io/fsm
 
 go 1.23
 
-toolchain go1.23.0
+toolchain go1.23.1
 
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
