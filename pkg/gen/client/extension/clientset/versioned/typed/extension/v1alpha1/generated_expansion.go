@@ -24,3 +24,5 @@ type FilterExpansion interface{}
 type FilterDefinitionExpansion interface{}
 
 type ListenerFilterExpansion interface{}
+
+type RateLimitExpansion interface{}

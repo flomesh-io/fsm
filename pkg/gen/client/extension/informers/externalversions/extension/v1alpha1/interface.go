@@ -31,6 +31,8 @@ type Interface interface {
 	FilterDefinitions() FilterDefinitionInformer
 	// ListenerFilters returns a ListenerFilterInformer.
 	ListenerFilters() ListenerFilterInformer
+	// RateLimits returns a RateLimitInformer.
+	RateLimits() RateLimitInformer
 }
 
 type version struct {
@@ -67,4 +69,9 @@ func (v *version) FilterDefinitions() FilterDefinitionInformer {
 // ListenerFilters returns a ListenerFilterInformer.
 func (v *version) ListenerFilters() ListenerFilterInformer {
 	return &listenerFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RateLimits returns a RateLimitInformer.
+func (v *version) RateLimits() RateLimitInformer {
+	return &rateLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

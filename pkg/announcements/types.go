@@ -484,14 +484,14 @@ const (
 
 	// ---
 
-	// RateLimitPolicyAdded is the type of announcement emitted when we observe an addition of ratelimitpolicies.gateway.flomesh.io
-	RateLimitPolicyAdded Kind = "ratelimitpolicy-added"
+	// RateLimitAdded is the type of announcement emitted when we observe an addition of ratelimitpolicies.extension.gateway.flomesh.io
+	RateLimitAdded Kind = "RateLimit-added"
 
-	// RateLimitPolicyDeleted the type of announcement emitted when we observe a deletion of ratelimitpolicies.gateway.flomesh.io
-	RateLimitPolicyDeleted Kind = "ratelimitpolicy-deleted"
+	// RateLimitDeleted the type of announcement emitted when we observe a deletion of ratelimitpolicies.extension.gateway.flomesh.io
+	RateLimitDeleted Kind = "RateLimit-deleted"
 
-	// RateLimitPolicyUpdated is the type of announcement emitted when we observe an update to ratelimitpolicies.gateway.flomesh.io
-	RateLimitPolicyUpdated Kind = "ratelimitpolicy-updated"
+	// RateLimitUpdated is the type of announcement emitted when we observe an update to ratelimitpolicies.extension.gateway.flomesh.io
+	RateLimitUpdated Kind = "RateLimit-updated"
 
 	// ---
 

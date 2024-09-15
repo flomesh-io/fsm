@@ -45,6 +45,10 @@ func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.Liste
 	return &FakeListenerFilters{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitInterface {
+	return &FakeRateLimits{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeExtensionV1alpha1) RESTClient() rest.Interface {

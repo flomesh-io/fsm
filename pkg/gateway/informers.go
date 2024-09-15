@@ -65,6 +65,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyCircuitBreaker)
 	case *extv1alpha1.FaultInjection:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyFaultInjection)
+	case *extv1alpha1.RateLimit:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyRateLimit)
 	}
 
 	return nil
@@ -210,6 +212,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.FaultInjectionAdded,
 			Update: announcements.FaultInjectionUpdated,
 			Delete: announcements.FaultInjectionDeleted,
+		}
+	case fsminformers.InformerKeyRateLimit:
+		return &k8s.EventTypes{
+			Add:    announcements.RateLimitAdded,
+			Update: announcements.RateLimitUpdated,
+			Delete: announcements.RateLimitDeleted,
 		}
 	}
 

@@ -557,3 +557,17 @@ func (f *FaultInjectionDelay) Max(max *metav1.Duration) {
 		f.MaxDuration = ptr.To(max.Milliseconds())
 	}
 }
+
+type RateLimitSpec struct {
+	Burst             *int32                         `json:"burst,omitempty"`
+	Requests          *int32                         `json:"requests,omitempty"`
+	IntervalDuration  *int64                         `json:"interval,omitempty"`
+	Backlog           *int32                         `json:"backlog,omitempty"`
+	RateLimitResponse *extv1alpha1.RateLimitResponse `json:"response,omitempty"`
+}
+
+func (r *RateLimitSpec) Interval(interval *metav1.Duration) {
+	if interval != nil {
+		r.IntervalDuration = ptr.To(interval.Milliseconds())
+	}
+}

@@ -59,6 +59,20 @@ func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map
 		}
 
 		return toMap("faultInjection", &f2)
+	case constants.RateLimitKind:
+		obj := &extv1alpha1.RateLimit{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve RateLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		r2 := fgwv2.RateLimitSpec{}
+		if err := gwutils.DeepCopy(&r2, &obj.Spec); err != nil {
+			log.Error().Msgf("Failed to copy RateLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("rateLimit", &r2)
 	}
 
 	return map[string]interface{}{}
