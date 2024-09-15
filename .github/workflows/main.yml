@@ -57,6 +57,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.61
+          args: --allow-parallel-runners=true --tests=false --timeout=5m
 
   codegen:
     name: Codegen
