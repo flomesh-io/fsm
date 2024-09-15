@@ -26,7 +26,11 @@ func (c *ConfigGenerator) resolveFilterDefinition(ref gwv1.LocalObjectReference)
 	return definition
 }
 
-func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map[string]interface{} {
+func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) map[string]interface{} {
+	if ref == nil {
+		return map[string]interface{}{}
+	}
+
 	key := types.NamespacedName{Namespace: c.gateway.Namespace, Name: string(ref.Name)}
 	ctx := context.Background()
 
