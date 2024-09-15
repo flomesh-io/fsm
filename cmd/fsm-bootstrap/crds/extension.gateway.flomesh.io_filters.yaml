@@ -103,7 +103,6 @@ spec:
                 - name
                 type: object
             required:
-            - configRef
             - definitionRef
             type: object
           status:

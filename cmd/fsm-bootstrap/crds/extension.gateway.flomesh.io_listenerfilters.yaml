@@ -139,7 +139,6 @@ spec:
                 minItems: 1
                 type: array
             required:
-            - configRef
             - definitionRef
             - targetRefs
             type: object
