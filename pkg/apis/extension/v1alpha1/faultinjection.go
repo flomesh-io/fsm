@@ -6,12 +6,6 @@ import (
 
 // FaultInjectionSpec defines the desired state of FaultInjection
 type FaultInjectionSpec struct {
-	// Config is the default Fault Injection for all ports, routes and hostnames
-	Config *FaultInjectionConfig `json:"faultInjection,omitempty"`
-}
-
-// FaultInjectionConfig defines the Fault Injection configuration for a route
-type FaultInjectionConfig struct {
 	// +optional
 	// Delay defines the delay configuration
 	Delay *FaultInjectionDelay `json:"delay,omitempty"`

@@ -55,6 +55,15 @@ issues:
     - linters:
         - gosec
       text: "G101:"
+    - linters:
+        - gosec
+      text: "G115:"
+    - linters:
+        - gosimple
+      text: "S1009:"
+    - linters:
+        - govet
+      text: "printf: non-constant format string in call to"
   exclude-use-default: false
 
 # output configuration options

@@ -47,66 +47,58 @@ spec:
           spec:
             description: FaultInjectionSpec defines the desired state of FaultInjection
             properties:
-              faultInjection:
-                description: Config is the default Fault Injection for all ports,
-                  routes and hostnames
+              abort:
+                description: Abort defines the abort configuration
                 properties:
-                  abort:
-                    description: Abort defines the abort configuration
+                  percentage:
+                    description: Percentage is the percentage of requests to delay
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  response:
+                    default:
+                      body: Fault injection triggered
+                      status: 500
+                    description: Response is the response when fault injection triggered
                     properties:
-                      percentage:
-                        description: Percentage is the percentage of requests to delay
-                        format: int32
-                        maximum: 100
-                        minimum: 0
-                        type: integer
-                      response:
-                        default:
-                          body: Fault injection triggered
-                          status: 500
-                        description: Response is the response when fault injection
-                          triggered
-                        properties:
-                          body:
-                            default: Fault injection triggered
-                            description: Body is the content of response body, default
-                              is "Fault injection triggered"
-                            type: string
-                          headers:
-                            additionalProperties:
-                              type: string
-                            description: Headers is the HTTP headers of response
-                            type: object
-                          status:
-                            default: 500
-                            description: StatusCode is the HTTP status code of the
-                              response, default is 500
-                            format: int32
-                            maximum: 600
-                            minimum: 0
-                            type: integer
+                      body:
+                        default: Fault injection triggered
+                        description: Body is the content of response body, default
+                          is "Fault injection triggered"
+                        type: string
+                      headers:
+                        additionalProperties:
+                          type: string
+                        description: Headers is the HTTP headers of response
                         type: object
-                    type: object
-                  delay:
-                    description: Delay defines the delay configuration
-                    properties:
-                      max:
-                        default: 1s
-                        description: Max is the maximum delay duration, default is
-                          1s
-                        type: string
-                      min:
-                        default: 1s
-                        description: Min is the minimum delay duration, default is
-                          1s
-                        type: string
-                      percentage:
-                        description: Percentage is the percentage of requests to delay
+                      status:
+                        default: 500
+                        description: StatusCode is the HTTP status code of the response,
+                          default is 500
                         format: int32
-                        maximum: 100
+                        maximum: 600
                         minimum: 0
                         type: integer
                     type: object
+                type: object
+              delay:
+                description: Delay defines the delay configuration
+                properties:
+                  max:
+                    default: 1s
+                    description: Max is the maximum delay duration, default is 1s
+                    type: string
+                  min:
+                    default: 1s
+                    description: Min is the minimum delay duration, default is 1s
+                    type: string
+                  percentage:
+                    description: Percentage is the percentage of requests to delay
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
                 type: object
             type: object
           status:

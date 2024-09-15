@@ -307,6 +307,8 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
 
 		reconcilers[GatewayAPIExtensionCircuitBreaker] = extensionv1alpha1.NewCircuitBreakerReconciler(ctx)
+
+		webhooks[GatewayAPIExtensionFaultInjection] = extwhv1alpha1.NewFaultInjectionWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx)
 	}
 
