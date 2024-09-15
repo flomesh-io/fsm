@@ -45,7 +45,7 @@ func (s *server) CmdAdd(args *skel.CmdArgs) (err error) {
 				// present both.
 				msg = fmt.Sprintf("%s: %v", msg, err)
 			}
-			err = fmt.Errorf(msg)
+			err = fmt.Errorf("%s", msg)
 		}
 		if err != nil {
 			log.Error().Msgf("fsm-cni cmdAdd error: %v", err)

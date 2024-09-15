@@ -313,9 +313,8 @@ func (c *Connector) getService(export *mcsv1alpha1.ServiceExport) (*corev1.Servi
 	}
 
 	if svc.Spec.Type == corev1.ServiceTypeExternalName {
-		msg := fmt.Sprintf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name)
-		log.Error().Msgf(msg)
-		return nil, fmt.Errorf(msg)
+		log.Error().Msgf(fmt.Sprintf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name))
+		return nil, fmt.Errorf("[%s] ExternalName service %s/%s cannot be exported", connectorConfig.Key(), export.Namespace, export.Name)
 	}
 
 	return svc, nil
