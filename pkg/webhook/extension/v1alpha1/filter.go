@@ -101,10 +101,10 @@ func (r *FilterWebhook) validateDefinitionRef(ctx context.Context, definitionRef
 	return errs
 }
 
-func (r *FilterWebhook) validateConfigRef(ctx context.Context, configRef gwv1.LocalObjectReference, path *field.Path) field.ErrorList {
+func (r *FilterWebhook) validateConfigRef(ctx context.Context, configRef *gwv1.LocalObjectReference, path *field.Path) field.ErrorList {
 	var errs field.ErrorList
 
-	if configRef.Group != extv1alpha1.GroupName {
+	if configRef != nil && configRef.Group != extv1alpha1.GroupName {
 		errs = append(errs, field.Invalid(path.Child("group"), configRef.Group, fmt.Sprintf("group must be %s", extv1alpha1.GroupName)))
 	}
 
