@@ -3,6 +3,8 @@ package fgw
 import (
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	"k8s.io/utils/ptr"
@@ -502,5 +504,56 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 		}
 	} else {
 		p.Spec.Ports = []gwpav1alpha2.PortHealthCheck{port}
+	}
+}
+
+type CircuitBreakerSpec struct {
+	LatencyThresholdDuration *int64                              `json:"latencyThreshold,omitempty"`
+	ErrorCountThreshold      *int32                              `json:"errorCountThreshold,omitempty"`
+	ErrorRatioThreshold      *float32                            `json:"errorRatioThreshold,omitempty"`
+	ConcurrencyThreshold     *int32                              `json:"concurrencyThreshold,omitempty"`
+	CheckIntervalDuration    *int64                              `json:"checkInterval,omitempty"`
+	BreakIntervalDuration    *int64                              `json:"breakInterval,omitempty"`
+	CircuitBreakerResponse   *extv1alpha1.CircuitBreakerResponse `json:"response,omitempty"`
+}
+
+func (c *CircuitBreakerSpec) LatencyThreshold(latencyThreshold *metav1.Duration) {
+	if latencyThreshold != nil {
+		c.LatencyThresholdDuration = ptr.To(latencyThreshold.Milliseconds())
+	}
+}
+
+func (c *CircuitBreakerSpec) CheckInterval(checkInterval *metav1.Duration) {
+	if checkInterval != nil {
+		c.CheckIntervalDuration = ptr.To(checkInterval.Milliseconds())
+	}
+}
+
+func (c *CircuitBreakerSpec) BreakInterval(breakInterval *metav1.Duration) {
+	if breakInterval != nil {
+		c.BreakIntervalDuration = ptr.To(breakInterval.Milliseconds())
+	}
+}
+
+type FaultInjectionSpec struct {
+	Delay *FaultInjectionDelay             `json:"delay,omitempty"`
+	Abort *extv1alpha1.FaultInjectionAbort `json:"abort,omitempty"`
+}
+
+type FaultInjectionDelay struct {
+	Percentage  int32  `json:"percentage,omitempty"`
+	MinDuration *int64 `json:"min,omitempty"`
+	MaxDuration *int64 `json:"max,omitempty"`
+}
+
+func (f *FaultInjectionDelay) Min(min *metav1.Duration) {
+	if min != nil {
+		f.MinDuration = ptr.To(min.Milliseconds())
+	}
+}
+
+func (f *FaultInjectionDelay) Max(max *metav1.Duration) {
+	if max != nil {
+		f.MaxDuration = ptr.To(max.Milliseconds())
 	}
 }

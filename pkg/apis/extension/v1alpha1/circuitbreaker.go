@@ -6,11 +6,6 @@ import (
 
 // CircuitBreakerSpec defines the desired state of CircuitBreaker
 type CircuitBreakerSpec struct {
-	// Config is the circuit breaking configuration
-	Config CircuitBreakerConfig `json:"circuitBreak,omitempty"`
-}
-
-type CircuitBreakerConfig struct {
 	// +optional
 	// +kubebuilder:default="1s"
 	// LatencyThreshold is the threshold in milliseconds to determine a slow request, default is 1s

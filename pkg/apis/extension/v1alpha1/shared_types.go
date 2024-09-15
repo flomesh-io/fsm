@@ -1,6 +1,8 @@
 package v1alpha1
 
-import gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+import (
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+)
 
 type LocalTargetReferenceWithPort struct {
 	// Group is the group of the target resource.

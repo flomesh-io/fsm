@@ -3,9 +3,11 @@ package v2
 import (
 	"context"
 
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
+
 	"sigs.k8s.io/yaml"
 
-	ghodssyaml "github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -36,7 +38,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map
 			return map[string]interface{}{}
 		}
 
-		return toMap(&obj.Spec)
+		c2 := fgwv2.CircuitBreakerSpec{}
+		if err := gwutils.DeepCopy(&c2, &obj.Spec); err != nil {
+			log.Error().Msgf("Failed to copy CircuitBreaker: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("circuitBreak", &c2)
 	case constants.FaultInjectionKind:
 		obj := &extv1alpha1.FaultInjection{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
@@ -44,7 +52,13 @@ func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map
 			return map[string]interface{}{}
 		}
 
-		return toMap(&obj.Spec)
+		f2 := fgwv2.FaultInjectionSpec{}
+		if err := gwutils.DeepCopy(&f2, &obj.Spec); err != nil {
+			log.Error().Msgf("Failed to copy FaultInjection: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("faultInjection", &f2)
 	}
 
 	return map[string]interface{}{}
@@ -63,8 +77,8 @@ func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
 	}
 }
 
-func toMap(spec interface{}) map[string]interface{} {
-	bytes, err := ghodssyaml.Marshal(spec)
+func toMap(key string, spec interface{}) map[string]interface{} {
+	bytes, err := yaml.Marshal(spec)
 	if err != nil {
 		log.Error().Msgf("Failed to marshal spec: %v", err)
 		return map[string]interface{}{}
@@ -81,5 +95,7 @@ func toMap(spec interface{}) map[string]interface{} {
 		return map[string]interface{}{}
 	}
 
-	return vals
+	return map[string]interface{}{
+		key: vals,
+	}
 }
