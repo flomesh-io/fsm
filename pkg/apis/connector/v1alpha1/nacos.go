@@ -65,7 +65,6 @@ type NacosSyncToK8SSpec struct {
 	PassingOnly bool `json:"passingOnly,omitempty"`
 
 	// +optional
-	// +optional
 	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
 
 	// +optional

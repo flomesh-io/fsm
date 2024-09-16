@@ -69,6 +69,9 @@ type Configurator interface {
 	// GetLocalDNSProxySecondaryUpstream returns the secondary upstream DNS server for local DNS Proxy
 	GetLocalDNSProxySecondaryUpstream() string
 
+	// GenerateIPv6BasedOnIPv4 returns whether auto generate IPv6 based on IPv4
+	GenerateIPv6BasedOnIPv4() bool
+
 	// GetTracingHost is the host to which we send tracing spans
 	GetTracingHost() string
 

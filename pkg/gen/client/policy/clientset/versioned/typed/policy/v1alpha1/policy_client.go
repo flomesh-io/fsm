@@ -30,6 +30,7 @@ type PolicyV1alpha1Interface interface {
 	EgressesGetter
 	EgressGatewaysGetter
 	IngressBackendsGetter
+	IsolationsGetter
 	RetriesGetter
 	UpstreamTrafficSettingsGetter
 }
@@ -57,6 +58,10 @@ func (c *PolicyV1alpha1Client) EgressGateways(namespace string) EgressGatewayInt
 
 func (c *PolicyV1alpha1Client) IngressBackends(namespace string) IngressBackendInterface {
 	return newIngressBackends(c, namespace)
+}
+
+func (c *PolicyV1alpha1Client) Isolations(namespace string) IsolationInterface {
+	return newIsolations(c, namespace)
 }
 
 func (c *PolicyV1alpha1Client) Retries(namespace string) RetryInterface {

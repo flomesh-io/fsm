@@ -73,6 +73,13 @@ func NewPolicyController(informerCollection *informers.InformerCollection, kubeC
 	}
 	client.informers.AddEventHandler(informers.InformerKeyAccessCert, k8s.GetEventHandlerFuncs(shouldObserve, acertEventTypes, msgBroker))
 
+	isolationEventTypes := k8s.EventTypes{
+		Add:    announcements.IsolationPolicyAdded,
+		Update: announcements.IsolationPolicyUpdated,
+		Delete: announcements.IsolationPolicyDeleted,
+	}
+	client.informers.AddEventHandler(informers.InformerKeyIsolation, k8s.GetEventHandlerFuncs(nil, isolationEventTypes, msgBroker))
+
 	retryEventTypes := k8s.EventTypes{
 		Add:    announcements.RetryPolicyAdded,
 		Update: announcements.RetryPolicyUpdated,
@@ -88,6 +95,17 @@ func NewPolicyController(informerCollection *informers.InformerCollection, kubeC
 	client.informers.AddEventHandler(informers.InformerKeyUpstreamTrafficSetting, k8s.GetEventHandlerFuncs(shouldObserve, upstreamTrafficSettingEventTypes, msgBroker))
 
 	return client
+}
+
+// ListIsolationPolicies returns the Isolation policies
+func (c *Client) ListIsolationPolicies() []*policyV1alpha1.Isolation {
+	var isolations []*policyV1alpha1.Isolation
+	for _, isolationIface := range c.informers.List(informers.InformerKeyIsolation) {
+		isolation := isolationIface.(*policyV1alpha1.Isolation)
+		isolations = append(isolations, isolation)
+	}
+
+	return isolations
 }
 
 // ListEgressGateways lists egress gateways

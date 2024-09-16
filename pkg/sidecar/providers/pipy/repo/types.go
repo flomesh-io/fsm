@@ -253,6 +253,7 @@ type ObservabilitySpec struct {
 
 // MeshConfigSpec represents the spec of mesh config
 type MeshConfigSpec struct {
+	ServiceIdentity identity.ServiceIdentity
 	SidecarLogLevel string
 	SidecarTimeout  int
 	Traffic         TrafficSpec
@@ -364,8 +365,7 @@ type OutboundHTTPRouteRuleSlice []*OutboundHTTPRouteRule
 // OutboundHTTPRouteRules is a wrapper type
 type OutboundHTTPRouteRules struct {
 	RouteRules           OutboundHTTPRouteRuleSlice `json:"RouteRules"`
-	ServiceIdentity      identity.ServiceIdentity
-	EgressForwardGateway *string `json:"EgressForwardGateway,omitempty"`
+	EgressForwardGateway *string                    `json:"EgressForwardGateway,omitempty"`
 	Pluggable
 }
 
@@ -551,13 +551,14 @@ type PipyConf struct {
 	Metrics          bool
 	Spec             MeshConfigSpec
 	Certificate      *Certificate
-	Inbound          *InboundTrafficPolicy    `json:"Inbound"`
-	Outbound         *OutboundTrafficPolicy   `json:"Outbound"`
-	Forward          *ForwardTrafficPolicy    `json:"Forward,omitempty"`
-	AllowedEndpoints map[string]string        `json:"AllowedEndpoints"`
-	Chains           map[string][]string      `json:"Chains,omitempty"`
-	DNSResolveDB     map[string][]interface{} `json:"DNSResolveDB,omitempty"`
+	Inbound          *InboundTrafficPolicy  `json:"Inbound"`
+	Outbound         *OutboundTrafficPolicy `json:"Outbound"`
+	Forward          *ForwardTrafficPolicy  `json:"Forward,omitempty"`
+	AllowedEndpoints map[string]string      `json:"AllowedEndpoints"`
+	Chains           map[string][]string    `json:"Chains,omitempty"`
+	DNSResolveDB     map[string][]string    `json:"DNSResolveDB,omitempty"`
 
 	PluginSetV     string `json:"-"`
 	pluginPolicies map[string]map[string]*map[string]*runtime.RawExtension
+	hashNameSet    map[uint64]int
 }

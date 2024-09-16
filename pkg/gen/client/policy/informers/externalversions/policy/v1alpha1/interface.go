@@ -31,6 +31,8 @@ type Interface interface {
 	EgressGateways() EgressGatewayInformer
 	// IngressBackends returns a IngressBackendInformer.
 	IngressBackends() IngressBackendInformer
+	// Isolations returns a IsolationInformer.
+	Isolations() IsolationInformer
 	// Retries returns a RetryInformer.
 	Retries() RetryInformer
 	// UpstreamTrafficSettings returns a UpstreamTrafficSettingInformer.
@@ -71,6 +73,11 @@ func (v *version) EgressGateways() EgressGatewayInformer {
 // IngressBackends returns a IngressBackendInformer.
 func (v *version) IngressBackends() IngressBackendInformer {
 	return &ingressBackendInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Isolations returns a IsolationInformer.
+func (v *version) Isolations() IsolationInformer {
+	return &isolationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Retries returns a RetryInformer.

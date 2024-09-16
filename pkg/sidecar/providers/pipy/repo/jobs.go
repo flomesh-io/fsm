@@ -18,12 +18,12 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/errcode"
-	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/injector"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/client"
+	"github.com/flomesh-io/fsm/pkg/utils"
 )
 
 // PipyConfGeneratorJob is the job to generate pipy policy json
@@ -95,10 +95,10 @@ func (job *PipyConfGeneratorJob) Run() {
 	features(s, proxy, pipyConf)
 	certs(s, proxy, pipyConf, proxyServices)
 	plugin(cataloger, s, pipyConf, proxy)
-	inbound(cataloger, proxy.Identity, s, pipyConf, proxyServices, proxy)
-	outbound(cataloger, proxy.Identity, s, pipyConf, proxy, s.cfg, desiredSuffix)
-	egress(cataloger, proxy.Identity, s, pipyConf, proxy, desiredSuffix)
-	forward(cataloger, proxy.Identity, s, pipyConf, proxy)
+	inbound(cataloger, s, pipyConf, proxyServices, proxy)
+	outbound(cataloger, s, pipyConf, proxy, s.cfg, desiredSuffix)
+	egress(cataloger, s, pipyConf, proxy, desiredSuffix)
+	forward(cataloger, s, pipyConf, proxy)
 	cloudConnector(cataloger, pipyConf, s.cfg, proxy)
 	balance(pipyConf)
 	reorder(pipyConf)
@@ -148,8 +148,8 @@ func reorder(pipyConf *PipyConf) {
 	}
 }
 
-func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, desiredSuffix string) bool {
-	egressTrafficPolicy, egressErr := cataloger.GetEgressTrafficPolicy(serviceIdentity)
+func egress(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, desiredSuffix string) bool {
+	egressTrafficPolicy, egressErr := cataloger.GetEgressTrafficPolicy(proxy.Identity)
 	if egressErr != nil {
 		if s.retryProxiesJob != nil {
 			s.retryProxiesJob()
@@ -158,11 +158,9 @@ func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIde
 	}
 
 	if egressTrafficPolicy != nil {
-		egressDependClusters := generatePipyEgressTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
-			egressTrafficPolicy, desiredSuffix)
+		egressDependClusters := generatePipyEgressTrafficRoutePolicy(cataloger, pipyConf, egressTrafficPolicy, desiredSuffix)
 		if len(egressDependClusters) > 0 {
-			if ready := generatePipyEgressTrafficBalancePolicy(cataloger, proxy, serviceIdentity, pipyConf,
-				egressTrafficPolicy, egressDependClusters); !ready {
+			if ready := generatePipyEgressTrafficBalancePolicy(cataloger, proxy, pipyConf, egressTrafficPolicy, egressDependClusters); !ready {
 				if s.retryProxiesJob != nil {
 					s.retryProxiesJob()
 				}
@@ -173,7 +171,7 @@ func egress(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIde
 	return true
 }
 
-func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, _ *pipy.Proxy) bool {
+func forward(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, _ *pipy.Proxy) bool {
 	egressGatewayPolicy, egressErr := cataloger.GetEgressGatewayPolicy()
 	if egressErr != nil {
 		if s.retryProxiesJob != nil {
@@ -182,8 +180,7 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 		return false
 	}
 	if egressGatewayPolicy != nil {
-		if ready := generatePipyEgressTrafficForwardPolicy(cataloger, serviceIdentity, pipyConf,
-			egressGatewayPolicy); !ready {
+		if ready := generatePipyEgressTrafficForwardPolicy(cataloger, pipyConf, egressGatewayPolicy); !ready {
 			if s.retryProxiesJob != nil {
 				s.retryProxiesJob()
 			}
@@ -193,22 +190,28 @@ func forward(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceId
 	return true
 }
 
-func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
-	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(serviceIdentity)
+func outbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
+	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(proxy.Identity)
 	if cfg.IsLocalDNSProxyEnabled() && !cfg.IsWildcardDNSProxyEnabled() {
 		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
 			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]interface{})
+				pipyConf.DNSResolveDB = make(map[string][]string)
 			}
-			for k, v := range outboundTrafficPolicy.ServicesResolvableSet {
-				pipyConf.DNSResolveDB[k] = v
+			for dn, ipv4s := range outboundTrafficPolicy.ServicesResolvableSet {
+				ipAddrs := make([]string, 0)
+				for _, ipv4 := range ipv4s {
+					ipAddrs = append(ipAddrs, ipv4.(string))
+					if cfg.GenerateIPv6BasedOnIPv4() {
+						ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipv4.(string)))
+					}
+				}
+				pipyConf.DNSResolveDB[dn] = ipAddrs
 			}
 		}
 	}
-	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf,
-		cfg, outboundTrafficPolicy, desiredSuffix)
+	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, pipyConf, cfg, outboundTrafficPolicy, desiredSuffix)
 	if len(outboundDependClusters) > 0 {
-		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, cfg, proxy, serviceIdentity, pipyConf,
+		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, cfg, proxy, pipyConf,
 			outboundTrafficPolicy, outboundDependClusters); !ready {
 			if s.retryProxiesJob != nil {
 				s.retryProxiesJob()
@@ -219,28 +222,34 @@ func outbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceI
 	return true
 }
 
-func inbound(cataloger catalog.MeshCataloger, serviceIdentity identity.ServiceIdentity, s *Server, pipyConf *PipyConf, proxyServices []service.MeshService, proxy *pipy.Proxy) {
+func inbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxyServices []service.MeshService, proxy *pipy.Proxy) {
 	// Build inbound mesh route configurations. These route configurations allow
 	// the services associated with this proxy to accept traffic from downstream
 	// clients on allowed routes.
-	inboundTrafficPolicy := cataloger.GetInboundMeshTrafficPolicy(serviceIdentity, proxyServices)
-	generatePipyInboundTrafficPolicy(cataloger, serviceIdentity, pipyConf, inboundTrafficPolicy, s.certManager.GetTrustDomain(), proxy)
+	inboundTrafficPolicy := cataloger.GetInboundMeshTrafficPolicy(proxy.Identity, proxyServices)
+	generatePipyInboundTrafficPolicy(cataloger, pipyConf, inboundTrafficPolicy, s.certManager.GetTrustDomain(), proxy)
 	if len(proxyServices) > 0 {
 		for _, svc := range proxyServices {
 			if ingressTrafficPolicy, ingressErr := cataloger.GetIngressTrafficPolicy(svc); ingressErr == nil {
 				if ingressTrafficPolicy != nil {
-					generatePipyIngressTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, ingressTrafficPolicy)
+					generatePipyIngressTrafficRoutePolicy(cataloger, pipyConf, ingressTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(ingressErr).Msg(ingressErr.Error())
 			}
 			if aclTrafficPolicy, aclErr := cataloger.GetAccessControlTrafficPolicy(svc); aclErr == nil {
 				if aclTrafficPolicy != nil {
-					generatePipyAccessControlTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, aclTrafficPolicy)
+					generatePipyAccessControlTrafficRoutePolicy(cataloger, pipyConf, aclTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(aclErr).Msg(aclErr.Error())
 			}
 			if expTrafficPolicy, expErr := cataloger.GetExportTrafficPolicy(svc); expErr == nil {
 				if expTrafficPolicy != nil {
-					generatePipyServiceExportTrafficRoutePolicy(cataloger, serviceIdentity, pipyConf, expTrafficPolicy)
+					generatePipyServiceExportTrafficRoutePolicy(cataloger, pipyConf, expTrafficPolicy)
 				}
+			} else {
+				log.Error().Err(expErr).Msg(expErr.Error())
 			}
 		}
 	}
@@ -356,6 +365,7 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 	if mc, ok := s.catalog.(*catalog.MeshCatalog); ok {
 		meshConf := mc.GetConfigurator()
 		proxy.MeshConf = meshConf
+		pipyConf.setServiceIdentity(proxy.Identity)
 		pipyConf.setSidecarLogLevel((*meshConf).GetMeshConfig().Spec.Sidecar.LogLevel)
 		pipyConf.setSidecarTimeout((*meshConf).GetMeshConfig().Spec.Sidecar.SidecarTimeout)
 		pipyConf.setEnableSidecarActiveHealthChecks((*meshConf).GetFeatureFlags().EnableSidecarActiveHealthChecks)
@@ -416,7 +426,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 		}
 		if len(svc.Annotations) > 0 {
 			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]interface{})
+				pipyConf.DNSResolveDB = make(map[string][]string)
 			}
 			resolvableIPSet := mapset.NewSet()
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
@@ -433,13 +443,21 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 						}
 					}
 				}
-				addrItems := resolvableIPSet.ToSlice()
-				sort.SliceStable(addrItems, func(i, j int) bool {
-					addr1 := addrItems[i].(string)
-					addr2 := addrItems[j].(string)
+				ipv4s := resolvableIPSet.ToSlice()
+				sort.SliceStable(ipv4s, func(i, j int) bool {
+					addr1 := ipv4s[i].(string)
+					addr2 := ipv4s[j].(string)
 					return addr1 < addr2
 				})
-				pipyConf.DNSResolveDB[fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())] = addrItems
+				ipAddrs := make([]string, 0)
+				for _, ipv4 := range ipv4s {
+					ipAddrs = append(ipAddrs, ipv4.(string))
+					if cfg.GenerateIPv6BasedOnIPv4() {
+						ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipv4.(string)))
+					}
+				}
+				dn := fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())
+				pipyConf.DNSResolveDB[dn] = ipAddrs
 				delete(pipyConf.DNSResolveDB, svc.Name)
 			}
 		}
@@ -451,24 +469,30 @@ func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 		return
 	}
 	if pipyConf.DNSResolveDB == nil {
-		pipyConf.DNSResolveDB = make(map[string][]interface{})
+		pipyConf.DNSResolveDB = make(map[string][]string)
 	}
 	dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
 	if cfg.IsWildcardDNSProxyEnabled() {
-		ipv4s := make([]interface{}, 0)
-		for _, ipv4 := range dnsProxy.Wildcard.IPv4 {
-			ipv4s = append(ipv4s, ipv4)
+		ipAddrs := make([]string, 0)
+		for _, ipAddr := range dnsProxy.Wildcard.IPs {
+			ipAddrs = append(ipAddrs, ipAddr.IPv4)
+			if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
+				ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipAddr.IPv4))
+			}
 		}
-		pipyConf.DNSResolveDB["*"] = ipv4s
+		pipyConf.DNSResolveDB["*"] = ipAddrs
 	} else {
 		if len(dnsProxy.DB) > 0 {
 			for _, db := range dnsProxy.DB {
-				if len(db.IPv4) > 0 {
-					ipv4s := make([]interface{}, 0)
-					for _, ipv4 := range db.IPv4 {
-						ipv4s = append(ipv4s, ipv4)
+				if len(db.IPs) > 0 {
+					ipAddrs := make([]string, 0)
+					for _, ipAddr := range db.IPs {
+						ipAddrs = append(ipAddrs, ipAddr.IPv4)
+						if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
+							ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipAddr.IPv4))
+						}
 					}
-					pipyConf.DNSResolveDB[db.DN] = ipv4s
+					pipyConf.DNSResolveDB[db.DN] = ipAddrs
 				}
 			}
 		}

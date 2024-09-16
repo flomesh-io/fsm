@@ -38,6 +38,20 @@ func (m *MockConfigurator) EXPECT() *MockConfiguratorMockRecorder {
 	return m.recorder
 }
 
+// GenerateIPv6BasedOnIPv4 mocks base method.
+func (m *MockConfigurator) GenerateIPv6BasedOnIPv4() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateIPv6BasedOnIPv4")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// GenerateIPv6BasedOnIPv4 indicates an expected call of GenerateIPv6BasedOnIPv4.
+func (mr *MockConfiguratorMockRecorder) GenerateIPv6BasedOnIPv4() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateIPv6BasedOnIPv4", reflect.TypeOf((*MockConfigurator)(nil).GenerateIPv6BasedOnIPv4))
+}
+
 // GetCertKeyBitSize mocks base method.
 func (m *MockConfigurator) GetCertKeyBitSize() int {
 	m.ctrl.T.Helper()

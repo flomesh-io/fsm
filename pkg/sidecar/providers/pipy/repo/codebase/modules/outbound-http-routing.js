@@ -1,5 +1,6 @@
 ((
   config = pipy.solve('config.js'),
+  specServiceIdentity = config?.Spec?.ServiceIdentity,
   {
     shuffle,
     failover,
@@ -72,7 +73,7 @@
       (method, path, headers) => void (
         tree[method]?.find?.(rule => rule(path, headers)),
         __service && (
-          headers['serviceidentity'] = __service.ServiceIdentity
+          headers['serviceidentity'] = specServiceIdentity
         )
       )
     )

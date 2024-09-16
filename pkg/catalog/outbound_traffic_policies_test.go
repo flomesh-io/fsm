@@ -645,6 +645,8 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 					return svcToEndpointsMap[svc.String()], nil
 				}).AnyTimes()
 
+			mockPolicyController.EXPECT().ListIsolationPolicies().Return(nil).AnyTimes()
+
 			// Mock calls to UpstreamTrafficSetting lookups
 			mockPolicyController.EXPECT().GetUpstreamTrafficSetting(gomock.Any()).DoAndReturn(
 				func(opt policy.UpstreamTrafficSettingGetOpt) *policyv1alpha1.UpstreamTrafficSetting {
