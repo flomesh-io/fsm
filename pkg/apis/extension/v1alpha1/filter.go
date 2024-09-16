@@ -12,7 +12,7 @@ type FilterSpec struct {
 
 	// +optional
 	// ConfigRef is the reference to the Configurations
-	ConfigRef *gwv1.LocalObjectReference `json:"configRef"`
+	ConfigRef *gwv1.LocalObjectReference `json:"configRef,omitempty"`
 }
 
 // Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols

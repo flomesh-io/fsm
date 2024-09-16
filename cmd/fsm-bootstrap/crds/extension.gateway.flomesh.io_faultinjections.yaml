@@ -51,7 +51,7 @@ spec:
                 description: Abort defines the abort configuration
                 properties:
                   percentage:
-                    description: Percentage is the percentage of requests to delay
+                    description: Percentage is the percentage of requests to abort
                     format: int32
                     maximum: 100
                     minimum: 0
@@ -81,6 +81,8 @@ spec:
                         minimum: 0
                         type: integer
                     type: object
+                required:
+                - percentage
                 type: object
               delay:
                 description: Delay defines the delay configuration
@@ -99,6 +101,8 @@ spec:
                     maximum: 100
                     minimum: 0
                     type: integer
+                required:
+                - percentage
                 type: object
             type: object
           status:

@@ -20,7 +20,7 @@ type FaultInjectionDelay struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
 	// Percentage is the percentage of requests to delay
-	Percentage int32 `json:"percentage,omitempty"`
+	Percentage int32 `json:"percentage"`
 
 	// +optional
 	// +kubebuilder:default="1s"
@@ -37,8 +37,8 @@ type FaultInjectionDelay struct {
 type FaultInjectionAbort struct {
 	// +kubebuilder:validation:Minimum=0
 	// +kubebuilder:validation:Maximum=100
-	// Percentage is the percentage of requests to delay
-	Percentage int32 `json:"percentage,omitempty"`
+	// Percentage is the percentage of requests to abort
+	Percentage int32 `json:"percentage"`
 
 	// +optional
 	// +kubebuilder:default={status: 500, body: "Fault injection triggered"}

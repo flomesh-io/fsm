@@ -17,7 +17,7 @@ type ListenerFilterSpec struct {
 
 	// +optional
 	// ConfigRef is the reference to the Configurations
-	ConfigRef *gwv1.LocalObjectReference `json:"configRef"`
+	ConfigRef *gwv1.LocalObjectReference `json:"configRef,omitempty"`
 }
 
 // ListenerFilter provides a way to configure ListenerFilters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols

@@ -10,13 +10,13 @@ type FilterDefinitionSpec struct {
 	// +optional
 	// +kubebuilder:default=Route
 	// +kubebuilder:validation:Enum=Route;Listener
-	Scope *FilterScope `json:"scope"`
+	Scope *FilterScope `json:"scope,omitempty"`
 
 	// Protocol is the protocol of FilterDefinition
 	// +optional
 	// +kubebuilder:default=http
 	// +kubebuilder:validation:Enum=http;tcp
-	Protocol *FilterProtocol `json:"protocol"`
+	Protocol *FilterProtocol `json:"protocol,omitempty"`
 
 	// Type is the type of the FilterDefinition in PascalCase, it should be unique within the namespace
 	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
@@ -24,7 +24,7 @@ type FilterDefinitionSpec struct {
 	// +kubebuilder:validation:MaxLength=63
 	Type string `json:"type"`
 
-	// Script is the list of scripts to be executed, key is the script name and value is the script content
+	// Script is the list of scripts to be executed
 	// +kubebuilder:validation:MinLength=1
 	Script string `json:"script"`
 }
