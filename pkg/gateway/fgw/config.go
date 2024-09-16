@@ -508,30 +508,30 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 }
 
 type CircuitBreakerSpec struct {
-	LatencyThresholdDuration *int64                              `json:"latencyThreshold,omitempty"`
-	ErrorCountThreshold      *int32                              `json:"errorCountThreshold,omitempty"`
-	ErrorRatioThreshold      *float32                            `json:"errorRatioThreshold,omitempty"`
-	ConcurrencyThreshold     *int32                              `json:"concurrencyThreshold,omitempty"`
-	CheckIntervalDuration    *int64                              `json:"checkInterval,omitempty"`
-	BreakIntervalDuration    *int64                              `json:"breakInterval,omitempty"`
-	CircuitBreakerResponse   *extv1alpha1.CircuitBreakerResponse `json:"response,omitempty"`
+	LatencyThresholdInMilliseconds *int64                              `json:"latencyThreshold,omitempty"`
+	ErrorCountThreshold            *int32                              `json:"errorCountThreshold,omitempty"`
+	ErrorRatioThreshold            *float32                            `json:"errorRatioThreshold,omitempty"`
+	ConcurrencyThreshold           *int32                              `json:"concurrencyThreshold,omitempty"`
+	CheckIntervalInMilliseconds    *int64                              `json:"checkInterval,omitempty"`
+	BreakIntervalInMilliseconds    *int64                              `json:"breakInterval,omitempty"`
+	CircuitBreakerResponse         *extv1alpha1.CircuitBreakerResponse `json:"response,omitempty"`
 }
 
 func (c *CircuitBreakerSpec) LatencyThreshold(latencyThreshold *metav1.Duration) {
 	if latencyThreshold != nil {
-		c.LatencyThresholdDuration = ptr.To(latencyThreshold.Milliseconds())
+		c.LatencyThresholdInMilliseconds = ptr.To(latencyThreshold.Milliseconds())
 	}
 }
 
 func (c *CircuitBreakerSpec) CheckInterval(checkInterval *metav1.Duration) {
 	if checkInterval != nil {
-		c.CheckIntervalDuration = ptr.To(checkInterval.Milliseconds())
+		c.CheckIntervalInMilliseconds = ptr.To(checkInterval.Milliseconds())
 	}
 }
 
 func (c *CircuitBreakerSpec) BreakInterval(breakInterval *metav1.Duration) {
 	if breakInterval != nil {
-		c.BreakIntervalDuration = ptr.To(breakInterval.Milliseconds())
+		c.BreakIntervalInMilliseconds = ptr.To(breakInterval.Milliseconds())
 	}
 }
 
@@ -541,19 +541,33 @@ type FaultInjectionSpec struct {
 }
 
 type FaultInjectionDelay struct {
-	Percentage  int32  `json:"percentage,omitempty"`
-	MinDuration *int64 `json:"min,omitempty"`
-	MaxDuration *int64 `json:"max,omitempty"`
+	Percentage        int32  `json:"percentage"`
+	MinInMilliseconds *int64 `json:"min,omitempty"`
+	MaxInMilliseconds *int64 `json:"max,omitempty"`
 }
 
 func (f *FaultInjectionDelay) Min(min *metav1.Duration) {
 	if min != nil {
-		f.MinDuration = ptr.To(min.Milliseconds())
+		f.MinInMilliseconds = ptr.To(min.Milliseconds())
 	}
 }
 
 func (f *FaultInjectionDelay) Max(max *metav1.Duration) {
 	if max != nil {
-		f.MaxDuration = ptr.To(max.Milliseconds())
+		f.MaxInMilliseconds = ptr.To(max.Milliseconds())
+	}
+}
+
+type RateLimitSpec struct {
+	Burst                  *int32                         `json:"burst,omitempty"`
+	Requests               *int32                         `json:"requests,omitempty"`
+	IntervalInMilliseconds *int64                         `json:"interval,omitempty"`
+	Backlog                *int32                         `json:"backlog,omitempty"`
+	RateLimitResponse      *extv1alpha1.RateLimitResponse `json:"response,omitempty"`
+}
+
+func (r *RateLimitSpec) Interval(interval *metav1.Duration) {
+	if interval != nil {
+		r.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
 	}
 }

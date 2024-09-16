@@ -60,6 +60,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().FilterDefinitions().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("listenerfilters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ListenerFilters().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("ratelimits"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().RateLimits().Informer()}, nil
 
 	}
 

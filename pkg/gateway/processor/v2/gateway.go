@@ -158,34 +158,28 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 
 	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
 	for _, f := range list.Items {
-		definition := c.resolveFilterDefinition(f.Spec.DefinitionRef)
-		if definition == nil {
-			continue
-		}
-
-		scope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
-		if scope != extv1alpha1.FilterScopeListener {
-			continue
-		}
-
-		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
-		listenerProtocol := toFilterProtocol(l.Protocol)
-
-		if listenerProtocol == nil {
-			continue
-		}
-
-		if *listenerProtocol != filterProtocol {
-			continue
-		}
-
-		filterType := definition.Spec.Type
-
+		filterType := f.Spec.Type
 		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
 			Type:            filterType,
 			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
 			Key:             uuid.NewString(),
 		})
+
+		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeListener, f.Spec.DefinitionRef)
+		if definition == nil {
+			continue
+		}
+
+		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
+		//listenerProtocol := toFilterProtocol(l.Protocol)
+		//
+		//if listenerProtocol == nil {
+		//	continue
+		//}
+		//
+		//if *listenerProtocol != filterProtocol {
+		//	continue
+		//}
 
 		if c.filters[filterProtocol] == nil {
 			c.filters[filterProtocol] = map[string]string{}

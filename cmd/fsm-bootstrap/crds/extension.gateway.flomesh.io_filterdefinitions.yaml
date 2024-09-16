@@ -63,8 +63,7 @@ spec:
                 - Listener
                 type: string
               script:
-                description: Script is the list of scripts to be executed, key is
-                  the script name and value is the script content
+                description: Script is the list of scripts to be executed
                 minLength: 1
                 type: string
               type:

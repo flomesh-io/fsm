@@ -138,10 +138,16 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
+              type:
+                description: Type is the type of the ListenerFilter in PascalCase,
+                  it should be unique within the namespace
+                maxLength: 63
+                minLength: 1
+                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
+                type: string
             required:
-            - configRef
-            - definitionRef
             - targetRefs
+            - type
             type: object
           status:
             description: Status defines the current state of ListenerFilter.

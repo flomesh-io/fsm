@@ -30,6 +30,7 @@ type ExtensionV1alpha1Interface interface {
 	FiltersGetter
 	FilterDefinitionsGetter
 	ListenerFiltersGetter
+	RateLimitsGetter
 }
 
 // ExtensionV1alpha1Client is used to interact with features provided by the extension.gateway.flomesh.io group.
@@ -55,6 +56,10 @@ func (c *ExtensionV1alpha1Client) FilterDefinitions() FilterDefinitionInterface 
 
 func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilterInterface {
 	return newListenerFilters(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) RateLimits(namespace string) RateLimitInterface {
+	return newRateLimits(c, namespace)
 }
 
 // NewForConfig creates a new ExtensionV1alpha1Client for the given config.

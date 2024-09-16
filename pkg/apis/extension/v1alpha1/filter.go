@@ -7,11 +7,19 @@ import (
 
 // FilterSpec defines the desired state of Filter
 type FilterSpec struct {
-	// DefinitionRef is the reference to the FilterDefinition
-	DefinitionRef gwv1.LocalObjectReference `json:"definitionRef"`
+	// Type is the type of the Filter in PascalCase, it should be unique within the namespace
+	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	Type string `json:"type"`
 
+	// +optional
+	// DefinitionRef is the reference to the FilterDefinition
+	DefinitionRef *gwv1.LocalObjectReference `json:"definitionRef"`
+
+	// +optional
 	// ConfigRef is the reference to the Configurations
-	ConfigRef gwv1.LocalObjectReference `json:"configRef"`
+	ConfigRef *gwv1.LocalObjectReference `json:"configRef,omitempty"`
 }
 
 // Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols

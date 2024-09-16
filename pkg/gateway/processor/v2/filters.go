@@ -3,30 +3,50 @@ package v2
 import (
 	"context"
 
+	"k8s.io/utils/ptr"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
-func (c *ConfigGenerator) resolveFilterDefinition(ref gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
+func (c *ConfigGenerator) resolveFilterDefinition(filterType string, filterScope extv1alpha1.FilterScope, ref *gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
+	if ref == nil {
+		return nil
+	}
+
 	definition := &extv1alpha1.FilterDefinition{}
 	if err := c.client.Get(context.Background(), types.NamespacedName{Name: string(ref.Name)}, definition); err != nil {
 		log.Error().Msgf("Failed to resolve FilterDefinition: %s", err)
 		return nil
 	}
 
+	if filterType != definition.Spec.Type {
+		log.Error().Msgf("FilterDefinition %s is not of type %s", definition.Name, filterType)
+		return nil
+	}
+
+	definitionScope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
+	if filterScope != definitionScope {
+		log.Error().Msgf("FilterDefinition %s is not of scope %s", definition.Name, filterScope)
+		return nil
+	}
+
 	return definition
 }
 
-func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map[string]interface{} {
+func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) map[string]interface{} {
+	if ref == nil {
+		return map[string]interface{}{}
+	}
+
 	key := types.NamespacedName{Namespace: c.gateway.Namespace, Name: string(ref.Name)}
 	ctx := context.Background()
 
@@ -59,23 +79,37 @@ func (c *ConfigGenerator) resolveFilterConfig(ref gwv1.LocalObjectReference) map
 		}
 
 		return toMap("faultInjection", &f2)
+	case constants.RateLimitKind:
+		obj := &extv1alpha1.RateLimit{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve RateLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		r2 := fgwv2.RateLimitSpec{}
+		if err := gwutils.DeepCopy(&r2, &obj.Spec); err != nil {
+			log.Error().Msgf("Failed to copy RateLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("rateLimit", &r2)
 	}
 
 	return map[string]interface{}{}
 }
 
-func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
-	switch protocol {
-	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolHTTP)
-	case gwv1.TCPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolTCP)
-	case gwv1.UDPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolUDP)
-	default:
-		return nil
-	}
-}
+//func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
+//	switch protocol {
+//	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolHTTP)
+//	case gwv1.TCPProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolTCP)
+//	case gwv1.UDPProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolUDP)
+//	default:
+//		return nil
+//	}
+//}
 
 func toMap(key string, spec interface{}) map[string]interface{} {
 	bytes, err := yaml.Marshal(spec)
