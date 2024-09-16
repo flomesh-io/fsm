@@ -253,6 +253,7 @@ type ObservabilitySpec struct {
 
 // MeshConfigSpec represents the spec of mesh config
 type MeshConfigSpec struct {
+	ServiceIdentity identity.ServiceIdentity
 	SidecarLogLevel string
 	SidecarTimeout  int
 	Traffic         TrafficSpec
@@ -364,8 +365,7 @@ type OutboundHTTPRouteRuleSlice []*OutboundHTTPRouteRule
 // OutboundHTTPRouteRules is a wrapper type
 type OutboundHTTPRouteRules struct {
 	RouteRules           OutboundHTTPRouteRuleSlice `json:"RouteRules"`
-	ServiceIdentity      identity.ServiceIdentity
-	EgressForwardGateway *string `json:"EgressForwardGateway,omitempty"`
+	EgressForwardGateway *string                    `json:"EgressForwardGateway,omitempty"`
 	Pluggable
 }
 

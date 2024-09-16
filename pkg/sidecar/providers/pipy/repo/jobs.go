@@ -209,7 +209,7 @@ func outbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pr
 			}
 		}
 	}
-	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, pipyConf, cfg, proxy, outboundTrafficPolicy, desiredSuffix)
+	outboundDependClusters := generatePipyOutboundTrafficRoutePolicy(cataloger, pipyConf, cfg, outboundTrafficPolicy, desiredSuffix)
 	if len(outboundDependClusters) > 0 {
 		if ready := generatePipyOutboundTrafficBalancePolicy(cataloger, cfg, proxy, pipyConf,
 			outboundTrafficPolicy, outboundDependClusters); !ready {
@@ -365,6 +365,7 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 	if mc, ok := s.catalog.(*catalog.MeshCatalog); ok {
 		meshConf := mc.GetConfigurator()
 		proxy.MeshConf = meshConf
+		pipyConf.setServiceIdentity(proxy.Identity)
 		pipyConf.setSidecarLogLevel((*meshConf).GetMeshConfig().Spec.Sidecar.LogLevel)
 		pipyConf.setSidecarTimeout((*meshConf).GetMeshConfig().Spec.Sidecar.SidecarTimeout)
 		pipyConf.setEnableSidecarActiveHealthChecks((*meshConf).GetFeatureFlags().EnableSidecarActiveHealthChecks)

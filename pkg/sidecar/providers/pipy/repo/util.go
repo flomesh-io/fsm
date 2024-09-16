@@ -132,7 +132,7 @@ func generatePipyInboundTrafficPolicy(meshCatalog catalog.MeshCataloger, pipyCon
 }
 
 func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator,
-	proxy *pipy.Proxy, outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
+	outboundPolicy *trafficpolicy.OutboundMeshTrafficPolicy,
 	desiredSuffix string) map[service.ClusterName]*WeightedCluster {
 	if len(outboundPolicy.TrafficMatches) == 0 {
 		return nil
@@ -171,7 +171,6 @@ func generatePipyOutboundTrafficRoutePolicy(_ catalog.MeshCataloger, pipyConf *P
 			for _, httpRouteConfig := range httpRouteConfigs {
 				ruleRef := &HTTPRouteRuleRef{RuleName: HTTPRouteRuleName(httpRouteConfig.Name)}
 				hsrrs := tm.newHTTPServiceRouteRules(ruleRef)
-				hsrrs.setServiceIdentity(proxy.Identity)
 				hsrrs.setPlugins(pipyConf.getTrafficMatchPluginConfigs(trafficMatch.Name))
 				for _, hostname := range httpRouteConfig.Hostnames {
 					tm.addHTTPHostPort2Service(HTTPHostPort(hostname), ruleRef, desiredSuffix)
