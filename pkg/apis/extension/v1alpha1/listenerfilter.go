@@ -7,16 +7,24 @@ import (
 
 // ListenerFilterSpec defines the desired state of ListenerFilter
 type ListenerFilterSpec struct {
+	// Type is the type of the ListenerFilter in PascalCase, it should be unique within the namespace
+	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=63
+	Type string `json:"type"`
+
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the ListenerFilter is applied
 	TargetRefs []LocalTargetReferenceWithPort `json:"targetRefs"`
 
+	// +optional
 	// DefinitionRef is the reference to the FilterDefinition
-	DefinitionRef gwv1.LocalObjectReference `json:"definitionRef"`
+	DefinitionRef *gwv1.LocalObjectReference `json:"definitionRef"`
 
+	// +optional
 	// ConfigRef is the reference to the Configurations
-	ConfigRef gwv1.LocalObjectReference `json:"configRef"`
+	ConfigRef *gwv1.LocalObjectReference `json:"configRef,omitempty"`
 }
 
 // ListenerFilter provides a way to configure ListenerFilters for HTTP/HTTPS/GRPC/GRPCS/TCP protocols

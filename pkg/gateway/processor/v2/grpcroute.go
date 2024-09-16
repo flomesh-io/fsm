@@ -149,14 +149,19 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
-
-			definition := c.resolveFilterDefinition(filter.Spec.DefinitionRef)
-			if definition == nil {
+			if filter == nil {
 				continue
 			}
 
-			scope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
-			if scope != extv1alpha1.FilterScopeRoute {
+			filterType := filter.Spec.Type
+			filters = append(filters, fgwv2.GRPCRouteFilter{
+				Type:            gwv1.GRPCRouteFilterType(filterType),
+				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+				Key:             uuid.NewString(),
+			})
+
+			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
+			if definition == nil {
 				continue
 			}
 
@@ -164,13 +169,6 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 			if filterProtocol != extv1alpha1.FilterProtocolHTTP {
 				continue
 			}
-
-			filterType := definition.Spec.Type
-			filters = append(filters, fgwv2.GRPCRouteFilter{
-				Type:            gwv1.GRPCRouteFilterType(filterType),
-				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
-				Key:             uuid.NewString(),
-			})
 
 			if c.filters[filterProtocol] == nil {
 				c.filters[filterProtocol] = map[string]string{}

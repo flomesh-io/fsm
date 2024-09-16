@@ -116,8 +116,8 @@ const (
 	InformerKeyGatewayAPIUDPRoute InformerKey = "UDPRoute-gwapi"
 	// InformerKeyGatewayAPIReferenceGrant is the InformerKey for a ReferenceGrant informer
 	InformerKeyGatewayAPIReferenceGrant InformerKey = "ReferenceGrant-gwapi"
-	// InformerKeyRateLimitPolicy is the InformerKey for a RateLimitPolicy informer
-	InformerKeyRateLimitPolicy InformerKey = "RateLimitPolicy"
+	// InformerKeyRateLimit is the InformerKey for a RateLimit extension informer
+	InformerKeyRateLimit InformerKey = "RateLimit"
 	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
 	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
 	// InformerKeyLoadBalancerPolicy is the InformerKey for a LoadBalancerPolicy informer
@@ -217,8 +217,8 @@ const (
 	// ReferenceGrantResourceType is the type used to represent the reference grants resource
 	ReferenceGrantResourceType ResourceType = "referencegrants"
 
-	// RateLimitPoliciesResourceType is the type used to represent the rate limit policies resource
-	RateLimitPoliciesResourceType ResourceType = "ratelimits"
+	// RateLimitsResourceType is the type used to represent the rate limit resource
+	RateLimitsResourceType ResourceType = "ratelimits"
 
 	// SessionStickyPoliciesResourceType is the type used to represent the session sticky policies resource
 	SessionStickyPoliciesResourceType ResourceType = "sessionstickies"

@@ -6,16 +6,16 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
-  name: filters.extension.gateway.flomesh.io
+  name: ratelimits.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io
   names:
     categories:
     - gateway-api
-    kind: Filter
-    listKind: FilterList
-    plural: filters
-    singular: filter
+    kind: RateLimit
+    listKind: RateLimitList
+    plural: ratelimits
+    singular: ratelimit
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -25,8 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Filter provides a way to configure filters for HTTP/HTTPS/GRPC/GRPCS/TCP
-          protocols
+        description: RateLimit is the Schema for the RateLimit API
         properties:
           apiVersion:
             description: |-
@@ -46,78 +45,65 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of Filter.
+            description: RateLimitSpec defines the desired state of RateLimit
             properties:
-              configRef:
-                description: ConfigRef is the reference to the Configurations
-                properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                    type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
-                    type: string
-                required:
-                - group
-                - kind
-                - name
-                type: object
-              definitionRef:
-                description: DefinitionRef is the reference to the FilterDefinition
-                properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                    type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
-                    type: string
-                required:
-                - group
-                - kind
-                - name
-                type: object
-              type:
-                description: Type is the type of the Filter in PascalCase, it should
-                  be unique within the namespace
-                maxLength: 63
-                minLength: 1
-                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
+              backlog:
+                default: 5
+                description: Backlog is the maximum number of requests that can be
+                  queued
+                format: int32
+                minimum: 0
+                type: integer
+              burst:
+                default: 10
+                description: Burst is the maximum number of requests that can be made
+                  in Interval, default is 10
+                format: int32
+                minimum: 0
+                type: integer
+              interval:
+                default: 10s
+                description: Interval is the time period in which the requests are
+                  counted
                 type: string
-            required:
-            - type
+              requests:
+                default: 5
+                description: Requests is the number of requests that can be made in
+                  Interval, default is 5
+                format: int32
+                minimum: 0
+                type: integer
+              response:
+                default:
+                  body: Rate limit reached
+                  status: 429
+                description: RateLimitResponse is the response when Rate limit reached
+                properties:
+                  body:
+                    default: Rate limit reached
+                    description: Body is the content of response body, default is
+                      "Rate limit reached"
+                    type: string
+                  headers:
+                    additionalProperties:
+                      type: string
+                    description: Headers is the HTTP headers of response
+                    type: object
+                  status:
+                    default: 429
+                    description: StatusCode is the HTTP status code of the response,
+                      default is 429
+                    format: int32
+                    maximum: 600
+                    minimum: 0
+                    type: integer
+                type: object
             type: object
           status:
-            description: Status defines the current state of Filter.
+            description: RateLimitStatus defines the observed state of RateLimit
             properties:
               conditions:
-                description: Conditions describes the status of the Filter with respect
-                  to the given Ancestor.
+                description: Conditions describe the current conditions of the RateLimit.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource.\n---\nThis struct is intended for
@@ -186,7 +172,6 @@ spec:
                   - type
                   type: object
                 maxItems: 8
-                minItems: 1
                 type: array
                 x-kubernetes-list-map-keys:
                 - type
