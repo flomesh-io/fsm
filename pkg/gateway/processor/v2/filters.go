@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	"k8s.io/utils/ptr"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 
@@ -15,10 +17,25 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
-func (c *ConfigGenerator) resolveFilterDefinition(ref gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
+func (c *ConfigGenerator) resolveFilterDefinition(filterType string, filterScope extv1alpha1.FilterScope, ref *gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
+	if ref == nil {
+		return nil
+	}
+
 	definition := &extv1alpha1.FilterDefinition{}
 	if err := c.client.Get(context.Background(), types.NamespacedName{Name: string(ref.Name)}, definition); err != nil {
 		log.Error().Msgf("Failed to resolve FilterDefinition: %s", err)
+		return nil
+	}
+
+	if filterType != definition.Spec.Type {
+		log.Error().Msgf("FilterDefinition %s is not of type %s", definition.Name, filterType)
+		return nil
+	}
+
+	definitionScope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
+	if filterScope != definitionScope {
+		log.Error().Msgf("FilterDefinition %s is not of scope %s", definition.Name, filterScope)
 		return nil
 	}
 

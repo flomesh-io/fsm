@@ -87,15 +87,17 @@ func (r *FilterWebhook) validateSpec(ctx context.Context, spec extv1alpha1.Filte
 	return errs
 }
 
-func (r *FilterWebhook) validateDefinitionRef(ctx context.Context, definitionRef gwv1.LocalObjectReference, path *field.Path) field.ErrorList {
+func (r *FilterWebhook) validateDefinitionRef(ctx context.Context, definitionRef *gwv1.LocalObjectReference, path *field.Path) field.ErrorList {
 	var errs field.ErrorList
 
-	if definitionRef.Group != extv1alpha1.GroupName {
-		errs = append(errs, field.Invalid(path.Child("group"), definitionRef.Group, fmt.Sprintf("group must be %s", extv1alpha1.GroupName)))
-	}
+	if definitionRef != nil {
+		if definitionRef.Group != extv1alpha1.GroupName {
+			errs = append(errs, field.Invalid(path.Child("group"), definitionRef.Group, fmt.Sprintf("group must be %s", extv1alpha1.GroupName)))
+		}
 
-	if definitionRef.Kind != constants.GatewayAPIExtensionFilterDefinitionKind {
-		errs = append(errs, field.Invalid(path.Child("kind"), definitionRef.Kind, fmt.Sprintf("kind must be %s", constants.GatewayAPIExtensionFilterDefinitionKind)))
+		if definitionRef.Kind != constants.GatewayAPIExtensionFilterDefinitionKind {
+			errs = append(errs, field.Invalid(path.Child("kind"), definitionRef.Kind, fmt.Sprintf("kind must be %s", constants.GatewayAPIExtensionFilterDefinitionKind)))
+		}
 	}
 
 	return errs

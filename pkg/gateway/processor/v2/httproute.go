@@ -148,14 +148,19 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
-
-			definition := c.resolveFilterDefinition(filter.Spec.DefinitionRef)
-			if definition == nil {
+			if filter == nil {
 				continue
 			}
 
-			scope := ptr.Deref(definition.Spec.Scope, extv1alpha1.FilterScopeRoute)
-			if scope != extv1alpha1.FilterScopeRoute {
+			filterType := filter.Spec.Type
+			filters = append(filters, fgwv2.HTTPRouteFilter{
+				Type:            gwv1.HTTPRouteFilterType(filterType),
+				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+				Key:             uuid.NewString(),
+			})
+
+			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
+			if definition == nil {
 				continue
 			}
 
@@ -163,13 +168,6 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			if filterProtocol != extv1alpha1.FilterProtocolHTTP {
 				continue
 			}
-
-			filterType := definition.Spec.Type
-			filters = append(filters, fgwv2.HTTPRouteFilter{
-				Type:            gwv1.HTTPRouteFilterType(filterType),
-				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
-				Key:             uuid.NewString(),
-			})
 
 			if c.filters[filterProtocol] == nil {
 				c.filters[filterProtocol] = map[string]string{}
