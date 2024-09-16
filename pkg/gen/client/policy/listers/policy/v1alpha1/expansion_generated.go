@@ -55,6 +55,14 @@ type IngressBackendListerExpansion interface{}
 // IngressBackendNamespaceLister.
 type IngressBackendNamespaceListerExpansion interface{}
 
+// IsolationListerExpansion allows custom methods to be added to
+// IsolationLister.
+type IsolationListerExpansion interface{}
+
+// IsolationNamespaceListerExpansion allows custom methods to be added to
+// IsolationNamespaceLister.
+type IsolationNamespaceListerExpansion interface{}
+
 // RetryListerExpansion allows custom methods to be added to
 // RetryLister.
 type RetryListerExpansion interface{}

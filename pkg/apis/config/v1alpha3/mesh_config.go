@@ -87,13 +87,22 @@ const (
 	LocalProxyModePodIP LocalProxyMode = "PodIP"
 )
 
+// ResolveAddr is the type to represent FSM's Resolve Addr configuration.
+type ResolveAddr struct {
+	// IPv4 defines a ipv4 address for resolve DN.
+	IPv4 string `json:"ipv4"`
+
+	// IPv6 defines a ipv6 address for resolve DN.
+	IPv6 string `json:"ipv6,omitempty"`
+}
+
 // WildcardDN is the type to represent FSM's Wildcard DN configuration.
 type WildcardDN struct {
 	// Enable defines a boolean indicating if wildcard are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
 
-	// IPv4 defines a ipv4 address for wildcard DN.
-	IPv4 []string `json:"ipv4,omitempty"`
+	// IPs defines ip addresses for resolve DN.
+	IPs []ResolveAddr `json:"ips"`
 }
 
 // ResolveDN is the type to represent FSM's Resolve DN configuration.
@@ -101,8 +110,8 @@ type ResolveDN struct {
 	// DN defines resolve DN.
 	DN string `json:"dn"`
 
-	// IPv4 defines a ipv4 address for resolve DN.
-	IPv4 []string `json:"ipv4"`
+	// IPs defines ip addresses for resolve DN.
+	IPs []ResolveAddr `json:"ips"`
 }
 
 // LocalDNSProxy is the type to represent FSM's local DNS proxy configuration.
@@ -117,6 +126,10 @@ type LocalDNSProxy struct {
 	// SecondaryUpstreamDNSServerIPAddr defines a secondary upstream DNS server for local DNS Proxy.
 	// +optional
 	SecondaryUpstreamDNSServerIPAddr string `json:"secondaryUpstreamDNSServerIPAddr,omitempty"`
+
+	// +kubebuilder:default=false
+	// +optional
+	GenerateIPv6BasedOnIPv4 bool `json:"generateIPv6BasedOnIPv4,omitempty"`
 
 	// Wildcard defines Wildcard DN.
 	Wildcard WildcardDN `json:"wildcard"`

@@ -60,6 +60,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().EgressGateways().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("ingressbackends"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().IngressBackends().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("isolations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().Isolations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("retries"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Policy().V1alpha1().Retries().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("upstreamtrafficsettings"):

@@ -507,10 +507,11 @@ fsm:
     enable: false
     searchesWithNamespace: true
     searchesWithTrustDomain: true
+    generateIPv6BasedOnIPv4: false
     wildcard:
       enable: false
-      ipv4:
-        - 127.0.0.2
+      ips:
+        - ipv4: 127.0.0.2
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits
   maxDataPlaneConnections: 0
 

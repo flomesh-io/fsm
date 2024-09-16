@@ -45,6 +45,10 @@ func (c *FakePolicyV1alpha1) IngressBackends(namespace string) v1alpha1.IngressB
 	return &FakeIngressBackends{c, namespace}
 }
 
+func (c *FakePolicyV1alpha1) Isolations(namespace string) v1alpha1.IsolationInterface {
+	return &FakeIsolations{c, namespace}
+}
+
 func (c *FakePolicyV1alpha1) Retries(namespace string) v1alpha1.RetryInterface {
 	return &FakeRetries{c, namespace}
 }

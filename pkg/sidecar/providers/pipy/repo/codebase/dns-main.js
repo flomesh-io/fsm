@@ -14,17 +14,17 @@
           rrv6 = [],
           v.map(
             ip => (
-              rr.push({
+              new IP(ip).version === 4 ? rr.push({
                 'name': k,
                 'type': 'A',
                 'ttl': 600, // TTL : 10 minutes
                 'rdata': ip
-              }),
+              }) :
               rrv6.push({
                 'name': k,
                 'type': 'AAAA',
                 'ttl': 600, // TTL : 10 minutes
-                'rdata': '00000000000000000000ffff' + ip.split('.').reduce((result, item) => (result += (n => '0123456789abcdef'.charAt(n / 16) + '0123456789abcdef'.charAt(n % 16))(Number.parseInt(item) % 256)), '')
+                'rdata': ip
               })
             )
           ),

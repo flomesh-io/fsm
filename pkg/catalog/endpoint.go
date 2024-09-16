@@ -9,13 +9,29 @@ import (
 // ListEndpointsForService returns the list of provider endpoints corresponding to a service
 func (mc *MeshCatalog) listEndpointsForService(svc service.MeshService) []endpoint.Endpoint {
 	var endpoints []endpoint.Endpoint
+	isolationCidrs := mc.GetIsolationCidrs()
 	for _, provider := range mc.endpointsProviders {
-		ep := provider.ListEndpointsForService(svc)
-		if len(ep) == 0 {
+		eps := provider.ListEndpointsForService(svc)
+		if len(eps) == 0 {
 			log.Trace().Msgf("No endpoints found for service %s by endpoints provider %s", provider.GetID(), svc)
 			continue
 		}
-		endpoints = append(endpoints, ep...)
+		if len(isolationCidrs) > 0 {
+			for _, ep := range eps {
+				isolation := false
+				for _, isolationCidr := range isolationCidrs {
+					if isolationCidr.Has(ep.IP) {
+						isolation = true
+						break
+					}
+				}
+				if !isolation {
+					endpoints = append(endpoints, ep)
+				}
+			}
+		} else {
+			endpoints = append(endpoints, eps...)
+		}
 	}
 	return endpoints
 }
@@ -23,9 +39,28 @@ func (mc *MeshCatalog) listEndpointsForService(svc service.MeshService) []endpoi
 // getDNSResolvableServiceEndpoints returns the resolvable set of endpoint over which a service is accessible using its FQDN
 func (mc *MeshCatalog) getDNSResolvableServiceEndpoints(svc service.MeshService) []endpoint.Endpoint {
 	var endpoints []endpoint.Endpoint
+	isolationCidrs := mc.GetIsolationCidrs()
 	for _, provider := range mc.endpointsProviders {
-		ep := provider.GetResolvableEndpointsForService(svc)
-		endpoints = append(endpoints, ep...)
+		eps := provider.GetResolvableEndpointsForService(svc)
+		if len(eps) == 0 {
+			continue
+		}
+		if len(isolationCidrs) > 0 {
+			for _, ep := range eps {
+				isolation := false
+				for _, isolationCidr := range isolationCidrs {
+					if isolationCidr.Has(ep.IP) {
+						isolation = true
+						break
+					}
+				}
+				if !isolation {
+					endpoints = append(endpoints, ep)
+				}
+			}
+		} else {
+			endpoints = append(endpoints, eps...)
+		}
 	}
 	return endpoints
 }
@@ -34,12 +69,13 @@ func (mc *MeshCatalog) getDNSResolvableServiceEndpoints(svc service.MeshService)
 // is allowed access the upstream service
 func (mc *MeshCatalog) ListAllowedUpstreamEndpointsForService(downstreamIdentity identity.ServiceIdentity, upstreamSvc service.MeshService) []endpoint.Endpoint {
 	outboundEndpoints := mc.listEndpointsForService(upstreamSvc)
-	if len(outboundEndpoints) == 0 {
-		return nil
-	}
 
 	if mc.configurator.IsPermissiveTrafficPolicyMode() {
 		return outboundEndpoints
+	}
+
+	if len(outboundEndpoints) == 0 {
+		return nil
 	}
 
 	// In SMI mode, the endpoints for an upstream service must be filtered based on the service account
@@ -73,13 +109,29 @@ func (mc *MeshCatalog) ListAllowedUpstreamEndpointsForService(downstreamIdentity
 // Note: ServiceIdentity must be in the format "name.namespace" [https://github.com/flomesh-io/fsm/issues/3188]
 func (mc *MeshCatalog) listEndpointsForServiceIdentity(serviceIdentity identity.ServiceIdentity) []endpoint.Endpoint {
 	var endpoints []endpoint.Endpoint
+	isolationCidrs := mc.GetIsolationCidrs()
 	for _, provider := range mc.endpointsProviders {
-		ep := provider.ListEndpointsForIdentity(serviceIdentity)
-		if len(ep) == 0 {
+		eps := provider.ListEndpointsForIdentity(serviceIdentity)
+		if len(eps) == 0 {
 			log.Trace().Msgf("[%s] No endpoints found for service account=%s", provider.GetID(), serviceIdentity)
 			continue
 		}
-		endpoints = append(endpoints, ep...)
+		if len(isolationCidrs) > 0 {
+			for _, ep := range eps {
+				isolation := false
+				for _, isolationCidr := range isolationCidrs {
+					if isolationCidr.Has(ep.IP) {
+						isolation = true
+						break
+					}
+				}
+				if !isolation {
+					endpoints = append(endpoints, ep)
+				}
+			}
+		} else {
+			endpoints = append(endpoints, eps...)
+		}
 	}
 	return endpoints
 }

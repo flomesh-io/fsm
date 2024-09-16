@@ -29,6 +29,13 @@ func (plugin *Pluggable) setPlugins(plugins map[string]*runtime.RawExtension) {
 	plugin.Plugins = plugins
 }
 
+func (p *PipyConf) setServiceIdentity(serviceIdentity identity.ServiceIdentity) (update bool) {
+	if update = p.Spec.ServiceIdentity != serviceIdentity; update {
+		p.Spec.ServiceIdentity = serviceIdentity
+	}
+	return
+}
+
 func (p *PipyConf) setSidecarLogLevel(sidecarLogLevel string) (update bool) {
 	if update = !strings.EqualFold(p.Spec.SidecarLogLevel, sidecarLogLevel); update {
 		p.Spec.SidecarLogLevel = sidecarLogLevel
@@ -295,7 +302,15 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 }
 
 func (p *PipyConf) hashName(hash uint64) HTTPRouteRuleName {
-	return HTTPRouteRuleName(fmt.Sprintf("%X", hash))
+	if p.hashNameSet == nil {
+		p.hashNameSet = make(map[uint64]int)
+	}
+	flowcode, exists := p.hashNameSet[hash]
+	if !exists {
+		flowcode = len(p.hashNameSet) + 1
+		p.hashNameSet[hash] = flowcode
+	}
+	return HTTPRouteRuleName(fmt.Sprintf("%05X", flowcode))
 }
 
 func (p *PipyConf) Pack() {
@@ -717,10 +732,6 @@ func (hrrs *InboundHTTPRouteRules) newHTTPServiceRouteRule(matchRule *HTTPMatchR
 	routeRule.HTTPMatchRule = *matchRule
 	hrrs.RouteRules = append(hrrs.RouteRules, routeRule)
 	return routeRule, false
-}
-
-func (hrrs *OutboundHTTPRouteRules) setServiceIdentity(serviceIdentity identity.ServiceIdentity) {
-	hrrs.ServiceIdentity = serviceIdentity
 }
 
 func (hrrs *OutboundHTTPRouteRules) newHTTPServiceRouteRule(matchRule *HTTPMatchRule) (route *OutboundHTTPRouteRule, duplicate bool) {

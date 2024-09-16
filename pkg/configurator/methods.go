@@ -123,6 +123,11 @@ func (c *Client) GetLocalDNSProxySecondaryUpstream() string {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SecondaryUpstreamDNSServerIPAddr
 }
 
+// GenerateIPv6BasedOnIPv4 returns whether auto generate IPv6 based on IPv4
+func (c *Client) GenerateIPv6BasedOnIPv4() bool {
+	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.GenerateIPv6BasedOnIPv4
+}
+
 // GetTracingHost is the host to which we send tracing spans
 func (c *Client) GetTracingHost() string {
 	tracingAddress := c.getMeshConfig().Spec.Observability.Tracing.Address
