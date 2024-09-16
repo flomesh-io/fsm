@@ -89,7 +89,7 @@ rules:
 
   # FSM's custom policy API
   - apiGroups: ["policy.flomesh.io"]
-    resources: ["egresses", "egressgateways", "ingressbackends", "accesscontrols", "accesscerts", "retries", "upstreamtrafficsettings"]
+    resources: ["egresses", "egressgateways", "ingressbackends", "accesscontrols", "accesscerts", "isolations", "retries", "upstreamtrafficsettings"]
     verbs: ["list", "get", "watch"]
   - apiGroups: ["policy.flomesh.io"]
     resources: ["ingressbackends/status", "accesscontrols/status", "accesscerts/status", "upstreamtrafficsettings/status"]

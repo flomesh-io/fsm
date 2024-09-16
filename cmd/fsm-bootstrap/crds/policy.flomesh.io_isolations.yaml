@@ -1,0 +1,71 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  labels:
+    app.kubernetes.io/name: flomesh.io
+  name: isolations.policy.flomesh.io
+spec:
+  group: policy.flomesh.io
+  names:
+    kind: Isolation
+    listKind: IsolationList
+    plural: isolations
+    shortNames:
+    - iso
+    singular: isolation
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Isolation is the type used to represent an isolation policy.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: Spec is the Isolation specification
+            properties:
+              cidrs:
+                description: |-
+                  cidr is a string representing the IP Isolation
+                  Valid examples are "192.168.1.0/24"
+                items:
+                  type: string
+                minItems: 1
+                type: array
+            required:
+            - cidrs
+            type: object
+          status:
+            description: Status is the status of the Isolation configuration.
+            properties:
+              currentStatus:
+                description: CurrentStatus defines the current status of an Isolation
+                  resource.
+                type: string
+              reason:
+                description: Reason defines the reason for the current status of an
+                  Isolation resource.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true

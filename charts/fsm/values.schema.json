@@ -1238,6 +1238,12 @@
                       "title": "Secondary upstream DNS server for local DNS Proxy",
                       "description": "Secondary upstream DNS server for local DNS Proxy"
                     },
+                    "generateIPv6BasedOnIPv4": {
+                      "$id": "#/properties/fsm/properties/localDNSProxy/properties/generateIPv6BasedOnIPv4",
+                      "type": "boolean",
+                      "title": "Auto generate IPv6 based on IPv4",
+                      "description": "Auto generate IPv6 based on IPv4"
+                    },
                     "wildcard": {
                       "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard",
                       "type": "object",
@@ -1245,7 +1251,7 @@
                       "description": "The wildcard schema for local DNS Proxy",
                       "required": [
                         "enable",
-                        "ipv4"
+                        "ips"
                       ],
                       "properties": {
                         "enable": {
@@ -1254,14 +1260,28 @@
                           "title": "The enable schema for wildcard",
                           "description": "Indicates whether wildcard is enabled or not"
                         },
-                        "ipv4": {
-                          "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ipv4",
+                        "ips": {
+                          "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ips",
                           "type": "array",
-                          "title": "The ipv4 schema for wildcard",
-                          "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$",
+                          "title": "The ips schema for wildcard",
                           "items": {
-                            "type": "string",
-                            "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                            "type": "object",
+                            "required": [
+                              "ipv4"
+                            ],
+                            "properties": {
+                              "ipv4": {
+                                "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ips/properties/ipv4",
+                                "type": "string",
+                                "title": "ipv4",
+                                "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                              },
+                              "ipv6": {
+                                "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ips/properties/ipv6",
+                                "type": "string",
+                                "title": "ipv6"
+                              }
+                            }
                           }
                         }
                       }
@@ -1275,22 +1295,37 @@
                         "type": "object",
                         "required": [
                           "dn",
-                          "ipv4"
+                          "ips"
                         ],
                         "properties": {
                           "dn": {
-                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/db/properties/dn",
+                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/db/properties/db/properties/dn",
                             "type": "string",
                             "title": "The dn schema for wildcard",
                             "description": "FQDN"
                           },
-                          "ipv4": {
-                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/db/properties/ipv4",
+                          "ips": {
+                            "$id": "#/properties/fsm/properties/localDNSProxy/properties/db/properties/ips",
                             "type": "array",
-                            "title": "ipv4",
+                            "title": "The ips schema for wildcard",
                             "items": {
-                              "type": "string",
-                              "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                              "type": "object",
+                              "required": [
+                                "ipv4"
+                              ],
+                              "properties": {
+                                "ipv4": {
+                                  "$id": "#/properties/fsm/properties/localDNSProxy/properties/db/properties/ips/properties/ipv4",
+                                  "type": "string",
+                                  "title": "ipv4",
+                                  "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                                },
+                                "ipv6": {
+                                  "$id": "#/properties/fsm/properties/localDNSProxy/properties/db/properties/ips/properties/ipv6",
+                                  "type": "string",
+                                  "title": "ipv6"
+                                }
+                              }
                             }
                           }
                         }

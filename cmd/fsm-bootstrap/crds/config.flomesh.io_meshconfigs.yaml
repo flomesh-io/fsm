@@ -2161,20 +2161,35 @@ spec:
                             dn:
                               description: DN defines resolve DN.
                               type: string
-                            ipv4:
-                              description: IPv4 defines a ipv4 address for resolve
-                                DN.
+                            ips:
+                              description: IPs defines ip addresses for resolve DN.
                               items:
-                                type: string
+                                description: ResolveAddr is the type to represent
+                                  FSM's Resolve Addr configuration.
+                                properties:
+                                  ipv4:
+                                    description: IPv4 defines a ipv4 address for resolve
+                                      DN.
+                                    type: string
+                                  ipv6:
+                                    description: IPv6 defines a ipv6 address for resolve
+                                      DN.
+                                    type: string
+                                required:
+                                - ipv4
+                                type: object
                               type: array
                           required:
                           - dn
-                          - ipv4
+                          - ips
                           type: object
                         type: array
                       enable:
                         description: Enable defines a boolean indicating if the sidecars
                           are enabled for local DNS Proxy.
+                        type: boolean
+                      generateIPv6BasedOnIPv4:
+                        default: false
                         type: boolean
                       primaryUpstreamDNSServerIPAddr:
                         description: PrimaryUpstreamDNSServerIPAddr defines a primary
@@ -2191,14 +2206,27 @@ spec:
                             description: Enable defines a boolean indicating if wildcard
                               are enabled for local DNS Proxy.
                             type: boolean
-                          ipv4:
-                            description: IPv4 defines a ipv4 address for wildcard
-                              DN.
+                          ips:
+                            description: IPs defines ip addresses for resolve DN.
                             items:
-                              type: string
+                              description: ResolveAddr is the type to represent FSM's
+                                Resolve Addr configuration.
+                              properties:
+                                ipv4:
+                                  description: IPv4 defines a ipv4 address for resolve
+                                    DN.
+                                  type: string
+                                ipv6:
+                                  description: IPv6 defines a ipv6 address for resolve
+                                    DN.
+                                  type: string
+                              required:
+                              - ipv4
+                              type: object
                             type: array
                         required:
                         - enable
+                        - ips
                         type: object
                     required:
                     - enable

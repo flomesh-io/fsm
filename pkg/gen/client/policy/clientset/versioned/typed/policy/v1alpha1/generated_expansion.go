@@ -25,6 +25,8 @@ type EgressGatewayExpansion interface{}
 
 type IngressBackendExpansion interface{}
 
+type IsolationExpansion interface{}
+
 type RetryExpansion interface{}
 
 type UpstreamTrafficSettingExpansion interface{}

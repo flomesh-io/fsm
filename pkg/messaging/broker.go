@@ -937,6 +937,8 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		announcements.IngressBackendAdded, announcements.IngressBackendDeleted, announcements.IngressBackendUpdated,
 		// AccessControl event
 		announcements.AccessControlAdded, announcements.AccessControlDeleted, announcements.AccessControlUpdated,
+		// Isolation event
+		announcements.IsolationPolicyAdded, announcements.IsolationPolicyDeleted, announcements.IsolationPolicyUpdated,
 		// Retry event
 		announcements.RetryPolicyAdded, announcements.RetryPolicyDeleted, announcements.RetryPolicyUpdated,
 		// UpstreamTrafficSetting event
