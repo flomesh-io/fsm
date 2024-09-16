@@ -9,7 +9,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
@@ -82,18 +81,18 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 	return map[string]interface{}{}
 }
 
-func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
-	switch protocol {
-	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolHTTP)
-	case gwv1.TCPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolTCP)
-	case gwv1.UDPProtocolType:
-		return ptr.To(extv1alpha1.FilterProtocolUDP)
-	default:
-		return nil
-	}
-}
+//func toFilterProtocol(protocol gwv1.ProtocolType) *extv1alpha1.FilterProtocol {
+//	switch protocol {
+//	case gwv1.HTTPProtocolType, gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolHTTP)
+//	case gwv1.TCPProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolTCP)
+//	case gwv1.UDPProtocolType:
+//		return ptr.To(extv1alpha1.FilterProtocolUDP)
+//	default:
+//		return nil
+//	}
+//}
 
 func toMap(key string, spec interface{}) map[string]interface{} {
 	bytes, err := yaml.Marshal(spec)

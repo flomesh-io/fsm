@@ -169,15 +169,15 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		}
 
 		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
-		listenerProtocol := toFilterProtocol(l.Protocol)
-
-		if listenerProtocol == nil {
-			continue
-		}
-
-		if *listenerProtocol != filterProtocol {
-			continue
-		}
+		//listenerProtocol := toFilterProtocol(l.Protocol)
+		//
+		//if listenerProtocol == nil {
+		//	continue
+		//}
+		//
+		//if *listenerProtocol != filterProtocol {
+		//	continue
+		//}
 
 		filterType := definition.Spec.Type
 
