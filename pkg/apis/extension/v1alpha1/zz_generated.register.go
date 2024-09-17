@@ -74,6 +74,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&MetricsList{},
 		&RateLimit{},
 		&RateLimitList{},
+		&Zipkin{},
+		&ZipkinList{},
 	)
 	// AddToGroupVersion allows the serialization of client types like ListOptions.
 	v1.AddToGroupVersion(scheme, SchemeGroupVersion)

@@ -121,6 +121,14 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("metrics", &m2)
+	case constants.GatewayZipkinKind:
+		obj := &extv1alpha1.Zipkin{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve Zipkin: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("zipkin", &obj.Spec)
 	}
 
 	return map[string]interface{}{}

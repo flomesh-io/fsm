@@ -66,6 +66,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().Metricses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("ratelimits"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().RateLimits().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("zipkins"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().Zipkins().Informer()}, nil
 
 	}
 

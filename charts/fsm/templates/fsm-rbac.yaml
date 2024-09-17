@@ -156,13 +156,13 @@ rules:
 
   # GatewayAPI Extension
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers", "faultinjections", "ratelimits", "httplogs", "metrics" ]
+    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers", "faultinjections", "ratelimits", "httplogs", "metrics", "zipkins" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers", "faultinjections/finalizers", "ratelimits/finalizers", "httplogs/finalizers", "metrics/finalizers" ]
+    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers", "faultinjections/finalizers", "ratelimits/finalizers", "httplogs/finalizers", "metrics/finalizers", "zipkins/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status", "faultinjections/status", "ratelimits/status", "httplogs/status", "metrics/status" ]
+    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status", "faultinjections/status", "ratelimits/status", "httplogs/status", "metrics/status", "zipkins/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment

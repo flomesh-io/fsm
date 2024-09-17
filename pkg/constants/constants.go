@@ -479,6 +479,9 @@ const (
 
 	// GatewayMetricsKind is the kind name of Metrics used in Flomesh API
 	GatewayMetricsKind = "Metrics"
+
+	// GatewayZipkinKind is the kind name of Zipkin used in Flomesh API
+	GatewayZipkinKind = "Zipkin"
 )
 
 // Gateway API Annotations and Labels

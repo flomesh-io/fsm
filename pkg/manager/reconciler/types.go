@@ -30,6 +30,7 @@ const (
 	GatewayAPIExtensionRateLimit        ResourceType = "GatewayAPIExtension(RateLimit)"
 	GatewayAPIExtensionHTTPLog          ResourceType = "GatewayAPIExtension(HTTPLog)"
 	GatewayAPIExtensionMetrics          ResourceType = "GatewayAPIExtension(Metrics)"
+	GatewayAPIExtensionZipkin           ResourceType = "GatewayAPIExtension(Zipkin)"
 	PolicyAttachmentHealthCheck         ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentRetry               ResourceType = "PolicyAttachment(Retry)"
 	PolicyAttachmentBackendLB           ResourceType = "PolicyAttachment(BackendLB)"
