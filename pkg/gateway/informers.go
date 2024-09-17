@@ -68,7 +68,9 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 	case *extv1alpha1.RateLimit:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyRateLimit)
 	case *extv1alpha1.HTTPLog:
-		return getEventTypesByInformerKey(fsminformers.InformerKeyHTTPLog)
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayHTTPLog)
+	case *extv1alpha1.Metrics:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayMetrics)
 	}
 
 	return nil
@@ -221,11 +223,17 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Update: announcements.RateLimitUpdated,
 			Delete: announcements.RateLimitDeleted,
 		}
-	case fsminformers.InformerKeyHTTPLog:
+	case fsminformers.InformerKeyGatewayHTTPLog:
 		return &k8s.EventTypes{
-			Add:    announcements.HTTPLogAdded,
-			Update: announcements.HTTPLogUpdated,
-			Delete: announcements.HTTPLogDeleted,
+			Add:    announcements.GatewayHTTPLogAdded,
+			Update: announcements.GatewayHTTPLogUpdated,
+			Delete: announcements.GatewayHTTPLogDeleted,
+		}
+	case fsminformers.InformerKeyGatewayMetrics:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayMetricsAdded,
+			Update: announcements.GatewayMetricsUpdated,
+			Delete: announcements.GatewayMetricsDeleted,
 		}
 	}
 

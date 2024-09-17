@@ -33,6 +33,8 @@ type Interface interface {
 	HTTPLogs() HTTPLogInformer
 	// ListenerFilters returns a ListenerFilterInformer.
 	ListenerFilters() ListenerFilterInformer
+	// Metricses returns a MetricsInformer.
+	Metricses() MetricsInformer
 	// RateLimits returns a RateLimitInformer.
 	RateLimits() RateLimitInformer
 }
@@ -76,6 +78,11 @@ func (v *version) HTTPLogs() HTTPLogInformer {
 // ListenerFilters returns a ListenerFilterInformer.
 func (v *version) ListenerFilters() ListenerFilterInformer {
 	return &listenerFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Metricses returns a MetricsInformer.
+func (v *version) Metricses() MetricsInformer {
+	return &metricsInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RateLimits returns a RateLimitInformer.

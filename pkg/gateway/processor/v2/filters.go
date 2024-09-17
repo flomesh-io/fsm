@@ -93,7 +93,7 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("rateLimit", &r2)
-	case constants.HTTPLogKind:
+	case constants.GatewayHTTPLogKind:
 		obj := &extv1alpha1.HTTPLog{}
 		if err := c.client.Get(ctx, key, obj); err != nil {
 			log.Error().Msgf("Failed to resolve HTTPLog: %s", err)
@@ -107,6 +107,20 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("httpLog", &l2)
+	case constants.GatewayMetricsKind:
+		obj := &extv1alpha1.Metrics{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve Metrics: %s", err)
+			return map[string]interface{}{}
+		}
+
+		m2 := fgwv2.MetricsSpec{}
+		if err := gwutils.DeepCopy(&m2, &obj.Spec); err != nil {
+			log.Error().Msgf("Failed to copy Metrics: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("metrics", &m2)
 	}
 
 	return map[string]interface{}{}

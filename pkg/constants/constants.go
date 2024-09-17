@@ -474,8 +474,11 @@ const (
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
 
-	// HTTPLogKind is the kind name of HTTPLog used in Flomesh API
-	HTTPLogKind = "HTTPLog"
+	// GatewayHTTPLogKind is the kind name of HTTPLog used in Flomesh API
+	GatewayHTTPLogKind = "HTTPLog"
+
+	// GatewayMetricsKind is the kind name of Metrics used in Flomesh API
+	GatewayMetricsKind = "Metrics"
 )
 
 // Gateway API Annotations and Labels

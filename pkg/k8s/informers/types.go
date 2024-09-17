@@ -150,8 +150,10 @@ const (
 	InformerKeyListenerFilter InformerKey = "ListenerFilter"
 	// InformerKeyFilterDefinition is the InformerKey for a FilterDefinition informer
 	InformerKeyFilterDefinition InformerKey = "FilterDefinition"
-	// InformerKeyHTTPLog is the InformerKey for a HTTPLog informer
-	InformerKeyHTTPLog InformerKey = "HTTPLog"
+	// InformerKeyGatewayHTTPLog is the InformerKey for a HTTPLog informer
+	InformerKeyGatewayHTTPLog InformerKey = "Gateway-HTTPLog"
+	// InformerKeyGatewayMetrics is the InformerKey for a Metrics informer
+	InformerKeyGatewayMetrics InformerKey = "Gateway-Metrics"
 )
 
 const (
@@ -265,4 +267,7 @@ const (
 
 	// HTTPLogsResourceType is the type used to represent the http logs resource
 	HTTPLogsResourceType ResourceType = "httplogs"
+
+	// MetricsResourceType is the type used to represent the metrics resource
+	MetricsResourceType ResourceType = "metrics"
 )
