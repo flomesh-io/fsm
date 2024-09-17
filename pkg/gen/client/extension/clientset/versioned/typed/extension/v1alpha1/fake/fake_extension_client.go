@@ -49,6 +49,10 @@ func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.Liste
 	return &FakeListenerFilters{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) Metricses(namespace string) v1alpha1.MetricsInterface {
+	return &FakeMetricses{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitInterface {
 	return &FakeRateLimits{c, namespace}
 }

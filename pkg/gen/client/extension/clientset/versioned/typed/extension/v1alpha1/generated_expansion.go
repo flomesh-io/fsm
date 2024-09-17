@@ -27,4 +27,6 @@ type HTTPLogExpansion interface{}
 
 type ListenerFilterExpansion interface{}
 
+type MetricsExpansion interface{}
+
 type RateLimitExpansion interface{}

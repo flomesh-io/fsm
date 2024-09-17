@@ -70,6 +70,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&HTTPLogList{},
 		&ListenerFilter{},
 		&ListenerFilterList{},
+		&Metrics{},
+		&MetricsList{},
 		&RateLimit{},
 		&RateLimitList{},
 	)
