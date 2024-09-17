@@ -1194,6 +1194,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.ListenerFilterAdded, announcements.ListenerFilterDeleted, announcements.ListenerFilterUpdated,
 		// FilterDefinition event
 		announcements.FilterDefinitionAdded, announcements.FilterDefinitionDeleted, announcements.FilterDefinitionUpdated,
+		// HTTPLog event
+		announcements.HTTPLogAdded, announcements.HTTPLogDeleted, announcements.HTTPLogUpdated,
 
 		//
 		// MultiCluster events

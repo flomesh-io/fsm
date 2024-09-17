@@ -102,7 +102,7 @@ func configFilterIndex(obj client.Object) []string {
 
 	var configs []string
 
-	if filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
+	if filter.Spec.ConfigRef != nil && filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
 		configs = append(configs, fmt.Sprintf("%s/%s/%s", filter.Spec.ConfigRef.Kind, filter.Namespace, filter.Spec.ConfigRef.Name))
 	}
 

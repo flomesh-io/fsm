@@ -29,6 +29,8 @@ type Interface interface {
 	Filters() FilterInformer
 	// FilterDefinitions returns a FilterDefinitionInformer.
 	FilterDefinitions() FilterDefinitionInformer
+	// HTTPLogs returns a HTTPLogInformer.
+	HTTPLogs() HTTPLogInformer
 	// ListenerFilters returns a ListenerFilterInformer.
 	ListenerFilters() ListenerFilterInformer
 	// RateLimits returns a RateLimitInformer.
@@ -64,6 +66,11 @@ func (v *version) Filters() FilterInformer {
 // FilterDefinitions returns a FilterDefinitionInformer.
 func (v *version) FilterDefinitions() FilterDefinitionInformer {
 	return &filterDefinitionInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// HTTPLogs returns a HTTPLogInformer.
+func (v *version) HTTPLogs() HTTPLogInformer {
+	return &hTTPLogInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ListenerFilters returns a ListenerFilterInformer.

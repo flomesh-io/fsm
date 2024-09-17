@@ -29,6 +29,7 @@ type ExtensionV1alpha1Interface interface {
 	FaultInjectionsGetter
 	FiltersGetter
 	FilterDefinitionsGetter
+	HTTPLogsGetter
 	ListenerFiltersGetter
 	RateLimitsGetter
 }
@@ -52,6 +53,10 @@ func (c *ExtensionV1alpha1Client) Filters(namespace string) FilterInterface {
 
 func (c *ExtensionV1alpha1Client) FilterDefinitions() FilterDefinitionInterface {
 	return newFilterDefinitions(c)
+}
+
+func (c *ExtensionV1alpha1Client) HTTPLogs(namespace string) HTTPLogInterface {
+	return newHTTPLogs(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilterInterface {

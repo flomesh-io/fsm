@@ -43,6 +43,14 @@ type FilterNamespaceListerExpansion interface{}
 // FilterDefinitionLister.
 type FilterDefinitionListerExpansion interface{}
 
+// HTTPLogListerExpansion allows custom methods to be added to
+// HTTPLogLister.
+type HTTPLogListerExpansion interface{}
+
+// HTTPLogNamespaceListerExpansion allows custom methods to be added to
+// HTTPLogNamespaceLister.
+type HTTPLogNamespaceListerExpansion interface{}
+
 // ListenerFilterListerExpansion allows custom methods to be added to
 // ListenerFilterLister.
 type ListenerFilterListerExpansion interface{}

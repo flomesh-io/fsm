@@ -101,6 +101,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyCircuitBreaker:            &extv1alpha1.CircuitBreaker{},
 		fsminformers.InformerKeyFaultInjection:            &extv1alpha1.FaultInjection{},
 		fsminformers.InformerKeyRateLimit:                 &extv1alpha1.RateLimit{},
+		fsminformers.InformerKeyHTTPLog:                   &extv1alpha1.HTTPLog{},
 	}
 
 	if version.IsEndpointSliceEnabled(ctx.KubeClient) {

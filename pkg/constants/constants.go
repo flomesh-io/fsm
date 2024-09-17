@@ -9,12 +9,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-
 	"helm.sh/helm/v3/pkg/chartutil"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 const (
@@ -477,6 +473,9 @@ const (
 
 	// RetryPolicyKind is the kind name of RetryPolicy used in Flomesh API
 	RetryPolicyKind = "RetryPolicy"
+
+	// HTTPLogKind is the kind name of HTTPLog used in Flomesh API
+	HTTPLogKind = "HTTPLog"
 )
 
 // Gateway API Annotations and Labels
@@ -679,24 +678,6 @@ const (
 
 	// FLBSecretKeyDefaultAlgo is the key for the default algo
 	FLBSecretKeyDefaultAlgo = "defaultAlgo"
-
-	// FLBServiceMutatingWebhookPath is the path at which the flb service mutating webhook is served
-	FLBServiceMutatingWebhookPath = "/mutate-flb-core-v1-service"
-
-	// FLBServiceValidatingWebhookPath is the path at which the flb service validating webhook is served
-	FLBServiceValidatingWebhookPath = "/validate-flb-core-v1-service"
-
-	// FLBSecretMutatingWebhookPath is the path at which the flb secret mutating webhook is served
-	FLBSecretMutatingWebhookPath = "/mutate-flb-core-v1-secret"
-
-	// FLBSecretValidatingWebhookPath is the path at which the flb secret validating webhook is served
-	FLBSecretValidatingWebhookPath = "/validate-flb-core-v1-secret"
-
-	// FLBTLSSecretMutatingWebhookPath is the path at which the flb tls secret mutating webhook is served
-	FLBTLSSecretMutatingWebhookPath = "/mutate-flb-core-v1-secret-tls"
-
-	// FLBTLSSecretValidatingWebhookPath is the path at which the flb tls secret validating webhook is served
-	FLBTLSSecretValidatingWebhookPath = "/validate-flb-core-v1-secret-tls"
 )
 
 // MultiCluster variables
@@ -739,21 +720,6 @@ const (
 var (
 	// WebhookServerServingCertsPath is the path at which the webhook server serving certs are stored
 	WebhookServerServingCertsPath = fmt.Sprintf(WebhookServerServingCertsPathTpl, os.TempDir())
-)
-
-// NamespacedIngress constants
-const (
-	// NamespacedIngressMutatingWebhookPath is the path at which the namespaced ingress mutating webhook is served
-	NamespacedIngressMutatingWebhookPath = "/mutate-flomesh-io-v1alpha1-namespacedingress"
-
-	// NamespacedIngressValidatingWebhookPath is the path at which the namespaced ingress validating webhook is served
-	NamespacedIngressValidatingWebhookPath = "/validate-flomesh-io-v1alpha1-namespacedingress"
-
-	// IngressMutatingWebhookPath is the path at which the ingress mutating webhook is served
-	IngressMutatingWebhookPath = "/mutate-networking-v1-ingress"
-
-	// IngressValidatingWebhookPath is the path at which the ingress validating webhook is served
-	IngressValidatingWebhookPath = "/validate-networking-v1-ingress"
 )
 
 // Ingress constants
@@ -840,30 +806,6 @@ var (
 		Major:   "1",
 		Minor:   "21",
 	}
-)
-
-// GroupVersionKind variables
-var (
-	GatewayClassGVK   = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayClassAPIGatewayKind)
-	GatewayGVK        = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIGatewayKind)
-	HTTPRouteGVK      = schema.FromAPIVersionAndKind(gwv1.GroupVersion.String(), GatewayAPIHTTPRouteKind)
-	TLSRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITLSRouteKind)
-	TCPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPITCPRouteKind)
-	UDPRouteGVK       = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIUDPRouteKind)
-	GRPCRouteGVK      = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIGRPCRouteKind)
-	ReferenceGrantGVK = schema.FromAPIVersionAndKind(gwv1alpha2.GroupVersion.String(), GatewayAPIReferenceGrantKind)
-	SecretGVK         = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesSecretKind)
-	ConfigMapGVK      = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesConfigMapKind)
-	ServiceGVK        = schema.FromAPIVersionAndKind(corev1.SchemeGroupVersion.String(), KubernetesServiceKind)
-	//RateLimitPolicyGVK       = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RateLimitPolicyKind)
-	//SessionStickyPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), SessionStickyPolicyKind)
-	//LoadBalancerPolicyGVK    = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), LoadBalancerPolicyKind)
-	//CircuitBreakingPolicyGVK = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), CircuitBreakingPolicyKind)
-	//AccessControlPolicyGVK   = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), AccessControlPolicyKind)
-	//HealthCheckPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), HealthCheckPolicyKind)
-	//FaultInjectionPolicyGVK  = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), FaultInjectionKind)
-	//UpstreamTLSPolicyGVK     = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), UpstreamTLSPolicyKind)
-	//RetryPolicyGVK           = schema.FromAPIVersionAndKind(gwpav1alpha1.GroupVersion.String(), RetryPolicyKind)
 )
 
 // GatewayAPI resources variables
