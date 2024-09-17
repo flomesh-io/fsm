@@ -59,6 +59,14 @@ type ListenerFilterListerExpansion interface{}
 // ListenerFilterNamespaceLister.
 type ListenerFilterNamespaceListerExpansion interface{}
 
+// MetricsListerExpansion allows custom methods to be added to
+// MetricsLister.
+type MetricsListerExpansion interface{}
+
+// MetricsNamespaceListerExpansion allows custom methods to be added to
+// MetricsNamespaceLister.
+type MetricsNamespaceListerExpansion interface{}
+
 // RateLimitListerExpansion allows custom methods to be added to
 // RateLimitLister.
 type RateLimitListerExpansion interface{}

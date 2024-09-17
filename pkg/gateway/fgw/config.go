@@ -593,3 +593,13 @@ func (b *HTTPLogBatch) Interval(interval *metav1.Duration) {
 		b.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
 	}
 }
+
+type MetricsSpec struct {
+	SampleIntervalInMilliseconds *int64 `json:"sampleInterval,omitempty"`
+}
+
+func (m *MetricsSpec) SampleInterval(sampleInterval *metav1.Duration) {
+	if sampleInterval != nil {
+		m.SampleIntervalInMilliseconds = ptr.To(sampleInterval.Milliseconds())
+	}
+}

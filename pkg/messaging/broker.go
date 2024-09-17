@@ -1172,7 +1172,7 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		//announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
 		// LoadBalancerPolicy event
 		//announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
-		// CircuitBreaking event
+		// CircuitBreaker event
 		announcements.CircuitBreakerAdded, announcements.CircuitBreakerDeleted, announcements.CircuitBreakerUpdated,
 		// AccessControlPolicy event
 		//announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
@@ -1195,7 +1195,9 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		// FilterDefinition event
 		announcements.FilterDefinitionAdded, announcements.FilterDefinitionDeleted, announcements.FilterDefinitionUpdated,
 		// HTTPLog event
-		announcements.HTTPLogAdded, announcements.HTTPLogDeleted, announcements.HTTPLogUpdated,
+		announcements.GatewayHTTPLogAdded, announcements.GatewayHTTPLogDeleted, announcements.GatewayHTTPLogUpdated,
+		// Metrics event
+		announcements.GatewayMetricsAdded, announcements.GatewayMetricsDeleted, announcements.GatewayMetricsUpdated,
 
 		//
 		// MultiCluster events

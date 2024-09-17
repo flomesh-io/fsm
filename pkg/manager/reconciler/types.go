@@ -29,6 +29,7 @@ const (
 	GatewayAPIExtensionFaultInjection   ResourceType = "GatewayAPIExtension(FaultInjection)"
 	GatewayAPIExtensionRateLimit        ResourceType = "GatewayAPIExtension(RateLimit)"
 	GatewayAPIExtensionHTTPLog          ResourceType = "GatewayAPIExtension(HTTPLog)"
+	GatewayAPIExtensionMetrics          ResourceType = "GatewayAPIExtension(Metrics)"
 	PolicyAttachmentHealthCheck         ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentRetry               ResourceType = "PolicyAttachment(Retry)"
 	PolicyAttachmentBackendLB           ResourceType = "PolicyAttachment(BackendLB)"

@@ -647,14 +647,25 @@ const (
 
 	// --
 
-	// HTTPLogAdded is the type of announcement emitted when we observe an addition of httplogs.extension.gateway.flomesh.io
-	HTTPLogAdded Kind = "httplog-added"
+	// GatewayHTTPLogAdded is the type of announcement emitted when we observe an addition of httplogs.extension.gateway.flomesh.io
+	GatewayHTTPLogAdded Kind = "gatewayhttplog-added"
 
-	// HTTPLogDeleted the type of announcement emitted when we observe a deletion of httplogs.extension.gateway.flomesh.io
-	HTTPLogDeleted Kind = "httplog-deleted"
+	// GatewayHTTPLogDeleted the type of announcement emitted when we observe a deletion of httplogs.extension.gateway.flomesh.io
+	GatewayHTTPLogDeleted Kind = "gatewayhttplog-deleted"
 
-	// HTTPLogUpdated is the type of announcement emitted when we observe an update to httplogs.extension.gateway.flomesh.io
-	HTTPLogUpdated Kind = "httplog-updated"
+	// GatewayHTTPLogUpdated is the type of announcement emitted when we observe an update to httplogs.extension.gateway.flomesh.io
+	GatewayHTTPLogUpdated Kind = "gatewayhttplog-updated"
+
+	// --
+
+	// GatewayMetricsAdded is the type of announcement emitted when we observe an addition of metrics.extension.gateway.flomesh.io
+	GatewayMetricsAdded Kind = "gatewaymetrics-added"
+
+	// GatewayMetricsDeleted the type of announcement emitted when we observe a deletion of metrics.extension.gateway.flomesh.io
+	GatewayMetricsDeleted Kind = "gatewaymetrics-deleted"
+
+	// GatewayMetricsUpdated is the type of announcement emitted when we observe an update to metrics.extension.gateway.flomesh.io
+	GatewayMetricsUpdated Kind = "gatewaymetrics-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

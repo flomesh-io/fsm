@@ -85,6 +85,7 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.FaultInjectionsResourceType:     &extensiontrigger.FaultInjectionTrigger{},
 			informers.RateLimitsResourceType:          &extensiontrigger.RateLimitTrigger{},
 			informers.HTTPLogsResourceType:            &extensiontrigger.HTTPLogTrigger{},
+			informers.MetricsResourceType:             &extensiontrigger.MetricsTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -164,6 +165,8 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.RateLimitsResourceType]
 	case *extv1alpha1.HTTPLog:
 		return c.triggers[informers.HTTPLogsResourceType]
+	case *extv1alpha1.Metrics:
+		return c.triggers[informers.MetricsResourceType]
 	}
 
 	return nil
