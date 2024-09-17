@@ -30,3 +30,5 @@ type ListenerFilterExpansion interface{}
 type MetricsExpansion interface{}
 
 type RateLimitExpansion interface{}
+
+type ZipkinExpansion interface{}

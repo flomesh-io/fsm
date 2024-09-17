@@ -33,6 +33,7 @@ type ExtensionV1alpha1Interface interface {
 	ListenerFiltersGetter
 	MetricsesGetter
 	RateLimitsGetter
+	ZipkinsGetter
 }
 
 // ExtensionV1alpha1Client is used to interact with features provided by the extension.gateway.flomesh.io group.
@@ -70,6 +71,10 @@ func (c *ExtensionV1alpha1Client) Metricses(namespace string) MetricsInterface {
 
 func (c *ExtensionV1alpha1Client) RateLimits(namespace string) RateLimitInterface {
 	return newRateLimits(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) Zipkins(namespace string) ZipkinInterface {
+	return newZipkins(c, namespace)
 }
 
 // NewForConfig creates a new ExtensionV1alpha1Client for the given config.

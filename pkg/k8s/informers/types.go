@@ -154,6 +154,8 @@ const (
 	InformerKeyGatewayHTTPLog InformerKey = "Gateway-HTTPLog"
 	// InformerKeyGatewayMetrics is the InformerKey for a Metrics informer
 	InformerKeyGatewayMetrics InformerKey = "Gateway-Metrics"
+	// InformerKeyGatewayZipkin is the InformerKey for a Zipkin informer
+	InformerKeyGatewayZipkin InformerKey = "Gateway-Zipkin"
 )
 
 const (
@@ -270,4 +272,7 @@ const (
 
 	// MetricsResourceType is the type used to represent the metrics resource
 	MetricsResourceType ResourceType = "metrics"
+
+	// ZipkinResourceType is the type used to represent the zipkin tracing resource
+	ZipkinResourceType ResourceType = "zipkins"
 )
