@@ -571,3 +571,25 @@ func (r *RateLimitSpec) Interval(interval *metav1.Duration) {
 		r.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
 	}
 }
+
+type HTTPLogSpec struct {
+	Target      string            `json:"target"`
+	Method      *string           `json:"method,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	BufferLimit *int64            `json:"bufferLimit,omitempty"`
+	Batch       *HTTPLogBatch     `json:"batch,omitempty"`
+}
+
+type HTTPLogBatch struct {
+	Size                   *int32  `json:"size,omitempty"`
+	IntervalInMilliseconds *int64  `json:"interval,omitempty"`
+	Prefix                 *string `json:"prefix,omitempty"`
+	Postfix                *string `json:"postfix,omitempty"`
+	Separator              *string `json:"separator,omitempty"`
+}
+
+func (b *HTTPLogBatch) Interval(interval *metav1.Duration) {
+	if interval != nil {
+		b.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
+	}
+}
