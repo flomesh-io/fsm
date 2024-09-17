@@ -41,6 +41,10 @@ func (c *FakeExtensionV1alpha1) FilterDefinitions() v1alpha1.FilterDefinitionInt
 	return &FakeFilterDefinitions{c}
 }
 
+func (c *FakeExtensionV1alpha1) HTTPLogs(namespace string) v1alpha1.HTTPLogInterface {
+	return &FakeHTTPLogs{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.ListenerFilterInterface {
 	return &FakeListenerFilters{c, namespace}
 }

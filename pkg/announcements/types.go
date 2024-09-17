@@ -644,6 +644,17 @@ const (
 
 	// ListenerFilterUpdated is the type of announcement emitted when we observe an update to listenerfilters.extension.gateway.flomesh.io
 	ListenerFilterUpdated Kind = "listenerfilter-updated"
+
+	// --
+
+	// HTTPLogAdded is the type of announcement emitted when we observe an addition of httplogs.extension.gateway.flomesh.io
+	HTTPLogAdded Kind = "httplog-added"
+
+	// HTTPLogDeleted the type of announcement emitted when we observe a deletion of httplogs.extension.gateway.flomesh.io
+	HTTPLogDeleted Kind = "httplog-deleted"
+
+	// HTTPLogUpdated is the type of announcement emitted when we observe an update to httplogs.extension.gateway.flomesh.io
+	HTTPLogUpdated Kind = "httplog-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

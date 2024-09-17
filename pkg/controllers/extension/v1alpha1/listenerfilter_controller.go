@@ -95,7 +95,7 @@ func configListenerFilterIndex(obj client.Object) []string {
 
 	var configs []string
 
-	if filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
+	if filter.Spec.ConfigRef != nil && filter.Spec.ConfigRef.Group == extv1alpha1.GroupName {
 		configs = append(configs, fmt.Sprintf("%s/%s/%s", filter.Spec.ConfigRef.Kind, filter.Namespace, filter.Spec.ConfigRef.Name))
 	}
 
@@ -107,7 +107,7 @@ func filterDefinitionListenerFilterIndex(obj client.Object) []string {
 
 	var definitions []string
 
-	if filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
+	if filter.Spec.DefinitionRef != nil && filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
 		filter.Spec.DefinitionRef.Kind == constants.GatewayAPIExtensionFilterDefinitionKind {
 		definitions = append(definitions, fmt.Sprintf("%s/%s", filter.Namespace, filter.Spec.DefinitionRef.Name))
 	}

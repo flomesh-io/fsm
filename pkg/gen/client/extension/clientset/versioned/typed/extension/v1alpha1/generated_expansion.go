@@ -23,6 +23,8 @@ type FilterExpansion interface{}
 
 type FilterDefinitionExpansion interface{}
 
+type HTTPLogExpansion interface{}
+
 type ListenerFilterExpansion interface{}
 
 type RateLimitExpansion interface{}

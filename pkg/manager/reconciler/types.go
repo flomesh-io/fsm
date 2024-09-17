@@ -28,6 +28,7 @@ const (
 	GatewayAPIExtensionCircuitBreaker   ResourceType = "GatewayAPIExtension(CircuitBreaker)"
 	GatewayAPIExtensionFaultInjection   ResourceType = "GatewayAPIExtension(FaultInjection)"
 	GatewayAPIExtensionRateLimit        ResourceType = "GatewayAPIExtension(RateLimit)"
+	GatewayAPIExtensionHTTPLog          ResourceType = "GatewayAPIExtension(HTTPLog)"
 	PolicyAttachmentHealthCheck         ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentRetry               ResourceType = "PolicyAttachment(Retry)"
 	PolicyAttachmentBackendLB           ResourceType = "PolicyAttachment(BackendLB)"
