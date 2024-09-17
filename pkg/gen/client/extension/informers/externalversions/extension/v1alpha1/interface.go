@@ -37,6 +37,8 @@ type Interface interface {
 	Metricses() MetricsInformer
 	// RateLimits returns a RateLimitInformer.
 	RateLimits() RateLimitInformer
+	// Zipkins returns a ZipkinInformer.
+	Zipkins() ZipkinInformer
 }
 
 type version struct {
@@ -88,4 +90,9 @@ func (v *version) Metricses() MetricsInformer {
 // RateLimits returns a RateLimitInformer.
 func (v *version) RateLimits() RateLimitInformer {
 	return &rateLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Zipkins returns a ZipkinInformer.
+func (v *version) Zipkins() ZipkinInformer {
+	return &zipkinInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

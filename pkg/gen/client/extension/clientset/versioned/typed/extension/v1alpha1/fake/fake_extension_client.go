@@ -57,6 +57,10 @@ func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitI
 	return &FakeRateLimits{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) Zipkins(namespace string) v1alpha1.ZipkinInterface {
+	return &FakeZipkins{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeExtensionV1alpha1) RESTClient() rest.Interface {

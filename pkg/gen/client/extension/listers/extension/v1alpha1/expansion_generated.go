@@ -74,3 +74,11 @@ type RateLimitListerExpansion interface{}
 // RateLimitNamespaceListerExpansion allows custom methods to be added to
 // RateLimitNamespaceLister.
 type RateLimitNamespaceListerExpansion interface{}
+
+// ZipkinListerExpansion allows custom methods to be added to
+// ZipkinLister.
+type ZipkinListerExpansion interface{}
+
+// ZipkinNamespaceListerExpansion allows custom methods to be added to
+// ZipkinNamespaceLister.
+type ZipkinNamespaceListerExpansion interface{}
