@@ -62,12 +62,12 @@ func (r *FilterDefinitionWebhook) ValidateUpdate(ctx context.Context, _, newObj 
 }
 
 func (r *FilterDefinitionWebhook) doValidation(ctx context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	FilterDefinition, ok := obj.(*extv1alpha1.FilterDefinition)
+	filterDefinition, ok := obj.(*extv1alpha1.FilterDefinition)
 	if !ok {
 		return nil, fmt.Errorf("unexpected type: %T", obj)
 	}
 
-	warnings, errs := r.validateDuplicateFilterDefinitionType(ctx, FilterDefinition)
+	warnings, errs := r.validateDuplicateFilterDefinitionType(ctx, filterDefinition)
 
 	if len(errs) > 0 {
 		return warnings, utils.ErrorListToError(errs)
@@ -76,7 +76,7 @@ func (r *FilterDefinitionWebhook) doValidation(ctx context.Context, obj runtime.
 	return nil, nil
 }
 
-func (r *FilterDefinitionWebhook) validateDuplicateFilterDefinitionType(ctx context.Context, FilterDefinition *extv1alpha1.FilterDefinition) (admission.Warnings, field.ErrorList) {
+func (r *FilterDefinitionWebhook) validateDuplicateFilterDefinitionType(ctx context.Context, filterDefinition *extv1alpha1.FilterDefinition) (admission.Warnings, field.ErrorList) {
 	var errs field.ErrorList
 
 	list := &extv1alpha1.FilterDefinitionList{}
@@ -85,13 +85,13 @@ func (r *FilterDefinitionWebhook) validateDuplicateFilterDefinitionType(ctx cont
 	}
 
 	for _, f := range list.Items {
-		if f.Name == FilterDefinition.Name {
+		if f.Name == filterDefinition.Name {
 			continue
 		}
 
-		if f.Spec.Type == FilterDefinition.Spec.Type {
+		if f.Spec.Type == filterDefinition.Spec.Type {
 			path := field.NewPath("spec").Child("type")
-			errs = append(errs, field.Invalid(path, FilterDefinition.Spec.Type, "FilterDefinition type must be unique within the cluster"))
+			errs = append(errs, field.Invalid(path, filterDefinition.Spec.Type, "filterDefinition type must be unique within the cluster"))
 			break
 		}
 	}

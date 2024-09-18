@@ -647,6 +647,17 @@ const (
 
 	// --
 
+	// FilterConfigAdded is the type of announcement emitted when we observe an addition of filterconfigs.extension.gateway.flomesh.io
+	FilterConfigAdded Kind = "filterconfig-added"
+
+	// FilterConfigDeleted the type of announcement emitted when we observe a deletion of filterconfigs.extension.gateway.flomesh.io
+	FilterConfigDeleted Kind = "filterconfig-deleted"
+
+	// FilterConfigUpdated is the type of announcement emitted when we observe an update to filterconfigs.extension.gateway.flomesh.io
+	FilterConfigUpdated Kind = "filterconfig-updated"
+
+	// --
+
 	// GatewayHTTPLogAdded is the type of announcement emitted when we observe an addition of httplogs.extension.gateway.flomesh.io
 	GatewayHTTPLogAdded Kind = "gatewayhttplog-added"
 

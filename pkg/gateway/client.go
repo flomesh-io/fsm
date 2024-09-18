@@ -98,6 +98,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyFilter:                    &extv1alpha1.Filter{},
 		fsminformers.InformerKeyFilterDefinition:          &extv1alpha1.FilterDefinition{},
 		fsminformers.InformerKeyListenerFilter:            &extv1alpha1.ListenerFilter{},
+		fsminformers.InformerKeyFilterConfig:              &extv1alpha1.FilterConfig{},
 		fsminformers.InformerKeyCircuitBreaker:            &extv1alpha1.CircuitBreaker{},
 		fsminformers.InformerKeyFaultInjection:            &extv1alpha1.FaultInjection{},
 		fsminformers.InformerKeyRateLimit:                 &extv1alpha1.RateLimit{},
