@@ -8,7 +8,7 @@ type Config interface {
 	GetVersion() string
 	GetResources() []Resource
 	GetSecrets() map[string]string
-	GetFilters() map[extv1alpha1.FilterProtocol]map[string]string
+	GetFilters() map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string
 }
 
 type Resource interface {

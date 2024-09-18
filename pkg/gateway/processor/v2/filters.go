@@ -17,7 +17,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 
-func (c *ConfigGenerator) resolveFilterDefinition(filterType string, filterScope extv1alpha1.FilterScope, ref *gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
+func (c *ConfigGenerator) resolveFilterDefinition(filterType extv1alpha1.FilterType, filterScope extv1alpha1.FilterScope, ref *gwv1.LocalObjectReference) *extv1alpha1.FilterDefinition {
 	if ref == nil {
 		return nil
 	}

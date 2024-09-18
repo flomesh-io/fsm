@@ -31,7 +31,7 @@ type ConfigGenerator struct {
 	gateway             *gwv1.Gateway
 	secretFiles         map[string]string
 	services            map[string]serviceContext
-	filters             map[extv1alpha1.FilterProtocol]map[string]string
+	filters             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string
 	upstreams           calculateBackendTargetsFunc
 	backendTLSPolicies  map[string]*fgwv2.BackendTLSPolicy
 	backendLBPolicies   map[string]*fgwv2.BackendLBPolicy
@@ -46,7 +46,7 @@ func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Proces
 		gateway:             gateway,
 		secretFiles:         map[string]string{},
 		services:            map[string]serviceContext{},
-		filters:             map[extv1alpha1.FilterProtocol]map[string]string{},
+		filters:             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string{},
 		backendTLSPolicies:  map[string]*fgwv2.BackendTLSPolicy{},
 		backendLBPolicies:   map[string]*fgwv2.BackendLBPolicy{},
 		healthCheckPolicies: map[string]*fgwv2.HealthCheckPolicy{},

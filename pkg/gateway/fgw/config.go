@@ -1,6 +1,7 @@
 package fgw
 
 import (
+	"encoding/json"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,10 +22,10 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []Resource                                       `json:"resources" hash:"set"`
-	Secrets   map[string]string                                `json:"secrets"`
-	Filters   map[extv1alpha1.FilterProtocol]map[string]string `json:"filters"`
-	Version   string                                           `json:"version" hash:"ignore"`
+	Resources []Resource                                                       `json:"resources" hash:"set"`
+	Secrets   map[string]string                                                `json:"secrets"`
+	Filters   map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string `json:"filters"`
+	Version   string                                                           `json:"version" hash:"ignore"`
 }
 
 func (c *ConfigSpec) GetVersion() string {
@@ -39,7 +40,7 @@ func (c *ConfigSpec) GetSecrets() map[string]string {
 	return c.Secrets
 }
 
-func (c *ConfigSpec) GetFilters() map[extv1alpha1.FilterProtocol]map[string]string {
+func (c *ConfigSpec) GetFilters() map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string {
 	return c.Filters
 }
 
@@ -98,9 +99,24 @@ type Listener struct {
 }
 
 type ListenerFilter struct {
-	Type            string                 `json:"type"`
-	ExtensionConfig map[string]interface{} `json:",inline,omitempty"`
+	Type            extv1alpha1.FilterType `json:"type"`
+	ExtensionConfig map[string]interface{} `json:"-"`
 	Key             string                 `json:"key,omitempty"`
+}
+
+func (f ListenerFilter) MarshalJSON() ([]byte, error) {
+	type LF ListenerFilter
+	b, _ := json.Marshal(LF(f))
+
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+
+	for k, v := range f.ExtensionConfig {
+		b, _ = json.Marshal(v)
+		m[k] = b
+	}
+
+	return json.Marshal(m)
 }
 
 type GatewayTLSConfig struct {
@@ -231,8 +247,23 @@ type HTTPRouteFilter struct {
 	RequestMirror          *HTTPRequestMirrorFilter        `json:"requestMirror,omitempty"`
 	RequestRedirect        *gwv1.HTTPRequestRedirectFilter `json:"requestRedirect,omitempty"`
 	URLRewrite             *gwv1.HTTPURLRewriteFilter      `json:"urlRewrite,omitempty"`
-	ExtensionConfig        map[string]interface{}          `json:",inline,omitempty"`
+	ExtensionConfig        map[string]interface{}          `json:"-"`
 	Key                    string                          `json:"key,omitempty"`
+}
+
+func (f HTTPRouteFilter) MarshalJSON() ([]byte, error) {
+	type HRF HTTPRouteFilter
+	b, _ := json.Marshal(HRF(f))
+
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+
+	for k, v := range f.ExtensionConfig {
+		b, _ = json.Marshal(v)
+		m[k] = b
+	}
+
+	return json.Marshal(m)
 }
 
 // ---
@@ -265,8 +296,23 @@ type GRPCRouteFilter struct {
 	RequestHeaderModifier  *gwv1.HTTPHeaderFilter   `json:"requestHeaderModifier,omitempty"`
 	ResponseHeaderModifier *gwv1.HTTPHeaderFilter   `json:"responseHeaderModifier,omitempty"`
 	RequestMirror          *HTTPRequestMirrorFilter `json:"requestMirror,omitempty"`
-	ExtensionConfig        map[string]interface{}   `json:",inline,omitempty"`
+	ExtensionConfig        map[string]interface{}   `json:"-"`
 	Key                    string                   `json:"key,omitempty"`
+}
+
+func (f GRPCRouteFilter) MarshalJSON() ([]byte, error) {
+	type GRF GRPCRouteFilter
+	b, _ := json.Marshal(GRF(f))
+
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+
+	for k, v := range f.ExtensionConfig {
+		b, _ = json.Marshal(v)
+		m[k] = b
+	}
+
+	return json.Marshal(m)
 }
 
 // ---
