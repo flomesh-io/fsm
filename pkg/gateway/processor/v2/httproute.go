@@ -170,7 +170,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 
 			if c.filters[filterProtocol] == nil {
-				c.filters[filterProtocol] = map[string]string{}
+				c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
 			}
 			if _, ok := c.filters[filterProtocol][filterType]; !ok {
 				c.filters[filterProtocol][filterType] = definition.Spec.Script

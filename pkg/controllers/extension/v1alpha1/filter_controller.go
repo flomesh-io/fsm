@@ -89,7 +89,8 @@ func filterDefinitionFilterIndex(obj client.Object) []string {
 
 	var definitions []string
 
-	if filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
+	if filter.Spec.DefinitionRef != nil &&
+		filter.Spec.DefinitionRef.Group == extv1alpha1.GroupName &&
 		filter.Spec.DefinitionRef.Kind == constants.GatewayAPIExtensionFilterDefinitionKind {
 		definitions = append(definitions, fmt.Sprintf("%s/%s", filter.Namespace, filter.Spec.DefinitionRef.Name))
 	}

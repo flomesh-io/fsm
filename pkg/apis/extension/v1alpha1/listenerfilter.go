@@ -8,10 +8,7 @@ import (
 // ListenerFilterSpec defines the desired state of ListenerFilter
 type ListenerFilterSpec struct {
 	// Type is the type of the ListenerFilter in PascalCase, it should be unique within the namespace
-	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	Type string `json:"type"`
+	Type FilterType `json:"type"`
 
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16

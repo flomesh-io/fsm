@@ -18,6 +18,13 @@ type LocalTargetReferenceWithPort struct {
 	Port gwv1.PortNumber `json:"port"`
 }
 
+// +kubebuilder:validation:Pattern=`^[A-Z]+(([A-Z]*[a-z0-9]+[A-Z]*)*)$`
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=63
+
+// FilterType defines the type of filter
+type FilterType string
+
 // FilterScope defines the scope of filter
 type FilterScope string
 
