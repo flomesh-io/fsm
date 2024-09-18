@@ -73,6 +73,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayMetrics)
 	case *extv1alpha1.Zipkin:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayZipkin)
+	case *extv1alpha1.FilterConfig:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyFilterConfig)
 	}
 
 	return nil
@@ -242,6 +244,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayZipkinAdded,
 			Update: announcements.GatewayZipkinUpdated,
 			Delete: announcements.GatewayZipkinDeleted,
+		}
+	case fsminformers.InformerKeyFilterConfig:
+		return &k8s.EventTypes{
+			Add:    announcements.FilterConfigAdded,
+			Update: announcements.FilterConfigUpdated,
+			Delete: announcements.FilterConfigDeleted,
 		}
 	}
 

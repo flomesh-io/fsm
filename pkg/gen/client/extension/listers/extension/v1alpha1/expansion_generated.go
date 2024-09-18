@@ -39,6 +39,14 @@ type FilterListerExpansion interface{}
 // FilterNamespaceLister.
 type FilterNamespaceListerExpansion interface{}
 
+// FilterConfigListerExpansion allows custom methods to be added to
+// FilterConfigLister.
+type FilterConfigListerExpansion interface{}
+
+// FilterConfigNamespaceListerExpansion allows custom methods to be added to
+// FilterConfigNamespaceLister.
+type FilterConfigNamespaceListerExpansion interface{}
+
 // FilterDefinitionListerExpansion allows custom methods to be added to
 // FilterDefinitionLister.
 type FilterDefinitionListerExpansion interface{}

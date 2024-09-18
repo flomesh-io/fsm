@@ -63,6 +63,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&FaultInjection{},
 		&FaultInjectionList{},
 		&Filter{},
+		&FilterConfig{},
+		&FilterConfigList{},
 		&FilterDefinition{},
 		&FilterDefinitionList{},
 		&FilterList{},
