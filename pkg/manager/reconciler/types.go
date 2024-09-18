@@ -25,6 +25,7 @@ const (
 	GatewayAPIExtensionFilter           ResourceType = "GatewayAPIExtension(Filter)"
 	GatewayAPIExtensionListenerFilter   ResourceType = "GatewayAPIExtension(ListenerFilter)"
 	GatewayAPIExtensionFilterDefinition ResourceType = "GatewayAPIExtension(FilterDefinition)"
+	GatewayAPIExtensionFilterConfig     ResourceType = "GatewayAPIExtension(FilterConfig)"
 	GatewayAPIExtensionCircuitBreaker   ResourceType = "GatewayAPIExtension(CircuitBreaker)"
 	GatewayAPIExtensionFaultInjection   ResourceType = "GatewayAPIExtension(FaultInjection)"
 	GatewayAPIExtensionRateLimit        ResourceType = "GatewayAPIExtension(RateLimit)"

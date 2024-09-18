@@ -435,6 +435,9 @@ const (
 	// GatewayAPIExtensionFilterDefinitionKind is the kind name of Filter used in Gateway API
 	GatewayAPIExtensionFilterDefinitionKind = "FilterDefinition"
 
+	// GatewayAPIExtensionFilterConfigKind is the kind name of FilterConfig used in Gateway API
+	GatewayAPIExtensionFilterConfigKind = "FilterConfig"
+
 	// KubernetesServiceKind is the kind name of Service used in Kubernetes Core API
 	KubernetesServiceKind = "Service"
 

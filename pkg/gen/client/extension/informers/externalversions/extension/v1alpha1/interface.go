@@ -27,6 +27,8 @@ type Interface interface {
 	FaultInjections() FaultInjectionInformer
 	// Filters returns a FilterInformer.
 	Filters() FilterInformer
+	// FilterConfigs returns a FilterConfigInformer.
+	FilterConfigs() FilterConfigInformer
 	// FilterDefinitions returns a FilterDefinitionInformer.
 	FilterDefinitions() FilterDefinitionInformer
 	// HTTPLogs returns a HTTPLogInformer.
@@ -65,6 +67,11 @@ func (v *version) FaultInjections() FaultInjectionInformer {
 // Filters returns a FilterInformer.
 func (v *version) Filters() FilterInformer {
 	return &filterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// FilterConfigs returns a FilterConfigInformer.
+func (v *version) FilterConfigs() FilterConfigInformer {
+	return &filterConfigInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // FilterDefinitions returns a FilterDefinitionInformer.

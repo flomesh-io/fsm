@@ -37,6 +37,10 @@ func (c *FakeExtensionV1alpha1) Filters(namespace string) v1alpha1.FilterInterfa
 	return &FakeFilters{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) FilterConfigs(namespace string) v1alpha1.FilterConfigInterface {
+	return &FakeFilterConfigs{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) FilterDefinitions() v1alpha1.FilterDefinitionInterface {
 	return &FakeFilterDefinitions{c}
 }

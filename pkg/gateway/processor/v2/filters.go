@@ -129,6 +129,20 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("zipkin", &obj.Spec)
+	case constants.GatewayAPIExtensionFilterConfigKind:
+		obj := &extv1alpha1.FilterConfig{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve FilterConfig: %s", err)
+			return map[string]interface{}{}
+		}
+
+		vals := map[string]interface{}{}
+		if err := yaml.Unmarshal([]byte(obj.Spec.Config), &vals); err != nil {
+			log.Error().Msgf("Failed to unmarshal FilterConfig: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return vals
 	}
 
 	return map[string]interface{}{}

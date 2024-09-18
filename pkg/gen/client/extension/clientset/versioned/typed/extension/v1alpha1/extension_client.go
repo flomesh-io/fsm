@@ -28,6 +28,7 @@ type ExtensionV1alpha1Interface interface {
 	CircuitBreakersGetter
 	FaultInjectionsGetter
 	FiltersGetter
+	FilterConfigsGetter
 	FilterDefinitionsGetter
 	HTTPLogsGetter
 	ListenerFiltersGetter
@@ -51,6 +52,10 @@ func (c *ExtensionV1alpha1Client) FaultInjections(namespace string) FaultInjecti
 
 func (c *ExtensionV1alpha1Client) Filters(namespace string) FilterInterface {
 	return newFilters(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) FilterConfigs(namespace string) FilterConfigInterface {
+	return newFilterConfigs(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) FilterDefinitions() FilterDefinitionInterface {

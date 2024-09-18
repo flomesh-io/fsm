@@ -21,6 +21,8 @@ type FaultInjectionExpansion interface{}
 
 type FilterExpansion interface{}
 
+type FilterConfigExpansion interface{}
+
 type FilterDefinitionExpansion interface{}
 
 type HTTPLogExpansion interface{}

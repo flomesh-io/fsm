@@ -306,6 +306,9 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		webhooks[GatewayAPIExtensionFilterDefinition] = extwhv1alpha1.NewFilterDefinitionWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
 
+		webhooks[GatewayAPIExtensionFilterConfig] = extwhv1alpha1.NewFilterConfigWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionFilterConfig] = extensionv1alpha1.NewFilterConfigReconciler(ctx)
+
 		reconcilers[GatewayAPIExtensionCircuitBreaker] = extensionv1alpha1.NewCircuitBreakerReconciler(ctx)
 
 		reconcilers[GatewayAPIExtensionRateLimit] = extensionv1alpha1.NewRateLimitReconciler(ctx)
