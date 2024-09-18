@@ -143,7 +143,7 @@ spec:
                   it should be unique within the namespace
                 maxLength: 63
                 minLength: 1
-                pattern: ^[A-Z](([a-z0-9]+[A-Z]?)*)$
+                pattern: ^[A-Z]+(([A-Z]*[a-z0-9]+[A-Z]*)*)$
                 type: string
             required:
             - targetRefs

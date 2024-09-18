@@ -8,10 +8,7 @@ import (
 // FilterSpec defines the desired state of Filter
 type FilterSpec struct {
 	// Type is the type of the Filter in PascalCase, it should be unique within the namespace
-	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	Type string `json:"type"`
+	Type FilterType `json:"type"`
 
 	// +optional
 	// DefinitionRef is the reference to the FilterDefinition

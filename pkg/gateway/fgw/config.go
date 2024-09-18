@@ -22,10 +22,10 @@ import (
 )
 
 type ConfigSpec struct {
-	Resources []Resource                                       `json:"resources" hash:"set"`
-	Secrets   map[string]string                                `json:"secrets"`
-	Filters   map[extv1alpha1.FilterProtocol]map[string]string `json:"filters"`
-	Version   string                                           `json:"version" hash:"ignore"`
+	Resources []Resource                                                       `json:"resources" hash:"set"`
+	Secrets   map[string]string                                                `json:"secrets"`
+	Filters   map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string `json:"filters"`
+	Version   string                                                           `json:"version" hash:"ignore"`
 }
 
 func (c *ConfigSpec) GetVersion() string {
@@ -40,7 +40,7 @@ func (c *ConfigSpec) GetSecrets() map[string]string {
 	return c.Secrets
 }
 
-func (c *ConfigSpec) GetFilters() map[extv1alpha1.FilterProtocol]map[string]string {
+func (c *ConfigSpec) GetFilters() map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string {
 	return c.Filters
 }
 
@@ -99,7 +99,7 @@ type Listener struct {
 }
 
 type ListenerFilter struct {
-	Type            string                 `json:"type"`
+	Type            extv1alpha1.FilterType `json:"type"`
 	ExtensionConfig map[string]interface{} `json:"-"`
 	Key             string                 `json:"key,omitempty"`
 }

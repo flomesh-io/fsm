@@ -19,10 +19,7 @@ type FilterDefinitionSpec struct {
 	Protocol *FilterProtocol `json:"protocol,omitempty"`
 
 	// Type is the type of the FilterDefinition in PascalCase, it should be unique within the namespace
-	// +kubebuilder:validation:Pattern=`^[A-Z](([a-z0-9]+[A-Z]?)*)$`
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:MaxLength=63
-	Type string `json:"type"`
+	Type FilterType `json:"type"`
 
 	// Script is the list of scripts to be executed
 	// +kubebuilder:validation:MinLength=1
