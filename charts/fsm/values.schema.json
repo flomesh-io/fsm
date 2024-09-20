@@ -1260,6 +1260,30 @@
                           "title": "The enable schema for wildcard",
                           "description": "Indicates whether wildcard is enabled or not"
                         },
+                        "los": {
+                          "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/los",
+                          "type": "array",
+                          "title": "The los schema for wildcard",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "ipv4"
+                            ],
+                            "properties": {
+                              "ipv4": {
+                                "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/los/properties/ipv4",
+                                "type": "string",
+                                "title": "ipv4",
+                                "pattern": "((?:\\d{1,3}\\.){3}\\d{1,3})$"
+                              },
+                              "ipv6": {
+                                "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/los/properties/ipv6",
+                                "type": "string",
+                                "title": "ipv6"
+                              }
+                            }
+                          }
+                        },
                         "ips": {
                           "$id": "#/properties/fsm/properties/localDNSProxy/properties/wildcard/properties/ips",
                           "type": "array",

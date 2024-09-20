@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-logr/zerologr"
 
+	"github.com/flomesh-io/fsm/pkg/dns"
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
@@ -370,6 +371,8 @@ func main() {
 	if err = validator.NewValidatingWebhook(ctx, cfg, validatorWebhookConfigName, fsmNamespace, fsmVersion, meshName, enableReconciler, validateTrafficTarget, certManager, kubeClient, k8sClient, policyController); err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting the validating webhook server")
 	}
+
+	dns.Start(cfg)
 
 	version.SetMetric()
 

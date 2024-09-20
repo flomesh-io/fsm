@@ -20,5 +20,9 @@ spec:
     - name: webhook
       port: 9443
       targetPort: 9443
+    - name: dns-proxy
+      port: 53
+      targetPort: 15053
+      protocol: UDP
   selector:
     app: fsm-controller

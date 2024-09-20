@@ -50,27 +50,6 @@ func (p *PipyConf) setSidecarTimeout(sidecarTimeout int) (update bool) {
 	return
 }
 
-func (p *PipyConf) setLocalDNSProxy(enable bool, conf *configurator.Configurator) {
-	if enable {
-		p.Spec.LocalDNSProxy = new(LocalDNSProxy)
-		primary := (*conf).GetLocalDNSProxyPrimaryUpstream()
-		secondary := (*conf).GetLocalDNSProxySecondaryUpstream()
-		primary = strings.TrimSpace(primary)
-		secondary = strings.TrimSpace(secondary)
-		if len(primary) > 0 || len(secondary) > 0 {
-			p.Spec.LocalDNSProxy.UpstreamDNSServers = new(UpstreamDNSServers)
-			if len(primary) > 0 {
-				p.Spec.LocalDNSProxy.UpstreamDNSServers.Primary = &primary
-			}
-			if len(secondary) > 0 {
-				p.Spec.LocalDNSProxy.UpstreamDNSServers.Secondary = &secondary
-			}
-		}
-	} else {
-		p.Spec.LocalDNSProxy = nil
-	}
-}
-
 func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.Observability.Tracing = &TracingSpec{

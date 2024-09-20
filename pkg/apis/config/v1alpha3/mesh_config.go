@@ -101,6 +101,10 @@ type WildcardDN struct {
 	// Enable defines a boolean indicating if wildcard are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
 
+	// LOs defines loopback addresses for resolve DN.
+	// +optional
+	LOs []ResolveAddr `json:"los"`
+
 	// IPs defines ip addresses for resolve DN.
 	IPs []ResolveAddr `json:"ips"`
 }

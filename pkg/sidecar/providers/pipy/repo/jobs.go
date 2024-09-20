@@ -192,10 +192,10 @@ func forward(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, _ *
 
 func outbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, proxy *pipy.Proxy, cfg configurator.Configurator, desiredSuffix string) bool {
 	outboundTrafficPolicy := cataloger.GetOutboundMeshTrafficPolicy(proxy.Identity)
-	if cfg.IsLocalDNSProxyEnabled() && !cfg.IsWildcardDNSProxyEnabled() {
+	if cfg.IsLocalDNSProxyEnabled() {
 		if len(outboundTrafficPolicy.ServicesResolvableSet) > 0 {
-			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]string)
+			if pipyConf.dnsResolveDB == nil {
+				pipyConf.dnsResolveDB = make(map[string][]string)
 			}
 			for dn, ipv4s := range outboundTrafficPolicy.ServicesResolvableSet {
 				ipAddrs := make([]string, 0)
@@ -205,7 +205,7 @@ func outbound(cataloger catalog.MeshCataloger, s *Server, pipyConf *PipyConf, pr
 						ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipv4.(string)))
 					}
 				}
-				pipyConf.DNSResolveDB[dn] = ipAddrs
+				pipyConf.dnsResolveDB[dn] = ipAddrs
 			}
 		}
 	}
@@ -374,7 +374,6 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 		pipyConf.setHTTP1PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP1PerRequestLoadBalancing)
 		pipyConf.setHTTP2PerRequestLoadBalancing((*meshConf).GetMeshConfig().Spec.Traffic.HTTP2PerRequestLoadBalancing)
 		pipyConf.setEnablePermissiveTrafficPolicyMode((*meshConf).IsPermissiveTrafficPolicyMode())
-		pipyConf.setLocalDNSProxy((*meshConf).IsLocalDNSProxyEnabled(), meshConf)
 		pipyConf.setObservabilityTracing((*meshConf).IsTracingEnabled(), meshConf)
 		pipyConf.setObservabilityRemoteLogging((*meshConf).IsRemoteLoggingEnabled(), meshConf)
 		clusterProps := (*meshConf).GetMeshConfig().Spec.ClusterSet.Properties
@@ -408,7 +407,7 @@ func probes(proxy *pipy.Proxy, pipyConf *PipyConf) {
 }
 
 func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg configurator.Configurator, proxy *pipy.Proxy) {
-	if !cfg.IsLocalDNSProxyEnabled() || cfg.IsWildcardDNSProxyEnabled() {
+	if !cfg.IsLocalDNSProxyEnabled() {
 		return
 	}
 	if proxy.Metadata == nil {
@@ -425,8 +424,8 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 			continue
 		}
 		if len(svc.Annotations) > 0 {
-			if pipyConf.DNSResolveDB == nil {
-				pipyConf.DNSResolveDB = make(map[string][]string)
+			if pipyConf.dnsResolveDB == nil {
+				pipyConf.dnsResolveDB = make(map[string][]string)
 			}
 			resolvableIPSet := mapset.NewSet()
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
@@ -436,7 +435,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 				}
 			}
 			if resolvableIPSet.Cardinality() > 0 {
-				if addrs, exists := pipyConf.DNSResolveDB[svc.Name]; exists {
+				if addrs, exists := pipyConf.dnsResolveDB[svc.Name]; exists {
 					for _, addr := range addrs {
 						if !resolvableIPSet.Contains(addr) {
 							resolvableIPSet.Add(addr)
@@ -457,8 +456,8 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 					}
 				}
 				dn := fmt.Sprintf("%s.%s.svc.%s", svc.Name, proxy.Metadata.Namespace, service.GetTrustDomain())
-				pipyConf.DNSResolveDB[dn] = ipAddrs
-				delete(pipyConf.DNSResolveDB, svc.Name)
+				pipyConf.dnsResolveDB[dn] = ipAddrs
+				delete(pipyConf.dnsResolveDB, svc.Name)
 			}
 		}
 	}
@@ -468,32 +467,21 @@ func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 	if !cfg.IsLocalDNSProxyEnabled() {
 		return
 	}
-	if pipyConf.DNSResolveDB == nil {
-		pipyConf.DNSResolveDB = make(map[string][]string)
+	if pipyConf.dnsResolveDB == nil {
+		pipyConf.dnsResolveDB = make(map[string][]string)
 	}
 	dnsProxy := cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy
-	if cfg.IsWildcardDNSProxyEnabled() {
-		ipAddrs := make([]string, 0)
-		for _, ipAddr := range dnsProxy.Wildcard.IPs {
-			ipAddrs = append(ipAddrs, ipAddr.IPv4)
-			if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
-				ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipAddr.IPv4))
-			}
-		}
-		pipyConf.DNSResolveDB["*"] = ipAddrs
-	} else {
-		if len(dnsProxy.DB) > 0 {
-			for _, db := range dnsProxy.DB {
-				if len(db.IPs) > 0 {
-					ipAddrs := make([]string, 0)
-					for _, ipAddr := range db.IPs {
-						ipAddrs = append(ipAddrs, ipAddr.IPv4)
-						if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
-							ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipAddr.IPv4))
-						}
+	if len(dnsProxy.DB) > 0 {
+		for _, db := range dnsProxy.DB {
+			if len(db.IPs) > 0 {
+				ipAddrs := make([]string, 0)
+				for _, ipAddr := range db.IPs {
+					ipAddrs = append(ipAddrs, ipAddr.IPv4)
+					if len(ipAddr.IPv6) == 0 && cfg.GenerateIPv6BasedOnIPv4() {
+						ipAddrs = append(ipAddrs, utils.IPv4Tov6(ipAddr.IPv4))
 					}
-					pipyConf.DNSResolveDB[db.DN] = ipAddrs
 				}
+				pipyConf.dnsResolveDB[db.DN] = ipAddrs
 			}
 		}
 	}

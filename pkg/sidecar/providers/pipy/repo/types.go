@@ -202,20 +202,6 @@ type TrafficSpec struct {
 	HTTP2PerRequestLoadBalancing      bool
 }
 
-// UpstreamDNSServers defines upstream DNS servers for local DNS Proxy.
-type UpstreamDNSServers struct {
-	// Primary defines a primary upstream DNS server for local DNS Proxy.
-	Primary *string `json:"Primary,omitempty"`
-	// Secondary defines a secondary upstream DNS server for local DNS Proxy.
-	Secondary *string `json:"Secondary,omitempty"`
-}
-
-// LocalDNSProxy is the type to represent FSM's local DNS proxy configuration.
-type LocalDNSProxy struct {
-	// UpstreamDNSServers defines upstream DNS servers for local DNS Proxy.
-	UpstreamDNSServers *UpstreamDNSServers `json:"UpstreamDNSServers,omitempty"`
-}
-
 // TracingSpec is the type to represent tracing configuration.
 type TracingSpec struct {
 	// Address defines the tracing collectio's hostname.
@@ -264,7 +250,6 @@ type MeshConfigSpec struct {
 		StartupProbes   []v1.Probe `json:"StartupProbes,omitempty"`
 	}
 	ClusterSet    map[string]string `json:"ClusterSet,omitempty"`
-	LocalDNSProxy *LocalDNSProxy    `json:"LocalDNSProxy,omitempty"`
 	Observability ObservabilitySpec `json:"Observability,omitempty"`
 }
 
@@ -556,9 +541,9 @@ type PipyConf struct {
 	Forward          *ForwardTrafficPolicy  `json:"Forward,omitempty"`
 	AllowedEndpoints map[string]string      `json:"AllowedEndpoints"`
 	Chains           map[string][]string    `json:"Chains,omitempty"`
-	DNSResolveDB     map[string][]string    `json:"DNSResolveDB,omitempty"`
 
 	PluginSetV     string `json:"-"`
 	pluginPolicies map[string]map[string]*map[string]*runtime.RawExtension
 	hashNameSet    map[uint64]int
+	dnsResolveDB   map[string][]string
 }
