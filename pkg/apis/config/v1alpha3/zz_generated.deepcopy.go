@@ -746,8 +746,14 @@ func (in *ResolveDN) DeepCopyInto(out *ResolveDN) {
 	*out = *in
 	if in.IPs != nil {
 		in, out := &in.IPs, &out.IPs
-		*out = make([]ResolveAddr, len(*in))
-		copy(*out, *in)
+		*out = make([]*ResolveAddr, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(ResolveAddr)
+				**out = **in
+			}
+		}
 	}
 	return
 }
@@ -1023,13 +1029,25 @@ func (in *WildcardDN) DeepCopyInto(out *WildcardDN) {
 	*out = *in
 	if in.LOs != nil {
 		in, out := &in.LOs, &out.LOs
-		*out = make([]ResolveAddr, len(*in))
-		copy(*out, *in)
+		*out = make([]*ResolveAddr, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(ResolveAddr)
+				**out = **in
+			}
+		}
 	}
 	if in.IPs != nil {
 		in, out := &in.IPs, &out.IPs
-		*out = make([]ResolveAddr, len(*in))
-		copy(*out, *in)
+		*out = make([]*ResolveAddr, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(ResolveAddr)
+				**out = **in
+			}
+		}
 	}
 	return
 }

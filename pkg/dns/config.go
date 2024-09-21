@@ -34,11 +34,11 @@ func (c *Config) IsWildcard() bool {
 	return c.cfg.IsWildcardDNSProxyEnabled()
 }
 
-func (c *Config) GetWildcardResolveDB() []configv1alpha3.ResolveAddr {
+func (c *Config) GetWildcardResolveDB() []*configv1alpha3.ResolveAddr {
 	return c.cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.IPs
 }
 
-func (c *Config) GetLoopbackResolveDB() []configv1alpha3.ResolveAddr {
+func (c *Config) GetLoopbackResolveDB() []*configv1alpha3.ResolveAddr {
 	return c.cfg.GetMeshConfig().Spec.Sidecar.LocalDNSProxy.Wildcard.LOs
 }
 

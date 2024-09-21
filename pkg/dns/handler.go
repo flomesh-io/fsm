@@ -136,9 +136,8 @@ func (h *DNSHandler) do(cfg *Config) {
 				return
 			}
 
-			if cfg.IsWildcard() && len(cfg.GetLoopbackResolveDB()) > 0 {
+			if dbs := cfg.GetWildcardResolveDB(); cfg.IsWildcard() && len(dbs) > 0 {
 				los := cfg.GetLoopbackResolveDB()
-				dbs := cfg.GetWildcardResolveDB()
 				for idx, rr := range resp.Answer {
 					header := rr.Header()
 					switch header.Rrtype {

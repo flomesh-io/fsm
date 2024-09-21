@@ -1251,6 +1251,7 @@
                       "description": "The wildcard schema for local DNS Proxy",
                       "required": [
                         "enable",
+                        "los",
                         "ips"
                       ],
                       "properties": {

@@ -2225,6 +2225,7 @@ spec:
                               type: object
                             type: array
                           los:
+                            default: []
                             description: LOs defines loopback addresses for resolve
                               DN.
                             items:

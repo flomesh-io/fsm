@@ -99,7 +99,6 @@ require (
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
-	github.com/ryanuber/go-glob v1.0.0
 	github.com/tidwall/gjson v1.14.4
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f
@@ -400,6 +399,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryancurrah/gomodguard v1.1.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.3.0 // indirect
+	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sasha-s/go-deadlock v0.2.0 // indirect
 	github.com/securego/gosec/v2 v2.5.0 // indirect
 	github.com/sethvargo/go-limiter v0.7.1 // indirect
