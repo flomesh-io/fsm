@@ -71,7 +71,7 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 			}
 		}
 
-		if mc.configurator.IsLocalDNSProxyEnabled() && !mc.configurator.IsWildcardDNSProxyEnabled() {
+		if mc.configurator.IsLocalDNSProxyEnabled() {
 			if !existIntraEndpoints {
 				resolvableIPSet := mapset.NewSet()
 				for _, endp := range endpoints {
