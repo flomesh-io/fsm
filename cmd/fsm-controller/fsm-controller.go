@@ -17,6 +17,7 @@ import (
 
 	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 
+	"github.com/flomesh-io/fsm/pkg/dns"
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
@@ -265,7 +266,6 @@ func main() {
 		informers.WithPluginClient(pluginClient),
 		informers.WithMachineClient(machineClient),
 		informers.WithConnectorClient(connectorClient),
-		informers.WithMultiClusterClient(multiclusterClient),
 		informers.WithNetworkingClient(networkingClient),
 		informers.WithIngressClient(kubeClient, namespacedIngressClient),
 		informers.WithGatewayAPIClient(gatewayAPIClient),
@@ -372,6 +372,8 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting the validating webhook server")
 	}
 
+	dns.Init(cfg)
+
 	version.SetMetric()
 
 	// Initialize FSM's http service server
@@ -400,6 +402,7 @@ func main() {
 	debugConfig := debugger.NewDebugConfig(certManager, meshCatalog, kubeConfig, kubeClient, cfg, k8sClient, msgBroker)
 	go debugConfig.StartDebugServerConfigListener(background.DebugHandlers, stop)
 
+	go dns.WatchAndUpdateLocalDNSProxy(msgBroker, stop)
 	// Start the k8s pod watcher that updates corresponding k8s secrets
 	go k8s.WatchAndUpdateProxyBootstrapSecret(kubeClient, msgBroker, stop)
 	// Start the global log level watcher that updates the log level dynamically

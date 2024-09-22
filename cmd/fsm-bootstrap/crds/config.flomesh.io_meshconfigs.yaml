@@ -2224,9 +2224,29 @@ spec:
                               - ipv4
                               type: object
                             type: array
+                          los:
+                            description: LOs defines loopback addresses for resolve
+                              DN.
+                            items:
+                              description: ResolveAddr is the type to represent FSM's
+                                Resolve Addr configuration.
+                              properties:
+                                ipv4:
+                                  description: IPv4 defines a ipv4 address for resolve
+                                    DN.
+                                  type: string
+                                ipv6:
+                                  description: IPv6 defines a ipv6 address for resolve
+                                    DN.
+                                  type: string
+                              required:
+                              - ipv4
+                              type: object
+                            type: array
                         required:
                         - enable
                         - ips
+                        - los
                         type: object
                     required:
                     - enable
