@@ -372,7 +372,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting the validating webhook server")
 	}
 
-	dns.Start(cfg)
+	dns.Init(cfg)
 
 	version.SetMetric()
 
@@ -402,6 +402,7 @@ func main() {
 	debugConfig := debugger.NewDebugConfig(certManager, meshCatalog, kubeConfig, kubeClient, cfg, k8sClient, msgBroker)
 	go debugConfig.StartDebugServerConfigListener(background.DebugHandlers, stop)
 
+	go dns.WatchAndUpdateLocalDNSProxy(msgBroker, stop)
 	// Start the k8s pod watcher that updates corresponding k8s secrets
 	go k8s.WatchAndUpdateProxyBootstrapSecret(kubeClient, msgBroker, stop)
 	// Start the global log level watcher that updates the log level dynamically
