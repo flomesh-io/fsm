@@ -72,6 +72,9 @@ const (
 	// SidecarPrometheusInboundListenerPort is Sidecar's inbound listener port number for prometheus
 	SidecarPrometheusInboundListenerPort = 15010
 
+	// FSMDNSProxyPort is the dns proxy listener port.
+	FSMDNSProxyPort = uint32(15053)
+
 	// InjectorWebhookPort is the port on which the sidecar injection webhook listens
 	InjectorWebhookPort = 9090
 

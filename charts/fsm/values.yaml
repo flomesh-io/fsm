@@ -510,6 +510,7 @@ fsm:
     generateIPv6BasedOnIPv4: false
     wildcard:
       enable: false
+      los: []
       ips:
         - ipv4: 127.0.0.2
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits

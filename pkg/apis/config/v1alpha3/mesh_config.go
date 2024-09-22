@@ -101,8 +101,11 @@ type WildcardDN struct {
 	// Enable defines a boolean indicating if wildcard are enabled for local DNS Proxy.
 	Enable bool `json:"enable"`
 
+	// LOs defines loopback addresses for resolve DN.
+	LOs []*ResolveAddr `json:"los"`
+
 	// IPs defines ip addresses for resolve DN.
-	IPs []ResolveAddr `json:"ips"`
+	IPs []*ResolveAddr `json:"ips"`
 }
 
 // ResolveDN is the type to represent FSM's Resolve DN configuration.
@@ -111,7 +114,7 @@ type ResolveDN struct {
 	DN string `json:"dn"`
 
 	// IPs defines ip addresses for resolve DN.
-	IPs []ResolveAddr `json:"ips"`
+	IPs []*ResolveAddr `json:"ips"`
 }
 
 // LocalDNSProxy is the type to represent FSM's local DNS proxy configuration.

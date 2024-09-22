@@ -104,6 +104,9 @@ spec:
               containerPort: 9091
             - name: webhook
               containerPort: 9443
+            - name: dns-proxy
+              containerPort: 15053
+              protocol: UDP
           command: ['/fsm-controller']
           args: [
             "--verbosity", "{{.Values.fsm.controllerLogLevel}}",
