@@ -2,6 +2,7 @@ package gw
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	metautil "k8s.io/apimachinery/pkg/api/meta"
@@ -202,6 +203,12 @@ func (g *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
 		}
 	}
 
+	sort.Slice(conditionsToWrite, func(i, j int) bool {
+		if conditionsToWrite[i].Type == conditionsToWrite[j].Type {
+			return conditionsToWrite[i].Reason < conditionsToWrite[j].Reason
+		}
+		return conditionsToWrite[i].Type < conditionsToWrite[j].Type
+	})
 	updated.Status.Conditions = conditionsToWrite
 
 	// Overwrite all listener statuses since we re-compute all of them
@@ -219,14 +226,31 @@ func (g *GatewayStatusUpdate) Mutate(obj client.Object) client.Object {
 		listenerStatusToWrite = append(listenerStatusToWrite, *status)
 	}
 
+	sort.Slice(listenerStatusToWrite, func(i, j int) bool {
+		return listenerStatusToWrite[i].Name < listenerStatusToWrite[j].Name
+	})
 	updated.Status.Listeners = listenerStatusToWrite
 
 	// Gateway addresses
+	var addressesToWrite []gwv1.GatewayStatusAddress
 	if len(g.addresses) > 0 {
-		updated.Status.Addresses = g.addresses
+		addressesToWrite = g.addresses
 	} else {
-		updated.Status.Addresses = g.existingAddresses
+		addressesToWrite = g.existingAddresses
 	}
+
+	sort.Slice(addressesToWrite, func(i, j int) bool {
+		if addressesToWrite[i].Type == nil || addressesToWrite[j].Type == nil {
+			return addressesToWrite[i].Value < addressesToWrite[j].Value
+		}
+
+		if *addressesToWrite[i].Type == *addressesToWrite[j].Type {
+			return addressesToWrite[i].Value < addressesToWrite[j].Value
+		}
+
+		return *addressesToWrite[i].Type < *addressesToWrite[j].Type
+	})
+	updated.Status.Addresses = addressesToWrite
 
 	return updated
 }

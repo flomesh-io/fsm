@@ -2,6 +2,7 @@
 package status
 
 import (
+	"github.com/flomesh-io/fsm/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,3 +63,7 @@ type PolicyAncestorStatusObject interface {
 	GetPolicyStatusObject() PolicyStatusObject
 	GetAncestorRef() gwv1.ParentReference
 }
+
+var (
+	log = logger.NewPretty("fsm-gateway/status")
+)
