@@ -62,3 +62,7 @@ type PolicyAncestorStatusObject interface {
 	GetPolicyStatusObject() PolicyStatusObject
 	GetAncestorRef() gwv1.ParentReference
 }
+
+//var (
+//	log = logger.NewPretty("fsm-gateway/status")
+//)
