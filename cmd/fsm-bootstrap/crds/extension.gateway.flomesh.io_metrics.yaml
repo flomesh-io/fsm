@@ -51,6 +51,7 @@ spec:
                 default: 1s
                 description: SampleInterval is the interval to sample the metrics,
                   default is 1s
+                format: date-time
                 type: string
             type: object
           status:

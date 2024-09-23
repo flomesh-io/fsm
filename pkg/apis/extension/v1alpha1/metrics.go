@@ -8,6 +8,8 @@ import (
 type MetricsSpec struct {
 	// +optional
 	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Format=date-time
 	// SampleInterval is the interval to sample the metrics, default is 1s
 	SampleInterval *metav1.Duration `json:"sampleInterval,omitempty"`
 }
