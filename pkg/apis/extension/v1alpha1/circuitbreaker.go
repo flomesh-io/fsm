@@ -8,6 +8,8 @@ import (
 type CircuitBreakerSpec struct {
 	// +optional
 	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// LatencyThreshold is the threshold in milliseconds to determine a slow request, default is 1s
 	LatencyThreshold *metav1.Duration `json:"latencyThreshold,omitempty"`
 
@@ -32,11 +34,15 @@ type CircuitBreakerSpec struct {
 
 	// +optional
 	// +kubebuilder:default="5s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// CheckInterval is the interval to check the health of the service, default is 5s
 	CheckInterval *metav1.Duration `json:"checkInterval,omitempty"`
 
 	// +optional
 	// +kubebuilder:default="30s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// BreakInterval is the interval to break the service, default is 30s
 	BreakInterval *metav1.Duration `json:"breakInterval,omitempty"`
 

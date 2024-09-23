@@ -24,11 +24,15 @@ type FaultInjectionDelay struct {
 
 	// +optional
 	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// Min is the minimum delay duration, default is 1s
 	Min *metav1.Duration `json:"min,omitempty"`
 
 	// +optional
 	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// Max is the maximum delay duration, default is 1s
 	Max *metav1.Duration `json:"max,omitempty"`
 }
