@@ -65,6 +65,7 @@ spec:
                 default: 10s
                 description: Interval is the time period in which the requests are
                   counted
+                pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                 type: string
               requests:
                 default: 5

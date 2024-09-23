@@ -90,10 +90,12 @@ spec:
                   max:
                     default: 1s
                     description: Max is the maximum delay duration, default is 1s
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                     type: string
                   min:
                     default: 1s
                     description: Min is the minimum delay duration, default is 1s
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                     type: string
                   percentage:
                     description: Percentage is the percentage of requests to delay
