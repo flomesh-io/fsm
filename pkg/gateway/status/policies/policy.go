@@ -164,7 +164,7 @@ func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses
 		return policy
-	case *gwv1alpha2.BackendLBPolicy:
+	case *gwpav1alpha2.BackendLBPolicy:
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses
 		return policy

@@ -10,6 +10,11 @@ type ListenerFilterSpec struct {
 	// Type is the type of the ListenerFilter in PascalCase, it should be unique within the namespace
 	Type FilterType `json:"type"`
 
+	// +listType=map
+	// +listMapKey=group
+	// +listMapKey=kind
+	// +listMapKey=name
+	// +listMapKey=port
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the ListenerFilter is applied

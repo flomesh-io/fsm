@@ -298,16 +298,16 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		reconcilers[PolicyAttachmentBackendTLS] = pav1alpha3.NewBackendTLSPolicyReconciler(ctx, webhooks[PolicyAttachmentBackendTLS])
 
 		webhooks[GatewayAPIExtensionFilter] = extwhv1alpha1.NewFilterWebhook(regCfg)
-		reconcilers[GatewayAPIExtensionFilter] = extensionv1alpha1.NewFilterReconciler(ctx)
+		reconcilers[GatewayAPIExtensionFilter] = extensionv1alpha1.NewFilterReconciler(ctx, webhooks[GatewayAPIExtensionFilter])
 
 		webhooks[GatewayAPIExtensionListenerFilter] = extwhv1alpha1.NewListenerFilterWebhook(regCfg)
-		reconcilers[GatewayAPIExtensionListenerFilter] = extensionv1alpha1.NewListenerFilterReconciler(ctx)
+		reconcilers[GatewayAPIExtensionListenerFilter] = extensionv1alpha1.NewListenerFilterReconciler(ctx, webhooks[GatewayAPIExtensionListenerFilter])
 
 		webhooks[GatewayAPIExtensionFilterDefinition] = extwhv1alpha1.NewFilterDefinitionWebhook(regCfg)
-		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx)
+		reconcilers[GatewayAPIExtensionFilterDefinition] = extensionv1alpha1.NewFilterDefinitionReconciler(ctx, webhooks[GatewayAPIExtensionFilterDefinition])
 
 		webhooks[GatewayAPIExtensionFilterConfig] = extwhv1alpha1.NewFilterConfigWebhook(regCfg)
-		reconcilers[GatewayAPIExtensionFilterConfig] = extensionv1alpha1.NewFilterConfigReconciler(ctx)
+		reconcilers[GatewayAPIExtensionFilterConfig] = extensionv1alpha1.NewFilterConfigReconciler(ctx, webhooks[GatewayAPIExtensionFilterConfig])
 
 		reconcilers[GatewayAPIExtensionCircuitBreaker] = extensionv1alpha1.NewCircuitBreakerReconciler(ctx)
 
@@ -320,7 +320,7 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		reconcilers[GatewayAPIExtensionZipkin] = extensionv1alpha1.NewZipkinReconciler(ctx)
 
 		webhooks[GatewayAPIExtensionFaultInjection] = extwhv1alpha1.NewFaultInjectionWebhook(regCfg)
-		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx)
+		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx, webhooks[GatewayAPIExtensionFaultInjection])
 	}
 
 	if mc.IsServiceLBEnabled() {

@@ -21,6 +21,8 @@ import (
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
+// ---
+
 type ConfigSpec struct {
 	Resources []Resource                                                       `json:"resources" hash:"set"`
 	Secrets   map[string]string                                                `json:"secrets"`
@@ -433,8 +435,9 @@ type BackendLBPolicy struct {
 }
 
 type BackendLBPolicySpec struct {
-	TargetRefs         []BackendRef             `json:"targetRefs" copier:"-" hash:"set"`
-	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
+	TargetRefs         []BackendRef                        `json:"targetRefs" copier:"-" hash:"set"`
+	SessionPersistence *gwv1.SessionPersistence            `json:"sessionPersistence,omitempty"`
+	Algorithm          *gwpav1alpha2.LoadBalancerAlgorithm `json:"algorithm,omitempty"`
 }
 
 func (p *BackendLBPolicy) AddTargetRef(ref BackendRef) {
@@ -553,6 +556,8 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 	}
 }
 
+// ---
+
 type CircuitBreakerSpec struct {
 	LatencyThresholdInMilliseconds *int64                              `json:"latencyThreshold,omitempty"`
 	ErrorCountThreshold            *int32                              `json:"errorCountThreshold,omitempty"`
@@ -581,6 +586,8 @@ func (c *CircuitBreakerSpec) BreakInterval(breakInterval *metav1.Duration) {
 	}
 }
 
+// ---
+
 type FaultInjectionSpec struct {
 	Delay *FaultInjectionDelay             `json:"delay,omitempty"`
 	Abort *extv1alpha1.FaultInjectionAbort `json:"abort,omitempty"`
@@ -604,6 +611,8 @@ func (f *FaultInjectionDelay) Max(max *metav1.Duration) {
 	}
 }
 
+// ---
+
 type RateLimitSpec struct {
 	Burst                  *int32                         `json:"burst,omitempty"`
 	Requests               *int32                         `json:"requests,omitempty"`
@@ -617,6 +626,8 @@ func (r *RateLimitSpec) Interval(interval *metav1.Duration) {
 		r.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
 	}
 }
+
+// ---
 
 type HTTPLogSpec struct {
 	Target      string            `json:"target"`
@@ -639,6 +650,8 @@ func (b *HTTPLogBatch) Interval(interval *metav1.Duration) {
 		b.IntervalInMilliseconds = ptr.To(interval.Milliseconds())
 	}
 }
+
+// ---
 
 type MetricsSpec struct {
 	SampleIntervalInMilliseconds *int64 `json:"sampleInterval,omitempty"`

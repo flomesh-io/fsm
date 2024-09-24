@@ -138,6 +138,12 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
+                x-kubernetes-list-map-keys:
+                - group
+                - kind
+                - name
+                - port
+                x-kubernetes-list-type: map
               type:
                 description: Type is the type of the ListenerFilter in PascalCase,
                   it should be unique within the namespace

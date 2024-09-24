@@ -8,6 +8,11 @@ import (
 
 // RetryPolicySpec defines the desired state of RetryPolicy
 type RetryPolicySpec struct {
+	// +listType=map
+	// +listMapKey=group
+	// +listMapKey=kind
+	// +listMapKey=name
+	// +listMapKey=namespace
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the policy is applied

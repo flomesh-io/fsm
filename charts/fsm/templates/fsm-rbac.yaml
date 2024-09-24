@@ -145,13 +145,13 @@ rules:
 
   # GatewayAPI
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses", "gateways", "httproutes", "grpcroutes", "referencegrants", "tcproutes", "tlsroutes", "udproutes", "backendlbpolicies", "backendtlspolicies" ]
+    resources: [ "gatewayclasses", "gateways", "httproutes", "grpcroutes", "referencegrants", "tcproutes", "tlsroutes", "udproutes", "backendtlspolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses/finalizers", "gateways/finalizers", "httproutes/finalizers", "grpcroutes/finalizers", "referencegrants/finalizers", "tcproutes/finalizers", "tlsroutes/finalizers", "udproutes/finalizers", "backendlbpolicies/finalizers", "backendtlspolicies/finalizers" ]
+    resources: [ "gatewayclasses/finalizers", "gateways/finalizers", "httproutes/finalizers", "grpcroutes/finalizers", "referencegrants/finalizers", "tcproutes/finalizers", "tlsroutes/finalizers", "udproutes/finalizers", "backendtlspolicies/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.networking.k8s.io" ]
-    resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status", "backendlbpolicies/status", "backendtlspolicies/status" ]
+    resources: [ "gatewayclasses/status", "gateways/status", "httproutes/status", "grpcroutes/status", "referencegrants/status", "tcproutes/status", "tlsroutes/status", "udproutes/status", "backendtlspolicies/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # GatewayAPI Extension
@@ -167,13 +167,13 @@ rules:
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [  "healthcheckpolicies", "retrypolicies" ]
+    resources: [ "healthcheckpolicies", "retrypolicies", "backendlbpolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "healthcheckpolicies/finalizers", "retrypolicies/finalizers"]
+    resources: [ "healthcheckpolicies/finalizers", "retrypolicies/finalizers", "backendlbpolicies/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [  "healthcheckpolicies/status", "retrypolicies/status"]
+    resources: [ "healthcheckpolicies/status", "retrypolicies/status", "backendlbpolicies/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

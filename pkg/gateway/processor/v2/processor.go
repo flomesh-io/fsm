@@ -149,7 +149,7 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.HealthCheckPoliciesResourceType]
 	case *gwpav1alpha2.RetryPolicy:
 		return c.triggers[informers.RetryPoliciesResourceType]
-	case *gwv1alpha2.BackendLBPolicy:
+	case *gwpav1alpha2.BackendLBPolicy:
 		return c.triggers[informers.BackendLBPoliciesResourceType]
 	case *gwv1alpha3.BackendTLSPolicy:
 		return c.triggers[informers.BackendTLSPoliciesResourceType]

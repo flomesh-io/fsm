@@ -296,6 +296,12 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
+                x-kubernetes-list-map-keys:
+                - group
+                - kind
+                - name
+                - namespace
+                x-kubernetes-list-type: map
             required:
             - targetRefs
             type: object
