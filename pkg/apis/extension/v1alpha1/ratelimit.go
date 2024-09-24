@@ -20,6 +20,8 @@ type RateLimitSpec struct {
 
 	// +optional
 	// +kubebuilder:default="10s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
 	// Interval is the time period in which the requests are counted
 	Interval *metav1.Duration `json:"interval,omitempty"`
 

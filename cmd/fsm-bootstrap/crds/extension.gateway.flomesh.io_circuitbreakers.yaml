@@ -51,11 +51,13 @@ spec:
                 default: 30s
                 description: BreakInterval is the interval to break the service, default
                   is 30s
+                pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                 type: string
               checkInterval:
                 default: 5s
                 description: CheckInterval is the interval to check the health of
                   the service, default is 5s
+                pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                 type: string
               concurrencyThreshold:
                 default: 0
@@ -83,6 +85,7 @@ spec:
                 default: 1s
                 description: LatencyThreshold is the threshold in milliseconds to
                   determine a slow request, default is 1s
+                pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
                 type: string
               response:
                 default:
