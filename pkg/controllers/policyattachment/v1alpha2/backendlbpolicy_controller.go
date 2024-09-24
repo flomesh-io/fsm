@@ -3,7 +3,7 @@ package v1alpha2
 import (
 	"context"
 
-	gwpav1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
