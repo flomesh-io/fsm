@@ -57,18 +57,18 @@ spec:
                   for all ports
                 properties:
                   failTimeout:
-                    description: FailTimeout is the time in seconds before considering
-                      the service as healthy if it's marked as unhealthy, even if
-                      it's already healthy
-                    format: int32
-                    minimum: 0
-                    type: integer
+                    default: 5s
+                    description: FailTimeout is the time before considering the service
+                      as healthy if it's marked as unhealthy, even if it's already
+                      healthy
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
                   interval:
-                    description: Interval is the interval in seconds to check the
-                      health of the service
-                    format: int32
-                    minimum: 1
-                    type: integer
+                    default: 1s
+                    description: Interval is the interval to check the health of the
+                      service
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
                   matches:
                     description: Matches is the list of health check match conditions
                       of HTTP service
@@ -149,18 +149,18 @@ spec:
                         the port
                       properties:
                         failTimeout:
-                          description: FailTimeout is the time in seconds before considering
+                          default: 5s
+                          description: FailTimeout is the time before considering
                             the service as healthy if it's marked as unhealthy, even
                             if it's already healthy
-                          format: int32
-                          minimum: 0
-                          type: integer
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
                         interval:
-                          description: Interval is the interval in seconds to check
-                            the health of the service
-                          format: int32
-                          minimum: 1
-                          type: integer
+                          default: 1s
+                          description: Interval is the interval to check the health
+                            of the service
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
                         matches:
                           description: Matches is the list of health check match conditions
                             of HTTP service
@@ -296,12 +296,6 @@ spec:
                 maxItems: 16
                 minItems: 1
                 type: array
-                x-kubernetes-list-map-keys:
-                - group
-                - kind
-                - name
-                - namespace
-                x-kubernetes-list-type: map
             required:
             - targetRefs
             type: object

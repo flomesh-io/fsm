@@ -8,11 +8,6 @@ import (
 
 // RetryPolicySpec defines the desired state of RetryPolicy
 type RetryPolicySpec struct {
-	// +listType=map
-	// +listMapKey=group
-	// +listMapKey=kind
-	// +listMapKey=name
-	// +listMapKey=namespace
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
 	// TargetRefs is the references to the target resources to which the policy is applied
@@ -55,10 +50,11 @@ type RetryConfig struct {
 	NumRetries *int32 `json:"numRetries,omitempty"`
 
 	// +optional
-	// +kubebuilder:default=1.0
-	// +kubebuilder:validation:Minimum=0.001
-	// BackoffBaseInterval is the base interval for computing backoff in seconds
-	BackoffBaseInterval *float32 `json:"backoffBaseInterval,omitempty"`
+	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
+	// BackoffBaseInterval is the base interval for computing backoff time between retries, default is 1s
+	BackoffBaseInterval *metav1.Duration `json:"backoffBaseInterval,omitempty"`
 }
 
 // +genclient
