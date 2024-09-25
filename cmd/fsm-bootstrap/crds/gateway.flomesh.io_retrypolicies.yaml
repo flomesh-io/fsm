@@ -67,11 +67,11 @@ spec:
                       description: Config is the retry configuration for the port
                       properties:
                         backoffBaseInterval:
-                          default: 1
+                          default: 1s
                           description: BackoffBaseInterval is the base interval for
-                            computing backoff in seconds
-                          minimum: 0.001
-                          type: number
+                            computing backoff time between retries, default is 1s
+                          pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                          type: string
                         numRetries:
                           default: 3
                           description: NumRetries is the number of retries
@@ -102,11 +102,11 @@ spec:
                   ports
                 properties:
                   backoffBaseInterval:
-                    default: 1
+                    default: 1s
                     description: BackoffBaseInterval is the base interval for computing
-                      backoff in seconds
-                    minimum: 0.001
-                    type: number
+                      backoff time between retries, default is 1s
+                    pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
+                    type: string
                   numRetries:
                     default: 3
                     description: NumRetries is the number of retries

@@ -35,18 +35,22 @@ type PortHealthCheck struct {
 }
 
 type HealthCheckConfig struct {
-	// +kubebuilder:validation:Minimum=1
-	// Interval is the interval in seconds to check the health of the service
-	Interval int32 `json:"interval"`
+	// +kubebuilder:default="1s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
+	// Interval is the interval to check the health of the service
+	Interval metav1.Duration `json:"interval"`
 
 	// +kubebuilder:validation:Minimum=0
 	// MaxFails is the maximum number of consecutive failed health checks before considering the service as unhealthy
 	MaxFails int32 `json:"maxFails"`
 
 	// +optional
-	// +kubebuilder:validation:Minimum=0
-	// FailTimeout is the time in seconds before considering the service as healthy if it's marked as unhealthy, even if it's already healthy
-	FailTimeout *int32 `json:"failTimeout,omitempty"`
+	// +kubebuilder:default="5s"
+	// +kubebuilder:validation:Type=string
+	// +kubebuilder:validation:Pattern=`^([0-9]{1,5}(h|m|s|ms)){1,4}$`
+	// FailTimeout is the time before considering the service as healthy if it's marked as unhealthy, even if it's already healthy
+	FailTimeout *metav1.Duration `json:"failTimeout,omitempty"`
 
 	// +optional
 	// Path is the path to check the health of the HTTP service, if it's not set, the health check will be TCP based

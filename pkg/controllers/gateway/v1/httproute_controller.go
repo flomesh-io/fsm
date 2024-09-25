@@ -138,7 +138,7 @@ func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.HTTPRoute{}).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToHTTPRoutes)).
-		Watches(&gwv1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToHTTPRoutes)).
+		Watches(&gwpav1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToHTTPRoutes)).
 		Watches(&gwpav1alpha2.HealthCheckPolicy{}, handler.EnqueueRequestsFromMapFunc(r.healthCheckToHTTPRoutes)).
 		Watches(&gwpav1alpha2.RetryPolicy{}, handler.EnqueueRequestsFromMapFunc(r.retryToHTTPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToHTTPRoutes)).
@@ -170,7 +170,7 @@ func (r *httpRouteReconciler) backendTLSToHTTPRoutes(ctx context.Context, object
 }
 
 func (r *httpRouteReconciler) backendLBToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
-	policy, ok := object.(*gwv1alpha2.BackendLBPolicy)
+	policy, ok := object.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
 		log.Error().Msgf("Unexpected type %T", object)
 		return nil

@@ -220,8 +220,8 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gwv1alpha2.BackendLBPolicy:
-		if b, ok := objB.(*gwv1alpha2.BackendLBPolicy); ok {
+	case *gwpav1alpha2.BackendLBPolicy:
+		if b, ok := objB.(*gwpav1alpha2.BackendLBPolicy); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {
 				return true
 			}

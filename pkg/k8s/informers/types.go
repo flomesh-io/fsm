@@ -120,22 +120,10 @@ const (
 	InformerKeyGatewayAPIReferenceGrant InformerKey = "ReferenceGrant-gwapi"
 	// InformerKeyRateLimit is the InformerKey for a RateLimit extension informer
 	InformerKeyRateLimit InformerKey = "RateLimit"
-	// InformerKeySessionStickyPolicy is the InformerKey for a SessionStickyPolicy informer
-	InformerKeySessionStickyPolicy InformerKey = "SessionStickyPolicy"
-	// InformerKeyLoadBalancerPolicy is the InformerKey for a LoadBalancerPolicy informer
-	InformerKeyLoadBalancerPolicy InformerKey = "LoadBalancerPolicy"
 	// InformerKeyCircuitBreaker is the InformerKey for a CircuitBreaker informer
 	InformerKeyCircuitBreaker InformerKey = "CircuitBreaker"
-	// InformerKeyAccessControlPolicy is the InformerKey for a AccessControlPolicy informer
-	InformerKeyAccessControlPolicy InformerKey = "AccessControlPolicy"
-	// InformerKeyHealthCheckPolicyV1alpha1 is the InformerKey for a HealthCheckPolicy informer
-	InformerKeyHealthCheckPolicyV1alpha1 InformerKey = "HealthCheckPolicy-v1alpha1"
 	// InformerKeyFaultInjection is the InformerKey for a FaultInjection informer
 	InformerKeyFaultInjection InformerKey = "FaultInjection"
-	// InformerKeyUpstreamTLSPolicy is the InformerKey for a UpstreamTLSPolicy informer
-	InformerKeyUpstreamTLSPolicy InformerKey = "UpstreamTLSPolicy"
-	// InformerKeyRetryPolicyV1alpha1 is the InformerKey for a RetryPolicy informer
-	InformerKeyRetryPolicyV1alpha1 InformerKey = "RetryPolicy-v1alpha1"
 	// InformerKeyBackendTLSPolicy is the InformerKey for a BackendTLSPolicy informer
 	InformerKeyBackendTLSPolicy InformerKey = "BackendTLSPolicy"
 	// InformerKeyBackendLBPolicy is the InformerKey for a BackendLBPolicy informer
@@ -230,12 +218,6 @@ const (
 	// RateLimitsResourceType is the type used to represent the rate limit resource
 	RateLimitsResourceType ResourceType = "ratelimits"
 
-	// SessionStickyPoliciesResourceType is the type used to represent the session sticky policies resource
-	SessionStickyPoliciesResourceType ResourceType = "sessionstickies"
-
-	// LoadBalancerPoliciesResourceType is the type used to represent the load balancer policies resource
-	LoadBalancerPoliciesResourceType ResourceType = "loadbalancers"
-
 	// CircuitBreakersResourceType is the type used to represent the circuit breakers  resource
 	CircuitBreakersResourceType ResourceType = "circuitbreakers"
 
@@ -247,9 +229,6 @@ const (
 
 	// FaultInjectionsResourceType is the type used to represent the fault injections resource
 	FaultInjectionsResourceType ResourceType = "faultinjections"
-
-	// UpstreamTLSPoliciesResourceType is the type used to represent the upstream tls policies resource
-	UpstreamTLSPoliciesResourceType ResourceType = "upstreamtls"
 
 	// RetryPoliciesResourceType is the type used to represent the retry policies resource
 	RetryPoliciesResourceType ResourceType = "retries"

@@ -3,6 +3,10 @@ package v1alpha1
 import (
 	"context"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -18,6 +22,7 @@ import (
 type filterDefinitionReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *filterDefinitionReconciler) NeedLeaderElection() bool {
@@ -25,10 +30,11 @@ func (r *filterDefinitionReconciler) NeedLeaderElection() bool {
 }
 
 // NewFilterDefinitionReconciler returns a new FilterDefinition Reconciler
-func NewFilterDefinitionReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewFilterDefinitionReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &filterDefinitionReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("FilterDefinition"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -59,6 +65,15 @@ func (r *filterDefinitionReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *filterDefinitionReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&extv1alpha1.FilterDefinition{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&extv1alpha1.FilterDefinition{}).
 		Complete(r); err != nil {
@@ -69,26 +84,5 @@ func (r *filterDefinitionReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func addFilterDefinitionIndexers(ctx context.Context, mgr manager.Manager) error {
-	//if err := mgr.GetFieldIndexer().IndexField(ctx, &extv1alpha1.FilterDefinition{}, constants.GatewayFilterDefinitionIndex, func(obj client.Object) []string {
-	//	filterDefinition := obj.(*extv1alpha1.FilterDefinition)
-	//
-	//	scope := ptr.Deref(filterDefinition.Spec.Scope, extv1alpha1.FilterDefinitionScopeRoute)
-	//	if scope != extv1alpha1.FilterDefinitionScopeListener {
-	//		return nil
-	//	}
-	//
-	//	var gateways []string
-	//	for _, targetRef := range filterDefinition.Spec.TargetRefs {
-	//		if string(targetRef.Kind) == constants.GatewayAPIGatewayKind &&
-	//			string(targetRef.Group) == gwv1.GroupName {
-	//			gateways = append(gateways, fmt.Sprintf("%s/%d", string(targetRef.Name), targetRef.Port))
-	//		}
-	//	}
-	//
-	//	return gateways
-	//}); err != nil {
-	//	return err
-	//}
-
 	return nil
 }

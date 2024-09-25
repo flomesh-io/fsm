@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,7 +35,7 @@ func NewBackendLBPolicyWebhook(cfg *whtypes.RegisterConfig) whtypes.Register {
 	}
 
 	if blder, err := builder.WebhookConfigurationManagedBy(cfg.Manager).
-		For(&gwv1alpha2.BackendLBPolicy{}).
+		For(&gwpav1alpha2.BackendLBPolicy{}).
 		WithWebhookServiceName(cfg.WebhookSvcName).
 		WithWebhookServiceNamespace(cfg.WebhookSvcNs).
 		WithCABundle(cfg.CaBundle).
@@ -55,7 +57,7 @@ func (r *BackendLBPolicyWebhook) ValidateUpdate(ctx context.Context, _, newObj r
 }
 
 func (r *BackendLBPolicyWebhook) doValidation(_ context.Context, obj runtime.Object) (warnings admission.Warnings, err error) {
-	policy, ok := obj.(*gwv1alpha2.BackendLBPolicy)
+	policy, ok := obj.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
 		return nil, fmt.Errorf("unexpected type: %T", obj)
 	}
@@ -97,11 +99,11 @@ func (r *BackendLBPolicyWebhook) validateTargetRefs(refs []gwv1alpha2.LocalPolic
 	return errs
 }
 
-func validateBackendLB(policy *gwv1alpha2.BackendLBPolicy) field.ErrorList {
+func validateBackendLB(policy *gwpav1alpha2.BackendLBPolicy) field.ErrorList {
 	return validateBackendLBSpec(&policy.Spec, field.NewPath("spec"))
 }
 
-func validateBackendLBSpec(spec *gwv1alpha2.BackendLBPolicySpec, path *field.Path) field.ErrorList {
+func validateBackendLBSpec(spec *gwpav1alpha2.BackendLBPolicySpec, path *field.Path) field.ErrorList {
 	if spec.SessionPersistence == nil {
 		return nil
 	}

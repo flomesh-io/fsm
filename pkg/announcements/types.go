@@ -504,28 +504,6 @@ const (
 
 	// ---
 
-	// SessionStickyPolicyAdded is the type of announcement emitted when we observe an addition of sessionstickypolicies.gateway.flomesh.io
-	SessionStickyPolicyAdded Kind = "sessionstickypolicy-added"
-
-	// SessionStickyPolicyDeleted the type of announcement emitted when we observe a deletion of sessionstickypolicies.gateway.flomesh.io
-	SessionStickyPolicyDeleted Kind = "sessionstickypolicy-deleted"
-
-	// SessionStickyPolicyUpdated is the type of announcement emitted when we observe an update to sessionstickypolicies.gateway.flomesh.io
-	SessionStickyPolicyUpdated Kind = "sessionstickypolicy-updated"
-
-	// ---
-
-	// LoadBalancerPolicyAdded is the type of announcement emitted when we observe an addition of loadbalancerpolicies.gateway.flomesh.io
-	LoadBalancerPolicyAdded Kind = "loadbalancerpolicy-added"
-
-	// LoadBalancerPolicyDeleted the type of announcement emitted when we observe a deletion of loadbalancerpolicies.gateway.flomesh.io
-	LoadBalancerPolicyDeleted Kind = "loadbalancerpolicy-deleted"
-
-	// LoadBalancerPolicyUpdated is the type of announcement emitted when we observe an update to loadbalancerpolicies.gateway.flomesh.io
-	LoadBalancerPolicyUpdated Kind = "loadbalancerpolicy-updated"
-
-	// ---
-
 	// CircuitBreakerAdded is the type of announcement emitted when we observe an addition of circuitbreakers.extension.gateway.flomesh.io
 	CircuitBreakerAdded Kind = "circuitbreaking-added"
 
@@ -534,17 +512,6 @@ const (
 
 	// CircuitBreakerUpdated is the type of announcement emitted when we observe an update to circuitbreakers.extension.gateway.flomesh.io
 	CircuitBreakerUpdated Kind = "circuitbreaking-updated"
-
-	// ---
-
-	// AccessControlPolicyAdded is the type of announcement emitted when we observe an addition of accesscontrolpolicies.gateway.flomesh.io
-	AccessControlPolicyAdded Kind = "accesscontrolpolicy-added"
-
-	// AccessControlPolicyDeleted the type of announcement emitted when we observe a deletion of accesscontrolpolicies.gateway.flomesh.io
-	AccessControlPolicyDeleted Kind = "accesscontrolpolicy-deleted"
-
-	// AccessControlPolicyUpdated is the type of announcement emitted when we observe an update to accesscontrolpolicies.gateway.flomesh.io
-	AccessControlPolicyUpdated Kind = "accesscontrolpolicy-updated"
 
 	// ---
 
@@ -567,17 +534,6 @@ const (
 
 	// FaultInjectionUpdated is the type of announcement emitted when we observe an update to faultinjectionpolicies.extension.gateway.flomesh.io
 	FaultInjectionUpdated Kind = "FaultInjection-updated"
-
-	// ---
-
-	// UpstreamTLSPolicyAdded is the type of announcement emitted when we observe an addition of upstreamtlspolicies.gateway.flomesh.io
-	UpstreamTLSPolicyAdded Kind = "upstreamtlspolicy-added"
-
-	// UpstreamTLSPolicyDeleted the type of announcement emitted when we observe a deletion of upstreamtlspolicies.gateway.flomesh.io
-	UpstreamTLSPolicyDeleted Kind = "upstreamtlspolicy-deleted"
-
-	// UpstreamTLSPolicyUpdated is the type of announcement emitted when we observe an update to upstreamtlspolicies.gateway.flomesh.io
-	UpstreamTLSPolicyUpdated Kind = "upstreamtlspolicy-updated"
 
 	// ---
 

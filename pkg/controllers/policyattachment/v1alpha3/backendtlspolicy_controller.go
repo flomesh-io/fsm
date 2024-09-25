@@ -31,7 +31,6 @@ type backendTLSPolicyReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
 	webhook  whtypes.Register
-	//statusProcessor *policystatus.ServicePolicyStatusProcessor
 }
 
 func (r *backendTLSPolicyReconciler) NeedLeaderElection() bool {
@@ -45,13 +44,6 @@ func NewBackendTLSPolicyReconciler(ctx *fctx.ControllerContext, webhook whtypes.
 		fctx:     ctx,
 		webhook:  webhook,
 	}
-
-	//r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
-	//	Client:              r.fctx.Client,
-	//	Informer:            r.fctx.InformerCollection,
-	//	GetAttachedPolicies: r.getAttachedRetryPolicies,
-	//	FindConflict:        r.findConflict,
-	//}
 
 	return r
 }
@@ -73,14 +65,6 @@ func (r *backendTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
-
-	//r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-	//	policy,
-	//	&policy.ObjectMeta,
-	//	&policy.TypeMeta,
-	//	policy.Spec.TargetRef,
-	//	policy.Status.Conditions,
-	//))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 

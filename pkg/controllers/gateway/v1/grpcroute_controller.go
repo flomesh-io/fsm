@@ -28,6 +28,7 @@ import (
 	"context"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
@@ -137,7 +138,7 @@ func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.GRPCRoute{}).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToGRPCRoutes)).
-		Watches(&gwv1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToGRPCRoutes)).
+		Watches(&gwpav1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToGRPCRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGRPCRoutes)).
 		Complete(r); err != nil {
 		return err
@@ -167,7 +168,7 @@ func (r *grpcRouteReconciler) backendTLSToGRPCRoutes(ctx context.Context, object
 }
 
 func (r *grpcRouteReconciler) backendLBToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
-	policy, ok := object.(*gwv1alpha2.BackendLBPolicy)
+	policy, ok := object.(*gwpav1alpha2.BackendLBPolicy)
 	if !ok {
 		log.Error().Msgf("Unexpected type %T", object)
 		return nil

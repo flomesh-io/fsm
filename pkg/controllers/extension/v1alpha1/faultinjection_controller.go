@@ -3,6 +3,10 @@ package v1alpha1
 import (
 	"context"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -18,6 +22,7 @@ import (
 type faultInjectionReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *faultInjectionReconciler) NeedLeaderElection() bool {
@@ -25,10 +30,11 @@ func (r *faultInjectionReconciler) NeedLeaderElection() bool {
 }
 
 // NewFaultInjectionReconciler returns a new FaultInjection Reconciler
-func NewFaultInjectionReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewFaultInjectionReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &faultInjectionReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("FaultInjection"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -59,6 +65,15 @@ func (r *faultInjectionReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *faultInjectionReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&extv1alpha1.FaultInjection{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&extv1alpha1.FaultInjection{}).
 		Complete(r); err != nil {

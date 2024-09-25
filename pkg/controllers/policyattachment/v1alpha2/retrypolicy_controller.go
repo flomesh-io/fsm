@@ -39,8 +39,7 @@ import (
 type retryPolicyReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
-	//statusProcessor *policystatus.ServicePolicyStatusProcessor
-	webhook whtypes.Register
+	webhook  whtypes.Register
 }
 
 func (r *retryPolicyReconciler) NeedLeaderElection() bool {
@@ -54,13 +53,6 @@ func NewRetryPolicyReconciler(ctx *fctx.ControllerContext, webhook whtypes.Regis
 		fctx:     ctx,
 		webhook:  webhook,
 	}
-
-	//r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
-	//	Client:              r.fctx.Client,
-	//	Informer:            r.fctx.InformerCollection,
-	//	GetAttachedPolicies: r.getAttachedRetryPolicies,
-	//	FindConflict:        r.findConflict,
-	//}
 
 	return r
 }
@@ -82,14 +74,6 @@ func (r *retryPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
-
-	//r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-	//	policy,
-	//	&policy.ObjectMeta,
-	//	&policy.TypeMeta,
-	//	policy.Spec.TargetRef,
-	//	policy.Status.Conditions,
-	//))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 

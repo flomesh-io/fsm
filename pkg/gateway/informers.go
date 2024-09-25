@@ -47,7 +47,7 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIUDPRoute)
 	case *gwv1beta1.ReferenceGrant:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayAPIReferenceGrant)
-	case *gwv1alpha2.BackendLBPolicy:
+	case *gwpav1alpha2.BackendLBPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyBackendLBPolicy)
 	case *gwv1alpha3.BackendTLSPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyBackendTLSPolicy)

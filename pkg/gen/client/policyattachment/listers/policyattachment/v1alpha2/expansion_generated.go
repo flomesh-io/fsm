@@ -15,6 +15,14 @@ limitations under the License.
 
 package v1alpha2
 
+// BackendLBPolicyListerExpansion allows custom methods to be added to
+// BackendLBPolicyLister.
+type BackendLBPolicyListerExpansion interface{}
+
+// BackendLBPolicyNamespaceListerExpansion allows custom methods to be added to
+// BackendLBPolicyNamespaceLister.
+type BackendLBPolicyNamespaceListerExpansion interface{}
+
 // HealthCheckPolicyListerExpansion allows custom methods to be added to
 // HealthCheckPolicyLister.
 type HealthCheckPolicyListerExpansion interface{}

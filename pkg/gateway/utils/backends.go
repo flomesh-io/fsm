@@ -203,8 +203,8 @@ func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetR
 }
 
 // FindBackendLBPolicy finds the BackendTLSPolicy for the given LocalPolicyTargetReference.
-func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReference, routeNamespace string) (*gwv1alpha2.BackendLBPolicy, bool) {
-	list := &gwv1alpha2.BackendLBPolicyList{}
+func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetReference, routeNamespace string) (*gwpav1alpha2.BackendLBPolicy, bool) {
+	list := &gwpav1alpha2.BackendLBPolicyList{}
 	if err := c.List(context.Background(), list, &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
 			Namespace: routeNamespace,
