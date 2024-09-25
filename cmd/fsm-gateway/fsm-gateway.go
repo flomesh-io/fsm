@@ -29,6 +29,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 
@@ -223,7 +226,7 @@ func parseFlags() error {
 	return nil
 }
 
-func startPipy(spawn int64, url string, mc configurator.Configurator) {
+func startPipy(spawn int64, url string, _ configurator.Configurator) {
 	args := []string{url}
 	if spawn > 1 {
 		args = append([]string{"--reuse-port", fmt.Sprintf("--threads=%d", spawn)}, args...)
@@ -233,7 +236,7 @@ func startPipy(spawn int64, url string, mc configurator.Configurator) {
 		args = append([]string{fmt.Sprintf("--log-level=%s", utils.PipyLogLevelByVerbosity(verbosity))}, args...)
 	}
 
-	args = append(args, fmt.Sprintf("--admin-port=%d", constants.FSMGatewayAdminPort))
+	args = append(args, fmt.Sprintf("--admin-port=%s:%d", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort))
 
 	// arguments for FGW
 	args = append(args, "--args", "--watch")
@@ -241,12 +244,6 @@ func startPipy(spawn int64, url string, mc configurator.Configurator) {
 	if verbosity == "debug" || verbosity == "trace" {
 		args = append(args, "--debug")
 	}
-
-	//if mc.GetFeatureFlags().GenerateSingleConfigForFGW {
-	//	args = append(args, "--config", "/config.json")
-	//} else {
-	//	args = append(args, "--config", "/config")
-	//}
 
 	cmd := exec.Command("pipy", args...) // #nosec G204
 	cmd.Stdout = os.Stdout
@@ -274,10 +271,13 @@ func startPipy(spawn int64, url string, mc configurator.Configurator) {
 func startHTTPServer() {
 	// Initialize FSM's http service server
 	httpServer := httpserver.NewHTTPServer(constants.FSMGatewayHTTPServerPort)
+
 	// Metrics
-	// httpServer.AddHandler(constants.MetricsPath, metricsstore.DefaultMetricsStore.Handler())
+	httpServer.AddHandler(constants.MetricsPath, metricsHandler())
 	// Version
 	httpServer.AddHandler(constants.VersionPath, version.GetVersionHandler())
+	// Health Check
+	httpServer.AddHandler(constants.HealthCheckPath, healthCheckHandler())
 
 	// Start HTTP server
 	err := httpServer.Start()
@@ -285,4 +285,67 @@ func startHTTPServer() {
 		log.Fatal().Err(err).Msgf("Failed to start FSM Gateway metrics/probes HTTP server")
 		os.Exit(1)
 	}
+}
+
+func metricsHandler() http.Handler {
+	handleInternalError := func(w http.ResponseWriter) {
+		w.WriteHeader(http.StatusInternalServerError)
+		if _, err := w.Write([]byte("Internal Server Error")); err != nil {
+			log.Error().Err(err).Msg("Failed to write response")
+		}
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requestURL := fmt.Sprintf("http://%s:%d", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort)
+
+		newReq, err := http.NewRequest(http.MethodGet, requestURL, nil)
+		if err != nil {
+			log.Error().Msgf("Could not create request: %s\n", err)
+			handleInternalError(w)
+			return
+		}
+
+		res, err := http.DefaultClient.Do(newReq)
+		if err != nil {
+			log.Error().Msgf("Error making http request: %s\n", err)
+			handleInternalError(w)
+			return
+		}
+
+		resBody, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Error().Msgf("Could not read response body: %s\n", err)
+			handleInternalError(w)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprint(w, string(resBody))
+	})
+}
+
+func healthCheckHandler() http.Handler {
+	setHealthcheckResponse := func(w http.ResponseWriter, responseCode int, msg string) {
+		w.WriteHeader(responseCode)
+		if _, err := w.Write([]byte(msg)); err != nil {
+			log.Error().Err(err).Msg("Failed to write response")
+		}
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		address := fmt.Sprintf("%s:%d", constants.LocalhostIPAddress, constants.FSMGatewayAdminPort)
+
+		conn, err := net.Dial("tcp", address)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to establish connection to %s", address)
+			setHealthcheckResponse(w, http.StatusNotFound, "FAILED")
+			return
+		}
+
+		if err = conn.Close(); err != nil {
+			log.Error().Err(err).Msgf("Failed to close connection to %s", address)
+		}
+
+		setHealthcheckResponse(w, http.StatusOK, "OK")
+	})
 }

@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o bin/fsm-gateway -ldflags "$LDFLAGS" ./cmd/fsm-gateway
 
 # Build the final image
-FROM flomesh/pipy:1.4.2-$DISTROLESS_TAG
+FROM flomesh/pipy:1.4.3-$DISTROLESS_TAG
 WORKDIR /
 COPY --from=builder /fsm/bin/fsm-gateway .
 
