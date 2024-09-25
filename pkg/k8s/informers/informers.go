@@ -256,13 +256,13 @@ func WithIngressClient(kubeClient kubernetes.Interface, nsigClient nsigClientset
 func WithPolicyAttachmentClientV2(gatewayAPIClient gatewayApiClientset.Interface, policyAttachmentClient policyAttachmentClientset.Interface) InformerCollectionOption {
 	return func(ic *InformerCollection) {
 		gatewayInformerFactory := gatewayApiInformers.NewSharedInformerFactory(gatewayAPIClient, DefaultKubeEventResyncInterval)
-		ic.informers[InformerKeyBackendLBPolicy] = gatewayInformerFactory.Gateway().V1alpha2().BackendLBPolicies().Informer()
 		ic.informers[InformerKeyBackendTLSPolicy] = gatewayInformerFactory.Gateway().V1alpha3().BackendTLSPolicies().Informer()
 
 		informerFactory := policyAttachmentInformers.NewSharedInformerFactory(policyAttachmentClient, DefaultKubeEventResyncInterval)
 
-		ic.informers[InformerKeyHealthCheckPolicyV1alpha1] = informerFactory.Gateway().V1alpha2().HealthCheckPolicies().Informer()
-		ic.informers[InformerKeyRetryPolicyV1alpha1] = informerFactory.Gateway().V1alpha2().RetryPolicies().Informer()
+		ic.informers[InformerKeyBackendLBPolicy] = informerFactory.Gateway().V1alpha2().BackendLBPolicies().Informer()
+		ic.informers[InformerKeyHealthCheckPolicyV1alpha2] = informerFactory.Gateway().V1alpha2().HealthCheckPolicies().Informer()
+		ic.informers[InformerKeyRetryPolicyV1alpha2] = informerFactory.Gateway().V1alpha2().RetryPolicies().Informer()
 	}
 }
 

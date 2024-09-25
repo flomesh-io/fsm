@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -24,6 +28,7 @@ import (
 type listenerListenerFilterReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *listenerListenerFilterReconciler) NeedLeaderElection() bool {
@@ -31,10 +36,11 @@ func (r *listenerListenerFilterReconciler) NeedLeaderElection() bool {
 }
 
 // NewListenerFilterReconciler returns a new ListenerFilter Reconciler
-func NewListenerFilterReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewListenerFilterReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &listenerListenerFilterReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("ListenerFilter"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -65,6 +71,15 @@ func (r *listenerListenerFilterReconciler) Reconcile(ctx context.Context, req ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *listenerListenerFilterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&extv1alpha1.ListenerFilter{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&extv1alpha1.ListenerFilter{}).
 		Complete(r); err != nil {

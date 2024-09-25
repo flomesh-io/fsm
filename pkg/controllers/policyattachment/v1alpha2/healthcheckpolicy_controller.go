@@ -41,8 +41,7 @@ import (
 type healthCheckPolicyReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
-	//statusProcessor *policystatus.ServicePolicyStatusProcessor
-	webhook whtypes.Register
+	webhook  whtypes.Register
 }
 
 func (r *healthCheckPolicyReconciler) NeedLeaderElection() bool {
@@ -56,13 +55,6 @@ func NewHealthCheckPolicyReconciler(ctx *fctx.ControllerContext, webhook whtypes
 		fctx:     ctx,
 		webhook:  webhook,
 	}
-
-	//r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
-	//	Client:              r.fctx.Client,
-	//	Informer:            r.fctx.InformerCollection,
-	//	GetAttachedPolicies: r.getAttachedHealthChecks,
-	//	FindConflict:        r.findConflict,
-	//}
 
 	return r
 }
@@ -84,14 +76,6 @@ func (r *healthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		r.fctx.GatewayEventHandler.OnDelete(policy)
 		return ctrl.Result{}, nil
 	}
-
-	//r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-	//	policy,
-	//	&policy.ObjectMeta,
-	//	&policy.TypeMeta,
-	//	policy.Spec.TargetRef,
-	//	policy.Status.Conditions,
-	//))
 
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 

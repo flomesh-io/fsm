@@ -21,6 +21,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// BackendLBPolicies returns a BackendLBPolicyInformer.
+	BackendLBPolicies() BackendLBPolicyInformer
 	// HealthCheckPolicies returns a HealthCheckPolicyInformer.
 	HealthCheckPolicies() HealthCheckPolicyInformer
 	// RetryPolicies returns a RetryPolicyInformer.
@@ -36,6 +38,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// BackendLBPolicies returns a BackendLBPolicyInformer.
+func (v *version) BackendLBPolicies() BackendLBPolicyInformer {
+	return &backendLBPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // HealthCheckPolicies returns a HealthCheckPolicyInformer.

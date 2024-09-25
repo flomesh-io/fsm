@@ -1168,20 +1168,12 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayAPIReferenceGrantAdded, announcements.GatewayAPIReferenceGrantDeleted, announcements.GatewayAPIReferenceGrantUpdated,
 		// RateLimit event
 		announcements.RateLimitAdded, announcements.RateLimitDeleted, announcements.RateLimitUpdated,
-		// SessionStickyPolicy event
-		//announcements.SessionStickyPolicyAdded, announcements.SessionStickyPolicyDeleted, announcements.SessionStickyPolicyUpdated,
-		// LoadBalancerPolicy event
-		//announcements.LoadBalancerPolicyAdded, announcements.LoadBalancerPolicyDeleted, announcements.LoadBalancerPolicyUpdated,
 		// CircuitBreaker event
 		announcements.CircuitBreakerAdded, announcements.CircuitBreakerDeleted, announcements.CircuitBreakerUpdated,
-		// AccessControlPolicy event
-		//announcements.AccessControlPolicyAdded, announcements.AccessControlPolicyDeleted, announcements.AccessControlPolicyUpdated,
 		// HealthCheckPolicy event
 		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
 		// FaultInjection event
 		announcements.FaultInjectionAdded, announcements.FaultInjectionDeleted, announcements.FaultInjectionUpdated,
-		// UpstreamTLSPolicy event
-		//announcements.UpstreamTLSPolicyAdded, announcements.UpstreamTLSPolicyDeleted, announcements.UpstreamTLSPolicyUpdated,
 		// RetryPolicy event
 		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
 		// BackendTLSPolicy event

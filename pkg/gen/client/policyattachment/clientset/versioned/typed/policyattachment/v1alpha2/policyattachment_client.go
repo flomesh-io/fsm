@@ -25,6 +25,7 @@ import (
 
 type GatewayV1alpha2Interface interface {
 	RESTClient() rest.Interface
+	BackendLBPoliciesGetter
 	HealthCheckPoliciesGetter
 	RetryPoliciesGetter
 }
@@ -32,6 +33,10 @@ type GatewayV1alpha2Interface interface {
 // GatewayV1alpha2Client is used to interact with features provided by the gateway.flomesh.io group.
 type GatewayV1alpha2Client struct {
 	restClient rest.Interface
+}
+
+func (c *GatewayV1alpha2Client) BackendLBPolicies(namespace string) BackendLBPolicyInterface {
+	return newBackendLBPolicies(c, namespace)
 }
 
 func (c *GatewayV1alpha2Client) HealthCheckPolicies(namespace string) HealthCheckPolicyInterface {

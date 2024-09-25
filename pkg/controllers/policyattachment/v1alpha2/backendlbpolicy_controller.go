@@ -3,11 +3,11 @@ package v1alpha2
 import (
 	"context"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
-
-	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -30,8 +30,7 @@ import (
 type backendLBPolicyReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
-	//statusProcessor *policystatus.ServicePolicyStatusProcessor
-	webhook whtypes.Register
+	webhook  whtypes.Register
 }
 
 func (r *backendLBPolicyReconciler) NeedLeaderElection() bool {
@@ -46,22 +45,15 @@ func NewBackendLBPolicyReconciler(ctx *fctx.ControllerContext, webhook whtypes.R
 		webhook:  webhook,
 	}
 
-	//r.statusProcessor = &policystatus.ServicePolicyStatusProcessor{
-	//	Client:              r.fctx.Client,
-	//	Informer:            r.fctx.InformerCollection,
-	//	GetAttachedPolicies: r.getAttachedRetryPolicies,
-	//	FindConflict:        r.findConflict,
-	//}
-
 	return r
 }
 
 // Reconcile reads that state of the cluster for a BackendLBPolicy object and makes changes based on the state read
 func (r *backendLBPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	policy := &gwv1alpha2.BackendLBPolicy{}
+	policy := &gwpav1alpha2.BackendLBPolicy{}
 	err := r.fctx.Get(ctx, req.NamespacedName, policy)
 	if errors.IsNotFound(err) {
-		r.fctx.GatewayEventHandler.OnDelete(&gwv1alpha2.BackendLBPolicy{
+		r.fctx.GatewayEventHandler.OnDelete(&gwpav1alpha2.BackendLBPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: req.Namespace,
 				Name:      req.Name,
@@ -74,14 +66,6 @@ func (r *backendLBPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, nil
 	}
 
-	//r.statusProcessor.Process(ctx, r.fctx.StatusUpdater, policystatus.NewPolicyUpdate(
-	//	policy,
-	//	&policy.ObjectMeta,
-	//	&policy.TypeMeta,
-	//	policy.Spec.TargetRef,
-	//	policy.Status.Conditions,
-	//))
-
 	r.fctx.GatewayEventHandler.OnAdd(policy, false)
 
 	return ctrl.Result{}, nil
@@ -90,7 +74,7 @@ func (r *backendLBPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 // SetupWithManager sets up the controller with the Manager.
 func (r *backendLBPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := whblder.WebhookManagedBy(mgr).
-		For(&gwv1alpha2.BackendLBPolicy{}).
+		For(&gwpav1alpha2.BackendLBPolicy{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
 		RecoverPanic().
@@ -99,7 +83,7 @@ func (r *backendLBPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	if err := ctrl.NewControllerManagedBy(mgr).
-		For(&gwv1alpha2.BackendLBPolicy{}).
+		For(&gwpav1alpha2.BackendLBPolicy{}).
 		Complete(r); err != nil {
 		return err
 	}
@@ -108,8 +92,8 @@ func (r *backendLBPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func addBackendLBPolicyIndexer(ctx context.Context, mgr manager.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1alpha2.BackendLBPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
-		policy := obj.(*gwv1alpha2.BackendLBPolicy)
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha2.BackendLBPolicy{}, constants.ServicePolicyAttachmentIndex, func(obj client.Object) []string {
+		policy := obj.(*gwpav1alpha2.BackendLBPolicy)
 
 		var targets []string
 		for _, targetRef := range policy.Spec.TargetRefs {

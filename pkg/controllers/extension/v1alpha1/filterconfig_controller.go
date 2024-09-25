@@ -3,6 +3,10 @@ package v1alpha1
 import (
 	"context"
 
+	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
+
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
@@ -18,6 +22,7 @@ import (
 type filterConfigReconciler struct {
 	recorder record.EventRecorder
 	fctx     *fctx.ControllerContext
+	webhook  whtypes.Register
 }
 
 func (r *filterConfigReconciler) NeedLeaderElection() bool {
@@ -25,10 +30,11 @@ func (r *filterConfigReconciler) NeedLeaderElection() bool {
 }
 
 // NewFilterConfigReconciler returns a new FilterConfig Reconciler
-func NewFilterConfigReconciler(ctx *fctx.ControllerContext) controllers.Reconciler {
+func NewFilterConfigReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
 	return &filterConfigReconciler{
 		recorder: ctx.Manager.GetEventRecorderFor("FilterConfig"),
 		fctx:     ctx,
+		webhook:  webhook,
 	}
 }
 
@@ -59,6 +65,15 @@ func (r *filterConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *filterConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := whblder.WebhookManagedBy(mgr).
+		For(&extv1alpha1.FilterConfig{}).
+		WithDefaulter(r.webhook).
+		WithValidator(r.webhook).
+		RecoverPanic().
+		Complete(); err != nil {
+		return err
+	}
+
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&extv1alpha1.FilterConfig{}).
 		Complete(r); err != nil {
