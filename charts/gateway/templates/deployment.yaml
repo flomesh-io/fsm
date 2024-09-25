@@ -90,7 +90,7 @@ spec:
           - name: {{ $listener.name }}
             containerPort: {{ $listener.port }}
           {{- end }}
-          - name: health
+          - name: version
             containerPort: 59091
           - name: metrics
             containerPort: 59092
@@ -126,12 +126,12 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 59091
+            port: 59092
         readinessProbe:
           initialDelaySeconds: 5
           timeoutSeconds: 5
           tcpSocket:
-            port: 59091
+            port: 59092
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
       securityContext:
