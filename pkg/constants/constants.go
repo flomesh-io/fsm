@@ -357,8 +357,11 @@ const (
 	// VersionPath is the path at which FSM controller serves version info
 	VersionPath = "/version"
 
+	// HealthCheckPath is the path at which serves health checks
+	HealthCheckPath = "/healthz"
+
 	// WebhookHealthPath is the path at which the webooks serve health probes
-	WebhookHealthPath = "/healthz"
+	WebhookHealthPath = HealthCheckPath
 )
 
 // FSM HTTP Server Responses

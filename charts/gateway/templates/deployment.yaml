@@ -49,7 +49,7 @@ spec:
         {{- end }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: '59092'
+        prometheus.io/port: '59091'
         prometheus.io/path: '/metrics'
         {{- with .Values.fsm.gateway.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -90,10 +90,8 @@ spec:
           - name: {{ $listener.name }}
             containerPort: {{ $listener.port }}
           {{- end }}
-          - name: health
+          - name: admin
             containerPort: 59091
-          - name: metrics
-            containerPort: 59092
         args:
           - --verbosity={{ .Values.fsm.gateway.logLevel }}
           - --fsm-namespace={{ .Values.fsm.fsmNamespace }}
@@ -125,12 +123,16 @@ spec:
         livenessProbe:
           initialDelaySeconds: 5
           timeoutSeconds: 5
-          tcpSocket:
+          httpGet:
+            scheme: HTTP
+            path: /healthz
             port: 59091
         readinessProbe:
           initialDelaySeconds: 5
           timeoutSeconds: 5
-          tcpSocket:
+          httpGet:
+            scheme: HTTP
+            path: /healthz
             port: 59091
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
