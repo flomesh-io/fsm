@@ -38,22 +38,24 @@ var globaltrafficpoliciesKind = v1alpha1.SchemeGroupVersion.WithKind("GlobalTraf
 
 // Get takes name of the globalTrafficPolicy, and returns the corresponding globalTrafficPolicy object, and an error if there is any.
 func (c *FakeGlobalTrafficPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.GlobalTrafficPolicy, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(globaltrafficpoliciesResource, c.ns, name), &v1alpha1.GlobalTrafficPolicy{})
+		Invokes(testing.NewGetActionWithOptions(globaltrafficpoliciesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GlobalTrafficPolicy), err
 }
 
 // List takes label and field selectors, and returns the list of GlobalTrafficPolicies that match those selectors.
 func (c *FakeGlobalTrafficPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.GlobalTrafficPolicyList, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicyList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(globaltrafficpoliciesResource, globaltrafficpoliciesKind, c.ns, opts), &v1alpha1.GlobalTrafficPolicyList{})
+		Invokes(testing.NewListActionWithOptions(globaltrafficpoliciesResource, globaltrafficpoliciesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeGlobalTrafficPolicies) List(ctx context.Context, opts v1.ListOption
 // Watch returns a watch.Interface that watches the requested globalTrafficPolicies.
 func (c *FakeGlobalTrafficPolicies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(globaltrafficpoliciesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(globaltrafficpoliciesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a globalTrafficPolicy and creates it.  Returns the server's representation of the globalTrafficPolicy, and an error, if there is any.
 func (c *FakeGlobalTrafficPolicies) Create(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.CreateOptions) (result *v1alpha1.GlobalTrafficPolicy, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(globaltrafficpoliciesResource, c.ns, globalTrafficPolicy), &v1alpha1.GlobalTrafficPolicy{})
+		Invokes(testing.NewCreateActionWithOptions(globaltrafficpoliciesResource, c.ns, globalTrafficPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GlobalTrafficPolicy), err
 }
 
 // Update takes the representation of a globalTrafficPolicy and updates it. Returns the server's representation of the globalTrafficPolicy, and an error, if there is any.
 func (c *FakeGlobalTrafficPolicies) Update(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (result *v1alpha1.GlobalTrafficPolicy, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(globaltrafficpoliciesResource, c.ns, globalTrafficPolicy), &v1alpha1.GlobalTrafficPolicy{})
+		Invokes(testing.NewUpdateActionWithOptions(globaltrafficpoliciesResource, c.ns, globalTrafficPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GlobalTrafficPolicy), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeGlobalTrafficPolicies) UpdateStatus(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (*v1alpha1.GlobalTrafficPolicy, error) {
+func (c *FakeGlobalTrafficPolicies) UpdateStatus(ctx context.Context, globalTrafficPolicy *v1alpha1.GlobalTrafficPolicy, opts v1.UpdateOptions) (result *v1alpha1.GlobalTrafficPolicy, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(globaltrafficpoliciesResource, "status", c.ns, globalTrafficPolicy), &v1alpha1.GlobalTrafficPolicy{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(globaltrafficpoliciesResource, "status", c.ns, globalTrafficPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GlobalTrafficPolicy), err
 }
@@ -120,7 +125,7 @@ func (c *FakeGlobalTrafficPolicies) Delete(ctx context.Context, name string, opt
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeGlobalTrafficPolicies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(globaltrafficpoliciesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(globaltrafficpoliciesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.GlobalTrafficPolicyList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeGlobalTrafficPolicies) DeleteCollection(ctx context.Context, opts v
 
 // Patch applies the patch and returns the patched globalTrafficPolicy.
 func (c *FakeGlobalTrafficPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GlobalTrafficPolicy, err error) {
+	emptyResult := &v1alpha1.GlobalTrafficPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(globaltrafficpoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha1.GlobalTrafficPolicy{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(globaltrafficpoliciesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GlobalTrafficPolicy), err
 }

@@ -37,20 +37,22 @@ var eurekaconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("EurekaConnector
 
 // Get takes name of the eurekaConnector, and returns the corresponding eurekaConnector object, and an error if there is any.
 func (c *FakeEurekaConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.EurekaConnector, err error) {
+	emptyResult := &v1alpha1.EurekaConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(eurekaconnectorsResource, name), &v1alpha1.EurekaConnector{})
+		Invokes(testing.NewRootGetActionWithOptions(eurekaconnectorsResource, name, options), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EurekaConnector), err
 }
 
 // List takes label and field selectors, and returns the list of EurekaConnectors that match those selectors.
 func (c *FakeEurekaConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.EurekaConnectorList, err error) {
+	emptyResult := &v1alpha1.EurekaConnectorList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(eurekaconnectorsResource, eurekaconnectorsKind, opts), &v1alpha1.EurekaConnectorList{})
+		Invokes(testing.NewRootListActionWithOptions(eurekaconnectorsResource, eurekaconnectorsKind, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -69,36 +71,39 @@ func (c *FakeEurekaConnectors) List(ctx context.Context, opts v1.ListOptions) (r
 // Watch returns a watch.Interface that watches the requested eurekaConnectors.
 func (c *FakeEurekaConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(eurekaconnectorsResource, opts))
+		InvokesWatch(testing.NewRootWatchActionWithOptions(eurekaconnectorsResource, opts))
 }
 
 // Create takes the representation of a eurekaConnector and creates it.  Returns the server's representation of the eurekaConnector, and an error, if there is any.
 func (c *FakeEurekaConnectors) Create(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.CreateOptions) (result *v1alpha1.EurekaConnector, err error) {
+	emptyResult := &v1alpha1.EurekaConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(eurekaconnectorsResource, eurekaConnector), &v1alpha1.EurekaConnector{})
+		Invokes(testing.NewRootCreateActionWithOptions(eurekaconnectorsResource, eurekaConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EurekaConnector), err
 }
 
 // Update takes the representation of a eurekaConnector and updates it. Returns the server's representation of the eurekaConnector, and an error, if there is any.
 func (c *FakeEurekaConnectors) Update(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (result *v1alpha1.EurekaConnector, err error) {
+	emptyResult := &v1alpha1.EurekaConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(eurekaconnectorsResource, eurekaConnector), &v1alpha1.EurekaConnector{})
+		Invokes(testing.NewRootUpdateActionWithOptions(eurekaconnectorsResource, eurekaConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EurekaConnector), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeEurekaConnectors) UpdateStatus(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (*v1alpha1.EurekaConnector, error) {
+func (c *FakeEurekaConnectors) UpdateStatus(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (result *v1alpha1.EurekaConnector, err error) {
+	emptyResult := &v1alpha1.EurekaConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(eurekaconnectorsResource, "status", eurekaConnector), &v1alpha1.EurekaConnector{})
+		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(eurekaconnectorsResource, "status", eurekaConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EurekaConnector), err
 }
@@ -112,7 +117,7 @@ func (c *FakeEurekaConnectors) Delete(ctx context.Context, name string, opts v1.
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeEurekaConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(eurekaconnectorsResource, listOpts)
+	action := testing.NewRootDeleteCollectionActionWithOptions(eurekaconnectorsResource, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.EurekaConnectorList{})
 	return err
@@ -120,10 +125,11 @@ func (c *FakeEurekaConnectors) DeleteCollection(ctx context.Context, opts v1.Del
 
 // Patch applies the patch and returns the patched eurekaConnector.
 func (c *FakeEurekaConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EurekaConnector, err error) {
+	emptyResult := &v1alpha1.EurekaConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(eurekaconnectorsResource, name, pt, data, subresources...), &v1alpha1.EurekaConnector{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(eurekaconnectorsResource, name, pt, data, opts, subresources...), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EurekaConnector), err
 }

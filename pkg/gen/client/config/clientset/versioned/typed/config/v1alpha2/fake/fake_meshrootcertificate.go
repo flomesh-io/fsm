@@ -38,22 +38,24 @@ var meshrootcertificatesKind = v1alpha2.SchemeGroupVersion.WithKind("MeshRootCer
 
 // Get takes name of the meshRootCertificate, and returns the corresponding meshRootCertificate object, and an error if there is any.
 func (c *FakeMeshRootCertificates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.MeshRootCertificate, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(meshrootcertificatesResource, c.ns, name), &v1alpha2.MeshRootCertificate{})
+		Invokes(testing.NewGetActionWithOptions(meshrootcertificatesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.MeshRootCertificate), err
 }
 
 // List takes label and field selectors, and returns the list of MeshRootCertificates that match those selectors.
 func (c *FakeMeshRootCertificates) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.MeshRootCertificateList, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificateList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(meshrootcertificatesResource, meshrootcertificatesKind, c.ns, opts), &v1alpha2.MeshRootCertificateList{})
+		Invokes(testing.NewListActionWithOptions(meshrootcertificatesResource, meshrootcertificatesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeMeshRootCertificates) List(ctx context.Context, opts v1.ListOptions
 // Watch returns a watch.Interface that watches the requested meshRootCertificates.
 func (c *FakeMeshRootCertificates) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(meshrootcertificatesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(meshrootcertificatesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a meshRootCertificate and creates it.  Returns the server's representation of the meshRootCertificate, and an error, if there is any.
 func (c *FakeMeshRootCertificates) Create(ctx context.Context, meshRootCertificate *v1alpha2.MeshRootCertificate, opts v1.CreateOptions) (result *v1alpha2.MeshRootCertificate, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(meshrootcertificatesResource, c.ns, meshRootCertificate), &v1alpha2.MeshRootCertificate{})
+		Invokes(testing.NewCreateActionWithOptions(meshrootcertificatesResource, c.ns, meshRootCertificate, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.MeshRootCertificate), err
 }
 
 // Update takes the representation of a meshRootCertificate and updates it. Returns the server's representation of the meshRootCertificate, and an error, if there is any.
 func (c *FakeMeshRootCertificates) Update(ctx context.Context, meshRootCertificate *v1alpha2.MeshRootCertificate, opts v1.UpdateOptions) (result *v1alpha2.MeshRootCertificate, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(meshrootcertificatesResource, c.ns, meshRootCertificate), &v1alpha2.MeshRootCertificate{})
+		Invokes(testing.NewUpdateActionWithOptions(meshrootcertificatesResource, c.ns, meshRootCertificate, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.MeshRootCertificate), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeMeshRootCertificates) UpdateStatus(ctx context.Context, meshRootCertificate *v1alpha2.MeshRootCertificate, opts v1.UpdateOptions) (*v1alpha2.MeshRootCertificate, error) {
+func (c *FakeMeshRootCertificates) UpdateStatus(ctx context.Context, meshRootCertificate *v1alpha2.MeshRootCertificate, opts v1.UpdateOptions) (result *v1alpha2.MeshRootCertificate, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(meshrootcertificatesResource, "status", c.ns, meshRootCertificate), &v1alpha2.MeshRootCertificate{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(meshrootcertificatesResource, "status", c.ns, meshRootCertificate, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.MeshRootCertificate), err
 }
@@ -120,7 +125,7 @@ func (c *FakeMeshRootCertificates) Delete(ctx context.Context, name string, opts
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeMeshRootCertificates) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(meshrootcertificatesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(meshrootcertificatesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha2.MeshRootCertificateList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeMeshRootCertificates) DeleteCollection(ctx context.Context, opts v1
 
 // Patch applies the patch and returns the patched meshRootCertificate.
 func (c *FakeMeshRootCertificates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.MeshRootCertificate, err error) {
+	emptyResult := &v1alpha2.MeshRootCertificate{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(meshrootcertificatesResource, c.ns, name, pt, data, subresources...), &v1alpha2.MeshRootCertificate{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(meshrootcertificatesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.MeshRootCertificate), err
 }

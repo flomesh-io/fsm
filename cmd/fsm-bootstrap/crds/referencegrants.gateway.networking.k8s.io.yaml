@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: https://github.com/kubernetes-sigs/gateway-api/pull/2997
-    gateway.networking.k8s.io/bundle-version: v1.1.0
+    gateway.networking.k8s.io/bundle-version: v1.2.0-rc1
     gateway.networking.k8s.io/channel: experimental
   creationTimestamp: null
   labels:
@@ -37,11 +37,9 @@ spec:
           trusted to reference the specified kinds of resources in the same namespace
           as the policy.
 
-
           Each ReferenceGrant can be used to represent a unique trust relationship.
           Additional Reference Grants can be used to add to the set of trusted
           sources of inbound references for the namespace they are defined within.
-
 
           A ReferenceGrant is required for all cross-namespace references in Gateway API
           (with the exception of cross-namespace Route-Gateway attachment, which is
@@ -49,7 +47,6 @@ spec:
           Service ParentRefs on a "consumer" mesh Route, which defines routing rules
           applicable only to workloads in the Route namespace). ReferenceGrants allowing
           a reference from a Route to a Service are only applicable to BackendRefs.
-
 
           ReferenceGrant is a form of runtime verification allowing users to assert
           which cross-namespace object references are permitted. Implementations that
@@ -84,7 +81,6 @@ spec:
                   to be an additional place that references can be valid from, or to put
                   this another way, entries MUST be combined using OR.
 
-
                   Support: Core
                 items:
                   description: ReferenceGrantFrom describes trusted namespaces and
@@ -94,7 +90,6 @@ spec:
                       description: |-
                         Group is the group of the referent.
                         When empty, the Kubernetes core API group is inferred.
-
 
                         Support: Core
                       maxLength: 253
@@ -106,15 +101,11 @@ spec:
                         additional resources, the following types are part of the "Core"
                         support level for this field.
 
-
                         When used to permit a SecretObjectReference:
-
 
                         * Gateway
 
-
                         When used to permit a BackendObjectReference:
-
 
                         * GRPCRoute
                         * HTTPRoute
@@ -128,7 +119,6 @@ spec:
                     namespace:
                       description: |-
                         Namespace is the namespace of the referent.
-
 
                         Support: Core
                       maxLength: 63
@@ -150,7 +140,6 @@ spec:
                   additional place that references can be valid to, or to put this another
                   way, entries MUST be combined using OR.
 
-
                   Support: Core
                 items:
                   description: |-
@@ -162,7 +151,6 @@ spec:
                         Group is the group of the referent.
                         When empty, the Kubernetes core API group is inferred.
 
-
                         Support: Core
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -172,7 +160,6 @@ spec:
                         Kind is the kind of the referent. Although implementations may support
                         additional resources, the following types are part of the "Core"
                         support level for this field:
-
 
                         * Secret when used to permit a SecretObjectReference
                         * Service when used to permit a BackendObjectReference
@@ -215,15 +202,12 @@ spec:
           trusted to reference the specified kinds of resources in the same namespace
           as the policy.
 
-
           Each ReferenceGrant can be used to represent a unique trust relationship.
           Additional Reference Grants can be used to add to the set of trusted
           sources of inbound references for the namespace they are defined within.
 
-
           All cross-namespace references in Gateway API (with the exception of cross-namespace
           Gateway-route attachment) require a ReferenceGrant.
-
 
           ReferenceGrant is a form of runtime verification allowing users to assert
           which cross-namespace object references are permitted. Implementations that
@@ -258,7 +242,6 @@ spec:
                   to be an additional place that references can be valid from, or to put
                   this another way, entries MUST be combined using OR.
 
-
                   Support: Core
                 items:
                   description: ReferenceGrantFrom describes trusted namespaces and
@@ -268,7 +251,6 @@ spec:
                       description: |-
                         Group is the group of the referent.
                         When empty, the Kubernetes core API group is inferred.
-
 
                         Support: Core
                       maxLength: 253
@@ -280,15 +262,11 @@ spec:
                         additional resources, the following types are part of the "Core"
                         support level for this field.
 
-
                         When used to permit a SecretObjectReference:
-
 
                         * Gateway
 
-
                         When used to permit a BackendObjectReference:
-
 
                         * GRPCRoute
                         * HTTPRoute
@@ -302,7 +280,6 @@ spec:
                     namespace:
                       description: |-
                         Namespace is the namespace of the referent.
-
 
                         Support: Core
                       maxLength: 63
@@ -324,7 +301,6 @@ spec:
                   additional place that references can be valid to, or to put this another
                   way, entries MUST be combined using OR.
 
-
                   Support: Core
                 items:
                   description: |-
@@ -336,7 +312,6 @@ spec:
                         Group is the group of the referent.
                         When empty, the Kubernetes core API group is inferred.
 
-
                         Support: Core
                       maxLength: 253
                       pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -346,7 +321,6 @@ spec:
                         Kind is the kind of the referent. Although implementations may support
                         additional resources, the following types are part of the "Core"
                         support level for this field:
-
 
                         * Secret when used to permit a SecretObjectReference
                         * Service when used to permit a BackendObjectReference

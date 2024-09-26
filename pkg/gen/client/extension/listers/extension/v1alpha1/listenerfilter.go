@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type ListenerFilterLister interface {
 
 // listenerFilterLister implements the ListenerFilterLister interface.
 type listenerFilterLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.ListenerFilter]
 }
 
 // NewListenerFilterLister returns a new ListenerFilterLister.
 func NewListenerFilterLister(indexer cache.Indexer) ListenerFilterLister {
-	return &listenerFilterLister{indexer: indexer}
-}
-
-// List lists all ListenerFilters in the indexer.
-func (s *listenerFilterLister) List(selector labels.Selector) (ret []*v1alpha1.ListenerFilter, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ListenerFilter))
-	})
-	return ret, err
+	return &listenerFilterLister{listers.New[*v1alpha1.ListenerFilter](indexer, v1alpha1.Resource("listenerfilter"))}
 }
 
 // ListenerFilters returns an object that can list and get ListenerFilters.
 func (s *listenerFilterLister) ListenerFilters(namespace string) ListenerFilterNamespaceLister {
-	return listenerFilterNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return listenerFilterNamespaceLister{listers.NewNamespaced[*v1alpha1.ListenerFilter](s.ResourceIndexer, namespace)}
 }
 
 // ListenerFilterNamespaceLister helps list and get ListenerFilters.
@@ -71,26 +63,5 @@ type ListenerFilterNamespaceLister interface {
 // listenerFilterNamespaceLister implements the ListenerFilterNamespaceLister
 // interface.
 type listenerFilterNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ListenerFilters in the indexer for a given namespace.
-func (s listenerFilterNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ListenerFilter, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ListenerFilter))
-	})
-	return ret, err
-}
-
-// Get retrieves the ListenerFilter from the indexer for a given namespace and name.
-func (s listenerFilterNamespaceLister) Get(name string) (*v1alpha1.ListenerFilter, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("listenerfilter"), name)
-	}
-	return obj.(*v1alpha1.ListenerFilter), nil
+	listers.ResourceIndexer[*v1alpha1.ListenerFilter]
 }

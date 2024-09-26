@@ -38,22 +38,24 @@ var accesscertsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessCert")
 
 // Get takes name of the accessCert, and returns the corresponding accessCert object, and an error if there is any.
 func (c *FakeAccessCerts) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessCert, err error) {
+	emptyResult := &v1alpha1.AccessCert{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(accesscertsResource, c.ns, name), &v1alpha1.AccessCert{})
+		Invokes(testing.NewGetActionWithOptions(accesscertsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessCert), err
 }
 
 // List takes label and field selectors, and returns the list of AccessCerts that match those selectors.
 func (c *FakeAccessCerts) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccessCertList, err error) {
+	emptyResult := &v1alpha1.AccessCertList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(accesscertsResource, accesscertsKind, c.ns, opts), &v1alpha1.AccessCertList{})
+		Invokes(testing.NewListActionWithOptions(accesscertsResource, accesscertsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeAccessCerts) List(ctx context.Context, opts v1.ListOptions) (result
 // Watch returns a watch.Interface that watches the requested accessCerts.
 func (c *FakeAccessCerts) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(accesscertsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(accesscertsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a accessCert and creates it.  Returns the server's representation of the accessCert, and an error, if there is any.
 func (c *FakeAccessCerts) Create(ctx context.Context, accessCert *v1alpha1.AccessCert, opts v1.CreateOptions) (result *v1alpha1.AccessCert, err error) {
+	emptyResult := &v1alpha1.AccessCert{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(accesscertsResource, c.ns, accessCert), &v1alpha1.AccessCert{})
+		Invokes(testing.NewCreateActionWithOptions(accesscertsResource, c.ns, accessCert, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessCert), err
 }
 
 // Update takes the representation of a accessCert and updates it. Returns the server's representation of the accessCert, and an error, if there is any.
 func (c *FakeAccessCerts) Update(ctx context.Context, accessCert *v1alpha1.AccessCert, opts v1.UpdateOptions) (result *v1alpha1.AccessCert, err error) {
+	emptyResult := &v1alpha1.AccessCert{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(accesscertsResource, c.ns, accessCert), &v1alpha1.AccessCert{})
+		Invokes(testing.NewUpdateActionWithOptions(accesscertsResource, c.ns, accessCert, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessCert), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAccessCerts) UpdateStatus(ctx context.Context, accessCert *v1alpha1.AccessCert, opts v1.UpdateOptions) (*v1alpha1.AccessCert, error) {
+func (c *FakeAccessCerts) UpdateStatus(ctx context.Context, accessCert *v1alpha1.AccessCert, opts v1.UpdateOptions) (result *v1alpha1.AccessCert, err error) {
+	emptyResult := &v1alpha1.AccessCert{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(accesscertsResource, "status", c.ns, accessCert), &v1alpha1.AccessCert{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(accesscertsResource, "status", c.ns, accessCert, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessCert), err
 }
@@ -120,7 +125,7 @@ func (c *FakeAccessCerts) Delete(ctx context.Context, name string, opts v1.Delet
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeAccessCerts) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(accesscertsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(accesscertsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.AccessCertList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeAccessCerts) DeleteCollection(ctx context.Context, opts v1.DeleteOp
 
 // Patch applies the patch and returns the patched accessCert.
 func (c *FakeAccessCerts) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessCert, err error) {
+	emptyResult := &v1alpha1.AccessCert{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(accesscertsResource, c.ns, name, pt, data, subresources...), &v1alpha1.AccessCert{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(accesscertsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessCert), err
 }

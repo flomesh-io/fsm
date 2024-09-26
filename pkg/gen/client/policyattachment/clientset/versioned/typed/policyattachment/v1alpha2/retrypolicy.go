@@ -17,14 +17,13 @@ package v1alpha2
 
 import (
 	"context"
-	"time"
 
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // RetryPoliciesGetter has a method to return a RetryPolicyInterface.
@@ -37,6 +36,7 @@ type RetryPoliciesGetter interface {
 type RetryPolicyInterface interface {
 	Create(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.CreateOptions) (*v1alpha2.RetryPolicy, error)
 	Update(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (*v1alpha2.RetryPolicy, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (*v1alpha2.RetryPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -49,144 +49,18 @@ type RetryPolicyInterface interface {
 
 // retryPolicies implements RetryPolicyInterface
 type retryPolicies struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*v1alpha2.RetryPolicy, *v1alpha2.RetryPolicyList]
 }
 
 // newRetryPolicies returns a RetryPolicies
 func newRetryPolicies(c *GatewayV1alpha2Client, namespace string) *retryPolicies {
 	return &retryPolicies{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*v1alpha2.RetryPolicy, *v1alpha2.RetryPolicyList](
+			"retrypolicies",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha2.RetryPolicy { return &v1alpha2.RetryPolicy{} },
+			func() *v1alpha2.RetryPolicyList { return &v1alpha2.RetryPolicyList{} }),
 	}
-}
-
-// Get takes name of the retryPolicy, and returns the corresponding retryPolicy object, and an error if there is any.
-func (c *retryPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.RetryPolicy, err error) {
-	result = &v1alpha2.RetryPolicy{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of RetryPolicies that match those selectors.
-func (c *retryPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.RetryPolicyList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha2.RetryPolicyList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested retryPolicies.
-func (c *retryPolicies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a retryPolicy and creates it.  Returns the server's representation of the retryPolicy, and an error, if there is any.
-func (c *retryPolicies) Create(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.CreateOptions) (result *v1alpha2.RetryPolicy, err error) {
-	result = &v1alpha2.RetryPolicy{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(retryPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a retryPolicy and updates it. Returns the server's representation of the retryPolicy, and an error, if there is any.
-func (c *retryPolicies) Update(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (result *v1alpha2.RetryPolicy, err error) {
-	result = &v1alpha2.RetryPolicy{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		Name(retryPolicy.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(retryPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *retryPolicies) UpdateStatus(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (result *v1alpha2.RetryPolicy, err error) {
-	result = &v1alpha2.RetryPolicy{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		Name(retryPolicy.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(retryPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the retryPolicy and deletes it. Returns an error if one occurs.
-func (c *retryPolicies) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *retryPolicies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched retryPolicy.
-func (c *retryPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.RetryPolicy, err error) {
-	result = &v1alpha2.RetryPolicy{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("retrypolicies").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

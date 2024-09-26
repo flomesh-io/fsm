@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type ServiceExportLister interface {
 
 // serviceExportLister implements the ServiceExportLister interface.
 type serviceExportLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.ServiceExport]
 }
 
 // NewServiceExportLister returns a new ServiceExportLister.
 func NewServiceExportLister(indexer cache.Indexer) ServiceExportLister {
-	return &serviceExportLister{indexer: indexer}
-}
-
-// List lists all ServiceExports in the indexer.
-func (s *serviceExportLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceExport, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceExport))
-	})
-	return ret, err
+	return &serviceExportLister{listers.New[*v1alpha1.ServiceExport](indexer, v1alpha1.Resource("serviceexport"))}
 }
 
 // ServiceExports returns an object that can list and get ServiceExports.
 func (s *serviceExportLister) ServiceExports(namespace string) ServiceExportNamespaceLister {
-	return serviceExportNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return serviceExportNamespaceLister{listers.NewNamespaced[*v1alpha1.ServiceExport](s.ResourceIndexer, namespace)}
 }
 
 // ServiceExportNamespaceLister helps list and get ServiceExports.
@@ -71,26 +63,5 @@ type ServiceExportNamespaceLister interface {
 // serviceExportNamespaceLister implements the ServiceExportNamespaceLister
 // interface.
 type serviceExportNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ServiceExports in the indexer for a given namespace.
-func (s serviceExportNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceExport, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceExport))
-	})
-	return ret, err
-}
-
-// Get retrieves the ServiceExport from the indexer for a given namespace and name.
-func (s serviceExportNamespaceLister) Get(name string) (*v1alpha1.ServiceExport, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("serviceexport"), name)
-	}
-	return obj.(*v1alpha1.ServiceExport), nil
+	listers.ResourceIndexer[*v1alpha1.ServiceExport]
 }

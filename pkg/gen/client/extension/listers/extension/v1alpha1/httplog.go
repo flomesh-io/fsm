@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type HTTPLogLister interface {
 
 // hTTPLogLister implements the HTTPLogLister interface.
 type hTTPLogLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.HTTPLog]
 }
 
 // NewHTTPLogLister returns a new HTTPLogLister.
 func NewHTTPLogLister(indexer cache.Indexer) HTTPLogLister {
-	return &hTTPLogLister{indexer: indexer}
-}
-
-// List lists all HTTPLogs in the indexer.
-func (s *hTTPLogLister) List(selector labels.Selector) (ret []*v1alpha1.HTTPLog, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.HTTPLog))
-	})
-	return ret, err
+	return &hTTPLogLister{listers.New[*v1alpha1.HTTPLog](indexer, v1alpha1.Resource("httplog"))}
 }
 
 // HTTPLogs returns an object that can list and get HTTPLogs.
 func (s *hTTPLogLister) HTTPLogs(namespace string) HTTPLogNamespaceLister {
-	return hTTPLogNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return hTTPLogNamespaceLister{listers.NewNamespaced[*v1alpha1.HTTPLog](s.ResourceIndexer, namespace)}
 }
 
 // HTTPLogNamespaceLister helps list and get HTTPLogs.
@@ -71,26 +63,5 @@ type HTTPLogNamespaceLister interface {
 // hTTPLogNamespaceLister implements the HTTPLogNamespaceLister
 // interface.
 type hTTPLogNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all HTTPLogs in the indexer for a given namespace.
-func (s hTTPLogNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.HTTPLog, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.HTTPLog))
-	})
-	return ret, err
-}
-
-// Get retrieves the HTTPLog from the indexer for a given namespace and name.
-func (s hTTPLogNamespaceLister) Get(name string) (*v1alpha1.HTTPLog, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("httplog"), name)
-	}
-	return obj.(*v1alpha1.HTTPLog), nil
+	listers.ResourceIndexer[*v1alpha1.HTTPLog]
 }

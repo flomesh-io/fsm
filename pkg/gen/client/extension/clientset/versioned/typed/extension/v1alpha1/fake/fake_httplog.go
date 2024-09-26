@@ -38,22 +38,24 @@ var httplogsKind = v1alpha1.SchemeGroupVersion.WithKind("HTTPLog")
 
 // Get takes name of the hTTPLog, and returns the corresponding hTTPLog object, and an error if there is any.
 func (c *FakeHTTPLogs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.HTTPLog, err error) {
+	emptyResult := &v1alpha1.HTTPLog{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(httplogsResource, c.ns, name), &v1alpha1.HTTPLog{})
+		Invokes(testing.NewGetActionWithOptions(httplogsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.HTTPLog), err
 }
 
 // List takes label and field selectors, and returns the list of HTTPLogs that match those selectors.
 func (c *FakeHTTPLogs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.HTTPLogList, err error) {
+	emptyResult := &v1alpha1.HTTPLogList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(httplogsResource, httplogsKind, c.ns, opts), &v1alpha1.HTTPLogList{})
+		Invokes(testing.NewListActionWithOptions(httplogsResource, httplogsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeHTTPLogs) List(ctx context.Context, opts v1.ListOptions) (result *v
 // Watch returns a watch.Interface that watches the requested hTTPLogs.
 func (c *FakeHTTPLogs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(httplogsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(httplogsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a hTTPLog and creates it.  Returns the server's representation of the hTTPLog, and an error, if there is any.
 func (c *FakeHTTPLogs) Create(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.CreateOptions) (result *v1alpha1.HTTPLog, err error) {
+	emptyResult := &v1alpha1.HTTPLog{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(httplogsResource, c.ns, hTTPLog), &v1alpha1.HTTPLog{})
+		Invokes(testing.NewCreateActionWithOptions(httplogsResource, c.ns, hTTPLog, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.HTTPLog), err
 }
 
 // Update takes the representation of a hTTPLog and updates it. Returns the server's representation of the hTTPLog, and an error, if there is any.
 func (c *FakeHTTPLogs) Update(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.UpdateOptions) (result *v1alpha1.HTTPLog, err error) {
+	emptyResult := &v1alpha1.HTTPLog{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(httplogsResource, c.ns, hTTPLog), &v1alpha1.HTTPLog{})
+		Invokes(testing.NewUpdateActionWithOptions(httplogsResource, c.ns, hTTPLog, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.HTTPLog), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHTTPLogs) UpdateStatus(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.UpdateOptions) (*v1alpha1.HTTPLog, error) {
+func (c *FakeHTTPLogs) UpdateStatus(ctx context.Context, hTTPLog *v1alpha1.HTTPLog, opts v1.UpdateOptions) (result *v1alpha1.HTTPLog, err error) {
+	emptyResult := &v1alpha1.HTTPLog{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(httplogsResource, "status", c.ns, hTTPLog), &v1alpha1.HTTPLog{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(httplogsResource, "status", c.ns, hTTPLog, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.HTTPLog), err
 }
@@ -120,7 +125,7 @@ func (c *FakeHTTPLogs) Delete(ctx context.Context, name string, opts v1.DeleteOp
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeHTTPLogs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(httplogsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(httplogsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.HTTPLogList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeHTTPLogs) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 
 // Patch applies the patch and returns the patched hTTPLog.
 func (c *FakeHTTPLogs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.HTTPLog, err error) {
+	emptyResult := &v1alpha1.HTTPLog{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(httplogsResource, c.ns, name, pt, data, subresources...), &v1alpha1.HTTPLog{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(httplogsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.HTTPLog), err
 }

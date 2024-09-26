@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type FaultInjectionLister interface {
 
 // faultInjectionLister implements the FaultInjectionLister interface.
 type faultInjectionLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.FaultInjection]
 }
 
 // NewFaultInjectionLister returns a new FaultInjectionLister.
 func NewFaultInjectionLister(indexer cache.Indexer) FaultInjectionLister {
-	return &faultInjectionLister{indexer: indexer}
-}
-
-// List lists all FaultInjections in the indexer.
-func (s *faultInjectionLister) List(selector labels.Selector) (ret []*v1alpha1.FaultInjection, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.FaultInjection))
-	})
-	return ret, err
+	return &faultInjectionLister{listers.New[*v1alpha1.FaultInjection](indexer, v1alpha1.Resource("faultinjection"))}
 }
 
 // FaultInjections returns an object that can list and get FaultInjections.
 func (s *faultInjectionLister) FaultInjections(namespace string) FaultInjectionNamespaceLister {
-	return faultInjectionNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return faultInjectionNamespaceLister{listers.NewNamespaced[*v1alpha1.FaultInjection](s.ResourceIndexer, namespace)}
 }
 
 // FaultInjectionNamespaceLister helps list and get FaultInjections.
@@ -71,26 +63,5 @@ type FaultInjectionNamespaceLister interface {
 // faultInjectionNamespaceLister implements the FaultInjectionNamespaceLister
 // interface.
 type faultInjectionNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all FaultInjections in the indexer for a given namespace.
-func (s faultInjectionNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.FaultInjection, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.FaultInjection))
-	})
-	return ret, err
-}
-
-// Get retrieves the FaultInjection from the indexer for a given namespace and name.
-func (s faultInjectionNamespaceLister) Get(name string) (*v1alpha1.FaultInjection, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("faultinjection"), name)
-	}
-	return obj.(*v1alpha1.FaultInjection), nil
+	listers.ResourceIndexer[*v1alpha1.FaultInjection]
 }

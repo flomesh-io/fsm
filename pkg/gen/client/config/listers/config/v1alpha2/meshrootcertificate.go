@@ -17,8 +17,8 @@ package v1alpha2
 
 import (
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type MeshRootCertificateLister interface {
 
 // meshRootCertificateLister implements the MeshRootCertificateLister interface.
 type meshRootCertificateLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha2.MeshRootCertificate]
 }
 
 // NewMeshRootCertificateLister returns a new MeshRootCertificateLister.
 func NewMeshRootCertificateLister(indexer cache.Indexer) MeshRootCertificateLister {
-	return &meshRootCertificateLister{indexer: indexer}
-}
-
-// List lists all MeshRootCertificates in the indexer.
-func (s *meshRootCertificateLister) List(selector labels.Selector) (ret []*v1alpha2.MeshRootCertificate, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.MeshRootCertificate))
-	})
-	return ret, err
+	return &meshRootCertificateLister{listers.New[*v1alpha2.MeshRootCertificate](indexer, v1alpha2.Resource("meshrootcertificate"))}
 }
 
 // MeshRootCertificates returns an object that can list and get MeshRootCertificates.
 func (s *meshRootCertificateLister) MeshRootCertificates(namespace string) MeshRootCertificateNamespaceLister {
-	return meshRootCertificateNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return meshRootCertificateNamespaceLister{listers.NewNamespaced[*v1alpha2.MeshRootCertificate](s.ResourceIndexer, namespace)}
 }
 
 // MeshRootCertificateNamespaceLister helps list and get MeshRootCertificates.
@@ -71,26 +63,5 @@ type MeshRootCertificateNamespaceLister interface {
 // meshRootCertificateNamespaceLister implements the MeshRootCertificateNamespaceLister
 // interface.
 type meshRootCertificateNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all MeshRootCertificates in the indexer for a given namespace.
-func (s meshRootCertificateNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.MeshRootCertificate, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.MeshRootCertificate))
-	})
-	return ret, err
-}
-
-// Get retrieves the MeshRootCertificate from the indexer for a given namespace and name.
-func (s meshRootCertificateNamespaceLister) Get(name string) (*v1alpha2.MeshRootCertificate, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha2.Resource("meshrootcertificate"), name)
-	}
-	return obj.(*v1alpha2.MeshRootCertificate), nil
+	listers.ResourceIndexer[*v1alpha2.MeshRootCertificate]
 }

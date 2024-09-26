@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -36,30 +36,10 @@ type EurekaConnectorLister interface {
 
 // eurekaConnectorLister implements the EurekaConnectorLister interface.
 type eurekaConnectorLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.EurekaConnector]
 }
 
 // NewEurekaConnectorLister returns a new EurekaConnectorLister.
 func NewEurekaConnectorLister(indexer cache.Indexer) EurekaConnectorLister {
-	return &eurekaConnectorLister{indexer: indexer}
-}
-
-// List lists all EurekaConnectors in the indexer.
-func (s *eurekaConnectorLister) List(selector labels.Selector) (ret []*v1alpha1.EurekaConnector, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.EurekaConnector))
-	})
-	return ret, err
-}
-
-// Get retrieves the EurekaConnector from the index for a given name.
-func (s *eurekaConnectorLister) Get(name string) (*v1alpha1.EurekaConnector, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("eurekaconnector"), name)
-	}
-	return obj.(*v1alpha1.EurekaConnector), nil
+	return &eurekaConnectorLister{listers.New[*v1alpha1.EurekaConnector](indexer, v1alpha1.Resource("eurekaconnector"))}
 }

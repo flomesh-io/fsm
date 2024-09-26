@@ -38,22 +38,24 @@ var listenerfiltersKind = v1alpha1.SchemeGroupVersion.WithKind("ListenerFilter")
 
 // Get takes name of the listenerFilter, and returns the corresponding listenerFilter object, and an error if there is any.
 func (c *FakeListenerFilters) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ListenerFilter, err error) {
+	emptyResult := &v1alpha1.ListenerFilter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(listenerfiltersResource, c.ns, name), &v1alpha1.ListenerFilter{})
+		Invokes(testing.NewGetActionWithOptions(listenerfiltersResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ListenerFilter), err
 }
 
 // List takes label and field selectors, and returns the list of ListenerFilters that match those selectors.
 func (c *FakeListenerFilters) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ListenerFilterList, err error) {
+	emptyResult := &v1alpha1.ListenerFilterList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(listenerfiltersResource, listenerfiltersKind, c.ns, opts), &v1alpha1.ListenerFilterList{})
+		Invokes(testing.NewListActionWithOptions(listenerfiltersResource, listenerfiltersKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeListenerFilters) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested listenerFilters.
 func (c *FakeListenerFilters) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(listenerfiltersResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(listenerfiltersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a listenerFilter and creates it.  Returns the server's representation of the listenerFilter, and an error, if there is any.
 func (c *FakeListenerFilters) Create(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.CreateOptions) (result *v1alpha1.ListenerFilter, err error) {
+	emptyResult := &v1alpha1.ListenerFilter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(listenerfiltersResource, c.ns, listenerFilter), &v1alpha1.ListenerFilter{})
+		Invokes(testing.NewCreateActionWithOptions(listenerfiltersResource, c.ns, listenerFilter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ListenerFilter), err
 }
 
 // Update takes the representation of a listenerFilter and updates it. Returns the server's representation of the listenerFilter, and an error, if there is any.
 func (c *FakeListenerFilters) Update(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.UpdateOptions) (result *v1alpha1.ListenerFilter, err error) {
+	emptyResult := &v1alpha1.ListenerFilter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(listenerfiltersResource, c.ns, listenerFilter), &v1alpha1.ListenerFilter{})
+		Invokes(testing.NewUpdateActionWithOptions(listenerfiltersResource, c.ns, listenerFilter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ListenerFilter), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeListenerFilters) UpdateStatus(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.UpdateOptions) (*v1alpha1.ListenerFilter, error) {
+func (c *FakeListenerFilters) UpdateStatus(ctx context.Context, listenerFilter *v1alpha1.ListenerFilter, opts v1.UpdateOptions) (result *v1alpha1.ListenerFilter, err error) {
+	emptyResult := &v1alpha1.ListenerFilter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(listenerfiltersResource, "status", c.ns, listenerFilter), &v1alpha1.ListenerFilter{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(listenerfiltersResource, "status", c.ns, listenerFilter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ListenerFilter), err
 }
@@ -120,7 +125,7 @@ func (c *FakeListenerFilters) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeListenerFilters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(listenerfiltersResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(listenerfiltersResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ListenerFilterList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeListenerFilters) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched listenerFilter.
 func (c *FakeListenerFilters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ListenerFilter, err error) {
+	emptyResult := &v1alpha1.ListenerFilter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(listenerfiltersResource, c.ns, name, pt, data, subresources...), &v1alpha1.ListenerFilter{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(listenerfiltersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.ListenerFilter), err
 }

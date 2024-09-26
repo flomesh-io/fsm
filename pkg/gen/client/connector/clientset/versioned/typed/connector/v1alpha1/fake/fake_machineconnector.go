@@ -37,20 +37,22 @@ var machineconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("MachineConnect
 
 // Get takes name of the machineConnector, and returns the corresponding machineConnector object, and an error if there is any.
 func (c *FakeMachineConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.MachineConnector, err error) {
+	emptyResult := &v1alpha1.MachineConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(machineconnectorsResource, name), &v1alpha1.MachineConnector{})
+		Invokes(testing.NewRootGetActionWithOptions(machineconnectorsResource, name, options), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.MachineConnector), err
 }
 
 // List takes label and field selectors, and returns the list of MachineConnectors that match those selectors.
 func (c *FakeMachineConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.MachineConnectorList, err error) {
+	emptyResult := &v1alpha1.MachineConnectorList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(machineconnectorsResource, machineconnectorsKind, opts), &v1alpha1.MachineConnectorList{})
+		Invokes(testing.NewRootListActionWithOptions(machineconnectorsResource, machineconnectorsKind, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -69,36 +71,39 @@ func (c *FakeMachineConnectors) List(ctx context.Context, opts v1.ListOptions) (
 // Watch returns a watch.Interface that watches the requested machineConnectors.
 func (c *FakeMachineConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(machineconnectorsResource, opts))
+		InvokesWatch(testing.NewRootWatchActionWithOptions(machineconnectorsResource, opts))
 }
 
 // Create takes the representation of a machineConnector and creates it.  Returns the server's representation of the machineConnector, and an error, if there is any.
 func (c *FakeMachineConnectors) Create(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.CreateOptions) (result *v1alpha1.MachineConnector, err error) {
+	emptyResult := &v1alpha1.MachineConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(machineconnectorsResource, machineConnector), &v1alpha1.MachineConnector{})
+		Invokes(testing.NewRootCreateActionWithOptions(machineconnectorsResource, machineConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.MachineConnector), err
 }
 
 // Update takes the representation of a machineConnector and updates it. Returns the server's representation of the machineConnector, and an error, if there is any.
 func (c *FakeMachineConnectors) Update(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (result *v1alpha1.MachineConnector, err error) {
+	emptyResult := &v1alpha1.MachineConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(machineconnectorsResource, machineConnector), &v1alpha1.MachineConnector{})
+		Invokes(testing.NewRootUpdateActionWithOptions(machineconnectorsResource, machineConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.MachineConnector), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeMachineConnectors) UpdateStatus(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (*v1alpha1.MachineConnector, error) {
+func (c *FakeMachineConnectors) UpdateStatus(ctx context.Context, machineConnector *v1alpha1.MachineConnector, opts v1.UpdateOptions) (result *v1alpha1.MachineConnector, err error) {
+	emptyResult := &v1alpha1.MachineConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(machineconnectorsResource, "status", machineConnector), &v1alpha1.MachineConnector{})
+		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(machineconnectorsResource, "status", machineConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.MachineConnector), err
 }
@@ -112,7 +117,7 @@ func (c *FakeMachineConnectors) Delete(ctx context.Context, name string, opts v1
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeMachineConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(machineconnectorsResource, listOpts)
+	action := testing.NewRootDeleteCollectionActionWithOptions(machineconnectorsResource, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.MachineConnectorList{})
 	return err
@@ -120,10 +125,11 @@ func (c *FakeMachineConnectors) DeleteCollection(ctx context.Context, opts v1.De
 
 // Patch applies the patch and returns the patched machineConnector.
 func (c *FakeMachineConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MachineConnector, err error) {
+	emptyResult := &v1alpha1.MachineConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(machineconnectorsResource, name, pt, data, subresources...), &v1alpha1.MachineConnector{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(machineconnectorsResource, name, pt, data, opts, subresources...), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.MachineConnector), err
 }

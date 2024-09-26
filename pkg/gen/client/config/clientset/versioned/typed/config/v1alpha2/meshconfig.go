@@ -17,14 +17,13 @@ package v1alpha2
 
 import (
 	"context"
-	"time"
 
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // MeshConfigsGetter has a method to return a MeshConfigInterface.
@@ -48,128 +47,18 @@ type MeshConfigInterface interface {
 
 // meshConfigs implements MeshConfigInterface
 type meshConfigs struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*v1alpha2.MeshConfig, *v1alpha2.MeshConfigList]
 }
 
 // newMeshConfigs returns a MeshConfigs
 func newMeshConfigs(c *ConfigV1alpha2Client, namespace string) *meshConfigs {
 	return &meshConfigs{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*v1alpha2.MeshConfig, *v1alpha2.MeshConfigList](
+			"meshconfigs",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha2.MeshConfig { return &v1alpha2.MeshConfig{} },
+			func() *v1alpha2.MeshConfigList { return &v1alpha2.MeshConfigList{} }),
 	}
-}
-
-// Get takes name of the meshConfig, and returns the corresponding meshConfig object, and an error if there is any.
-func (c *meshConfigs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.MeshConfig, err error) {
-	result = &v1alpha2.MeshConfig{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of MeshConfigs that match those selectors.
-func (c *meshConfigs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.MeshConfigList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha2.MeshConfigList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested meshConfigs.
-func (c *meshConfigs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a meshConfig and creates it.  Returns the server's representation of the meshConfig, and an error, if there is any.
-func (c *meshConfigs) Create(ctx context.Context, meshConfig *v1alpha2.MeshConfig, opts v1.CreateOptions) (result *v1alpha2.MeshConfig, err error) {
-	result = &v1alpha2.MeshConfig{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(meshConfig).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a meshConfig and updates it. Returns the server's representation of the meshConfig, and an error, if there is any.
-func (c *meshConfigs) Update(ctx context.Context, meshConfig *v1alpha2.MeshConfig, opts v1.UpdateOptions) (result *v1alpha2.MeshConfig, err error) {
-	result = &v1alpha2.MeshConfig{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		Name(meshConfig.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(meshConfig).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the meshConfig and deletes it. Returns an error if one occurs.
-func (c *meshConfigs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *meshConfigs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched meshConfig.
-func (c *meshConfigs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.MeshConfig, err error) {
-	result = &v1alpha2.MeshConfig{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("meshconfigs").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

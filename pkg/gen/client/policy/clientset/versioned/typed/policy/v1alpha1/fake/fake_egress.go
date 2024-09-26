@@ -38,22 +38,24 @@ var egressesKind = v1alpha1.SchemeGroupVersion.WithKind("Egress")
 
 // Get takes name of the egress, and returns the corresponding egress object, and an error if there is any.
 func (c *FakeEgresses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Egress, err error) {
+	emptyResult := &v1alpha1.Egress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(egressesResource, c.ns, name), &v1alpha1.Egress{})
+		Invokes(testing.NewGetActionWithOptions(egressesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Egress), err
 }
 
 // List takes label and field selectors, and returns the list of Egresses that match those selectors.
 func (c *FakeEgresses) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.EgressList, err error) {
+	emptyResult := &v1alpha1.EgressList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(egressesResource, egressesKind, c.ns, opts), &v1alpha1.EgressList{})
+		Invokes(testing.NewListActionWithOptions(egressesResource, egressesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,28 +74,30 @@ func (c *FakeEgresses) List(ctx context.Context, opts v1.ListOptions) (result *v
 // Watch returns a watch.Interface that watches the requested egresses.
 func (c *FakeEgresses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(egressesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(egressesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a egress and creates it.  Returns the server's representation of the egress, and an error, if there is any.
 func (c *FakeEgresses) Create(ctx context.Context, egress *v1alpha1.Egress, opts v1.CreateOptions) (result *v1alpha1.Egress, err error) {
+	emptyResult := &v1alpha1.Egress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(egressesResource, c.ns, egress), &v1alpha1.Egress{})
+		Invokes(testing.NewCreateActionWithOptions(egressesResource, c.ns, egress, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Egress), err
 }
 
 // Update takes the representation of a egress and updates it. Returns the server's representation of the egress, and an error, if there is any.
 func (c *FakeEgresses) Update(ctx context.Context, egress *v1alpha1.Egress, opts v1.UpdateOptions) (result *v1alpha1.Egress, err error) {
+	emptyResult := &v1alpha1.Egress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(egressesResource, c.ns, egress), &v1alpha1.Egress{})
+		Invokes(testing.NewUpdateActionWithOptions(egressesResource, c.ns, egress, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Egress), err
 }
@@ -108,7 +112,7 @@ func (c *FakeEgresses) Delete(ctx context.Context, name string, opts v1.DeleteOp
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeEgresses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(egressesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(egressesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.EgressList{})
 	return err
@@ -116,11 +120,12 @@ func (c *FakeEgresses) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 
 // Patch applies the patch and returns the patched egress.
 func (c *FakeEgresses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Egress, err error) {
+	emptyResult := &v1alpha1.Egress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(egressesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Egress{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(egressesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Egress), err
 }

@@ -17,8 +17,8 @@ package v1alpha2
 
 import (
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type HealthCheckPolicyLister interface {
 
 // healthCheckPolicyLister implements the HealthCheckPolicyLister interface.
 type healthCheckPolicyLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha2.HealthCheckPolicy]
 }
 
 // NewHealthCheckPolicyLister returns a new HealthCheckPolicyLister.
 func NewHealthCheckPolicyLister(indexer cache.Indexer) HealthCheckPolicyLister {
-	return &healthCheckPolicyLister{indexer: indexer}
-}
-
-// List lists all HealthCheckPolicies in the indexer.
-func (s *healthCheckPolicyLister) List(selector labels.Selector) (ret []*v1alpha2.HealthCheckPolicy, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.HealthCheckPolicy))
-	})
-	return ret, err
+	return &healthCheckPolicyLister{listers.New[*v1alpha2.HealthCheckPolicy](indexer, v1alpha2.Resource("healthcheckpolicy"))}
 }
 
 // HealthCheckPolicies returns an object that can list and get HealthCheckPolicies.
 func (s *healthCheckPolicyLister) HealthCheckPolicies(namespace string) HealthCheckPolicyNamespaceLister {
-	return healthCheckPolicyNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return healthCheckPolicyNamespaceLister{listers.NewNamespaced[*v1alpha2.HealthCheckPolicy](s.ResourceIndexer, namespace)}
 }
 
 // HealthCheckPolicyNamespaceLister helps list and get HealthCheckPolicies.
@@ -71,26 +63,5 @@ type HealthCheckPolicyNamespaceLister interface {
 // healthCheckPolicyNamespaceLister implements the HealthCheckPolicyNamespaceLister
 // interface.
 type healthCheckPolicyNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all HealthCheckPolicies in the indexer for a given namespace.
-func (s healthCheckPolicyNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.HealthCheckPolicy, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.HealthCheckPolicy))
-	})
-	return ret, err
-}
-
-// Get retrieves the HealthCheckPolicy from the indexer for a given namespace and name.
-func (s healthCheckPolicyNamespaceLister) Get(name string) (*v1alpha2.HealthCheckPolicy, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha2.Resource("healthcheckpolicy"), name)
-	}
-	return obj.(*v1alpha2.HealthCheckPolicy), nil
+	listers.ResourceIndexer[*v1alpha2.HealthCheckPolicy]
 }

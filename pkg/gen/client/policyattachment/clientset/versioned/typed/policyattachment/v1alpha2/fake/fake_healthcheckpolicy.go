@@ -38,22 +38,24 @@ var healthcheckpoliciesKind = v1alpha2.SchemeGroupVersion.WithKind("HealthCheckP
 
 // Get takes name of the healthCheckPolicy, and returns the corresponding healthCheckPolicy object, and an error if there is any.
 func (c *FakeHealthCheckPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(healthcheckpoliciesResource, c.ns, name), &v1alpha2.HealthCheckPolicy{})
+		Invokes(testing.NewGetActionWithOptions(healthcheckpoliciesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.HealthCheckPolicy), err
 }
 
 // List takes label and field selectors, and returns the list of HealthCheckPolicies that match those selectors.
 func (c *FakeHealthCheckPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.HealthCheckPolicyList, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicyList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(healthcheckpoliciesResource, healthcheckpoliciesKind, c.ns, opts), &v1alpha2.HealthCheckPolicyList{})
+		Invokes(testing.NewListActionWithOptions(healthcheckpoliciesResource, healthcheckpoliciesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeHealthCheckPolicies) List(ctx context.Context, opts v1.ListOptions)
 // Watch returns a watch.Interface that watches the requested healthCheckPolicies.
 func (c *FakeHealthCheckPolicies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(healthcheckpoliciesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(healthcheckpoliciesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a healthCheckPolicy and creates it.  Returns the server's representation of the healthCheckPolicy, and an error, if there is any.
 func (c *FakeHealthCheckPolicies) Create(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.CreateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(healthcheckpoliciesResource, c.ns, healthCheckPolicy), &v1alpha2.HealthCheckPolicy{})
+		Invokes(testing.NewCreateActionWithOptions(healthcheckpoliciesResource, c.ns, healthCheckPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.HealthCheckPolicy), err
 }
 
 // Update takes the representation of a healthCheckPolicy and updates it. Returns the server's representation of the healthCheckPolicy, and an error, if there is any.
 func (c *FakeHealthCheckPolicies) Update(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(healthcheckpoliciesResource, c.ns, healthCheckPolicy), &v1alpha2.HealthCheckPolicy{})
+		Invokes(testing.NewUpdateActionWithOptions(healthcheckpoliciesResource, c.ns, healthCheckPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.HealthCheckPolicy), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeHealthCheckPolicies) UpdateStatus(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*v1alpha2.HealthCheckPolicy, error) {
+func (c *FakeHealthCheckPolicies) UpdateStatus(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(healthcheckpoliciesResource, "status", c.ns, healthCheckPolicy), &v1alpha2.HealthCheckPolicy{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(healthcheckpoliciesResource, "status", c.ns, healthCheckPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.HealthCheckPolicy), err
 }
@@ -120,7 +125,7 @@ func (c *FakeHealthCheckPolicies) Delete(ctx context.Context, name string, opts 
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeHealthCheckPolicies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(healthcheckpoliciesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(healthcheckpoliciesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha2.HealthCheckPolicyList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeHealthCheckPolicies) DeleteCollection(ctx context.Context, opts v1.
 
 // Patch applies the patch and returns the patched healthCheckPolicy.
 func (c *FakeHealthCheckPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.HealthCheckPolicy, err error) {
+	emptyResult := &v1alpha2.HealthCheckPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(healthcheckpoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha2.HealthCheckPolicy{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(healthcheckpoliciesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.HealthCheckPolicy), err
 }

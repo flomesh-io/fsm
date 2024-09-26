@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type PluginConfigLister interface {
 
 // pluginConfigLister implements the PluginConfigLister interface.
 type pluginConfigLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.PluginConfig]
 }
 
 // NewPluginConfigLister returns a new PluginConfigLister.
 func NewPluginConfigLister(indexer cache.Indexer) PluginConfigLister {
-	return &pluginConfigLister{indexer: indexer}
-}
-
-// List lists all PluginConfigs in the indexer.
-func (s *pluginConfigLister) List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginConfig))
-	})
-	return ret, err
+	return &pluginConfigLister{listers.New[*v1alpha1.PluginConfig](indexer, v1alpha1.Resource("pluginconfig"))}
 }
 
 // PluginConfigs returns an object that can list and get PluginConfigs.
 func (s *pluginConfigLister) PluginConfigs(namespace string) PluginConfigNamespaceLister {
-	return pluginConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return pluginConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.PluginConfig](s.ResourceIndexer, namespace)}
 }
 
 // PluginConfigNamespaceLister helps list and get PluginConfigs.
@@ -71,26 +63,5 @@ type PluginConfigNamespaceLister interface {
 // pluginConfigNamespaceLister implements the PluginConfigNamespaceLister
 // interface.
 type pluginConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all PluginConfigs in the indexer for a given namespace.
-func (s pluginConfigNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.PluginConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the PluginConfig from the indexer for a given namespace and name.
-func (s pluginConfigNamespaceLister) Get(name string) (*v1alpha1.PluginConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("pluginconfig"), name)
-	}
-	return obj.(*v1alpha1.PluginConfig), nil
+	listers.ResourceIndexer[*v1alpha1.PluginConfig]
 }

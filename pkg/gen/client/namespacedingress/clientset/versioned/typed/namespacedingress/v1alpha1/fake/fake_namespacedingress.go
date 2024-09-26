@@ -38,22 +38,24 @@ var namespacedingressesKind = v1alpha1.SchemeGroupVersion.WithKind("NamespacedIn
 
 // Get takes name of the namespacedIngress, and returns the corresponding namespacedIngress object, and an error if there is any.
 func (c *FakeNamespacedIngresses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	emptyResult := &v1alpha1.NamespacedIngress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(namespacedingressesResource, c.ns, name), &v1alpha1.NamespacedIngress{})
+		Invokes(testing.NewGetActionWithOptions(namespacedingressesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NamespacedIngress), err
 }
 
 // List takes label and field selectors, and returns the list of NamespacedIngresses that match those selectors.
 func (c *FakeNamespacedIngresses) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.NamespacedIngressList, err error) {
+	emptyResult := &v1alpha1.NamespacedIngressList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(namespacedingressesResource, namespacedingressesKind, c.ns, opts), &v1alpha1.NamespacedIngressList{})
+		Invokes(testing.NewListActionWithOptions(namespacedingressesResource, namespacedingressesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeNamespacedIngresses) List(ctx context.Context, opts v1.ListOptions)
 // Watch returns a watch.Interface that watches the requested namespacedIngresses.
 func (c *FakeNamespacedIngresses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(namespacedingressesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(namespacedingressesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a namespacedIngress and creates it.  Returns the server's representation of the namespacedIngress, and an error, if there is any.
 func (c *FakeNamespacedIngresses) Create(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.CreateOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	emptyResult := &v1alpha1.NamespacedIngress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(namespacedingressesResource, c.ns, namespacedIngress), &v1alpha1.NamespacedIngress{})
+		Invokes(testing.NewCreateActionWithOptions(namespacedingressesResource, c.ns, namespacedIngress, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NamespacedIngress), err
 }
 
 // Update takes the representation of a namespacedIngress and updates it. Returns the server's representation of the namespacedIngress, and an error, if there is any.
 func (c *FakeNamespacedIngresses) Update(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.UpdateOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	emptyResult := &v1alpha1.NamespacedIngress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(namespacedingressesResource, c.ns, namespacedIngress), &v1alpha1.NamespacedIngress{})
+		Invokes(testing.NewUpdateActionWithOptions(namespacedingressesResource, c.ns, namespacedIngress, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NamespacedIngress), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeNamespacedIngresses) UpdateStatus(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.UpdateOptions) (*v1alpha1.NamespacedIngress, error) {
+func (c *FakeNamespacedIngresses) UpdateStatus(ctx context.Context, namespacedIngress *v1alpha1.NamespacedIngress, opts v1.UpdateOptions) (result *v1alpha1.NamespacedIngress, err error) {
+	emptyResult := &v1alpha1.NamespacedIngress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(namespacedingressesResource, "status", c.ns, namespacedIngress), &v1alpha1.NamespacedIngress{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(namespacedingressesResource, "status", c.ns, namespacedIngress, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NamespacedIngress), err
 }
@@ -120,7 +125,7 @@ func (c *FakeNamespacedIngresses) Delete(ctx context.Context, name string, opts 
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeNamespacedIngresses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(namespacedingressesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(namespacedingressesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.NamespacedIngressList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeNamespacedIngresses) DeleteCollection(ctx context.Context, opts v1.
 
 // Patch applies the patch and returns the patched namespacedIngress.
 func (c *FakeNamespacedIngresses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.NamespacedIngress, err error) {
+	emptyResult := &v1alpha1.NamespacedIngress{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(namespacedingressesResource, c.ns, name, pt, data, subresources...), &v1alpha1.NamespacedIngress{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(namespacedingressesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.NamespacedIngress), err
 }

@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type CircuitBreakerLister interface {
 
 // circuitBreakerLister implements the CircuitBreakerLister interface.
 type circuitBreakerLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.CircuitBreaker]
 }
 
 // NewCircuitBreakerLister returns a new CircuitBreakerLister.
 func NewCircuitBreakerLister(indexer cache.Indexer) CircuitBreakerLister {
-	return &circuitBreakerLister{indexer: indexer}
-}
-
-// List lists all CircuitBreakers in the indexer.
-func (s *circuitBreakerLister) List(selector labels.Selector) (ret []*v1alpha1.CircuitBreaker, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.CircuitBreaker))
-	})
-	return ret, err
+	return &circuitBreakerLister{listers.New[*v1alpha1.CircuitBreaker](indexer, v1alpha1.Resource("circuitbreaker"))}
 }
 
 // CircuitBreakers returns an object that can list and get CircuitBreakers.
 func (s *circuitBreakerLister) CircuitBreakers(namespace string) CircuitBreakerNamespaceLister {
-	return circuitBreakerNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return circuitBreakerNamespaceLister{listers.NewNamespaced[*v1alpha1.CircuitBreaker](s.ResourceIndexer, namespace)}
 }
 
 // CircuitBreakerNamespaceLister helps list and get CircuitBreakers.
@@ -71,26 +63,5 @@ type CircuitBreakerNamespaceLister interface {
 // circuitBreakerNamespaceLister implements the CircuitBreakerNamespaceLister
 // interface.
 type circuitBreakerNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all CircuitBreakers in the indexer for a given namespace.
-func (s circuitBreakerNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.CircuitBreaker, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.CircuitBreaker))
-	})
-	return ret, err
-}
-
-// Get retrieves the CircuitBreaker from the indexer for a given namespace and name.
-func (s circuitBreakerNamespaceLister) Get(name string) (*v1alpha1.CircuitBreaker, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("circuitbreaker"), name)
-	}
-	return obj.(*v1alpha1.CircuitBreaker), nil
+	listers.ResourceIndexer[*v1alpha1.CircuitBreaker]
 }

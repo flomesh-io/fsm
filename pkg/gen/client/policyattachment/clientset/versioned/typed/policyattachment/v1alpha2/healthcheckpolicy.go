@@ -17,14 +17,13 @@ package v1alpha2
 
 import (
 	"context"
-	"time"
 
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // HealthCheckPoliciesGetter has a method to return a HealthCheckPolicyInterface.
@@ -37,6 +36,7 @@ type HealthCheckPoliciesGetter interface {
 type HealthCheckPolicyInterface interface {
 	Create(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.CreateOptions) (*v1alpha2.HealthCheckPolicy, error)
 	Update(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*v1alpha2.HealthCheckPolicy, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (*v1alpha2.HealthCheckPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -49,144 +49,18 @@ type HealthCheckPolicyInterface interface {
 
 // healthCheckPolicies implements HealthCheckPolicyInterface
 type healthCheckPolicies struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*v1alpha2.HealthCheckPolicy, *v1alpha2.HealthCheckPolicyList]
 }
 
 // newHealthCheckPolicies returns a HealthCheckPolicies
 func newHealthCheckPolicies(c *GatewayV1alpha2Client, namespace string) *healthCheckPolicies {
 	return &healthCheckPolicies{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*v1alpha2.HealthCheckPolicy, *v1alpha2.HealthCheckPolicyList](
+			"healthcheckpolicies",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha2.HealthCheckPolicy { return &v1alpha2.HealthCheckPolicy{} },
+			func() *v1alpha2.HealthCheckPolicyList { return &v1alpha2.HealthCheckPolicyList{} }),
 	}
-}
-
-// Get takes name of the healthCheckPolicy, and returns the corresponding healthCheckPolicy object, and an error if there is any.
-func (c *healthCheckPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
-	result = &v1alpha2.HealthCheckPolicy{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of HealthCheckPolicies that match those selectors.
-func (c *healthCheckPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.HealthCheckPolicyList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha2.HealthCheckPolicyList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested healthCheckPolicies.
-func (c *healthCheckPolicies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a healthCheckPolicy and creates it.  Returns the server's representation of the healthCheckPolicy, and an error, if there is any.
-func (c *healthCheckPolicies) Create(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.CreateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
-	result = &v1alpha2.HealthCheckPolicy{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(healthCheckPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a healthCheckPolicy and updates it. Returns the server's representation of the healthCheckPolicy, and an error, if there is any.
-func (c *healthCheckPolicies) Update(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
-	result = &v1alpha2.HealthCheckPolicy{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(healthCheckPolicy.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(healthCheckPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *healthCheckPolicies) UpdateStatus(ctx context.Context, healthCheckPolicy *v1alpha2.HealthCheckPolicy, opts v1.UpdateOptions) (result *v1alpha2.HealthCheckPolicy, err error) {
-	result = &v1alpha2.HealthCheckPolicy{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(healthCheckPolicy.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(healthCheckPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the healthCheckPolicy and deletes it. Returns an error if one occurs.
-func (c *healthCheckPolicies) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *healthCheckPolicies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched healthCheckPolicy.
-func (c *healthCheckPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.HealthCheckPolicy, err error) {
-	result = &v1alpha2.HealthCheckPolicy{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("healthcheckpolicies").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

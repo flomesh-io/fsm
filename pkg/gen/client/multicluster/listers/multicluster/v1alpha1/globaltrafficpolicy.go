@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type GlobalTrafficPolicyLister interface {
 
 // globalTrafficPolicyLister implements the GlobalTrafficPolicyLister interface.
 type globalTrafficPolicyLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.GlobalTrafficPolicy]
 }
 
 // NewGlobalTrafficPolicyLister returns a new GlobalTrafficPolicyLister.
 func NewGlobalTrafficPolicyLister(indexer cache.Indexer) GlobalTrafficPolicyLister {
-	return &globalTrafficPolicyLister{indexer: indexer}
-}
-
-// List lists all GlobalTrafficPolicies in the indexer.
-func (s *globalTrafficPolicyLister) List(selector labels.Selector) (ret []*v1alpha1.GlobalTrafficPolicy, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.GlobalTrafficPolicy))
-	})
-	return ret, err
+	return &globalTrafficPolicyLister{listers.New[*v1alpha1.GlobalTrafficPolicy](indexer, v1alpha1.Resource("globaltrafficpolicy"))}
 }
 
 // GlobalTrafficPolicies returns an object that can list and get GlobalTrafficPolicies.
 func (s *globalTrafficPolicyLister) GlobalTrafficPolicies(namespace string) GlobalTrafficPolicyNamespaceLister {
-	return globalTrafficPolicyNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return globalTrafficPolicyNamespaceLister{listers.NewNamespaced[*v1alpha1.GlobalTrafficPolicy](s.ResourceIndexer, namespace)}
 }
 
 // GlobalTrafficPolicyNamespaceLister helps list and get GlobalTrafficPolicies.
@@ -71,26 +63,5 @@ type GlobalTrafficPolicyNamespaceLister interface {
 // globalTrafficPolicyNamespaceLister implements the GlobalTrafficPolicyNamespaceLister
 // interface.
 type globalTrafficPolicyNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all GlobalTrafficPolicies in the indexer for a given namespace.
-func (s globalTrafficPolicyNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.GlobalTrafficPolicy, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.GlobalTrafficPolicy))
-	})
-	return ret, err
-}
-
-// Get retrieves the GlobalTrafficPolicy from the indexer for a given namespace and name.
-func (s globalTrafficPolicyNamespaceLister) Get(name string) (*v1alpha1.GlobalTrafficPolicy, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("globaltrafficpolicy"), name)
-	}
-	return obj.(*v1alpha1.GlobalTrafficPolicy), nil
+	listers.ResourceIndexer[*v1alpha1.GlobalTrafficPolicy]
 }

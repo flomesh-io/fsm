@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type NamespacedIngressLister interface {
 
 // namespacedIngressLister implements the NamespacedIngressLister interface.
 type namespacedIngressLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.NamespacedIngress]
 }
 
 // NewNamespacedIngressLister returns a new NamespacedIngressLister.
 func NewNamespacedIngressLister(indexer cache.Indexer) NamespacedIngressLister {
-	return &namespacedIngressLister{indexer: indexer}
-}
-
-// List lists all NamespacedIngresses in the indexer.
-func (s *namespacedIngressLister) List(selector labels.Selector) (ret []*v1alpha1.NamespacedIngress, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NamespacedIngress))
-	})
-	return ret, err
+	return &namespacedIngressLister{listers.New[*v1alpha1.NamespacedIngress](indexer, v1alpha1.Resource("namespacedingress"))}
 }
 
 // NamespacedIngresses returns an object that can list and get NamespacedIngresses.
 func (s *namespacedIngressLister) NamespacedIngresses(namespace string) NamespacedIngressNamespaceLister {
-	return namespacedIngressNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return namespacedIngressNamespaceLister{listers.NewNamespaced[*v1alpha1.NamespacedIngress](s.ResourceIndexer, namespace)}
 }
 
 // NamespacedIngressNamespaceLister helps list and get NamespacedIngresses.
@@ -71,26 +63,5 @@ type NamespacedIngressNamespaceLister interface {
 // namespacedIngressNamespaceLister implements the NamespacedIngressNamespaceLister
 // interface.
 type namespacedIngressNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all NamespacedIngresses in the indexer for a given namespace.
-func (s namespacedIngressNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.NamespacedIngress, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NamespacedIngress))
-	})
-	return ret, err
-}
-
-// Get retrieves the NamespacedIngress from the indexer for a given namespace and name.
-func (s namespacedIngressNamespaceLister) Get(name string) (*v1alpha1.NamespacedIngress, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("namespacedingress"), name)
-	}
-	return obj.(*v1alpha1.NamespacedIngress), nil
+	listers.ResourceIndexer[*v1alpha1.NamespacedIngress]
 }

@@ -38,22 +38,24 @@ var circuitbreakersKind = v1alpha1.SchemeGroupVersion.WithKind("CircuitBreaker")
 
 // Get takes name of the circuitBreaker, and returns the corresponding circuitBreaker object, and an error if there is any.
 func (c *FakeCircuitBreakers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.CircuitBreaker, err error) {
+	emptyResult := &v1alpha1.CircuitBreaker{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(circuitbreakersResource, c.ns, name), &v1alpha1.CircuitBreaker{})
+		Invokes(testing.NewGetActionWithOptions(circuitbreakersResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CircuitBreaker), err
 }
 
 // List takes label and field selectors, and returns the list of CircuitBreakers that match those selectors.
 func (c *FakeCircuitBreakers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.CircuitBreakerList, err error) {
+	emptyResult := &v1alpha1.CircuitBreakerList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(circuitbreakersResource, circuitbreakersKind, c.ns, opts), &v1alpha1.CircuitBreakerList{})
+		Invokes(testing.NewListActionWithOptions(circuitbreakersResource, circuitbreakersKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeCircuitBreakers) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested circuitBreakers.
 func (c *FakeCircuitBreakers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(circuitbreakersResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(circuitbreakersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a circuitBreaker and creates it.  Returns the server's representation of the circuitBreaker, and an error, if there is any.
 func (c *FakeCircuitBreakers) Create(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.CreateOptions) (result *v1alpha1.CircuitBreaker, err error) {
+	emptyResult := &v1alpha1.CircuitBreaker{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(circuitbreakersResource, c.ns, circuitBreaker), &v1alpha1.CircuitBreaker{})
+		Invokes(testing.NewCreateActionWithOptions(circuitbreakersResource, c.ns, circuitBreaker, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CircuitBreaker), err
 }
 
 // Update takes the representation of a circuitBreaker and updates it. Returns the server's representation of the circuitBreaker, and an error, if there is any.
 func (c *FakeCircuitBreakers) Update(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.UpdateOptions) (result *v1alpha1.CircuitBreaker, err error) {
+	emptyResult := &v1alpha1.CircuitBreaker{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(circuitbreakersResource, c.ns, circuitBreaker), &v1alpha1.CircuitBreaker{})
+		Invokes(testing.NewUpdateActionWithOptions(circuitbreakersResource, c.ns, circuitBreaker, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CircuitBreaker), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeCircuitBreakers) UpdateStatus(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.UpdateOptions) (*v1alpha1.CircuitBreaker, error) {
+func (c *FakeCircuitBreakers) UpdateStatus(ctx context.Context, circuitBreaker *v1alpha1.CircuitBreaker, opts v1.UpdateOptions) (result *v1alpha1.CircuitBreaker, err error) {
+	emptyResult := &v1alpha1.CircuitBreaker{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(circuitbreakersResource, "status", c.ns, circuitBreaker), &v1alpha1.CircuitBreaker{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(circuitbreakersResource, "status", c.ns, circuitBreaker, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CircuitBreaker), err
 }
@@ -120,7 +125,7 @@ func (c *FakeCircuitBreakers) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeCircuitBreakers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(circuitbreakersResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(circuitbreakersResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.CircuitBreakerList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeCircuitBreakers) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched circuitBreaker.
 func (c *FakeCircuitBreakers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.CircuitBreaker, err error) {
+	emptyResult := &v1alpha1.CircuitBreaker{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(circuitbreakersResource, c.ns, name, pt, data, subresources...), &v1alpha1.CircuitBreaker{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(circuitbreakersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.CircuitBreaker), err
 }

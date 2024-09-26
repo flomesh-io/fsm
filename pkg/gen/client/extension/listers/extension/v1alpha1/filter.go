@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type FilterLister interface {
 
 // filterLister implements the FilterLister interface.
 type filterLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Filter]
 }
 
 // NewFilterLister returns a new FilterLister.
 func NewFilterLister(indexer cache.Indexer) FilterLister {
-	return &filterLister{indexer: indexer}
-}
-
-// List lists all Filters in the indexer.
-func (s *filterLister) List(selector labels.Selector) (ret []*v1alpha1.Filter, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Filter))
-	})
-	return ret, err
+	return &filterLister{listers.New[*v1alpha1.Filter](indexer, v1alpha1.Resource("filter"))}
 }
 
 // Filters returns an object that can list and get Filters.
 func (s *filterLister) Filters(namespace string) FilterNamespaceLister {
-	return filterNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return filterNamespaceLister{listers.NewNamespaced[*v1alpha1.Filter](s.ResourceIndexer, namespace)}
 }
 
 // FilterNamespaceLister helps list and get Filters.
@@ -71,26 +63,5 @@ type FilterNamespaceLister interface {
 // filterNamespaceLister implements the FilterNamespaceLister
 // interface.
 type filterNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Filters in the indexer for a given namespace.
-func (s filterNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Filter, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Filter))
-	})
-	return ret, err
-}
-
-// Get retrieves the Filter from the indexer for a given namespace and name.
-func (s filterNamespaceLister) Get(name string) (*v1alpha1.Filter, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("filter"), name)
-	}
-	return obj.(*v1alpha1.Filter), nil
+	listers.ResourceIndexer[*v1alpha1.Filter]
 }

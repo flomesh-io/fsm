@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -36,30 +36,10 @@ type NacosConnectorLister interface {
 
 // nacosConnectorLister implements the NacosConnectorLister interface.
 type nacosConnectorLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.NacosConnector]
 }
 
 // NewNacosConnectorLister returns a new NacosConnectorLister.
 func NewNacosConnectorLister(indexer cache.Indexer) NacosConnectorLister {
-	return &nacosConnectorLister{indexer: indexer}
-}
-
-// List lists all NacosConnectors in the indexer.
-func (s *nacosConnectorLister) List(selector labels.Selector) (ret []*v1alpha1.NacosConnector, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.NacosConnector))
-	})
-	return ret, err
-}
-
-// Get retrieves the NacosConnector from the index for a given name.
-func (s *nacosConnectorLister) Get(name string) (*v1alpha1.NacosConnector, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("nacosconnector"), name)
-	}
-	return obj.(*v1alpha1.NacosConnector), nil
+	return &nacosConnectorLister{listers.New[*v1alpha1.NacosConnector](indexer, v1alpha1.Resource("nacosconnector"))}
 }

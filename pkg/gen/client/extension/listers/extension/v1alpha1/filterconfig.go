@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type FilterConfigLister interface {
 
 // filterConfigLister implements the FilterConfigLister interface.
 type filterConfigLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.FilterConfig]
 }
 
 // NewFilterConfigLister returns a new FilterConfigLister.
 func NewFilterConfigLister(indexer cache.Indexer) FilterConfigLister {
-	return &filterConfigLister{indexer: indexer}
-}
-
-// List lists all FilterConfigs in the indexer.
-func (s *filterConfigLister) List(selector labels.Selector) (ret []*v1alpha1.FilterConfig, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.FilterConfig))
-	})
-	return ret, err
+	return &filterConfigLister{listers.New[*v1alpha1.FilterConfig](indexer, v1alpha1.Resource("filterconfig"))}
 }
 
 // FilterConfigs returns an object that can list and get FilterConfigs.
 func (s *filterConfigLister) FilterConfigs(namespace string) FilterConfigNamespaceLister {
-	return filterConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return filterConfigNamespaceLister{listers.NewNamespaced[*v1alpha1.FilterConfig](s.ResourceIndexer, namespace)}
 }
 
 // FilterConfigNamespaceLister helps list and get FilterConfigs.
@@ -71,26 +63,5 @@ type FilterConfigNamespaceLister interface {
 // filterConfigNamespaceLister implements the FilterConfigNamespaceLister
 // interface.
 type filterConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all FilterConfigs in the indexer for a given namespace.
-func (s filterConfigNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.FilterConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.FilterConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the FilterConfig from the indexer for a given namespace and name.
-func (s filterConfigNamespaceLister) Get(name string) (*v1alpha1.FilterConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("filterconfig"), name)
-	}
-	return obj.(*v1alpha1.FilterConfig), nil
+	listers.ResourceIndexer[*v1alpha1.FilterConfig]
 }
