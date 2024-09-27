@@ -3,8 +3,6 @@ package v1alpha3
 import (
 	"context"
 
-	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
-
 	corev1 "k8s.io/api/core/v1"
 
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
