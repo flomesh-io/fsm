@@ -3,6 +3,7 @@ package fgw
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -466,9 +467,20 @@ type RetryPolicy struct {
 }
 
 type RetryPolicySpec struct {
-	TargetRefs   []BackendRef              `json:"targetRefs" copier:"-" hash:"set"`
-	Ports        []gwpav1alpha2.PortRetry  `json:"ports,omitempty" hash:"set"`
-	DefaultRetry *gwpav1alpha2.RetryConfig `json:"retry,omitempty"`
+	TargetRefs   []BackendRef `json:"targetRefs" copier:"-" hash:"set"`
+	Ports        []PortRetry  `json:"ports,omitempty" hash:"set"`
+	DefaultRetry *RetryConfig `json:"retry,omitempty"`
+}
+
+type PortRetry struct {
+	Port  gwv1.PortNumber `json:"port"`
+	Retry *RetryConfig    `json:"retry,omitempty"`
+}
+
+type RetryConfig struct {
+	RetryOn                      []string `json:"retryOn,omitempty"`
+	NumRetries                   *int32   `json:"numRetries,omitempty"`
+	BackoffBaseIntervalInSeconds *float64 `json:"backoffBaseInterval,omitempty"`
 }
 
 func (p *RetryPolicy) AddTargetRef(ref BackendRef) {
@@ -500,10 +512,30 @@ func (p *RetryPolicy) AddPort(port gwpav1alpha2.PortRetry) {
 		}
 
 		if !exists {
-			p.Spec.Ports = append(p.Spec.Ports, port)
+			p.Spec.Ports = append(p.Spec.Ports, PortRetry{Port: port.Port, Retry: newRetryConfig(port.Retry)})
 		}
 	} else {
-		p.Spec.Ports = []gwpav1alpha2.PortRetry{port}
+		p.Spec.Ports = []PortRetry{{Port: port.Port, Retry: newRetryConfig(port.Retry)}}
+	}
+}
+
+func newRetryConfig(config *gwpav1alpha2.RetryConfig) *RetryConfig {
+	if config == nil {
+		return nil
+	}
+
+	c := &RetryConfig{
+		RetryOn:    config.RetryOn,
+		NumRetries: config.NumRetries,
+	}
+	c.BackoffBaseInterval(config.BackoffBaseInterval)
+
+	return c
+}
+
+func (c *RetryConfig) BackoffBaseInterval(backoffBaseInterval *metav1.Duration) {
+	if backoffBaseInterval != nil {
+		c.BackoffBaseIntervalInSeconds = ptr.To(math.Ceil(backoffBaseInterval.Seconds()*1000) / 1000)
 	}
 }
 
@@ -515,9 +547,22 @@ type HealthCheckPolicy struct {
 }
 
 type HealthCheckPolicySpec struct {
-	TargetRefs         []BackendRef                    `json:"targetRefs" copier:"-" hash:"set"`
-	Ports              []gwpav1alpha2.PortHealthCheck  `json:"ports,omitempty" copier:"-" hash:"set"`
-	DefaultHealthCheck *gwpav1alpha2.HealthCheckConfig `json:"healthCheck,omitempty"`
+	TargetRefs         []BackendRef       `json:"targetRefs" copier:"-" hash:"set"`
+	Ports              []PortHealthCheck  `json:"ports,omitempty" copier:"-" hash:"set"`
+	DefaultHealthCheck *HealthCheckConfig `json:"healthCheck,omitempty"`
+}
+
+type PortHealthCheck struct {
+	Port        gwv1.PortNumber    `json:"port"`
+	HealthCheck *HealthCheckConfig `json:"healthCheck,omitempty"`
+}
+
+type HealthCheckConfig struct {
+	IntervalInSeconds    float64                         `json:"interval"`
+	MaxFails             int32                           `json:"maxFails"`
+	FailTimeoutInSeconds *float64                        `json:"failTimeout,omitempty"`
+	Path                 *string                         `json:"path,omitempty"`
+	Matches              []gwpav1alpha2.HealthCheckMatch `json:"matches,omitempty"`
 }
 
 func (p *HealthCheckPolicy) AddTargetRef(ref BackendRef) {
@@ -549,10 +594,36 @@ func (p *HealthCheckPolicy) AddPort(port gwpav1alpha2.PortHealthCheck) {
 		}
 
 		if !exists {
-			p.Spec.Ports = append(p.Spec.Ports, port)
+			p.Spec.Ports = append(p.Spec.Ports, PortHealthCheck{Port: port.Port, HealthCheck: newHealthCheckConfig(port.HealthCheck)})
 		}
 	} else {
-		p.Spec.Ports = []gwpav1alpha2.PortHealthCheck{port}
+		p.Spec.Ports = []PortHealthCheck{{Port: port.Port, HealthCheck: newHealthCheckConfig(port.HealthCheck)}}
+	}
+}
+
+func newHealthCheckConfig(config *gwpav1alpha2.HealthCheckConfig) *HealthCheckConfig {
+	if config == nil {
+		return nil
+	}
+
+	c := &HealthCheckConfig{
+		MaxFails: config.MaxFails,
+		Path:     config.Path,
+		Matches:  config.Matches,
+	}
+	c.Interval(config.Interval)
+	c.FailTimeout(config.FailTimeout)
+
+	return c
+}
+
+func (c *HealthCheckConfig) Interval(interval metav1.Duration) {
+	c.IntervalInSeconds = math.Ceil(interval.Seconds()*1000) / 1000
+}
+
+func (c *HealthCheckConfig) FailTimeout(failTimeout *metav1.Duration) {
+	if failTimeout != nil {
+		c.FailTimeoutInSeconds = ptr.To(math.Ceil(failTimeout.Seconds()*1000) / 1000)
 	}
 }
 
