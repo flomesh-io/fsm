@@ -7,6 +7,8 @@ import (
 
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
+	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
+
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -73,7 +75,7 @@ func (r *backendTLSPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *backendTLSPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := ctrl.NewWebhookManagedBy(mgr).
+	if err := whblder.WebhookManagedBy(mgr).
 		For(&gwv1alpha3.BackendTLSPolicy{}).
 		WithDefaulter(r.webhook).
 		WithValidator(r.webhook).
