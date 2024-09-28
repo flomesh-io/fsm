@@ -106,6 +106,8 @@ type SyncToFgwSpec struct {
 
 // GatewaySpec is the type used to represent the Gateway Connector specification.
 type GatewaySpec struct {
+	GatewayName string `json:"gatewayName"`
+
 	Ingress IngressSelectorSpec `json:"ingress"`
 
 	Egress IngressSelectorSpec `json:"egress"`

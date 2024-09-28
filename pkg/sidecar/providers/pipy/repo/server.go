@@ -25,7 +25,8 @@ const (
 	// workerPoolSize is the default number of workerpool workers (0 is GOMAXPROCS)
 	workerPoolSize = 0
 
-	fsmCodebaseConfig = "config.json"
+	fsmCodebaseConfig   = "config.json"
+	fsmCodebaseConfigGz = "config.json.gz"
 )
 
 var (

@@ -66,6 +66,8 @@ spec:
                     - ClusterIP
                     type: string
                 type: object
+              gatewayName:
+                type: string
               ingress:
                 description: IngressSelectorSpec is the type used to represent the
                   ingress selector specification.
@@ -182,6 +184,7 @@ spec:
                 type: object
             required:
             - egress
+            - gatewayName
             - ingress
             - syncToFgw
             type: object

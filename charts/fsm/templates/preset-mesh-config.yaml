@@ -24,6 +24,7 @@ data:
         "logLevel": {{.Values.fsm.sidecar.sidecarLogLevel | mustToJson}},
         "maxDataPlaneConnections": {{.Values.fsm.maxDataPlaneConnections | mustToJson}},
         "configResyncInterval": {{.Values.fsm.configResyncInterval | mustToJson}},
+        "compressConfig": {{.Values.fsm.sidecar.compressConfig | mustToJson}},
         "sidecarImage": "{{ include "sidecar.image" .}}",
         "sidecarDisabledMTLS": {{.Values.fsm.sidecar.sidecarDisabledMTLS | mustToJson }},
         "sidecarTimeout": {{.Values.fsm.sidecar.sidecarTimeout | mustToJson}},

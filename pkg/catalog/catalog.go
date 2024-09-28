@@ -16,6 +16,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/ticker"
 )
 
+var (
+	meshCatalog *MeshCatalog
+)
+
 // NewMeshCatalog creates a new service catalog
 func NewMeshCatalog(kubeController k8s.Controller,
 	meshSpec smi.MeshSpec,
@@ -28,7 +32,7 @@ func NewMeshCatalog(kubeController k8s.Controller,
 	serviceProviders []service.Provider,
 	endpointsProviders []endpoint.Provider,
 	msgBroker *messaging.Broker) *MeshCatalog {
-	mc := &MeshCatalog{
+	meshCatalog = &MeshCatalog{
 		serviceProviders:       serviceProviders,
 		endpointsProviders:     endpointsProviders,
 		meshSpec:               meshSpec,
@@ -46,7 +50,11 @@ func NewMeshCatalog(kubeController k8s.Controller,
 	resyncTicker := ticker.NewResyncTicker(msgBroker, 30*time.Second /* min resync interval */)
 	resyncTicker.Start(stop, cfg.GetConfigResyncInterval())
 
-	return mc
+	return meshCatalog
+}
+
+func GetMeshCatalog() *MeshCatalog {
+	return meshCatalog
 }
 
 // GetKubeController returns the kube controller instance handling the current cluster
