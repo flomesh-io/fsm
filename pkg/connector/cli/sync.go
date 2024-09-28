@@ -65,6 +65,7 @@ func (c *client) syncKtoG() {
 	c.cancelFuncs = append(c.cancelFuncs, cancelFunc)
 
 	ingressAddr, egressAddr, clusterIP, externalIP := waitGatewayReady(ctx, c.kubeClient,
+		c.GetViaFgwName(),
 		c.GetViaIngressIPSelector(),
 		c.GetViaEgressIPSelector(),
 		int32(c.GetViaIngressHTTPPort()),
@@ -154,8 +155,8 @@ func (c *client) waitViaGatewayReady(ctx context.Context, configClient configCli
 	}
 }
 
-func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, ingressIPSelector, egressIPSelector ctv1.AddrSelector, viaPorts ...int32) (ingressAddr, egressAddr, clusterIP, externalIP string) {
-	gatewaySvcName := fmt.Sprintf("%s-%s-%s", constants.FSMGatewayName, Cfg.FsmNamespace, constants.ProtocolTCP)
+func waitGatewayReady(ctx context.Context, kubeClient kubernetes.Interface, viaFgwName string, ingressIPSelector, egressIPSelector ctv1.AddrSelector, viaPorts ...int32) (ingressAddr, egressAddr, clusterIP, externalIP string) {
+	gatewaySvcName := fmt.Sprintf("%s-%s-%s-%s", constants.FSMGatewayName, Cfg.FsmNamespace, viaFgwName, constants.ProtocolTCP)
 	for {
 		if fgwSvc, err := kubeClient.CoreV1().Services(Cfg.FsmNamespace).Get(ctx, gatewaySvcName, metav1.GetOptions{}); err == nil {
 			if fgwSvc != nil {

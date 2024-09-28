@@ -201,6 +201,7 @@ type config struct {
 	}
 
 	viaCfg struct {
+		fgwName           string
 		ingressIPSelector ctv1.AddrSelector
 		egressIPSelector  ctv1.AddrSelector
 
@@ -210,6 +211,12 @@ type config struct {
 		ingress protocolPort
 		egress  protocolPort
 	}
+}
+
+func (c *config) GetViaFgwName() string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.viaCfg.fgwName
 }
 
 func (c *config) GetViaIngressIPSelector() ctv1.AddrSelector {
@@ -714,6 +721,8 @@ func (c *client) initGatewayConnectorConfig(spec ctv1.GatewaySpec) {
 	c.k2gCfg.defaultSync = spec.SyncToFgw.DefaultSync
 	c.k2gCfg.allowK8sNamespacesSet = ToSet(spec.SyncToFgw.AllowK8sNamespaces)
 	c.k2gCfg.denyK8sNamespacesSet = ToSet(spec.SyncToFgw.DenyK8sNamespaces)
+
+	c.viaCfg.fgwName = spec.GatewayName
 
 	c.viaCfg.ingressIPSelector = spec.Ingress.IPSelector
 	c.viaCfg.egressIPSelector = spec.Egress.IPSelector

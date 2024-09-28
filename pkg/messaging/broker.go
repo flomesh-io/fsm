@@ -1038,6 +1038,7 @@ func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 		prevSpec.Observability.Tracing != newSpec.Observability.Tracing ||
 		prevSpec.Observability.RemoteLogging != newSpec.Observability.RemoteLogging ||
 		prevSpec.Sidecar.LogLevel != newSpec.Sidecar.LogLevel ||
+		prevSpec.Sidecar.CompressConfig != newSpec.Sidecar.CompressConfig ||
 		prevSpec.Sidecar.SidecarTimeout != newSpec.Sidecar.SidecarTimeout ||
 		!reflect.DeepEqual(prevSpec.Sidecar.LocalDNSProxy, newSpec.Sidecar.LocalDNSProxy) ||
 		prevSpec.Traffic.InboundExternalAuthorization.Enable != newSpec.Traffic.InboundExternalAuthorization.Enable ||
