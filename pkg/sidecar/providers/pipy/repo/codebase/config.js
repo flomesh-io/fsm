@@ -1,6 +1,15 @@
 (
   (
-    config = JSON.decode(pipy.load('config.json')),
+    config =((
+      data = pipy.load('config.json.gz')
+     ) => {
+      if (data) {
+        data = zlib.gunzip(data)
+      } else {
+        data = pipy.load('config.json')
+      }
+      return JSON.decode(data)
+    })(),
 
     uniqueTrafficMatches = {},
     uniqueTrafficMatchesFlag = {},

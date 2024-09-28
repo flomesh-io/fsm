@@ -1,6 +1,8 @@
 package repo
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"runtime"
@@ -366,6 +368,7 @@ func features(s *Server, proxy *pipy.Proxy, pipyConf *PipyConf) {
 		meshConf := mc.GetConfigurator()
 		proxy.MeshConf = meshConf
 		pipyConf.setServiceIdentity(proxy.Identity)
+		pipyConf.setSidecarCompressConfig((*meshConf).GetMeshConfig().Spec.Sidecar.CompressConfig)
 		pipyConf.setSidecarLogLevel((*meshConf).GetMeshConfig().Spec.Sidecar.LogLevel)
 		pipyConf.setSidecarTimeout((*meshConf).GetMeshConfig().Spec.Sidecar.SidecarTimeout)
 		pipyConf.setEnableSidecarActiveHealthChecks((*meshConf).GetFeatureFlags().EnableSidecarActiveHealthChecks)
@@ -487,6 +490,45 @@ func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 	}
 }
 
+func marshal(pipyConf *PipyConf) ([]client.BatchItem, error) {
+	var jsonBytes []byte
+	var err error
+	if prettyConfig() {
+		jsonBytes, err = json.MarshalIndent(pipyConf, "", " ")
+	} else {
+		jsonBytes, err = json.Marshal(pipyConf)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !pipyConf.Spec.sidecarCompressConfig {
+		return []client.BatchItem{
+			{
+				Filename: fsmCodebaseConfig,
+				Content:  jsonBytes,
+			},
+			{
+				Filename: fsmCodebaseConfigGz,
+				Obsolete: true,
+			},
+		}, nil
+	}
+	var gzipBuf bytes.Buffer
+	writer := gzip.NewWriter(&gzipBuf)
+	writer.Write(jsonBytes)
+	writer.Close()
+	return []client.BatchItem{
+		{
+			Filename: fsmCodebaseConfigGz,
+			Content:  gzipBuf.Bytes(),
+		},
+		{
+			Filename: fsmCodebaseConfig,
+			Obsolete: true,
+		},
+	}, nil
+}
+
 func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf) {
 	pipyConf.Ts = nil
 	pipyConf.Version = nil
@@ -523,23 +565,15 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				version := fmt.Sprintf("%d", codebaseCurV)
 				pipyConf.Version = &version
 
-				var bytes []byte
-				if prettyConfig() {
-					bytes, _ = json.MarshalIndent(pipyConf, "", " ")
-				} else {
-					bytes, _ = json.Marshal(pipyConf)
-				}
-				_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
-					{
-						Basepath: codebase,
-						Items: []client.BatchItem{
-							{
-								Filename: fsmCodebaseConfig,
-								Content:  bytes,
-							},
+				var items []client.BatchItem
+				if items, err = marshal(pipyConf); err == nil {
+					_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
+						{
+							Basepath: codebase,
+							Items:    items,
 						},
-					},
-				})
+					})
+				}
 			}
 			if err != nil || !success {
 				if err != nil {

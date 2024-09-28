@@ -251,6 +251,8 @@ type MeshConfigSpec struct {
 	}
 	ClusterSet    map[string]string `json:"ClusterSet,omitempty"`
 	Observability ObservabilitySpec `json:"Observability,omitempty"`
+
+	sidecarCompressConfig bool
 }
 
 // Certificate represents an x509 certificate.

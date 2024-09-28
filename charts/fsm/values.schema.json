@@ -562,6 +562,7 @@
                   "required": [
                     "image",
                     "sidecarDisabledMTLS",
+                    "compressConfig",
                     "sidecarLogLevel",
                     "sidecarTimeout"
                   ],
@@ -627,6 +628,15 @@
                       "type": "boolean",
                       "title": "The sidecarDisabledMTLS schema",
                       "description": "The proxy side car runs without mTLS",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "compressConfig": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/compressConfig",
+                      "type": "boolean",
+                      "title": "The compressConfig schema",
+                      "description": "Compress sidecar's config.json",
                       "examples": [
                         false
                       ]
