@@ -2020,6 +2020,9 @@ spec:
                     items:
                       type: string
                     type: array
+                  compressConfig:
+                    default: true
+                    type: boolean
                   configResyncInterval:
                     description: ConfigResyncInterval defines the resync interval
                       for regular proxy broadcast updates.

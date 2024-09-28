@@ -50,6 +50,13 @@ func (p *PipyConf) setSidecarTimeout(sidecarTimeout int) (update bool) {
 	return
 }
 
+func (p *PipyConf) setSidecarCompressConfig(compressConfig bool) (update bool) {
+	if update = p.Spec.sidecarCompressConfig != compressConfig; update {
+		p.Spec.sidecarCompressConfig = compressConfig
+	}
+	return
+}
+
 func (p *PipyConf) setObservabilityTracing(enable bool, conf *configurator.Configurator) {
 	if enable {
 		p.Spec.Observability.Tracing = &TracingSpec{
