@@ -490,7 +490,7 @@ func dnsResolveDB(pipyConf *PipyConf, cfg configurator.Configurator) {
 	}
 }
 
-func marshal(pipyConf *PipyConf) ([]byte, string, error) {
+func marshal(pipyConf *PipyConf) ([]client.BatchItem, error) {
 	var jsonBytes []byte
 	var err error
 	if prettyConfig() {
@@ -499,16 +499,34 @@ func marshal(pipyConf *PipyConf) ([]byte, string, error) {
 		jsonBytes, err = json.Marshal(pipyConf)
 	}
 	if err != nil {
-		return nil, fsmCodebaseConfig, err
+		return nil, err
 	}
 	if !pipyConf.Spec.sidecarCompressConfig {
-		return jsonBytes, fsmCodebaseConfig, nil
+		return []client.BatchItem{
+			{
+				Filename: fsmCodebaseConfig,
+				Content:  jsonBytes,
+			},
+			{
+				Filename: fsmCodebaseConfigGz,
+				Obsolete: true,
+			},
+		}, nil
 	}
 	var gzipBuf bytes.Buffer
 	writer := gzip.NewWriter(&gzipBuf)
 	writer.Write(jsonBytes)
 	writer.Close()
-	return gzipBuf.Bytes(), fsmCodebaseConfigGz, nil
+	return []client.BatchItem{
+		{
+			Filename: fsmCodebaseConfigGz,
+			Content:  gzipBuf.Bytes(),
+		},
+		{
+			Filename: fsmCodebaseConfig,
+			Obsolete: true,
+		},
+	}, nil
 }
 
 func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoClient, proxy *pipy.Proxy, pipyConf *PipyConf) {
@@ -547,18 +565,12 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				version := fmt.Sprintf("%d", codebaseCurV)
 				pipyConf.Version = &version
 
-				var cfgBytes []byte
-				var fname string
-				if cfgBytes, fname, err = marshal(pipyConf); err == nil {
+				var items []client.BatchItem
+				if items, err = marshal(pipyConf); err == nil {
 					_, err = repoClient.Batch(fmt.Sprintf("%d", codebaseCurV-1), []client.Batch{
 						{
 							Basepath: codebase,
-							Items: []client.BatchItem{
-								{
-									Filename: fname,
-									Content:  cfgBytes,
-								},
-							},
+							Items:    items,
 						},
 					})
 				}
