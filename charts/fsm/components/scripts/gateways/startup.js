@@ -207,7 +207,7 @@ export function makeResourceWatcher(gatewayFilter) {
     }
     if (dirtyTimeout) dirtyTimeout.cancel()
     dirtyTimeout = new Timeout(5)
-    dirtyTimeout.wait().then(updateDirtyResources)
+    dirtyTimeout.wait().then(updateDirtyResources).catch(() => {})
   }
 
   function addDirtyGateway(name) {
