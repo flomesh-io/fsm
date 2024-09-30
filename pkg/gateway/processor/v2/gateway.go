@@ -3,6 +3,7 @@ package v2
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 
@@ -156,6 +157,18 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		return
 	}
 
+	sort.Slice(list.Items, func(i, j int) bool {
+		if list.Items[i].Spec.Priority == nil || list.Items[j].Spec.Priority == nil {
+			return list.Items[i].Spec.Type < list.Items[j].Spec.Type
+		}
+
+		if *list.Items[i].Spec.Priority == *list.Items[j].Spec.Priority {
+			return list.Items[i].Spec.Type < list.Items[j].Spec.Type
+		}
+
+		return *list.Items[i].Spec.Priority < *list.Items[j].Spec.Priority
+	})
+
 	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
 	for _, f := range list.Items {
 		filterType := f.Spec.Type
@@ -188,4 +201,5 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 			c.filters[filterProtocol][filterType] = definition.Spec.Script
 		}
 	}
+
 }

@@ -102,6 +102,15 @@ spec:
                 - kind
                 - name
                 type: object
+              priority:
+                default: 100
+                description: Priority is the priority of the ListenerFilter, it is
+                  used to determine the order of the ListenerFilters, the ListenerFilter
+                  with the lowest priority is applied first
+                format: int32
+                maximum: 10000
+                minimum: 0
+                type: integer
               targetRefs:
                 description: TargetRefs is the references to the target resources
                   to which the ListenerFilter is applied
