@@ -9,19 +9,10 @@ on:
         type: string
 
 jobs:
-  debian:
-    name: Build pipy debian image
+  debian-x86:
+    name: Build pipy debian x86 image
     runs-on: ubuntu-22.04
     steps:
-      - name: Increase swapfile
-        run: |
-          sudo swapoff -a
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          sudo swapon --show
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.2.0
 
@@ -45,24 +36,89 @@ jobs:
         with:
           images: flomesh/pipy
           tags: |
-            type=raw,${{ inputs.tag }}-debian
+            type=raw,${{ inputs.tag }}-debian-amd64
 
       - name: Build and Push
         uses: docker/build-push-action@v6.9.0
         with:
           context: .
           file: ./dockerfiles/Dockerfile.pipy-debian
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           build-args: |
             PIPY_VERSION=${{ inputs.tag }}
 
+  debian-arm64:
+    name: Build pipy debian arm64 image
+    runs-on: [self-hosted, arm64]
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.6.1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Docker meta
+        id: docker_meta
+        uses: crazy-max/ghaction-docker-meta@v5.5.1
+        with:
+          images: flomesh/pipy
+          tags: |
+            type=raw,${{ inputs.tag }}-debian-arm64
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6.7.0
+        with:
+          context: .
+          file: ./dockerfiles/Dockerfile.pipy-debian
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          build-args: |
+            PIPY_VERSION=${{ inputs.tag }}
+
+  manifest:
+    name: Create Docker manifest
+    runs-on: ubuntu-22.04
+    needs: [debian-x86, debian-arm64]
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.2.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.6.1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3.3.0
+        with:
+          username: ${{ secrets.RELEASE_DOCKER_USER }}
+          password: ${{ secrets.RELEASE_DOCKER_PASS }}
+
+      - name: Docker manifest
+        run: |
+          docker manifest create flomesh/pipy:${{ inputs.tag }}-debian \
+            flomesh/pipy:${{ inputs.tag }}-debian-amd64 \
+            flomesh/pipy:${{ inputs.tag }}-debian-arm64
+          docker manifest push flomesh/pipy:${{ inputs.tag }}-debian
+
   pipy-nonroot:
     name: Build pipy nonroot image
     runs-on: ubuntu-22.04
-    needs: debian
+    needs: manifest
     strategy:
       matrix:
         id: [ "nonroot", "debug-nonroot" ]
