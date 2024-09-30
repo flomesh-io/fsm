@@ -201,5 +201,4 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 			c.filters[filterProtocol][filterType] = definition.Spec.Script
 		}
 	}
-
 }
