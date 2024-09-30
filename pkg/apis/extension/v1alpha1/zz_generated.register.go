@@ -74,6 +74,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ListenerFilterList{},
 		&Metrics{},
 		&MetricsList{},
+		&ProxyTag{},
+		&ProxyTagList{},
 		&RateLimit{},
 		&RateLimitList{},
 		&Zipkin{},

@@ -105,6 +105,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyGatewayHTTPLog:            &extv1alpha1.HTTPLog{},
 		fsminformers.InformerKeyGatewayMetrics:            &extv1alpha1.Metrics{},
 		fsminformers.InformerKeyGatewayZipkin:             &extv1alpha1.Zipkin{},
+		fsminformers.InformerKeyGatewayProxyTag:           &extv1alpha1.ProxyTag{},
 	}
 
 	if version.IsEndpointSliceEnabled(ctx.KubeClient) {

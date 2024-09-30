@@ -31,6 +31,8 @@ type ListenerFilterExpansion interface{}
 
 type MetricsExpansion interface{}
 
+type ProxyTagExpansion interface{}
+
 type RateLimitExpansion interface{}
 
 type ZipkinExpansion interface{}
