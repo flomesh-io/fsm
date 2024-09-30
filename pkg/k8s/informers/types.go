@@ -146,6 +146,8 @@ const (
 	InformerKeyGatewayMetrics InformerKey = "Gateway-Metrics"
 	// InformerKeyGatewayZipkin is the InformerKey for a Zipkin informer
 	InformerKeyGatewayZipkin InformerKey = "Gateway-Zipkin"
+	// InformerKeyGatewayProxyTag is the InformerKey for a ProxyTag informer
+	InformerKeyGatewayProxyTag InformerKey = "Gateway-ProxyTag"
 )
 
 const (
@@ -259,4 +261,7 @@ const (
 
 	// ZipkinResourceType is the type used to represent the zipkin tracing resource
 	ZipkinResourceType ResourceType = "zipkins"
+
+	// ProxyTagResourceType is the type used to represent the proxy tag resource
+	ProxyTagResourceType ResourceType = "proxytags"
 )

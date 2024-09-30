@@ -1195,6 +1195,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayMetricsAdded, announcements.GatewayMetricsDeleted, announcements.GatewayMetricsUpdated,
 		// Zipkin event
 		announcements.GatewayZipkinAdded, announcements.GatewayZipkinDeleted, announcements.GatewayZipkinUpdated,
+		// ProxyTag event
+		announcements.GatewayProxyTagAdded, announcements.GatewayProxyTagDeleted, announcements.GatewayProxyTagUpdated,
 
 		//
 		// MultiCluster events

@@ -644,6 +644,17 @@ const (
 
 	// GatewayZipkinUpdated is the type of announcement emitted when we observe an update to zipkins.extension.gateway.flomesh.io
 	GatewayZipkinUpdated Kind = "gatewayzipkin-updated"
+
+	// --
+
+	// GatewayProxyTagAdded is the type of announcement emitted when we observe an addition of proxytags.extension.gateway.flomesh.io
+	GatewayProxyTagAdded Kind = "gatewayproxytag-added"
+
+	// GatewayProxyTagDeleted the type of announcement emitted when we observe a deletion of proxytags.extension.gateway.flomesh.io
+	GatewayProxyTagDeleted Kind = "gatewayproxytag-deleted"
+
+	// GatewayProxyTagUpdated is the type of announcement emitted when we observe an update to proxytags.extension.gateway.flomesh.io
+	GatewayProxyTagUpdated Kind = "gatewayproxytag-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration
