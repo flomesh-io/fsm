@@ -52,7 +52,7 @@ jobs:
 
   euler-arm64:
     name: Build pipy euler arm64 image
-    runs-on: [self-hosted, arm64]
+    runs-on: [ubuntu-latest-m]
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.2.0
