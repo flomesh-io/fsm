@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type EgressLister interface {
 
 // egressLister implements the EgressLister interface.
 type egressLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Egress]
 }
 
 // NewEgressLister returns a new EgressLister.
 func NewEgressLister(indexer cache.Indexer) EgressLister {
-	return &egressLister{indexer: indexer}
-}
-
-// List lists all Egresses in the indexer.
-func (s *egressLister) List(selector labels.Selector) (ret []*v1alpha1.Egress, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Egress))
-	})
-	return ret, err
+	return &egressLister{listers.New[*v1alpha1.Egress](indexer, v1alpha1.Resource("egress"))}
 }
 
 // Egresses returns an object that can list and get Egresses.
 func (s *egressLister) Egresses(namespace string) EgressNamespaceLister {
-	return egressNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return egressNamespaceLister{listers.NewNamespaced[*v1alpha1.Egress](s.ResourceIndexer, namespace)}
 }
 
 // EgressNamespaceLister helps list and get Egresses.
@@ -71,26 +63,5 @@ type EgressNamespaceLister interface {
 // egressNamespaceLister implements the EgressNamespaceLister
 // interface.
 type egressNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Egresses in the indexer for a given namespace.
-func (s egressNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Egress, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Egress))
-	})
-	return ret, err
-}
-
-// Get retrieves the Egress from the indexer for a given namespace and name.
-func (s egressNamespaceLister) Get(name string) (*v1alpha1.Egress, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("egress"), name)
-	}
-	return obj.(*v1alpha1.Egress), nil
+	listers.ResourceIndexer[*v1alpha1.Egress]
 }

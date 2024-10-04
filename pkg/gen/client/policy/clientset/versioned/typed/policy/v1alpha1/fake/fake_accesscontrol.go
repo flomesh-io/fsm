@@ -38,22 +38,24 @@ var accesscontrolsKind = v1alpha1.SchemeGroupVersion.WithKind("AccessControl")
 
 // Get takes name of the accessControl, and returns the corresponding accessControl object, and an error if there is any.
 func (c *FakeAccessControls) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccessControl, err error) {
+	emptyResult := &v1alpha1.AccessControl{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(accesscontrolsResource, c.ns, name), &v1alpha1.AccessControl{})
+		Invokes(testing.NewGetActionWithOptions(accesscontrolsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessControl), err
 }
 
 // List takes label and field selectors, and returns the list of AccessControls that match those selectors.
 func (c *FakeAccessControls) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccessControlList, err error) {
+	emptyResult := &v1alpha1.AccessControlList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(accesscontrolsResource, accesscontrolsKind, c.ns, opts), &v1alpha1.AccessControlList{})
+		Invokes(testing.NewListActionWithOptions(accesscontrolsResource, accesscontrolsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeAccessControls) List(ctx context.Context, opts v1.ListOptions) (res
 // Watch returns a watch.Interface that watches the requested accessControls.
 func (c *FakeAccessControls) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(accesscontrolsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(accesscontrolsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a accessControl and creates it.  Returns the server's representation of the accessControl, and an error, if there is any.
 func (c *FakeAccessControls) Create(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.CreateOptions) (result *v1alpha1.AccessControl, err error) {
+	emptyResult := &v1alpha1.AccessControl{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(accesscontrolsResource, c.ns, accessControl), &v1alpha1.AccessControl{})
+		Invokes(testing.NewCreateActionWithOptions(accesscontrolsResource, c.ns, accessControl, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessControl), err
 }
 
 // Update takes the representation of a accessControl and updates it. Returns the server's representation of the accessControl, and an error, if there is any.
 func (c *FakeAccessControls) Update(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (result *v1alpha1.AccessControl, err error) {
+	emptyResult := &v1alpha1.AccessControl{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(accesscontrolsResource, c.ns, accessControl), &v1alpha1.AccessControl{})
+		Invokes(testing.NewUpdateActionWithOptions(accesscontrolsResource, c.ns, accessControl, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessControl), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAccessControls) UpdateStatus(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (*v1alpha1.AccessControl, error) {
+func (c *FakeAccessControls) UpdateStatus(ctx context.Context, accessControl *v1alpha1.AccessControl, opts v1.UpdateOptions) (result *v1alpha1.AccessControl, err error) {
+	emptyResult := &v1alpha1.AccessControl{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(accesscontrolsResource, "status", c.ns, accessControl), &v1alpha1.AccessControl{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(accesscontrolsResource, "status", c.ns, accessControl, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessControl), err
 }
@@ -120,7 +125,7 @@ func (c *FakeAccessControls) Delete(ctx context.Context, name string, opts v1.De
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeAccessControls) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(accesscontrolsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(accesscontrolsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.AccessControlList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeAccessControls) DeleteCollection(ctx context.Context, opts v1.Delet
 
 // Patch applies the patch and returns the patched accessControl.
 func (c *FakeAccessControls) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccessControl, err error) {
+	emptyResult := &v1alpha1.AccessControl{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(accesscontrolsResource, c.ns, name, pt, data, subresources...), &v1alpha1.AccessControl{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(accesscontrolsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.AccessControl), err
 }

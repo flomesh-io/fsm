@@ -38,22 +38,24 @@ var filtersKind = v1alpha1.SchemeGroupVersion.WithKind("Filter")
 
 // Get takes name of the filter, and returns the corresponding filter object, and an error if there is any.
 func (c *FakeFilters) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Filter, err error) {
+	emptyResult := &v1alpha1.Filter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(filtersResource, c.ns, name), &v1alpha1.Filter{})
+		Invokes(testing.NewGetActionWithOptions(filtersResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Filter), err
 }
 
 // List takes label and field selectors, and returns the list of Filters that match those selectors.
 func (c *FakeFilters) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.FilterList, err error) {
+	emptyResult := &v1alpha1.FilterList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(filtersResource, filtersKind, c.ns, opts), &v1alpha1.FilterList{})
+		Invokes(testing.NewListActionWithOptions(filtersResource, filtersKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeFilters) List(ctx context.Context, opts v1.ListOptions) (result *v1
 // Watch returns a watch.Interface that watches the requested filters.
 func (c *FakeFilters) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(filtersResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(filtersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a filter and creates it.  Returns the server's representation of the filter, and an error, if there is any.
 func (c *FakeFilters) Create(ctx context.Context, filter *v1alpha1.Filter, opts v1.CreateOptions) (result *v1alpha1.Filter, err error) {
+	emptyResult := &v1alpha1.Filter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(filtersResource, c.ns, filter), &v1alpha1.Filter{})
+		Invokes(testing.NewCreateActionWithOptions(filtersResource, c.ns, filter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Filter), err
 }
 
 // Update takes the representation of a filter and updates it. Returns the server's representation of the filter, and an error, if there is any.
 func (c *FakeFilters) Update(ctx context.Context, filter *v1alpha1.Filter, opts v1.UpdateOptions) (result *v1alpha1.Filter, err error) {
+	emptyResult := &v1alpha1.Filter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(filtersResource, c.ns, filter), &v1alpha1.Filter{})
+		Invokes(testing.NewUpdateActionWithOptions(filtersResource, c.ns, filter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Filter), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeFilters) UpdateStatus(ctx context.Context, filter *v1alpha1.Filter, opts v1.UpdateOptions) (*v1alpha1.Filter, error) {
+func (c *FakeFilters) UpdateStatus(ctx context.Context, filter *v1alpha1.Filter, opts v1.UpdateOptions) (result *v1alpha1.Filter, err error) {
+	emptyResult := &v1alpha1.Filter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(filtersResource, "status", c.ns, filter), &v1alpha1.Filter{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(filtersResource, "status", c.ns, filter, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Filter), err
 }
@@ -120,7 +125,7 @@ func (c *FakeFilters) Delete(ctx context.Context, name string, opts v1.DeleteOpt
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeFilters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(filtersResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(filtersResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.FilterList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeFilters) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 
 // Patch applies the patch and returns the patched filter.
 func (c *FakeFilters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Filter, err error) {
+	emptyResult := &v1alpha1.Filter{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(filtersResource, c.ns, name, pt, data, subresources...), &v1alpha1.Filter{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(filtersResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Filter), err
 }

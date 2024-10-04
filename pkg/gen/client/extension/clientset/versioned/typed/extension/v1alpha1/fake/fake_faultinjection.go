@@ -38,22 +38,24 @@ var faultinjectionsKind = v1alpha1.SchemeGroupVersion.WithKind("FaultInjection")
 
 // Get takes name of the faultInjection, and returns the corresponding faultInjection object, and an error if there is any.
 func (c *FakeFaultInjections) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.FaultInjection, err error) {
+	emptyResult := &v1alpha1.FaultInjection{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(faultinjectionsResource, c.ns, name), &v1alpha1.FaultInjection{})
+		Invokes(testing.NewGetActionWithOptions(faultinjectionsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.FaultInjection), err
 }
 
 // List takes label and field selectors, and returns the list of FaultInjections that match those selectors.
 func (c *FakeFaultInjections) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.FaultInjectionList, err error) {
+	emptyResult := &v1alpha1.FaultInjectionList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(faultinjectionsResource, faultinjectionsKind, c.ns, opts), &v1alpha1.FaultInjectionList{})
+		Invokes(testing.NewListActionWithOptions(faultinjectionsResource, faultinjectionsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeFaultInjections) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested faultInjections.
 func (c *FakeFaultInjections) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(faultinjectionsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(faultinjectionsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a faultInjection and creates it.  Returns the server's representation of the faultInjection, and an error, if there is any.
 func (c *FakeFaultInjections) Create(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.CreateOptions) (result *v1alpha1.FaultInjection, err error) {
+	emptyResult := &v1alpha1.FaultInjection{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(faultinjectionsResource, c.ns, faultInjection), &v1alpha1.FaultInjection{})
+		Invokes(testing.NewCreateActionWithOptions(faultinjectionsResource, c.ns, faultInjection, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.FaultInjection), err
 }
 
 // Update takes the representation of a faultInjection and updates it. Returns the server's representation of the faultInjection, and an error, if there is any.
 func (c *FakeFaultInjections) Update(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.UpdateOptions) (result *v1alpha1.FaultInjection, err error) {
+	emptyResult := &v1alpha1.FaultInjection{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(faultinjectionsResource, c.ns, faultInjection), &v1alpha1.FaultInjection{})
+		Invokes(testing.NewUpdateActionWithOptions(faultinjectionsResource, c.ns, faultInjection, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.FaultInjection), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeFaultInjections) UpdateStatus(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.UpdateOptions) (*v1alpha1.FaultInjection, error) {
+func (c *FakeFaultInjections) UpdateStatus(ctx context.Context, faultInjection *v1alpha1.FaultInjection, opts v1.UpdateOptions) (result *v1alpha1.FaultInjection, err error) {
+	emptyResult := &v1alpha1.FaultInjection{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(faultinjectionsResource, "status", c.ns, faultInjection), &v1alpha1.FaultInjection{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(faultinjectionsResource, "status", c.ns, faultInjection, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.FaultInjection), err
 }
@@ -120,7 +125,7 @@ func (c *FakeFaultInjections) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeFaultInjections) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(faultinjectionsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(faultinjectionsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.FaultInjectionList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeFaultInjections) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched faultInjection.
 func (c *FakeFaultInjections) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.FaultInjection, err error) {
+	emptyResult := &v1alpha1.FaultInjection{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(faultinjectionsResource, c.ns, name, pt, data, subresources...), &v1alpha1.FaultInjection{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(faultinjectionsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.FaultInjection), err
 }

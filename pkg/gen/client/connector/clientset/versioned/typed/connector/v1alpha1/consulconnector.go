@@ -17,14 +17,13 @@ package v1alpha1
 
 import (
 	"context"
-	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ConsulConnectorsGetter has a method to return a ConsulConnectorInterface.
@@ -37,6 +36,7 @@ type ConsulConnectorsGetter interface {
 type ConsulConnectorInterface interface {
 	Create(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.CreateOptions) (*v1alpha1.ConsulConnector, error)
 	Update(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (*v1alpha1.ConsulConnector, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (*v1alpha1.ConsulConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -49,133 +49,18 @@ type ConsulConnectorInterface interface {
 
 // consulConnectors implements ConsulConnectorInterface
 type consulConnectors struct {
-	client rest.Interface
+	*gentype.ClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList]
 }
 
 // newConsulConnectors returns a ConsulConnectors
 func newConsulConnectors(c *ConnectorV1alpha1Client) *consulConnectors {
 	return &consulConnectors{
-		client: c.RESTClient(),
+		gentype.NewClientWithList[*v1alpha1.ConsulConnector, *v1alpha1.ConsulConnectorList](
+			"consulconnectors",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			"",
+			func() *v1alpha1.ConsulConnector { return &v1alpha1.ConsulConnector{} },
+			func() *v1alpha1.ConsulConnectorList { return &v1alpha1.ConsulConnectorList{} }),
 	}
-}
-
-// Get takes name of the consulConnector, and returns the corresponding consulConnector object, and an error if there is any.
-func (c *consulConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ConsulConnector, err error) {
-	result = &v1alpha1.ConsulConnector{}
-	err = c.client.Get().
-		Resource("consulconnectors").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ConsulConnectors that match those selectors.
-func (c *consulConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ConsulConnectorList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.ConsulConnectorList{}
-	err = c.client.Get().
-		Resource("consulconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested consulConnectors.
-func (c *consulConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Resource("consulconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a consulConnector and creates it.  Returns the server's representation of the consulConnector, and an error, if there is any.
-func (c *consulConnectors) Create(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.CreateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	result = &v1alpha1.ConsulConnector{}
-	err = c.client.Post().
-		Resource("consulconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consulConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a consulConnector and updates it. Returns the server's representation of the consulConnector, and an error, if there is any.
-func (c *consulConnectors) Update(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	result = &v1alpha1.ConsulConnector{}
-	err = c.client.Put().
-		Resource("consulconnectors").
-		Name(consulConnector.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consulConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *consulConnectors) UpdateStatus(ctx context.Context, consulConnector *v1alpha1.ConsulConnector, opts v1.UpdateOptions) (result *v1alpha1.ConsulConnector, err error) {
-	result = &v1alpha1.ConsulConnector{}
-	err = c.client.Put().
-		Resource("consulconnectors").
-		Name(consulConnector.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(consulConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the consulConnector and deletes it. Returns an error if one occurs.
-func (c *consulConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Resource("consulconnectors").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *consulConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Resource("consulconnectors").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched consulConnector.
-func (c *consulConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ConsulConnector, err error) {
-	result = &v1alpha1.ConsulConnector{}
-	err = c.client.Patch(pt).
-		Resource("consulconnectors").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

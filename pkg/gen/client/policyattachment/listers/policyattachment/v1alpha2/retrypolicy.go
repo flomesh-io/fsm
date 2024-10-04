@@ -17,8 +17,8 @@ package v1alpha2
 
 import (
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type RetryPolicyLister interface {
 
 // retryPolicyLister implements the RetryPolicyLister interface.
 type retryPolicyLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha2.RetryPolicy]
 }
 
 // NewRetryPolicyLister returns a new RetryPolicyLister.
 func NewRetryPolicyLister(indexer cache.Indexer) RetryPolicyLister {
-	return &retryPolicyLister{indexer: indexer}
-}
-
-// List lists all RetryPolicies in the indexer.
-func (s *retryPolicyLister) List(selector labels.Selector) (ret []*v1alpha2.RetryPolicy, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.RetryPolicy))
-	})
-	return ret, err
+	return &retryPolicyLister{listers.New[*v1alpha2.RetryPolicy](indexer, v1alpha2.Resource("retrypolicy"))}
 }
 
 // RetryPolicies returns an object that can list and get RetryPolicies.
 func (s *retryPolicyLister) RetryPolicies(namespace string) RetryPolicyNamespaceLister {
-	return retryPolicyNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return retryPolicyNamespaceLister{listers.NewNamespaced[*v1alpha2.RetryPolicy](s.ResourceIndexer, namespace)}
 }
 
 // RetryPolicyNamespaceLister helps list and get RetryPolicies.
@@ -71,26 +63,5 @@ type RetryPolicyNamespaceLister interface {
 // retryPolicyNamespaceLister implements the RetryPolicyNamespaceLister
 // interface.
 type retryPolicyNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all RetryPolicies in the indexer for a given namespace.
-func (s retryPolicyNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.RetryPolicy, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.RetryPolicy))
-	})
-	return ret, err
-}
-
-// Get retrieves the RetryPolicy from the indexer for a given namespace and name.
-func (s retryPolicyNamespaceLister) Get(name string) (*v1alpha2.RetryPolicy, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha2.Resource("retrypolicy"), name)
-	}
-	return obj.(*v1alpha2.RetryPolicy), nil
+	listers.ResourceIndexer[*v1alpha2.RetryPolicy]
 }

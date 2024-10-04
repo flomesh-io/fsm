@@ -38,22 +38,24 @@ var egressgatewaysKind = v1alpha1.SchemeGroupVersion.WithKind("EgressGateway")
 
 // Get takes name of the egressGateway, and returns the corresponding egressGateway object, and an error if there is any.
 func (c *FakeEgressGateways) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.EgressGateway, err error) {
+	emptyResult := &v1alpha1.EgressGateway{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(egressgatewaysResource, c.ns, name), &v1alpha1.EgressGateway{})
+		Invokes(testing.NewGetActionWithOptions(egressgatewaysResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EgressGateway), err
 }
 
 // List takes label and field selectors, and returns the list of EgressGateways that match those selectors.
 func (c *FakeEgressGateways) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.EgressGatewayList, err error) {
+	emptyResult := &v1alpha1.EgressGatewayList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(egressgatewaysResource, egressgatewaysKind, c.ns, opts), &v1alpha1.EgressGatewayList{})
+		Invokes(testing.NewListActionWithOptions(egressgatewaysResource, egressgatewaysKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,28 +74,30 @@ func (c *FakeEgressGateways) List(ctx context.Context, opts v1.ListOptions) (res
 // Watch returns a watch.Interface that watches the requested egressGateways.
 func (c *FakeEgressGateways) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(egressgatewaysResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(egressgatewaysResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a egressGateway and creates it.  Returns the server's representation of the egressGateway, and an error, if there is any.
 func (c *FakeEgressGateways) Create(ctx context.Context, egressGateway *v1alpha1.EgressGateway, opts v1.CreateOptions) (result *v1alpha1.EgressGateway, err error) {
+	emptyResult := &v1alpha1.EgressGateway{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(egressgatewaysResource, c.ns, egressGateway), &v1alpha1.EgressGateway{})
+		Invokes(testing.NewCreateActionWithOptions(egressgatewaysResource, c.ns, egressGateway, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EgressGateway), err
 }
 
 // Update takes the representation of a egressGateway and updates it. Returns the server's representation of the egressGateway, and an error, if there is any.
 func (c *FakeEgressGateways) Update(ctx context.Context, egressGateway *v1alpha1.EgressGateway, opts v1.UpdateOptions) (result *v1alpha1.EgressGateway, err error) {
+	emptyResult := &v1alpha1.EgressGateway{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(egressgatewaysResource, c.ns, egressGateway), &v1alpha1.EgressGateway{})
+		Invokes(testing.NewUpdateActionWithOptions(egressgatewaysResource, c.ns, egressGateway, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EgressGateway), err
 }
@@ -108,7 +112,7 @@ func (c *FakeEgressGateways) Delete(ctx context.Context, name string, opts v1.De
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeEgressGateways) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(egressgatewaysResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(egressgatewaysResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.EgressGatewayList{})
 	return err
@@ -116,11 +120,12 @@ func (c *FakeEgressGateways) DeleteCollection(ctx context.Context, opts v1.Delet
 
 // Patch applies the patch and returns the patched egressGateway.
 func (c *FakeEgressGateways) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EgressGateway, err error) {
+	emptyResult := &v1alpha1.EgressGateway{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(egressgatewaysResource, c.ns, name, pt, data, subresources...), &v1alpha1.EgressGateway{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(egressgatewaysResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.EgressGateway), err
 }

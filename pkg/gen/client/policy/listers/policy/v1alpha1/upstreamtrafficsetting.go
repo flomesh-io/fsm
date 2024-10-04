@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type UpstreamTrafficSettingLister interface {
 
 // upstreamTrafficSettingLister implements the UpstreamTrafficSettingLister interface.
 type upstreamTrafficSettingLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.UpstreamTrafficSetting]
 }
 
 // NewUpstreamTrafficSettingLister returns a new UpstreamTrafficSettingLister.
 func NewUpstreamTrafficSettingLister(indexer cache.Indexer) UpstreamTrafficSettingLister {
-	return &upstreamTrafficSettingLister{indexer: indexer}
-}
-
-// List lists all UpstreamTrafficSettings in the indexer.
-func (s *upstreamTrafficSettingLister) List(selector labels.Selector) (ret []*v1alpha1.UpstreamTrafficSetting, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.UpstreamTrafficSetting))
-	})
-	return ret, err
+	return &upstreamTrafficSettingLister{listers.New[*v1alpha1.UpstreamTrafficSetting](indexer, v1alpha1.Resource("upstreamtrafficsetting"))}
 }
 
 // UpstreamTrafficSettings returns an object that can list and get UpstreamTrafficSettings.
 func (s *upstreamTrafficSettingLister) UpstreamTrafficSettings(namespace string) UpstreamTrafficSettingNamespaceLister {
-	return upstreamTrafficSettingNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return upstreamTrafficSettingNamespaceLister{listers.NewNamespaced[*v1alpha1.UpstreamTrafficSetting](s.ResourceIndexer, namespace)}
 }
 
 // UpstreamTrafficSettingNamespaceLister helps list and get UpstreamTrafficSettings.
@@ -71,26 +63,5 @@ type UpstreamTrafficSettingNamespaceLister interface {
 // upstreamTrafficSettingNamespaceLister implements the UpstreamTrafficSettingNamespaceLister
 // interface.
 type upstreamTrafficSettingNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all UpstreamTrafficSettings in the indexer for a given namespace.
-func (s upstreamTrafficSettingNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.UpstreamTrafficSetting, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.UpstreamTrafficSetting))
-	})
-	return ret, err
-}
-
-// Get retrieves the UpstreamTrafficSetting from the indexer for a given namespace and name.
-func (s upstreamTrafficSettingNamespaceLister) Get(name string) (*v1alpha1.UpstreamTrafficSetting, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("upstreamtrafficsetting"), name)
-	}
-	return obj.(*v1alpha1.UpstreamTrafficSetting), nil
+	listers.ResourceIndexer[*v1alpha1.UpstreamTrafficSetting]
 }

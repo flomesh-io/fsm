@@ -674,10 +674,10 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 	return gwValues.AsMap(), nil
 }
 
-func infraForTemplate(gateway *gwv1.Gateway) map[string]map[gwv1.AnnotationKey]gwv1.AnnotationValue {
-	infra := map[string]map[gwv1.AnnotationKey]gwv1.AnnotationValue{
-		"annotations": {},
-		"labels":      {},
+func infraForTemplate(gateway *gwv1.Gateway) map[string]interface{} {
+	infra := map[string]interface{}{
+		"annotations": map[gwv1.AnnotationKey]gwv1.AnnotationValue{},
+		"labels":      map[gwv1.LabelKey]gwv1.LabelValue{},
 	}
 
 	if gateway.Spec.Infrastructure != nil {

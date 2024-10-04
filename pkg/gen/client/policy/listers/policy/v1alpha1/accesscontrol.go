@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type AccessControlLister interface {
 
 // accessControlLister implements the AccessControlLister interface.
 type accessControlLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.AccessControl]
 }
 
 // NewAccessControlLister returns a new AccessControlLister.
 func NewAccessControlLister(indexer cache.Indexer) AccessControlLister {
-	return &accessControlLister{indexer: indexer}
-}
-
-// List lists all AccessControls in the indexer.
-func (s *accessControlLister) List(selector labels.Selector) (ret []*v1alpha1.AccessControl, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AccessControl))
-	})
-	return ret, err
+	return &accessControlLister{listers.New[*v1alpha1.AccessControl](indexer, v1alpha1.Resource("accesscontrol"))}
 }
 
 // AccessControls returns an object that can list and get AccessControls.
 func (s *accessControlLister) AccessControls(namespace string) AccessControlNamespaceLister {
-	return accessControlNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return accessControlNamespaceLister{listers.NewNamespaced[*v1alpha1.AccessControl](s.ResourceIndexer, namespace)}
 }
 
 // AccessControlNamespaceLister helps list and get AccessControls.
@@ -71,26 +63,5 @@ type AccessControlNamespaceLister interface {
 // accessControlNamespaceLister implements the AccessControlNamespaceLister
 // interface.
 type accessControlNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AccessControls in the indexer for a given namespace.
-func (s accessControlNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AccessControl, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AccessControl))
-	})
-	return ret, err
-}
-
-// Get retrieves the AccessControl from the indexer for a given namespace and name.
-func (s accessControlNamespaceLister) Get(name string) (*v1alpha1.AccessControl, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("accesscontrol"), name)
-	}
-	return obj.(*v1alpha1.AccessControl), nil
+	listers.ResourceIndexer[*v1alpha1.AccessControl]
 }

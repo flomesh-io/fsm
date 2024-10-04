@@ -30,6 +30,8 @@ import (
 	"strconv"
 	"sync"
 
+	"k8s.io/klog/v2"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/events"
@@ -55,7 +57,7 @@ func (info *baseEndpointInfo) IP() string {
 }
 
 func (info *baseEndpointInfo) Port() (int, error) {
-	return utilcache.PortPart(info.Endpoint)
+	return PortPart(info.Endpoint)
 }
 
 func (info *baseEndpointInfo) NodeName() string {
@@ -252,4 +254,20 @@ func (em EndpointsMap) unmerge(other EndpointsMap) {
 	for svcPortName := range other {
 		delete(em, svcPortName)
 	}
+}
+
+// PortPart returns just the port part of an endpoint string.
+func PortPart(s string) (int, error) {
+	// Must be IP:port
+	_, port, err := net.SplitHostPort(s)
+	if err != nil {
+		klog.ErrorS(err, "Failed to parse host-port", "input", s)
+		return -1, err
+	}
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		klog.ErrorS(err, "Failed to parse port", "input", port)
+		return -1, err
+	}
+	return portNumber, nil
 }

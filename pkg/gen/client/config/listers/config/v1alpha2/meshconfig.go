@@ -17,8 +17,8 @@ package v1alpha2
 
 import (
 	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha2"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type MeshConfigLister interface {
 
 // meshConfigLister implements the MeshConfigLister interface.
 type meshConfigLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha2.MeshConfig]
 }
 
 // NewMeshConfigLister returns a new MeshConfigLister.
 func NewMeshConfigLister(indexer cache.Indexer) MeshConfigLister {
-	return &meshConfigLister{indexer: indexer}
-}
-
-// List lists all MeshConfigs in the indexer.
-func (s *meshConfigLister) List(selector labels.Selector) (ret []*v1alpha2.MeshConfig, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.MeshConfig))
-	})
-	return ret, err
+	return &meshConfigLister{listers.New[*v1alpha2.MeshConfig](indexer, v1alpha2.Resource("meshconfig"))}
 }
 
 // MeshConfigs returns an object that can list and get MeshConfigs.
 func (s *meshConfigLister) MeshConfigs(namespace string) MeshConfigNamespaceLister {
-	return meshConfigNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return meshConfigNamespaceLister{listers.NewNamespaced[*v1alpha2.MeshConfig](s.ResourceIndexer, namespace)}
 }
 
 // MeshConfigNamespaceLister helps list and get MeshConfigs.
@@ -71,26 +63,5 @@ type MeshConfigNamespaceLister interface {
 // meshConfigNamespaceLister implements the MeshConfigNamespaceLister
 // interface.
 type meshConfigNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all MeshConfigs in the indexer for a given namespace.
-func (s meshConfigNamespaceLister) List(selector labels.Selector) (ret []*v1alpha2.MeshConfig, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha2.MeshConfig))
-	})
-	return ret, err
-}
-
-// Get retrieves the MeshConfig from the indexer for a given namespace and name.
-func (s meshConfigNamespaceLister) Get(name string) (*v1alpha2.MeshConfig, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha2.Resource("meshconfig"), name)
-	}
-	return obj.(*v1alpha2.MeshConfig), nil
+	listers.ResourceIndexer[*v1alpha2.MeshConfig]
 }

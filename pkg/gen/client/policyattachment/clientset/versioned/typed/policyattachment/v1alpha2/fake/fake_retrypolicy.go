@@ -38,22 +38,24 @@ var retrypoliciesKind = v1alpha2.SchemeGroupVersion.WithKind("RetryPolicy")
 
 // Get takes name of the retryPolicy, and returns the corresponding retryPolicy object, and an error if there is any.
 func (c *FakeRetryPolicies) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha2.RetryPolicy, err error) {
+	emptyResult := &v1alpha2.RetryPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(retrypoliciesResource, c.ns, name), &v1alpha2.RetryPolicy{})
+		Invokes(testing.NewGetActionWithOptions(retrypoliciesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.RetryPolicy), err
 }
 
 // List takes label and field selectors, and returns the list of RetryPolicies that match those selectors.
 func (c *FakeRetryPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha2.RetryPolicyList, err error) {
+	emptyResult := &v1alpha2.RetryPolicyList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(retrypoliciesResource, retrypoliciesKind, c.ns, opts), &v1alpha2.RetryPolicyList{})
+		Invokes(testing.NewListActionWithOptions(retrypoliciesResource, retrypoliciesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeRetryPolicies) List(ctx context.Context, opts v1.ListOptions) (resu
 // Watch returns a watch.Interface that watches the requested retryPolicies.
 func (c *FakeRetryPolicies) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(retrypoliciesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(retrypoliciesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a retryPolicy and creates it.  Returns the server's representation of the retryPolicy, and an error, if there is any.
 func (c *FakeRetryPolicies) Create(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.CreateOptions) (result *v1alpha2.RetryPolicy, err error) {
+	emptyResult := &v1alpha2.RetryPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(retrypoliciesResource, c.ns, retryPolicy), &v1alpha2.RetryPolicy{})
+		Invokes(testing.NewCreateActionWithOptions(retrypoliciesResource, c.ns, retryPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.RetryPolicy), err
 }
 
 // Update takes the representation of a retryPolicy and updates it. Returns the server's representation of the retryPolicy, and an error, if there is any.
 func (c *FakeRetryPolicies) Update(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (result *v1alpha2.RetryPolicy, err error) {
+	emptyResult := &v1alpha2.RetryPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(retrypoliciesResource, c.ns, retryPolicy), &v1alpha2.RetryPolicy{})
+		Invokes(testing.NewUpdateActionWithOptions(retrypoliciesResource, c.ns, retryPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.RetryPolicy), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRetryPolicies) UpdateStatus(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (*v1alpha2.RetryPolicy, error) {
+func (c *FakeRetryPolicies) UpdateStatus(ctx context.Context, retryPolicy *v1alpha2.RetryPolicy, opts v1.UpdateOptions) (result *v1alpha2.RetryPolicy, err error) {
+	emptyResult := &v1alpha2.RetryPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(retrypoliciesResource, "status", c.ns, retryPolicy), &v1alpha2.RetryPolicy{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(retrypoliciesResource, "status", c.ns, retryPolicy, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.RetryPolicy), err
 }
@@ -120,7 +125,7 @@ func (c *FakeRetryPolicies) Delete(ctx context.Context, name string, opts v1.Del
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeRetryPolicies) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(retrypoliciesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(retrypoliciesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha2.RetryPolicyList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeRetryPolicies) DeleteCollection(ctx context.Context, opts v1.Delete
 
 // Patch applies the patch and returns the patched retryPolicy.
 func (c *FakeRetryPolicies) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha2.RetryPolicy, err error) {
+	emptyResult := &v1alpha2.RetryPolicy{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(retrypoliciesResource, c.ns, name, pt, data, subresources...), &v1alpha2.RetryPolicy{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(retrypoliciesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha2.RetryPolicy), err
 }

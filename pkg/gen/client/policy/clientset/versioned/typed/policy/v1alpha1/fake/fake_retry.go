@@ -38,22 +38,24 @@ var retriesKind = v1alpha1.SchemeGroupVersion.WithKind("Retry")
 
 // Get takes name of the retry, and returns the corresponding retry object, and an error if there is any.
 func (c *FakeRetries) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Retry, err error) {
+	emptyResult := &v1alpha1.Retry{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(retriesResource, c.ns, name), &v1alpha1.Retry{})
+		Invokes(testing.NewGetActionWithOptions(retriesResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Retry), err
 }
 
 // List takes label and field selectors, and returns the list of Retries that match those selectors.
 func (c *FakeRetries) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RetryList, err error) {
+	emptyResult := &v1alpha1.RetryList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(retriesResource, retriesKind, c.ns, opts), &v1alpha1.RetryList{})
+		Invokes(testing.NewListActionWithOptions(retriesResource, retriesKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,28 +74,30 @@ func (c *FakeRetries) List(ctx context.Context, opts v1.ListOptions) (result *v1
 // Watch returns a watch.Interface that watches the requested retries.
 func (c *FakeRetries) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(retriesResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(retriesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a retry and creates it.  Returns the server's representation of the retry, and an error, if there is any.
 func (c *FakeRetries) Create(ctx context.Context, retry *v1alpha1.Retry, opts v1.CreateOptions) (result *v1alpha1.Retry, err error) {
+	emptyResult := &v1alpha1.Retry{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(retriesResource, c.ns, retry), &v1alpha1.Retry{})
+		Invokes(testing.NewCreateActionWithOptions(retriesResource, c.ns, retry, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Retry), err
 }
 
 // Update takes the representation of a retry and updates it. Returns the server's representation of the retry, and an error, if there is any.
 func (c *FakeRetries) Update(ctx context.Context, retry *v1alpha1.Retry, opts v1.UpdateOptions) (result *v1alpha1.Retry, err error) {
+	emptyResult := &v1alpha1.Retry{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(retriesResource, c.ns, retry), &v1alpha1.Retry{})
+		Invokes(testing.NewUpdateActionWithOptions(retriesResource, c.ns, retry, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Retry), err
 }
@@ -108,7 +112,7 @@ func (c *FakeRetries) Delete(ctx context.Context, name string, opts v1.DeleteOpt
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeRetries) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(retriesResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(retriesResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.RetryList{})
 	return err
@@ -116,11 +120,12 @@ func (c *FakeRetries) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 
 // Patch applies the patch and returns the patched retry.
 func (c *FakeRetries) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Retry, err error) {
+	emptyResult := &v1alpha1.Retry{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(retriesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Retry{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(retriesResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Retry), err
 }

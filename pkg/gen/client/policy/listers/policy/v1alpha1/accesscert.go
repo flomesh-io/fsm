@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type AccessCertLister interface {
 
 // accessCertLister implements the AccessCertLister interface.
 type accessCertLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.AccessCert]
 }
 
 // NewAccessCertLister returns a new AccessCertLister.
 func NewAccessCertLister(indexer cache.Indexer) AccessCertLister {
-	return &accessCertLister{indexer: indexer}
-}
-
-// List lists all AccessCerts in the indexer.
-func (s *accessCertLister) List(selector labels.Selector) (ret []*v1alpha1.AccessCert, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AccessCert))
-	})
-	return ret, err
+	return &accessCertLister{listers.New[*v1alpha1.AccessCert](indexer, v1alpha1.Resource("accesscert"))}
 }
 
 // AccessCerts returns an object that can list and get AccessCerts.
 func (s *accessCertLister) AccessCerts(namespace string) AccessCertNamespaceLister {
-	return accessCertNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return accessCertNamespaceLister{listers.NewNamespaced[*v1alpha1.AccessCert](s.ResourceIndexer, namespace)}
 }
 
 // AccessCertNamespaceLister helps list and get AccessCerts.
@@ -71,26 +63,5 @@ type AccessCertNamespaceLister interface {
 // accessCertNamespaceLister implements the AccessCertNamespaceLister
 // interface.
 type accessCertNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all AccessCerts in the indexer for a given namespace.
-func (s accessCertNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.AccessCert, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.AccessCert))
-	})
-	return ret, err
-}
-
-// Get retrieves the AccessCert from the indexer for a given namespace and name.
-func (s accessCertNamespaceLister) Get(name string) (*v1alpha1.AccessCert, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("accesscert"), name)
-	}
-	return obj.(*v1alpha1.AccessCert), nil
+	listers.ResourceIndexer[*v1alpha1.AccessCert]
 }

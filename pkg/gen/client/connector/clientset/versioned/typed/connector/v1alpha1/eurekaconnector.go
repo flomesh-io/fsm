@@ -17,14 +17,13 @@ package v1alpha1
 
 import (
 	"context"
-	"time"
 
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	scheme "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // EurekaConnectorsGetter has a method to return a EurekaConnectorInterface.
@@ -37,6 +36,7 @@ type EurekaConnectorsGetter interface {
 type EurekaConnectorInterface interface {
 	Create(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.CreateOptions) (*v1alpha1.EurekaConnector, error)
 	Update(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (*v1alpha1.EurekaConnector, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (*v1alpha1.EurekaConnector, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -49,133 +49,18 @@ type EurekaConnectorInterface interface {
 
 // eurekaConnectors implements EurekaConnectorInterface
 type eurekaConnectors struct {
-	client rest.Interface
+	*gentype.ClientWithList[*v1alpha1.EurekaConnector, *v1alpha1.EurekaConnectorList]
 }
 
 // newEurekaConnectors returns a EurekaConnectors
 func newEurekaConnectors(c *ConnectorV1alpha1Client) *eurekaConnectors {
 	return &eurekaConnectors{
-		client: c.RESTClient(),
+		gentype.NewClientWithList[*v1alpha1.EurekaConnector, *v1alpha1.EurekaConnectorList](
+			"eurekaconnectors",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			"",
+			func() *v1alpha1.EurekaConnector { return &v1alpha1.EurekaConnector{} },
+			func() *v1alpha1.EurekaConnectorList { return &v1alpha1.EurekaConnectorList{} }),
 	}
-}
-
-// Get takes name of the eurekaConnector, and returns the corresponding eurekaConnector object, and an error if there is any.
-func (c *eurekaConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.EurekaConnector, err error) {
-	result = &v1alpha1.EurekaConnector{}
-	err = c.client.Get().
-		Resource("eurekaconnectors").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of EurekaConnectors that match those selectors.
-func (c *eurekaConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.EurekaConnectorList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.EurekaConnectorList{}
-	err = c.client.Get().
-		Resource("eurekaconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested eurekaConnectors.
-func (c *eurekaConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Resource("eurekaconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a eurekaConnector and creates it.  Returns the server's representation of the eurekaConnector, and an error, if there is any.
-func (c *eurekaConnectors) Create(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.CreateOptions) (result *v1alpha1.EurekaConnector, err error) {
-	result = &v1alpha1.EurekaConnector{}
-	err = c.client.Post().
-		Resource("eurekaconnectors").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(eurekaConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a eurekaConnector and updates it. Returns the server's representation of the eurekaConnector, and an error, if there is any.
-func (c *eurekaConnectors) Update(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (result *v1alpha1.EurekaConnector, err error) {
-	result = &v1alpha1.EurekaConnector{}
-	err = c.client.Put().
-		Resource("eurekaconnectors").
-		Name(eurekaConnector.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(eurekaConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *eurekaConnectors) UpdateStatus(ctx context.Context, eurekaConnector *v1alpha1.EurekaConnector, opts v1.UpdateOptions) (result *v1alpha1.EurekaConnector, err error) {
-	result = &v1alpha1.EurekaConnector{}
-	err = c.client.Put().
-		Resource("eurekaconnectors").
-		Name(eurekaConnector.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(eurekaConnector).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the eurekaConnector and deletes it. Returns an error if one occurs.
-func (c *eurekaConnectors) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Resource("eurekaconnectors").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *eurekaConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Resource("eurekaconnectors").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched eurekaConnector.
-func (c *eurekaConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.EurekaConnector, err error) {
-	result = &v1alpha1.EurekaConnector{}
-	err = c.client.Patch(pt).
-		Resource("eurekaconnectors").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

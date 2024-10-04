@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -36,30 +36,10 @@ type ConsulConnectorLister interface {
 
 // consulConnectorLister implements the ConsulConnectorLister interface.
 type consulConnectorLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.ConsulConnector]
 }
 
 // NewConsulConnectorLister returns a new ConsulConnectorLister.
 func NewConsulConnectorLister(indexer cache.Indexer) ConsulConnectorLister {
-	return &consulConnectorLister{indexer: indexer}
-}
-
-// List lists all ConsulConnectors in the indexer.
-func (s *consulConnectorLister) List(selector labels.Selector) (ret []*v1alpha1.ConsulConnector, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ConsulConnector))
-	})
-	return ret, err
-}
-
-// Get retrieves the ConsulConnector from the index for a given name.
-func (s *consulConnectorLister) Get(name string) (*v1alpha1.ConsulConnector, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("consulconnector"), name)
-	}
-	return obj.(*v1alpha1.ConsulConnector), nil
+	return &consulConnectorLister{listers.New[*v1alpha1.ConsulConnector](indexer, v1alpha1.Resource("consulconnector"))}
 }

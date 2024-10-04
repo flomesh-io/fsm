@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type ZipkinLister interface {
 
 // zipkinLister implements the ZipkinLister interface.
 type zipkinLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Zipkin]
 }
 
 // NewZipkinLister returns a new ZipkinLister.
 func NewZipkinLister(indexer cache.Indexer) ZipkinLister {
-	return &zipkinLister{indexer: indexer}
-}
-
-// List lists all Zipkins in the indexer.
-func (s *zipkinLister) List(selector labels.Selector) (ret []*v1alpha1.Zipkin, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Zipkin))
-	})
-	return ret, err
+	return &zipkinLister{listers.New[*v1alpha1.Zipkin](indexer, v1alpha1.Resource("zipkin"))}
 }
 
 // Zipkins returns an object that can list and get Zipkins.
 func (s *zipkinLister) Zipkins(namespace string) ZipkinNamespaceLister {
-	return zipkinNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return zipkinNamespaceLister{listers.NewNamespaced[*v1alpha1.Zipkin](s.ResourceIndexer, namespace)}
 }
 
 // ZipkinNamespaceLister helps list and get Zipkins.
@@ -71,26 +63,5 @@ type ZipkinNamespaceLister interface {
 // zipkinNamespaceLister implements the ZipkinNamespaceLister
 // interface.
 type zipkinNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Zipkins in the indexer for a given namespace.
-func (s zipkinNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Zipkin, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Zipkin))
-	})
-	return ret, err
-}
-
-// Get retrieves the Zipkin from the indexer for a given namespace and name.
-func (s zipkinNamespaceLister) Get(name string) (*v1alpha1.Zipkin, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("zipkin"), name)
-	}
-	return obj.(*v1alpha1.Zipkin), nil
+	listers.ResourceIndexer[*v1alpha1.Zipkin]
 }

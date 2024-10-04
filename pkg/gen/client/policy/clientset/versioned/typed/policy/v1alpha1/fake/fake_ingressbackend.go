@@ -38,22 +38,24 @@ var ingressbackendsKind = v1alpha1.SchemeGroupVersion.WithKind("IngressBackend")
 
 // Get takes name of the ingressBackend, and returns the corresponding ingressBackend object, and an error if there is any.
 func (c *FakeIngressBackends) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.IngressBackend, err error) {
+	emptyResult := &v1alpha1.IngressBackend{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(ingressbackendsResource, c.ns, name), &v1alpha1.IngressBackend{})
+		Invokes(testing.NewGetActionWithOptions(ingressbackendsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.IngressBackend), err
 }
 
 // List takes label and field selectors, and returns the list of IngressBackends that match those selectors.
 func (c *FakeIngressBackends) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.IngressBackendList, err error) {
+	emptyResult := &v1alpha1.IngressBackendList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(ingressbackendsResource, ingressbackendsKind, c.ns, opts), &v1alpha1.IngressBackendList{})
+		Invokes(testing.NewListActionWithOptions(ingressbackendsResource, ingressbackendsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeIngressBackends) List(ctx context.Context, opts v1.ListOptions) (re
 // Watch returns a watch.Interface that watches the requested ingressBackends.
 func (c *FakeIngressBackends) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(ingressbackendsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(ingressbackendsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a ingressBackend and creates it.  Returns the server's representation of the ingressBackend, and an error, if there is any.
 func (c *FakeIngressBackends) Create(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.CreateOptions) (result *v1alpha1.IngressBackend, err error) {
+	emptyResult := &v1alpha1.IngressBackend{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(ingressbackendsResource, c.ns, ingressBackend), &v1alpha1.IngressBackend{})
+		Invokes(testing.NewCreateActionWithOptions(ingressbackendsResource, c.ns, ingressBackend, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.IngressBackend), err
 }
 
 // Update takes the representation of a ingressBackend and updates it. Returns the server's representation of the ingressBackend, and an error, if there is any.
 func (c *FakeIngressBackends) Update(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.UpdateOptions) (result *v1alpha1.IngressBackend, err error) {
+	emptyResult := &v1alpha1.IngressBackend{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(ingressbackendsResource, c.ns, ingressBackend), &v1alpha1.IngressBackend{})
+		Invokes(testing.NewUpdateActionWithOptions(ingressbackendsResource, c.ns, ingressBackend, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.IngressBackend), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeIngressBackends) UpdateStatus(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.UpdateOptions) (*v1alpha1.IngressBackend, error) {
+func (c *FakeIngressBackends) UpdateStatus(ctx context.Context, ingressBackend *v1alpha1.IngressBackend, opts v1.UpdateOptions) (result *v1alpha1.IngressBackend, err error) {
+	emptyResult := &v1alpha1.IngressBackend{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(ingressbackendsResource, "status", c.ns, ingressBackend), &v1alpha1.IngressBackend{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(ingressbackendsResource, "status", c.ns, ingressBackend, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.IngressBackend), err
 }
@@ -120,7 +125,7 @@ func (c *FakeIngressBackends) Delete(ctx context.Context, name string, opts v1.D
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeIngressBackends) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(ingressbackendsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(ingressbackendsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.IngressBackendList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeIngressBackends) DeleteCollection(ctx context.Context, opts v1.Dele
 
 // Patch applies the patch and returns the patched ingressBackend.
 func (c *FakeIngressBackends) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.IngressBackend, err error) {
+	emptyResult := &v1alpha1.IngressBackend{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(ingressbackendsResource, c.ns, name, pt, data, subresources...), &v1alpha1.IngressBackend{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(ingressbackendsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.IngressBackend), err
 }

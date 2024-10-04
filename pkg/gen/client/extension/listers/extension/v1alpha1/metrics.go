@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type MetricsLister interface {
 
 // metricsLister implements the MetricsLister interface.
 type metricsLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Metrics]
 }
 
 // NewMetricsLister returns a new MetricsLister.
 func NewMetricsLister(indexer cache.Indexer) MetricsLister {
-	return &metricsLister{indexer: indexer}
-}
-
-// List lists all Metricses in the indexer.
-func (s *metricsLister) List(selector labels.Selector) (ret []*v1alpha1.Metrics, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Metrics))
-	})
-	return ret, err
+	return &metricsLister{listers.New[*v1alpha1.Metrics](indexer, v1alpha1.Resource("metrics"))}
 }
 
 // Metricses returns an object that can list and get Metricses.
 func (s *metricsLister) Metricses(namespace string) MetricsNamespaceLister {
-	return metricsNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return metricsNamespaceLister{listers.NewNamespaced[*v1alpha1.Metrics](s.ResourceIndexer, namespace)}
 }
 
 // MetricsNamespaceLister helps list and get Metricses.
@@ -71,26 +63,5 @@ type MetricsNamespaceLister interface {
 // metricsNamespaceLister implements the MetricsNamespaceLister
 // interface.
 type metricsNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Metricses in the indexer for a given namespace.
-func (s metricsNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Metrics, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Metrics))
-	})
-	return ret, err
-}
-
-// Get retrieves the Metrics from the indexer for a given namespace and name.
-func (s metricsNamespaceLister) Get(name string) (*v1alpha1.Metrics, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("metrics"), name)
-	}
-	return obj.(*v1alpha1.Metrics), nil
+	listers.ResourceIndexer[*v1alpha1.Metrics]
 }

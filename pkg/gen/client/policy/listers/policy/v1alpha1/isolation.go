@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type IsolationLister interface {
 
 // isolationLister implements the IsolationLister interface.
 type isolationLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.Isolation]
 }
 
 // NewIsolationLister returns a new IsolationLister.
 func NewIsolationLister(indexer cache.Indexer) IsolationLister {
-	return &isolationLister{indexer: indexer}
-}
-
-// List lists all Isolations in the indexer.
-func (s *isolationLister) List(selector labels.Selector) (ret []*v1alpha1.Isolation, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Isolation))
-	})
-	return ret, err
+	return &isolationLister{listers.New[*v1alpha1.Isolation](indexer, v1alpha1.Resource("isolation"))}
 }
 
 // Isolations returns an object that can list and get Isolations.
 func (s *isolationLister) Isolations(namespace string) IsolationNamespaceLister {
-	return isolationNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return isolationNamespaceLister{listers.NewNamespaced[*v1alpha1.Isolation](s.ResourceIndexer, namespace)}
 }
 
 // IsolationNamespaceLister helps list and get Isolations.
@@ -71,26 +63,5 @@ type IsolationNamespaceLister interface {
 // isolationNamespaceLister implements the IsolationNamespaceLister
 // interface.
 type isolationNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Isolations in the indexer for a given namespace.
-func (s isolationNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Isolation, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Isolation))
-	})
-	return ret, err
-}
-
-// Get retrieves the Isolation from the indexer for a given namespace and name.
-func (s isolationNamespaceLister) Get(name string) (*v1alpha1.Isolation, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("isolation"), name)
-	}
-	return obj.(*v1alpha1.Isolation), nil
+	listers.ResourceIndexer[*v1alpha1.Isolation]
 }

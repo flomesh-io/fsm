@@ -295,7 +295,7 @@ fsm:
 			},
 			Infrastructure: &gwv1.GatewayInfrastructure{
 				Annotations: map[gwv1.AnnotationKey]gwv1.AnnotationValue{"xyz": "abc"},
-				Labels:      map[gwv1.AnnotationKey]gwv1.AnnotationValue{"test": "demo"},
+				Labels:      map[gwv1.LabelKey]gwv1.LabelValue{"test": "demo"},
 				ParametersRef: &gwv1.LocalParametersReference{
 					Group: corev1.GroupName,
 					Kind:  constants.KubernetesConfigMapKind,

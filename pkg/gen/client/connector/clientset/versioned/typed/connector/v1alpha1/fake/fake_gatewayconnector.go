@@ -37,20 +37,22 @@ var gatewayconnectorsKind = v1alpha1.SchemeGroupVersion.WithKind("GatewayConnect
 
 // Get takes name of the gatewayConnector, and returns the corresponding gatewayConnector object, and an error if there is any.
 func (c *FakeGatewayConnectors) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.GatewayConnector, err error) {
+	emptyResult := &v1alpha1.GatewayConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(gatewayconnectorsResource, name), &v1alpha1.GatewayConnector{})
+		Invokes(testing.NewRootGetActionWithOptions(gatewayconnectorsResource, name, options), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GatewayConnector), err
 }
 
 // List takes label and field selectors, and returns the list of GatewayConnectors that match those selectors.
 func (c *FakeGatewayConnectors) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.GatewayConnectorList, err error) {
+	emptyResult := &v1alpha1.GatewayConnectorList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(gatewayconnectorsResource, gatewayconnectorsKind, opts), &v1alpha1.GatewayConnectorList{})
+		Invokes(testing.NewRootListActionWithOptions(gatewayconnectorsResource, gatewayconnectorsKind, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -69,36 +71,39 @@ func (c *FakeGatewayConnectors) List(ctx context.Context, opts v1.ListOptions) (
 // Watch returns a watch.Interface that watches the requested gatewayConnectors.
 func (c *FakeGatewayConnectors) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(gatewayconnectorsResource, opts))
+		InvokesWatch(testing.NewRootWatchActionWithOptions(gatewayconnectorsResource, opts))
 }
 
 // Create takes the representation of a gatewayConnector and creates it.  Returns the server's representation of the gatewayConnector, and an error, if there is any.
 func (c *FakeGatewayConnectors) Create(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.CreateOptions) (result *v1alpha1.GatewayConnector, err error) {
+	emptyResult := &v1alpha1.GatewayConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(gatewayconnectorsResource, gatewayConnector), &v1alpha1.GatewayConnector{})
+		Invokes(testing.NewRootCreateActionWithOptions(gatewayconnectorsResource, gatewayConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GatewayConnector), err
 }
 
 // Update takes the representation of a gatewayConnector and updates it. Returns the server's representation of the gatewayConnector, and an error, if there is any.
 func (c *FakeGatewayConnectors) Update(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.UpdateOptions) (result *v1alpha1.GatewayConnector, err error) {
+	emptyResult := &v1alpha1.GatewayConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(gatewayconnectorsResource, gatewayConnector), &v1alpha1.GatewayConnector{})
+		Invokes(testing.NewRootUpdateActionWithOptions(gatewayconnectorsResource, gatewayConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GatewayConnector), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeGatewayConnectors) UpdateStatus(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.UpdateOptions) (*v1alpha1.GatewayConnector, error) {
+func (c *FakeGatewayConnectors) UpdateStatus(ctx context.Context, gatewayConnector *v1alpha1.GatewayConnector, opts v1.UpdateOptions) (result *v1alpha1.GatewayConnector, err error) {
+	emptyResult := &v1alpha1.GatewayConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(gatewayconnectorsResource, "status", gatewayConnector), &v1alpha1.GatewayConnector{})
+		Invokes(testing.NewRootUpdateSubresourceActionWithOptions(gatewayconnectorsResource, "status", gatewayConnector, opts), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GatewayConnector), err
 }
@@ -112,7 +117,7 @@ func (c *FakeGatewayConnectors) Delete(ctx context.Context, name string, opts v1
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeGatewayConnectors) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(gatewayconnectorsResource, listOpts)
+	action := testing.NewRootDeleteCollectionActionWithOptions(gatewayconnectorsResource, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.GatewayConnectorList{})
 	return err
@@ -120,10 +125,11 @@ func (c *FakeGatewayConnectors) DeleteCollection(ctx context.Context, opts v1.De
 
 // Patch applies the patch and returns the patched gatewayConnector.
 func (c *FakeGatewayConnectors) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.GatewayConnector, err error) {
+	emptyResult := &v1alpha1.GatewayConnector{}
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(gatewayconnectorsResource, name, pt, data, subresources...), &v1alpha1.GatewayConnector{})
+		Invokes(testing.NewRootPatchSubresourceActionWithOptions(gatewayconnectorsResource, name, pt, data, opts, subresources...), emptyResult)
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.GatewayConnector), err
 }

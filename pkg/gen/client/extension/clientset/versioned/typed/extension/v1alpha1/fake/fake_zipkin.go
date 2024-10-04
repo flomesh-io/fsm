@@ -38,22 +38,24 @@ var zipkinsKind = v1alpha1.SchemeGroupVersion.WithKind("Zipkin")
 
 // Get takes name of the zipkin, and returns the corresponding zipkin object, and an error if there is any.
 func (c *FakeZipkins) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Zipkin, err error) {
+	emptyResult := &v1alpha1.Zipkin{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(zipkinsResource, c.ns, name), &v1alpha1.Zipkin{})
+		Invokes(testing.NewGetActionWithOptions(zipkinsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Zipkin), err
 }
 
 // List takes label and field selectors, and returns the list of Zipkins that match those selectors.
 func (c *FakeZipkins) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ZipkinList, err error) {
+	emptyResult := &v1alpha1.ZipkinList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(zipkinsResource, zipkinsKind, c.ns, opts), &v1alpha1.ZipkinList{})
+		Invokes(testing.NewListActionWithOptions(zipkinsResource, zipkinsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -72,40 +74,43 @@ func (c *FakeZipkins) List(ctx context.Context, opts v1.ListOptions) (result *v1
 // Watch returns a watch.Interface that watches the requested zipkins.
 func (c *FakeZipkins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(zipkinsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(zipkinsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a zipkin and creates it.  Returns the server's representation of the zipkin, and an error, if there is any.
 func (c *FakeZipkins) Create(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.CreateOptions) (result *v1alpha1.Zipkin, err error) {
+	emptyResult := &v1alpha1.Zipkin{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(zipkinsResource, c.ns, zipkin), &v1alpha1.Zipkin{})
+		Invokes(testing.NewCreateActionWithOptions(zipkinsResource, c.ns, zipkin, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Zipkin), err
 }
 
 // Update takes the representation of a zipkin and updates it. Returns the server's representation of the zipkin, and an error, if there is any.
 func (c *FakeZipkins) Update(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.UpdateOptions) (result *v1alpha1.Zipkin, err error) {
+	emptyResult := &v1alpha1.Zipkin{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(zipkinsResource, c.ns, zipkin), &v1alpha1.Zipkin{})
+		Invokes(testing.NewUpdateActionWithOptions(zipkinsResource, c.ns, zipkin, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Zipkin), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeZipkins) UpdateStatus(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.UpdateOptions) (*v1alpha1.Zipkin, error) {
+func (c *FakeZipkins) UpdateStatus(ctx context.Context, zipkin *v1alpha1.Zipkin, opts v1.UpdateOptions) (result *v1alpha1.Zipkin, err error) {
+	emptyResult := &v1alpha1.Zipkin{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(zipkinsResource, "status", c.ns, zipkin), &v1alpha1.Zipkin{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(zipkinsResource, "status", c.ns, zipkin, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Zipkin), err
 }
@@ -120,7 +125,7 @@ func (c *FakeZipkins) Delete(ctx context.Context, name string, opts v1.DeleteOpt
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeZipkins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(zipkinsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(zipkinsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.ZipkinList{})
 	return err
@@ -128,11 +133,12 @@ func (c *FakeZipkins) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 
 // Patch applies the patch and returns the patched zipkin.
 func (c *FakeZipkins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Zipkin, err error) {
+	emptyResult := &v1alpha1.Zipkin{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(zipkinsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Zipkin{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(zipkinsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1alpha1.Zipkin), err
 }

@@ -17,8 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/plugin/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/listers"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,25 +35,17 @@ type PluginChainLister interface {
 
 // pluginChainLister implements the PluginChainLister interface.
 type pluginChainLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*v1alpha1.PluginChain]
 }
 
 // NewPluginChainLister returns a new PluginChainLister.
 func NewPluginChainLister(indexer cache.Indexer) PluginChainLister {
-	return &pluginChainLister{indexer: indexer}
-}
-
-// List lists all PluginChains in the indexer.
-func (s *pluginChainLister) List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginChain))
-	})
-	return ret, err
+	return &pluginChainLister{listers.New[*v1alpha1.PluginChain](indexer, v1alpha1.Resource("pluginchain"))}
 }
 
 // PluginChains returns an object that can list and get PluginChains.
 func (s *pluginChainLister) PluginChains(namespace string) PluginChainNamespaceLister {
-	return pluginChainNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return pluginChainNamespaceLister{listers.NewNamespaced[*v1alpha1.PluginChain](s.ResourceIndexer, namespace)}
 }
 
 // PluginChainNamespaceLister helps list and get PluginChains.
@@ -71,26 +63,5 @@ type PluginChainNamespaceLister interface {
 // pluginChainNamespaceLister implements the PluginChainNamespaceLister
 // interface.
 type pluginChainNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all PluginChains in the indexer for a given namespace.
-func (s pluginChainNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.PluginChain, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.PluginChain))
-	})
-	return ret, err
-}
-
-// Get retrieves the PluginChain from the indexer for a given namespace and name.
-func (s pluginChainNamespaceLister) Get(name string) (*v1alpha1.PluginChain, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("pluginchain"), name)
-	}
-	return obj.(*v1alpha1.PluginChain), nil
+	listers.ResourceIndexer[*v1alpha1.PluginChain]
 }
