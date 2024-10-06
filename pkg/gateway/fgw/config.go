@@ -272,7 +272,9 @@ func (f HTTPRouteFilter) MarshalJSON() ([]byte, error) {
 // ---
 
 type HTTPRequestMirrorFilter struct {
-	BackendRef BackendRef `json:"backendRef"`
+	BackendRef BackendRef     `json:"backendRef" copier:"-"`
+	Percent    *int32         `json:"percent,omitempty"`
+	Fraction   *gwv1.Fraction `json:"fraction,omitempty"`
 }
 
 // ---

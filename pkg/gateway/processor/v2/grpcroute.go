@@ -133,15 +133,17 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
-				filters = append(filters, fgwv2.GRPCRouteFilter{
-					Type: gwv1.GRPCRouteFilterRequestMirror,
-					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
-						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
-					},
-					Key: uuid.NewString(),
-				})
+				f2 := fgwv2.GRPCRouteFilter{Key: uuid.NewString()}
+				if err := gwutils.DeepCopy(&f2, &f); err != nil {
+					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
+					continue
+				}
 
-				// TODO: process backend level policies here??? TBD
+				if f2.RequestMirror != nil {
+					f2.RequestMirror.BackendRef = fgwv2.NewBackendRefWithWeight(svcPort.String(), 1)
+				}
+
+				filters = append(filters, f2)
 
 				c.services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
