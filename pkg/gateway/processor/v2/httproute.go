@@ -133,15 +133,18 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
-				filters = append(filters, fgwv2.HTTPRouteFilter{
-					Type: gwv1.HTTPRouteFilterRequestMirror,
-					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
-						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
-					},
-					Key: uuid.NewString(),
-				})
+				f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
+				if err := gwutils.DeepCopy(&f2, &f); err != nil {
+					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
+					continue
+				}
 
-				// TODO: process backend level policies here??? TBD
+				if f2.RequestMirror != nil {
+					f2.RequestMirror.BackendRef = fgwv2.NewBackendRefWithWeight(svcPort.String(), 1)
+				}
+
+				filters = append(filters, f2)
+
 				c.services[svcPort.String()] = serviceContext{
 					svcPortName: *svcPort,
 				}
@@ -177,7 +180,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 		default:
 			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
-			if err := gwutils.DeepCopy(f2, f); err != nil {
+			if err := gwutils.DeepCopy(&f2, &f); err != nil {
 				continue
 			}
 			filters = append(filters, f2)
