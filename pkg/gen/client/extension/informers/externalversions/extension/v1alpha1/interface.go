@@ -37,6 +37,8 @@ type Interface interface {
 	ListenerFilters() ListenerFilterInformer
 	// Metricses returns a MetricsInformer.
 	Metricses() MetricsInformer
+	// ProxyTags returns a ProxyTagInformer.
+	ProxyTags() ProxyTagInformer
 	// RateLimits returns a RateLimitInformer.
 	RateLimits() RateLimitInformer
 	// Zipkins returns a ZipkinInformer.
@@ -92,6 +94,11 @@ func (v *version) ListenerFilters() ListenerFilterInformer {
 // Metricses returns a MetricsInformer.
 func (v *version) Metricses() MetricsInformer {
 	return &metricsInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ProxyTags returns a ProxyTagInformer.
+func (v *version) ProxyTags() ProxyTagInformer {
+	return &proxyTagInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RateLimits returns a RateLimitInformer.

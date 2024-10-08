@@ -494,6 +494,9 @@ const (
 
 	// GatewayZipkinKind is the kind name of Zipkin used in Flomesh API
 	GatewayZipkinKind = "Zipkin"
+
+	// GatewayProxyTagKind is the kind name of ProxyTag used in Flomesh API
+	GatewayProxyTagKind = "ProxyTag"
 )
 
 // Gateway API Annotations and Labels

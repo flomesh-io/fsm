@@ -17,6 +17,14 @@ type ListenerFilterSpec struct {
 	// Priority is the priority of the ListenerFilter, it is used to determine the order of the ListenerFilters, the ListenerFilter with the lowest priority is applied first
 	Priority *int32 `json:"priority,omitempty"`
 
+	// +optional
+	// +kubebuilder:default=Listener
+	// +kubebuilder:validation:Enum=Route;Listener
+	// Aspect is the aspect of the ListenerFilter, default is Listener
+	// If the aspect is Route, the ListenerFilter is applied to all Routes attached to this listener and is executed before any Route level filters
+	// If the aspect is Listener, the ListenerFilter is executed when request is received by the listener
+	Aspect *FilterAspect `json:"aspect,omitempty"`
+
 	// +listType=map
 	// +listMapKey=group
 	// +listMapKey=kind

@@ -93,12 +93,13 @@ type GatewaySpec struct {
 }
 
 type Listener struct {
-	Name     gwv1.SectionName  `json:"name"`
-	Hostname *gwv1.Hostname    `json:"hostname,omitempty"`
-	Port     gwv1.PortNumber   `json:"port"`
-	Protocol gwv1.ProtocolType `json:"protocol"`
-	TLS      *GatewayTLSConfig `json:"tls,omitempty" copier:"-"`
-	Filters  []ListenerFilter  `json:"routeFilters,omitempty" hash:"set" copier:"-"`
+	Name         gwv1.SectionName  `json:"name"`
+	Hostname     *gwv1.Hostname    `json:"hostname,omitempty"`
+	Port         gwv1.PortNumber   `json:"port"`
+	Protocol     gwv1.ProtocolType `json:"protocol"`
+	TLS          *GatewayTLSConfig `json:"tls,omitempty" copier:"-"`
+	Filters      []ListenerFilter  `json:"filters,omitempty" hash:"set" copier:"-"`
+	RouteFilters []ListenerFilter  `json:"routeFilters,omitempty" hash:"set" copier:"-"`
 }
 
 type ListenerFilter struct {

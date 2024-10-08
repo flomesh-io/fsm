@@ -57,6 +57,10 @@ func (c *FakeExtensionV1alpha1) Metricses(namespace string) v1alpha1.MetricsInte
 	return &FakeMetricses{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) ProxyTags(namespace string) v1alpha1.ProxyTagInterface {
+	return &FakeProxyTags{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitInterface {
 	return &FakeRateLimits{c, namespace}
 }
