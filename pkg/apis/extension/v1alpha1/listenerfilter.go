@@ -36,10 +36,14 @@ type ListenerFilterSpec struct {
 	TargetRefs []LocalTargetReferenceWithPort `json:"targetRefs"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// DefinitionRef is the reference to the FilterDefinition
 	DefinitionRef *gwv1.LocalObjectReference `json:"definitionRef"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// ConfigRef is the reference to the Configurations
 	ConfigRef *gwv1.LocalObjectReference `json:"configRef,omitempty"`
 }

@@ -47,6 +47,7 @@ type CircuitBreakerSpec struct {
 	BreakInterval *metav1.Duration `json:"breakInterval,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:Type=object
 	// +kubebuilder:default={status: 429, body: "Circuit breaker triggered"}
 	// CircuitBreakerResponse is the response when circuit breaker triggered
 	CircuitBreakerResponse *CircuitBreakerResponse `json:"response,omitempty"`

@@ -60,6 +60,7 @@ spec:
                 type: string
               configRef:
                 description: ConfigRef is the reference to the Configurations
+                nullable: true
                 properties:
                   group:
                     description: |-
@@ -87,6 +88,7 @@ spec:
                 type: object
               definitionRef:
                 description: DefinitionRef is the reference to the FilterDefinition
+                nullable: true
                 properties:
                   group:
                     description: |-

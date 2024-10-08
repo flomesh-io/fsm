@@ -45,6 +45,7 @@ type FaultInjectionAbort struct {
 	Percentage int32 `json:"percentage"`
 
 	// +optional
+	// +kubebuilder:validation:Type=object
 	// +kubebuilder:default={status: 500, body: "Fault injection triggered"}
 	// Response is the response when fault injection triggered
 	Response *FaultInjectionResponse `json:"response,omitempty"`
