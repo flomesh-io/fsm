@@ -11,7 +11,9 @@ export default function (config) {
           if (tag) {
             headers[origHost] = headers.host
             headers.host = tag
-          } else if (headers['fgw-target']) {
+          } else if (headers['fgw-target-service']) {
+            headers[proxyTag] = headers['fgw-target-service']
+          } else {
             headers[proxyTag] = headers.host
           }
         }
