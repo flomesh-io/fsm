@@ -402,14 +402,16 @@ type BackendTLSPolicy struct {
 }
 
 type BackendTLSPolicySpec struct {
-	TargetRefs []BackendRef               `json:"targetRefs" copier:"-" hash:"set"`
-	Validation BackendTLSPolicyValidation `json:"validation"`
+	TargetRefs []BackendRef                                `json:"targetRefs" copier:"-" hash:"set"`
+	Validation BackendTLSPolicyValidation                  `json:"validation"`
+	Options    map[gwv1.AnnotationKey]gwv1.AnnotationValue `json:"options,omitempty"`
 }
 
 type BackendTLSPolicyValidation struct {
 	CACertificates          []map[string]string                     `json:"caCertificates,omitempty" copier:"-" hash:"set"`
 	WellKnownCACertificates *gwv1alpha3.WellKnownCACertificatesType `json:"wellKnownCACertificates,omitempty"`
 	Hostname                gwv1.PreciseHostname                    `json:"hostname"`
+	SubjectAltNames         []gwv1alpha3.SubjectAltName             `json:"subjectAltNames,omitempty"`
 }
 
 func (p *BackendTLSPolicy) AddTargetRef(ref BackendRef) {
