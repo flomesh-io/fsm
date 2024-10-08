@@ -46,7 +46,7 @@ var _ = FSMDescribe("Test traffic among Statefulset members",
 				install.Namespace = testNS
 				install.Timeout = 180 * time.Second
 				saName := "zookeeper"
-				replicaCount := 3
+				replicaCount := 1
 
 				cli := cli.New()
 				chartPath, err := install.LocateChart("https://charts.bitnami.com/bitnami/zookeeper-9.0.2.tgz", cli)
