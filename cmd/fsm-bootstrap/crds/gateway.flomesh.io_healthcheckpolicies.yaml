@@ -55,6 +55,7 @@ spec:
               healthCheck:
                 description: DefaultHealthCheck is the default health check configuration
                   for all ports
+                nullable: true
                 properties:
                   failTimeout:
                     default: 5s
@@ -146,6 +147,7 @@ spec:
                     healthCheck:
                       description: HealthCheck is the health check configuration for
                         the port
+                      nullable: true
                       properties:
                         failTimeout:
                           default: 5s

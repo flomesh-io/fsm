@@ -21,6 +21,8 @@ type RetryPolicySpec struct {
 	Ports []PortRetry `json:"ports,omitempty"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// DefaultRetry is the default retry configuration for all ports
 	DefaultRetry *RetryConfig `json:"retry,omitempty"`
 }
@@ -31,6 +33,8 @@ type PortRetry struct {
 	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// Config is the retry configuration for the port
 	Retry *RetryConfig `json:"retry,omitempty"`
 }

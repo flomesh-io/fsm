@@ -65,6 +65,7 @@ spec:
                       type: integer
                     retry:
                       description: Config is the retry configuration for the port
+                      nullable: true
                       properties:
                         backoffBaseInterval:
                           default: 1s
@@ -100,6 +101,7 @@ spec:
               retry:
                 description: DefaultRetry is the default retry configuration for all
                   ports
+                nullable: true
                 properties:
                   backoffBaseInterval:
                     default: 1s

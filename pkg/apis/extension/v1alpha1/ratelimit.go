@@ -32,6 +32,7 @@ type RateLimitSpec struct {
 	Backlog *int32 `json:"backlog,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:Type=object
 	// +kubebuilder:default={status: 429, body: "Rate limit reached"}
 	// RateLimitResponse is the response when Rate limit reached
 	RateLimitResponse *RateLimitResponse `json:"response,omitempty"`

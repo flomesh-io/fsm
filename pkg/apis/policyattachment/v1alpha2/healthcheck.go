@@ -21,6 +21,8 @@ type HealthCheckPolicySpec struct {
 	Ports []PortHealthCheck `json:"ports,omitempty"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// DefaultHealthCheck is the default health check configuration for all ports
 	DefaultHealthCheck *HealthCheckConfig `json:"healthCheck,omitempty"`
 }
@@ -30,6 +32,8 @@ type PortHealthCheck struct {
 	Port gwv1.PortNumber `json:"port"`
 
 	// +optional
+	// +nullable
+	// +kubebuilder:validation:Type=object
 	// HealthCheck is the health check configuration for the port
 	HealthCheck *HealthCheckConfig `json:"healthCheck,omitempty"`
 }
