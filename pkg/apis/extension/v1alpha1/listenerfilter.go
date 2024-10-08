@@ -10,6 +10,14 @@ type ListenerFilterSpec struct {
 	// Type is the type of the ListenerFilter in PascalCase, it should be unique within the namespace
 	Type FilterType `json:"type"`
 
+	// +optional
+	// +kubebuilder:default=Listener
+	// +kubebuilder:validation:Enum=Route;Listener
+	// Aspect is the aspect of the ListenerFilter, default is Listener
+	// If the aspect is Route, the ListenerFilter is applied to all Routes attached to this listener and is executed before any Route level filters
+	// If the aspect is Listener, the ListenerFilter is executed when request is received by the listener
+	Aspect *FilterAspect `json:"aspect,omitempty"`
+
 	// +listType=map
 	// +listMapKey=group
 	// +listMapKey=kind

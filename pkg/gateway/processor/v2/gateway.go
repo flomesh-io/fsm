@@ -157,13 +157,24 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 	}
 
 	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
+	v2l.RouteFilters = make([]fgwv2.ListenerFilter, 0)
 	for _, f := range list.Items {
 		filterType := f.Spec.Type
-		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
+		filter := fgwv2.ListenerFilter{
 			Type:            filterType,
 			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
 			Key:             uuid.NewString(),
-		})
+		}
+
+		aspect := ptr.Deref(f.Spec.Aspect, extv1alpha1.FilterAspectListener)
+		switch aspect {
+		case extv1alpha1.FilterAspectListener:
+			v2l.Filters = append(v2l.Filters, filter)
+		case extv1alpha1.FilterAspectRoute:
+			v2l.RouteFilters = append(v2l.RouteFilters, filter)
+		default:
+			continue
+		}
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeListener, f.Spec.DefinitionRef)
 		if definition == nil {
@@ -171,16 +182,6 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		}
 
 		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
-		//listenerProtocol := toFilterProtocol(l.Protocol)
-		//
-		//if listenerProtocol == nil {
-		//	continue
-		//}
-		//
-		//if *listenerProtocol != filterProtocol {
-		//	continue
-		//}
-
 		if c.filters[filterProtocol] == nil {
 			c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
 		}

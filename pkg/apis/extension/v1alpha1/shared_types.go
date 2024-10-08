@@ -90,3 +90,13 @@ const (
 	// policy is attached to an invalid target resource.
 	FilterReasonTargetNotFound FilterConditionReason = "TargetNotFound"
 )
+
+type FilterAspect string
+
+const (
+	// FilterAspectListener is the aspect of filter for listener
+	FilterAspectListener FilterAspect = "Listener"
+
+	// FilterAspectRoute is the aspect of filter for route
+	FilterAspectRoute FilterAspect = "Route"
+)
