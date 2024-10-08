@@ -22,13 +22,8 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 	if mc := catalog.GetMeshCatalog(); mc != nil {
 		isolationCidrs = mc.GetIsolationCidrs()
 	}
-	for ep := range endpointSet {
-		targets = append(targets, fgwv2.BackendTarget{
-			Address: ep.address,
-			Port:    ptr.To(ep.port),
-			Weight:  1,
-		})
 
+	for ep := range endpointSet {
 		isolation := false
 		if len(isolationCidrs) > 0 {
 			for _, isolationCidr := range isolationCidrs {
