@@ -10,12 +10,12 @@ type ListenerFilterSpec struct {
 	// Type is the type of the ListenerFilter in PascalCase, it should be unique within the namespace
 	Type FilterType `json:"type"`
 
-    // +optional
-    // +kubebuilder:default=100
-    // +kubebuilder:validation:Minimum=0
-    // +kubebuilder:validation:Maximum=10000
-    // Priority is the priority of the ListenerFilter, it is used to determine the order of the ListenerFilters, the ListenerFilter with the lowest priority is applied first
-    Priority *int32 `json:"priority,omitempty"`
+	// +optional
+	// +kubebuilder:default=100
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=10000
+	// Priority is the priority of the ListenerFilter, it is used to determine the order of the ListenerFilters, the ListenerFilter with the lowest priority is applied first
+	Priority *int32 `json:"priority,omitempty"`
 
 	// +optional
 	// +kubebuilder:default=Listener
