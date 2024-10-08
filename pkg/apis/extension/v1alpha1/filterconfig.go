@@ -8,6 +8,7 @@ import (
 type FilterConfigSpec struct {
 	// +kube:validation:Required
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Type=string
 	// Config is the filter configuration in YAML format
 	Config string `json:"config"`
 }

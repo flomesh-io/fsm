@@ -27,6 +27,7 @@ type HTTPLogSpec struct {
 	BufferLimit *int64 `json:"bufferLimit,omitempty"`
 
 	// +optional
+	// +kubebuilder:validation:Type=object
 	// +kubebuilder:default={size: 1000, interval: "1s", prefix: "", postfix: "", separator: "\n"}
 	// Batch is the batch configuration of the logs
 	Batch *HTTPLogBatch `json:"batch,omitempty"`

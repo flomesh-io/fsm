@@ -23,6 +23,7 @@ type FilterDefinitionSpec struct {
 
 	// Script is the list of scripts to be executed
 	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:Type=string
 	Script string `json:"script"`
 }
 
