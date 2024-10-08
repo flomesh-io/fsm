@@ -7,10 +7,11 @@ export default function (config) {
     .pipeNext()
     .handleMessageEnd(() => {
       var inbound = $ctx.parent.inbound
-      var headers = $ctx.head.headers
+      var headers = $ctx.head.headers || {}
       var response = $ctx.response
       var target = $ctx.target
       log({
+        headers: headers,
         protocol: $ctx.head.protocol || '',
         upstream_service_time: response.headTime,
         upstream_local_address: target || '',
