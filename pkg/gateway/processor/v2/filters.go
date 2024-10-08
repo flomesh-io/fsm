@@ -129,6 +129,14 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("zipkin", &obj.Spec)
+	case constants.GatewayProxyTagKind:
+		obj := &extv1alpha1.ProxyTag{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve ProxyTag: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("proxyTag", &obj.Spec)
 	case constants.GatewayAPIExtensionFilterConfigKind:
 		obj := &extv1alpha1.FilterConfig{}
 		if err := c.client.Get(ctx, key, obj); err != nil {

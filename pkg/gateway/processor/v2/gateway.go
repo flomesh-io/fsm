@@ -157,22 +157,44 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		return
 	}
 
-	sort.Slice(list.Items, func(i, j int) bool {
-		if list.Items[i].Spec.Priority == nil || list.Items[j].Spec.Priority == nil {
-			return list.Items[i].Spec.Type < list.Items[j].Spec.Type
+	filters := make([]extv1alpha1.ListenerFilter, 0)
+	routeFilters := make([]extv1alpha1.ListenerFilter, 0)
+
+	for _, f := range list.Items {
+		aspect := ptr.Deref(f.Spec.Aspect, extv1alpha1.FilterAspectListener)
+
+		switch aspect {
+		case extv1alpha1.FilterAspectListener:
+			filters = append(filters, f)
+		case extv1alpha1.FilterAspectRoute:
+			routeFilters = append(routeFilters, f)
+		default:
+			continue
+		}
+	}
+
+	v2l.Filters = c.resolveListenerFilters(filters)
+	v2l.RouteFilters = c.resolveListenerFilters(routeFilters)
+}
+
+func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerFilter) []fgwv2.ListenerFilter {
+	sort.Slice(filters, func(i, j int) bool {
+		if filters[i].Spec.Priority == nil || filters[j].Spec.Priority == nil {
+			return filters[i].Spec.Type < filters[j].Spec.Type
 		}
 
-		if *list.Items[i].Spec.Priority == *list.Items[j].Spec.Priority {
-			return list.Items[i].Spec.Type < list.Items[j].Spec.Type
+		if *filters[i].Spec.Priority == *filters[j].Spec.Priority {
+			return filters[i].Spec.Type < filters[j].Spec.Type
 		}
 
-		return *list.Items[i].Spec.Priority < *list.Items[j].Spec.Priority
+		return *filters[i].Spec.Priority < *filters[j].Spec.Priority
 	})
 
-	v2l.Filters = make([]fgwv2.ListenerFilter, 0)
-	for _, f := range list.Items {
+	result := make([]fgwv2.ListenerFilter, 0)
+	for _, f := range filters {
 		filterType := f.Spec.Type
-		v2l.Filters = append(v2l.Filters, fgwv2.ListenerFilter{
+
+		result = append(result, fgwv2.ListenerFilter{
 			Type:            filterType,
 			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
 			Key:             uuid.NewString(),
@@ -184,16 +206,6 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		}
 
 		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
-		//listenerProtocol := toFilterProtocol(l.Protocol)
-		//
-		//if listenerProtocol == nil {
-		//	continue
-		//}
-		//
-		//if *listenerProtocol != filterProtocol {
-		//	continue
-		//}
-
 		if c.filters[filterProtocol] == nil {
 			c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
 		}
@@ -201,4 +213,6 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 			c.filters[filterProtocol][filterType] = definition.Spec.Script
 		}
 	}
+
+	return result
 }

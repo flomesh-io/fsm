@@ -75,6 +75,14 @@ type MetricsListerExpansion interface{}
 // MetricsNamespaceLister.
 type MetricsNamespaceListerExpansion interface{}
 
+// ProxyTagListerExpansion allows custom methods to be added to
+// ProxyTagLister.
+type ProxyTagListerExpansion interface{}
+
+// ProxyTagNamespaceListerExpansion allows custom methods to be added to
+// ProxyTagNamespaceLister.
+type ProxyTagNamespaceListerExpansion interface{}
+
 // RateLimitListerExpansion allows custom methods to be added to
 // RateLimitLister.
 type RateLimitListerExpansion interface{}

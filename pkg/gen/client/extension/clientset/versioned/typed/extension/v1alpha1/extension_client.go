@@ -33,6 +33,7 @@ type ExtensionV1alpha1Interface interface {
 	HTTPLogsGetter
 	ListenerFiltersGetter
 	MetricsesGetter
+	ProxyTagsGetter
 	RateLimitsGetter
 	ZipkinsGetter
 }
@@ -72,6 +73,10 @@ func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilt
 
 func (c *ExtensionV1alpha1Client) Metricses(namespace string) MetricsInterface {
 	return newMetricses(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) ProxyTags(namespace string) ProxyTagInterface {
+	return newProxyTags(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) RateLimits(namespace string) RateLimitInterface {

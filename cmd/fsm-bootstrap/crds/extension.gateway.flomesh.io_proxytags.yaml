@@ -6,16 +6,16 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.15.0
   labels:
     app.kubernetes.io/name: flomesh.io
-  name: listenerfilters.extension.gateway.flomesh.io
+  name: proxytags.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io
   names:
     categories:
     - gateway-api
-    kind: ListenerFilter
-    listKind: ListenerFilterList
-    plural: listenerfilters
-    singular: listenerfilter
+    kind: ProxyTag
+    listKind: ProxyTagList
+    plural: proxytags
+    singular: proxytag
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -25,8 +25,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ListenerFilter provides a way to configure ListenerFilters for
-          HTTP/HTTPS/GRPC/GRPCS/TCP protocols
+        description: ProxyTag is the Schema for the ProxyTag API
         properties:
           apiVersion:
             description: |-
@@ -46,140 +45,30 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of ListenerFilter.
+            description: ProxyTagSpec defines the desired state of ProxyTag
             properties:
-              aspect:
-                default: Listener
-                description: |-
-                  Aspect is the aspect of the ListenerFilter, default is Listener
-                  If the aspect is Route, the ListenerFilter is applied to all Routes attached to this listener and is executed before any Route level filters
-                  If the aspect is Listener, the ListenerFilter is executed when request is received by the listener
-                enum:
-                - Route
-                - Listener
-                type: string
-              configRef:
-                description: ConfigRef is the reference to the Configurations
-                properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                    type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
-                    type: string
-                required:
-                - group
-                - kind
-                - name
-                type: object
-              definitionRef:
-                description: DefinitionRef is the reference to the FilterDefinition
-                properties:
-                  group:
-                    description: |-
-                      Group is the group of the referent. For example, "gateway.networking.k8s.io".
-                      When unspecified or empty string, core API group is inferred.
-                    maxLength: 253
-                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                    type: string
-                  kind:
-                    description: Kind is kind of the referent. For example "HTTPRoute"
-                      or "Service".
-                    maxLength: 63
-                    minLength: 1
-                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                    type: string
-                  name:
-                    description: Name is the name of the referent.
-                    maxLength: 253
-                    minLength: 1
-                    type: string
-                required:
-                - group
-                - kind
-                - name
-                type: object
-              priority:
-                default: 100
-                description: Priority is the priority of the ListenerFilter, it is
-                  used to determine the order of the ListenerFilters, the ListenerFilter
-                  with the lowest priority is applied first
-                format: int32
-                maximum: 10000
-                minimum: 0
-                type: integer
-              targetRefs:
-                description: TargetRefs is the references to the target resources
-                  to which the ListenerFilter is applied
-                items:
-                  properties:
-                    group:
-                      description: Group is the group of the target resource.
-                      maxLength: 253
-                      pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                      type: string
-                    kind:
-                      description: Kind is kind of the target resource.
-                      maxLength: 63
-                      minLength: 1
-                      pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
-                      type: string
-                    name:
-                      description: Name is the name of the target resource.
-                      maxLength: 253
-                      minLength: 1
-                      type: string
-                    port:
-                      description: port is the port of the target listener.
-                      format: int32
-                      maximum: 65535
-                      minimum: 1
-                      type: integer
-                  required:
-                  - group
-                  - kind
-                  - name
-                  - port
-                  type: object
-                maxItems: 16
-                minItems: 1
-                type: array
-                x-kubernetes-list-map-keys:
-                - group
-                - kind
-                - name
-                - port
-                x-kubernetes-list-type: map
-              type:
-                description: Type is the type of the ListenerFilter in PascalCase,
-                  it should be unique within the namespace
-                maxLength: 63
+              dstHostHeader:
+                default: proxy-tag
+                description: DestinationHostHeader is the header name to be used for
+                  the destination host, default is "proxy-tag"
+                maxLength: 256
                 minLength: 1
-                pattern: ^[A-Z]+(([A-Z]*[a-z0-9]+[A-Z]*)*)$
+                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
                 type: string
-            required:
-            - targetRefs
-            - type
+              srcHostHeader:
+                default: orig-host
+                description: SourceHostHeader is the header name to be used for the
+                  source host, default is "orig-host"
+                maxLength: 256
+                minLength: 1
+                pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                type: string
             type: object
           status:
-            description: Status defines the current state of ListenerFilter.
+            description: ProxyTagStatus defines the observed state of ProxyTag
             properties:
               conditions:
-                description: Conditions describes the status of the ListenerFilter
-                  with respect to the given Ancestor.
+                description: Conditions describe the current conditions of the ProxyTag.
                 items:
                   description: "Condition contains details for one aspect of the current
                     state of this API Resource.\n---\nThis struct is intended for
@@ -248,7 +137,6 @@ spec:
                   - type
                   type: object
                 maxItems: 8
-                minItems: 1
                 type: array
                 x-kubernetes-list-map-keys:
                 - type
