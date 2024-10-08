@@ -48,6 +48,16 @@ spec:
           spec:
             description: Spec defines the desired state of ListenerFilter.
             properties:
+              aspect:
+                default: Listener
+                description: |-
+                  Aspect is the aspect of the ListenerFilter, default is Listener
+                  If the aspect is Route, the ListenerFilter is applied to all Routes attached to this listener and is executed before any Route level filters
+                  If the aspect is Listener, the ListenerFilter is executed when request is received by the listener
+                enum:
+                - Route
+                - Listener
+                type: string
               configRef:
                 description: ConfigRef is the reference to the Configurations
                 properties:
