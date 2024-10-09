@@ -447,12 +447,6 @@ type FeatureFlags struct {
 	// EnableValidateTCPRouteHostnames defines if validate tcp route hostnames is enabled.
 	EnableValidateTLSRouteHostnames bool `json:"enableValidateTLSRouteHostnames"`
 
-	// EnableGatewayAgentService defines if agent service is enabled.
-	EnableGatewayAgentService bool `json:"enableGatewayAgentService"`
-
-	// EnableGatewayProxyTag defines if gateway proxy-tag header is enabled.
-	EnableGatewayProxyTag bool `json:"enableGatewayProxyTag"`
-
 	// UseEndpointSlicesForGateway defines if endpoint slices are enabled for calculating gateway routes.
 	UseEndpointSlicesForGateway bool `json:"useEndpointSlicesForGateway"`
 }

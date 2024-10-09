@@ -748,10 +748,6 @@ fsm:
     enableValidateGRPCRouteHostnames: true
     # -- Enable validate TLS route hostnames, enforce the hostname is DNS name not IP address
     enableValidateTLSRouteHostnames: true
-    # -- Enable Gateway Agent Service
-    enableGatewayAgentService: false
-    # -- Enable Gateway proxy-tag header for remote host
-    enableGatewayProxyTag: false
     # -- Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later
     useEndpointSlicesForGateway: true
 
