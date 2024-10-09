@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   fsm:
   - apiVersion: v2
+    appVersion: 1.4.3-beta.1
+    created: "2024-10-09T04:10:02.090449974Z"
+    description: A Helm chart to install the fsm control plane on Kubernetes
+    digest: 3d8f1609367aff2bf7d9fe5ee3db58202eb5027bc4061e7262b546f427fec11a
+    kubeVersion: '>= 1.19.0-0'
+    name: fsm
+    type: application
+    urls:
+    - https://flomesh-io.github.io/fsm/fsm-1.4.3-beta.1.tgz
+    version: 1.4.3-beta.1
+  - apiVersion: v2
     appVersion: 1.4.2
     created: "2024-09-29T03:21:13.877713403Z"
     description: A Helm chart to install the fsm control plane on Kubernetes
@@ -1002,4 +1013,4 @@ entries:
     urls:
     - https://flomesh-io.github.io/fsm/fsm-1.0.0.tgz
     version: 1.0.0
-generated: "2024-09-29T03:21:13.871184125Z"
+generated: "2024-10-09T04:10:02.08502651Z"
