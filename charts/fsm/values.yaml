@@ -917,15 +917,6 @@ fsm:
   fsmGateway:
     enabled: false
     logLevel: info
-    fgwLogLevel: info
-    stripAnyHostPort: true
-    proxyPreserveHost: true
-    sslPassthroughUpstreamPort: 443
-    http1PerRequestLoadBalancing: false
-    http2PerRequestLoadBalancing: true
-    proxyTag:
-      srcHostHeader: orig-host
-      dstHostHeader: proxy-tag
 
   #
   # -- FSM ServiceLB parameters

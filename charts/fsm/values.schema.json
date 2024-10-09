@@ -1946,14 +1946,7 @@
                     "title": "The gatewayApi Schema",
                     "required": [
                         "enabled",
-                        "logLevel",
-                        "fgwLogLevel",
-                        "stripAnyHostPort",
-                        "proxyPreserveHost",
-                        "sslPassthroughUpstreamPort",
-                        "http1PerRequestLoadBalancing",
-                        "http2PerRequestLoadBalancing",
-                        "proxyTag"
+                        "logLevel"
                     ],
                     "properties": {
                         "enabled": {
@@ -1965,63 +1958,6 @@
                             "type": "string",
                             "default": "info",
                             "title": "The logLevel Schema"
-                        },
-                        "fgwLogLevel": {
-                          "type": "string",
-                          "default": "info",
-                          "title": "The FGW logLevel Schema"
-                        },
-                        "stripAnyHostPort": {
-                          "type": "boolean",
-                          "default": true,
-                          "title": "The stripAnyHostPort Schema"
-                        },
-                        "proxyPreserveHost": {
-                          "type": "boolean",
-                          "default": true,
-                          "title": "The proxyPreserveHost Schema"
-                        },
-                        "sslPassthroughUpstreamPort": {
-                          "type": "integer",
-                          "default": 443,
-                          "title": "The sslPassthroughUpstreamPort Schema"
-                        },
-                        "http1PerRequestLoadBalancing": {
-                          "type": "boolean",
-                          "default": false,
-                          "title": "The http1PerRequestLoadBalancing Schema"
-                        },
-                        "http2PerRequestLoadBalancing": {
-                          "type": "boolean",
-                          "default": true,
-                          "title": "The http2PerRequestLoadBalancing Schema"
-                        },
-                        "proxyTag": {
-                          "type": "object",
-                          "title": "Proxy Tag",
-                          "description": "Proxy Tag",
-                          "required": [
-                            "srcHostHeader",
-                            "dstHostHeader"
-                          ],
-                          "properties": {
-                            "srcHostHeader": {
-                              "type": "string",
-                              "title": "Source Host Header",
-                              "description": "The source host header to be used for storing the original host of the request",
-                              "examples": [
-                                "orig-host"
-                              ]
-                            },
-                            "dstHostHeader": {
-                              "type": "string",
-                              "title": "Destination Host Header",
-                              "description": "The destination host header to be used for storing the user defined host of the request",
-                              "examples": [
-                                "proxy-tag"
-                              ]
-                            }
-                          }
                         }
                     }
                 },

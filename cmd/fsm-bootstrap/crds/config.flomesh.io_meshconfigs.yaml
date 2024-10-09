@@ -1544,29 +1544,6 @@ spec:
                     default: false
                     description: Enabled defines if gateway api is enabled.
                     type: boolean
-                  fgwLogLevel:
-                    default: info
-                    description: FGWLogLevel defines the log level of FGW.
-                    enum:
-                    - trace
-                    - debug
-                    - info
-                    - warn
-                    - error
-                    - fatal
-                    - panic
-                    - disabled
-                    type: string
-                  http1PerRequestLoadBalancing:
-                    default: false
-                    description: HTTP1PerRequestLoadBalancing defines if load balancing
-                      based on per-request is enabled for http1.
-                    type: boolean
-                  http2PerRequestLoadBalancing:
-                    default: false
-                    description: HTTP2PerRequestLoadBalancing defines if load balancing
-                      based on per-request is enabled for http2.
-                    type: boolean
                   logLevel:
                     default: info
                     description: LogLevel defines the log level of gateway api.
@@ -1580,51 +1557,9 @@ spec:
                     - panic
                     - disabled
                     type: string
-                  proxyPreserveHost:
-                    default: true
-                    description: ProxyPreserveHost defines if proxy preserve host
-                      is enabled.
-                    type: boolean
-                  proxyTag:
-                    default:
-                      dstHostHeader: proxy-tag
-                      srcHostHeader: orig-host
-                    description: ProxyTag defines the proxy tag configuration of gateway
-                      api.
-                    properties:
-                      dstHostHeader:
-                        default: proxy-tag
-                        description: DstHostHeader defines the dst host header.
-                        type: string
-                      srcHostHeader:
-                        default: orig-host
-                        description: SrcHostHeader defines the src host header.
-                        type: string
-                    required:
-                    - dstHostHeader
-                    - srcHostHeader
-                    type: object
-                  sslPassthroughUpstreamPort:
-                    default: 443
-                    description: SSLPassthroughUpstreamPort defines the default upstream
-                      port of SSL passthrough.
-                    format: int32
-                    type: integer
-                  stripAnyHostPort:
-                    default: false
-                    description: StripAnyHostPort defines if strip any host port is
-                      enabled.
-                    type: boolean
                 required:
                 - enabled
-                - fgwLogLevel
-                - http1PerRequestLoadBalancing
-                - http2PerRequestLoadBalancing
                 - logLevel
-                - proxyPreserveHost
-                - proxyTag
-                - sslPassthroughUpstreamPort
-                - stripAnyHostPort
                 type: object
               image:
                 description: Image defines the configurations of Image info
