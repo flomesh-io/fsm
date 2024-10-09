@@ -188,15 +188,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmController.resource | object | `{"limits":{"cpu":"2","memory":"2G"},"requests":{"cpu":"0.5","memory":"256M"}}` | FSM controller's container resource parameters. See https://docs.flomesh.io/docs/guides/ha_scale/scale/ for more details. |
 | fsm.fsmController.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmGateway.enabled | bool | `false` |  |
-| fsm.fsmGateway.fgwLogLevel | string | `"info"` |  |
-| fsm.fsmGateway.http1PerRequestLoadBalancing | bool | `false` |  |
-| fsm.fsmGateway.http2PerRequestLoadBalancing | bool | `true` |  |
 | fsm.fsmGateway.logLevel | string | `"info"` |  |
-| fsm.fsmGateway.proxyPreserveHost | bool | `true` |  |
-| fsm.fsmGateway.proxyTag.dstHostHeader | string | `"proxy-tag"` |  |
-| fsm.fsmGateway.proxyTag.srcHostHeader | string | `"orig-host"` |  |
-| fsm.fsmGateway.sslPassthroughUpstreamPort | int | `443` |  |
-| fsm.fsmGateway.stripAnyHostPort | bool | `true` |  |
 | fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.fsmIngress.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
