@@ -647,45 +647,6 @@ type GatewayAPISpec struct {
 	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
 	// LogLevel defines the log level of gateway api.
 	LogLevel string `json:"logLevel"`
-
-	// +kubebuilder:default=info
-	// +kubebuilder:validation:Enum=trace;debug;info;warn;error;fatal;panic;disabled
-	// FGWLogLevel defines the log level of FGW.
-	FGWLogLevel string `json:"fgwLogLevel"`
-
-	// +kubebuilder:default=false
-	// StripAnyHostPort defines if strip any host port is enabled.
-	StripAnyHostPort bool `json:"stripAnyHostPort"`
-
-	// +kubebuilder:default=true
-	// ProxyPreserveHost defines if proxy preserve host is enabled.
-	ProxyPreserveHost bool `json:"proxyPreserveHost"`
-
-	// +kubebuilder:default=443
-	// SSLPassthroughUpstreamPort defines the default upstream port of SSL passthrough.
-	SSLPassthroughUpstreamPort int32 `json:"sslPassthroughUpstreamPort"`
-
-	// +kubebuilder:default=false
-	// HTTP1PerRequestLoadBalancing defines if load balancing based on per-request is enabled for http1.
-	HTTP1PerRequestLoadBalancing bool `json:"http1PerRequestLoadBalancing"`
-
-	// +kubebuilder:default=false
-	// HTTP2PerRequestLoadBalancing defines if load balancing based on per-request is enabled for http2.
-	HTTP2PerRequestLoadBalancing bool `json:"http2PerRequestLoadBalancing"`
-
-	// +kubebuilder:default={srcHostHeader: "orig-host", dstHostHeader: "proxy-tag"}
-	// ProxyTag defines the proxy tag configuration of gateway api.
-	ProxyTag ProxyTag `json:"proxyTag"`
-}
-
-type ProxyTag struct {
-	// +kubebuilder:default="orig-host"
-	// SrcHostHeader defines the src host header.
-	SrcHostHeader string `json:"srcHostHeader"`
-
-	// +kubebuilder:default="proxy-tag"
-	// DstHostHeader defines the dst host header.
-	DstHostHeader string `json:"dstHostHeader"`
 }
 
 // ServiceLBSpec is the type to represent service lb.

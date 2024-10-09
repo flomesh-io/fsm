@@ -182,27 +182,6 @@ type Configurator interface {
 	// GetFSMGatewayLogLevel returns log level of FSM Gateway
 	GetFSMGatewayLogLevel() string
 
-	// GetFGWLogLevel returns log level of FSM Gateway
-	GetFGWLogLevel() string
-
-	// IsFGWStripAnyHostPort returns whether to strip any host port
-	IsFGWStripAnyHostPort() bool
-
-	// IsFGWProxyPreserveHost returns whether to preserve host
-	IsFGWProxyPreserveHost() bool
-
-	// GetFGWSSLPassthroughUpstreamPort returns the default upstream port that FGW used for SSL Passthrough
-	GetFGWSSLPassthroughUpstreamPort() int32
-
-	// IsFGWHTTP1PerRequestLoadBalancingEnabled returns whether per-request load balancing is enabled for HTTP1 protocol
-	IsFGWHTTP1PerRequestLoadBalancingEnabled() bool
-
-	// IsFGWHTTP2PerRequestLoadBalancingEnabled returns whether per-request load balancing is enabled for HTTP2 protocol
-	IsFGWHTTP2PerRequestLoadBalancingEnabled() bool
-
-	// GetFGWProxyTag returns the proxy tag configuration for FGW
-	GetFGWProxyTag() configv1alpha3.ProxyTag
-
 	// IsIngressEnabled returns whether Ingress is enabled
 	IsIngressEnabled() bool
 

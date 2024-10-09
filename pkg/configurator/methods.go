@@ -485,47 +485,6 @@ func (c *Client) GetFSMGatewayLogLevel() string {
 	return mcSpec.GatewayAPI.LogLevel
 }
 
-// GetFGWLogLevel returns log level of FGW
-func (c *Client) GetFGWLogLevel() string {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.FGWLogLevel
-}
-
-// IsFGWStripAnyHostPort returns whether to strip any host port
-func (c *Client) IsFGWStripAnyHostPort() bool {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.StripAnyHostPort
-}
-
-// IsFGWProxyPreserveHost returns whether to preserve host
-func (c *Client) IsFGWProxyPreserveHost() bool {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.ProxyPreserveHost
-}
-
-// GetFGWSSLPassthroughUpstreamPort returns the default upstream port that FGW used for SSL Passthrough
-func (c *Client) GetFGWSSLPassthroughUpstreamPort() int32 {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.SSLPassthroughUpstreamPort
-}
-
-// IsFGWHTTP1PerRequestLoadBalancingEnabled returns whether per-request load balancing is enabled for HTTP1 protocol
-func (c *Client) IsFGWHTTP1PerRequestLoadBalancingEnabled() bool {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.HTTP1PerRequestLoadBalancing
-}
-
-// IsFGWHTTP2PerRequestLoadBalancingEnabled returns whether per-request load balancing is enabled for HTTP2 protocol
-func (c *Client) IsFGWHTTP2PerRequestLoadBalancingEnabled() bool {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.HTTP2PerRequestLoadBalancing
-}
-
-func (c *Client) GetFGWProxyTag() configv1alpha3.ProxyTag {
-	mcSpec := c.getMeshConfig().Spec
-	return mcSpec.GatewayAPI.ProxyTag
-}
-
 // IsIngressEnabled returns whether Ingress is enabled
 func (c *Client) IsIngressEnabled() bool {
 	mcSpec := c.getMeshConfig().Spec
