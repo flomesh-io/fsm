@@ -6,6 +6,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.3
   labels:
     app.kubernetes.io/name: flomesh.io
+    gateway.flomesh.io/extension: Filter
   name: metrics.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io

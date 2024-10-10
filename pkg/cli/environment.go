@@ -48,6 +48,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"k8s.io/cli-runtime/pkg/genericiooptions"
+
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -83,6 +85,7 @@ type EnvSettings struct {
 	envConfig EnvConfig
 	config    *genericclioptions.ConfigFlags
 	verbose   bool
+	ioStreams genericiooptions.IOStreams
 }
 
 // New relevant environment variables set and returns EnvSettings
@@ -93,20 +96,31 @@ func New() *EnvSettings {
 		os.Exit(1)
 	}
 
+	ioStreams := genericiooptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
 	env := &EnvSettings{
 		envConfig: *envConfig,
+		ioStreams: ioStreams,
 	}
 
 	// bind to kubernetes config flags
-	env.config = &genericclioptions.ConfigFlags{
-		Namespace: &env.envConfig.Install.Namespace,
-	}
+	//env.config = &genericclioptions.ConfigFlags{
+	//	Namespace: &env.envConfig.Install.Namespace,
+	//}
+	globalConfig := genericclioptions.NewConfigFlags(true).
+		WithDeprecatedPasswordFlag().
+		WithDiscoveryBurst(300).
+		WithDiscoveryQPS(50.0).
+		WithWarningPrinter(ioStreams)
+	globalConfig.Namespace = &env.envConfig.Install.Namespace
+
+	env.config = globalConfig
+
 	return env
 }
 
 // AddFlags binds flags to the given flagset.
 func (s *EnvSettings) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&s.envConfig.Install.Namespace, "fsm-namespace", s.envConfig.Install.Namespace, "namespace for fsm control plane")
+	fs.StringVarP(&s.envConfig.Install.Namespace, "fsm-namespace", "n", "", "namespace for fsm control plane")
 	fs.BoolVar(&s.verbose, "verbose", s.verbose, "enable verbose output")
 }
 
@@ -128,6 +142,11 @@ func (s *EnvSettings) Namespace() string {
 // Verbose gets whether verbose output is enabled from the configuration
 func (s *EnvSettings) Verbose() bool {
 	return s.verbose
+}
+
+// IOStreams returns the IOStreams from the configuration
+func (s *EnvSettings) IOStreams() genericiooptions.IOStreams {
+	return s.ioStreams
 }
 
 // IsManaged returns true in a managed FSM environment (ex. managed by a cloud distributor)
