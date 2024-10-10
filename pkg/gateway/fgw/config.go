@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -152,6 +153,23 @@ type HTTPRouteRule struct {
 	BackendRefs        []HTTPBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 	Timeouts           *gwv1.HTTPRouteTimeouts  `json:"timeouts,omitempty"`
 	SessionPersistence *gwv1.SessionPersistence `json:"sessionPersistence,omitempty"`
+	Retry              *HTTPRouteRetry          `json:"retry,omitempty"`
+}
+
+type HTTPRouteRetry struct {
+	Codes                 []gwv1.HTTPRouteRetryStatusCode `json:"codes,omitempty"`
+	Attempts              *int                            `json:"attempts,omitempty"`
+	BackoffInMilliseconds *int64                          `json:"backoff,omitempty"`
+}
+
+func (m *HTTPRouteRetry) Backoff(backoff *gwv1.Duration) {
+	if backoff == nil {
+		return
+	}
+
+	if duration, err := time.ParseDuration(string(*backoff)); err == nil {
+		m.BackoffInMilliseconds = ptr.To(duration.Milliseconds())
+	}
 }
 
 // ---
