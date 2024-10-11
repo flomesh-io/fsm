@@ -33,6 +33,7 @@ func TestGetHostnamesForServicePort(t *testing.T) {
 			serviceAccessNames: &configv1alpha3.ServiceAccessNames{
 				MustWithServicePort: false,
 				WithTrustDomain:     true,
+				MustWithNamespace:   true,
 			},
 			expectedHostnames: []string{
 				"s1",
@@ -54,6 +55,7 @@ func TestGetHostnamesForServicePort(t *testing.T) {
 			serviceAccessNames: &configv1alpha3.ServiceAccessNames{
 				MustWithServicePort: false,
 				WithTrustDomain:     true,
+				MustWithNamespace:   true,
 			},
 			expectedHostnames: []string{
 				"s1.ns1",
