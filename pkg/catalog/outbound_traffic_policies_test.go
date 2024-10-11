@@ -599,7 +599,7 @@ func TestGetOutboundMeshTrafficPolicy(t *testing.T) {
 			// Mock calls to k8s client caches
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode).AnyTimes()
 			mockCfg.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()
-			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true}).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true, MustWithNamespace: true}).AnyTimes()
 			mockCfg.EXPECT().IsEgressEnabled().Return(false).AnyTimes()
 			mockCfg.EXPECT().IsLocalDNSProxyEnabled().Return(false).AnyTimes()
 			mockCfg.EXPECT().IsWildcardDNSProxyEnabled().Return(false).AnyTimes()
