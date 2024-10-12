@@ -2415,6 +2415,9 @@ spec:
                             default: true
                             type: boolean
                         type: object
+                      mustWithNamespace:
+                        default: true
+                        type: boolean
                       mustWithServicePort:
                         default: false
                         type: boolean
