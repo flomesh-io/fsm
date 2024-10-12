@@ -128,7 +128,7 @@ func (cmd *egressGatewayEnableCmd) run() error {
 		return fmt.Errorf("mode must be either http2tunnel or socks5")
 	}
 
-	fsmNamespace := settings.Namespace()
+	fsmNamespace := settings.FsmNamespace()
 
 	debug("Getting mesh config ...")
 	// get mesh config

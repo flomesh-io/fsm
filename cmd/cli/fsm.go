@@ -2,13 +2,19 @@
 package main
 
 import (
-	goflag "flag"
 	"fmt"
-	"io"
 	"os"
+
+	cmdanalyze "sigs.k8s.io/gwctl/cmd/analyze"
+	cmdapply "sigs.k8s.io/gwctl/cmd/apply"
+	cmddelete "sigs.k8s.io/gwctl/cmd/delete"
+	cmdget "sigs.k8s.io/gwctl/cmd/get"
+
+	"github.com/spf13/pflag"
 
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
+	"k8s.io/cli-runtime/pkg/genericiooptions"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
 )
@@ -23,7 +29,7 @@ To install and configure FSM, run:
 
 var settings = cli.New()
 
-func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer, stderr io.Writer, args []string) *cobra.Command {
+func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStreams, args []string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "fsm",
 		Short:        "Install and manage Flomesh Service Mesh",
@@ -31,9 +37,14 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
+	//cmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
 	flags := cmd.PersistentFlags()
 	settings.AddFlags(flags)
+
+	factory := settings.Factory()
+	stdin := ioStreams.In
+	stdout := ioStreams.Out
+	stderr := ioStreams.ErrOut
 
 	// Add subcommands here
 	cmd.AddCommand(
@@ -42,7 +53,7 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		newNamespaceCmd(stdout),
 		newMetricsCmd(stdout),
 		newVersionCmd(stdout),
-		newProxyCmd(config, stdout),
+		newProxyCmd(config, factory, stdout),
 		newPolicyCmd(stdout, stderr),
 		newSupportCmd(config, stdout, stderr),
 		newUninstallCmd(config, stdin, stdout),
@@ -51,6 +62,11 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		newServiceLBCmd(stdout),
 		newFLBCmd(config, stdout),
 		newEgressGatewayCmd(config, stdout),
+		cmdapply.NewCmd(factory, ioStreams),
+		cmdget.NewCmd(factory, ioStreams, false),
+		cmdget.NewCmd(factory, ioStreams, true),
+		cmddelete.NewCmd(factory, ioStreams),
+		cmdanalyze.NewCmd(factory, ioStreams),
 	)
 
 	// Add subcommands related to unmanaged environments
@@ -61,19 +77,25 @@ func newRootCmd(config *action.Configuration, stdin io.Reader, stdout io.Writer,
 		)
 	}
 
-	_ = flags.Parse(args)
+	_ = cmd.PersistentFlags().Parse(args)
+	if settings.Verbose() {
+		cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			fmt.Fprintf(os.Stderr, "flag=%s, value=%s\n", flag.Name, flag.Value)
+		})
+	}
 
 	return cmd
 }
 
 func initCommands() *cobra.Command {
 	actionConfig := new(action.Configuration)
-	cmd := newRootCmd(actionConfig, os.Stdin, os.Stdout, os.Stderr, os.Args[1:])
-	_ = actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", debug)
+	cmd := newRootCmd(actionConfig, settings.IOStreams(), os.Args[1:])
+	_ = actionConfig.Init(settings.RESTClientGetter(), settings.FsmNamespace(), "secret", debug)
 
 	// run when each command's execute method is called
 	cobra.OnInitialize(func() {
-		if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", debug); err != nil {
+		if err := actionConfig.Init(settings.RESTClientGetter(), settings.FsmNamespace(), "secret", debug); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to initialize action configuration: %v", err)
 			os.Exit(1)
 		}
 	})

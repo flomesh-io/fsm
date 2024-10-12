@@ -59,7 +59,7 @@ func TestAnnotateErrorMessageWithFsmNamespace(t *testing.T) {
 	fsmNamespaceErrorMsg := fmt.Sprintf(
 		"Note: The command failed when run in the FSM namespace [%s].\n"+
 			"Use the global flag --fsm-namespace if [%s] is not the intended FSM namespace.",
-		settings.Namespace(), settings.Namespace())
+		settings.FsmNamespace(), settings.FsmNamespace())
 
 	testCases := []test{
 		{

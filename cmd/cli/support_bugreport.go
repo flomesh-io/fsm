@@ -169,7 +169,7 @@ func (cmd *bugReportCmd) run() error {
 		Stderr:               cmd.stderr,
 		KubeClient:           cmd.kubeClient,
 		PolicyClient:         cmd.policyClient,
-		ControlPlaneNamepace: settings.Namespace(),
+		ControlPlaneNamepace: settings.FsmNamespace(),
 		AppNamespaces:        cmd.appNamespaces,
 		AppDeployments:       appDeployments,
 		AppPods:              appPods,
