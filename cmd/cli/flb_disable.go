@@ -62,7 +62,7 @@ func (cmd *flbDisableCmd) run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fsmNamespace := settings.Namespace()
+	fsmNamespace := settings.FsmNamespace()
 
 	debug("Getting mesh config ...")
 	// get mesh config

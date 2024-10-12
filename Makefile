@@ -31,6 +31,7 @@ DOCKER_BUILDX_PLATFORM ?= linux/amd64
 DOCKER_BUILDX_OUTPUT ?= type=registry
 
 LDFLAGS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w"
+LDFLAGS_BUILD_CROSS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w -extldflags '-static'"
 
 # These two values are combined and passed to go test
 E2E_FLAGS ?= -installType=KindCluster
@@ -74,7 +75,7 @@ build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, t
 
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
-	CGO_ENABLED=0 go build -v -o ./bin/fsm -ldflags ${LDFLAGS} ./cmd/cli
+	CGO_ENABLED=1 go build -v -o ./bin/fsm -ldflags ${LDFLAGS} ./cmd/cli
 
 cmd/cli/chart.tgz: scripts/generate_chart/generate_chart.go $(shell find charts/fsm)
 	go run $< --chart-name=fsm > $@
@@ -361,7 +362,7 @@ install-git-pre-push-hook:
 
 .PHONY: build-cross
 build-cross: helm-update-dep cmd/cli/chart.tgz
-	GO111MODULE=on CGO_ENABLED=0 $(GOX) -ldflags $(LDFLAGS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
+	GO111MODULE=on CGO_ENABLED=1 $(GOX) -cgo -ldflags $(LDFLAGS_BUILD_CROSS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
 
 .PHONY: dist
 dist:
