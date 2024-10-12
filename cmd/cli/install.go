@@ -143,7 +143,7 @@ func (i *installCmd) run(config *helm.Configuration) error {
 
 	installClient := helm.NewInstall(config)
 	installClient.ReleaseName = i.meshName
-	installClient.Namespace = settings.Namespace()
+	installClient.Namespace = settings.FsmNamespace()
 	installClient.CreateNamespace = true
 	installClient.Wait = true
 	installClient.Atomic = i.atomic
@@ -168,7 +168,7 @@ func (i *installCmd) run(config *helm.Configuration) error {
 				return err
 			}
 
-			pods, _ := i.clientSet.CoreV1().Pods(settings.Namespace()).List(context.Background(), metav1.ListOptions{})
+			pods, _ := i.clientSet.CoreV1().Pods(settings.FsmNamespace()).List(context.Background(), metav1.ListOptions{})
 
 			for _, pod := range pods.Items {
 				fmt.Fprintf(i.out, "Status for pod %s in namespace %s:\n %v\n\n", pod.Name, pod.Namespace, pod.Status)
@@ -177,7 +177,7 @@ func (i *installCmd) run(config *helm.Configuration) error {
 		}
 	} else {
 		spinner := new(cli.Spinner)
-		spinner.Init(i.clientSet, settings.Namespace(), values)
+		spinner.Init(i.clientSet, settings.FsmNamespace(), values)
 		err = spinner.Run(func() error {
 			_, installErr := installClient.Run(i.chartRequested, values)
 			return installErr
@@ -188,7 +188,7 @@ func (i *installCmd) run(config *helm.Configuration) error {
 			}
 		}
 	}
-	fmt.Fprintf(i.out, "FSM installed successfully in namespace [%s] with mesh name [%s]\n", settings.Namespace(), i.meshName)
+	fmt.Fprintf(i.out, "FSM installed successfully in namespace [%s] with mesh name [%s]\n", settings.FsmNamespace(), i.meshName)
 	return nil
 }
 

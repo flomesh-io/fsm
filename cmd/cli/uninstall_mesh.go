@@ -88,7 +88,7 @@ func newUninstallMeshCmd(config *action.Configuration, in io.Reader, out io.Writ
 				return fmt.Errorf("Could not access extension client set: %w", err)
 			}
 
-			uninstall.meshNamespace = settings.Namespace()
+			uninstall.meshNamespace = settings.FsmNamespace()
 			return uninstall.run()
 		},
 	}

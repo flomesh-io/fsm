@@ -168,7 +168,7 @@ func (cmd *ingressEnableCmd) run() error {
 		return fmt.Errorf("invalid service type, only support LoadBalancer or NodePort")
 	}
 
-	fsmNamespace := settings.Namespace()
+	fsmNamespace := settings.FsmNamespace()
 
 	debug("Getting mesh config ...")
 	// get mesh config
