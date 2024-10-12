@@ -15,7 +15,7 @@ import (
 
 // GetHostnamesForService returns the hostnames over which the service is accessible
 func GetHostnamesForService(svc service.MeshService, san *configv1alpha3.ServiceAccessNames, localNamespace bool) (hostnames []string) {
-	if localNamespace {
+	if localNamespace || !san.MustWithNamespace {
 		if !san.MustWithServicePort {
 			hostnames = append(hostnames, svc.Name) // service
 		}

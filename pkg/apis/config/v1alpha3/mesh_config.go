@@ -274,6 +274,10 @@ type ServiceAccessNames struct {
 	// +optional
 	WithTrustDomain bool `json:"withTrustDomain,omitempty"`
 
+	// +kubebuilder:default=true
+	// +optional
+	MustWithNamespace bool `json:"mustWithNamespace,omitempty"`
+
 	// +kubebuilder:default={withNamespace: true}
 	// +optional
 	CloudServiceAccessNames *CloudServiceAccessNames `json:"cloud,omitempty"`

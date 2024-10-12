@@ -2037,7 +2037,7 @@ func TestGetInboundMeshTrafficPolicy(t *testing.T) {
 			mockPolicyController.EXPECT().GetUpstreamTrafficSetting(gomock.Any()).Return(tc.upstreamTrafficSetting).AnyTimes()
 			mockCfg.EXPECT().IsPermissiveTrafficPolicyMode().Return(tc.permissiveMode)
 			mockCfg.EXPECT().GetServiceAccessMode().Return(configv1alpha3.ServiceAccessModeDomain).AnyTimes()
-			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true}).AnyTimes()
+			mockCfg.EXPECT().GetServiceAccessNames().Return(&configv1alpha3.ServiceAccessNames{WithTrustDomain: true, MustWithNamespace: true}).AnyTimes()
 			mockMeshSpec.EXPECT().ListTrafficTargets(gomock.Any()).Return(tc.trafficTargets).AnyTimes()
 			mockMeshSpec.EXPECT().ListHTTPTrafficSpecs().Return(tc.httpRouteGroups).AnyTimes()
 			tc.prepare(mockMeshSpec, tc.trafficSplits)
