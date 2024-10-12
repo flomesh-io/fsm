@@ -37,8 +37,6 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 		SilenceUsage: true,
 	}
 
-	//cmd.SetArgs(args)
-
 	//cmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
 	flags := cmd.PersistentFlags()
 	settings.AddFlags(flags)
@@ -79,11 +77,7 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 		)
 	}
 
-	err := cmd.PersistentFlags().Parse(args)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse flags: %v", err)
-		os.Exit(1)
-	}
+	_ = cmd.PersistentFlags().Parse(args)
 	if settings.Verbose() {
 		cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 			fmt.Fprintf(os.Stderr, "flag=%s, value=%s\n", flag.Name, flag.Value)
@@ -95,7 +89,7 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 
 func initCommands() *cobra.Command {
 	actionConfig := new(action.Configuration)
-	cmd := newRootCmd(actionConfig, settings.IOStreams(), os.Args)
+	cmd := newRootCmd(actionConfig, settings.IOStreams(), os.Args[1:])
 	_ = actionConfig.Init(settings.RESTClientGetter(), settings.FsmNamespace(), "secret", debug)
 
 	// run when each command's execute method is called
