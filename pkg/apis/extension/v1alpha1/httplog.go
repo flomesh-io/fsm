@@ -79,7 +79,7 @@ type HTTPLogStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,categories=gateway-api
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.flomesh.io/extension=Filter}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io}
 
 // HTTPLog is the Schema for the HTTPLog API
 type HTTPLog struct {

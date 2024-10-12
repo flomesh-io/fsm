@@ -87,7 +87,7 @@ type FaultInjectionStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,categories=gateway-api
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io,gateway.flomesh.io/extension=Filter}
+// +kubebuilder:metadata:labels={app.kubernetes.io/name=flomesh.io}
 
 // FaultInjection is the Schema for the FaultInjection API
 type FaultInjection struct {

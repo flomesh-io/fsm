@@ -135,7 +135,7 @@ func (u *meshUpgradeCmd) run(config *helm.Configuration) error {
 		return err
 	}
 
-	fmt.Fprintf(u.out, "FSM successfully upgraded mesh [%s] in namespace [%s]\n", u.meshName, settings.FsmNamespace())
+	fmt.Fprintf(u.out, "FSM successfully upgraded mesh [%s] in namespace [%s]\n", u.meshName, settings.Namespace())
 	return nil
 }
 

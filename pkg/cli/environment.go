@@ -48,10 +48,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"sigs.k8s.io/gwctl/pkg/common"
-
-	"k8s.io/cli-runtime/pkg/genericiooptions"
-
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -87,8 +83,6 @@ type EnvSettings struct {
 	envConfig EnvConfig
 	config    *genericclioptions.ConfigFlags
 	verbose   bool
-	ioStreams genericiooptions.IOStreams
-	factory   common.Factory
 }
 
 // New relevant environment variables set and returns EnvSettings
@@ -99,35 +93,21 @@ func New() *EnvSettings {
 		os.Exit(1)
 	}
 
-	ioStreams := genericiooptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
 	env := &EnvSettings{
 		envConfig: *envConfig,
-		ioStreams: ioStreams,
 	}
 
 	// bind to kubernetes config flags
-	//env.config = &genericclioptions.ConfigFlags{
-	//	Namespace: &env.envConfig.Install.Namespace,
-	//}
-	globalConfig := genericclioptions.NewConfigFlags(true).
-		WithDiscoveryBurst(300).
-		WithDiscoveryQPS(50.0).
-		WithWarningPrinter(ioStreams)
-	//globalConfig.Namespace = &env.envConfig.Install.Namespace
-	env.factory = common.NewFactory(globalConfig)
-	env.config = globalConfig
-
+	env.config = &genericclioptions.ConfigFlags{
+		Namespace: &env.envConfig.Install.Namespace,
+	}
 	return env
 }
 
 // AddFlags binds flags to the given flagset.
 func (s *EnvSettings) AddFlags(fs *pflag.FlagSet) {
-	s.config.AddFlags(fs)
-
-	fs.StringVarP(&s.envConfig.Install.Namespace, "fsm-namespace", "N", s.envConfig.Install.Namespace, "namespace for fsm control plane")
+	fs.StringVar(&s.envConfig.Install.Namespace, "fsm-namespace", s.envConfig.Install.Namespace, "namespace for fsm control plane")
 	fs.BoolVar(&s.verbose, "verbose", s.verbose, "enable verbose output")
-
-	fs.PrintDefaults()
 }
 
 // Config returns the environment config
@@ -140,24 +120,14 @@ func (s *EnvSettings) RESTClientGetter() genericclioptions.RESTClientGetter {
 	return s.config
 }
 
-// FsmNamespace gets the fsm-namespace from the configuration
-func (s *EnvSettings) FsmNamespace() string {
+// Namespace gets the namespace from the configuration
+func (s *EnvSettings) Namespace() string {
 	return s.envConfig.Install.Namespace
 }
 
 // Verbose gets whether verbose output is enabled from the configuration
 func (s *EnvSettings) Verbose() bool {
 	return s.verbose
-}
-
-// IOStreams returns the IOStreams from the configuration
-func (s *EnvSettings) IOStreams() genericiooptions.IOStreams {
-	return s.ioStreams
-}
-
-// Factory returns the factory from the configuration
-func (s *EnvSettings) Factory() common.Factory {
-	return s.factory
 }
 
 // IsManaged returns true in a managed FSM environment (ex. managed by a cloud distributor)

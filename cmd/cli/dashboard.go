@@ -76,7 +76,7 @@ func (d *dashboardCmd) run() error {
 	v1ClientSet := clientSet.CoreV1()
 
 	// Get Grafana service data
-	svc, err := v1ClientSet.Services(settings.FsmNamespace()).
+	svc, err := v1ClientSet.Services(settings.Namespace()).
 		Get(context.TODO(), grafanaServiceName, metav1.GetOptions{})
 
 	if err != nil {
@@ -86,7 +86,7 @@ func (d *dashboardCmd) run() error {
 	// Select pod/s given the service data available
 	set := labels.Set(svc.Spec.Selector)
 	listOptions := metav1.ListOptions{LabelSelector: set.AsSelector().String()}
-	pods, err := v1ClientSet.Pods(settings.FsmNamespace()).List(context.TODO(), listOptions)
+	pods, err := v1ClientSet.Pods(settings.Namespace()).List(context.TODO(), listOptions)
 	if err != nil {
 		return annotateErrorMessageWithFsmNamespace("Error listing pods: %s", err)
 	}

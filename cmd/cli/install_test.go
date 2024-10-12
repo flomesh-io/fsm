@@ -70,7 +70,7 @@ var _ = Describe("Running the install command", func() {
 			out = new(bytes.Buffer)
 			store = storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -115,7 +115,7 @@ var _ = Describe("Running the install command", func() {
 			})
 
 			It("should be installed in the correct namespace", func() {
-				Expect(rel.Namespace).To(Equal(settings.FsmNamespace()))
+				Expect(rel.Namespace).To(Equal(settings.Namespace()))
 			})
 		})
 	})
@@ -132,7 +132,7 @@ var _ = Describe("Running the install command", func() {
 			out = new(bytes.Buffer)
 			store = storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -178,7 +178,7 @@ var _ = Describe("Running the install command", func() {
 			})
 
 			It("should be installed in the correct namespace", func() {
-				Expect(rel.Namespace).To(Equal(settings.FsmNamespace()))
+				Expect(rel.Namespace).To(Equal(settings.Namespace()))
 			})
 		})
 	})
@@ -195,7 +195,7 @@ var _ = Describe("Running the install command", func() {
 			out = new(bytes.Buffer)
 			store = storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -255,7 +255,7 @@ var _ = Describe("Running the install command", func() {
 			})
 
 			It("should be installed in the correct namespace", func() {
-				Expect(rel.Namespace).To(Equal(settings.FsmNamespace()))
+				Expect(rel.Namespace).To(Equal(settings.Namespace()))
 			})
 		})
 	})
@@ -272,7 +272,7 @@ var _ = Describe("Running the install command", func() {
 			out = new(bytes.Buffer)
 			store = storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -336,7 +336,7 @@ var _ = Describe("Running the install command", func() {
 			})
 
 			It("should be installed in the correct namespace", func() {
-				Expect(rel.Namespace).To(Equal(settings.FsmNamespace()))
+				Expect(rel.Namespace).To(Equal(settings.Namespace()))
 			})
 		})
 	})
@@ -351,7 +351,7 @@ var _ = Describe("Running the install command", func() {
 			out := new(bytes.Buffer)
 			store := storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -416,7 +416,7 @@ var _ = Describe("Running the install command", func() {
 			out = new(bytes.Buffer)
 			store = storage.Init(driver.NewMemory())
 			if mem, ok := store.Driver.(*driver.Memory); ok {
-				mem.SetNamespace(settings.FsmNamespace())
+				mem.SetNamespace(settings.Namespace())
 			}
 
 			config = &helm.Configuration{
@@ -471,7 +471,7 @@ var _ = Describe("Running the install command", func() {
 			})
 
 			It("should be installed in the correct namespace", func() {
-				Expect(rel.Namespace).To(Equal(settings.FsmNamespace()))
+				Expect(rel.Namespace).To(Equal(settings.Namespace()))
 			})
 		})
 	})
@@ -489,7 +489,7 @@ var _ = Describe("deployPrometheus is true", func() {
 		out = new(bytes.Buffer)
 		store = storage.Init(driver.NewMemory())
 		if mem, ok := store.Driver.(*driver.Memory); ok {
-			mem.SetNamespace(settings.FsmNamespace())
+			mem.SetNamespace(settings.Namespace())
 		}
 
 		config = &helm.Configuration{

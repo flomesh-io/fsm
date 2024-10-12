@@ -288,7 +288,7 @@ func annotateErrorMessageWithFsmNamespace(errMsgFormat string, args ...interface
 	fsmNamespaceErrorMsg := fmt.Sprintf(
 		"Note: The command failed when run in the FSM namespace [%s].\n"+
 			"Use the global flag --fsm-namespace if [%s] is not the intended FSM namespace.",
-		settings.FsmNamespace(), settings.FsmNamespace())
+		settings.Namespace(), settings.Namespace())
 
 	return annotateErrorMessageWithActionableMessage(fsmNamespaceErrorMsg, errMsgFormat, args...)
 }

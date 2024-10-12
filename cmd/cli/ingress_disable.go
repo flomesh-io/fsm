@@ -75,7 +75,7 @@ func (cmd *ingressDisableCmd) run() error {
 			version.ServerVersion.String(), version.MinK8sVersion.String())
 	}
 
-	fsmNamespace := settings.FsmNamespace()
+	fsmNamespace := settings.Namespace()
 
 	debug("Getting mesh config ...")
 	// get mesh config

@@ -88,7 +88,7 @@ func TestNew(t *testing.T) {
 			settings.AddFlags(flags)
 			err := flags.Parse(test.args)
 			assert.Nil(err)
-			assert.Equal(settings.FsmNamespace(), test.expectedNamespace)
+			assert.Equal(settings.Namespace(), test.expectedNamespace)
 		})
 	}
 }
@@ -103,7 +103,7 @@ func TestNamespaceErr(t *testing.T) {
 	configPath := "This doesn't even look like a valid path name"
 	env.config.KubeConfig = &configPath
 
-	tassert.Equal(t, env.FsmNamespace(), "fsm-system")
+	tassert.Equal(t, env.Namespace(), "fsm-system")
 }
 
 func TestRESTClientGetter(t *testing.T) {

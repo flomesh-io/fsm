@@ -120,7 +120,7 @@ func (cmd *trafficPolicyCheckCmd) run() error {
 }
 
 func (cmd *trafficPolicyCheckCmd) checkTrafficPolicy(srcPod, dstPod *corev1.Pod) error {
-	fsmNamespace := settings.FsmNamespace()
+	fsmNamespace := settings.Namespace()
 
 	// Check if permissive mode is enabled, in which case every meshed pod is allowed to communicate with each other
 	if permissiveMode, err := cmd.isPermissiveModeEnabled(); err != nil {
@@ -176,7 +176,7 @@ func (cmd *trafficPolicyCheckCmd) getMeshedPod(namespace, podName string) (*core
 }
 
 func (cmd *trafficPolicyCheckCmd) isPermissiveModeEnabled() (bool, error) {
-	fsmNamespace := settings.FsmNamespace()
+	fsmNamespace := settings.Namespace()
 
 	meshConfig, err := cmd.meshConfigClient.ConfigV1alpha3().MeshConfigs(fsmNamespace).Get(context.TODO(), defaultFsmMeshConfigName, metav1.GetOptions{})
 

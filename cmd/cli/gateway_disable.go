@@ -83,7 +83,7 @@ func (cmd *gatewayDisableCmd) run() error {
 			version.ServerVersion.String(), version.MinK8sVersionForGatewayAPI.String())
 	}
 
-	fsmNamespace := settings.FsmNamespace()
+	fsmNamespace := settings.Namespace()
 
 	debug("Getting mesh config ...")
 	// get mesh config
