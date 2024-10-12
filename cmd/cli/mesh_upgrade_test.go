@@ -16,7 +16,7 @@ import (
 
 func meshUpgradeConfig() *action.Configuration {
 	mem := driver.NewMemory()
-	mem.SetNamespace(settings.Namespace())
+	mem.SetNamespace(settings.FsmNamespace())
 	store := storage.Init(mem)
 
 	return &action.Configuration{

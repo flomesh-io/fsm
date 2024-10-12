@@ -2,21 +2,19 @@
 package main
 
 import (
-	goflag "flag"
 	"fmt"
 	"os"
-
-	cmdget "sigs.k8s.io/gwctl/cmd/get"
-
-	"k8s.io/cli-runtime/pkg/genericiooptions"
-	"sigs.k8s.io/gwctl/pkg/common"
-
-	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/action"
 
 	cmdanalyze "sigs.k8s.io/gwctl/cmd/analyze"
 	cmdapply "sigs.k8s.io/gwctl/cmd/apply"
 	cmddelete "sigs.k8s.io/gwctl/cmd/delete"
+	cmdget "sigs.k8s.io/gwctl/cmd/get"
+
+	"github.com/spf13/pflag"
+
+	"github.com/spf13/cobra"
+	"helm.sh/helm/v3/pkg/action"
+	"k8s.io/cli-runtime/pkg/genericiooptions"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
 )
@@ -39,11 +37,13 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 		SilenceUsage: true,
 	}
 
-	cmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
+	//cmd.SetArgs(args)
+
+	//cmd.PersistentFlags().AddGoFlagSet(goflag.CommandLine)
 	flags := cmd.PersistentFlags()
 	settings.AddFlags(flags)
 
-	factory := common.NewFactory(settings.RESTClientGetter())
+	factory := settings.Factory()
 	stdin := ioStreams.In
 	stdout := ioStreams.Out
 	stderr := ioStreams.ErrOut
@@ -55,7 +55,7 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 		newNamespaceCmd(stdout),
 		newMetricsCmd(stdout),
 		newVersionCmd(stdout),
-		newProxyCmd(config, stdout),
+		newProxyCmd(config, factory, stdout),
 		newPolicyCmd(stdout, stderr),
 		newSupportCmd(config, stdout, stderr),
 		newUninstallCmd(config, stdin, stdout),
@@ -79,19 +79,28 @@ func newRootCmd(config *action.Configuration, ioStreams genericiooptions.IOStrea
 		)
 	}
 
-	_ = flags.Parse(args)
+	err := cmd.PersistentFlags().Parse(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse flags: %v", err)
+		os.Exit(1)
+	}
+	if settings.Verbose() {
+		cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			fmt.Fprintf(os.Stderr, "flag=%s, value=%s\n", flag.Name, flag.Value)
+		})
+	}
 
 	return cmd
 }
 
 func initCommands() *cobra.Command {
 	actionConfig := new(action.Configuration)
-	cmd := newRootCmd(actionConfig, settings.IOStreams(), os.Args[1:])
-	_ = actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", debug)
+	cmd := newRootCmd(actionConfig, settings.IOStreams(), os.Args)
+	_ = actionConfig.Init(settings.RESTClientGetter(), settings.FsmNamespace(), "secret", debug)
 
 	// run when each command's execute method is called
 	cobra.OnInitialize(func() {
-		if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", debug); err != nil {
+		if err := actionConfig.Init(settings.RESTClientGetter(), settings.FsmNamespace(), "secret", debug); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to initialize action configuration: %v", err)
 			os.Exit(1)
 		}
