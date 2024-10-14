@@ -31,6 +31,7 @@ DOCKER_BUILDX_PLATFORM ?= linux/amd64
 DOCKER_BUILDX_OUTPUT ?= type=registry
 
 LDFLAGS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w"
+LDFLAGS_BUILD_CROSS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w -extldflags '-static'"
 
 # These two values are combined and passed to go test
 E2E_FLAGS ?= -installType=KindCluster
@@ -361,7 +362,7 @@ install-git-pre-push-hook:
 
 .PHONY: build-cross
 build-cross: helm-update-dep cmd/cli/chart.tgz
-	GO111MODULE=on CGO_ENABLED=1 $(GOX) -ldflags $(LDFLAGS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
+	GO111MODULE=on CGO_ENABLED=1 $(GOX) -cgo -ldflags $(LDFLAGS_BUILD_CROSS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
 
 .PHONY: dist
 dist:
