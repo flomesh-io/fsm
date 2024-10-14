@@ -111,7 +111,7 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			return nil
 		}
 		externalSource := false
-		internalSource := false
+		internalSource := true
 		if len(k8sSvc.Annotations) > 0 {
 			internalSource, externalSource = gw.checkServiceType(k8sSvc)
 		}
