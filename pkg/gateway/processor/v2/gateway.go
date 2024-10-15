@@ -66,6 +66,8 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 		g2.Spec.Listeners = append(g2.Spec.Listeners, *v2l)
 	}
 
+	c.processGatewayBackendTLS(g2)
+
 	return g2
 }
 
@@ -215,4 +217,37 @@ func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerF
 	}
 
 	return result
+}
+
+func (c *ConfigGenerator) processGatewayBackendTLS(g2 *fgwv2.Gateway) {
+	if c.gateway.Spec.BackendTLS != nil && c.gateway.Spec.BackendTLS.ClientCertificateRef != nil {
+		ref := c.gateway.Spec.BackendTLS.ClientCertificateRef
+
+		secret, err := c.secretRefToSecret(c.gateway, *ref)
+
+		if err != nil {
+			log.Error().Msgf("Failed to resolve Secret: %s", err)
+			return
+		}
+
+		if secret.Type != corev1.SecretTypeTLS {
+			log.Warn().Msgf("BackendTLS Secret %s/%s is not of type %s, will be ignored for Gateway %s/%s",
+				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
+				c.gateway.Namespace, c.gateway.Name)
+			return
+		}
+
+		certName := fmt.Sprintf("gw-bk-tls-%s-%s.crt", c.gateway.Namespace, c.gateway.Name)
+		keyName := fmt.Sprintf("gw-bk-tls-%s-%s.key", c.gateway.Namespace, c.gateway.Name)
+
+		g2.Spec.BackendTLS = &fgwv2.GatewayBackendTLS{
+			ClientCertificate: map[string]string{
+				corev1.TLSCertKey:       certName,
+				corev1.TLSPrivateKeyKey: keyName,
+			},
+		}
+
+		c.secretFiles[certName] = string(secret.Data[corev1.TLSCertKey])
+		c.secretFiles[keyName] = string(secret.Data[corev1.TLSPrivateKeyKey])
+	}
 }

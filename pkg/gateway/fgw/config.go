@@ -91,6 +91,7 @@ type GatewaySpec struct {
 	GatewayClassName gwv1.ObjectName       `json:"gatewayClassName"`
 	Listeners        []Listener            `json:"listeners,omitempty" copier:"-" hash:"set"`
 	Addresses        []gwv1.GatewayAddress `json:"addresses,omitempty"`
+	BackendTLS       *GatewayBackendTLS    `json:"backendTLS,omitempty" copier:"-"`
 }
 
 type Listener struct {
@@ -133,6 +134,10 @@ type GatewayTLSConfig struct {
 
 type FrontendTLSValidation struct {
 	CACertificates []map[string]string `json:"caCertificates,omitempty" copier:"-" hash:"set"`
+}
+
+type GatewayBackendTLS struct {
+	ClientCertificate map[string]string `json:"clientCertificate,omitempty"`
 }
 
 // ---
