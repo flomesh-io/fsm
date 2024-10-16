@@ -405,19 +405,25 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 }
 
 func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *apiv1.Service) {
-	for port, appProtocol := range svcMeta.Ports {
-		if exists := s.existPort(createSvc, port, appProtocol); !exists {
+	for targetPort, appProtocol := range svcMeta.Ports {
+		if exists := s.existPort(createSvc, targetPort, appProtocol); !exists {
 			specPort := apiv1.ServicePort{
-				Name:       fmt.Sprintf("%s%d", appProtocol, port),
+				Name:       fmt.Sprintf("%s%d", appProtocol, targetPort),
 				Protocol:   apiv1.ProtocolTCP,
-				Port:       int32(port),
-				TargetPort: intstr.FromInt32(int32(port)),
+				Port:       int32(targetPort),
+				TargetPort: intstr.FromInt32(int32(targetPort)),
 			}
 			if appProtocol == constants.ProtocolHTTP {
 				specPort.AppProtocol = &protocolHTTP
+				if port := s.controller.GetFixedHTTPServicePort(); port != nil {
+					specPort.Port = int32(*port)
+				}
 			}
 			if appProtocol == constants.ProtocolGRPC {
 				specPort.AppProtocol = &protocolGRPC
+				if port := s.controller.GetFixedGRPCServicePort(); port != nil {
+					specPort.Port = int32(*port)
+				}
 			}
 			createSvc.Spec.Ports = append(createSvc.Spec.Ports, specPort)
 		}

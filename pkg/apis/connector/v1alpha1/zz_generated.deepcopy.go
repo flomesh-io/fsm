@@ -237,6 +237,16 @@ func (in *ConsulSyncToK8SSpec) DeepCopyInto(out *ConsulSyncToK8SSpec) {
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
 	}
+	if in.FixedHTTPServicePort != nil {
+		in, out := &in.FixedHTTPServicePort, &out.FixedHTTPServicePort
+		*out = new(uint32)
+		**out = **in
+	}
+	if in.FixedGRPCServicePort != nil {
+		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
+		*out = new(uint32)
+		**out = **in
+	}
 	out.WithGateway = in.WithGateway
 	return
 }
@@ -444,6 +454,16 @@ func (in *EurekaSyncToK8SSpec) DeepCopyInto(out *EurekaSyncToK8SSpec) {
 		in, out := &in.ExcludeMetadatas, &out.ExcludeMetadatas
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
+	}
+	if in.FixedHTTPServicePort != nil {
+		in, out := &in.FixedHTTPServicePort, &out.FixedHTTPServicePort
+		*out = new(uint32)
+		**out = **in
+	}
+	if in.FixedGRPCServicePort != nil {
+		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
+		*out = new(uint32)
+		**out = **in
 	}
 	out.WithGateway = in.WithGateway
 	return
@@ -955,6 +975,16 @@ func (in *NacosSyncToK8SSpec) DeepCopyInto(out *NacosSyncToK8SSpec) {
 		in, out := &in.ExcludeMetadatas, &out.ExcludeMetadatas
 		*out = make([]Metadata, len(*in))
 		copy(*out, *in)
+	}
+	if in.FixedHTTPServicePort != nil {
+		in, out := &in.FixedHTTPServicePort, &out.FixedHTTPServicePort
+		*out = new(uint32)
+		**out = **in
+	}
+	if in.FixedGRPCServicePort != nil {
+		in, out := &in.FixedGRPCServicePort, &out.FixedGRPCServicePort
+		*out = new(uint32)
+		**out = **in
 	}
 	if in.ClusterSet != nil {
 		in, out := &in.ClusterSet, &out.ClusterSet
