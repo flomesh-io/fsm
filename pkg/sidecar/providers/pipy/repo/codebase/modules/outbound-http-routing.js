@@ -18,7 +18,7 @@
 
   makeServiceHandler = (portConfig, serviceInfo) => (
     (
-      rules = portConfig?.HttpServiceRouteRules?.[serviceInfo.RuleName]?.RouteRules || [],
+      rules = portConfig?.HttpServiceRouteRules?.[serviceInfo?.RuleName]?.RouteRules || [],
       tree = {},
     ) => (
       rules.forEach(
@@ -39,7 +39,7 @@
             headerRules = config.Headers ? Object.entries(config.Headers).map(([k, v]) => [k, new RegExp(v)]) : null,
             balancer = new algo.RoundRobinLoadBalancer(shuffle(config.TargetClusters || {})),
             failoverBalancer = failover(config.TargetClusters),
-            service = Object.assign({ name: serviceInfo.Service || serviceInfo.RuleName }, portConfig?.HttpServiceRouteRules?.[serviceInfo.RuleName]),
+            service = Object.assign({ name: serviceInfo.Service || serviceInfo?.RuleName }, portConfig?.HttpServiceRouteRules?.[serviceInfo.RuleName]),
             rule = headerRules ? (
               (path, headers) => matchPath(path) && headerRules.every(([k, v]) => v.test(headers[k] || '')) && (
                 __route = config,
