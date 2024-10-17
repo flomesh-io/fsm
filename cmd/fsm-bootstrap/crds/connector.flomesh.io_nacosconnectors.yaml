@@ -313,6 +313,12 @@ spec:
                       - value
                       type: object
                     type: array
+                  fixedGrpcServicePort:
+                    format: int32
+                    type: integer
+                  fixedHttpServicePort:
+                    format: int32
+                    type: integer
                   groupSet:
                     default:
                     - DEFAULT_GROUP

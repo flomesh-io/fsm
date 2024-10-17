@@ -462,9 +462,13 @@ func generatePipyOutboundTrafficBalancePolicy(meshCatalog catalog.MeshCataloger,
 				} else if strings.EqualFold(constants.ProtocolGRPC, upstreamEndpoint.AppProtocol) {
 					viaGw = upstreamEndpoint.ViaGatewayGRPC
 				}
-				if upstreamEndpoint.WithGateway {
-					if upstreamEndpoint.WithMultiGateways {
-						viaGw = generatePipyViaGateway(upstreamEndpoint.AppProtocol, upstreamEndpoint.ClusterID, proxy, &viaGateway)
+				if len(upstreamEndpoint.ViaGatewayMode) > 0 {
+					if upstreamEndpoint.WithGateway {
+						if upstreamEndpoint.WithMultiGateways {
+							viaGw = generatePipyViaGateway(upstreamEndpoint.AppProtocol, upstreamEndpoint.ClusterID, proxy, &viaGateway)
+						}
+					} else {
+						port = Port(upstreamEndpoint.Port)
 					}
 				}
 				clusterConfigs.addWeightedZoneEndpoint(address, port, weight, upstreamEndpoint.ClusterKey, upstreamEndpoint.LBType, upstreamEndpoint.Path, viaGw)

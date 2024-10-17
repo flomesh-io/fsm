@@ -323,6 +323,12 @@ spec:
                     type: array
                   filterTag:
                     type: string
+                  fixedGrpcServicePort:
+                    format: int32
+                    type: integer
+                  fixedHttpServicePort:
+                    format: int32
+                    type: integer
                   generateInternalServiceHealthCheck:
                     default: true
                     type: boolean
