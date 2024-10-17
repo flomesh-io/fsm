@@ -82,6 +82,12 @@ type NacosSyncToK8SSpec struct {
 	// +optional
 	SuffixMetadata string `json:"suffixMetadata,omitempty"`
 
+	// +optional
+	FixedHTTPServicePort *uint32 `json:"fixedHttpServicePort,omitempty"`
+
+	// +optional
+	FixedGRPCServicePort *uint32 `json:"fixedGrpcServicePort,omitempty"`
+
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:default={"DEFAULT"}
 	// +optional
