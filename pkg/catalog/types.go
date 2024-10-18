@@ -20,6 +20,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/smi"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
+	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 )
 
 var (
@@ -102,6 +103,8 @@ type MeshCataloger interface {
 
 	// GetExportTrafficPolicy returns the export policy for the given mesh service
 	GetExportTrafficPolicy(svc service.MeshService) (*trafficpolicy.ServiceExportTrafficPolicy, error)
+
+	GetIsolationCidrs() []*cidr.CIDR
 
 	// GetPlugins returns the plugin policies
 	GetPlugins() []*trafficpolicy.Plugin
