@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/util/dump"
 
@@ -130,10 +132,33 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		}
 	}
 
+	delItems, err := c.getDelItems(gatewayPath, batch)
+	if err != nil {
+		log.Error().Msgf("Get del items error: %s", err)
+		return
+	}
+	batch.DelItems = delItems
+
 	if err := c.repoClient.Batch([]repo.Batch{batch}); err != nil {
 		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 		return
 	}
+}
+
+func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]string, error) {
+	files, err := c.repoClient.ListFiles(gatewayPath)
+	if err != nil {
+		log.Error().Msgf("List files in %q error: %s", gatewayPath, err)
+		return nil, err
+	}
+
+	toDelete := sets.NewString(files...)
+
+	for _, item := range batch.Items {
+		toDelete.Delete(item.String())
+	}
+
+	return toDelete.UnsortedList(), nil
 }
 
 func (c *GatewayProcessor) getVersion(basepath string, file string) (string, error) {
