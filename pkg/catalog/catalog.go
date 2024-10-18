@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	meshCatalog *MeshCatalog
+	meshCataloger MeshCataloger
 )
 
 // NewMeshCatalog creates a new service catalog
@@ -32,7 +32,7 @@ func NewMeshCatalog(kubeController k8s.Controller,
 	serviceProviders []service.Provider,
 	endpointsProviders []endpoint.Provider,
 	msgBroker *messaging.Broker) *MeshCatalog {
-	meshCatalog = &MeshCatalog{
+	meshCatalog := &MeshCatalog{
 		serviceProviders:       serviceProviders,
 		endpointsProviders:     endpointsProviders,
 		meshSpec:               meshSpec,
@@ -44,6 +44,8 @@ func NewMeshCatalog(kubeController k8s.Controller,
 		kubeController:         kubeController,
 	}
 
+	meshCataloger = meshCatalog
+
 	// Start the Resync ticker to tick based on the resync interval.
 	// Starting the resync ticker only starts the ticker config watcher which
 	// internally manages the lifecycle of the ticker routine.
@@ -53,8 +55,8 @@ func NewMeshCatalog(kubeController k8s.Controller,
 	return meshCatalog
 }
 
-func GetMeshCatalog() *MeshCatalog {
-	return meshCatalog
+func GetMeshCataloger() MeshCataloger {
+	return meshCataloger
 }
 
 // GetKubeController returns the kube controller instance handling the current cluster

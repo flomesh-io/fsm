@@ -156,13 +156,19 @@ func (p *Proxy) GetConnectedAt() time.Time {
 
 // GetIP returns the address of the proxy connected.
 func (p *Proxy) GetIP() net.Addr {
+	if p.Addr == nil {
+		return p.MachineIP
+	}
 	return p.Addr
 }
 
 // GetAddr returns the IP address of the proxy connected.
 func (p *Proxy) GetAddr() string {
 	if p.Addr == nil {
-		return ""
+		if p.MachineIP == nil {
+			return ""
+		}
+		return p.MachineIP.String()
 	}
 	return p.Addr.String()
 }
