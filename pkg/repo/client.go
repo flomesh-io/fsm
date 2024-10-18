@@ -216,10 +216,25 @@ func (p *PipyRepoClient) upsertFile(path string, content interface{}) error {
 	return fmt.Errorf(errstr, resp.StatusCode(), resp.Status())
 }
 
-//func (p *PipyRepoClient) delete(path string) {
-//	// DELETE, as pipy repo doesn't support deletion yet, this's not implemented
-//	panic("implement me")
-//}
+// deleteFile delete codebase file
+func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
+	var resp *resty.Response
+
+	resp, err = p.httpClient.R().
+		Delete(fullFileApiPath(path))
+
+	if err == nil {
+		if resp.IsSuccess() {
+			success = true
+			return
+		}
+		err = fmt.Errorf("error happened while deleting codebase[%s], reason: %s", path, resp.Status())
+		return
+	}
+
+	log.Err(err).Msgf("error happened while deleting codebase[%s]", path)
+	return
+}
 
 // Commit the codebase, version is the current vesion of the codebase, it will be increased by 1 when committing
 func (p *PipyRepoClient) commit(path string, _ int64) error {
@@ -273,12 +288,20 @@ func (p *PipyRepoClient) Batch(batches []Batch) error {
 
 		// 2. upload each json to repo
 		for _, item := range batch.Items {
-			fullpath := fmt.Sprintf("%s%s/%s", batch.Basepath, item.Path, item.Filename)
+			fullpath := fmt.Sprintf("%s%s", batch.Basepath, item.String())
 			log.Debug().Msgf("Creating/updating config %q", fullpath)
 			log.Debug().Msgf("Content: %v", item.Content)
 			err := p.upsertFile(fullpath, item.Content)
 			if err != nil {
 				log.Error().Msgf("Upsert %q error, reason: %s", fullpath, err.Error())
+				return err
+			}
+		}
+
+		for _, file := range batch.DelItems {
+			fullpath := fmt.Sprintf("%s%s", batch.Basepath, file)
+			log.Debug().Msgf("Deleting %q", fullpath)
+			if _, err := p.deleteFile(fullpath); err != nil {
 				return err
 			}
 		}
@@ -336,6 +359,16 @@ func (p *PipyRepoClient) CodebaseExists(path string) bool {
 	exists, _ := p.codebaseExists(path)
 
 	return exists
+}
+
+func (p *PipyRepoClient) ListFiles(path string) ([]string, error) {
+	codebase, err := p.get(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return codebase.Files, nil
 }
 
 func fullRepoApiPath(path string) string {
