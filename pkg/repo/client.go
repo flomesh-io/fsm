@@ -216,6 +216,26 @@ func (p *PipyRepoClient) upsertFile(path string, content interface{}) error {
 	return fmt.Errorf(errstr, resp.StatusCode(), resp.Status())
 }
 
+// DeleteCodebase delete codebase
+func (p *PipyRepoClient) DeleteCodebase(path string) (success bool, err error) {
+	var resp *resty.Response
+
+	resp, err = p.httpClient.R().
+		Delete(fullRepoApiPath(path))
+
+	if err == nil {
+		if resp.IsSuccess() {
+			success = true
+			return
+		}
+		err = fmt.Errorf("error happened while deleting codebase[%s], reason: %s", path, resp.Status())
+		return
+	}
+
+	log.Err(err).Msgf("error happened while deleting codebase[%s]", path)
+	return
+}
+
 // deleteFile delete codebase file
 func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
 	var resp *resty.Response
@@ -228,11 +248,11 @@ func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
 			success = true
 			return
 		}
-		err = fmt.Errorf("error happened while deleting codebase[%s], reason: %s", path, resp.Status())
+		err = fmt.Errorf("error happened while deleting file %q, reason: %s", path, resp.Status())
 		return
 	}
 
-	log.Err(err).Msgf("error happened while deleting codebase[%s]", path)
+	log.Err(err).Msgf("error happened while deleting file %q", path)
 	return
 }
 
