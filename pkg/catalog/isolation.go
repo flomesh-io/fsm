@@ -18,6 +18,8 @@ func (mc *MeshCatalog) GetIsolationCidrs() []*cidr.CIDR {
 			for _, isolationCidr := range p.Spec.CIDR {
 				if parsedCidr, err := cidr.ParseCIDR(isolationCidr); err == nil {
 					isolationCidrs = append(isolationCidrs, parsedCidr)
+				} else {
+					log.Error().Err(err).Msgf("invalid isolation cidr: %s", isolationCidr)
 				}
 			}
 		}

@@ -19,7 +19,7 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 	targets := make([]fgwv2.BackendTarget, 0)
 
 	var isolationCidrs []*cidr.CIDR
-	if mc := catalog.GetMeshCatalog(); mc != nil {
+	if mc := catalog.GetMeshCataloger(); mc != nil {
 		isolationCidrs = mc.GetIsolationCidrs()
 	}
 

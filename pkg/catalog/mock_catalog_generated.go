@@ -13,6 +13,7 @@ import (
 	k8s "github.com/flomesh-io/fsm/pkg/k8s"
 	service "github.com/flomesh-io/fsm/pkg/service"
 	trafficpolicy "github.com/flomesh-io/fsm/pkg/trafficpolicy"
+	cidr "github.com/flomesh-io/fsm/pkg/utils/cidr"
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -142,6 +143,20 @@ func (m *MockMeshCataloger) GetIngressTrafficPolicy(arg0 service.MeshService) (*
 func (mr *MockMeshCatalogerMockRecorder) GetIngressTrafficPolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressTrafficPolicy", reflect.TypeOf((*MockMeshCataloger)(nil).GetIngressTrafficPolicy), arg0)
+}
+
+// GetIsolationCidrs mocks base method.
+func (m *MockMeshCataloger) GetIsolationCidrs() []*cidr.CIDR {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIsolationCidrs")
+	ret0, _ := ret[0].([]*cidr.CIDR)
+	return ret0
+}
+
+// GetIsolationCidrs indicates an expected call of GetIsolationCidrs.
+func (mr *MockMeshCatalogerMockRecorder) GetIsolationCidrs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIsolationCidrs", reflect.TypeOf((*MockMeshCataloger)(nil).GetIsolationCidrs))
 }
 
 // GetKubeController mocks base method.

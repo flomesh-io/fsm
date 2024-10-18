@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"net"
 	"runtime"
 	"sort"
 	"sync/atomic"
@@ -67,6 +68,21 @@ func (job *PipyConfGeneratorJob) Run() {
 
 	atomic.AddInt32(&proxy.Backlogs, -1)
 
+	cataloger := s.catalog
+	if isolationCidrs := cataloger.GetIsolationCidrs(); len(isolationCidrs) > 0 {
+		isolation := false
+		addr := proxy.GetAddr()
+		for _, isolationCidr := range isolationCidrs {
+			if isolationCidr.Has(net.ParseIP(addr)) {
+				isolation = true
+				break
+			}
+		}
+		if isolation {
+			return
+		}
+	}
+
 	proxyServices, err := s.proxyRegistry.ListProxyServices(proxy)
 	if err != nil {
 		log.Warn().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingServiceList)).
@@ -82,7 +98,6 @@ func (job *PipyConfGeneratorJob) Run() {
 		})
 	}
 
-	cataloger := s.catalog
 	pipyConf := new(PipyConf)
 
 	desiredSuffix := ""
