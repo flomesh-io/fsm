@@ -130,10 +130,41 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		}
 	}
 
+	delItems, err := c.getDelItems(gatewayPath, batch)
+	if err != nil {
+		log.Error().Msgf("Get del items error: %s", err)
+		return
+	}
+	batch.DelItems = delItems
+
 	if err := c.repoClient.Batch([]repo.Batch{batch}); err != nil {
 		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 		return
 	}
+}
+
+func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]string, error) {
+	files, err := c.repoClient.ListFiles(gatewayPath)
+	if err != nil {
+		log.Error().Msgf("List files in %q error: %s", gatewayPath, err)
+		return nil, err
+	}
+
+	toDelete := map[string]struct{}{}
+	for _, file := range files {
+		toDelete[file] = struct{}{}
+	}
+
+	for _, item := range batch.Items {
+		delete(toDelete, item.String())
+	}
+
+	delItems := make([]string, 0)
+	for file := range toDelete {
+		delItems = append(delItems, file)
+	}
+
+	return delItems, nil
 }
 
 func (c *GatewayProcessor) getVersion(basepath string, file string) (string, error) {

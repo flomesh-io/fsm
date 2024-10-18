@@ -24,7 +24,11 @@
 
 package repo
 
-import "github.com/flomesh-io/fsm/pkg/logger"
+import (
+	"strings"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
+)
 
 type Codebase struct {
 	Version     int64    `json:"version,string,omitempty"`
@@ -40,12 +44,27 @@ type Codebase struct {
 type Batch struct {
 	Basepath string
 	Items    []BatchItem
+	DelItems []string
 }
 
 type BatchItem struct {
 	Path     string
 	Filename string
 	Content  interface{}
+}
+
+func (item *BatchItem) String() string {
+	path := item.Path
+
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	if path == "/" {
+		return "/" + item.Filename
+	}
+
+	return path + "/" + item.Filename
 }
 
 var log = logger.New("pipy-repo-client")
