@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/util/dump"
 
@@ -150,21 +152,13 @@ func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]
 		return nil, err
 	}
 
-	toDelete := map[string]struct{}{}
-	for _, file := range files {
-		toDelete[file] = struct{}{}
-	}
+	toDelete := sets.NewString(files...)
 
 	for _, item := range batch.Items {
-		delete(toDelete, item.String())
+		toDelete.Delete(item.String())
 	}
 
-	delItems := make([]string, 0)
-	for file := range toDelete {
-		delItems = append(delItems, file)
-	}
-
-	return delItems, nil
+	return toDelete.UnsortedList(), nil
 }
 
 func (c *GatewayProcessor) getVersion(basepath string, file string) (string, error) {
