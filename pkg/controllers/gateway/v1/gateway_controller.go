@@ -151,6 +151,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}.String())
 			r.mutex.Unlock()
 
+			if _, err := r.fctx.RepoClient.DeleteCodebase(utils.GatewayCodebasePath(req.Namespace, req.Name)); err != nil {
+				log.Warn().Msgf("Failed to delete codebase of gateway %s/%s: %s", req.Namespace, req.Name, err)
+			}
+
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
@@ -164,6 +168,10 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.mutex.Lock()
 		delete(r.activeGateways, client.ObjectKeyFromObject(gateway).String())
 		r.mutex.Unlock()
+
+		if _, err := r.fctx.RepoClient.DeleteCodebase(utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)); err != nil {
+			log.Warn().Msgf("Failed to delete codebase of gateway %s/%s: %s", gateway.Namespace, gateway.Name, err)
+		}
 
 		return ctrl.Result{}, nil
 	}
