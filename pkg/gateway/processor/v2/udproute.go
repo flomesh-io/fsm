@@ -100,7 +100,7 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference, holder); svcPort != nil {
-			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
+			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backend.Weight))
 
 			c.services[svcPort.String()] = serviceContext{
 				svcPortName: *svcPort,
