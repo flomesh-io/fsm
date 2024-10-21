@@ -732,7 +732,7 @@ func (r *serviceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			&corev1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.servicesByNamespace),
 			builder.WithPredicates(
-				predicate.Or(
+				predicate.Or[client.Object](
 					predicate.GenerationChangedPredicate{},
 					predicate.AnnotationChangedPredicate{},
 				),
