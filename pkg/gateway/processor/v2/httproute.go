@@ -105,7 +105,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
-			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
+			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters, holder)
@@ -140,7 +140,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				}
 
 				if f2.RequestMirror != nil {
-					f2.RequestMirror.BackendRef = fgwv2.NewBackendRefWithWeight(svcPort.String(), 1)
+					f2.RequestMirror.BackendRef = fgwv2.NewBackendRef(svcPort.String())
 				}
 
 				filters = append(filters, f2)

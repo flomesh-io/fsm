@@ -107,7 +107,7 @@ func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1al
 	for _, backend := range rule.BackendRefs {
 		name := fmt.Sprintf("%s%s", backend.Name, formatTLSPort(backend.Port))
 
-		backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(name, backendWeight(backend)))
+		backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(name, backend.Weight))
 
 		backends = append(backends, fgwv2.NewBackend(name, []fgwv2.BackendTarget{
 			{

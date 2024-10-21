@@ -99,7 +99,7 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference, holder); svcPort != nil {
-			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backendWeight(backend)))
+			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backend.Weight))
 
 			for _, processor := range c.getBackendPolicyProcessors(tcpRoute) {
 				processor.Process(tcpRoute, holder.GetParentRef(), rule, backend.BackendObjectReference, svcPort)
