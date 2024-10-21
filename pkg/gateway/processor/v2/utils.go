@@ -35,7 +35,7 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 			targets = append(targets, fgwv2.BackendTarget{
 				Address: ep.address,
 				Port:    ptr.To(ep.port),
-				Weight:  1,
+				Weight:  ptr.To(int32(1)), // TODO: support setting weight of endpoint in the future
 			})
 		}
 	}

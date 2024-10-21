@@ -369,7 +369,7 @@ type BackendSpec struct {
 type BackendTarget struct {
 	Address string            `json:"address"`
 	Port    *int32            `json:"port"`
-	Weight  int32             `json:"weight"`
+	Weight  *int32            `json:"weight,omitempty"`
 	Tags    map[string]string `json:"tags,omitempty"`
 }
 
