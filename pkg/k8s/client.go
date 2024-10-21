@@ -374,13 +374,15 @@ func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshServ
 			CloudAttachedNamespace: cloudAttachedTo,
 		}
 
+		// use port.appProtocol if specified, else use port protocol
+		meshSvc.Protocol = pointer.StringDeref(portSpec.AppProtocol, string(portSpec.Protocol))
+
 		if svcMeta != nil {
 			if len(svcMeta.Ports) > 0 {
 				found := false
-				for port, protocol := range svcMeta.Ports {
-					if uint16(portSpec.Port) == uint16(port) {
-						meshSvc.TargetPort = uint16(port)
-						meshSvc.Protocol = string(protocol)
+				for metaPort, metaProtocol := range svcMeta.Ports {
+					if strings.EqualFold(meshSvc.Protocol, string(metaProtocol)) {
+						meshSvc.TargetPort = uint16(metaPort)
 						meshServices = append(meshServices, meshSvc)
 						found = true
 						break
@@ -605,6 +607,17 @@ func (c *client) GetTargetPortForServicePort(namespacedSvc types.NamespacedName,
 	}
 
 	svc := svcIf.(*corev1.Service)
+
+	if svc != nil && len(svc.Annotations) > 0 {
+		if _, microSvcExists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; microSvcExists {
+			for _, portSpec := range svc.Spec.Ports {
+				if uint16(portSpec.Port) == port {
+					return uint16(portSpec.TargetPort.IntValue()), nil
+				}
+			}
+		}
+	}
+
 	var portName string
 	for _, portSpec := range svc.Spec.Ports {
 		if uint16(portSpec.Port) == port {

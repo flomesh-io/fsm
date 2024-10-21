@@ -110,9 +110,15 @@ func FilterTrafficSplit(trafficSplit *smiSplit.TrafficSplit, options ...TrafficS
 	}
 
 	// If apex service filter option is set, ignore traffic splits whose apex service does not match
-	if o.ApexService.Name != "" && (o.ApexService.Namespace != trafficSplit.Namespace ||
-		o.ApexService.Name != k8s.GetServiceFromHostname(o.KubeController, trafficSplit.Spec.Service)) {
-		return nil
+	if len(o.ApexService.Name) > 0 {
+		if o.ApexService.Namespace != trafficSplit.Namespace {
+			return nil
+		}
+
+		serviceName := k8s.GetServiceFromHostname(o.KubeController, trafficSplit.Spec.Service)
+		if o.ApexService.Name != serviceName && o.ApexService.NamespacedKey() != serviceName {
+			return nil
+		}
 	}
 
 	// If backend service filter option is set, ignore traffic splits whose backend service does not match
