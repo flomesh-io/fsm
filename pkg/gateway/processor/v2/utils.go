@@ -11,8 +11,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
-
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.BackendTarget {
@@ -43,14 +41,6 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 	}
 
 	return targets
-}
-
-func backendWeight(bk gwv1.BackendRef) int32 {
-	if bk.Weight != nil {
-		return *bk.Weight
-	}
-
-	return 1
 }
 
 func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {

@@ -230,11 +230,11 @@ type UDPRouteRule struct {
 type HTTPBackendRef struct {
 	Kind    string            `json:"kind"`
 	Name    string            `json:"name"`
-	Weight  int32             `json:"weight,omitempty"`
+	Weight  *int32            `json:"weight,omitempty"`
 	Filters []HTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
-func NewHTTPBackendRef(name string, weight int32) HTTPBackendRef {
+func NewHTTPBackendRef(name string, weight *int32) HTTPBackendRef {
 	return HTTPBackendRef{
 		Kind:   "Backend",
 		Name:   name,
@@ -281,11 +281,11 @@ type HTTPRequestMirrorFilter struct {
 type GRPCBackendRef struct {
 	Kind    string            `json:"kind"`
 	Name    string            `json:"name"`
-	Weight  int32             `json:"weight,omitempty"`
+	Weight  *int32            `json:"weight,omitempty"`
 	Filters []GRPCRouteFilter `json:"filters,omitempty" hash:"set"`
 }
 
-func NewGRPCBackendRef(name string, weight int32) GRPCBackendRef {
+func NewGRPCBackendRef(name string, weight *int32) GRPCBackendRef {
 	return GRPCBackendRef{
 		Kind:   "Backend",
 		Name:   name,
@@ -334,11 +334,11 @@ func NewBackendRef(name string) BackendRef {
 	}
 }
 
-func NewBackendRefWithWeight(name string, weight int32) BackendRef {
+func NewBackendRefWithWeight(name string, weight *int32) BackendRef {
 	return BackendRef{
 		Kind:   "Backend",
 		Name:   name,
-		Weight: ptr.To(weight),
+		Weight: weight,
 	}
 }
 
@@ -369,7 +369,7 @@ type BackendSpec struct {
 type BackendTarget struct {
 	Address string            `json:"address"`
 	Port    *int32            `json:"port"`
-	Weight  int32             `json:"weight,omitempty"`
+	Weight  int32             `json:"weight"`
 	Tags    map[string]string `json:"tags,omitempty"`
 }
 

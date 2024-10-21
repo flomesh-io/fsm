@@ -105,7 +105,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
-			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), backendWeight(bk.BackendRef))
+			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
 				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters, holder)
@@ -136,7 +136,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				filters = append(filters, fgwv2.GRPCRouteFilter{
 					Type: gwv1.GRPCRouteFilterRequestMirror,
 					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
-						BackendRef: fgwv2.NewBackendRefWithWeight(svcPort.String(), 1),
+						BackendRef: fgwv2.NewBackendRef(svcPort.String()),
 					},
 					Key: uuid.NewString(),
 				})
