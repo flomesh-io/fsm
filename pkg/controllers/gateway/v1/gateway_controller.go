@@ -311,9 +311,11 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 
 		if gwutils.IsTLSListener(listener) {
 			// process certificates
-			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
-			for _, ref := range listener.TLS.CertificateRefs {
-				_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
+			if listener.TLS.CertificateRefs != nil {
+				secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
+				for _, ref := range listener.TLS.CertificateRefs {
+					_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
+				}
 			}
 
 			// process CA certificates
@@ -383,6 +385,7 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 	allListenersProgrammed := func(gw *gwv1.Gateway) bool {
 		for _, listener := range gw.Status.Listeners {
 			if !gwutils.IsListenerProgrammed(listener) {
+				log.Warn().Msgf("Listener %s is not programmed", listener.Name)
 				return false
 			}
 		}
