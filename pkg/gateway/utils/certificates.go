@@ -19,24 +19,17 @@ import (
 // IsTLSListener returns true if the listener is a TLS listener.
 func IsTLSListener(l gwv1.Listener) bool {
 	switch l.Protocol {
-	case gwv1.HTTPSProtocolType:
-		// Terminate
-		if l.TLS != nil {
-			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
-				return true
-			}
+	case gwv1.HTTPSProtocolType, gwv1.TLSProtocolType:
+		if l.TLS == nil {
+			return false
 		}
-	case gwv1.TLSProtocolType:
-		// Terminate & Passthrough
-		if l.TLS != nil {
-			if l.TLS.Mode == nil {
-				return true
-			}
 
-			switch *l.TLS.Mode {
-			case gwv1.TLSModeTerminate:
-				return true
-			}
+		if l.TLS.Mode == nil {
+			return true
+		}
+
+		if *l.TLS.Mode == gwv1.TLSModeTerminate {
+			return true
 		}
 	}
 

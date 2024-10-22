@@ -5,8 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/flomesh-io/fsm/pkg/logger"
-
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,9 +13,9 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
-var (
-	log = logger.New("fsm-gateway/status/gateway")
-)
+//var (
+//	log = logger.NewPretty("fsm-gateway/status/gateway")
+//)
 
 type GatewayStatusUpdate struct {
 	conditions         map[gwv1.GatewayConditionType]metav1.Condition
@@ -145,10 +143,7 @@ func (g *GatewayStatusUpdate) AddListenerCondition(
 		ObservedGeneration: g.generation,
 	}
 
-	changed := metautil.SetStatusCondition(&listenerStatus.Conditions, condition)
-	if changed {
-		log.Warn().Msgf("Listener %q, new condition %#v", listenerName, cond)
-	}
+	metautil.SetStatusCondition(&listenerStatus.Conditions, condition)
 
 	return condition
 }

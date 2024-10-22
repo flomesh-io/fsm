@@ -265,6 +265,8 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 
 func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
+	log.Warn().Msgf("[GW] invalidListeners = %#v", invalidListeners)
+
 	for name, cond := range invalidListeners {
 		update.AddListenerCondition(
 			string(name),
@@ -309,6 +311,10 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 			}
 		}
 
+		if _, ok := invalidListeners[listener.Name]; ok {
+			continue
+		}
+
 		if gwutils.IsTLSListener(listener) {
 			// process certificates
 			if listener.TLS.CertificateRefs != nil {
@@ -327,11 +333,9 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 			}
 		}
 
-		if _, ok := invalidListeners[listener.Name]; ok {
-			continue
-		}
-
 		listenerStatus := update.GetListenerStatus(string(listener.Name))
+
+		log.Warn().Msgf("[GW] listenerStatus = %#v", listenerStatus)
 
 		if listenerStatus == nil || len(listenerStatus.Conditions) == 0 {
 			update.AddListenerCondition(
