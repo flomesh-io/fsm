@@ -3,6 +3,8 @@ package routes
 import (
 	"fmt"
 
+	"github.com/flomesh-io/fsm/pkg/logger"
+
 	corev1 "k8s.io/api/core/v1"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -14,6 +16,10 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
+)
+
+var (
+	log = logger.New("fsm-gateway/status/route")
 )
 
 type PolicyObjectReferenceResolver struct {

@@ -386,6 +386,10 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 		for _, listener := range gw.Spec.Listeners {
 			listenerStatus := update.GetListenerStatus(string(listener.Name))
 
+			if listenerStatus == nil {
+				continue
+			}
+
 			if !gwutils.IsListenerProgrammed(*listenerStatus) {
 				if cond := metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed)); cond != nil {
 					log.Warn().Msgf("Listener %s is not programmed: %s", listener.Name, cond.Message)
