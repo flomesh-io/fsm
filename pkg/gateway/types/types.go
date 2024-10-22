@@ -2,7 +2,8 @@
 package types
 
 import (
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/apimachinery/pkg/types"
+	cache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -79,4 +80,22 @@ type CrossNamespaceTo struct {
 	Kind      string
 	Namespace string
 	Name      string
+}
+
+// SecretReferenceResolver is the interface for resolving Secret references
+type SecretReferenceResolver interface {
+	AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference)
+	AddRefNotPermittedCondition(ref gwv1.SecretObjectReference)
+	AddRefNotFoundCondition(key types.NamespacedName)
+	AddGetRefErrorCondition(key types.NamespacedName, err error)
+}
+
+// ObjectReferenceResolver is the interface for resolving Object references
+type ObjectReferenceResolver interface {
+	AddInvalidRefCondition(ref gwv1.ObjectReference)
+	AddRefNotPermittedCondition(ref gwv1.ObjectReference)
+	AddRefNotFoundCondition(key types.NamespacedName, kind string)
+	AddGetRefErrorCondition(key types.NamespacedName, kind string, err error)
+	AddNoRequiredCAFileCondition(key types.NamespacedName, kind string)
+	AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string)
 }

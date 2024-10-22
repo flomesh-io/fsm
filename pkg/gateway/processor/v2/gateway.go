@@ -18,7 +18,6 @@ import (
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	corev1 "k8s.io/api/core/v1"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -55,7 +54,7 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 		}
 
 		// get certificates and CA certificates
-		if c.tls(l) && v2l.TLS != nil {
+		if gwutils.IsTLSListener(l.Listener) && v2l.TLS != nil {
 			c.processCertificates(l, v2l)
 			c.processCACerts(l, v2l)
 		}
@@ -69,32 +68,6 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 	c.processGatewayBackendTLS(g2)
 
 	return g2
-}
-
-func (c *ConfigGenerator) tls(l gwtypes.Listener) bool {
-	switch l.Protocol {
-	case gwv1.HTTPSProtocolType:
-		// Terminate
-		if l.TLS != nil {
-			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
-				return true
-			}
-		}
-	case gwv1.TLSProtocolType:
-		// Terminate & Passthrough
-		if l.TLS != nil {
-			if l.TLS.Mode == nil {
-				return true
-			}
-
-			switch *l.TLS.Mode {
-			case gwv1.TLSModeTerminate:
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Listener) {

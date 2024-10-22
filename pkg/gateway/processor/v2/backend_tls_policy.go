@@ -3,9 +3,9 @@ package v2
 import (
 	"fmt"
 
-	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
-
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -91,7 +91,8 @@ func (p *BackendTLSPolicyProcessor) processCACertificates(policy *gwv1alpha3.Bac
 			Name:      ref.Name,
 		}
 
-		ca := gwutils.ObjectRefToCACertificate(p.generator.client, policy, ref, nil)
+		resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{})
+		ca := resolver.ObjectRefToCACertificate(p.generator.client, policy, ref)
 		if len(ca) == 0 {
 			continue
 		}

@@ -26,9 +26,154 @@
 package v1
 
 import (
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	"github.com/flomesh-io/fsm/pkg/logger"
 )
 
 var (
 	log = logger.NewPretty("gatewayapi-controller/v1")
 )
+
+type GatewayListenerSecretReferenceResolver struct {
+	listenerName string
+	update       *gw.GatewayStatusUpdate
+}
+
+func NewGatewayListenerSecretReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerSecretReferenceResolver {
+	return &GatewayListenerSecretReferenceResolver{
+		listenerName: name,
+		update:       update,
+	}
+}
+
+func (r *GatewayListenerSecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("Unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind),
+	)
+}
+
+func (r *GatewayListenerSecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonRefNotPermitted,
+		fmt.Sprintf("Reference to Secret %s/%s is not allowed", string(*ref.Namespace), ref.Name),
+	)
+}
+
+func (r *GatewayListenerSecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("Secret %s not found", key.String()),
+	)
+}
+
+func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("Failed to get Secret %s: %s", key.String(), err),
+	)
+}
+
+func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+	r.update.AddListenerCondition(
+		r.listenerName,
+		conditionType,
+		status,
+		reason,
+		message,
+	)
+}
+
+// ---
+
+type GatewayListenerObjectReferenceResolver struct {
+	listenerName string
+	update       *gw.GatewayStatusUpdate
+}
+
+func NewGatewayListenerObjectReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerObjectReferenceResolver {
+	return &GatewayListenerObjectReferenceResolver{
+		listenerName: name,
+		update:       update,
+	}
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("Unsupported group %s and kind %s for CA Certificate", ref.Group, ref.Kind),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonRefNotPermitted,
+		fmt.Sprintf("Reference to %s %s/%s is not allowed", ref.Kind, string(*ref.Namespace), ref.Name),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("%s %s not found", kind, key.String()),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("Failed to get %s %s: %s", kind, key.String(), err),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("No required CA with key %s in %s %s", corev1.ServiceAccountRootCAKey, kind, key.String()),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionFalse,
+		gwv1.ListenerReasonInvalidCertificateRef,
+		fmt.Sprintf("CA Certificate is empty in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, refererNamespace), ref.Name),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+	r.update.AddListenerCondition(
+		r.listenerName,
+		conditionType,
+		status,
+		reason,
+		message,
+	)
+}

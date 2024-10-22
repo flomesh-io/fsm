@@ -309,6 +309,22 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 			}
 		}
 
+		if gwutils.IsTLSListener(listener) {
+			// process certificates
+			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
+			for _, ref := range listener.TLS.CertificateRefs {
+				_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
+			}
+
+			// process CA certificates
+			if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
+				objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
+				for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
+					_ = objRefResolver.ObjectRefToCACertificate(r.fctx.Manager.GetCache(), gateway, ref)
+				}
+			}
+		}
+
 		if _, ok := invalidListeners[listener.Name]; ok {
 			continue
 		}
