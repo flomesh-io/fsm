@@ -315,24 +315,6 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 			continue
 		}
 
-		if gwutils.IsTLSListener(listener) {
-			// process certificates
-			if listener.TLS.CertificateRefs != nil {
-				secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
-				for _, ref := range listener.TLS.CertificateRefs {
-					_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
-				}
-			}
-
-			// process CA certificates
-			if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
-				objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
-				for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
-					_ = objRefResolver.ObjectRefToCACertificate(r.fctx.Manager.GetCache(), gateway, ref)
-				}
-			}
-		}
-
 		listenerStatus := update.GetListenerStatus(string(listener.Name))
 
 		log.Warn().Msgf("[GW] listenerStatus = %#v", listenerStatus)
@@ -382,6 +364,24 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 					gwv1.ListenerReasonResolvedRefs,
 					"Listener references resolved",
 				)
+			}
+		}
+
+		if gwutils.IsTLSListener(listener) {
+			// process certificates
+			if listener.TLS.CertificateRefs != nil {
+				secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
+				for _, ref := range listener.TLS.CertificateRefs {
+					_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
+				}
+			}
+
+			// process CA certificates
+			if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
+				objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
+				for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
+					_ = objRefResolver.ObjectRefToCACertificate(r.fctx.Manager.GetCache(), gateway, ref)
+				}
 			}
 		}
 	}
