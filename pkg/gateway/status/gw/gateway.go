@@ -87,6 +87,14 @@ func (g *GatewayStatusUpdate) SetAddresses(addresses []gwv1.GatewayStatusAddress
 	g.addresses = addresses
 }
 
+func (g *GatewayStatusUpdate) GetAddresses() []gwv1.GatewayStatusAddress {
+	if len(g.addresses) > 0 {
+		return g.addresses
+	} else {
+		return g.existingAddresses
+	}
+}
+
 func (g *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, groupKinds []gwv1.RouteGroupKind) {
 	if g.listenerStatus == nil {
 		g.listenerStatus = map[string]*gwv1.ListenerStatus{}

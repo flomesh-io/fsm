@@ -238,32 +238,36 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 		})
 	}()
 
-	// 1. compute listener status & accepted status
-	r.computeListenerStatus(ctx, gateway, update)
-
-	// 2. so far, it's accepted, just deploy it if not
+	// 1. deploy the gateway
 	if result, err := r.applyGateway(gateway, update); err != nil {
 		return result, err
 	}
 
-	// 3. compute gateway address and programmed status
-	r.computeGatewayProgrammedCondition(ctx, gateway, update)
-
-	if !update.ConditionExists(gwv1.GatewayConditionAccepted) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
-
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionTrue,
-			gwv1.GatewayReasonAccepted,
-			"Gateway is accepted",
-		)
-	}
+	// 2. compute gateway and listeners status
+	r.computeGatewayAndListenersStatus(ctx, gateway, update)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
+func (r *gatewayReconciler) computeGatewayAndListenersStatus(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
+	defer func() {
+		if !update.ConditionExists(gwv1.GatewayConditionAccepted) {
+			update.AddCondition(
+				gwv1.GatewayConditionAccepted,
+				metav1.ConditionTrue,
+				gwv1.GatewayReasonAccepted,
+				"Gateway is accepted",
+			)
+
+			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
+		}
+	}()
+
+	r.computeAllListenerStatus(ctx, gateway, update)
+	r.computeGatewayProgrammedCondition(ctx, gateway, update)
+}
+
+func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
 	log.Warn().Msgf("[GW] invalidListeners = %#v", invalidListeners)
 
@@ -277,6 +281,39 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 		)
 	}
 
+	for _, listener := range gateway.Spec.Listeners {
+		r.computeListenerStatus(gateway, listener, update, invalidListeners)
+	}
+
+	allListenersProgrammed := func(gw *gwv1.Gateway) bool {
+		for _, listener := range gw.Spec.Listeners {
+			listenerStatus := update.GetListenerStatus(string(listener.Name))
+
+			if listenerStatus == nil {
+				continue
+			}
+
+			if !gwutils.IsListenerProgrammed(*listenerStatus) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	if !allListenersProgrammed(gateway) {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Listeners", "Not All listeners are programmed")
+
+		update.AddCondition(
+			gwv1.GatewayConditionAccepted,
+			metav1.ConditionFalse,
+			gwv1.GatewayReasonListenersNotValid,
+			"Not all listeners are programmed",
+		)
+	}
+}
+
+func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listener gwv1.Listener, update *gw.GatewayStatusUpdate, invalidListeners map[gwv1.SectionName]metav1.Condition) {
 	addInvalidListenerCondition := func(name gwv1.SectionName, msg string) {
 		update.AddListenerCondition(
 			string(name),
@@ -287,37 +324,8 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 		)
 	}
 
-	for _, listener := range gateway.Spec.Listeners {
-		groupKinds := supportedRouteGroupKinds(gateway, listener, update)
-		update.SetListenerSupportedKinds(string(listener.Name), groupKinds)
-
-		if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
-			listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gwv1.NamespacesFromSelector {
-			if listener.AllowedRoutes.Namespaces.Selector == nil {
-				addInvalidListenerCondition(listener.Name, "Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".")
-				continue
-			}
-
-			if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
-				addInvalidListenerCondition(listener.Name, "Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.")
-				continue
-			}
-
-			var err error
-			_, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
-			if err != nil {
-				addInvalidListenerCondition(listener.Name, fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err))
-				continue
-			}
-		}
-
-		if _, ok := invalidListeners[listener.Name]; ok {
-			continue
-		}
-
+	defer func() {
 		listenerStatus := update.GetListenerStatus(string(listener.Name))
-
-		log.Warn().Msgf("[GW] listenerStatus = %#v", listenerStatus)
 
 		if listenerStatus == nil || len(listenerStatus.Conditions) == 0 {
 			update.AddListenerCondition(
@@ -343,7 +351,14 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 			)
 		} else {
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed)) == nil {
-				addInvalidListenerCondition(listener.Name, "Invalid listener, see other listener conditions for details")
+				//addInvalidListenerCondition(listener.Name, "Invalid listener, see other listener conditions for details")
+				update.AddListenerCondition(
+					string(listener.Name),
+					gwv1.ListenerConditionProgrammed,
+					metav1.ConditionTrue,
+					gwv1.ListenerReasonProgrammed,
+					"Listener programmed",
+				)
 			}
 
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted)) == nil {
@@ -366,62 +381,71 @@ func (r *gatewayReconciler) computeListenerStatus(_ context.Context, gateway *gw
 				)
 			}
 		}
+	}()
 
-		if gwutils.IsTLSListener(listener) {
-			// process certificates
-			if listener.TLS.CertificateRefs != nil {
-				secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
-				for _, ref := range listener.TLS.CertificateRefs {
-					_, _ = secretRefResolver.SecretRefToSecret(r.fctx.Manager.GetCache(), gateway, ref)
-				}
-			}
+	groupKinds := supportedRouteGroupKinds(gateway, listener, update)
+	update.SetListenerSupportedKinds(string(listener.Name), groupKinds)
 
-			// process CA certificates
-			if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
-				objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
-				for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
-					_ = objRefResolver.ObjectRefToCACertificate(r.fctx.Manager.GetCache(), gateway, ref)
-				}
-			}
+	if listener.AllowedRoutes != nil && listener.AllowedRoutes.Namespaces != nil &&
+		listener.AllowedRoutes.Namespaces.From != nil && *listener.AllowedRoutes.Namespaces.From == gwv1.NamespacesFromSelector {
+		if listener.AllowedRoutes.Namespaces.Selector == nil {
+			addInvalidListenerCondition(listener.Name, "Listener.AllowedRoutes.Namespaces.Selector is required when Listener.AllowedRoutes.Namespaces.From is set to \"Selector\".")
+			return
+		}
+
+		if len(listener.AllowedRoutes.Namespaces.Selector.MatchExpressions)+len(listener.AllowedRoutes.Namespaces.Selector.MatchLabels) == 0 {
+			addInvalidListenerCondition(listener.Name, "Listener.AllowedRoutes.Namespaces.Selector must specify at least one MatchLabel or MatchExpression.")
+			return
+		}
+
+		var err error
+		_, err = metav1.LabelSelectorAsSelector(listener.AllowedRoutes.Namespaces.Selector)
+		if err != nil {
+			addInvalidListenerCondition(listener.Name, fmt.Sprintf("Error parsing Listener.AllowedRoutes.Namespaces.Selector: %v.", err))
+			return
 		}
 	}
 
-	allListenersProgrammed := func(gw *gwv1.Gateway) bool {
-		for _, listener := range gw.Spec.Listeners {
-			listenerStatus := update.GetListenerStatus(string(listener.Name))
+	if _, found := invalidListeners[listener.Name]; found {
+		return
+	}
 
-			if listenerStatus == nil {
-				continue
-			}
+	if gwutils.IsTLSListener(listener) {
+		cache := r.fctx.Manager.GetCache()
 
-			if !gwutils.IsListenerProgrammed(*listenerStatus) {
-				if cond := metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed)); cond != nil {
-					log.Warn().Msgf("Listener %s is not programmed: %s", listener.Name, cond.Message)
-				} else {
-					log.Warn().Msgf("Listener %s is not programmed", listener.Name)
+		// process certificates
+		if listener.TLS.CertificateRefs != nil {
+			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
+			for _, ref := range listener.TLS.CertificateRefs {
+				if _, err := secretRefResolver.SecretRefToSecret(cache, gateway, ref); err != nil {
+					return
 				}
-
-				return false
 			}
 		}
 
-		return true
-	}
-
-	if !allListenersProgrammed(gateway) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Listeners", "Not All listeners are programmed")
-
-		update.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonListenersNotValid,
-			"Not all listeners are programmed",
-		)
+		// process CA certificates
+		if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
+			objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
+			for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
+				if ca := objRefResolver.ObjectRefToCACertificate(cache, gateway, ref); len(ca) == 0 {
+					return
+				}
+			}
+		}
 	}
 }
 
 func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Context, gw *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
-	if len(gw.Status.Addresses) == 0 {
+	svc, err := r.gatewayService(ctx, gw)
+	if err != nil {
+		log.Error().Msgf("Failed to get Gateway service: %s", err)
+	}
+	if svc != nil {
+		addresses := r.gatewayAddresses(svc)
+		update.SetAddresses(addresses)
+	}
+
+	if len(update.GetAddresses()) == 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Addresses", "No addresses have been assigned to the Gateway")
 
 		update.AddCondition(
@@ -430,15 +454,8 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 			gwv1.GatewayReasonAddressNotAssigned,
 			"No addresses have been assigned to the Gateway",
 		)
-	}
 
-	svc, err := r.gatewayService(ctx, gw)
-	if err != nil {
-		log.Error().Msgf("Failed to get Gateway service: %s", err)
-	}
-	if svc != nil {
-		addresses := r.gatewayAddresses(svc)
-		update.SetAddresses(addresses)
+		return
 	}
 	//isSpecAddressAssigned := func(specAddresses []gwv1.GatewayAddress, statusAddresses []gwv1.GatewayStatusAddress) bool {
 	//	if len(specAddresses) == 0 {
@@ -479,9 +496,11 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 			gwv1.GatewayReasonNoResources,
 			"Deployment replicas unavailable",
 		)
+
+		return
 	}
 
-	if !update.ConditionExists(gwv1.GatewayConditionProgrammed) && deployment != nil && deployment.Status.AvailableReplicas != 0 {
+	if !update.ConditionExists(gwv1.GatewayConditionProgrammed) && deployment.Status.AvailableReplicas != 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
 
 		update.AddCondition(
@@ -737,15 +756,15 @@ func infraForTemplate(gateway *gwv1.Gateway) map[string]interface{} {
 func (r *gatewayReconciler) listenersForTemplate(gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) []listener {
 	listeners := make([]listener, 0)
 	for _, l := range gateway.Spec.Listeners {
-		s := update.GetListenerStatus(string(l.Name))
-
-		if s == nil {
-			continue
-		}
-
-		if !gwutils.IsListenerValid(*s) {
-			continue
-		}
+		//s := update.GetListenerStatus(string(l.Name))
+		//
+		//if s == nil {
+		//	continue
+		//}
+		//
+		//if !gwutils.IsListenerValid(*s) {
+		//	continue
+		//}
 
 		listeners = append(listeners, listener{
 			Name:     l.Name,
