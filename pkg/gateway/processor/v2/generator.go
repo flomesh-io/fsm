@@ -103,16 +103,6 @@ func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backe
 	return gwutils.BackendRefToServicePortName(c.client, route, backendRef, rps)
 }
 
-func (c *ConfigGenerator) secretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
-	resolver := gwutils.NewSecretReferenceResolverFactory(&DummySecretReferenceResolver{})
-	return resolver.SecretRefToSecret(c.client, referer, ref)
-}
-
-func (c *ConfigGenerator) objectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) []byte {
-	resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{})
-	return resolver.ObjectRefToCACertificate(c.client, referer, ref)
-}
-
 func (c *ConfigGenerator) getServiceFromCache(key client.ObjectKey) (*corev1.Service, error) {
 	obj := &corev1.Service{}
 	if err := c.client.Get(context.TODO(), key, obj); err != nil {
