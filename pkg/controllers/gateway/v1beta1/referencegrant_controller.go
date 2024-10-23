@@ -27,6 +27,10 @@ package v1beta1
 import (
 	"context"
 
+	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/logger"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -42,6 +46,10 @@ import (
 
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
+)
+
+var (
+	log = logger.NewPretty("gatewayapi-controller/v1beta1")
 )
 
 type referenceGrantReconciler struct {
@@ -103,6 +111,7 @@ func addReferenceGrantIndexers(ctx context.Context, mgr manager.Manager) error {
 		var referredResources []string
 		for _, target := range refGrant.Spec.To {
 			referredResources = append(referredResources, string(target.Kind))
+			log.Warn().Msgf("RefGrants[%s/%s]: to %s[%s/%s]", refGrant.Namespace, refGrant.Name, target.Kind, refGrant.Namespace, ptr.Deref(target.Name, ""))
 		}
 
 		return referredResources
