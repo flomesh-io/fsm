@@ -89,6 +89,8 @@ func GetSecretRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 		return nil
 	}
 
+	log.Warn().Msgf("SecretRefGrants: %#v", list.Items)
+
 	return ToSlicePtr(list.Items)
 }
 
