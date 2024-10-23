@@ -64,7 +64,12 @@ func IsListenerResolvedRefs(listenerStatus gwv1.ListenerStatus) bool {
 
 // IsListenerValid returns true if the listener is valid
 func IsListenerValid(s gwv1.ListenerStatus) bool {
-	return IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
+	valid := IsListenerAccepted(s) && IsListenerProgrammed(s) && !IsListenerConflicted(s) && IsListenerResolvedRefs(s)
+	if !valid {
+		log.Warn().Msgf("Listener[%s] is invalid: %#v", s.Name, s.Conditions)
+	}
+
+	return valid
 }
 
 // GetActiveGateways returns the active gateways
