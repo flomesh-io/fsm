@@ -140,6 +140,8 @@ func (r *referenceGrantReconciler) secretToRefGrants(ctx context.Context, object
 						Name:      refGrant.Name,
 					},
 				})
+
+				break
 			}
 		}
 	}
@@ -174,6 +176,8 @@ func (r *referenceGrantReconciler) configMapToRefGrants(ctx context.Context, obj
 						Name:      refGrant.Name,
 					},
 				})
+
+				break
 			}
 		}
 	}
@@ -208,6 +212,8 @@ func (r *referenceGrantReconciler) serviceToRefGrants(ctx context.Context, objec
 						Name:      refGrant.Name,
 					},
 				})
+
+				break
 			}
 		}
 	}
