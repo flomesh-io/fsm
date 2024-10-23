@@ -171,6 +171,25 @@ fsm:
 	_, err = Td.CreateConfigMap(nsGateway, cm)
 	Expect(err).NotTo(HaveOccurred())
 
+	By("Creating ReferenceGrant for testing Secret reference cross namespace")
+	referenceGrant := gwv1beta1.ReferenceGrant{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsGRPCSvc,
+			Name:      "secret-cross-1",
+		},
+
+		Spec: gwv1beta1.ReferenceGrantSpec{
+			From: []gwv1beta1.ReferenceGrantFrom{
+				{Group: gwv1.GroupName, Kind: "Gateway", Namespace: nsGateway},
+			},
+			To: []gwv1beta1.ReferenceGrantTo{
+				{Group: corev1.GroupName, Kind: "Secret", Name: ptr.To(gwv1.ObjectName("grpc-cert"))},
+			},
+		},
+	}
+	_, err = Td.CreateGatewayAPIReferenceGrant(nsGRPCSvc, referenceGrant)
+	Expect(err).NotTo(HaveOccurred())
+
 	By("Deploy Gateway")
 	gateway := gwv1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -310,25 +329,6 @@ fsm:
 	Expect(Td.WaitForPodsRunningReady(nsGateway, 2, &metav1.LabelSelector{
 		MatchLabels: map[string]string{constants.AppLabel: constants.FSMGatewayName},
 	})).To(Succeed())
-
-	By("Creating ReferenceGrant for testing Secret reference cross namespace")
-	referenceGrant := gwv1beta1.ReferenceGrant{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: nsGRPCSvc,
-			Name:      "secret-cross-1",
-		},
-
-		Spec: gwv1beta1.ReferenceGrantSpec{
-			From: []gwv1beta1.ReferenceGrantFrom{
-				{Group: gwv1.GroupName, Kind: "Gateway", Namespace: nsGateway},
-			},
-			To: []gwv1beta1.ReferenceGrantTo{
-				{Group: corev1.GroupName, Kind: "Secret", Name: ptr.To(gwv1.ObjectName("grpc-cert"))},
-			},
-		},
-	}
-	_, err = Td.CreateGatewayAPIReferenceGrant(nsGRPCSvc, referenceGrant)
-	Expect(err).NotTo(HaveOccurred())
 }
 
 func testFSMGatewayHTTPTrafficSameNamespace() {
