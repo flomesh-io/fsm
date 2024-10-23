@@ -32,8 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
-	"github.com/flomesh-io/fsm/pkg/logger"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -51,9 +49,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/controllers"
 )
 
-var (
-	log = logger.NewPretty("gatewayapi-controller/v1beta1")
-)
+//var (
+//	log = logger.NewPretty("gatewayapi-controller/v1beta1")
+//)
 
 type referenceGrantReconciler struct {
 	recorder record.EventRecorder
