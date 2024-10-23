@@ -2,8 +2,10 @@
 package types
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	cache "k8s.io/client-go/tools/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -100,4 +102,14 @@ type ObjectReferenceResolver interface {
 	AddNoRequiredCAFileCondition(key types.NamespacedName, kind string)
 	AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string)
 	AddRefsResolvedCondition()
+}
+
+type SecretReferenceResolverFactory interface {
+	ResolveAllRefs(referer client.Object, refs []gwv1.SecretObjectReference) bool
+	SecretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error)
+}
+
+type ObjectReferenceResolverFactory interface {
+	ResolveAllRefs(referer client.Object, refs []gwv1.ObjectReference) bool
+	ObjectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) []byte
 }

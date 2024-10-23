@@ -36,19 +36,21 @@ func IsTLSListener(l gwv1.Listener) bool {
 	return false
 }
 
-type SecretReferenceResolverFactory struct {
+type secretReferenceResolverFactory struct {
 	gwtypes.SecretReferenceResolver
+	client cache.Cache
 }
 
-func NewSecretReferenceResolverFactory(resolver gwtypes.SecretReferenceResolver) *SecretReferenceResolverFactory {
-	return &SecretReferenceResolverFactory{resolver}
+func NewSecretReferenceResolverFactory(resolver gwtypes.SecretReferenceResolver, client cache.Cache) gwtypes.SecretReferenceResolverFactory {
+	return &secretReferenceResolverFactory{SecretReferenceResolver: resolver, client: client}
 }
 
-func (f *SecretReferenceResolverFactory) ResolveAllRefs(client cache.Cache, referer client.Object, refs []gwv1.SecretObjectReference) bool {
+func (f *secretReferenceResolverFactory) ResolveAllRefs(referer client.Object, refs []gwv1.SecretObjectReference) bool {
 	resolved := true
 
 	for _, ref := range refs {
-		if _, err := f.SecretRefToSecret(client, referer, ref); err != nil {
+		if _, err := f.SecretRefToSecret(referer, ref); err != nil {
+			log.Error().Msgf("Error resolving secret reference: %v", err)
 			resolved = false
 			break
 		}
@@ -61,7 +63,7 @@ func (f *SecretReferenceResolverFactory) ResolveAllRefs(client cache.Cache, refe
 	return resolved
 }
 
-func (f *SecretReferenceResolverFactory) SecretRefToSecret(client cache.Cache, referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
+func (f *secretReferenceResolverFactory) SecretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
 	if !IsValidRefToGroupKindOfSecret(ref) {
 		f.AddInvalidCertificateRefCondition(ref)
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
@@ -80,7 +82,7 @@ func (f *SecretReferenceResolverFactory) SecretRefToSecret(client cache.Cache, r
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		GetSecretRefGrants(client),
+		GetSecretRefGrants(f.client),
 	) {
 		f.AddRefNotPermittedCondition(ref)
 
@@ -91,7 +93,7 @@ func (f *SecretReferenceResolverFactory) SecretRefToSecret(client cache.Cache, r
 
 	getSecretFromCache := func(key types.NamespacedName) (*corev1.Secret, error) {
 		obj := &corev1.Secret{}
-		if err := client.Get(context.Background(), key, obj); err != nil {
+		if err := f.client.Get(context.Background(), key, obj); err != nil {
 			if errors.IsNotFound(err) {
 				f.AddRefNotFoundCondition(key)
 			} else {
@@ -110,19 +112,20 @@ func (f *SecretReferenceResolverFactory) SecretRefToSecret(client cache.Cache, r
 	})
 }
 
-type ObjectReferenceResolverFactory struct {
+type objectReferenceResolverFactory struct {
 	gwtypes.ObjectReferenceResolver
+	client cache.Cache
 }
 
-func NewObjectReferenceResolverFactory(resolver gwtypes.ObjectReferenceResolver) *ObjectReferenceResolverFactory {
-	return &ObjectReferenceResolverFactory{resolver}
+func NewObjectReferenceResolverFactory(resolver gwtypes.ObjectReferenceResolver, client cache.Cache) gwtypes.ObjectReferenceResolverFactory {
+	return &objectReferenceResolverFactory{ObjectReferenceResolver: resolver, client: client}
 }
 
-func (f *ObjectReferenceResolverFactory) ResolveAllRefs(client cache.Cache, referer client.Object, refs []gwv1.ObjectReference) bool {
+func (f *objectReferenceResolverFactory) ResolveAllRefs(referer client.Object, refs []gwv1.ObjectReference) bool {
 	resolved := true
 
 	for _, ref := range refs {
-		if ca := f.ObjectRefToCACertificate(client, referer, ref); len(ca) == 0 {
+		if ca := f.ObjectRefToCACertificate(referer, ref); len(ca) == 0 {
 			resolved = false
 			break
 		}
@@ -137,7 +140,7 @@ func (f *ObjectReferenceResolverFactory) ResolveAllRefs(client cache.Cache, refe
 
 // ObjectRefToCACertificate converts an ObjectReference to a CA Certificate.
 // It supports Kubernetes Secret and ConfigMap as the referent.
-func (f *ObjectReferenceResolverFactory) ObjectRefToCACertificate(client cache.Cache, referer client.Object, ref gwv1.ObjectReference) []byte {
+func (f *objectReferenceResolverFactory) ObjectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) []byte {
 	if !IsValidRefToGroupKindOfCA(ref) {
 		f.AddInvalidRefCondition(ref)
 		return nil
@@ -156,7 +159,7 @@ func (f *ObjectReferenceResolverFactory) ObjectRefToCACertificate(client cache.C
 			Namespace: string(*ref.Namespace),
 			Name:      string(ref.Name),
 		},
-		GetCARefGrants(client),
+		GetCARefGrants(f.client),
 	) {
 		f.AddRefNotPermittedCondition(ref)
 		return nil
@@ -167,7 +170,7 @@ func (f *ObjectReferenceResolverFactory) ObjectRefToCACertificate(client cache.C
 	case constants.KubernetesSecretKind:
 		getSecretFromCache := func(key types.NamespacedName) (*corev1.Secret, error) {
 			obj := &corev1.Secret{}
-			if err := client.Get(context.Background(), key, obj); err != nil {
+			if err := f.client.Get(context.Background(), key, obj); err != nil {
 				return nil, err
 			}
 
@@ -200,7 +203,7 @@ func (f *ObjectReferenceResolverFactory) ObjectRefToCACertificate(client cache.C
 	case constants.KubernetesConfigMapKind:
 		getConfigMapFromCache := func(key types.NamespacedName) (*corev1.ConfigMap, error) {
 			obj := &corev1.ConfigMap{}
-			if err := client.Get(context.Background(), key, obj); err != nil {
+			if err := f.client.Get(context.Background(), key, obj); err != nil {
 				return nil, err
 			}
 

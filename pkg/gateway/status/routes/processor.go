@@ -357,8 +357,8 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 		})
 	}
 
-	resolver := gwutils.NewObjectReferenceResolverFactory(NewPolicyObjectReferenceResolver(ancestorStatus))
-	if !resolver.ResolveAllRefs(p.client, policy, refs) {
+	resolver := gwutils.NewObjectReferenceResolverFactory(NewPolicyObjectReferenceResolver(ancestorStatus), p.client)
+	if !resolver.ResolveAllRefs(policy, refs) {
 		return
 	}
 

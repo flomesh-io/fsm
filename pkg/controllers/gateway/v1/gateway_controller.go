@@ -269,7 +269,6 @@ func (r *gatewayReconciler) computeGatewayAndListenersStatus(ctx context.Context
 
 func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
-	log.Warn().Msgf("[GW] invalidListeners = %#v", invalidListeners)
 
 	for name, cond := range invalidListeners {
 		update.AddListenerCondition(
@@ -415,16 +414,16 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 
 		// process certificates
 		if listener.TLS.CertificateRefs != nil {
-			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
-			if !secretRefResolver.ResolveAllRefs(cache, gateway, listener.TLS.CertificateRefs) {
+			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update), cache)
+			if !secretRefResolver.ResolveAllRefs(gateway, listener.TLS.CertificateRefs) {
 				return
 			}
 		}
 
 		// process CA certificates
 		if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
-			objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
-			if !objRefResolver.ResolveAllRefs(cache, gateway, listener.TLS.FrontendValidation.CACertificateRefs) {
+			objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update), cache)
+			if !objRefResolver.ResolveAllRefs(gateway, listener.TLS.FrontendValidation.CACertificateRefs) {
 				return
 			}
 		}
