@@ -24,8 +24,6 @@ func GetServiceRefGrants(c cache.Cache) []*gwv1beta1.ReferenceGrant {
 		return nil
 	}
 
-	log.Warn().Msgf("ServiceRefGrants: %#v", list.Items)
-
 	return ToSlicePtr(list.Items)
 }
 
