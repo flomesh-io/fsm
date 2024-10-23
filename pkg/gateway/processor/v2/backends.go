@@ -95,8 +95,11 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 		if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 			svcMeta := connector.Decode(svc, v)
 			found := false
-			for portMeta := range svcMeta.Ports {
-				if uint16(portMeta) == uint16(*port) {
+
+			targetPort := *port
+			for _, portSpec := range svc.Spec.Ports {
+				if portSpec.Port == *port {
+					targetPort = portSpec.TargetPort.IntVal
 					found = true
 					break
 				}
@@ -105,7 +108,7 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 				endpointSet := make(map[endpointContext]struct{})
 				for address, metadata := range svcMeta.Endpoints {
 					if len(metadata.Native.ViaGatewayHTTP) == 0 {
-						ep := endpointContext{address: string(address), port: *port}
+						ep := endpointContext{address: string(address), port: targetPort}
 						endpointSet[ep] = struct{}{}
 					} else {
 						if segs := strings.Split(metadata.Native.ViaGatewayHTTP, ":"); len(segs) == 2 {
