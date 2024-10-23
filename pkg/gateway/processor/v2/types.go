@@ -51,6 +51,10 @@ func (r *DummySecretReferenceResolver) AddGetRefErrorCondition(key types.Namespa
 
 }
 
+func (r *DummySecretReferenceResolver) AddRefsResolvedCondition() {
+
+}
+
 // ---
 
 type DummyObjectReferenceResolver struct{}
@@ -71,4 +75,7 @@ func (r *DummyObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.Na
 }
 
 func (r *DummyObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+}
+
+func (r *DummyObjectReferenceResolver) AddRefsResolvedCondition() {
 }

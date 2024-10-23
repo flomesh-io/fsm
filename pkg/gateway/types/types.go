@@ -88,6 +88,7 @@ type SecretReferenceResolver interface {
 	AddRefNotPermittedCondition(ref gwv1.SecretObjectReference)
 	AddRefNotFoundCondition(key types.NamespacedName)
 	AddGetRefErrorCondition(key types.NamespacedName, err error)
+	AddRefsResolvedCondition()
 }
 
 // ObjectReferenceResolver is the interface for resolving Object references
@@ -98,4 +99,5 @@ type ObjectReferenceResolver interface {
 	AddGetRefErrorCondition(key types.NamespacedName, kind string, err error)
 	AddNoRequiredCAFileCondition(key types.NamespacedName, kind string)
 	AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string)
+	AddRefsResolvedCondition()
 }

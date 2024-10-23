@@ -90,6 +90,15 @@ func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key typ
 	)
 }
 
+func (r *GatewayListenerSecretReferenceResolver) AddRefsResolvedCondition() {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionTrue,
+		gwv1.ListenerReasonResolvedRefs,
+		"References resolved",
+	)
+}
+
 func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
 	r.update.AddListenerCondition(
 		r.listenerName,
@@ -165,6 +174,15 @@ func (r *GatewayListenerObjectReferenceResolver) AddEmptyCACondition(ref gwv1.Ob
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
 		fmt.Sprintf("CA Certificate is empty in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, refererNamespace), ref.Name),
+	)
+}
+
+func (r *GatewayListenerObjectReferenceResolver) AddRefsResolvedCondition() {
+	r.addCondition(
+		gwv1.ListenerConditionResolvedRefs,
+		metav1.ConditionTrue,
+		gwv1.ListenerReasonResolvedRefs,
+		"References resolved",
 	)
 }
 

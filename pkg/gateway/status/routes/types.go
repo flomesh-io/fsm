@@ -85,3 +85,12 @@ func (r *PolicyObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectRefer
 		fmt.Sprintf("CA Certificate is empty in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, refererNamespace), ref.Name),
 	)
 }
+
+func (r *PolicyObjectReferenceResolver) AddRefsResolvedCondition() {
+	r.ancestorStatus.AddCondition(
+		gwv1alpha2.PolicyConditionAccepted,
+		metav1.ConditionTrue,
+		gwv1alpha2.PolicyReasonAccepted,
+		"References resolved, policy is accepted",
+	)
+}

@@ -416,20 +416,16 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 		// process certificates
 		if listener.TLS.CertificateRefs != nil {
 			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update))
-			for _, ref := range listener.TLS.CertificateRefs {
-				if _, err := secretRefResolver.SecretRefToSecret(cache, gateway, ref); err != nil {
-					return
-				}
+			if !secretRefResolver.ResolveAllRefs(cache, gateway, listener.TLS.CertificateRefs) {
+				return
 			}
 		}
 
 		// process CA certificates
 		if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
 			objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update))
-			for _, ref := range listener.TLS.FrontendValidation.CACertificateRefs {
-				if ca := objRefResolver.ObjectRefToCACertificate(cache, gateway, ref); len(ca) == 0 {
-					return
-				}
+			if !objRefResolver.ResolveAllRefs(cache, gateway, listener.TLS.FrontendValidation.CACertificateRefs) {
+				return
 			}
 		}
 	}
@@ -500,7 +496,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 		return
 	}
 
-	if !update.ConditionExists(gwv1.GatewayConditionProgrammed) && deployment.Status.AvailableReplicas != 0 {
+	if deployment.Status.AvailableReplicas != 0 {
 		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, "Programmed", fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
 
 		update.AddCondition(

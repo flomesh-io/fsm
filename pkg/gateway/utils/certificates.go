@@ -44,6 +44,23 @@ func NewSecretReferenceResolverFactory(resolver gwtypes.SecretReferenceResolver)
 	return &SecretReferenceResolverFactory{resolver}
 }
 
+func (f *SecretReferenceResolverFactory) ResolveAllRefs(client cache.Cache, referer client.Object, refs []gwv1.SecretObjectReference) bool {
+	resolved := true
+
+	for _, ref := range refs {
+		if _, err := f.SecretRefToSecret(client, referer, ref); err != nil {
+			resolved = false
+			break
+		}
+	}
+
+	if resolved {
+		f.AddRefsResolvedCondition()
+	}
+
+	return resolved
+}
+
 func (f *SecretReferenceResolverFactory) SecretRefToSecret(client cache.Cache, referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
 	if !IsValidRefToGroupKindOfSecret(ref) {
 		f.AddInvalidCertificateRefCondition(ref)
@@ -99,6 +116,23 @@ type ObjectReferenceResolverFactory struct {
 
 func NewObjectReferenceResolverFactory(resolver gwtypes.ObjectReferenceResolver) *ObjectReferenceResolverFactory {
 	return &ObjectReferenceResolverFactory{resolver}
+}
+
+func (f *ObjectReferenceResolverFactory) ResolveAllRefs(client cache.Cache, referer client.Object, refs []gwv1.ObjectReference) bool {
+	resolved := true
+
+	for _, ref := range refs {
+		if ca := f.ObjectRefToCACertificate(client, referer, ref); len(ca) == 0 {
+			resolved = false
+			break
+		}
+	}
+
+	if resolved {
+		f.AddRefsResolvedCondition()
+	}
+
+	return resolved
 }
 
 // ObjectRefToCACertificate converts an ObjectReference to a CA Certificate.

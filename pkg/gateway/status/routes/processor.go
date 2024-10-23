@@ -347,18 +347,19 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 		return
 	}
 
-	resolver := gwutils.NewObjectReferenceResolverFactory(NewPolicyObjectReferenceResolver(ancestorStatus))
+	refs := make([]gwv1.ObjectReference, 0)
 	for _, ref := range policy.Spec.Validation.CACertificateRefs {
-		ref := gwv1.ObjectReference{
+		refs = append(refs, gwv1.ObjectReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Namespace: ptr.To(gwv1.Namespace(policy.Namespace)),
 			Name:      ref.Name,
-		}
+		})
+	}
 
-		if ca := resolver.ObjectRefToCACertificate(p.client, policy, ref); len(ca) == 0 {
-			log.Error().Msgf("Failed to get CA certificate %s", ref.Name)
-		}
+	resolver := gwutils.NewObjectReferenceResolverFactory(NewPolicyObjectReferenceResolver(ancestorStatus))
+	if !resolver.ResolveAllRefs(p.client, policy, refs) {
+		return
 	}
 
 	if !ancestorStatus.ConditionExists(gwv1alpha2.PolicyConditionAccepted) {
