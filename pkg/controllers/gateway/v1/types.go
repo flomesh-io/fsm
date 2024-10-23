@@ -42,15 +42,83 @@ var (
 	log = logger.NewPretty("gatewayapi-controller/v1")
 )
 
+// ---
+
+type GatewaySecretReferenceResolver struct {
+	update *gw.GatewayStatusUpdate
+}
+
+func NewGatewaySecretReferenceResolver(update *gw.GatewayStatusUpdate) *GatewaySecretReferenceResolver {
+	return &GatewaySecretReferenceResolver{
+		update: update,
+	}
+}
+
+func (r *GatewaySecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+	r.addCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.GatewayReasonInvalid,
+		fmt.Sprintf("Unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind),
+	)
+}
+
+func (r *GatewaySecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+	r.addCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.GatewayReasonInvalid,
+		fmt.Sprintf("Reference to Secret %s/%s is not allowed", string(*ref.Namespace), ref.Name),
+	)
+}
+
+func (r *GatewaySecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+	r.addCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.GatewayReasonInvalid,
+		fmt.Sprintf("Secret %s not found", key.String()),
+	)
+}
+
+func (r *GatewaySecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+	r.addCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.GatewayReasonInvalid,
+		fmt.Sprintf("Failed to get Secret %s: %s", key.String(), err),
+	)
+}
+
+func (r *GatewaySecretReferenceResolver) AddRefsResolvedCondition() {
+	r.addCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionTrue,
+		gwv1.GatewayReasonAccepted,
+		"BackendTLS Reference resolved",
+	)
+}
+
+func (r *GatewaySecretReferenceResolver) addCondition(conditionType gwv1.GatewayConditionType, status metav1.ConditionStatus, reason gwv1.GatewayConditionReason, message string) {
+	r.update.AddCondition(
+		conditionType,
+		status,
+		reason,
+		message,
+	)
+}
+
+// ---
+
 type GatewayListenerSecretReferenceResolver struct {
-	listenerName string
 	update       *gw.GatewayStatusUpdate
+	listenerName string
 }
 
 func NewGatewayListenerSecretReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerSecretReferenceResolver {
 	return &GatewayListenerSecretReferenceResolver{
-		listenerName: name,
 		update:       update,
+		listenerName: name,
 	}
 }
 

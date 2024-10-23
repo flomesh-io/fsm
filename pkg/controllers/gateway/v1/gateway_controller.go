@@ -310,6 +310,15 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 			"Not all listeners are programmed",
 		)
 	}
+
+	if gateway.Spec.BackendTLS != nil && gateway.Spec.BackendTLS.ClientCertificateRef != nil {
+		ref := gateway.Spec.BackendTLS.ClientCertificateRef
+
+		secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewaySecretReferenceResolver(update), r.fctx.Manager.GetCache())
+		if _, err := secretRefResolver.SecretRefToSecret(gateway, *ref); err != nil {
+			return
+		}
+	}
 }
 
 func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listener gwv1.Listener, update *gw.GatewayStatusUpdate, invalidListeners map[gwv1.SectionName]metav1.Condition) {
