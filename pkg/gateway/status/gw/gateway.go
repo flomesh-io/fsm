@@ -13,6 +13,10 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
+//var (
+//	log = logger.NewPretty("fsm-gateway/status/gateway")
+//)
+
 type GatewayStatusUpdate struct {
 	conditions         map[gwv1.GatewayConditionType]metav1.Condition
 	existingConditions map[gwv1.GatewayConditionType]metav1.Condition
@@ -81,6 +85,14 @@ func (g *GatewayStatusUpdate) IsStatusConditionTrue(conditionType gwv1.GatewayCo
 
 func (g *GatewayStatusUpdate) SetAddresses(addresses []gwv1.GatewayStatusAddress) {
 	g.addresses = addresses
+}
+
+func (g *GatewayStatusUpdate) GetAddresses() []gwv1.GatewayStatusAddress {
+	if len(g.addresses) > 0 {
+		return g.addresses
+	} else {
+		return g.existingAddresses
+	}
 }
 
 func (g *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, groupKinds []gwv1.RouteGroupKind) {

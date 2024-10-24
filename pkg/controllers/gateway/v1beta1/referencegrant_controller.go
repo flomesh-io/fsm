@@ -27,6 +27,11 @@ package v1beta1
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -43,6 +48,10 @@ import (
 	fctx "github.com/flomesh-io/fsm/pkg/context"
 	"github.com/flomesh-io/fsm/pkg/controllers"
 )
+
+//var (
+//	log = logger.NewPretty("gatewayapi-controller/v1beta1")
+//)
 
 type referenceGrantReconciler struct {
 	recorder record.EventRecorder
@@ -90,6 +99,9 @@ func (r *referenceGrantReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *referenceGrantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1beta1.ReferenceGrant{}).
+		Watches(&corev1.Secret{}, handler.EnqueueRequestsFromMapFunc(r.secretToRefGrants)).
+		Watches(&corev1.ConfigMap{}, handler.EnqueueRequestsFromMapFunc(r.configMapToRefGrants)).
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToRefGrants)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -97,9 +109,118 @@ func (r *referenceGrantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return addReferenceGrantIndexers(context.Background(), mgr)
 }
 
+func (r *referenceGrantReconciler) secretToRefGrants(ctx context.Context, object client.Object) []reconcile.Request {
+	secret := object.(*corev1.Secret)
+
+	list := &gwv1beta1.ReferenceGrantList{}
+	err := r.fctx.Manager.GetCache().List(ctx, list, client.InNamespace(secret.Namespace))
+	if err != nil {
+		return nil
+	}
+
+	var refGrants []reconcile.Request
+	for _, refGrant := range list.Items {
+		for _, target := range refGrant.Spec.To {
+			if target.Group != corev1.GroupName {
+				continue
+			}
+
+			if target.Kind != constants.KubernetesSecretKind {
+				continue
+			}
+
+			if target.Name == nil || string(*target.Name) == secret.Name {
+				refGrants = append(refGrants, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: refGrant.Namespace,
+						Name:      refGrant.Name,
+					},
+				})
+
+				break
+			}
+		}
+	}
+
+	return refGrants
+}
+
+func (r *referenceGrantReconciler) configMapToRefGrants(ctx context.Context, object client.Object) []reconcile.Request {
+	cm := object.(*corev1.ConfigMap)
+
+	list := &gwv1beta1.ReferenceGrantList{}
+	err := r.fctx.Manager.GetCache().List(ctx, list, client.InNamespace(cm.Namespace))
+	if err != nil {
+		return nil
+	}
+
+	var refGrants []reconcile.Request
+	for _, refGrant := range list.Items {
+		for _, target := range refGrant.Spec.To {
+			if target.Group != corev1.GroupName {
+				continue
+			}
+
+			if target.Kind != constants.KubernetesConfigMapKind {
+				continue
+			}
+
+			if target.Name == nil || string(*target.Name) == cm.Name {
+				refGrants = append(refGrants, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: refGrant.Namespace,
+						Name:      refGrant.Name,
+					},
+				})
+
+				break
+			}
+		}
+	}
+
+	return refGrants
+}
+
+func (r *referenceGrantReconciler) serviceToRefGrants(ctx context.Context, object client.Object) []reconcile.Request {
+	service := object.(*corev1.Service)
+
+	list := &gwv1beta1.ReferenceGrantList{}
+	err := r.fctx.Manager.GetCache().List(ctx, list, client.InNamespace(service.Namespace))
+	if err != nil {
+		return nil
+	}
+
+	var refGrants []reconcile.Request
+	for _, refGrant := range list.Items {
+		for _, target := range refGrant.Spec.To {
+			if target.Group != corev1.GroupName {
+				continue
+			}
+
+			if target.Kind != constants.KubernetesServiceKind {
+				continue
+			}
+
+			if target.Name == nil || string(*target.Name) == service.Name {
+				refGrants = append(refGrants, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: refGrant.Namespace,
+						Name:      refGrant.Name,
+					},
+				})
+
+				break
+			}
+		}
+	}
+
+	return refGrants
+}
+
 func addReferenceGrantIndexers(ctx context.Context, mgr manager.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwv1beta1.ReferenceGrant{}, constants.TargetKindRefGrantIndex, func(obj client.Object) []string {
 		refGrant := obj.(*gwv1beta1.ReferenceGrant)
+
 		var referredResources []string
 		for _, target := range refGrant.Spec.To {
 			referredResources = append(referredResources, string(target.Kind))

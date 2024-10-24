@@ -3,9 +3,9 @@ package v2
 import (
 	"fmt"
 
-	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
-
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
+
+	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -78,6 +78,8 @@ func (p *BackendTLSPolicyProcessor) getOrCreateBackendTLSPolicy(policy *gwv1alph
 }
 
 func (p *BackendTLSPolicyProcessor) processCACertificates(policy *gwv1alpha3.BackendTLSPolicy, p2 *fgwv2.BackendTLSPolicy) {
+	resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{}, p.generator.client)
+
 	for index, ref := range policy.Spec.Validation.CACertificateRefs {
 		caName := fmt.Sprintf("bktls-%s-%s-%d.crt", policy.Namespace, policy.Name, index)
 		if _, ok := p.generator.secretFiles[caName]; ok {
@@ -91,7 +93,7 @@ func (p *BackendTLSPolicyProcessor) processCACertificates(policy *gwv1alpha3.Bac
 			Name:      ref.Name,
 		}
 
-		ca := gwutils.ObjectRefToCACertificate(p.generator.client, policy, ref, nil)
+		ca := resolver.ObjectRefToCACertificate(policy, ref)
 		if len(ca) == 0 {
 			continue
 		}

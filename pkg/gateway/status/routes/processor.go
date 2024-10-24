@@ -40,8 +40,6 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/rs/zerolog/log"
-
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -349,16 +347,19 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 		return
 	}
 
+	refs := make([]gwv1.ObjectReference, 0)
 	for _, ref := range policy.Spec.Validation.CACertificateRefs {
-		ref := gwv1.ObjectReference{
+		refs = append(refs, gwv1.ObjectReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Namespace: ptr.To(gwv1.Namespace(policy.Namespace)),
 			Name:      ref.Name,
-		}
-		if ca := gwutils.ObjectRefToCACertificate(p.client, policy, ref, ancestorStatus); len(ca) == 0 {
-			log.Error().Msgf("Failed to get CA certificate %s", ref.Name)
-		}
+		})
+	}
+
+	resolver := gwutils.NewObjectReferenceResolverFactory(NewPolicyObjectReferenceResolver(ancestorStatus), p.client)
+	if !resolver.ResolveAllRefs(policy, refs) {
+		return
 	}
 
 	if !ancestorStatus.ConditionExists(gwv1alpha2.PolicyConditionAccepted) {

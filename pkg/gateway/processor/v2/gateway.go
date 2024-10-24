@@ -18,7 +18,6 @@ import (
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	corev1 "k8s.io/api/core/v1"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -55,7 +54,7 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 		}
 
 		// get certificates and CA certificates
-		if c.tls(l) && v2l.TLS != nil {
+		if gwutils.IsTLSListener(l.Listener) && v2l.TLS != nil {
 			c.processCertificates(l, v2l)
 			c.processCACerts(l, v2l)
 		}
@@ -66,38 +65,16 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 		g2.Spec.Listeners = append(g2.Spec.Listeners, *v2l)
 	}
 
+	c.processGatewayBackendTLS(g2)
+
 	return g2
 }
 
-func (c *ConfigGenerator) tls(l gwtypes.Listener) bool {
-	switch l.Protocol {
-	case gwv1.HTTPSProtocolType:
-		// Terminate
-		if l.TLS != nil {
-			if l.TLS.Mode == nil || *l.TLS.Mode == gwv1.TLSModeTerminate {
-				return true
-			}
-		}
-	case gwv1.TLSProtocolType:
-		// Terminate & Passthrough
-		if l.TLS != nil {
-			if l.TLS.Mode == nil {
-				return true
-			}
-
-			switch *l.TLS.Mode {
-			case gwv1.TLSModeTerminate:
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Listener) {
+	resolver := gwutils.NewSecretReferenceResolverFactory(&DummySecretReferenceResolver{}, c.client)
+
 	for index, ref := range l.TLS.CertificateRefs {
-		secret, err := c.secretRefToSecret(c.gateway, ref)
+		secret, err := resolver.SecretRefToSecret(c.gateway, ref)
 
 		if err != nil {
 			log.Error().Msgf("Failed to resolve Secret: %s", err)
@@ -126,8 +103,10 @@ func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Lis
 
 func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *fgwv2.Listener) {
 	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
+		resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{}, c.client)
+
 		for index, ref := range l.TLS.FrontendValidation.CACertificateRefs {
-			ca := c.objectRefToCACertificate(c.gateway, ref)
+			ca := resolver.ObjectRefToCACertificate(c.gateway, ref)
 
 			if len(ca) == 0 {
 				continue
@@ -215,4 +194,38 @@ func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerF
 	}
 
 	return result
+}
+
+func (c *ConfigGenerator) processGatewayBackendTLS(g2 *fgwv2.Gateway) {
+	if c.gateway.Spec.BackendTLS != nil && c.gateway.Spec.BackendTLS.ClientCertificateRef != nil {
+		ref := c.gateway.Spec.BackendTLS.ClientCertificateRef
+
+		resolver := gwutils.NewSecretReferenceResolverFactory(&DummySecretReferenceResolver{}, c.client)
+		secret, err := resolver.SecretRefToSecret(c.gateway, *ref)
+
+		if err != nil {
+			log.Error().Msgf("Failed to resolve Secret: %s", err)
+			return
+		}
+
+		if secret.Type != corev1.SecretTypeTLS {
+			log.Warn().Msgf("BackendTLS Secret %s/%s is not of type %s, will be ignored for Gateway %s/%s",
+				secret.Namespace, secret.Name, corev1.SecretTypeTLS,
+				c.gateway.Namespace, c.gateway.Name)
+			return
+		}
+
+		certName := fmt.Sprintf("gw-bk-tls-%s-%s.crt", c.gateway.Namespace, c.gateway.Name)
+		keyName := fmt.Sprintf("gw-bk-tls-%s-%s.key", c.gateway.Namespace, c.gateway.Name)
+
+		g2.Spec.BackendTLS = &fgwv2.GatewayBackendTLS{
+			ClientCertificate: map[string]string{
+				corev1.TLSCertKey:       certName,
+				corev1.TLSPrivateKeyKey: keyName,
+			},
+		}
+
+		c.secretFiles[certName] = string(secret.Data[corev1.TLSCertKey])
+		c.secretFiles[keyName] = string(secret.Data[corev1.TLSPrivateKeyKey])
+	}
 }
