@@ -373,7 +373,7 @@ type Backend struct {
 	Port           int32       `json:"-"` // store the port for the backend temporarily
 }
 
-func NewBackend(svcPortName string, targets []BackendTarget) *Backend {
+func NewBackend(svcPortName string, appProtocol *string, targets []BackendTarget) *Backend {
 	return &Backend{
 		CommonResource: CommonResource{
 			Kind: "Backend",
@@ -382,20 +382,23 @@ func NewBackend(svcPortName string, targets []BackendTarget) *Backend {
 			},
 		},
 		Spec: BackendSpec{
-			Targets: targets,
+			AppProtocol: appProtocol,
+			Targets:     targets,
 		},
 	}
 }
 
 type BackendSpec struct {
-	Targets []BackendTarget `json:"targets,omitempty" hash:"set"`
+	AppProtocol *string         `json:"appProtocol,omitempty"`
+	Targets     []BackendTarget `json:"targets,omitempty" hash:"set"`
 }
 
 type BackendTarget struct {
-	Address string            `json:"address"`
-	Port    *int32            `json:"port"`
-	Weight  *int32            `json:"weight,omitempty"`
-	Tags    map[string]string `json:"tags,omitempty"`
+	Address     string            `json:"address"`
+	Port        *int32            `json:"port"`
+	Weight      *int32            `json:"weight,omitempty"`
+	AppProtocol *string           `json:"appProtocol,omitempty"`
+	Tags        map[string]string `json:"tags,omitempty"`
 }
 
 // ---
@@ -405,6 +408,7 @@ type ServicePortName struct {
 	types.NamespacedName
 	SectionName string
 	Port        *int32
+	AppProtocol *string
 }
 
 func (spn *ServicePortName) String() string {

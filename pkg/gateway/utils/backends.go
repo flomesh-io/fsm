@@ -157,6 +157,7 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 		NamespacedName: key,
 		SectionName:    svcPort.Name,
 		Port:           ptr.To(int32(*backendRef.Port)),
+		AppProtocol:    svcPort.AppProtocol,
 	}
 }
 
