@@ -68,10 +68,11 @@ func (r *tlsRouteReconciler) NeedLeaderElection() bool {
 
 // NewTLSRouteReconciler returns a new TLSRoute.Reconciler
 func NewTLSRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
+	recorder := ctx.Manager.GetEventRecorderFor("TLSRoute")
 	return &tlsRouteReconciler{
-		recorder:        ctx.Manager.GetEventRecorderFor("TLSRoute"),
+		recorder:        recorder,
 		fctx:            ctx,
-		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), recorder, ctx.StatusUpdater),
 		webhook:         webhook,
 	}
 }

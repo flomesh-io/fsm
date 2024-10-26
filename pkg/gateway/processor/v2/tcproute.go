@@ -106,7 +106,7 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 			}
 
 			c.services[svcPort.String()] = serviceContext{
-				svcPortName: *svcPort,
+				ServicePortName: *svcPort,
 			}
 		}
 	}

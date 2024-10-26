@@ -103,7 +103,7 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backend.Weight))
 
 			c.services[svcPort.String()] = serviceContext{
-				svcPortName: *svcPort,
+				ServicePortName: *svcPort,
 			}
 		}
 	}

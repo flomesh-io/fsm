@@ -21,7 +21,7 @@ func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 	//configs := make(map[string]fgw.ServiceConfig)
 	backends := make([]fgwv2.Resource, 0)
 	for svcPortName, svcInfo := range c.services {
-		svcKey := svcInfo.svcPortName.NamespacedName
+		svcKey := svcInfo.NamespacedName
 		svc, err := c.getServiceFromCache(svcKey)
 
 		if err != nil {
@@ -35,7 +35,7 @@ func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 		}
 
 		// don't create Backend resource if there are no endpoints
-		targets := c.calculateEndpoints(svc, svcInfo.svcPortName.Port)
+		targets := c.calculateEndpoints(svc, svcInfo.Port)
 		if len(targets) == 0 {
 			continue
 		}
@@ -44,7 +44,7 @@ func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 		//    enricher.Enrich(svcPortName, svcCfg)
 		//}
 
-		backends = append(backends, fgwv2.NewBackend(svcPortName, targets))
+		backends = append(backends, fgwv2.NewBackend(svcPortName, svcInfo.AppProtocol, targets))
 	}
 
 	return backends

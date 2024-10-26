@@ -146,17 +146,19 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 		return nil
 	}
 
-	rps.AddCondition(
-		gwv1.RouteConditionResolvedRefs,
-		metav1.ConditionTrue,
-		gwv1.RouteReasonResolvedRefs,
-		fmt.Sprintf("References of %s is resolved", gvk.Kind),
-	)
+	//rps.AddCondition(
+	//	gwv1.RouteConditionResolvedRefs,
+	//	metav1.ConditionTrue,
+	//	gwv1.RouteReasonResolvedRefs,
+	//	fmt.Sprintf("References of %s is resolved", gvk.Kind),
+	//)
 
 	return &fgwv2.ServicePortName{
 		NamespacedName: key,
 		SectionName:    svcPort.Name,
 		Port:           ptr.To(int32(*backendRef.Port)),
+		Protocol:       svcPort.Protocol,
+		AppProtocol:    svcPort.AppProtocol,
 	}
 }
 
