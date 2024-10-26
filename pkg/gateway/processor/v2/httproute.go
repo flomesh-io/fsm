@@ -118,7 +118,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 			}
 
 			c.services[svcPort.String()] = serviceContext{
-				svcPortName: *svcPort,
+				ServicePortName: *svcPort,
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				filters = append(filters, f2)
 
 				c.services[svcPort.String()] = serviceContext{
-					svcPortName: *svcPort,
+					ServicePortName: *svcPort,
 				}
 			}
 		case gwv1.HTTPRouteFilterExtensionRef:

@@ -82,10 +82,11 @@ func (r *grpcRouteReconciler) NeedLeaderElection() bool {
 
 // NewGRPCRouteReconciler returns a new GRPCRoute.Reconciler
 func NewGRPCRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
+	recorder := ctx.Manager.GetEventRecorderFor("GRPCRoute")
 	return &grpcRouteReconciler{
-		recorder:        ctx.Manager.GetEventRecorderFor("GRPCRoute"),
+		recorder:        recorder,
 		fctx:            ctx,
-		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), recorder, ctx.StatusUpdater),
 		webhook:         webhook,
 	}
 }

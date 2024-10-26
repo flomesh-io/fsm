@@ -16,13 +16,13 @@ var (
 )
 
 type serviceContext struct {
-	svcPortName fgwv2.ServicePortName
+	fgwv2.ServicePortName
 }
 
 type endpointContext struct {
-	address     string
-	port        int32
-	appProtocol *string
+	address string
+	port    int32
+	//appProtocol *string
 }
 
 type calculateBackendTargetsFunc func(svc *corev1.Service, port *int32) []fgwv2.BackendTarget

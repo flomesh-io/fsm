@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
@@ -408,6 +410,7 @@ type ServicePortName struct {
 	types.NamespacedName
 	SectionName string
 	Port        *int32
+	Protocol    corev1.Protocol
 	AppProtocol *string
 }
 

@@ -569,6 +569,13 @@ const (
 	ConfigListenerFilterIndex                    = "configListenerFilterIndex"
 )
 
+// GatewayAPI Backend Protocol Selection constants
+const (
+	AppProtocolH2C = "kubernetes.io/h2c"
+	AppProtocolWS  = "kubernetes.io/ws"
+	AppProtocolWSS = "kubernetes.io/wss"
+)
+
 // PIPY Repo constants
 const (
 	// DefaultPipyRepoPath is the default path for the PIPY repo

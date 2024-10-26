@@ -82,10 +82,11 @@ func (r *httpRouteReconciler) NeedLeaderElection() bool {
 
 // NewHTTPRouteReconciler returns a new HTTPRoute Reconciler
 func NewHTTPRouteReconciler(ctx *fctx.ControllerContext, webhook whtypes.Register) controllers.Reconciler {
+	recorder := ctx.Manager.GetEventRecorderFor("HTTPRoute")
 	return &httpRouteReconciler{
-		recorder:        ctx.Manager.GetEventRecorderFor("HTTPRoute"),
+		recorder:        recorder,
 		fctx:            ctx,
-		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), ctx.StatusUpdater),
+		statusProcessor: routes.NewRouteStatusProcessor(ctx.Manager.GetCache(), recorder, ctx.StatusUpdater),
 		webhook:         webhook,
 	}
 }

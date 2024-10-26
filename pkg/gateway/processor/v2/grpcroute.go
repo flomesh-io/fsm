@@ -118,7 +118,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 			}
 
 			c.services[svcPort.String()] = serviceContext{
-				svcPortName: *svcPort,
+				ServicePortName: *svcPort,
 			}
 		}
 	}
@@ -146,7 +146,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				filters = append(filters, f2)
 
 				c.services[svcPort.String()] = serviceContext{
-					svcPortName: *svcPort,
+					ServicePortName: *svcPort,
 				}
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
