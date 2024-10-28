@@ -3,9 +3,10 @@ package main
 import (
 	"io"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 )
 
 const proxyCmdDescription = `

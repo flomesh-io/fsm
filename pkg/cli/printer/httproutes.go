@@ -23,12 +23,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/duration"
 
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/cli/extension/directlyattachedpolicy"
 	"github.com/flomesh-io/fsm/pkg/cli/extension/gatewayeffectivepolicy"
 	extensionutils "github.com/flomesh-io/fsm/pkg/cli/extension/utils"
 	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
 	"github.com/flomesh-io/fsm/pkg/cli/topology"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func (p *TablePrinter) printHTTPRoute(httpRouteNode *topology.Node, w io.Writer) error {
@@ -67,7 +68,7 @@ func (p *TablePrinter) printHTTPRoute(httpRouteNode *topology.Node, w io.Writer)
 
 	parentRefsCount := fmt.Sprintf("%d", len(httpRoute.Spec.ParentRefs))
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := httpRoute.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))

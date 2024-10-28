@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
-	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/utils/clock"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"github.com/flomesh-io/fsm/pkg/cli/topology"
 )
 
 type OutputFormat string

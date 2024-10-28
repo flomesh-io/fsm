@@ -23,8 +23,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
-	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,6 +32,9 @@ import (
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
 )
 
 // DescriberKV stores key-value pairs that are used with Describing a resource.
@@ -136,7 +137,7 @@ func convertEventsSliceToTable(events []*corev1.Event, clock clock.Clock) *Table
 		UseSeparator: true,
 	}
 	for _, event := range events {
-		age := "Unknown"
+		age := UnknownAge
 		if !event.FirstTimestamp.IsZero() {
 			age = duration.HumanDuration(clock.Since(event.FirstTimestamp.Time))
 		}

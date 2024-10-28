@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
-	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
-	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/klog/v2"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
+	"github.com/flomesh-io/fsm/pkg/cli/topology"
 )
 
 func (p *TablePrinter) printPolicy(policyNode *topology.Node, w io.Writer) error {
@@ -53,7 +54,7 @@ func (p *TablePrinter) printPolicy(policyNode *topology.Node, w io.Writer) error
 
 	kind := fmt.Sprintf("%v.%v", policy.Unstructured.GroupVersionKind().Kind, policy.Unstructured.GroupVersionKind().Group)
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := policy.Unstructured.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))
@@ -95,7 +96,7 @@ func (p *TablePrinter) printPolicyCRD(policyCRDNode *topology.Node, w io.Writer)
 		policyType = "Inherited"
 	}
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := policyCRD.CRD.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))

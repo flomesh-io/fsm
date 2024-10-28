@@ -57,7 +57,7 @@ func (p *TablePrinter) printBackend(backendNode *topology.Node, w io.Writer) err
 	name := backend.GetName()
 	backendType := backend.GetKind()
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := backend.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))

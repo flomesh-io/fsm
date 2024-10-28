@@ -24,13 +24,14 @@ import (
 	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/util/duration"
 
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/cli/extension/directlyattachedpolicy"
 	"github.com/flomesh-io/fsm/pkg/cli/extension/gatewayeffectivepolicy"
 	extensionutils "github.com/flomesh-io/fsm/pkg/cli/extension/utils"
 	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
 	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	topologygw "github.com/flomesh-io/fsm/pkg/cli/topology/gateway"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func (p *TablePrinter) printGateway(gatewayNode *topology.Node, w io.Writer) error {
@@ -76,7 +77,7 @@ func (p *TablePrinter) printGateway(gatewayNode *topology.Node, w io.Writer) err
 		}
 	}
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := gateway.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))
@@ -154,7 +155,7 @@ func (p *DescriptionPrinter) printGateway(gatewayNode *topology.Node, w io.Write
 	for _, httpRouteNode := range topology.SortedNodes(httpRouteNodes) {
 		httpRouteCount++
 		if httpRouteCount > maxHTTPRoutes {
-			attachedRoutes.Rows = append(attachedRoutes.Rows, []string{fmt.Sprintf("(Truncated)")})
+			attachedRoutes.Rows = append(attachedRoutes.Rows, []string{"(Truncated)"})
 			break
 		}
 		row := []string{
@@ -167,7 +168,7 @@ func (p *DescriptionPrinter) printGateway(gatewayNode *topology.Node, w io.Write
 		for _, backendNode := range topology.SortedNodes(backendNodes) {
 			backendsCount++
 			if backendsCount > maxBackends {
-				backends.Rows = append(backends.Rows, []string{fmt.Sprintf("(Truncated)")})
+				backends.Rows = append(backends.Rows, []string{"(Truncated)"})
 				break
 			}
 			row := []string{

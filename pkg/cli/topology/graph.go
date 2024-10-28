@@ -19,12 +19,13 @@ package topology
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 )
 
 const (
@@ -66,7 +67,6 @@ func (g *Graph) DeleteNode(node *Node) {
 	if len(g.Nodes[node.GKNN().GroupKind()]) == 0 {
 		delete(g.Nodes, node.GKNN().GroupKind())
 	}
-	return
 }
 
 func (g *Graph) DeleteNodeUsingGKNN(nodeGKNN common.GKNN) {

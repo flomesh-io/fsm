@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +29,8 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 )
 
 const (

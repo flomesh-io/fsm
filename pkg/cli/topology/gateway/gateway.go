@@ -19,11 +19,12 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
-	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"github.com/flomesh-io/fsm/pkg/cli/topology"
 
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )

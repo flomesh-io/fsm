@@ -80,9 +80,9 @@ func (d defaultGroupKindFetcher) Fetch(gk schema.GroupKind) ([]*unstructured.Uns
 	}
 
 	// Return any additional Resources if they have been provided.
-	for _, u := range d.additionalResourcesByGK[gk] {
-		result = append(result, u)
-	}
+	//for _, u := range d.additionalResourcesByGK[gk] {
+	result = append(result, d.additionalResourcesByGK[gk]...)
+	//}
 
 	return result, nil
 }

@@ -50,10 +50,11 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 )
 
 const (

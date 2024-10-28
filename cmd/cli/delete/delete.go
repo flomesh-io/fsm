@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/utils/ptr"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 )
 
 func NewCmd(factory common.Factory, iostreams genericiooptions.IOStreams) *cobra.Command {

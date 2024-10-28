@@ -48,7 +48,7 @@ func (p *TablePrinter) printNamespace(namespaceNode *topology.Node, w io.Writer)
 
 	ns := topology.MustAccessObject(namespaceNode, &corev1.Namespace{})
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := ns.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))

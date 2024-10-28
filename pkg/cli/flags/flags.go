@@ -21,9 +21,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )

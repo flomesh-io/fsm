@@ -19,9 +19,10 @@ package notfoundrefvalidator
 import (
 	"fmt"
 
+	"k8s.io/klog/v2"
+
 	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/flomesh-io/fsm/pkg/cli/topology"
-	"k8s.io/klog/v2"
 )
 
 const (
