@@ -21,10 +21,11 @@ import (
 	"context"
 	"log"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
-	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	graphviz "github.com/goccy/go-graphviz"
 	"github.com/goccy/go-graphviz/cgraph"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"github.com/flomesh-io/fsm/pkg/cli/topology"
 )
 
 // TODO:

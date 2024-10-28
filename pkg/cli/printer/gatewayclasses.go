@@ -23,11 +23,12 @@ import (
 	"golang.org/x/exp/maps"
 	"k8s.io/apimachinery/pkg/util/duration"
 
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/cli/extension/directlyattachedpolicy"
 	"github.com/flomesh-io/fsm/pkg/cli/policymanager"
 	"github.com/flomesh-io/fsm/pkg/cli/topology"
 	topologygw "github.com/flomesh-io/fsm/pkg/cli/topology/gateway"
-	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 func (p *TablePrinter) printGatewayClass(gatewayClassNode *topology.Node, w io.Writer) error {
@@ -57,7 +58,7 @@ func (p *TablePrinter) printGatewayClass(gatewayClassNode *topology.Node, w io.W
 		}
 	}
 
-	age := "<unknown>"
+	age := UnknownAge
 	creationTimestamp := gatewayClass.GetCreationTimestamp()
 	if !creationTimestamp.IsZero() {
 		age = duration.HumanDuration(p.Clock.Since(creationTimestamp.Time))
@@ -117,7 +118,7 @@ func (p *DescriptionPrinter) printGatewayClass(gatewayClassNode *topology.Node, 
 	for _, gatewayNode := range topology.SortedNodes(gatewayNodes) {
 		gatewaysCount++
 		if gatewaysCount > maxGateways {
-			attachedGateways.Rows = append(attachedGateways.Rows, []string{fmt.Sprintf("(Truncated)")})
+			attachedGateways.Rows = append(attachedGateways.Rows, []string{"(Truncated)"})
 			break
 		}
 		row := []string{

@@ -22,13 +22,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
+	corev1 "k8s.io/api/core/v1"
+
 	"golang.org/x/exp/maps"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
@@ -228,17 +231,17 @@ func (p Policy) IsDirect() bool {
 }
 
 func (p Policy) IsAttachedTo(objRef common.GKNN) bool {
-	if p.TargetRef.Kind == "Namespace" && p.TargetRef.Name == "" {
+	if p.TargetRef.Kind == K8sNamespaceKind && p.TargetRef.Name == "" {
 		p.TargetRef.Name = "default"
 	}
-	if objRef.Kind == "Namespace" && objRef.Name == "" {
+	if objRef.Kind == K8sNamespaceKind && objRef.Name == "" {
 		objRef.Name = "default"
 	}
-	if p.TargetRef.Kind != "Namespace" && p.TargetRef.Namespace == "" {
-		p.TargetRef.Namespace = "default"
+	if p.TargetRef.Kind != K8sNamespaceKind && p.TargetRef.Namespace == "" {
+		p.TargetRef.Namespace = corev1.NamespaceDefault
 	}
-	if objRef.Kind != "Namespace" && objRef.Namespace == "" {
-		objRef.Namespace = "default"
+	if objRef.Kind != K8sNamespaceKind && objRef.Namespace == "" {
+		objRef.Namespace = corev1.NamespaceDefault
 	}
 	return p.TargetRef == objRef
 }
