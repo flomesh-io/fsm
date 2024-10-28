@@ -111,7 +111,7 @@ func (c *ConfigGenerator) toV2TLSBackendRefs(_ *gwv1alpha2.TLSRoute, rule gwv1al
 
 		// For TLS Passthrough, it doesn't support backend protocol selection for the time being
 		// TODO: Add support for backend protocol selection
-		backends = append(backends, fgwv2.NewBackend(name, nil, []fgwv2.BackendTarget{
+		backends = append(backends, fgwv2.NewBackend(name, toFGWAppProtocol(nil), []fgwv2.BackendTarget{
 			{
 				Address: string(backend.Name),
 				Port:    tlsBackendPort(backend.Port),

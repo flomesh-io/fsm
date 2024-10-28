@@ -2,6 +2,7 @@ package v2
 
 import (
 	"net"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -45,4 +46,23 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 
 func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
 	return k8s.IsHeadlessService(service) && len(service.Spec.Selector) == 0
+}
+
+func toFGWAppProtocol(appProtocol *string) *string {
+	if appProtocol == nil {
+		return nil
+	}
+
+	for _, prefix := range []string{
+		"kubernetes.io/",
+		"gateway.networking.k8s.io/",
+		"gateway.flomesh.io/",
+	} {
+		if strings.HasPrefix(*appProtocol, prefix) {
+			after, _ := strings.CutPrefix(*appProtocol, prefix)
+			return ptr.To(after)
+		}
+	}
+
+	return appProtocol
 }
