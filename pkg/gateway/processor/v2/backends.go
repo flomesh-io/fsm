@@ -44,7 +44,7 @@ func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
 		//    enricher.Enrich(svcPortName, svcCfg)
 		//}
 
-		backends = append(backends, fgwv2.NewBackend(svcPortName, svcInfo.AppProtocol, targets))
+		backends = append(backends, fgwv2.NewBackend(svcPortName, toFGWAppProtocol(svcInfo.AppProtocol), targets))
 	}
 
 	return backends
