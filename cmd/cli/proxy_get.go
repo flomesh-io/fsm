@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 
-	"sigs.k8s.io/gwctl/pkg/common"
-
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	corev1 "k8s.io/api/core/v1"
@@ -14,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/flomesh-io/fsm/pkg/cli"
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 

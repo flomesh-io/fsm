@@ -3,8 +3,7 @@ package main
 import (
 	"io"
 
-	"sigs.k8s.io/gwctl/pkg/common"
-
+	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 )

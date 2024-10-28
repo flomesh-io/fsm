@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	cmdanalyze "sigs.k8s.io/gwctl/cmd/analyze"
-	cmdapply "sigs.k8s.io/gwctl/cmd/apply"
-	cmddelete "sigs.k8s.io/gwctl/cmd/delete"
-	cmdget "sigs.k8s.io/gwctl/cmd/get"
+	cmdanalyze "github.com/flomesh-io/fsm/cmd/cli/analyze"
+	cmdapply "github.com/flomesh-io/fsm/cmd/cli/apply"
+	cmddelete "github.com/flomesh-io/fsm/cmd/cli/delete"
+	cmdget "github.com/flomesh-io/fsm/cmd/cli/get"
 
 	"github.com/spf13/pflag"
 
