@@ -6,10 +6,10 @@ var $ctx
 var $session
 var $conn
 
-export default function (backendRef, backendResource) {
+export default function (backendRef, backendResource, gateway) {
   var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
-  var tls = makeBackendTLS(backendRef, backendResource)
+  var tls = makeBackendTLS(backendRef, backendResource, gateway)
 
   var isHealthy = (target) => true
 

@@ -59,7 +59,7 @@ function makeListener(gateway, listener) {
 
   var routeResources = findRouteResources(gateway, listener)
   var routerKey = makeRouterKey(gateway, key)
-  var pipelines = [pipy.import(routeModuleName).default(routerKey, listener, routeResources)]
+  var pipelines = [pipy.import(routeModuleName).default(routerKey, listener, routeResources, gateway)]
 
   if (termTLS) {
     pipelines.unshift(
@@ -188,7 +188,6 @@ export function makeResourceWatcher(gatewayFilter) {
         break
       case 'BackendLBPolicy':
       case 'BackendTLSPolicy':
-      case 'RetryPolicy':
         addDirtyRoutersByPolicy(res.spec?.targetRefs)
         if (oldResource && res !== oldResource) {
           addDirtyRoutersByPolicy(oldResource.spec?.targetRefs)

@@ -8,7 +8,7 @@ var shutdown = pipeline($=>$.replaceStreamStart(new StreamEnd))
 var $ctx
 var $selection
 
-export default function (routerKey, listener, routeResources) {
+export default function (routerKey, listener, routeResources, gateway) {
   var router = null
 
   function watch() {
@@ -16,7 +16,7 @@ export default function (routerKey, listener, routeResources) {
   }
 
   function update(listener, routeResources) {
-    router = makeRouter(listener, routeResources)
+    router = makeRouter(listener, routeResources, gateway)
     watch()
   }
 
@@ -31,12 +31,12 @@ export default function (routerKey, listener, routeResources) {
   )
 }
 
-function makeRouter(listener, routeResources) {
+function makeRouter(listener, routeResources, gateway) {
   var selector = makeBackendSelector(
     'tcp', listener,
     routeResources[0]?.spec?.rules?.[0],
     function (backendRef, backendResource, filters) {
-      var forwarder = backendResource ? makeBalancer(backendRef, backendResource) : shutdown
+      var forwarder = backendResource ? makeBalancer(backendRef, backendResource, gateway) : shutdown
       return pipeline($=>$
         .pipe([...filters, forwarder], () => $ctx)
         .onEnd(() => $selection.free?.())
