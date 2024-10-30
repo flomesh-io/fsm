@@ -143,8 +143,9 @@ function getTargets(backendResource) {
   return backendResource.spec.targets.map(t => {
     var port = t.port || backendRef.port
     var address = `${t.address}:${port}`
+    var protocol = t.appProtocol || backendResource.spec.appProtocol
     var weight = t.weight
-    return { address, weight, concurrency: 0 }
+    return { address, protocol, weight, concurrency: 0 }
   })
 }
 

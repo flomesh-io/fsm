@@ -8,18 +8,15 @@ var $ctx
 var $session
 var $conn
 
-export default function (backendRef, backendResource, isHTTP2) {
+export default function (backendRef, backendResource, gateway, isHTTP2) {
   var backend = makeBackend(backendResource.metadata.name)
   var balancer = backend.balancer
   var hc = makeHealthCheck(backendRef, backendResource)
-  var tls = makeBackendTLS(backendRef, backendResource)
+  var tls = makeBackendTLS(backendRef, backendResource, gateway)
 
   var backendLBPolicies = findPolicies('BackendLBPolicy', backendResource)
   var sessionPersistenceConfig = backendLBPolicies.find(r => r.spec.sessionPersistence)?.spec?.sessionPersistence
   var sessionPersistence = sessionPersistenceConfig && makeSessionPersistence(sessionPersistenceConfig)
-
-  var retryPolices = findPolicies('RetryPolicy', backendResource)
-  var retryConfig = retryPolices?.[0]?.spec?.retry
 
   if (sessionPersistence) {
     var restoreSession = sessionPersistence.restore
@@ -85,7 +82,7 @@ export default function (backendRef, backendResource, isHTTP2) {
           target: $session.target,
         }
       })
-      $.muxHTTP(() => $session, { version: isHTTP2 ? 2 : 1 }).to($=>{
+      $.muxHTTP(() => $session, { version: () => isHTTP2 || $session.target.protocol === 'h2c' ? 2 : 1 }).to($=>{
         if (tls) {
           $.connectTLS({
             ...tls,
@@ -111,57 +108,5 @@ export default function (backendRef, backendResource, isHTTP2) {
 
       $.onEnd(() => $session.free())
     })
-
-    if (retryConfig) {
-      var retryCodes = {}
-      ;(retryConfig.retryOn || ['5xx']).forEach(code => {
-        if (code.toString().substring(1) === 'xx') {
-          var base = Number.parseInt(code.toString().charAt(0) + '00')
-          new Array(100).fill().forEach((_, i) => retryCodes[base + i] = true)
-        } else {
-          retryCodes[Number.parseInt(code)] = true
-        }
-      })
-
-      var $retryCounter = 0
-      forward = pipeline($=>$
-        .repeat(() => {
-          if ($retryCounter > 0) {
-            return new Timeout(retryConfig.backoffBaseInterval * Math.pow(2, $retryCounter - 1)).wait().then(true)
-          } else {
-            return false
-          }
-        }).to($=>$
-          .pipe(forward)
-          .pipe(evt => {
-            if (evt instanceof MessageStart) {
-              var needRetry = (evt.head.status in retryCodes)
-              var wasRetry = ($retryCounter > 0)
-              if (wasRetry) {
-                $ctx.retries.push({
-                  target: $ctx.target,
-                  succeeded: !needRetry,
-                })
-              }
-              if (needRetry) {
-                if (++$retryCounter < retryConfig.numRetries) {
-                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${evt.head.status}`)
-                  return 'retry'
-                } else {
-                  log?.(`Inb #${$ctx.parent.inbound.id} Req #${$ctx.id} retry ${$retryCounter} status ${evt.head.status} gave up`)
-                  $retryCounter = 0
-                  return 'conclude'
-                }
-              } else {
-                return 'conclude'
-              }
-            }
-          }, {
-            'retry': $=>$.replaceData().replaceMessage(new StreamEnd),
-            'conclude': $=>$,
-          })
-        )
-      )
-    }
   })
 }
