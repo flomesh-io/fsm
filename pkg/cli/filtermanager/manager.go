@@ -1,3 +1,19 @@
+/*
+Copyright 2023 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package filtermanager
 
 import (
@@ -6,6 +22,8 @@ import (
 	"sort"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"golang.org/x/exp/maps"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,11 +31,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	"github.com/flomesh-io/fsm/pkg/cli/common"
+
 	gatewayv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
-	"sigs.k8s.io/gwctl/pkg/common"
 )
 
-type PolicyManager struct {
+type FilterManager struct {
 	Fetcher common.GroupKindFetcher
 
 	// policyCRDs maps a CRD name to the CRD object.
@@ -26,8 +45,8 @@ type PolicyManager struct {
 	policies map[common.GKNN]*Policy
 }
 
-func New(fetcher common.GroupKindFetcher) *PolicyManager {
-	return &PolicyManager{
+func New(fetcher common.GroupKindFetcher) *FilterManager {
+	return &FilterManager{
 		Fetcher:    fetcher,
 		policyCRDs: make(map[PolicyCrdID]*PolicyCRD),
 		policies:   make(map[common.GKNN]*Policy),
@@ -35,7 +54,7 @@ func New(fetcher common.GroupKindFetcher) *PolicyManager {
 }
 
 // Init will construct a local cache of all Policy CRDs and Policy Resources.
-func (p *PolicyManager) Init() error {
+func (p *FilterManager) Init() error {
 	err := p.initPolicyCRDs()
 	if err != nil {
 		return err
@@ -44,7 +63,7 @@ func (p *PolicyManager) Init() error {
 	return p.initPolicies()
 }
 
-func (p *PolicyManager) initPolicyCRDs() error {
+func (p *FilterManager) initPolicyCRDs() error {
 	crdGK := schema.GroupKind{Group: apiextensionsv1.GroupName, Kind: "CustomResourceDefinition"}
 
 	allUnstructuredCRDs, err := p.Fetcher.Fetch(crdGK)
@@ -66,7 +85,7 @@ func (p *PolicyManager) initPolicyCRDs() error {
 	return nil
 }
 
-func (p *PolicyManager) initPolicies() error {
+func (p *FilterManager) initPolicies() error {
 	for _, policyCRD := range p.policyCRDs {
 		gk := schema.GroupKind{Group: policyCRD.CRD.Spec.Group, Kind: policyCRD.CRD.Spec.Names.Kind}
 		policies, err := p.Fetcher.Fetch(gk)
@@ -85,7 +104,7 @@ func (p *PolicyManager) initPolicies() error {
 	return nil
 }
 
-func (p *PolicyManager) PoliciesAttachedTo(objRef common.GKNN) []*Policy {
+func (p *FilterManager) PoliciesAttachedTo(objRef common.GKNN) []*Policy {
 	var result []*Policy
 	for _, policy := range p.policies {
 		if policy.IsAttachedTo(objRef) {
@@ -95,11 +114,11 @@ func (p *PolicyManager) PoliciesAttachedTo(objRef common.GKNN) []*Policy {
 	return result
 }
 
-func (p *PolicyManager) GetCRDs() []*PolicyCRD {
+func (p *FilterManager) GetCRDs() []*PolicyCRD {
 	return maps.Values(p.policyCRDs)
 }
 
-func (p *PolicyManager) GetCRD(name string) (*PolicyCRD, bool) {
+func (p *FilterManager) GetCRD(name string) (*PolicyCRD, bool) {
 	for _, policyCrd := range p.policyCRDs {
 		if name == policyCrd.CRD.Name {
 			return policyCrd, true
@@ -109,7 +128,7 @@ func (p *PolicyManager) GetCRD(name string) (*PolicyCRD, bool) {
 	return nil, false
 }
 
-func (p *PolicyManager) GetPolicies() []*Policy {
+func (p *FilterManager) GetPolicies() []*Policy {
 	return maps.Values(p.policies)
 }
 
@@ -212,17 +231,17 @@ func (p Policy) IsDirect() bool {
 }
 
 func (p Policy) IsAttachedTo(objRef common.GKNN) bool {
-	if p.TargetRef.Kind == "Namespace" && p.TargetRef.Name == "" {
+	if p.TargetRef.Kind == K8sNamespaceKind && p.TargetRef.Name == "" {
 		p.TargetRef.Name = "default"
 	}
-	if objRef.Kind == "Namespace" && objRef.Name == "" {
+	if objRef.Kind == K8sNamespaceKind && objRef.Name == "" {
 		objRef.Name = "default"
 	}
-	if p.TargetRef.Kind != "Namespace" && p.TargetRef.Namespace == "" {
-		p.TargetRef.Namespace = "default"
+	if p.TargetRef.Kind != K8sNamespaceKind && p.TargetRef.Namespace == "" {
+		p.TargetRef.Namespace = corev1.NamespaceDefault
 	}
-	if objRef.Kind != "Namespace" && objRef.Namespace == "" {
-		objRef.Namespace = "default"
+	if objRef.Kind != K8sNamespaceKind && objRef.Namespace == "" {
+		objRef.Namespace = corev1.NamespaceDefault
 	}
 	return p.TargetRef == objRef
 }
