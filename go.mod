@@ -46,7 +46,7 @@ require (
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.1.1
-	gorm.io/gorm v1.21.12
+	gorm.io/gorm v1.23.5
 	helm.sh/helm/v3 v3.16.2
 	k8s.io/api v0.31.1
 	k8s.io/apiextensions-apiserver v0.31.1
@@ -63,7 +63,7 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/hashicorp/vault v1.18.0
+	github.com/hashicorp/vault v1.18.1
 	github.com/hashicorp/vault/sdk v0.14.0
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -206,6 +206,7 @@ require (
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
+	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/docker/cli v26.1.5+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -357,7 +358,7 @@ require (
 	github.com/jefferai/jsonx v1.0.1 // indirect
 	github.com/jingyugao/rowserrcheck v0.0.0-20191204022205-72ab7603b68a // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.2 // indirect
+	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20191110105641-45db9963cdd3 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
@@ -460,7 +461,7 @@ require (
 	github.com/sonatard/noctx v0.0.1 // indirect
 	github.com/sony/gobreaker v0.5.0 // indirect
 	github.com/sourcegraph/go-diff v0.6.1 // indirect
-	github.com/spf13/afero v1.9.2 // indirect
+	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.8.1 // indirect
@@ -499,6 +500,8 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
 	go.opentelemetry.io/otel v1.30.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.30.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.29.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
 	go.opentelemetry.io/otel/trace v1.30.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
