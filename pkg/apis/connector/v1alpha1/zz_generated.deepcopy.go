@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -132,6 +133,11 @@ func (in *ConsulSpec) DeepCopyInto(out *ConsulSpec) {
 		in, out := &in.Replicas, &out.Replicas
 		*out = new(int32)
 		**out = **in
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.LeaderElection != nil {
 		in, out := &in.LeaderElection, &out.LeaderElection
@@ -355,6 +361,11 @@ func (in *EurekaSpec) DeepCopyInto(out *EurekaSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	if in.LeaderElection != nil {
 		in, out := &in.LeaderElection, &out.LeaderElection
 		*out = new(bool)
@@ -552,6 +563,11 @@ func (in *GatewaySpec) DeepCopyInto(out *GatewaySpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	if in.LeaderElection != nil {
 		in, out := &in.LeaderElection, &out.LeaderElection
 		*out = new(bool)
@@ -704,6 +720,11 @@ func (in *MachineSpec) DeepCopyInto(out *MachineSpec) {
 		in, out := &in.Replicas, &out.Replicas
 		*out = new(int32)
 		**out = **in
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.LeaderElection != nil {
 		in, out := &in.LeaderElection, &out.LeaderElection
@@ -876,6 +897,11 @@ func (in *NacosSpec) DeepCopyInto(out *NacosSpec) {
 		in, out := &in.Replicas, &out.Replicas
 		*out = new(int32)
 		**out = **in
+	}
+	if in.ImagePullSecrets != nil {
+		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.LeaderElection != nil {
 		in, out := &in.LeaderElection, &out.LeaderElection

@@ -45,6 +45,10 @@ func (c *MachineConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
+func (c *MachineConnector) GetImagePullSecrets() []corev1.LocalObjectReference {
+	return c.Spec.ImagePullSecrets
+}
+
 func (c *MachineConnector) GetLeaderElection() *bool {
 	return c.Spec.LeaderElection
 }
@@ -107,6 +111,16 @@ type MachineSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// If specified, these secrets will be passed to individual puller implementations for them to use.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// +kubebuilder:default=true
 	// +optional
