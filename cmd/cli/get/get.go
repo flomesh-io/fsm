@@ -140,7 +140,7 @@ type getOptions struct {
 	isPolicy    bool
 	isPolicyCRD bool
 
-	genericclioptions.IOStreams
+	genericiooptions.IOStreams
 }
 
 func (o *getOptions) Run(args []string) error {
@@ -160,7 +160,7 @@ func (o *getOptions) Run(args []string) error {
 		return err
 	}
 
-	sources := []*unstructured.Unstructured{}
+	sources := make([]*unstructured.Unstructured, 0)
 	for _, info := range infos {
 		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(info.Object) //nolint:govet
 		if err != nil {
@@ -222,7 +222,7 @@ func (o *getOptions) handlePolicy(args []string) error {
 		return err
 	}
 
-	nodes := []*topology.Node{}
+	nodes := make([]*topology.Node, 0)
 	if o.isPolicy {
 		for _, policy := range policyManager.GetPolicies() {
 			shouldSkip := (!o.allNamespaces && o.namespace != policy.GKNN().Namespace) ||

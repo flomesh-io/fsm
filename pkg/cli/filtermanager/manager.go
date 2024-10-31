@@ -39,6 +39,12 @@ import (
 type FilterManager struct {
 	Fetcher common.GroupKindFetcher
 
+	// filterCRDs maps a CRD name to the CRD object.
+	filterCRDs map[FilterCrdID]*FilterCRD
+
+	// filters maps a filter name to the filter object.
+	filters map[common.GKNN]*Filter
+
 	// policyCRDs maps a CRD name to the CRD object.
 	policyCRDs map[PolicyCrdID]*PolicyCRD
 	// policies maps a policy name to the policy object.
@@ -130,6 +136,13 @@ func (p *FilterManager) GetCRD(name string) (*PolicyCRD, bool) {
 
 func (p *FilterManager) GetPolicies() []*Policy {
 	return maps.Values(p.policies)
+}
+
+// FilterCrdID has the structurued "<CRD Kind>.<CRD Group>"
+type FilterCrdID string
+
+type FilterCRD struct {
+	CRD *apiextensionsv1.CustomResourceDefinition
 }
 
 // PolicyCrdID has the structurued "<CRD Kind>.<CRD Group>"
