@@ -52,6 +52,10 @@ func (c *EurekaConnector) GetLeaderElection() *bool {
 	return c.Spec.LeaderElection
 }
 
+func (c *EurekaConnector) GetImagePullSecrets() []corev1.LocalObjectReference {
+	return c.Spec.ImagePullSecrets
+}
+
 // EurekaSyncToK8SSpec is the type used to represent the sync from Eureka to K8S specification.
 type EurekaSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
@@ -195,6 +199,16 @@ type EurekaSpec struct {
 	// +kubebuilder:validation:Minimum=1
 	// +optional
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
+	// If specified, these secrets will be passed to individual puller implementations for them to use.
+	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=name
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// +kubebuilder:default=true
 	// +optional

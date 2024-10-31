@@ -116,6 +116,12 @@ func (r *connectorReconciler) resolveValues(object metav1.Object, mc configurato
 		fmt.Sprintf("fsm.cloudConnector.leaderElection=%t", leaderElection(connector, true)),
 	}
 
+	if pullSecrets := connector.GetImagePullSecrets(); len(pullSecrets) > 0 {
+		for index, pullSecret := range pullSecrets {
+			overrides = append(overrides, fmt.Sprintf("fsm.imagePullSecrets[%d].name=%s", index, pullSecret.Name))
+		}
+	}
+
 	for _, ov := range overrides {
 		if err := strvals.ParseInto(ov, finalValues); err != nil {
 			return nil, err

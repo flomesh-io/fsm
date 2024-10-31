@@ -98,7 +98,7 @@ func (gw *GatewaySource) Upsert(key string, raw interface{}) error {
 	return nil
 }
 
-func (gw *GatewaySource) Delete(key string, raw interface{}) error {
+func (gw *GatewaySource) Delete(_ string, _ interface{}) error {
 	return nil
 }
 
@@ -200,6 +200,8 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 }
 
 func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool) {
+	externalSource = false
+	internalSource = true
 	if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 		svcMeta := connector.Decode(k8sSvc, v)
 		for _, endpointMeta := range svcMeta.Endpoints {
