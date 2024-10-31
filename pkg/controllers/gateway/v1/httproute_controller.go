@@ -141,7 +141,6 @@ func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToHTTPRoutes)).
 		Watches(&gwpav1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToHTTPRoutes)).
 		Watches(&gwpav1alpha2.HealthCheckPolicy{}, handler.EnqueueRequestsFromMapFunc(r.healthCheckToHTTPRoutes)).
-		Watches(&gwpav1alpha2.RetryPolicy{}, handler.EnqueueRequestsFromMapFunc(r.retryToHTTPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToHTTPRoutes)).
 		Complete(r); err != nil {
 		return err
@@ -191,16 +190,6 @@ func (r *httpRouteReconciler) backendLBToHTTPRoutes(ctx context.Context, object 
 }
 
 func (r *httpRouteReconciler) healthCheckToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
-	policy, ok := object.(*gwpav1alpha2.HealthCheckPolicy)
-	if !ok {
-		log.Error().Msgf("Unexpected type %T", object)
-		return nil
-	}
-
-	return r.policyToHTTPRoutes(ctx, policy, policy.Spec.TargetRefs)
-}
-
-func (r *httpRouteReconciler) retryToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
 	policy, ok := object.(*gwpav1alpha2.HealthCheckPolicy)
 	if !ok {
 		log.Error().Msgf("Unexpected type %T", object)

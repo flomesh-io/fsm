@@ -537,17 +537,6 @@ const (
 
 	// ---
 
-	// RetryPolicyAttachmentAdded is the type of announcement emitted when we observe an addition of retries.gateway.flomesh.io
-	RetryPolicyAttachmentAdded Kind = "retrypolicy-added"
-
-	// RetryPolicyAttachmentDeleted the type of announcement emitted when we observe a deletion of retries.gateway.flomesh.io
-	RetryPolicyAttachmentDeleted Kind = "retrypolicy-deleted"
-
-	// RetryPolicyAttachmentUpdated is the type of announcement emitted when we observe an update to retries.gateway.flomesh.io
-	RetryPolicyAttachmentUpdated Kind = "retrypolicy-updated"
-
-	// ---
-
 	// BackendTLSPolicyAdded is the type of announcement emitted when we observe an addition of backendtlspolicies.gateway.networking.k8s.io
 	BackendTLSPolicyAdded Kind = "backendtlspolicy-added"
 

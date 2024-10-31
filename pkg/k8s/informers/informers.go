@@ -262,7 +262,6 @@ func WithPolicyAttachmentClientV2(gatewayAPIClient gatewayApiClientset.Interface
 
 		ic.informers[InformerKeyBackendLBPolicy] = informerFactory.Gateway().V1alpha2().BackendLBPolicies().Informer()
 		ic.informers[InformerKeyHealthCheckPolicyV1alpha2] = informerFactory.Gateway().V1alpha2().HealthCheckPolicies().Informer()
-		ic.informers[InformerKeyRetryPolicyV1alpha2] = informerFactory.Gateway().V1alpha2().RetryPolicies().Informer()
 	}
 }
 

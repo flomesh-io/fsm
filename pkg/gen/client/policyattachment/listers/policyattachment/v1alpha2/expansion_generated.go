@@ -30,11 +30,3 @@ type HealthCheckPolicyListerExpansion interface{}
 // HealthCheckPolicyNamespaceListerExpansion allows custom methods to be added to
 // HealthCheckPolicyNamespaceLister.
 type HealthCheckPolicyNamespaceListerExpansion interface{}
-
-// RetryPolicyListerExpansion allows custom methods to be added to
-// RetryPolicyLister.
-type RetryPolicyListerExpansion interface{}
-
-// RetryPolicyNamespaceListerExpansion allows custom methods to be added to
-// RetryPolicyNamespaceLister.
-type RetryPolicyNamespaceListerExpansion interface{}

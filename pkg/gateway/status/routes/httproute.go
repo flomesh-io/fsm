@@ -97,7 +97,6 @@ func (p *RouteStatusProcessor) processHTTPRouteBackend(route *gwv1.HTTPRoute, pa
 
 	p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
 	p.computeHealthCheckPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
-	p.computeRetryPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
 
 	return true
 }

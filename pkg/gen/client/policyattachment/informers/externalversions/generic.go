@@ -54,8 +54,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().BackendLBPolicies().Informer()}, nil
 	case v1alpha2.SchemeGroupVersion.WithResource("healthcheckpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().HealthCheckPolicies().Informer()}, nil
-	case v1alpha2.SchemeGroupVersion.WithResource("retrypolicies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Gateway().V1alpha2().RetryPolicies().Informer()}, nil
 
 	}
 
