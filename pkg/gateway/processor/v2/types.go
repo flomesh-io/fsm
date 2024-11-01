@@ -29,49 +29,58 @@ type BackendPolicyProcessor interface {
 
 // ---
 
-type DummySecretReferenceResolver struct{}
+type DummySecretReferenceConditionProvider struct{}
 
-func (r *DummySecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
-
-}
-
-func (r *DummySecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+func (r *DummySecretReferenceConditionProvider) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
 
 }
 
-func (r *DummySecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+func (r *DummySecretReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
 
 }
 
-func (r *DummySecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+func (r *DummySecretReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName) {
 
 }
 
-func (r *DummySecretReferenceResolver) AddRefsResolvedCondition() {
+func (r *DummySecretReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+
+}
+
+func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition() {
 
 }
 
 // ---
 
-type DummyObjectReferenceResolver struct{}
+type DummyObjectReferenceConditionProvider struct{}
 
-func (r *DummyObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+func (r *DummyObjectReferenceConditionProvider) AddInvalidRefCondition(ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+func (r *DummyObjectReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+func (r *DummyObjectReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
 }
 
-func (r *DummyObjectReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+func (r *DummyObjectReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
 }
 
-func (r *DummyObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+func (r *DummyObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
 }
 
-func (r *DummyObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+func (r *DummyObjectReferenceConditionProvider) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
 }
 
-func (r *DummyObjectReferenceResolver) AddRefsResolvedCondition() {
+func (r *DummyObjectReferenceConditionProvider) AddRefsResolvedCondition() {
+}
+
+// ---
+
+type DummyGatewayListenerConditionProvider struct{}
+
+func (p *DummyGatewayListenerConditionProvider) AddNoMatchingParentCondition(parentRef gwv1.ParentReference, routeNs string) {
+}
+func (p *DummyGatewayListenerConditionProvider) AddNotAllowedByListeners(parentRef gwv1.ParentReference, routeNs string) {
 }

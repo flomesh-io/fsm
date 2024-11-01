@@ -71,7 +71,7 @@ func (c *ConfigGenerator) processGateway() *fgwv2.Gateway {
 }
 
 func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Listener) {
-	resolver := gwutils.NewSecretReferenceResolverFactory(&DummySecretReferenceResolver{}, c.client)
+	resolver := gwutils.NewSecretReferenceResolver(&DummySecretReferenceConditionProvider{}, c.client)
 
 	for index, ref := range l.TLS.CertificateRefs {
 		secret, err := resolver.SecretRefToSecret(c.gateway, ref)
@@ -103,7 +103,7 @@ func (c *ConfigGenerator) processCertificates(l gwtypes.Listener, v2l *fgwv2.Lis
 
 func (c *ConfigGenerator) processCACerts(l gwtypes.Listener, v2l *fgwv2.Listener) {
 	if l.TLS.FrontendValidation != nil && len(l.TLS.FrontendValidation.CACertificateRefs) > 0 {
-		resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{}, c.client)
+		resolver := gwutils.NewObjectReferenceResolver(&DummyObjectReferenceConditionProvider{}, c.client)
 
 		for index, ref := range l.TLS.FrontendValidation.CACertificateRefs {
 			ca := resolver.ObjectRefToCACertificate(c.gateway, ref)
@@ -200,7 +200,7 @@ func (c *ConfigGenerator) processGatewayBackendTLS(g2 *fgwv2.Gateway) {
 	if c.gateway.Spec.BackendTLS != nil && c.gateway.Spec.BackendTLS.ClientCertificateRef != nil {
 		ref := c.gateway.Spec.BackendTLS.ClientCertificateRef
 
-		resolver := gwutils.NewSecretReferenceResolverFactory(&DummySecretReferenceResolver{}, c.client)
+		resolver := gwutils.NewSecretReferenceResolver(&DummySecretReferenceConditionProvider{}, c.client)
 		secret, err := resolver.SecretRefToSecret(c.gateway, *ref)
 
 		if err != nil {

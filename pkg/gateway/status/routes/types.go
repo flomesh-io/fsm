@@ -22,17 +22,17 @@ var (
 	log = logger.New("fsm-gateway/status/route")
 )
 
-type PolicyObjectReferenceResolver struct {
+type PolicyObjectReferenceConditionProvider struct {
 	ancestorStatus status.PolicyAncestorStatusObject
 }
 
-func NewPolicyObjectReferenceResolver(ancestorStatus status.PolicyAncestorStatusObject) *PolicyObjectReferenceResolver {
-	return &PolicyObjectReferenceResolver{
+func NewPolicyObjectReferenceConditionProvider(ancestorStatus status.PolicyAncestorStatusObject) *PolicyObjectReferenceConditionProvider {
+	return &PolicyObjectReferenceConditionProvider{
 		ancestorStatus: ancestorStatus,
 	}
 }
 
-func (r *PolicyObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+func (r *PolicyObjectReferenceConditionProvider) AddInvalidRefCondition(ref gwv1.ObjectReference) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -41,7 +41,7 @@ func (r *PolicyObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectRe
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+func (r *PolicyObjectReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -50,7 +50,7 @@ func (r *PolicyObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.Obj
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+func (r *PolicyObjectReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -59,7 +59,7 @@ func (r *PolicyObjectReferenceResolver) AddRefNotFoundCondition(key types.Namesp
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+func (r *PolicyObjectReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -68,7 +68,7 @@ func (r *PolicyObjectReferenceResolver) AddGetRefErrorCondition(key types.Namesp
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+func (r *PolicyObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -77,7 +77,7 @@ func (r *PolicyObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.N
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+func (r *PolicyObjectReferenceConditionProvider) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionFalse,
@@ -86,11 +86,41 @@ func (r *PolicyObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectRefer
 	)
 }
 
-func (r *PolicyObjectReferenceResolver) AddRefsResolvedCondition() {
+func (r *PolicyObjectReferenceConditionProvider) AddRefsResolvedCondition() {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionTrue,
 		gwv1alpha2.PolicyReasonAccepted,
 		"References resolved, policy is accepted",
+	)
+}
+
+// ---
+
+type RouteParentListenerConditionProvider struct {
+	rps status.RouteParentStatusObject
+}
+
+func NewRouteParentListenerConditionProvider(rps status.RouteParentStatusObject) *RouteParentListenerConditionProvider {
+	return &RouteParentListenerConditionProvider{
+		rps: rps,
+	}
+}
+
+func (r *RouteParentListenerConditionProvider) AddNoMatchingParentCondition(parentRef gwv1.ParentReference, routeNs string) {
+	r.rps.AddCondition(
+		gwv1.RouteConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.RouteReasonNoMatchingParent,
+		fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
+	)
+}
+
+func (r *RouteParentListenerConditionProvider) AddNotAllowedByListeners(parentRef gwv1.ParentReference, routeNs string) {
+	r.rps.AddCondition(
+		gwv1.RouteConditionAccepted,
+		metav1.ConditionFalse,
+		gwv1.RouteReasonNotAllowedByListeners,
+		fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
 	)
 }
