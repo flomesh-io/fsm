@@ -32,7 +32,6 @@ type ConfigGenerator struct {
 	backendTLSPolicies  map[string]*fgwv2.BackendTLSPolicy
 	backendLBPolicies   map[string]*fgwv2.BackendLBPolicy
 	healthCheckPolicies map[string]*fgwv2.HealthCheckPolicy
-	retryPolicies       map[string]*fgwv2.RetryPolicy
 }
 
 func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache) processor.Generator {
@@ -46,7 +45,6 @@ func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Proces
 		backendTLSPolicies:  map[string]*fgwv2.BackendTLSPolicy{},
 		backendLBPolicies:   map[string]*fgwv2.BackendLBPolicy{},
 		healthCheckPolicies: map[string]*fgwv2.HealthCheckPolicy{},
-		retryPolicies:       map[string]*fgwv2.RetryPolicy{},
 	}
 
 	if processor.UseEndpointSlices() {
@@ -89,10 +87,6 @@ func (c *ConfigGenerator) processResources() []fgwv2.Resource {
 	}
 
 	for _, policy := range c.healthCheckPolicies {
-		resources = append(resources, policy)
-	}
-
-	for _, policy := range c.retryPolicies {
 		resources = append(resources, policy)
 	}
 

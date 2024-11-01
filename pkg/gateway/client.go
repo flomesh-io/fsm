@@ -91,7 +91,6 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyGatewayAPIUDPRoute:        &gwv1alpha2.UDPRoute{},
 		fsminformers.InformerKeyGatewayAPIReferenceGrant:  &gwv1beta1.ReferenceGrant{},
 		fsminformers.InformerKeyHealthCheckPolicyV1alpha2: &gwpav1alpha2.HealthCheckPolicy{},
-		fsminformers.InformerKeyRetryPolicyV1alpha2:       &gwpav1alpha2.RetryPolicy{},
 		fsminformers.InformerKeyBackendTLSPolicy:          &gwv1alpha3.BackendTLSPolicy{},
 		fsminformers.InformerKeyBackendLBPolicy:           &gwpav1alpha2.BackendLBPolicy{},
 		fsminformers.InformerKeyNamespace:                 &corev1.Namespace{},

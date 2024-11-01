@@ -130,8 +130,6 @@ const (
 	InformerKeyBackendLBPolicy InformerKey = "BackendLBPolicy"
 	// InformerKeyHealthCheckPolicyV1alpha2 is the InformerKey for a HealthCheckPolicy informer
 	InformerKeyHealthCheckPolicyV1alpha2 InformerKey = "HealthCheckPolicy-v1alpha2"
-	// InformerKeyRetryPolicyV1alpha2 is the InformerKey for a RetryPolicy informer
-	InformerKeyRetryPolicyV1alpha2 InformerKey = "RetryPolicy-v1alpha2"
 	// InformerKeyFilter is the InformerKey for a Filter informer
 	InformerKeyFilter InformerKey = "Filter"
 	// InformerKeyListenerFilter is the InformerKey for a ListenerFilter informer
@@ -231,9 +229,6 @@ const (
 
 	// FaultInjectionsResourceType is the type used to represent the fault injections resource
 	FaultInjectionsResourceType ResourceType = "faultinjections"
-
-	// RetryPoliciesResourceType is the type used to represent the retry policies resource
-	RetryPoliciesResourceType ResourceType = "retries"
 
 	// BackendTLSPoliciesResourceType is the type used to represent the backend tls policies resource
 	BackendTLSPoliciesResourceType ResourceType = "backendtls"

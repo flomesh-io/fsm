@@ -12,7 +12,6 @@ func (c *ConfigGenerator) getBackendPolicyProcessors(route client.Object) []Back
 		return []BackendPolicyProcessor{
 			NewBackendTLSPolicyProcessor(c),
 			NewBackendLBPolicyProcessor(c),
-			NewRetryPolicyProcessor(c),
 			NewHealthCheckPolicyProcessor(c),
 		}
 	case *gwv1.GRPCRoute:

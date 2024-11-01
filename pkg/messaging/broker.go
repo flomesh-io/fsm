@@ -1177,8 +1177,6 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.HealthCheckPolicyAdded, announcements.HealthCheckPolicyDeleted, announcements.HealthCheckPolicyUpdated,
 		// FaultInjection event
 		announcements.FaultInjectionAdded, announcements.FaultInjectionDeleted, announcements.FaultInjectionUpdated,
-		// RetryPolicy event
-		announcements.RetryPolicyAttachmentAdded, announcements.RetryPolicyAttachmentDeleted, announcements.RetryPolicyAttachmentUpdated,
 		// BackendTLSPolicy event
 		announcements.BackendTLSPolicyAdded, announcements.BackendTLSPolicyDeleted, announcements.BackendTLSPolicyUpdated,
 		// BackendLBPolicy event

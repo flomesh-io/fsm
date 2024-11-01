@@ -27,7 +27,6 @@ type GatewayV1alpha2Interface interface {
 	RESTClient() rest.Interface
 	BackendLBPoliciesGetter
 	HealthCheckPoliciesGetter
-	RetryPoliciesGetter
 }
 
 // GatewayV1alpha2Client is used to interact with features provided by the gateway.flomesh.io group.
@@ -41,10 +40,6 @@ func (c *GatewayV1alpha2Client) BackendLBPolicies(namespace string) BackendLBPol
 
 func (c *GatewayV1alpha2Client) HealthCheckPolicies(namespace string) HealthCheckPolicyInterface {
 	return newHealthCheckPolicies(c, namespace)
-}
-
-func (c *GatewayV1alpha2Client) RetryPolicies(namespace string) RetryPolicyInterface {
-	return newRetryPolicies(c, namespace)
 }
 
 // NewForConfig creates a new GatewayV1alpha2Client for the given config.

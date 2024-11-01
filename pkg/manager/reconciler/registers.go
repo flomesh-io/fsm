@@ -288,9 +288,6 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		webhooks[PolicyAttachmentHealthCheck] = pawhv1alpha2.NewHealthCheckPolicyWebhook(regCfg)
 		reconcilers[PolicyAttachmentHealthCheck] = pav1alpha2.NewHealthCheckPolicyReconciler(ctx, webhooks[PolicyAttachmentHealthCheck])
 
-		webhooks[PolicyAttachmentRetry] = pawhv1alpha2.NewRetryPolicyWebhook(regCfg)
-		reconcilers[PolicyAttachmentRetry] = pav1alpha2.NewRetryPolicyReconciler(ctx, webhooks[PolicyAttachmentRetry])
-
 		webhooks[PolicyAttachmentBackendLB] = pawhv1alpha2.NewBackendLBPolicyWebhook(regCfg)
 		reconcilers[PolicyAttachmentBackendLB] = pav1alpha2.NewBackendLBPolicyReconciler(ctx, webhooks[PolicyAttachmentBackendLB])
 
