@@ -262,37 +262,3 @@ func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyT
 
 	return nil, nil, false
 }
-
-func FindRetryPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyTargetReference, routeNamespace string, svcPort *fgwv2.ServicePortName) (*gwpav1alpha2.RetryPolicy, *gwpav1alpha2.PortRetry, bool) {
-	if svcPort == nil {
-		return nil, nil, false
-	}
-
-	if svcPort.Port == nil {
-		return nil, nil, false
-	}
-
-	list := &gwpav1alpha2.RetryPolicyList{}
-	if err := c.List(context.Background(), list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(constants.ServicePolicyAttachmentIndex, types.NamespacedName{
-			Namespace: NamespaceDerefOr(targetRef.Namespace, routeNamespace),
-			Name:      string(targetRef.Name),
-		}.String()),
-	}); err != nil {
-		return nil, nil, false
-	}
-
-	for _, policy := range ToSlicePtr(list.Items) {
-		for _, ref := range policy.Spec.TargetRefs {
-			if cmp.Equal(ref, targetRef) {
-				for i, port := range policy.Spec.Ports {
-					if *svcPort.Port == int32(port.Port) {
-						return policy, &policy.Spec.Ports[i], true
-					}
-				}
-			}
-		}
-	}
-
-	return nil, nil, false
-}

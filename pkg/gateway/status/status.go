@@ -238,12 +238,6 @@ func isStatusEqual(objA, objB interface{}) bool {
 				return true
 			}
 		}
-	case *gwpav1alpha2.RetryPolicy:
-		if b, ok := objB.(*gwpav1alpha2.RetryPolicy); ok {
-			if cmp.Equal(a.Status, b.Status, opts) {
-				return true
-			}
-		}
 	case *extv1alpha1.Filter:
 		if b, ok := objB.(*extv1alpha1.Filter); ok {
 			if cmp.Equal(a.Status, b.Status, opts) {

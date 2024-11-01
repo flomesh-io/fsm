@@ -168,10 +168,6 @@ func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses
 		return policy
-	case *gwpav1alpha2.RetryPolicy:
-		policy := o.DeepCopy()
-		policy.Status.Ancestors = newPolicyAncestorStatuses
-		return policy
 	case *gwpav1alpha2.HealthCheckPolicy:
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses

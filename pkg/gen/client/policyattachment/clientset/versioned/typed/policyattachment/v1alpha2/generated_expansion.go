@@ -18,5 +18,3 @@ package v1alpha2
 type BackendLBPolicyExpansion interface{}
 
 type HealthCheckPolicyExpansion interface{}
-
-type RetryPolicyExpansion interface{}

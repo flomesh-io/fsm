@@ -75,7 +75,6 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.UDPRoutesResourceType:           &gatewaytrigger.UDPRoutesTrigger{},
 			informers.ReferenceGrantResourceType:      &gatewaytrigger.ReferenceGrantTrigger{},
 			informers.HealthCheckPoliciesResourceType: &policytriggerv2.HealthCheckPoliciesTrigger{},
-			informers.RetryPoliciesResourceType:       &policytriggerv2.RetryPoliciesTrigger{},
 			informers.BackendLBPoliciesResourceType:   &policytriggerv2.BackendLBPoliciesTrigger{},
 			informers.BackendTLSPoliciesResourceType:  &policytriggerv2.BackendTLSPoliciesTrigger{},
 			informers.FiltersResourceType:             &extensiontrigger.FilterTrigger{},
@@ -148,8 +147,6 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.ReferenceGrantResourceType]
 	case *gwpav1alpha2.HealthCheckPolicy:
 		return c.triggers[informers.HealthCheckPoliciesResourceType]
-	case *gwpav1alpha2.RetryPolicy:
-		return c.triggers[informers.RetryPoliciesResourceType]
 	case *gwpav1alpha2.BackendLBPolicy:
 		return c.triggers[informers.BackendLBPoliciesResourceType]
 	case *gwv1alpha3.BackendTLSPolicy:
