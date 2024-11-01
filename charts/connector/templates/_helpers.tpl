@@ -19,15 +19,6 @@ securityContext:
     supplementalGroups: [5555]
 {{- end -}}
 
-{{/* fsm-curl image */}}
-{{- define "fsmCurl.image" -}}
-{{- if .Values.fsm.image.tag -}}
-{{- printf "%s/%s:%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.tag -}}
-{{- else -}}
-{{- printf "%s/%s@%s" .Values.fsm.image.registry .Values.fsm.image.name.fsmCurl .Values.fsm.image.digest.fsmCurl -}}
-{{- end -}}
-{{- end -}}
-
 {{/* fsm-conector image */}}
 {{- define "fsmConnector.image" -}}
 {{- if .Values.fsm.image.tag -}}
