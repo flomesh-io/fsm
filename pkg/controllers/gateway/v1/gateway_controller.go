@@ -314,7 +314,7 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 	if gateway.Spec.BackendTLS != nil && gateway.Spec.BackendTLS.ClientCertificateRef != nil {
 		ref := gateway.Spec.BackendTLS.ClientCertificateRef
 
-		secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewaySecretReferenceResolver(update), r.fctx.Manager.GetCache())
+		secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewaySecretReferenceResolver(update), r.fctx.Manager.GetCache())
 		if _, err := secretRefResolver.SecretRefToSecret(gateway, *ref); err != nil {
 			return
 		}
@@ -423,7 +423,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 
 		// process certificates
 		if listener.TLS.CertificateRefs != nil {
-			secretRefResolver := gwutils.NewSecretReferenceResolverFactory(NewGatewayListenerSecretReferenceResolver(string(listener.Name), update), cache)
+			secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewayListenerSecretReferenceConditionProvider(string(listener.Name), update), cache)
 			if !secretRefResolver.ResolveAllRefs(gateway, listener.TLS.CertificateRefs) {
 				return
 			}
@@ -431,7 +431,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 
 		// process CA certificates
 		if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
-			objRefResolver := gwutils.NewObjectReferenceResolverFactory(NewGatewayListenerObjectReferenceResolver(string(listener.Name), update), cache)
+			objRefResolver := gwutils.NewObjectReferenceResolver(NewGatewayListenerObjectReferenceConditionProvider(string(listener.Name), update), cache)
 			if !objRefResolver.ResolveAllRefs(gateway, listener.TLS.FrontendValidation.CACertificateRefs) {
 				return
 			}

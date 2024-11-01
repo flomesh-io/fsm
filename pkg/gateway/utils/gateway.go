@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -153,11 +152,21 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 	return validListeners
 }
 
+type gatewayListenerResolver struct {
+	gwtypes.GatewayListenerConditionProvider
+	client cache.Cache
+	rps    status.RouteParentStatusObject
+}
+
+func NewGatewayListenerResolver(conditionProvider gwtypes.GatewayListenerConditionProvider, client cache.Cache, rps status.RouteParentStatusObject) gwtypes.GatewayListenerResolver {
+	return &gatewayListenerResolver{GatewayListenerConditionProvider: conditionProvider, client: client, rps: rps}
+}
+
 // GetAllowedListeners returns the allowed listeners
-func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteParentStatusObject) []gwtypes.Listener {
-	routeGvk := rps.GetRouteStatusObject().GroupVersionKind()
-	routeNs := rps.GetRouteStatusObject().GetFullName().Namespace
-	parentRef := rps.GetParentRef()
+func (f *gatewayListenerResolver) GetAllowedListeners(gw *gwv1.Gateway) []gwtypes.Listener {
+	routeGvk := f.rps.GetRouteStatusObject().GroupVersionKind()
+	routeNs := f.rps.GetRouteStatusObject().GetFullName().Namespace
+	parentRef := f.rps.GetParentRef()
 	validListeners := GetValidListenersForGateway(gw)
 
 	selectedListeners := make([]gwtypes.Listener, 0)
@@ -169,13 +178,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteP
 	}
 
 	if len(selectedListeners) == 0 {
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonNoMatchingParent,
-			fmt.Sprintf("No listeners match parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
-		)
-
+		f.AddNoMatchingParentCondition(parentRef, routeNs)
 		return nil
 	}
 
@@ -186,7 +189,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteP
 		}
 
 		// Check if the route is in a namespace that the listener allows.
-		if !NamespaceMatches(client, selectedListener.AllowedRoutes.Namespaces, gw.Namespace, routeNs) {
+		if !NamespaceMatches(f.client, selectedListener.AllowedRoutes.Namespaces, gw.Namespace, routeNs) {
 			continue
 		}
 
@@ -194,13 +197,7 @@ func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteP
 	}
 
 	if len(allowedListeners) == 0 {
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonNotAllowedByListeners,
-			fmt.Sprintf("No matched listeners of parent ref %s", types.NamespacedName{Namespace: NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)}),
-		)
-
+		f.AddNotAllowedByListeners(parentRef, routeNs)
 		return nil
 	}
 

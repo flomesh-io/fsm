@@ -110,19 +110,19 @@ func (r *GatewaySecretReferenceResolver) addCondition(conditionType gwv1.Gateway
 
 // ---
 
-type GatewayListenerSecretReferenceResolver struct {
+type GatewayListenerSecretReferenceConditionProvider struct {
 	update       *gw.GatewayStatusUpdate
 	listenerName string
 }
 
-func NewGatewayListenerSecretReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerSecretReferenceResolver {
-	return &GatewayListenerSecretReferenceResolver{
+func NewGatewayListenerSecretReferenceConditionProvider(name string, update *gw.GatewayStatusUpdate) *GatewayListenerSecretReferenceConditionProvider {
+	return &GatewayListenerSecretReferenceConditionProvider{
 		update:       update,
 		listenerName: name,
 	}
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -131,7 +131,7 @@ func (r *GatewayListenerSecretReferenceResolver) AddInvalidCertificateRefConditi
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -140,7 +140,7 @@ func (r *GatewayListenerSecretReferenceResolver) AddRefNotPermittedCondition(ref
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -149,7 +149,7 @@ func (r *GatewayListenerSecretReferenceResolver) AddRefNotFoundCondition(key typ
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, err error) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -158,7 +158,7 @@ func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key typ
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefsResolvedCondition() {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefsResolvedCondition() {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionTrue,
@@ -167,7 +167,7 @@ func (r *GatewayListenerSecretReferenceResolver) AddRefsResolvedCondition() {
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+func (r *GatewayListenerSecretReferenceConditionProvider) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
 	r.update.AddListenerCondition(
 		r.listenerName,
 		conditionType,
@@ -179,19 +179,19 @@ func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1
 
 // ---
 
-type GatewayListenerObjectReferenceResolver struct {
+type GatewayListenerObjectReferenceConditionProvider struct {
 	listenerName string
 	update       *gw.GatewayStatusUpdate
 }
 
-func NewGatewayListenerObjectReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerObjectReferenceResolver {
-	return &GatewayListenerObjectReferenceResolver{
+func NewGatewayListenerObjectReferenceConditionProvider(name string, update *gw.GatewayStatusUpdate) *GatewayListenerObjectReferenceConditionProvider {
+	return &GatewayListenerObjectReferenceConditionProvider{
 		listenerName: name,
 		update:       update,
 	}
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddInvalidRefCondition(ref gwv1.ObjectReference) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -200,7 +200,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddInvalidRefCondition(ref gwv1
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -209,7 +209,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddRefNotPermittedCondition(ref
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -218,7 +218,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddRefNotFoundCondition(key typ
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -227,7 +227,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddGetRefErrorCondition(key typ
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -236,7 +236,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddNoRequiredCAFileCondition(ke
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
@@ -245,7 +245,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddEmptyCACondition(ref gwv1.Ob
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefsResolvedCondition() {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefsResolvedCondition() {
 	r.addCondition(
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionTrue,
@@ -254,7 +254,7 @@ func (r *GatewayListenerObjectReferenceResolver) AddRefsResolvedCondition() {
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
 	r.update.AddListenerCondition(
 		r.listenerName,
 		conditionType,

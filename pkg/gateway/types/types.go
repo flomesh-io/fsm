@@ -84,8 +84,8 @@ type CrossNamespaceTo struct {
 	Name      string
 }
 
-// SecretReferenceResolver is the interface for resolving Secret references
-type SecretReferenceResolver interface {
+// SecretReferenceConditionProvider is the interface for providing SecretReference conditions
+type SecretReferenceConditionProvider interface {
 	AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference)
 	AddRefNotPermittedCondition(ref gwv1.SecretObjectReference)
 	AddRefNotFoundCondition(key types.NamespacedName)
@@ -93,8 +93,8 @@ type SecretReferenceResolver interface {
 	AddRefsResolvedCondition()
 }
 
-// ObjectReferenceResolver is the interface for resolving Object references
-type ObjectReferenceResolver interface {
+// ObjectReferenceConditionProvider is the interface for providing ObjectReference conditions
+type ObjectReferenceConditionProvider interface {
 	AddInvalidRefCondition(ref gwv1.ObjectReference)
 	AddRefNotPermittedCondition(ref gwv1.ObjectReference)
 	AddRefNotFoundCondition(key types.NamespacedName, kind string)
@@ -104,12 +104,25 @@ type ObjectReferenceResolver interface {
 	AddRefsResolvedCondition()
 }
 
-type SecretReferenceResolverFactory interface {
+// SecretReferenceResolver is the interface for resolving SecretReferences
+type SecretReferenceResolver interface {
 	ResolveAllRefs(referer client.Object, refs []gwv1.SecretObjectReference) bool
 	SecretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error)
 }
 
-type ObjectReferenceResolverFactory interface {
+// ObjectReferenceResolver is the interface for resolving ObjectReferences
+type ObjectReferenceResolver interface {
 	ResolveAllRefs(referer client.Object, refs []gwv1.ObjectReference) bool
 	ObjectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) []byte
+}
+
+// GatewayListenerConditionProvider is the interface for providing GatewayListener conditions
+type GatewayListenerConditionProvider interface {
+	AddNoMatchingParentCondition(parentRef gwv1.ParentReference, routeNs string)
+	AddNotAllowedByListeners(parentRef gwv1.ParentReference, routeNs string)
+}
+
+// GatewayListenerResolver is the interface for resolving Listeners of the Gateway
+type GatewayListenerResolver interface {
+	GetAllowedListeners(gw *gwv1.Gateway) []Listener
 }

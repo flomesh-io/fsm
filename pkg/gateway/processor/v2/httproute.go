@@ -202,7 +202,8 @@ func (c *ConfigGenerator) ignoreHTTPRoute(httpRoute *gwv1.HTTPRoute, rsh status.
 			continue
 		}
 
-		allowedListeners := gwutils.GetAllowedListeners(c.client, c.gateway, h)
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
 		if len(allowedListeners) == 0 {
 			continue
 		}

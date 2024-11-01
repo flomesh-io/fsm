@@ -122,7 +122,8 @@ func (c *ConfigGenerator) ignoreUDPRoute(udpRoute *gwv1alpha2.UDPRoute, rsh stat
 			continue
 		}
 
-		allowedListeners := gwutils.GetAllowedListeners(c.client, c.gateway, h)
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
 		if len(allowedListeners) == 0 {
 			continue
 		}

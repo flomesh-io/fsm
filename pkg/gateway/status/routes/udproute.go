@@ -1,6 +1,7 @@
 package routes
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -16,6 +17,8 @@ func (p *RouteStatusProcessor) processUDPRouteStatus(route *gwv1alpha2.UDPRoute,
 	}
 
 	// All backend references of all rules have been resolved successfully for the parent
+	defer p.recorder.Eventf(route, corev1.EventTypeNormal, string(gwv1.RouteReasonResolvedRefs), "All backend references are resolved")
+
 	rps.AddCondition(
 		gwv1.RouteConditionResolvedRefs,
 		metav1.ConditionTrue,
@@ -43,6 +46,8 @@ func (p *RouteStatusProcessor) processUDPRouteBackend(route *gwv1alpha2.UDPRoute
 	}
 
 	if svcPort.AppProtocol != nil {
+		defer p.recorder.Eventf(route, corev1.EventTypeWarning, string(gwv1.RouteReasonUnsupportedProtocol), "AppProtocol is not supported for UDPRoute backend")
+
 		rps.AddCondition(
 			gwv1.RouteConditionResolvedRefs,
 			metav1.ConditionFalse,
