@@ -182,7 +182,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 		return
 	}
 
-	resolver := gwutils.NewGatewayListenerResolver(NewRouteParentListenerConditionProvider(rps), p.client, rps)
+	resolver := gwutils.NewGatewayListenerResolver(NewRouteParentListenerConditionProvider(rps, p.recorder), p.client, rps)
 	allowedListeners := resolver.GetAllowedListeners(parent)
 	if len(allowedListeners) == 0 {
 		return

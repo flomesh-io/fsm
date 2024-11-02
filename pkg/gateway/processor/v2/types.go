@@ -2,6 +2,7 @@ package v2
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -31,23 +32,23 @@ type BackendPolicyProcessor interface {
 
 type DummySecretReferenceConditionProvider struct{}
 
-func (r *DummySecretReferenceConditionProvider) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+func (r *DummySecretReferenceConditionProvider) AddInvalidCertificateRefCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 
 }
 
-func (r *DummySecretReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+func (r *DummySecretReferenceConditionProvider) AddRefNotPermittedCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 
 }
 
-func (r *DummySecretReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName) {
+func (r *DummySecretReferenceConditionProvider) AddRefNotFoundCondition(obj client.Object, key types.NamespacedName) {
 
 }
 
-func (r *DummySecretReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+func (r *DummySecretReferenceConditionProvider) AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, err error) {
 
 }
 
-func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition() {
+func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition(obj runtime.Object) {
 
 }
 
@@ -55,32 +56,32 @@ func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition() {
 
 type DummyObjectReferenceConditionProvider struct{}
 
-func (r *DummyObjectReferenceConditionProvider) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+func (r *DummyObjectReferenceConditionProvider) AddInvalidRefCondition(obj client.Object, ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+func (r *DummyObjectReferenceConditionProvider) AddRefNotPermittedCondition(obj client.Object, ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+func (r *DummyObjectReferenceConditionProvider) AddRefNotFoundCondition(obj client.Object, key types.NamespacedName, kind string) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+func (r *DummyObjectReferenceConditionProvider) AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, kind string, err error) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+func (r *DummyObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(obj client.Object, key types.NamespacedName, kind string) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+func (r *DummyObjectReferenceConditionProvider) AddEmptyCACondition(obj client.Object, ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddRefsResolvedCondition() {
+func (r *DummyObjectReferenceConditionProvider) AddRefsResolvedCondition(obj runtime.Object) {
 }
 
 // ---
 
 type DummyGatewayListenerConditionProvider struct{}
 
-func (p *DummyGatewayListenerConditionProvider) AddNoMatchingParentCondition(parentRef gwv1.ParentReference, routeNs string) {
+func (p *DummyGatewayListenerConditionProvider) AddNoMatchingParentCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
 }
-func (p *DummyGatewayListenerConditionProvider) AddNotAllowedByListeners(parentRef gwv1.ParentReference, routeNs string) {
+func (p *DummyGatewayListenerConditionProvider) AddNotAllowedByListeners(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
 }
