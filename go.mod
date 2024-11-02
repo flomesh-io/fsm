@@ -63,7 +63,7 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/hashicorp/vault v1.18.0
+	github.com/hashicorp/vault v1.18.1
 	github.com/hashicorp/vault/sdk v0.14.0
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
