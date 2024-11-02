@@ -178,7 +178,7 @@ func (f *gatewayListenerResolver) GetAllowedListeners(gw *gwv1.Gateway) []gwtype
 	}
 
 	if len(selectedListeners) == 0 {
-		f.AddNoMatchingParentCondition(parentRef, routeNs)
+		f.AddNoMatchingParentCondition(gw, parentRef, routeNs)
 		return nil
 	}
 
@@ -197,7 +197,7 @@ func (f *gatewayListenerResolver) GetAllowedListeners(gw *gwv1.Gateway) []gwtype
 	}
 
 	if len(allowedListeners) == 0 {
-		f.AddNotAllowedByListeners(parentRef, routeNs)
+		f.AddNotAllowedByListeners(gw, parentRef, routeNs)
 		return nil
 	}
 

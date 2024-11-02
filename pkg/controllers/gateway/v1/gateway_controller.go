@@ -231,12 +231,32 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	)
 
 	defer func() {
+		log.Debug().Msgf("[XXX] finished computing status of Gateway %s/%s", gateway.Namespace, gateway.Name)
+
+		if update.IsStatusConditionTrue(gwv1.GatewayConditionProgrammed) {
+			log.Debug().Msgf("[XXX] Gateway %s/%s is programmed", gateway.Namespace, gateway.Name)
+			r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonProgrammed), "Gateway is programmed")
+		}
+
+		if update.IsStatusConditionTrue(gwv1.GatewayConditionAccepted) {
+			log.Debug().Msgf("[XXX] Gateway %s/%s is accepted", gateway.Namespace, gateway.Name)
+			r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonAccepted), "Gateway is accepted")
+		}
+
 		r.fctx.StatusUpdater.Send(status.Update{
 			Resource:       &gwv1.Gateway{},
 			NamespacedName: client.ObjectKeyFromObject(gateway),
 			Mutator:        update,
 		})
 	}()
+
+	// assume gateway is accepted, if not, it will be updated later
+	update.AddCondition(
+		gwv1.GatewayConditionAccepted,
+		metav1.ConditionTrue,
+		gwv1.GatewayReasonAccepted,
+		"Gateway is accepted",
+	)
 
 	// 1. deploy the gateway
 	if result, err := r.applyGateway(gateway, update); err != nil {
@@ -250,18 +270,13 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 }
 
 func (r *gatewayReconciler) computeGatewayAndListenersStatus(ctx context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
-	defer func() {
-		if !update.ConditionExists(gwv1.GatewayConditionAccepted) {
-			update.AddCondition(
-				gwv1.GatewayConditionAccepted,
-				metav1.ConditionTrue,
-				gwv1.GatewayReasonAccepted,
-				"Gateway is accepted",
-			)
-
-			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, "Accepted", "Gateway is accepted")
-		}
-	}()
+	// assume gateway is programmed, if not, it will be updated later
+	update.AddCondition(
+		gwv1.GatewayConditionProgrammed,
+		metav1.ConditionTrue,
+		gwv1.GatewayReasonProgrammed,
+		"Gateway is programmed",
+	)
 
 	r.computeAllListenerStatus(ctx, gateway, update)
 	r.computeGatewayProgrammedCondition(ctx, gateway, update)
@@ -270,7 +285,9 @@ func (r *gatewayReconciler) computeGatewayAndListenersStatus(ctx context.Context
 func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway *gwv1.Gateway, update *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
 
-	for name, cond := range invalidListeners {
+	addInvalidListenerCondition := func(name gwv1.SectionName, cond metav1.Condition) {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.ListenerReasonInvalid), "Invalid listener %q: %s", name, cond.Message)
+
 		update.AddListenerCondition(
 			string(name),
 			gwv1.ListenerConditionType(cond.Type),
@@ -278,6 +295,10 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 			gwv1.ListenerConditionReason(cond.Reason),
 			cond.Message,
 		)
+	}
+
+	for name, cond := range invalidListeners {
+		addInvalidListenerCondition(name, cond)
 	}
 
 	for _, listener := range gateway.Spec.Listeners {
@@ -301,7 +322,7 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 	}
 
 	if !allListenersProgrammed(gateway) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Listeners", "Not All listeners are programmed")
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonListenersNotValid), "Not All listeners are programmed")
 
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
@@ -314,7 +335,7 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 	if gateway.Spec.BackendTLS != nil && gateway.Spec.BackendTLS.ClientCertificateRef != nil {
 		ref := gateway.Spec.BackendTLS.ClientCertificateRef
 
-		secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewaySecretReferenceResolver(update), r.fctx.Manager.GetCache())
+		secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewaySecretReferenceResolver(update, r.recorder), r.fctx.Manager.GetCache())
 		if _, err := secretRefResolver.SecretRefToSecret(gateway, *ref); err != nil {
 			return
 		}
@@ -323,6 +344,8 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 
 func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listener gwv1.Listener, update *gw.GatewayStatusUpdate, invalidListeners map[gwv1.SectionName]metav1.Condition) {
 	addInvalidListenerCondition := func(name gwv1.SectionName, msg string) {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.ListenerReasonInvalid), "Invalid listener %q: %s", name, msg)
+
 		update.AddListenerCondition(
 			string(name),
 			gwv1.ListenerConditionProgrammed,
@@ -336,6 +359,12 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 		listenerStatus := update.GetListenerStatus(string(listener.Name))
 
 		if listenerStatus == nil || len(listenerStatus.Conditions) == 0 {
+			defer func() {
+				r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonProgrammed), "Listener %q is valid", listener.Name)
+				r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonAccepted), "Listener %q is accepted", listener.Name)
+				r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonResolvedRefs), "Listener %q references resolved", listener.Name)
+			}()
+
 			update.AddListenerCondition(
 				string(listener.Name),
 				gwv1.ListenerConditionProgrammed,
@@ -343,6 +372,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 				gwv1.ListenerReasonProgrammed,
 				"Valid listener",
 			)
+
 			update.AddListenerCondition(
 				string(listener.Name),
 				gwv1.ListenerConditionAccepted,
@@ -350,6 +380,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 				gwv1.ListenerReasonAccepted,
 				"Listener accepted",
 			)
+
 			update.AddListenerCondition(
 				string(listener.Name),
 				gwv1.ListenerConditionResolvedRefs,
@@ -360,6 +391,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 		} else {
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed)) == nil {
 				//addInvalidListenerCondition(listener.Name, "Invalid listener, see other listener conditions for details")
+				defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonProgrammed), "Listener %q is programmed", listener.Name)
 				update.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionProgrammed,
@@ -370,6 +402,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 			}
 
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted)) == nil {
+				defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonAccepted), "Listener %q is accepted", listener.Name)
 				update.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionAccepted,
@@ -380,6 +413,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 			}
 
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionResolvedRefs)) == nil {
+				defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonResolvedRefs), "Listener %q references resolved", listener.Name)
 				update.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionResolvedRefs,
@@ -423,7 +457,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 
 		// process certificates
 		if listener.TLS.CertificateRefs != nil {
-			secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewayListenerSecretReferenceConditionProvider(string(listener.Name), update), cache)
+			secretRefResolver := gwutils.NewSecretReferenceResolver(NewGatewayListenerSecretReferenceConditionProvider(string(listener.Name), update, r.recorder), cache)
 			if !secretRefResolver.ResolveAllRefs(gateway, listener.TLS.CertificateRefs) {
 				return
 			}
@@ -431,7 +465,7 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 
 		// process CA certificates
 		if listener.TLS.FrontendValidation != nil && len(listener.TLS.FrontendValidation.CACertificateRefs) > 0 {
-			objRefResolver := gwutils.NewObjectReferenceResolver(NewGatewayListenerObjectReferenceConditionProvider(string(listener.Name), update), cache)
+			objRefResolver := gwutils.NewObjectReferenceResolver(NewGatewayListenerObjectReferenceConditionProvider(string(listener.Name), update, r.recorder), cache)
 			if !objRefResolver.ResolveAllRefs(gateway, listener.TLS.FrontendValidation.CACertificateRefs) {
 				return
 			}
@@ -805,6 +839,7 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 	}
 
 	if err := r.fctx.Get(context.TODO(), key, cm); err != nil {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Failed to get ConfigMap %s: %s", key, err)
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
 			metav1.ConditionFalse,
@@ -815,6 +850,7 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 	}
 
 	if len(cm.Data) == 0 {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Configmap %q has no data", key)
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
 			metav1.ConditionFalse,
@@ -826,6 +862,7 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 
 	valuesYaml, ok := cm.Data["values.yaml"]
 	if !ok {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Configmap %q doesn't have values.yaml", key)
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
 			metav1.ConditionFalse,
@@ -839,6 +876,7 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, update
 
 	paramsMap := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(valuesYaml), &paramsMap); err != nil {
+		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Failed to unmarshal values.yaml of Configmap %s: %s", key, err)
 		update.AddCondition(
 			gwv1.GatewayConditionAccepted,
 			metav1.ConditionFalse,

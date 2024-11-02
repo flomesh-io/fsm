@@ -3,6 +3,7 @@ package types
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	cache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -86,22 +87,22 @@ type CrossNamespaceTo struct {
 
 // SecretReferenceConditionProvider is the interface for providing SecretReference conditions
 type SecretReferenceConditionProvider interface {
-	AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference)
-	AddRefNotPermittedCondition(ref gwv1.SecretObjectReference)
-	AddRefNotFoundCondition(key types.NamespacedName)
-	AddGetRefErrorCondition(key types.NamespacedName, err error)
-	AddRefsResolvedCondition()
+	AddInvalidCertificateRefCondition(obj client.Object, ref gwv1.SecretObjectReference)
+	AddRefNotPermittedCondition(obj client.Object, ref gwv1.SecretObjectReference)
+	AddRefNotFoundCondition(obj client.Object, key types.NamespacedName)
+	AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, err error)
+	AddRefsResolvedCondition(obj runtime.Object)
 }
 
 // ObjectReferenceConditionProvider is the interface for providing ObjectReference conditions
 type ObjectReferenceConditionProvider interface {
-	AddInvalidRefCondition(ref gwv1.ObjectReference)
-	AddRefNotPermittedCondition(ref gwv1.ObjectReference)
-	AddRefNotFoundCondition(key types.NamespacedName, kind string)
-	AddGetRefErrorCondition(key types.NamespacedName, kind string, err error)
-	AddNoRequiredCAFileCondition(key types.NamespacedName, kind string)
-	AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string)
-	AddRefsResolvedCondition()
+	AddInvalidRefCondition(obj client.Object, ref gwv1.ObjectReference)
+	AddRefNotPermittedCondition(obj client.Object, ref gwv1.ObjectReference)
+	AddRefNotFoundCondition(obj client.Object, key types.NamespacedName, kind string)
+	AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, kind string, err error)
+	AddNoRequiredCAFileCondition(obj client.Object, key types.NamespacedName, kind string)
+	AddEmptyCACondition(obj client.Object, ref gwv1.ObjectReference)
+	AddRefsResolvedCondition(obj runtime.Object)
 }
 
 // SecretReferenceResolver is the interface for resolving SecretReferences
@@ -118,8 +119,8 @@ type ObjectReferenceResolver interface {
 
 // GatewayListenerConditionProvider is the interface for providing GatewayListener conditions
 type GatewayListenerConditionProvider interface {
-	AddNoMatchingParentCondition(parentRef gwv1.ParentReference, routeNs string)
-	AddNotAllowedByListeners(parentRef gwv1.ParentReference, routeNs string)
+	AddNoMatchingParentCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string)
+	AddNotAllowedByListeners(route client.Object, parentRef gwv1.ParentReference, routeNs string)
 }
 
 // GatewayListenerResolver is the interface for resolving Listeners of the Gateway

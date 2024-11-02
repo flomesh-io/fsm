@@ -57,7 +57,7 @@ func (f *secretReferenceResolver) ResolveAllRefs(referer client.Object, refs []g
 	}
 
 	if resolved {
-		f.AddRefsResolvedCondition()
+		f.AddRefsResolvedCondition(referer)
 	}
 
 	return resolved
@@ -65,7 +65,7 @@ func (f *secretReferenceResolver) ResolveAllRefs(referer client.Object, refs []g
 
 func (f *secretReferenceResolver) SecretRefToSecret(referer client.Object, ref gwv1.SecretObjectReference) (*corev1.Secret, error) {
 	if !IsValidRefToGroupKindOfSecret(ref) {
-		f.AddInvalidCertificateRefCondition(ref)
+		f.AddInvalidCertificateRefCondition(referer, ref)
 		return nil, fmt.Errorf("unsupported group %s and kind %s for secret", *ref.Group, *ref.Kind)
 	}
 
@@ -84,7 +84,7 @@ func (f *secretReferenceResolver) SecretRefToSecret(referer client.Object, ref g
 		},
 		GetSecretRefGrants(f.client),
 	) {
-		f.AddRefNotPermittedCondition(ref)
+		f.AddRefNotPermittedCondition(referer, ref)
 
 		return nil, fmt.Errorf("cross-namespace secert reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
 			referer.GetObjectKind().GroupVersionKind().Kind, referer.GetObjectKind().GroupVersionKind().Group, referer.GetNamespace(), referer.GetName(),
@@ -95,9 +95,9 @@ func (f *secretReferenceResolver) SecretRefToSecret(referer client.Object, ref g
 		obj := &corev1.Secret{}
 		if err := f.client.Get(context.Background(), key, obj); err != nil {
 			if errors.IsNotFound(err) {
-				f.AddRefNotFoundCondition(key)
+				f.AddRefNotFoundCondition(referer, key)
 			} else {
-				f.AddGetRefErrorCondition(key, err)
+				f.AddGetRefErrorCondition(referer, key, err)
 			}
 
 			return nil, err
@@ -132,7 +132,7 @@ func (f *objectReferenceResolver) ResolveAllRefs(referer client.Object, refs []g
 	}
 
 	if resolved {
-		f.AddRefsResolvedCondition()
+		f.AddRefsResolvedCondition(referer)
 	}
 
 	return resolved
@@ -142,7 +142,7 @@ func (f *objectReferenceResolver) ResolveAllRefs(referer client.Object, refs []g
 // It supports Kubernetes Secret and ConfigMap as the referent.
 func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object, ref gwv1.ObjectReference) []byte {
 	if !IsValidRefToGroupKindOfCA(ref) {
-		f.AddInvalidRefCondition(ref)
+		f.AddInvalidRefCondition(referer, ref)
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object
 		},
 		GetCARefGrants(f.client),
 	) {
-		f.AddRefNotPermittedCondition(ref)
+		f.AddRefNotPermittedCondition(referer, ref)
 		return nil
 	}
 
@@ -184,9 +184,9 @@ func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object
 		secret, err := getSecretFromCache(secretKey)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				f.AddRefNotFoundCondition(secretKey, string(ref.Kind))
+				f.AddRefNotFoundCondition(referer, secretKey, string(ref.Kind))
 			} else {
-				f.AddGetRefErrorCondition(secretKey, string(ref.Kind), err)
+				f.AddGetRefErrorCondition(referer, secretKey, string(ref.Kind), err)
 			}
 
 			return nil
@@ -196,7 +196,7 @@ func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object
 		if ok {
 			ca = append(ca, caBytes...)
 		} else {
-			f.AddNoRequiredCAFileCondition(secretKey, string(ref.Kind))
+			f.AddNoRequiredCAFileCondition(referer, secretKey, string(ref.Kind))
 
 			return nil
 		}
@@ -217,9 +217,9 @@ func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object
 		cm, err := getConfigMapFromCache(cmKey)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				f.AddRefNotFoundCondition(cmKey, string(ref.Kind))
+				f.AddRefNotFoundCondition(referer, cmKey, string(ref.Kind))
 			} else {
-				f.AddGetRefErrorCondition(cmKey, string(ref.Kind), err)
+				f.AddGetRefErrorCondition(referer, cmKey, string(ref.Kind), err)
 			}
 
 			return nil
@@ -229,13 +229,13 @@ func (f *objectReferenceResolver) ObjectRefToCACertificate(referer client.Object
 		if ok {
 			ca = append(ca, []byte(caBytes)...)
 		} else {
-			f.AddNoRequiredCAFileCondition(cmKey, string(ref.Kind))
+			f.AddNoRequiredCAFileCondition(referer, cmKey, string(ref.Kind))
 			return nil
 		}
 	}
 
 	if len(ca) == 0 {
-		f.AddEmptyCACondition(ref, referer.GetNamespace())
+		f.AddEmptyCACondition(referer, ref)
 		return nil
 	}
 
