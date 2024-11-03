@@ -205,8 +205,7 @@
                             "title": "Default image names",
                             "description": "Default image names for control plane.",
                             "required": [
-                              "fsmConnector",
-                              "fsmCurl"
+                              "fsmConnector"
                             ],
                             "properties": {
                               "fsmConnector": {
@@ -214,12 +213,6 @@
                                 "type": "string",
                                 "title": "fsm-connector's image name",
                                 "description": "fsm-connector container's image name."
-                              },
-                              "fsmCurl": {
-                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmCurl",
-                                "type": "string",
-                                "title": "fsm-curl's image name",
-                                "description": "fsm-curl container's image name."
                               }
                             }
                         },
@@ -248,8 +241,7 @@
                             "title": "Default image digests",
                             "description": "Default image digests for control plane.",
                             "required": [
-                              "fsmConnector",
-                              "fsmCurl"
+                              "fsmConnector"
                             ],
                             "properties": {
                               "fsmConnector": {
@@ -257,12 +249,6 @@
                                 "type": "string",
                                 "title": "fsm-connector's image digest",
                                 "description": "fsm-connector container's image digest."
-                              },
-                              "fsmCurl": {
-                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmCurl",
-                                "type": "string",
-                                "title": "fsm-curl's image digest",
-                                "description": "fsm-curl container's image digest."
                               }
                             }
                         }
@@ -318,8 +304,7 @@
                     "connectorProvider",
                     "connectorName",
                     "replicaCount",
-                    "resource",
-                    "initResources"
+                    "resource"
                   ],
                   "properties": {
                     "enable": {
@@ -356,9 +341,6 @@
                       ]
                     },
                     "resource": {
-                      "$ref": "#/definitions/containerResources"
-                    },
-                    "initResources": {
                       "$ref": "#/definitions/containerResources"
                     },
                     "podLabels": {
