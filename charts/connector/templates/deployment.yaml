@@ -39,12 +39,6 @@ spec:
       {{- if not (.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
       {{- include "restricted.securityContext" . | nindent 6 }}
       {{- end }}
-      initContainers:
-        - name: init
-          image: "{{ include "fsmCurl.image" . }}"
-          command: ["curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
-          resources:
-            {{- toYaml .Values.fsm.cloudConnector.initResources | nindent 12 }}
       containers:
         - name: connector
           image: "{{ include "fsmConnector.image" . }}"
