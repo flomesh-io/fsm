@@ -90,7 +90,7 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv
 	}
 
 	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule, holder)
-	if len(r2.BackendRefs) == 0 {
+	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
@@ -105,6 +105,10 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
+			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
+				continue
+			}
+
 			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
@@ -117,9 +121,9 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 				processor.Process(grpcRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
 
-			c.services[svcPort.String()] = serviceContext{
-				svcPortName: *svcPort,
-			}
+			//c.services[svcPort.String()] = serviceContext{
+			//	ServicePortName: *svcPort,
+			//}
 		}
 	}
 
@@ -133,6 +137,10 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
+				if c.toFGWBackend(svcPort) == nil {
+					continue
+				}
+
 				filters = append(filters, fgwv2.GRPCRouteFilter{
 					Type: gwv1.GRPCRouteFilterRequestMirror,
 					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
@@ -141,11 +149,9 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 					Key: uuid.NewString(),
 				})
 
-				// TODO: process backend level policies here??? TBD
-
-				c.services[svcPort.String()] = serviceContext{
-					svcPortName: *svcPort,
-				}
+				//c.services[svcPort.String()] = serviceContext{
+				//	ServicePortName: *svcPort,
+				//}
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
