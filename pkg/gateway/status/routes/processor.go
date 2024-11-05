@@ -107,12 +107,12 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 		gwv1.RouteConditionAccepted,
 		metav1.ConditionTrue,
 		gwv1.RouteReasonAccepted,
-		fmt.Sprintf("%s is Accepted", gvk.Kind),
+		fmt.Sprintf("%s is accepted", gvk.Kind),
 	)
 
 	defer func() {
 		if metautil.IsStatusConditionTrue(rps.GetRouteStatusObject().ConditionsForParentRef(parentRef), string(gwv1.RouteConditionAccepted)) {
-			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeNormal, string(gwv1.RouteReasonAccepted), "%s is Accepted", gvk.Kind)
+			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeNormal, string(gwv1.RouteReasonAccepted), "%s is accepted", gvk.Kind)
 		}
 	}()
 
