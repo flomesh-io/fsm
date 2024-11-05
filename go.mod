@@ -37,7 +37,7 @@ require (
 	github.com/prometheus/common v0.55.0
 	github.com/rs/zerolog v1.29.0
 	github.com/servicemeshinterface/smi-sdk-go v0.5.0
-	github.com/sethvargo/go-retry v0.2.3
+	github.com/sethvargo/go-retry v0.3.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
@@ -55,7 +55,7 @@ require (
 	k8s.io/client-go v0.31.1
 	k8s.io/code-generator v0.31.1
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
-	sigs.k8s.io/controller-runtime v0.19.0
+	sigs.k8s.io/controller-runtime v0.19.1
 	sigs.k8s.io/gateway-api v1.2.0
 	sigs.k8s.io/kind v0.24.0
 )
