@@ -31,14 +31,16 @@ type GatewayStatusUpdate struct {
 	existingAddresses  []gwv1.GatewayStatusAddress
 }
 
-func NewGatewayStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, gs *gwv1.GatewayStatus) *GatewayStatusUpdate {
+func NewGatewayStatusUpdate(gw *gwv1.Gateway) *GatewayStatusUpdate {
+	gs := &gw.Status
+
 	return &GatewayStatusUpdate{
-		objectMeta:         meta,
-		typeMeta:           typeMeta,
-		resource:           resource,
+		objectMeta:         &gw.ObjectMeta,
+		typeMeta:           &gw.TypeMeta,
+		resource:           gw,
 		transitionTime:     metav1.Time{Time: time.Now()},
-		fullName:           types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
-		generation:         meta.Generation,
+		fullName:           types.NamespacedName{Namespace: gw.Namespace, Name: gw.Name},
+		generation:         gw.Generation,
 		existingConditions: getGatewayConditions(gs),
 		existingAddresses:  gs.Addresses,
 	}
@@ -109,7 +111,7 @@ func (g *GatewayStatusUpdate) SetListenerSupportedKinds(listenerName string, gro
 	g.listenerStatus[listenerName].SupportedKinds = append(g.listenerStatus[listenerName].SupportedKinds, groupKinds...)
 }
 
-func (g *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int) {
+func (g *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, numRoutes int32) {
 	if g.listenerStatus == nil {
 		g.listenerStatus = map[string]*gwv1.ListenerStatus{}
 	}
@@ -119,7 +121,7 @@ func (g *GatewayStatusUpdate) SetListenerAttachedRoutes(listenerName string, num
 		}
 	}
 
-	g.listenerStatus[listenerName].AttachedRoutes = int32(numRoutes)
+	g.listenerStatus[listenerName].AttachedRoutes = numRoutes
 }
 
 // AddListenerCondition adds a Condition for the specified listener.
