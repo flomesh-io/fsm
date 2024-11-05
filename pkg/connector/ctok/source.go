@@ -168,6 +168,9 @@ func (s *CtoKSource) Aggregate(ctx context.Context, svcName connector.MicroSvcNa
 					}
 				}
 			}
+			if len(endpointMeta.Native.ClusterSet) == 0 || len(endpointMeta.Native.ClusterId) > 0 {
+				endpointMeta.Native.ClusterSet = endpointMeta.Native.ClusterId
+			}
 			svcMeta.Endpoints[connector.MicroEndpointAddr(instance.Address)] = endpointMeta
 		}
 	}
