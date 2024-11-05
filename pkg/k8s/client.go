@@ -355,7 +355,6 @@ func ServiceToMeshServices(c Controller, svc *corev1.Service) []service.MeshServ
 			if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 				svcMeta = connector.Decode(svc, v)
 			}
-
 			ns := c.GetNamespace(svc.Namespace)
 			if len(ns.Annotations) > 0 {
 				if attachedNs, exists := ns.Annotations[connector.AnnotationCloudServiceAttachedTo]; exists {
