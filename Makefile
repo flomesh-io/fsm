@@ -334,7 +334,7 @@ trivy-ci-setup:
 # Show all vulnerabilities in logs
 trivy-scan-verbose-%: NAME=$(@:trivy-scan-verbose-%=%)
 trivy-scan-verbose-%:
-	trivy image "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
+	trivy image --db-repository aquasec/trivy-db:2 "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 # Exit if vulnerability exists
 trivy-scan-fail-%: NAME=$(@:trivy-scan-fail-%=%)
