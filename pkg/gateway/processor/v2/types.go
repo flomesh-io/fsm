@@ -14,9 +14,9 @@ var (
 	log = logger.New("fsm-gateway/processor-v2")
 )
 
-type serviceContext struct {
-	svcPortName fgwv2.ServicePortName
-}
+//type serviceContext struct {
+//	fgwv2.ServicePortName
+//}
 
 type endpointContext struct {
 	address string
