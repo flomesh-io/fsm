@@ -15,14 +15,13 @@ var (
 	log = logger.New("fsm-gateway/processor-v2")
 )
 
-type serviceContext struct {
-	fgwv2.ServicePortName
-}
+//type serviceContext struct {
+//	fgwv2.ServicePortName
+//}
 
 type endpointContext struct {
 	address string
 	port    int32
-	//appProtocol *string
 }
 
 type calculateBackendTargetsFunc func(svc *corev1.Service, port *int32) []fgwv2.BackendTarget

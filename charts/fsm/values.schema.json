@@ -2165,7 +2165,8 @@
                         "enableValidateHTTPRouteHostnames",
                         "enableValidateGRPCRouteHostnames",
                         "enableValidateTLSRouteHostnames",
-                        "useEndpointSlicesForGateway"
+                        "useEndpointSlicesForGateway",
+                        "dropRouteRuleIfNoAvailableBackends"
                     ],
                     "properties": {
                         "enableEgressPolicy": {
@@ -2320,7 +2321,16 @@
                           "examples": [
                             true
                           ]
-                        }
+                        },
+                        "dropRouteRuleIfNoAvailableBackends": {
+                        "$id": "#/properties/fsm/properties/featureFlags/properties/dropRouteRuleIfNoAvailableBackends",
+                        "type": "boolean",
+                        "title": "DropRouteRuleIfNoAvailableBackends",
+                        "description": "Drop route rule of GatewayAPI if no available backends",
+                        "examples": [
+                          false
+                        ]
+                      }
                     },
                     "additionalProperties": false
                 },

@@ -750,6 +750,8 @@ fsm:
     enableValidateTLSRouteHostnames: true
     # -- Use EndpointSlices for calculating Gateway routes, it's enabled by default if running on Kubernetes 1.21 or later
     useEndpointSlicesForGateway: true
+    # -- Drop route rule of GatewayAPI if no available backends
+    dropRouteRuleIfNoAvailableBackends: false
 
   # -- Node tolerations applied to control plane pods.
   # The specified tolerations allow pods to schedule onto nodes with matching taints.

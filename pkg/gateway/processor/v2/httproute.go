@@ -90,7 +90,7 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv
 	}
 
 	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule, holder)
-	if len(r2.BackendRefs) == 0 {
+	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
@@ -105,6 +105,10 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
+			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
+				continue
+			}
+
 			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
@@ -117,9 +121,9 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 				processor.Process(httpRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
 
-			c.services[svcPort.String()] = serviceContext{
-				ServicePortName: *svcPort,
-			}
+			//c.services[svcPort.String()] = serviceContext{
+			//	ServicePortName: *svcPort,
+			//}
 		}
 	}
 
@@ -133,6 +137,10 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
 			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
+				if c.toFGWBackend(svcPort) == nil {
+					continue
+				}
+
 				f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
 				if err := gwutils.DeepCopy(&f2, &f); err != nil {
 					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
@@ -145,9 +153,9 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 
 				filters = append(filters, f2)
 
-				c.services[svcPort.String()] = serviceContext{
-					ServicePortName: *svcPort,
-				}
+				//c.services[svcPort.String()] = serviceContext{
+				//	ServicePortName: *svcPort,
+				//}
 			}
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
@@ -180,7 +188,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 		default:
 			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
-			if err := gwutils.DeepCopy(&f2, &f); err != nil {
+			if err := gwutils.DeepCopy(f2, f); err != nil {
 				continue
 			}
 			filters = append(filters, f2)

@@ -18,36 +18,54 @@ import (
 )
 
 func (c *ConfigGenerator) processBackends() []fgwv2.Resource {
-	//configs := make(map[string]fgw.ServiceConfig)
 	backends := make([]fgwv2.Resource, 0)
-	for svcPortName, svcInfo := range c.services {
-		svcKey := svcInfo.NamespacedName
-		svc, err := c.getServiceFromCache(svcKey)
-
-		if err != nil {
-			log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
-			continue
-		}
-
-		if svc.Spec.Type == corev1.ServiceTypeExternalName {
-			log.Warn().Msgf("Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
-			continue
-		}
-
-		// don't create Backend resource if there are no endpoints
-		targets := c.calculateEndpoints(svc, svcInfo.Port)
-		if len(targets) == 0 {
-			continue
-		}
-
-		//for _, enricher := range c.getServicePolicyEnrichers(svc) {
-		//    enricher.Enrich(svcPortName, svcCfg)
-		//}
-
-		backends = append(backends, fgwv2.NewBackend(svcPortName, toFGWAppProtocol(svcInfo.AppProtocol), targets))
+	for _, bk := range c.backends {
+		backends = append(backends, bk)
 	}
 
 	return backends
+}
+
+func (c *ConfigGenerator) toFGWBackend(svcPort *fgwv2.ServicePortName) *fgwv2.Backend {
+	if svcPort == nil {
+		return nil
+	}
+
+	if bk, ok := c.backends[svcPort.String()]; ok {
+		return bk
+	}
+
+	// don't create Backend resource if there are no endpoints
+	targets := c.findFGWBackendTargets(svcPort)
+	if len(targets) == 0 {
+		return nil
+	}
+
+	bk := fgwv2.NewBackend(svcPort.String(), toFGWAppProtocol(svcPort.AppProtocol), targets)
+	c.backends[svcPort.String()] = bk
+
+	return bk
+}
+
+func (c *ConfigGenerator) findFGWBackendTargets(svcPort *fgwv2.ServicePortName) []fgwv2.BackendTarget {
+	if svcPort == nil {
+		return nil
+	}
+
+	svcKey := svcPort.NamespacedName
+	svc, err := c.getServiceFromCache(svcKey)
+
+	if err != nil {
+		log.Error().Msgf("Failed to get Service %s: %s", svcKey, err)
+		return nil
+	}
+
+	if svc.Spec.Type == corev1.ServiceTypeExternalName {
+		log.Warn().Msgf("Type of Service %s is %s, will be ignored", svcKey, corev1.ServiceTypeExternalName)
+		return nil
+	}
+
+	return c.calculateEndpoints(svc, svcPort.Port)
 }
 
 func (c *ConfigGenerator) calculateEndpoints(svc *corev1.Service, port *int32) []fgwv2.BackendTarget {

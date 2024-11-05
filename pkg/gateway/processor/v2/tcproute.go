@@ -87,7 +87,7 @@ func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule g
 	}
 
 	r2.BackendRefs = c.toV2TCPBackendRefs(tcpRoute, rule, holder)
-	if len(r2.BackendRefs) == 0 {
+	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
@@ -99,15 +99,19 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference, holder); svcPort != nil {
+			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
+				continue
+			}
+
 			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backend.Weight))
 
 			for _, processor := range c.getBackendPolicyProcessors(tcpRoute) {
 				processor.Process(tcpRoute, holder.GetParentRef(), rule, backend.BackendObjectReference, svcPort)
 			}
 
-			c.services[svcPort.String()] = serviceContext{
-				ServicePortName: *svcPort,
-			}
+			//c.services[svcPort.String()] = serviceContext{
+			//	ServicePortName: *svcPort,
+			//}
 		}
 	}
 

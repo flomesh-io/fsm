@@ -26,7 +26,7 @@ func (c *GatewayProcessor) BuildConfigs() {
 	defer c.mutex.Unlock()
 
 	for _, gw := range gwutils.GetActiveGateways(c.client) {
-		cfg := NewGatewayConfigGenerator(gw, c, c.client).Generate()
+		cfg := NewGatewayConfigGenerator(gw, c, c.client, c.cfg).Generate()
 
 		go c.syncConfigDir(gw, cfg)
 	}
