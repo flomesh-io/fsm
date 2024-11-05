@@ -339,12 +339,7 @@ trivy-scan-verbose-%:
 # Exit if vulnerability exists
 trivy-scan-fail-%: NAME=$(@:trivy-scan-fail-%=%)
 trivy-scan-fail-%:
-	trivy image --exit-code 1 \
-		--ignore-unfixed \
-		--severity MEDIUM,HIGH,CRITICAL \
-		--dependency-tree \
-		--db-repository aquasec/trivy-db:2 \
-		"$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
+	trivy image --exit-code 1 --ignore-unfixed --severity MEDIUM,HIGH,CRITICAL --dependency-tree --db-repository aquasec/trivy-db:2 "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 .PHONY: trivy-scan-images trivy-scan-images-fail trivy-scan-images-verbose
 trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(TRI_TARGETS))
