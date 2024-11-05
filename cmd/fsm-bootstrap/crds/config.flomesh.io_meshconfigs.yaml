@@ -1426,6 +1426,10 @@ spec:
               featureFlags:
                 description: FeatureFlags defines the feature flags for a mesh instance.
                 properties:
+                  dropRouteRuleIfNoAvailableBackends:
+                    description: DropRouteRuleIfNoAvailableBackends defines if route
+                      rule should be dropped when no available endpoints.
+                    type: boolean
                   enableAccessCertPolicy:
                     description: EnableAccessCertPolicy defines if FSM can issue certificates
                       for external services..
@@ -1492,6 +1496,7 @@ spec:
                       are enabled for calculating gateway routes.
                     type: boolean
                 required:
+                - dropRouteRuleIfNoAvailableBackends
                 - enableAccessCertPolicy
                 - enableAccessControlPolicy
                 - enableAsyncProxyServiceMapping

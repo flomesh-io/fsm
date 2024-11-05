@@ -3,6 +3,8 @@ package v2
 import (
 	"context"
 
+	"github.com/flomesh-io/fsm/pkg/configurator"
+
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -22,11 +24,13 @@ import (
 )
 
 type ConfigGenerator struct {
-	client              cache.Cache
-	processor           processor.Processor
-	gateway             *gwv1.Gateway
-	secretFiles         map[string]string
-	services            map[string]serviceContext
+	client      cache.Cache
+	processor   processor.Processor
+	cfg         configurator.Configurator
+	gateway     *gwv1.Gateway
+	secretFiles map[string]string
+	//services            map[string]serviceContext
+	backends            map[string]*fgwv2.Backend
 	filters             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string
 	upstreams           calculateBackendTargetsFunc
 	backendTLSPolicies  map[string]*fgwv2.BackendTLSPolicy
@@ -34,13 +38,15 @@ type ConfigGenerator struct {
 	healthCheckPolicies map[string]*fgwv2.HealthCheckPolicy
 }
 
-func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache) processor.Generator {
+func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache, mc configurator.Configurator) processor.Generator {
 	p := &ConfigGenerator{
-		client:              client,
-		processor:           processor,
-		gateway:             gateway,
-		secretFiles:         map[string]string{},
-		services:            map[string]serviceContext{},
+		client:      client,
+		processor:   processor,
+		cfg:         mc,
+		gateway:     gateway,
+		secretFiles: map[string]string{},
+		//services:            map[string]serviceContext{},
+		backends:            map[string]*fgwv2.Backend{},
 		filters:             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string{},
 		backendTLSPolicies:  map[string]*fgwv2.BackendTLSPolicy{},
 		backendLBPolicies:   map[string]*fgwv2.BackendLBPolicy{},

@@ -106,6 +106,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.enablePrivilegedInitContainer | bool | `false` | Run init container in privileged mode |
 | fsm.enableReconciler | bool | `false` | Enable reconciler for FSM's CRDs and mutating webhook |
 | fsm.enforceSingleMesh | bool | `true` | Enforce only deploying one mesh in the cluster |
+| fsm.featureFlags.dropRouteRuleIfNoAvailableBackends | bool | `false` | Drop route rule of GatewayAPI if no available backends |
 | fsm.featureFlags.enableAccessCertPolicy | bool | `false` |  |
 | fsm.featureFlags.enableAccessControlPolicy | bool | `true` | Enables FSM's AccessControl policy API. When enabled, FSM will use the AccessControl API allow access control traffic to mesh backends |
 | fsm.featureFlags.enableAsyncProxyServiceMapping | bool | `false` | Enable async proxy-service mapping |

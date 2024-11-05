@@ -88,7 +88,7 @@ func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule g
 	}
 
 	r2.BackendRefs = c.toV2UDPBackendRefs(udpRoute, rule, holder)
-	if len(r2.BackendRefs) == 0 {
+	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
@@ -100,11 +100,15 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 	for _, backend := range rule.BackendRefs {
 		backend := backend
 		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference, holder); svcPort != nil {
+			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
+				continue
+			}
+
 			backendRefs = append(backendRefs, fgwv2.NewBackendRefWithWeight(svcPort.String(), backend.Weight))
 
-			c.services[svcPort.String()] = serviceContext{
-				ServicePortName: *svcPort,
-			}
+			//c.services[svcPort.String()] = serviceContext{
+			//	ServicePortName: *svcPort,
+			//}
 		}
 	}
 

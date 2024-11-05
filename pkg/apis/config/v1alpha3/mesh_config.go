@@ -453,6 +453,9 @@ type FeatureFlags struct {
 
 	// UseEndpointSlicesForGateway defines if endpoint slices are enabled for calculating gateway routes.
 	UseEndpointSlicesForGateway bool `json:"useEndpointSlicesForGateway"`
+
+	// DropRouteRuleIfNoAvailableBackends defines if route rule should be dropped when no available endpoints.
+	DropRouteRuleIfNoAvailableBackends bool `json:"dropRouteRuleIfNoAvailableBackends"`
 }
 
 // RepoServerSpec is the type to represent repo server.
