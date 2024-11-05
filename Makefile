@@ -327,8 +327,8 @@ build-ci: embed-files
 
 .PHONY: trivy-ci-setup
 trivy-ci-setup:
-	wget https://github.com/aquasecurity/trivy/releases/download/v0.23.0/trivy_0.23.0_Linux-64bit.tar.gz
-	tar zxvf trivy_0.23.0_Linux-64bit.tar.gz
+	wget https://github.com/aquasecurity/trivy/releases/download/v0.57.0/trivy_0.57.0_Linux-64bit.tar.gz
+	tar zxvf trivy_0.57.0_Linux-64bit.tar.gz
 	echo $$(pwd) >> $(GITHUB_PATH)
 
 # Show all vulnerabilities in logs
