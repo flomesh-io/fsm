@@ -140,6 +140,7 @@ func allowedEndpoints(pipyConf *PipyConf, s *Server) {
 }
 
 func balance(pipyConf *PipyConf) {
+	pipyConf.rebalancedTargetClusters()
 	pipyConf.rebalancedOutboundClusters()
 	pipyConf.rebalancedForwardClusters()
 }
