@@ -150,6 +150,46 @@ func (p *PipyConf) newForwardTrafficPolicy() *ForwardTrafficPolicy {
 	return p.Forward
 }
 
+func (p *PipyConf) rebalancedTargetClusters() {
+	if p.Outbound == nil {
+		return
+	}
+	if p.Outbound.TrafficMatches == nil || len(p.Outbound.TrafficMatches) == 0 {
+		return
+	}
+	for _, trafficMatchSlice := range p.Outbound.TrafficMatches {
+		if len(trafficMatchSlice) == 0 {
+			continue
+		}
+		for _, trafficMatch := range trafficMatchSlice {
+			if len(trafficMatch.HTTPServiceRouteRules) == 0 {
+				continue
+			}
+			for _, routeRuleMap := range trafficMatch.HTTPServiceRouteRules {
+				if routeRuleMap == nil || len(routeRuleMap.RouteRules) == 0 {
+					continue
+				}
+				for _, routeRule := range routeRuleMap.RouteRules {
+					if len(routeRule.TargetClusters) == 0 {
+						continue
+					}
+					isAllFailover := true
+					for _, weight := range routeRule.TargetClusters {
+						if weight > 0 {
+							isAllFailover = false
+						}
+					}
+					if isAllFailover {
+						for clusterName := range routeRule.TargetClusters {
+							routeRule.TargetClusters[clusterName] = constants.ClusterWeightAcceptAll
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 func (p *PipyConf) rebalancedOutboundClusters() {
 	if p.Outbound == nil {
 		return

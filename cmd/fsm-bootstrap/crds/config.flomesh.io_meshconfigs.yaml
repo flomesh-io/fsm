@@ -1331,13 +1331,22 @@ spec:
                   DO_NOT_EDIT_viaGateway:
                     default: viaGateway Managed by fsm-connector-gateway.
                     type: string
-                  lbType:
-                    default: FailOver
-                    description: Type of global load distribution
-                    enum:
-                    - ActiveActive
-                    - FailOver
-                    type: string
+                  lb:
+                    properties:
+                      masterNamespace:
+                        type: string
+                      slaveNamespaces:
+                        items:
+                          type: string
+                        type: array
+                      type:
+                        default: ActiveActive
+                        description: Type of global load distribution
+                        enum:
+                        - ActiveActive
+                        - FailOver
+                        type: string
+                    type: object
                   viaGateway:
                     description: ViaGateway defines gateway settings
                     properties:
@@ -1369,6 +1378,7 @@ spec:
                     type: object
                 required:
                 - DO_NOT_EDIT_viaGateway
+                - lb
                 - viaGateway
                 type: object
               egressGateway:

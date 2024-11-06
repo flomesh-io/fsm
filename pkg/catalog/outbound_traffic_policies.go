@@ -104,7 +104,13 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 		// Check if there is a traffic split corresponding to this service.
 		// The upstream clusters are to be derived from the traffic split backends
 		// in that case.
-		trafficSplits := mc.meshSpec.ListTrafficSplits(smi.WithTrafficSplitApexService(meshSvc))
+		splitSvc := service.MeshService{Name: meshSvc.Name}
+		if len(meshSvc.CloudAttachedNamespace) > 0 {
+			splitSvc.Namespace = meshSvc.CloudAttachedNamespace
+		} else {
+			splitSvc.Namespace = meshSvc.Namespace
+		}
+		trafficSplits := mc.meshSpec.ListTrafficSplits(smi.WithTrafficSplitApexService(splitSvc))
 		if len(trafficSplits) > 0 {
 			// Program routes to the backends specified in the traffic split
 			for _, split := range trafficSplits {
@@ -276,8 +282,13 @@ func (mc *MeshCatalog) mergeSplitUpstreamClusters(meshSvc service.MeshService, b
 			Namespace: backendNamespace, // Backends belong to the same namespace as the apex service
 			Name:      backendService,
 		}
-		targetPort, err := mc.kubeController.GetTargetPortForServicePort(
-			types.NamespacedName{Namespace: backendNamespace, Name: backendMeshSvc.Name}, meshSvc.Port)
+		namespacedName := types.NamespacedName{Namespace: backendNamespace, Name: backendMeshSvc.Name}
+		if len(meshSvc.CloudAttachedNamespace) > 0 {
+			if strings.EqualFold(meshSvc.CloudAttachedNamespace, backendNamespace) {
+				namespacedName.Namespace = meshSvc.Namespace
+			}
+		}
+		targetPort, err := mc.getTargetPortForServicePort(meshSvc, namespacedName)
 		if err == nil {
 			backendMeshSvc.TargetPort = targetPort
 			aas = append(aas, service.ClusterName(backendMeshSvc.SidecarClusterName()))
@@ -308,6 +319,22 @@ func (mc *MeshCatalog) mergeSplitUpstreamClusters(meshSvc service.MeshService, b
 	upstreamClusters = activeUpstreamClusters(aas, backend, upstreamClusters)
 	upstreamClusters = failOverUpstreamClusters(fos, upstreamClusters)
 	return upstreamClusters
+}
+
+func (mc *MeshCatalog) getTargetPortForServicePort(meshSvc service.MeshService, namespacedName types.NamespacedName) (uint16, error) {
+	targetPort, err := mc.kubeController.GetTargetPortForServicePort(namespacedName, meshSvc.Port)
+	if err != nil {
+		lb := mc.configurator.GetMeshConfig().Spec.Connector.Lb
+		if lb.IsMasterNamespace(namespacedName.Namespace) {
+			for _, slaveNamespace := range lb.SlaveNamespaces {
+				namespacedName.Namespace = slaveNamespace
+				if targetPort, err = mc.kubeController.GetTargetPortForServicePort(namespacedName, meshSvc.Port); err == nil {
+					break
+				}
+			}
+		}
+	}
+	return targetPort, err
 }
 
 func (mc *MeshCatalog) enableEgressSrviceForIdentity(downstreamIdentity identity.ServiceIdentity, egressPolicyGetted bool, egressPolicy *trafficpolicy.EgressTrafficPolicy, meshSvc service.MeshService) (bool, bool, *trafficpolicy.EgressTrafficPolicy) {

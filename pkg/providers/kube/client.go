@@ -48,7 +48,7 @@ func (c *client) ListEndpointsForService(svc service.MeshService) []endpoint.End
 		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 			svcMeta := connector.Decode(k8sSvc, v)
 			if len(svcMeta.Endpoints) > 0 {
-				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.LbType
+				lbType := c.meshConfigurator.GetMeshConfig().Spec.Connector.Lb.Type
 				for addr, endpointMeta := range svcMeta.Endpoints {
 					for port, protocol := range endpointMeta.Ports {
 						ept := endpoint.Endpoint{
