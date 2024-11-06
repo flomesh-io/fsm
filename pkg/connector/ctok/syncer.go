@@ -312,6 +312,9 @@ func (s *CtoKSyncer) crudList() ([]*apiv1.Service, []string) {
 	for k8sSvcName, cloudSvcName := range s.controller.GetC2KContext().SourceServices {
 		svcMetaMap := s.microAggregator.Aggregate(s.ctx, connector.MicroSvcName(k8sSvcName))
 		if len(svcMetaMap) == 0 {
+			if _, exists := s.controller.GetC2KContext().ServiceKeyToName[fmt.Sprintf("%s/%s", s.controller.GetDeriveNamespace(), k8sSvcName)]; exists {
+				deleteSvcs = append(deleteSvcs, k8sSvcName)
+			}
 			continue
 		}
 		for microSvcName, svcMeta := range svcMetaMap {
