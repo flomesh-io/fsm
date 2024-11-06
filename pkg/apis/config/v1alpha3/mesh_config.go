@@ -1,6 +1,8 @@
 package v1alpha3
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -774,12 +776,37 @@ const (
 	FailOverLbType LoadBalancerType = "FailOver"
 )
 
-// ConnectorSpec is the type to represent connector configs.
-type ConnectorSpec struct {
-	// +kubebuilder:default=FailOver
+type LoadBalancer struct {
+	// +kubebuilder:default=ActiveActive
 	// +kubebuilder:validation:Enum=ActiveActive;FailOver
 	// Type of global load distribution
-	LbType LoadBalancerType `json:"lbType,omitempty"`
+	Type LoadBalancerType `json:"type,omitempty"`
+
+	MasterNamespace string   `json:"masterNamespace,omitempty"`
+	SlaveNamespaces []string `json:"slaveNamespaces,omitempty"`
+}
+
+func (lb *LoadBalancer) IsMasterNamespace(namespace string) bool {
+	if FailOverLbType == lb.Type && len(lb.SlaveNamespaces) > 0 {
+		return strings.EqualFold(lb.MasterNamespace, namespace)
+	}
+	return false
+}
+
+func (lb *LoadBalancer) IsSlaveNamespace(namespace string) bool {
+	if FailOverLbType == lb.Type && len(lb.SlaveNamespaces) > 0 {
+		for _, ns := range lb.SlaveNamespaces {
+			if strings.EqualFold(ns, namespace) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// ConnectorSpec is the type to represent connector configs.
+type ConnectorSpec struct {
+	Lb LoadBalancer `json:"lb"`
 
 	// +kubebuilder:default="viaGateway Managed by fsm-connector-gateway."
 	Notice string `json:"DO_NOT_EDIT_viaGateway"`
