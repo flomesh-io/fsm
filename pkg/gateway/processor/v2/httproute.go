@@ -120,10 +120,6 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 			for _, processor := range c.getBackendPolicyProcessors(httpRoute) {
 				processor.Process(httpRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
-
-			//c.services[svcPort.String()] = serviceContext{
-			//	ServicePortName: *svcPort,
-			//}
 		}
 	}
 
@@ -148,10 +144,6 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 					},
 					Key: uuid.NewString(),
 				})
-
-				//c.services[svcPort.String()] = serviceContext{
-				//	ServicePortName: *svcPort,
-				//}
 			}
 		case gwv1.HTTPRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, httpRoute, f.ExtensionRef)
@@ -184,7 +176,8 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 		default:
 			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
-			if err := gwutils.DeepCopy(f2, f); err != nil {
+			if err := gwutils.DeepCopy(&f2, &f); err != nil {
+				log.Error().Msgf("Failed to copy HTTPRouteFilter: %v", err)
 				continue
 			}
 			filters = append(filters, f2)
