@@ -120,10 +120,6 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 			for _, processor := range c.getBackendPolicyProcessors(grpcRoute) {
 				processor.Process(grpcRoute, holder.GetParentRef(), rule, bk.BackendObjectReference, svcPort)
 			}
-
-			//c.services[svcPort.String()] = serviceContext{
-			//	ServicePortName: *svcPort,
-			//}
 		}
 	}
 
@@ -152,10 +148,6 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				}
 
 				filters = append(filters, f2)
-
-				//c.services[svcPort.String()] = serviceContext{
-				//	ServicePortName: *svcPort,
-				//}
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
@@ -189,6 +181,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 		default:
 			f2 := fgwv2.GRPCRouteFilter{Key: uuid.NewString()}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
+				log.Error().Msgf("Failed to copy GRPCRouteFilter: %v", err)
 				continue
 			}
 			filters = append(filters, f2)

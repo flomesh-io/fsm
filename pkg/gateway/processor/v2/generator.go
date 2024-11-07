@@ -24,12 +24,11 @@ import (
 )
 
 type ConfigGenerator struct {
-	client      cache.Cache
-	processor   processor.Processor
-	cfg         configurator.Configurator
-	gateway     *gwv1.Gateway
-	secretFiles map[string]string
-	//services            map[string]serviceContext
+	client              cache.Cache
+	processor           processor.Processor
+	cfg                 configurator.Configurator
+	gateway             *gwv1.Gateway
+	secretFiles         map[string]string
 	backends            map[string]*fgwv2.Backend
 	filters             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string
 	upstreams           calculateBackendTargetsFunc
@@ -40,12 +39,11 @@ type ConfigGenerator struct {
 
 func NewGatewayConfigGenerator(gateway *gwv1.Gateway, processor processor.Processor, client cache.Cache, mc configurator.Configurator) processor.Generator {
 	p := &ConfigGenerator{
-		client:      client,
-		processor:   processor,
-		cfg:         mc,
-		gateway:     gateway,
-		secretFiles: map[string]string{},
-		//services:            map[string]serviceContext{},
+		client:              client,
+		processor:           processor,
+		cfg:                 mc,
+		gateway:             gateway,
+		secretFiles:         map[string]string{},
 		backends:            map[string]*fgwv2.Backend{},
 		filters:             map[extv1alpha1.FilterProtocol]map[extv1alpha1.FilterType]string{},
 		backendTLSPolicies:  map[string]*fgwv2.BackendTLSPolicy{},
