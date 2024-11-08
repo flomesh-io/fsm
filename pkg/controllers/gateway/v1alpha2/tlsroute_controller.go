@@ -97,8 +97,7 @@ func (r *tlsRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	rsu := routes.NewRouteStatusUpdate(
 		tlsRoute,
-		&tlsRoute.ObjectMeta,
-		&tlsRoute.TypeMeta,
+		tlsRoute.GroupVersionKind(),
 		tlsRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(tlsRoute.Status.Parents),
 	)

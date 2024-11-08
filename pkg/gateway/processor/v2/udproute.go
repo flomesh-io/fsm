@@ -33,8 +33,7 @@ func (c *ConfigGenerator) processUDPRoutes() []fgwv2.Resource {
 	for _, udpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			udpRoute,
-			&udpRoute.ObjectMeta,
-			&udpRoute.TypeMeta,
+			udpRoute.GroupVersionKind(),
 			nil,
 			gwutils.ToSlicePtr(udpRoute.Status.Parents),
 		)

@@ -32,8 +32,7 @@ func (c *ConfigGenerator) processTCPRoutes() []fgwv2.Resource {
 	for _, tcpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			tcpRoute,
-			&tcpRoute.ObjectMeta,
-			&tcpRoute.TypeMeta,
+			tcpRoute.GroupVersionKind(),
 			nil,
 			gwutils.ToSlicePtr(tcpRoute.Status.Parents),
 		)

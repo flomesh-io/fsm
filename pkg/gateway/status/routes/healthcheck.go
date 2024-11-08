@@ -32,8 +32,7 @@ func (p *RouteStatusProcessor) computeHealthCheckPolicyStatus(route client.Objec
 
 	psu := policies.NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(
 		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
+		policy.GroupVersionKind(),
 		policy.Spec.TargetRefs,
 		gwutils.ToSlicePtr(policy.Status.Ancestors),
 	)

@@ -100,8 +100,7 @@ func (r *udpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	rsu := routes.NewRouteStatusUpdate(
 		udpRoute,
-		&udpRoute.ObjectMeta,
-		&udpRoute.TypeMeta,
+		udpRoute.GroupVersionKind(),
 		nil,
 		gwutils.ToSlicePtr(udpRoute.Status.Parents),
 	)

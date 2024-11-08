@@ -35,8 +35,7 @@ func (c *ConfigGenerator) processGRPCRoutes() []fgwv2.Resource {
 	for _, grpcRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			grpcRoute,
-			&grpcRoute.ObjectMeta,
-			&grpcRoute.TypeMeta,
+			grpcRoute.GroupVersionKind(),
 			grpcRoute.Spec.Hostnames,
 			gwutils.ToSlicePtr(grpcRoute.Status.Parents),
 		)

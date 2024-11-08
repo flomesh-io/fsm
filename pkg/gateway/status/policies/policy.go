@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
@@ -28,22 +30,17 @@ import (
 type PolicyTargetReference = gwv1alpha2.NamespacedPolicyTargetReference
 
 type DefaultPolicyStatusObject struct {
-	objectMeta             *metav1.ObjectMeta
-	typeMeta               *metav1.TypeMeta
 	targetRefs             []PolicyTargetReference
 	policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus
 	resource               client.Object
 	transitionTime         metav1.Time
 	fullName               types.NamespacedName
 	generation             int64
+	gvk                    schema.GroupVersionKind
 }
 
-func (p *DefaultPolicyStatusObject) GetObjectMeta() *metav1.ObjectMeta {
-	return p.objectMeta
-}
-
-func (p *DefaultPolicyStatusObject) GetTypeMeta() *metav1.TypeMeta {
-	return p.typeMeta
+func (p *DefaultPolicyStatusObject) GroupVersionKind() schema.GroupVersionKind {
+	return p.gvk
 }
 
 func (p *DefaultPolicyStatusObject) GetResource() client.Object {
@@ -177,49 +174,48 @@ func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
 	}
 }
 
-func NewPolicyStatusUpdateWithLocalPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+func NewPolicyStatusUpdateWithLocalPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.LocalPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	refs := make([]PolicyTargetReference, len(targetRefs))
 	for i, ref := range targetRefs {
 		refs[i] = PolicyTargetReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Name:      ref.Name,
-			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
 		}
 	}
 
-	return newPolicyStatusUpdate(resource, meta, typeMeta, refs, policyAncestorStatuses)
+	return newPolicyStatusUpdate(resource, gvk, refs, policyAncestorStatuses)
 }
 
-func NewPolicyStatusUpdateWithLocalPolicyTargetReferenceWithSectionName(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+func NewPolicyStatusUpdateWithLocalPolicyTargetReferenceWithSectionName(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	refs := make([]PolicyTargetReference, len(targetRefs))
 	for i, ref := range targetRefs {
 		refs[i] = PolicyTargetReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Name:      ref.Name,
-			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
 		}
 	}
 
-	return newPolicyStatusUpdate(resource, meta, typeMeta, refs, policyAncestorStatuses)
+	return newPolicyStatusUpdate(resource, gvk, refs, policyAncestorStatuses)
 }
 
-func NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
-	return newPolicyStatusUpdate(resource, meta, typeMeta, targetRefs, policyAncestorStatuses)
+func NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+	return newPolicyStatusUpdate(resource, gvk, targetRefs, policyAncestorStatuses)
 }
 
-func newPolicyStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+func newPolicyStatusUpdate(resource client.Object, gvk schema.GroupVersionKind, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	return &PolicyStatusUpdate{
 		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{
-			objectMeta:             meta,
-			typeMeta:               typeMeta,
 			targetRefs:             targetRefs,
 			policyAncestorStatuses: policyAncestorStatuses,
 			resource:               resource,
 			transitionTime:         metav1.Time{Time: time.Now()},
-			fullName:               types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
-			generation:             meta.Generation,
+			fullName:               types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
+			generation:             resource.GetGeneration(),
+			gvk:                    gvk,
 		},
 	}
 }
@@ -230,49 +226,48 @@ type PolicyStatusHolder struct {
 	*DefaultPolicyStatusObject
 }
 
-func NewPolicyStatusHolderWithLocalPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+func NewPolicyStatusHolderWithLocalPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.LocalPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
 	refs := make([]PolicyTargetReference, len(targetRefs))
 	for i, ref := range targetRefs {
 		refs[i] = PolicyTargetReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Name:      ref.Name,
-			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
 		}
 	}
 
-	return newPolicyStatusHolder(resource, meta, typeMeta, refs, policyAncestorStatuses)
+	return newPolicyStatusHolder(resource, gvk, refs, policyAncestorStatuses)
 }
 
-func NewPolicyStatusHolderWithLocalPolicyTargetReferenceWithSectionName(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+func NewPolicyStatusHolderWithLocalPolicyTargetReferenceWithSectionName(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.LocalPolicyTargetReferenceWithSectionName, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
 	refs := make([]PolicyTargetReference, len(targetRefs))
 	for i, ref := range targetRefs {
 		refs[i] = PolicyTargetReference{
 			Group:     ref.Group,
 			Kind:      ref.Kind,
 			Name:      ref.Name,
-			Namespace: ptr.To(gwv1.Namespace(meta.Namespace)),
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
 		}
 	}
 
-	return newPolicyStatusHolder(resource, meta, typeMeta, refs, policyAncestorStatuses)
+	return newPolicyStatusHolder(resource, gvk, refs, policyAncestorStatuses)
 }
 
-func NewPolicyStatusHolderWithNamespacedPolicyTargetReference(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
-	return newPolicyStatusHolder(resource, meta, typeMeta, targetRefs, policyAncestorStatuses)
+func NewPolicyStatusHolderWithNamespacedPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+	return newPolicyStatusHolder(resource, gvk, targetRefs, policyAncestorStatuses)
 }
 
-func newPolicyStatusHolder(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
+func newPolicyStatusHolder(resource client.Object, gvk schema.GroupVersionKind, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusHolder {
 	return &PolicyStatusHolder{
 		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{
-			objectMeta:             meta,
-			typeMeta:               typeMeta,
 			targetRefs:             targetRefs,
 			policyAncestorStatuses: policyAncestorStatuses,
 			resource:               resource,
 			transitionTime:         metav1.Time{Time: time.Now()},
-			fullName:               types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
-			generation:             meta.Generation,
+			fullName:               types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
+			generation:             resource.GetGeneration(),
+			gvk:                    gvk,
 		},
 	}
 }

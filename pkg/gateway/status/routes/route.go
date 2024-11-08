@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,22 +23,17 @@ import (
 // --- DefaultRouteStatusObject ---
 
 type DefaultRouteStatusObject struct {
-	objectMeta          *metav1.ObjectMeta
-	typeMeta            *metav1.TypeMeta
 	routeParentStatuses []*gwv1.RouteParentStatus
 	hostnames           []gwv1.Hostname
 	resource            client.Object
 	transitionTime      metav1.Time
 	fullName            types.NamespacedName
 	generation          int64
+	gvk                 schema.GroupVersionKind
 }
 
-func (r *DefaultRouteStatusObject) GetObjectMeta() *metav1.ObjectMeta {
-	return r.objectMeta
-}
-
-func (r *DefaultRouteStatusObject) GetTypeMeta() *metav1.TypeMeta {
-	return r.typeMeta
+func (r *DefaultRouteStatusObject) GroupVersionKind() schema.GroupVersionKind {
+	return r.gvk
 }
 
 func (r *DefaultRouteStatusObject) GetRouteParentStatuses() []*gwv1.RouteParentStatus {
@@ -152,17 +149,16 @@ type RouteStatusUpdate struct {
 	*DefaultRouteStatusObject
 }
 
-func NewRouteStatusUpdate(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, hostnames []gwv1.Hostname, routeParentStatuses []*gwv1.RouteParentStatus) status.RouteStatusObject {
+func NewRouteStatusUpdate(resource client.Object, gvk schema.GroupVersionKind, hostnames []gwv1.Hostname, routeParentStatuses []*gwv1.RouteParentStatus) status.RouteStatusObject {
 	return &RouteStatusUpdate{
 		DefaultRouteStatusObject: &DefaultRouteStatusObject{
-			objectMeta:          meta,
-			typeMeta:            typeMeta,
 			routeParentStatuses: routeParentStatuses,
 			resource:            resource,
 			hostnames:           hostnames,
 			transitionTime:      metav1.Time{Time: time.Now()},
-			fullName:            types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
-			generation:          meta.Generation,
+			fullName:            types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
+			generation:          resource.GetGeneration(),
+			gvk:                 gvk,
 		},
 	}
 }
@@ -218,16 +214,16 @@ type RouteStatusHolder struct {
 	*DefaultRouteStatusObject
 }
 
-func NewRouteStatusHolder(resource client.Object, meta *metav1.ObjectMeta, typeMeta *metav1.TypeMeta, hostnames []gwv1.Hostname, routeParentStatuses []*gwv1.RouteParentStatus) status.RouteStatusObject {
+func NewRouteStatusHolder(resource client.Object, gvk schema.GroupVersionKind, hostnames []gwv1.Hostname, routeParentStatuses []*gwv1.RouteParentStatus) status.RouteStatusObject {
 	return &RouteStatusHolder{
-		DefaultRouteStatusObject: &DefaultRouteStatusObject{objectMeta: meta,
-			typeMeta:            typeMeta,
+		DefaultRouteStatusObject: &DefaultRouteStatusObject{
 			routeParentStatuses: routeParentStatuses,
 			resource:            resource,
 			hostnames:           hostnames,
 			transitionTime:      metav1.Time{Time: time.Now()},
-			fullName:            types.NamespacedName{Namespace: meta.Namespace, Name: meta.Name},
-			generation:          meta.Generation,
+			fullName:            types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
+			generation:          resource.GetGeneration(),
+			gvk:                 gvk,
 		},
 	}
 }

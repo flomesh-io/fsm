@@ -31,8 +31,7 @@ func (p *RouteStatusProcessor) computeBackendLBPolicyStatus(route client.Object,
 
 	psu := policies.NewPolicyStatusUpdateWithLocalPolicyTargetReference(
 		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
+		policy.GroupVersionKind(),
 		policy.Spec.TargetRefs,
 		gwutils.ToSlicePtr(policy.Status.Ancestors),
 	)

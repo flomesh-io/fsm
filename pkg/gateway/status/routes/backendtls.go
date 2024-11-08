@@ -36,8 +36,7 @@ func (p *RouteStatusProcessor) computeBackendTLSPolicyStatus(route client.Object
 
 	psu := policies.NewPolicyStatusUpdateWithLocalPolicyTargetReferenceWithSectionName(
 		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
+		policy.GroupVersionKind(),
 		policy.Spec.TargetRefs,
 		gwutils.ToSlicePtr(policy.Status.Ancestors),
 	)

@@ -155,8 +155,8 @@ func GetValidListenersForGateway(gw *gwv1.Gateway) []gwtypes.Listener {
 
 // GetAllowedListeners returns the allowed listeners
 func GetAllowedListeners(client cache.Cache, gw *gwv1.Gateway, rps status.RouteParentStatusObject) []gwtypes.Listener {
-	routeGvk := rps.GetRouteStatusObject().GetTypeMeta().GroupVersionKind()
-	routeNs := rps.GetRouteStatusObject().GetObjectMeta().Namespace
+	routeGvk := rps.GetRouteStatusObject().GroupVersionKind()
+	routeNs := rps.GetRouteStatusObject().GetFullName().Namespace
 	parentRef := rps.GetParentRef()
 	validListeners := GetValidListenersForGateway(gw)
 
