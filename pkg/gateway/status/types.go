@@ -3,6 +3,7 @@ package status
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -11,8 +12,7 @@ import (
 
 // MetadataAccessor is an interface to access metadata of a resource.
 type MetadataAccessor interface {
-	GetObjectMeta() *metav1.ObjectMeta
-	GetTypeMeta() *metav1.TypeMeta
+	GroupVersionKind() schema.GroupVersionKind
 	GetResource() client.Object
 	GetTransitionTime() metav1.Time
 	GetFullName() types.NamespacedName

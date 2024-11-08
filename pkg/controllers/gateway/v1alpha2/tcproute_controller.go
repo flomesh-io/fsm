@@ -103,8 +103,7 @@ func (r *tcpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	rsu := routes.NewRouteStatusUpdate(
 		tcpRoute,
-		&tcpRoute.ObjectMeta,
-		&tcpRoute.TypeMeta,
+		tcpRoute.GroupVersionKind(),
 		nil,
 		gwutils.ToSlicePtr(tcpRoute.Status.Parents),
 	)

@@ -47,8 +47,7 @@ func (p *HealthCheckPolicyProcessor) Process(route client.Object, routeParentRef
 
 	psu := policies.NewPolicyStatusHolderWithNamespacedPolicyTargetReference(
 		policy,
-		&policy.ObjectMeta,
-		&policy.TypeMeta,
+		policy.GroupVersionKind(),
 		policy.Spec.TargetRefs,
 		gwutils.ToSlicePtr(policy.Status.Ancestors),
 	)

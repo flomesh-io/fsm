@@ -111,8 +111,7 @@ func (r *httpRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	rsu := routes.NewRouteStatusUpdate(
 		httpRoute,
-		&httpRoute.ObjectMeta,
-		&httpRoute.TypeMeta,
+		httpRoute.GroupVersionKind(),
 		httpRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(httpRoute.Status.Parents),
 	)

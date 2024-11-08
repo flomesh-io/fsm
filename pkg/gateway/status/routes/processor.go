@@ -96,7 +96,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	for _, parentRef := range parentRefs {
 		rps := rs.StatusUpdateFor(parentRef)
 
-		gvk := rs.GetTypeMeta().GroupVersionKind()
+		gvk := rs.GroupVersionKind()
 		rps.AddCondition(
 			gwv1.RouteConditionAccepted,
 			metav1.ConditionTrue,

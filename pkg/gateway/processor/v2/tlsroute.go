@@ -31,8 +31,7 @@ func (c *ConfigGenerator) processTLSRoutes() []fgwv2.Resource {
 	for _, tlsRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			tlsRoute,
-			&tlsRoute.ObjectMeta,
-			&tlsRoute.TypeMeta,
+			tlsRoute.GroupVersionKind(),
 			tlsRoute.Spec.Hostnames,
 			gwutils.ToSlicePtr(tlsRoute.Status.Parents),
 		)

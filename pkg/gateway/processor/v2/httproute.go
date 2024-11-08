@@ -35,8 +35,7 @@ func (c *ConfigGenerator) processHTTPRoutes() []fgwv2.Resource {
 	for _, httpRoute := range gwutils.SortResources(gwutils.ToSlicePtr(list.Items)) {
 		rsh := routestatus.NewRouteStatusHolder(
 			httpRoute,
-			&httpRoute.ObjectMeta,
-			&httpRoute.TypeMeta,
+			httpRoute.GroupVersionKind(),
 			httpRoute.Spec.Hostnames,
 			gwutils.ToSlicePtr(httpRoute.Status.Parents),
 		)

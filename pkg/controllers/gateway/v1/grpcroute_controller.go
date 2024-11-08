@@ -111,8 +111,7 @@ func (r *grpcRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	rsu := routes.NewRouteStatusUpdate(
 		grpcRoute,
-		&grpcRoute.ObjectMeta,
-		&grpcRoute.TypeMeta,
+		grpcRoute.GroupVersionKind(),
 		grpcRoute.Spec.Hostnames,
 		gwutils.ToSlicePtr(grpcRoute.Status.Parents),
 	)
