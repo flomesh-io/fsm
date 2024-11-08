@@ -101,13 +101,13 @@ func (p *RouteStatusProcessor) Process(_ context.Context, update status.RouteSta
 func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObject, parentRef gwv1.ParentReference) {
 	rps := rs.StatusUpdateFor(parentRef)
 
-		gvk := rs.GroupVersionKind()
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionTrue,
-			gwv1.RouteReasonAccepted,
-			fmt.Sprintf("%s is accepted", gvk.Kind),
-		)
+	gvk := rs.GroupVersionKind()
+	rps.AddCondition(
+		gwv1.RouteConditionAccepted,
+		metav1.ConditionTrue,
+		gwv1.RouteReasonAccepted,
+		fmt.Sprintf("%s is accepted", gvk.Kind),
+	)
 
 	defer func() {
 		if metautil.IsStatusConditionTrue(rps.GetRouteStatusObject().ConditionsForParentRef(parentRef), string(gwv1.RouteConditionAccepted)) {
