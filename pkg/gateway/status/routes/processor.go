@@ -71,27 +71,27 @@ func NewRouteStatusProcessor(cache cache.Cache, recorder record.EventRecorder, s
 }
 
 // Process computes the status of a Route
-func (p *RouteStatusProcessor) Process(_ context.Context, update status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
+func (p *RouteStatusProcessor) Process(_ context.Context, rs status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
 	//if activeGateways := gwutils.GetActiveGateways(p.client); len(activeGateways) > 0 {
-	//	p.computeRouteParentStatus(activeGateways, update, parentRefs)
+	//	p.computeRouteParentStatus(activeGateways, rs, parentRefs)
 	//
 	//	updater.Send(status.Update{
-	//		Resource:       update.GetResource(),
-	//		NamespacedName: update.GetFullName(),
-	//		Mutator:        update,
+	//		Resource:       rs.GetResource(),
+	//		NamespacedName: rs.GetFullName(),
+	//		Mutator:        rs,
 	//	})
 	//}
 
 	defer func() {
 		p.statusUpdater.Send(status.Update{
-			Resource:       update.GetResource(),
-			NamespacedName: update.GetFullName(),
-			Mutator:        update,
+			Resource:       rs.GetResource(),
+			NamespacedName: rs.GetFullName(),
+			Mutator:        rs,
 		})
 	}()
 
 	for _, parentRef := range parentRefs {
-		p.computeRouteParentStatus(update, parentRef)
+		p.computeRouteParentStatus(rs, parentRef)
 	}
 
 	return nil
