@@ -7,10 +7,10 @@ toolchain go1.23.1
 require (
 	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
 	github.com/Azure/go-autorest/autorest/to v0.4.0
-	github.com/axw/gocov v1.0.0
-	github.com/containerd/containerd v1.7.20 // indirect
+	github.com/axw/gocov v1.2.1
+	github.com/containerd/containerd v1.7.23 // indirect
 	github.com/cskr/pubsub v1.0.2
-	github.com/deckarep/golang-set/v2 v2.1.0
+	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/docker/docker v26.1.5+incompatible
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.17.0
@@ -190,7 +190,7 @@ require (
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	github.com/containerd/errdefs v0.1.0 // indirect
+	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
@@ -544,17 +544,8 @@ require (
 replace (
 	github.com/distribution/reference => github.com/distribution/reference v0.5.0
 	github.com/pires/go-proxyproto v1.0.0 => github.com/peteski22/go-proxyproto v1.0.0
-	k8s.io/api => k8s.io/api v0.31.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.31.1
-	k8s.io/apiserver => k8s.io/apiserver v0.31.1
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.31.1
-	k8s.io/client-go => k8s.io/client-go v0.31.1
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.31.1
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.31.1
-	k8s.io/code-generator => k8s.io/code-generator v0.31.1
-	k8s.io/component-base => k8s.io/component-base v0.31.1
-	k8s.io/component-helpers => k8s.io/component-helpers v0.31.1
 	k8s.io/controller-manager => k8s.io/controller-manager v0.31.1
 	k8s.io/cri-api => k8s.io/cri-api v0.31.1
 	k8s.io/cri-client => k8s.io/cri-client v0.31.1
@@ -565,7 +556,6 @@ replace (
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.31.1
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.31.1
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.31.1
-	k8s.io/kubectl => k8s.io/kubectl v0.31.1
 	k8s.io/kubelet => k8s.io/kubelet v0.31.1
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.31.1
 	k8s.io/metrics => k8s.io/metrics v0.31.1
