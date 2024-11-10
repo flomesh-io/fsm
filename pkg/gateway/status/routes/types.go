@@ -124,7 +124,7 @@ func (r *RouteParentListenerConditionProvider) AddNoMatchingParentCondition(rout
 	)
 }
 
-func (r *RouteParentListenerConditionProvider) AddNotAllowedByListeners(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
+func (r *RouteParentListenerConditionProvider) AddNotAllowedByListenersCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
 	defer r.recorder.Eventf(route, corev1.EventTypeWarning, string(gwv1.RouteReasonNotAllowedByListeners), "No matched listeners of parent ref %s", types.NamespacedName{Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, routeNs), Name: string(parentRef.Name)})
 
 	r.rps.AddCondition(

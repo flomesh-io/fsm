@@ -119,7 +119,7 @@ type ObjectReferenceResolver interface {
 // GatewayListenerConditionProvider is the interface for providing GatewayListener conditions
 type GatewayListenerConditionProvider interface {
 	AddNoMatchingParentCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string)
-	AddNotAllowedByListeners(route client.Object, parentRef gwv1.ParentReference, routeNs string)
+	AddNotAllowedByListenersCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string)
 }
 
 // GatewayListenerResolver is the interface for resolving Listeners of the Gateway

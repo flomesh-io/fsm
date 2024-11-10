@@ -82,5 +82,5 @@ type DummyGatewayListenerConditionProvider struct{}
 
 func (p *DummyGatewayListenerConditionProvider) AddNoMatchingParentCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
 }
-func (p *DummyGatewayListenerConditionProvider) AddNotAllowedByListeners(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
+func (p *DummyGatewayListenerConditionProvider) AddNotAllowedByListenersCondition(route client.Object, parentRef gwv1.ParentReference, routeNs string) {
 }

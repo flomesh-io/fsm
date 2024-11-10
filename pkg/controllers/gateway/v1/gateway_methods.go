@@ -1,10 +1,11 @@
 package v1
 
 import (
-	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
 )
 
 func (r *gatewayReconciler) addInvalidListenerCondition(gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, name gwv1.SectionName, cond metav1.Condition) {

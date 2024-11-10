@@ -488,9 +488,9 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 		return
 	}
 
-	if deployment.Status.AvailableReplicas != 0 {
-		addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
-	}
+	//if deployment.Status.AvailableReplicas != 0 {
+	addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
+	//}
 }
 
 func (r *gatewayReconciler) gatewayService(ctx context.Context, gateway *gwv1.Gateway) (*corev1.Service, error) {

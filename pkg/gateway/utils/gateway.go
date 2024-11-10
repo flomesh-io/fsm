@@ -197,7 +197,7 @@ func (f *gatewayListenerResolver) GetAllowedListeners(gw *gwv1.Gateway) []gwtype
 	}
 
 	if len(allowedListeners) == 0 {
-		f.AddNotAllowedByListeners(gw, parentRef, routeNs)
+		f.AddNotAllowedByListenersCondition(gw, parentRef, routeNs)
 		return nil
 	}
 
