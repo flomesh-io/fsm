@@ -116,27 +116,13 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	}()
 
 	if parentRef.Group != nil && *parentRef.Group != gwv1.GroupName {
-		defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, string(gwv1.RouteReasonUnsupportedValue), "Group %q is not supported as parent of Route", *parentRef.Group)
-
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonUnsupportedValue,
-			fmt.Sprintf("Group %q is not supported as parent of Route", *parentRef.Group),
-		)
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonUnsupportedValue, fmt.Sprintf("Group %q is not supported as parent of Route", *parentRef.Group))
 
 		return
 	}
 
 	if parentRef.Kind != nil && *parentRef.Kind != constants.GatewayAPIGatewayKind {
-		defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, string(gwv1.RouteReasonUnsupportedValue), "Kind %q is not supported as parent of Route", *parentRef.Kind)
-
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonUnsupportedValue,
-			fmt.Sprintf("Kind %q is not supported as parent of Route", *parentRef.Kind),
-		)
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonUnsupportedValue, fmt.Sprintf("Kind %q is not supported as parent of Route", *parentRef.Kind))
 
 		return
 	}
@@ -148,37 +134,16 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	parent := &gwv1.Gateway{}
 	if err := p.client.Get(context.Background(), parentKey, parent); err != nil {
 		if errors.IsNotFound(err) {
-			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, string(gwv1.RouteReasonNoMatchingParent), "Parent %s not found", parentKey)
-
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonNoMatchingParent,
-				fmt.Sprintf("Parent %s not found", parentKey),
-			)
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Parent %s not found", parentKey))
 		} else {
-			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, string(gwv1.RouteReasonNoMatchingParent), "Failed to get Parent %s: %s", parentKey, err)
-
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonNoMatchingParent,
-				fmt.Sprintf("Failed to get Parent %s: %s", parentKey, err),
-			)
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Failed to get Parent %s: %s", parentKey, err))
 		}
+
 		return
 	}
 
 	if !gwutils.IsActiveGateway(parent) {
-		defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, string(gwv1.RouteReasonNoMatchingParent), "Parent %s is not accepted or programmed", parentKey)
-
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonNoMatchingParent,
-			fmt.Sprintf("Parent %s is not accepted or programmed", parentKey),
-		)
-
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Parent %s is not accepted or programmed", parentKey))
 		return
 	}
 
@@ -202,15 +167,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	switch gvk.Kind {
 	case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
 		if count == 0 && !rps.ConditionExists(gwv1.RouteConditionAccepted) {
-			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeWarning, "NoMatchingListenerHostname", "No matching hostnames were found between the listener and the route.")
-
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonNoMatchingListenerHostname,
-				"No matching hostnames were found between the listener and the route.",
-			)
-
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingListenerHostname, "No matching hostnames were found between the listener and the route.")
 			return
 		}
 	}
@@ -241,6 +198,8 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 	}
 }
 
-func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *fgwv2.ServicePortName {
-	return gwutils.BackendRefToServicePortName(p.client, route, backendRef, rps)
+func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
+	return gwutils.BackendRefToServicePortName(p.client, route, backendRef, func(reason gwv1.RouteConditionReason, message string) {
+		p.addNotResolvedRefsCondition(route, rps, reason, message)
+	})
 }

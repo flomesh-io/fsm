@@ -3,8 +3,6 @@ package routes
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/client-go/tools/record"
@@ -92,7 +90,7 @@ func (r *PolicyObjectReferenceConditionProvider) AddEmptyCACondition(obj client.
 	)
 }
 
-func (r *PolicyObjectReferenceConditionProvider) AddRefsResolvedCondition(obj runtime.Object) {
+func (r *PolicyObjectReferenceConditionProvider) AddRefsResolvedCondition(obj client.Object) {
 	r.ancestorStatus.AddCondition(
 		gwv1alpha2.PolicyConditionAccepted,
 		metav1.ConditionTrue,

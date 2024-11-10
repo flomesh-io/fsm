@@ -3,7 +3,6 @@ package types
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	cache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -91,7 +90,7 @@ type SecretReferenceConditionProvider interface {
 	AddRefNotPermittedCondition(obj client.Object, ref gwv1.SecretObjectReference)
 	AddRefNotFoundCondition(obj client.Object, key types.NamespacedName)
 	AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, err error)
-	AddRefsResolvedCondition(obj runtime.Object)
+	AddRefsResolvedCondition(obj client.Object)
 }
 
 // ObjectReferenceConditionProvider is the interface for providing ObjectReference conditions
@@ -102,7 +101,7 @@ type ObjectReferenceConditionProvider interface {
 	AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, kind string, err error)
 	AddNoRequiredCAFileCondition(obj client.Object, key types.NamespacedName, kind string)
 	AddEmptyCACondition(obj client.Object, ref gwv1.ObjectReference)
-	AddRefsResolvedCondition(obj runtime.Object)
+	AddRefsResolvedCondition(obj client.Object)
 }
 
 // SecretReferenceResolver is the interface for resolving SecretReferences

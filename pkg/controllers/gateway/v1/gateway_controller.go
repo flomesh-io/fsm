@@ -226,6 +226,14 @@ func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *g
 	gsu := gw.NewGatewayStatusUpdate(gateway)
 
 	defer func() {
+		if gsu.IsStatusConditionTrue(gwv1.GatewayConditionProgrammed) {
+			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonProgrammed), "Gateway is programmed")
+		}
+
+		if gsu.IsStatusConditionTrue(gwv1.GatewayConditionAccepted) {
+			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonAccepted), "Gateway is accepted")
+		}
+
 		r.fctx.StatusUpdater.Send(status.Update{
 			Resource:       &gwv1.Gateway{},
 			NamespacedName: client.ObjectKeyFromObject(gateway),
@@ -268,20 +276,8 @@ func (r *gatewayReconciler) computeGatewayAndListenersStatus(ctx context.Context
 func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate) {
 	invalidListeners := invalidateListeners(gateway.Spec.Listeners)
 
-	addInvalidListenerCondition := func(name gwv1.SectionName, cond metav1.Condition) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.ListenerReasonInvalid), "Invalid listener %q: %s", name, cond.Message)
-
-		gsu.AddListenerCondition(
-			string(name),
-			gwv1.ListenerConditionType(cond.Type),
-			cond.Status,
-			gwv1.ListenerConditionReason(cond.Reason),
-			cond.Message,
-		)
-	}
-
 	for name, cond := range invalidListeners {
-		addInvalidListenerCondition(name, cond)
+		r.addInvalidListenerCondition(gateway, gsu, name, cond)
 	}
 
 	for _, listener := range gateway.Spec.Listeners {
@@ -305,14 +301,7 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 	}
 
 	if !allListenersProgrammed(gateway) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonListenersNotValid), "Not All listeners are programmed")
-
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonListenersNotValid,
-			"Not all listeners are programmed",
-		)
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonListenersNotValid, "Not all listeners are programmed")
 	}
 
 	if gateway.Spec.BackendTLS != nil && gateway.Spec.BackendTLS.ClientCertificateRef != nil {
@@ -327,27 +316,13 @@ func (r *gatewayReconciler) computeAllListenerStatus(_ context.Context, gateway 
 
 func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listener gwv1.Listener, gsu *gw.GatewayStatusUpdate, invalidListeners map[gwv1.SectionName]metav1.Condition) {
 	addInvalidListenerCondition := func(name gwv1.SectionName, msg string) {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.ListenerReasonInvalid), "Invalid listener %q: %s", name, msg)
-
-		gsu.AddListenerCondition(
-			string(name),
-			gwv1.ListenerConditionProgrammed,
-			metav1.ConditionFalse,
-			gwv1.ListenerReasonInvalid,
-			msg,
-		)
+		r.addListenerNotProgrammedCondition(gateway, gsu, name, gwv1.ListenerReasonInvalid, msg)
 	}
 
 	defer func() {
 		listenerStatus := gsu.GetListenerStatus(string(listener.Name))
 
 		if listenerStatus == nil || len(listenerStatus.Conditions) == 0 {
-			//defer func() {
-			//	r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonProgrammed), "Listener %q is valid", listener.Name)
-			//	r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonAccepted), "Listener %q is accepted", listener.Name)
-			//	r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonResolvedRefs), "Listener %q references resolved", listener.Name)
-			//}()
-
 			gsu.AddListenerCondition(
 				string(listener.Name),
 				gwv1.ListenerConditionProgrammed,
@@ -373,8 +348,6 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 			)
 		} else {
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionProgrammed)) == nil {
-				//addInvalidListenerCondition(listener.Name, "Invalid listener, see other listener conditions for details")
-				//defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonProgrammed), "Listener %q is programmed", listener.Name)
 				gsu.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionProgrammed,
@@ -385,7 +358,6 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 			}
 
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionAccepted)) == nil {
-				//defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonAccepted), "Listener %q is accepted", listener.Name)
 				gsu.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionAccepted,
@@ -396,7 +368,6 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 			}
 
 			if metautil.FindStatusCondition(listenerStatus.Conditions, string(gwv1.ListenerConditionResolvedRefs)) == nil {
-				//defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.ListenerReasonResolvedRefs), "Listener %q references resolved", listener.Name)
 				gsu.AddListenerCondition(
 					string(listener.Name),
 					gwv1.ListenerConditionResolvedRefs,
@@ -457,25 +428,29 @@ func (r *gatewayReconciler) computeListenerStatus(gateway *gwv1.Gateway, listene
 }
 
 func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Context, gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate) {
+	addNotProgrammedCondition := func(reason gwv1.GatewayConditionReason, message string) {
+		r.addGatewayNotProgrammedCondition(gw, gsu, reason, message)
+	}
+
+	addProgrammedCondition := func(reason gwv1.GatewayConditionReason, message string) {
+		r.addGatewayProgrammedCondition(gw, gsu, reason, message)
+	}
+
 	svc, err := r.gatewayService(ctx, gw)
 	if err != nil {
 		log.Error().Msgf("Failed to get Gateway service: %s", err)
+		addNotProgrammedCondition(gwv1.GatewayReasonInvalid, fmt.Sprintf("Failed to get Gateway service: %s", err))
+
+		return
 	}
+
 	if svc != nil {
 		addresses := r.gatewayAddresses(svc)
 		gsu.SetAddresses(addresses)
 	}
 
 	if len(gsu.GetAddresses()) == 0 {
-		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Addresses", "No addresses have been assigned to the Gateway")
-
-		gsu.AddCondition(
-			gwv1.GatewayConditionProgrammed,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonAddressNotAssigned,
-			"No addresses have been assigned to the Gateway",
-		)
-
+		addNotProgrammedCondition(gwv1.GatewayReasonAddressNotAssigned, "No addresses have been assigned to the Gateway")
 		return
 	}
 	//isSpecAddressAssigned := func(specAddresses []gwv1.GatewayAddress, statusAddresses []gwv1.GatewayStatusAddress) bool {
@@ -509,27 +484,12 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 
 	deployment := r.gatewayDeployment(ctx, gw)
 	if deployment == nil || deployment.Status.AvailableReplicas == 0 {
-		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Unavailable", "Gateway Deployment replicas unavailable")
-
-		gsu.AddCondition(
-			gwv1.GatewayConditionProgrammed,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonNoResources,
-			"Deployment replicas unavailable",
-		)
-
+		addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway Deployment replicas unavailable")
 		return
 	}
 
 	if deployment.Status.AvailableReplicas != 0 {
-		defer r.recorder.Eventf(gw, corev1.EventTypeNormal, string(gwv1.GatewayReasonProgrammed), fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
-
-		gsu.AddCondition(
-			gwv1.GatewayConditionProgrammed,
-			metav1.ConditionTrue,
-			gwv1.GatewayReasonProgrammed,
-			fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas),
-		)
+		addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
 	}
 }
 
@@ -574,21 +534,8 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 
 func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	if len(gateway.Spec.Addresses) > 0 {
-		gsu.AddCondition(
-			gwv1.GatewayConditionProgrammed,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonAddressNotAssigned,
-			".spec.addresses is not supported yet.",
-		)
-
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonUnsupportedAddress,
-			".spec.addresses is not supported yet.",
-		)
-
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, "Address", ".spec.addresses is not supported yet.")
+		r.addGatewayNotProgrammedCondition(gateway, gsu, gwv1.GatewayReasonAddressNotAssigned, ".spec.addresses is not supported yet.")
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonUnsupportedAddress, ".spec.addresses is not supported yet.")
 
 		return ctrl.Result{}, nil
 	}
@@ -822,36 +769,18 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, gsu *g
 	}
 
 	if err := r.fctx.Get(context.TODO(), key, cm); err != nil {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Failed to get ConfigMap %s: %s", key, err)
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Failed to get ConfigMap %s: %s", key, err),
-		)
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonInvalidParameters, fmt.Sprintf("Failed to get ConfigMap %s: %s", key, err))
 		return nil, fmt.Errorf("failed to get Configmap %s: %s", key, err)
 	}
 
 	if len(cm.Data) == 0 {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Configmap %q has no data", key)
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Configmap %q has no data", key),
-		)
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonInvalidParameters, fmt.Sprintf("Configmap %q has no data", key))
 		return nil, fmt.Errorf("configmap %q has no data", key)
 	}
 
 	valuesYaml, ok := cm.Data["values.yaml"]
 	if !ok {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Configmap %q doesn't have values.yaml", key)
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Configmap %q doesn't have required values.yaml", key),
-		)
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonInvalidParameters, fmt.Sprintf("Configmap %q doesn't have required values.yaml", key))
 		return nil, fmt.Errorf("configmap %q has no values.yaml", key)
 	}
 
@@ -859,13 +788,7 @@ func (r *gatewayReconciler) resolveParameterValues(gateway *gwv1.Gateway, gsu *g
 
 	paramsMap := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(valuesYaml), &paramsMap); err != nil {
-		defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(gwv1.GatewayReasonInvalidParameters), "Failed to unmarshal values.yaml of Configmap %s: %s", key, err)
-		gsu.AddCondition(
-			gwv1.GatewayConditionAccepted,
-			metav1.ConditionFalse,
-			gwv1.GatewayReasonInvalidParameters,
-			fmt.Sprintf("Failed to unmarshal values.yaml of Configmap %s: %s", key, err),
-		)
+		r.addGatewayNotAcceptedCondition(gateway, gsu, gwv1.GatewayReasonInvalidParameters, fmt.Sprintf("Failed to unmarshal values.yaml of Configmap %s: %s", key, err))
 		return nil, fmt.Errorf("failed to unmarshal values.yaml of Configmap %s: %s", key, err)
 	}
 

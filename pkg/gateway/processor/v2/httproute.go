@@ -94,7 +94,7 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv
 	}
 
 	if len(rule.Filters) > 0 {
-		r2.Filters = c.toV2HTTPRouteFilters(httpRoute, rule.Filters, holder)
+		r2.Filters = c.toV2HTTPRouteFilters(httpRoute, rule.Filters)
 	}
 
 	return r2
@@ -103,7 +103,7 @@ func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv
 func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
-		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
@@ -111,7 +111,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
-				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters, holder)
+				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters)
 			}
 
 			backendRefs = append(backendRefs, b2)
@@ -125,13 +125,13 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter, holder status.RouteParentStatusObject) []fgwv2.HTTPRouteFilter {
+func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter) []fgwv2.HTTPRouteFilter {
 	filters := make([]fgwv2.HTTPRouteFilter, 0)
 	for _, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
-			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(httpRoute, f.RequestMirror.BackendRef); svcPort != nil {
 				if c.toFGWBackend(svcPort) == nil {
 					continue
 				}

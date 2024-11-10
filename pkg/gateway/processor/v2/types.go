@@ -2,7 +2,6 @@ package v2
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -48,7 +47,7 @@ func (r *DummySecretReferenceConditionProvider) AddGetRefErrorCondition(obj clie
 
 }
 
-func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition(obj runtime.Object) {
+func (r *DummySecretReferenceConditionProvider) AddRefsResolvedCondition(obj client.Object) {
 
 }
 
@@ -74,7 +73,7 @@ func (r *DummyObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(obj
 func (r *DummyObjectReferenceConditionProvider) AddEmptyCACondition(obj client.Object, ref gwv1.ObjectReference) {
 }
 
-func (r *DummyObjectReferenceConditionProvider) AddRefsResolvedCondition(obj runtime.Object) {
+func (r *DummyObjectReferenceConditionProvider) AddRefsResolvedCondition(obj client.Object) {
 }
 
 // ---

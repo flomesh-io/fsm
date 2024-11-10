@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
@@ -17,28 +19,20 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 )
 
 // BackendRefToServicePortName converts a BackendRef to a ServicePortName for a given Route if the referent is a Kubernetes Service and the port is valid.
-func BackendRefToServicePortName(client cache.Cache, route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
+func BackendRefToServicePortName(client cache.Cache, route client.Object, backendRef gwv1.BackendObjectReference, addNotResolvedRefsCondition func(gwv1.RouteConditionReason, string)) *fgwv2.ServicePortName {
 	if !IsValidBackendRefToGroupKindOfService(backendRef) {
 		log.Error().Msgf("Unsupported backend group %s and kind %s for service", *backendRef.Group, *backendRef.Kind)
-		rps.AddCondition(
-			gwv1.RouteConditionResolvedRefs,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonInvalidKind,
-			fmt.Sprintf("Unsupported backend group %s and kind %s for service", *backendRef.Group, *backendRef.Kind),
-		)
+		addNotResolvedRefsCondition(gwv1.RouteReasonInvalidKind, fmt.Sprintf("Unsupported backend group %s and kind %s for service", *backendRef.Group, *backendRef.Kind))
 
 		return nil
 	}
@@ -46,12 +40,8 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 	// should not happen, there's validation rules in the CRD and webhooks, just double check
 	if backendRef.Port == nil {
 		log.Warn().Msgf("Port is not specified in the backend reference %s/%s when the referent is a Kubernetes Service", NamespaceDerefOr(backendRef.Namespace, route.GetNamespace()), backendRef.Name)
-		rps.AddCondition(
-			gwv1.RouteConditionResolvedRefs,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonBackendNotFound,
-			fmt.Sprintf("Port is not specified in the backend reference %s/%s when the referent is a Kubernetes Service", NamespaceDerefOr(backendRef.Namespace, route.GetNamespace()), backendRef.Name),
-		)
+		addNotResolvedRefsCondition(gwv1.RouteReasonBackendNotFound, fmt.Sprintf("Port is not specified in the backend reference %s/%s when the referent is a Kubernetes Service", NamespaceDerefOr(backendRef.Namespace, route.GetNamespace()), backendRef.Name))
+
 		return nil
 	}
 
@@ -71,16 +61,8 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 		},
 		GetServiceRefGrants(client),
 	) {
-		//log.Error().Msgf("Cross-namespace reference from %s.%s %s/%s to %s.%s %s/%s is not allowed",
-		//	gvk.Kind, gvk.Group, routeNamespace, route.GetName(),
-		//	string(*backendRef.Kind), string(*backendRef.Group), string(*backendRef.Namespace), backendRef.Name)
-
-		rps.AddCondition(
-			gwv1.RouteConditionResolvedRefs,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonRefNotPermitted,
-			fmt.Sprintf("Backend reference to %s/%s is not allowed", string(*backendRef.Namespace), backendRef.Name),
-		)
+		log.Warn().Msgf("Backend reference of Route %s/%s to %s/%s is not allowed", route.GetNamespace(), route.GetName(), string(*backendRef.Namespace), backendRef.Name)
+		addNotResolvedRefsCondition(gwv1.RouteReasonRefNotPermitted, fmt.Sprintf("Backend reference to %s/%s is not allowed", string(*backendRef.Namespace), backendRef.Name))
 
 		return nil
 	}
@@ -93,6 +75,12 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 	getServiceFromCache := func(key types.NamespacedName) (*corev1.Service, error) {
 		obj := &corev1.Service{}
 		if err := client.Get(context.Background(), key, obj); err != nil {
+			if errors.IsNotFound(err) {
+				addNotResolvedRefsCondition(gwv1.RouteReasonBackendNotFound, fmt.Sprintf("Backend ref to Service %s not found", key))
+			} else {
+				addNotResolvedRefsCondition(gwv1.RouteReasonBackendNotFound, fmt.Sprintf("Failed to get service %s: %s", key, err))
+			}
+
 			return nil, err
 		}
 
@@ -102,23 +90,6 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 	service, err := getServiceFromCache(key)
 	if err != nil {
 		log.Error().Msgf("Failed to get service %s: %s", key, err)
-
-		if errors.IsNotFound(err) {
-			rps.AddCondition(
-				gwv1.RouteConditionResolvedRefs,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonBackendNotFound,
-				fmt.Sprintf("Backend ref to Service %s not found", key),
-			)
-		} else {
-			rps.AddCondition(
-				gwv1.RouteConditionResolvedRefs,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonBackendNotFound,
-				fmt.Sprintf("Failed to get service %s: %s", key, err),
-			)
-		}
-
 		return nil
 	}
 
@@ -136,22 +107,10 @@ func BackendRefToServicePortName(client cache.Cache, route client.Object, backen
 
 	if svcPort == nil {
 		log.Error().Msgf("Port %d is not found in service %s", *backendRef.Port, key)
-		rps.AddCondition(
-			gwv1.RouteConditionResolvedRefs,
-			metav1.ConditionFalse,
-			gwv1.RouteReasonBackendNotFound,
-			fmt.Sprintf("Port %d is not found in service %s", *backendRef.Port, key),
-		)
+		addNotResolvedRefsCondition(gwv1.RouteReasonBackendNotFound, fmt.Sprintf("Port %d is not found in service %s", *backendRef.Port, key))
 
 		return nil
 	}
-
-	//rps.AddCondition(
-	//	gwv1.RouteConditionResolvedRefs,
-	//	metav1.ConditionTrue,
-	//	gwv1.RouteReasonResolvedRefs,
-	//	fmt.Sprintf("References of %s is resolved", gvk.Kind),
-	//)
 
 	return &fgwv2.ServicePortName{
 		NamespacedName: key,

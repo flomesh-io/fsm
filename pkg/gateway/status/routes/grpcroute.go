@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -19,14 +18,7 @@ func (p *RouteStatusProcessor) processGRPCRouteStatus(route *gwv1.GRPCRoute, par
 	}
 
 	// All backend references of all rules have been resolved successfully for the parent
-	defer p.recorder.Eventf(route, corev1.EventTypeNormal, string(gwv1.RouteReasonResolvedRefs), "All backend references are resolved")
-
-	rps.AddCondition(
-		gwv1.RouteConditionResolvedRefs,
-		metav1.ConditionTrue,
-		gwv1.RouteReasonResolvedRefs,
-		"All backend references are resolved",
-	)
+	p.addResolvedRefsCondition(route, rps, gwv1.RouteReasonResolvedRefs, "All backend references are resolved")
 
 	return true
 }
@@ -52,32 +44,15 @@ func (p *RouteStatusProcessor) processGRPCRouteBackend(route *gwv1.GRPCRoute, pa
 		case constants.AppProtocolH2C:
 			log.Debug().Msgf("Backend Protocol: %q for service port %q", *svcPort.AppProtocol, svcPort.String())
 			if svcPort.Protocol != corev1.ProtocolTCP {
-				defer p.recorder.Eventf(route, corev1.EventTypeWarning, string(gwv1.RouteReasonUnsupportedProtocol), "Unsupported AppProtocol %q for protocol %q", *svcPort.AppProtocol, svcPort.Protocol)
-
-				rps.AddCondition(
-					gwv1.RouteConditionResolvedRefs,
-					metav1.ConditionFalse,
-					gwv1.RouteReasonUnsupportedProtocol,
-					fmt.Sprintf("Unsupported AppProtocol %q for protocol %q", *svcPort.AppProtocol, svcPort.Protocol),
-				)
-
+				p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q for protocol %q", *svcPort.AppProtocol, svcPort.Protocol))
 				return false
 			}
 		default:
-			defer p.recorder.Eventf(route, corev1.EventTypeWarning, string(gwv1.RouteReasonUnsupportedProtocol), "Unsupported AppProtocol %q", *svcPort.AppProtocol)
-
-			rps.AddCondition(
-				gwv1.RouteConditionResolvedRefs,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonUnsupportedProtocol,
-				"Unsupported AppProtocol %q",
-			)
-
+			p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q", *svcPort.AppProtocol))
 			return false
 		}
 	}
 
-	log.Debug().Msgf("BackendRef: %v, svcPort: %s", bk.BackendObjectReference, svcPort.String())
 	p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef, func(found bool) {})
 	p.computeBackendLBPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef)
 
