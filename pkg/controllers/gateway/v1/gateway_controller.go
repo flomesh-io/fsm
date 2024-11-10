@@ -225,14 +225,15 @@ func (r *gatewayReconciler) compute(gateway *gwv1.Gateway) bool {
 func (r *gatewayReconciler) computeGatewayStatus(ctx context.Context, gateway *gwv1.Gateway) (ctrl.Result, error) {
 	gsu := gw.NewGatewayStatusUpdate(gateway)
 
-	defer func() {
-		if gsu.IsStatusConditionTrue(gwv1.GatewayConditionProgrammed) {
-			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonProgrammed), "Gateway is programmed")
+	recordGatewayEvent := func(cond gwv1.GatewayConditionType, reason gwv1.GatewayConditionReason, message string) {
+		if gsu.IsStatusConditionTrue(cond) {
+			r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(reason), message)
 		}
+	}
 
-		if gsu.IsStatusConditionTrue(gwv1.GatewayConditionAccepted) {
-			defer r.recorder.Eventf(gateway, corev1.EventTypeNormal, string(gwv1.GatewayReasonAccepted), "Gateway is accepted")
-		}
+	defer func() {
+		recordGatewayEvent(gwv1.GatewayConditionProgrammed, gwv1.GatewayReasonProgrammed, "Gateway is programmed")
+		recordGatewayEvent(gwv1.GatewayConditionAccepted, gwv1.GatewayReasonAccepted, "Gateway is accepted")
 
 		r.fctx.StatusUpdater.Send(status.Update{
 			Resource:       &gwv1.Gateway{},
@@ -564,7 +565,7 @@ func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Con
 	gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
 	parentPath := utils.GetDefaultGatewaysPath()
 	if err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
-		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase of gateway: %s", err)
+		r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase: %s", err)
 
 		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
 	}
@@ -636,7 +637,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 		r.kubeVersionForTemplate(),
 	)
 	if ctrlResult, err := helm.RenderChart(templateClient, gw, chartSource, mc, r.fctx.Client, r.fctx.Scheme, resolveValues); err != nil {
-		defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
+		r.recorder.Eventf(gw, corev1.EventTypeWarning, "Deploy", "Failed to deploy gateway: %s", err)
 
 		return ctrlResult, err
 	}

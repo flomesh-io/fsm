@@ -29,6 +29,8 @@ import (
 	"fmt"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	whtypes "github.com/flomesh-io/fsm/pkg/webhook/types"
 
 	whblder "github.com/flomesh-io/fsm/pkg/webhook/builder"
@@ -37,7 +39,6 @@ import (
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metautil "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,8 +128,6 @@ func (r *gatewayClassReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
-	defer r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
-
 	metautil.SetStatusCondition(&gatewayClass.Status.Conditions, metav1.Condition{
 		Type:               string(gwv1.GatewayClassConditionStatusAccepted),
 		Status:             metav1.ConditionTrue,
@@ -137,6 +136,8 @@ func (r *gatewayClassReconciler) setAccepted(gatewayClass *gwv1.GatewayClass) {
 		Reason:             string(gwv1.GatewayClassReasonAccepted),
 		Message:            fmt.Sprintf("GatewayClass %q is accepted.", gatewayClass.Name),
 	})
+
+	r.recorder.Eventf(gatewayClass, corev1.EventTypeNormal, "Accepted", "GatewayClass is accepted")
 }
 
 // SetupWithManager sets up the controller with the Manager.

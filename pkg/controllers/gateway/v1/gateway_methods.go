@@ -9,10 +9,11 @@ import (
 )
 
 func (r *gatewayReconciler) addInvalidListenerCondition(gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, name gwv1.SectionName, cond metav1.Condition) {
-	defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, cond.Reason, cond.Message)
-
-	gsu.AddListenerCondition(
-		string(name),
+	r.addListenerCondition(
+		gateway,
+		gsu,
+		name,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionType(cond.Type),
 		cond.Status,
 		gwv1.ListenerConditionReason(cond.Reason),
@@ -21,10 +22,11 @@ func (r *gatewayReconciler) addInvalidListenerCondition(gateway *gwv1.Gateway, g
 }
 
 func (r *gatewayReconciler) addListenerNotProgrammedCondition(gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, name gwv1.SectionName, reason gwv1.ListenerConditionReason, msg string) {
-	defer r.recorder.Eventf(gateway, corev1.EventTypeWarning, string(reason), msg)
-
-	gsu.AddListenerCondition(
-		string(name),
+	r.addListenerCondition(
+		gateway,
+		gsu,
+		name,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionProgrammed,
 		metav1.ConditionFalse,
 		reason,
@@ -33,9 +35,10 @@ func (r *gatewayReconciler) addListenerNotProgrammedCondition(gateway *gwv1.Gate
 }
 
 func (r *gatewayReconciler) addGatewayNotProgrammedCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, reason gwv1.GatewayConditionReason, msg string) {
-	defer r.recorder.Eventf(gw, corev1.EventTypeWarning, string(reason), msg)
-
-	gsu.AddCondition(
+	r.addCondition(
+		gw,
+		gsu,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionProgrammed,
 		metav1.ConditionFalse,
 		reason,
@@ -44,9 +47,10 @@ func (r *gatewayReconciler) addGatewayNotProgrammedCondition(gw *gwv1.Gateway, g
 }
 
 func (r *gatewayReconciler) addGatewayProgrammedCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, reason gwv1.GatewayConditionReason, msg string) {
-	defer r.recorder.Eventf(gw, corev1.EventTypeNormal, string(reason), msg)
-
-	gsu.AddCondition(
+	r.addCondition(
+		gw,
+		gsu,
+		corev1.EventTypeNormal,
 		gwv1.GatewayConditionProgrammed,
 		metav1.ConditionTrue,
 		reason,
@@ -55,12 +59,36 @@ func (r *gatewayReconciler) addGatewayProgrammedCondition(gw *gwv1.Gateway, gsu 
 }
 
 func (r *gatewayReconciler) addGatewayNotAcceptedCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, reason gwv1.GatewayConditionReason, msg string) {
-	defer r.recorder.Eventf(gw, corev1.EventTypeWarning, string(reason), msg)
-
-	gsu.AddCondition(
+	r.addCondition(
+		gw,
+		gsu,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionFalse,
 		reason,
 		msg,
 	)
+}
+
+func (r *gatewayReconciler) addCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, eventType string, conditionType gwv1.GatewayConditionType, status metav1.ConditionStatus, reason gwv1.GatewayConditionReason, message string) {
+	gsu.AddCondition(
+		conditionType,
+		status,
+		reason,
+		message,
+	)
+
+	r.recorder.Event(gw, eventType, string(reason), message)
+}
+
+func (r *gatewayReconciler) addListenerCondition(gw *gwv1.Gateway, gsu *gw.GatewayStatusUpdate, name gwv1.SectionName, eventType string, conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+	gsu.AddListenerCondition(
+		string(name),
+		conditionType,
+		status,
+		reason,
+		message,
+	)
+
+	r.recorder.Event(gw, eventType, string(reason), message)
 }
