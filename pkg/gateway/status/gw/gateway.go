@@ -21,8 +21,6 @@ type GatewayStatusUpdate struct {
 	conditions         map[gwv1.GatewayConditionType]metav1.Condition
 	existingConditions map[gwv1.GatewayConditionType]metav1.Condition
 	listenerStatus     map[string]*gwv1.ListenerStatus
-	objectMeta         *metav1.ObjectMeta
-	typeMeta           *metav1.TypeMeta
 	resource           client.Object
 	transitionTime     metav1.Time
 	fullName           types.NamespacedName
@@ -35,8 +33,6 @@ func NewGatewayStatusUpdate(gw *gwv1.Gateway) *GatewayStatusUpdate {
 	gs := &gw.Status
 
 	return &GatewayStatusUpdate{
-		objectMeta:         &gw.ObjectMeta,
-		typeMeta:           &gw.TypeMeta,
 		resource:           gw,
 		transitionTime:     metav1.Time{Time: time.Now()},
 		fullName:           types.NamespacedName{Namespace: gw.Namespace, Name: gw.Name},
