@@ -94,7 +94,7 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv
 	}
 
 	if len(r2.Filters) > 0 {
-		r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters, holder)
+		r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters)
 	}
 
 	return r2
@@ -103,7 +103,7 @@ func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv
 func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
 	for _, bk := range rule.BackendRefs {
-		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
@@ -111,7 +111,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
-				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters, holder)
+				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters)
 			}
 
 			backendRefs = append(backendRefs, b2)
@@ -125,13 +125,13 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []fgwv2.GRPCRouteFilter {
+func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter) []fgwv2.GRPCRouteFilter {
 	filters := make([]fgwv2.GRPCRouteFilter, 0)
 	for _, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
-			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef, holder); svcPort != nil {
+			if svcPort := c.backendRefToServicePortName(grpcRoute, f.RequestMirror.BackendRef); svcPort != nil {
 				if c.toFGWBackend(svcPort) == nil {
 					continue
 				}
@@ -202,7 +202,8 @@ func (c *ConfigGenerator) ignoreGRPCRoute(grpcRoute *gwv1.GRPCRoute, rsh status.
 			continue
 		}
 
-		allowedListeners := gwutils.GetAllowedListeners(c.client, c.gateway, h)
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
 		if len(allowedListeners) == 0 {
 			continue
 		}

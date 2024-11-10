@@ -78,7 +78,7 @@ func (p *BackendTLSPolicyProcessor) getOrCreateBackendTLSPolicy(policy *gwv1alph
 }
 
 func (p *BackendTLSPolicyProcessor) processCACertificates(policy *gwv1alpha3.BackendTLSPolicy, p2 *fgwv2.BackendTLSPolicy) {
-	resolver := gwutils.NewObjectReferenceResolverFactory(&DummyObjectReferenceResolver{}, p.generator.client)
+	resolver := gwutils.NewObjectReferenceResolver(&DummyObjectReferenceConditionProvider{}, p.generator.client)
 
 	for index, ref := range policy.Spec.Validation.CACertificateRefs {
 		caName := fmt.Sprintf("bktls-%s-%s-%d.crt", policy.Namespace, policy.Name, index)

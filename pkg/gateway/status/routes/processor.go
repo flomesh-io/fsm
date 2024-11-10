@@ -28,6 +28,10 @@ import (
 	"context"
 	"fmt"
 
+	metautil "k8s.io/apimachinery/pkg/api/meta"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/client-go/tools/record"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -67,153 +71,135 @@ func NewRouteStatusProcessor(cache cache.Cache, recorder record.EventRecorder, s
 }
 
 // Process computes the status of a Route
-func (p *RouteStatusProcessor) Process(_ context.Context, update status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
+func (p *RouteStatusProcessor) Process(_ context.Context, rs status.RouteStatusObject, parentRefs []gwv1.ParentReference) error {
 	//if activeGateways := gwutils.GetActiveGateways(p.client); len(activeGateways) > 0 {
-	//	p.computeRouteParentStatus(activeGateways, update, parentRefs)
+	//	p.computeRouteParentStatus(activeGateways, rs, parentRefs)
 	//
 	//	updater.Send(status.Update{
-	//		Resource:       update.GetResource(),
-	//		NamespacedName: update.GetFullName(),
-	//		Mutator:        update,
+	//		Resource:       rs.GetResource(),
+	//		NamespacedName: rs.GetFullName(),
+	//		Mutator:        rs,
 	//	})
 	//}
 
 	defer func() {
 		p.statusUpdater.Send(status.Update{
-			Resource:       update.GetResource(),
-			NamespacedName: update.GetFullName(),
-			Mutator:        update,
+			Resource:       rs.GetResource(),
+			NamespacedName: rs.GetFullName(),
+			Mutator:        rs,
 		})
 	}()
 
-	p.computeRouteParentStatus(update, parentRefs)
+	for _, parentRef := range parentRefs {
+		p.computeRouteParentStatus(rs, parentRef)
+	}
 
 	return nil
 }
 
 //gocyclo:ignore
-func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObject, parentRefs []gwv1.ParentReference) {
-	for _, parentRef := range parentRefs {
-		rps := rs.StatusUpdateFor(parentRef)
+func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObject, parentRef gwv1.ParentReference) {
+	rps := rs.StatusUpdateFor(parentRef)
 
-		gvk := rs.GroupVersionKind()
-		rps.AddCondition(
-			gwv1.RouteConditionAccepted,
-			metav1.ConditionTrue,
-			gwv1.RouteReasonAccepted,
-			fmt.Sprintf("%s is Accepted", gvk.Kind),
-		)
+	gvk := rs.GroupVersionKind()
+	rps.AddCondition(
+		gwv1.RouteConditionAccepted,
+		metav1.ConditionTrue,
+		gwv1.RouteReasonAccepted,
+		fmt.Sprintf("%s is accepted", gvk.Kind),
+	)
 
-		if parentRef.Group != nil && *parentRef.Group != gwv1.GroupName {
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonUnsupportedValue,
-				fmt.Sprintf("Group %q is not supported as parent of xRoute", *parentRef.Group),
-			)
-			continue
+	defer func() {
+		if metautil.IsStatusConditionTrue(rps.GetRouteStatusObject().ConditionsForParentRef(parentRef), string(gwv1.RouteConditionAccepted)) {
+			defer p.recorder.Eventf(rs.GetResource(), corev1.EventTypeNormal, string(gwv1.RouteReasonAccepted), "%s is accepted", gvk.Kind)
+		}
+	}()
+
+	if parentRef.Group != nil && *parentRef.Group != gwv1.GroupName {
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonUnsupportedValue, fmt.Sprintf("Group %q is not supported as parent of Route", *parentRef.Group))
+
+		return
+	}
+
+	if parentRef.Kind != nil && *parentRef.Kind != constants.GatewayAPIGatewayKind {
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonUnsupportedValue, fmt.Sprintf("Kind %q is not supported as parent of Route", *parentRef.Kind))
+
+		return
+	}
+
+	parentKey := types.NamespacedName{
+		Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, rs.GetFullName().Namespace),
+		Name:      string(parentRef.Name),
+	}
+	parent := &gwv1.Gateway{}
+	if err := p.client.Get(context.Background(), parentKey, parent); err != nil {
+		if errors.IsNotFound(err) {
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Parent %s not found", parentKey))
+		} else {
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Failed to get Parent %s: %s", parentKey, err))
 		}
 
-		if parentRef.Kind != nil && *parentRef.Kind != constants.GatewayAPIGatewayKind {
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonUnsupportedValue,
-				fmt.Sprintf("Kind %q is not supported as parent of xRoute", *parentRef.Kind),
-			)
-			continue
-		}
+		return
+	}
 
-		parentKey := types.NamespacedName{
-			Namespace: gwutils.NamespaceDerefOr(parentRef.Namespace, rs.GetFullName().Namespace),
-			Name:      string(parentRef.Name),
-		}
-		parent := &gwv1.Gateway{}
-		if err := p.client.Get(context.Background(), parentKey, parent); err != nil {
-			if errors.IsNotFound(err) {
-				rps.AddCondition(
-					gwv1.RouteConditionAccepted,
-					metav1.ConditionFalse,
-					gwv1.RouteReasonNoMatchingParent,
-					fmt.Sprintf("Parent %s not found", parentKey),
-				)
-			} else {
-				rps.AddCondition(
-					gwv1.RouteConditionAccepted,
-					metav1.ConditionFalse,
-					gwv1.RouteReasonNoMatchingParent,
-					fmt.Sprintf("Failed to get Parent %s: %s", parentKey, err),
-				)
-			}
-			continue
-		}
+	if !gwutils.IsActiveGateway(parent) {
+		p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingParent, fmt.Sprintf("Parent %s is not accepted or programmed", parentKey))
+		return
+	}
 
-		if !gwutils.IsActiveGateway(parent) {
-			rps.AddCondition(
-				gwv1.RouteConditionAccepted,
-				metav1.ConditionFalse,
-				gwv1.RouteReasonNoMatchingParent,
-				fmt.Sprintf("Parent %s is not accepted or programmed", parentKey),
-			)
-			continue
+	resolver := gwutils.NewGatewayListenerResolver(NewRouteParentListenerConditionProvider(rps, p.recorder), p.client, rps)
+	allowedListeners := resolver.GetAllowedListeners(parent)
+	if len(allowedListeners) == 0 {
+		return
+	}
+
+	count := 0
+	for _, listener := range allowedListeners {
+		hostnames := gwutils.GetValidHostnames(listener.Hostname, rs.GetHostnames())
+
+		//if len(hostnames) == 0 {
+		//	continue
+		//}
+
+		count += len(hostnames)
+	}
+
+	switch gvk.Kind {
+	case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
+		if count == 0 && !rps.ConditionExists(gwv1.RouteConditionAccepted) {
+			p.addNotAcceptedCondition(rs.GetResource(), rps, gwv1.RouteReasonNoMatchingListenerHostname, "No matching hostnames were found between the listener and the route.")
+			return
 		}
+	}
 
-		allowedListeners := gwutils.GetAllowedListeners(p.client, parent, rps)
-		if len(allowedListeners) == 0 {
-			continue
+	switch route := rs.GetResource().(type) {
+	case *gwv1.HTTPRoute:
+		if !p.processHTTPRouteStatus(route, parentRef, rps) {
+			return
 		}
-
-		count := 0
-		for _, listener := range allowedListeners {
-			hostnames := gwutils.GetValidHostnames(listener.Hostname, rs.GetHostnames())
-
-			//if len(hostnames) == 0 {
-			//	continue
-			//}
-
-			count += len(hostnames)
+	case *gwv1.GRPCRoute:
+		if !p.processGRPCRouteStatus(route, parentRef, rps) {
+			return
 		}
-
-		switch gvk.Kind {
-		case constants.GatewayAPIHTTPRouteKind, constants.GatewayAPITLSRouteKind, constants.GatewayAPIGRPCRouteKind:
-			if count == 0 && !rps.ConditionExists(gwv1.RouteConditionAccepted) {
-				rps.AddCondition(
-					gwv1.RouteConditionAccepted,
-					metav1.ConditionFalse,
-					gwv1.RouteReasonNoMatchingListenerHostname,
-					"No matching hostnames were found between the listener and the route.",
-				)
-				continue
-			}
+	case *gwv1alpha2.TLSRoute:
+		//for _, rule := range route.Spec.Rules {
+		//
+		//}
+	case *gwv1alpha2.TCPRoute:
+		if !p.processTCPRouteStatus(route, parentRef, rps) {
+			return
 		}
-
-		switch route := rs.GetResource().(type) {
-		case *gwv1.HTTPRoute:
-			if !p.processHTTPRouteStatus(route, parentRef, rps) {
-				continue
-			}
-		case *gwv1.GRPCRoute:
-			if !p.processGRPCRouteStatus(route, parentRef, rps) {
-				continue
-			}
-		case *gwv1alpha2.TLSRoute:
-			//for _, rule := range route.Spec.Rules {
-			//
-			//}
-		case *gwv1alpha2.TCPRoute:
-			if !p.processTCPRouteStatus(route, parentRef, rps) {
-				continue
-			}
-		case *gwv1alpha2.UDPRoute:
-			if !p.processUDPRouteStatus(route, rps) {
-				continue
-			}
-		default:
-			continue
+	case *gwv1alpha2.UDPRoute:
+		if !p.processUDPRouteStatus(route, rps) {
+			return
 		}
+	default:
+		return
 	}
 }
 
-func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteParentStatusObject) *fgwv2.ServicePortName {
-	return gwutils.BackendRefToServicePortName(p.client, route, backendRef, rps)
+func (p *RouteStatusProcessor) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
+	return gwutils.BackendRefToServicePortName(p.client, route, backendRef, func(reason gwv1.RouteConditionReason, message string) {
+		p.addNotResolvedRefsCondition(route, rps, reason, message)
+	})
 }

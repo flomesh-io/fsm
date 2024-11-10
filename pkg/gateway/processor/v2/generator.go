@@ -9,10 +9,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	"github.com/flomesh-io/fsm/pkg/gateway/processor"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
+	"github.com/flomesh-io/fsm/pkg/gateway/processor"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -97,8 +95,8 @@ func (c *ConfigGenerator) processResources() []fgwv2.Resource {
 	return resources
 }
 
-func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference, rps status.RouteConditionAccessor) *fgwv2.ServicePortName {
-	return gwutils.BackendRefToServicePortName(c.client, route, backendRef, rps)
+func (c *ConfigGenerator) backendRefToServicePortName(route client.Object, backendRef gwv1.BackendObjectReference) *fgwv2.ServicePortName {
+	return gwutils.BackendRefToServicePortName(c.client, route, backendRef, func(gwv1.RouteConditionReason, string) {})
 }
 
 func (c *ConfigGenerator) getServiceFromCache(key client.ObjectKey) (*corev1.Service, error) {

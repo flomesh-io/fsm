@@ -28,9 +28,12 @@ package v1
 import (
 	"fmt"
 
+	"k8s.io/client-go/tools/record"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status/gw"
@@ -45,17 +48,21 @@ var (
 // ---
 
 type GatewaySecretReferenceResolver struct {
-	update *gw.GatewayStatusUpdate
+	update   *gw.GatewayStatusUpdate
+	recorder record.EventRecorder
 }
 
-func NewGatewaySecretReferenceResolver(update *gw.GatewayStatusUpdate) *GatewaySecretReferenceResolver {
+func NewGatewaySecretReferenceResolver(update *gw.GatewayStatusUpdate, recorder record.EventRecorder) *GatewaySecretReferenceResolver {
 	return &GatewaySecretReferenceResolver{
-		update: update,
+		update:   update,
+		recorder: recorder,
 	}
 }
 
-func (r *GatewaySecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewaySecretReferenceResolver) AddInvalidCertificateRefCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionFalse,
 		gwv1.GatewayReasonInvalid,
@@ -63,8 +70,10 @@ func (r *GatewaySecretReferenceResolver) AddInvalidCertificateRefCondition(ref g
 	)
 }
 
-func (r *GatewaySecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewaySecretReferenceResolver) AddRefNotPermittedCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionFalse,
 		gwv1.GatewayReasonInvalid,
@@ -72,8 +81,10 @@ func (r *GatewaySecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.Se
 	)
 }
 
-func (r *GatewaySecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+func (r *GatewaySecretReferenceResolver) AddRefNotFoundCondition(obj client.Object, key types.NamespacedName) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionFalse,
 		gwv1.GatewayReasonInvalid,
@@ -81,8 +92,10 @@ func (r *GatewaySecretReferenceResolver) AddRefNotFoundCondition(key types.Names
 	)
 }
 
-func (r *GatewaySecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+func (r *GatewaySecretReferenceResolver) AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, err error) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionFalse,
 		gwv1.GatewayReasonInvalid,
@@ -90,40 +103,48 @@ func (r *GatewaySecretReferenceResolver) AddGetRefErrorCondition(key types.Names
 	)
 }
 
-func (r *GatewaySecretReferenceResolver) AddRefsResolvedCondition() {
+func (r *GatewaySecretReferenceResolver) AddRefsResolvedCondition(obj client.Object) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeNormal,
 		gwv1.GatewayConditionAccepted,
 		metav1.ConditionTrue,
 		gwv1.GatewayReasonAccepted,
-		"BackendTLS Reference resolved",
+		"Gateway BackendTLS Reference resolved",
 	)
 }
 
-func (r *GatewaySecretReferenceResolver) addCondition(conditionType gwv1.GatewayConditionType, status metav1.ConditionStatus, reason gwv1.GatewayConditionReason, message string) {
+func (r *GatewaySecretReferenceResolver) addCondition(obj client.Object, eventType string, conditionType gwv1.GatewayConditionType, status metav1.ConditionStatus, reason gwv1.GatewayConditionReason, message string) {
 	r.update.AddCondition(
 		conditionType,
 		status,
 		reason,
 		message,
 	)
+
+	r.recorder.Event(obj, eventType, string(reason), message)
 }
 
 // ---
 
-type GatewayListenerSecretReferenceResolver struct {
+type GatewayListenerSecretReferenceConditionProvider struct {
 	update       *gw.GatewayStatusUpdate
 	listenerName string
+	recorder     record.EventRecorder
 }
 
-func NewGatewayListenerSecretReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerSecretReferenceResolver {
-	return &GatewayListenerSecretReferenceResolver{
+func NewGatewayListenerSecretReferenceConditionProvider(name string, update *gw.GatewayStatusUpdate, recorder record.EventRecorder) *GatewayListenerSecretReferenceConditionProvider {
+	return &GatewayListenerSecretReferenceConditionProvider{
 		update:       update,
 		listenerName: name,
+		recorder:     recorder,
 	}
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddInvalidCertificateRefCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddInvalidCertificateRefCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -131,8 +152,10 @@ func (r *GatewayListenerSecretReferenceResolver) AddInvalidCertificateRefConditi
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefNotPermittedCondition(ref gwv1.SecretObjectReference) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefNotPermittedCondition(obj client.Object, ref gwv1.SecretObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonRefNotPermitted,
@@ -140,8 +163,10 @@ func (r *GatewayListenerSecretReferenceResolver) AddRefNotPermittedCondition(ref
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefNotFoundCondition(obj client.Object, key types.NamespacedName) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -149,8 +174,10 @@ func (r *GatewayListenerSecretReferenceResolver) AddRefNotFoundCondition(key typ
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, err error) {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, err error) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -158,16 +185,18 @@ func (r *GatewayListenerSecretReferenceResolver) AddGetRefErrorCondition(key typ
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) AddRefsResolvedCondition() {
+func (r *GatewayListenerSecretReferenceConditionProvider) AddRefsResolvedCondition(obj client.Object) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeNormal,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionTrue,
 		gwv1.ListenerReasonResolvedRefs,
-		"References resolved",
+		fmt.Sprintf("Secret references of listener %q resolved", r.listenerName),
 	)
 }
 
-func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+func (r *GatewayListenerSecretReferenceConditionProvider) addCondition(obj client.Object, eventType string, conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
 	r.update.AddListenerCondition(
 		r.listenerName,
 		conditionType,
@@ -175,24 +204,30 @@ func (r *GatewayListenerSecretReferenceResolver) addCondition(conditionType gwv1
 		reason,
 		message,
 	)
+
+	r.recorder.Event(obj, eventType, string(reason), message)
 }
 
 // ---
 
-type GatewayListenerObjectReferenceResolver struct {
+type GatewayListenerObjectReferenceConditionProvider struct {
 	listenerName string
 	update       *gw.GatewayStatusUpdate
+	recorder     record.EventRecorder
 }
 
-func NewGatewayListenerObjectReferenceResolver(name string, update *gw.GatewayStatusUpdate) *GatewayListenerObjectReferenceResolver {
-	return &GatewayListenerObjectReferenceResolver{
+func NewGatewayListenerObjectReferenceConditionProvider(name string, update *gw.GatewayStatusUpdate, recorder record.EventRecorder) *GatewayListenerObjectReferenceConditionProvider {
+	return &GatewayListenerObjectReferenceConditionProvider{
 		listenerName: name,
 		update:       update,
+		recorder:     recorder,
 	}
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddInvalidRefCondition(ref gwv1.ObjectReference) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddInvalidRefCondition(obj client.Object, ref gwv1.ObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -200,8 +235,10 @@ func (r *GatewayListenerObjectReferenceResolver) AddInvalidRefCondition(ref gwv1
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefNotPermittedCondition(ref gwv1.ObjectReference) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefNotPermittedCondition(obj client.Object, ref gwv1.ObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonRefNotPermitted,
@@ -209,8 +246,10 @@ func (r *GatewayListenerObjectReferenceResolver) AddRefNotPermittedCondition(ref
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefNotFoundCondition(key types.NamespacedName, kind string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefNotFoundCondition(obj client.Object, key types.NamespacedName, kind string) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -218,8 +257,10 @@ func (r *GatewayListenerObjectReferenceResolver) AddRefNotFoundCondition(key typ
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddGetRefErrorCondition(key types.NamespacedName, kind string, err error) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddGetRefErrorCondition(obj client.Object, key types.NamespacedName, kind string, err error) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -227,8 +268,10 @@ func (r *GatewayListenerObjectReferenceResolver) AddGetRefErrorCondition(key typ
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddNoRequiredCAFileCondition(key types.NamespacedName, kind string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddNoRequiredCAFileCondition(obj client.Object, key types.NamespacedName, kind string) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
@@ -236,25 +279,29 @@ func (r *GatewayListenerObjectReferenceResolver) AddNoRequiredCAFileCondition(ke
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddEmptyCACondition(ref gwv1.ObjectReference, refererNamespace string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddEmptyCACondition(obj client.Object, ref gwv1.ObjectReference) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeWarning,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionFalse,
 		gwv1.ListenerReasonInvalidCertificateRef,
-		fmt.Sprintf("CA Certificate is empty in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, refererNamespace), ref.Name),
+		fmt.Sprintf("CA Certificate is empty in %s %s/%s", ref.Kind, gwutils.NamespaceDerefOr(ref.Namespace, obj.GetNamespace()), ref.Name),
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) AddRefsResolvedCondition() {
+func (r *GatewayListenerObjectReferenceConditionProvider) AddRefsResolvedCondition(obj client.Object) {
 	r.addCondition(
+		obj,
+		corev1.EventTypeNormal,
 		gwv1.ListenerConditionResolvedRefs,
 		metav1.ConditionTrue,
 		gwv1.ListenerReasonResolvedRefs,
-		"References resolved",
+		"Object references of all listeners resolved",
 	)
 }
 
-func (r *GatewayListenerObjectReferenceResolver) addCondition(conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
+func (r *GatewayListenerObjectReferenceConditionProvider) addCondition(obj client.Object, eventType string, conditionType gwv1.ListenerConditionType, status metav1.ConditionStatus, reason gwv1.ListenerConditionReason, message string) {
 	r.update.AddListenerCondition(
 		r.listenerName,
 		conditionType,
@@ -262,4 +309,6 @@ func (r *GatewayListenerObjectReferenceResolver) addCondition(conditionType gwv1
 		reason,
 		message,
 	)
+
+	r.recorder.Event(obj, eventType, string(reason), message)
 }

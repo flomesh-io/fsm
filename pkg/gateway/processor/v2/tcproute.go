@@ -97,7 +97,7 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	backendRefs := make([]fgwv2.BackendRef, 0)
 	for _, backend := range rule.BackendRefs {
 		backend := backend
-		if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference, holder); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(tcpRoute, backend.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
@@ -125,7 +125,8 @@ func (c *ConfigGenerator) ignoreTCPRoute(tcpRoute *gwv1alpha2.TCPRoute, rsh stat
 			continue
 		}
 
-		allowedListeners := gwutils.GetAllowedListeners(c.client, c.gateway, h)
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
 		if len(allowedListeners) == 0 {
 			continue
 		}

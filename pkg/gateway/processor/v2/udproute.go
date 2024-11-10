@@ -98,7 +98,7 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 	backendRefs := make([]fgwv2.BackendRef, 0)
 	for _, backend := range rule.BackendRefs {
 		backend := backend
-		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference, holder); svcPort != nil {
+		if svcPort := c.backendRefToServicePortName(udpRoute, backend.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
 			}
@@ -122,7 +122,8 @@ func (c *ConfigGenerator) ignoreUDPRoute(udpRoute *gwv1alpha2.UDPRoute, rsh stat
 			continue
 		}
 
-		allowedListeners := gwutils.GetAllowedListeners(c.client, c.gateway, h)
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
 		if len(allowedListeners) == 0 {
 			continue
 		}
