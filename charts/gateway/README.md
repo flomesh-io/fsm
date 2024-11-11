@@ -115,6 +115,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.tag | string | `"1.4.0"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-gateway` image pull secret |
 | fsm.meshName | string | `"fsm"` | Identifier for the instance of a service mesh within a cluster |
+| fsm.trafficInterceptionMode | string | `"PodLevel"` | Traffic interception mode |
 
 <!-- markdownlint-enable MD013 MD034 -->
 <!-- markdownlint-restore -->
