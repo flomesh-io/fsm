@@ -30,6 +30,9 @@ fsm:
   # -- Namespace to deploy FSM in. If not specified, the Helm release namespace is used.
   fsmNamespace: ""
 
+  # -- Traffic interception mode
+  trafficInterceptionMode: PodLevel
+
   gateway:
     logLevel: info
 

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	log = logger.New("helm-utilities")
+	log = logger.NewPretty("helm-utilities")
 )
 
 type YAMLHandlerFunc func(dynamicClient dynamic.Interface, mapper meta.RESTMapper, manifest string) error
