@@ -1,6 +1,7 @@
 import resources from './resources.js'
 
 export var log
+export var dumpEnabled
 
 var logFunc = function (a, b, c, d, e, f) {
   var n = 6
@@ -21,8 +22,12 @@ var logFunc = function (a, b, c, d, e, f) {
   }
 }
 
-export function logEnable(on) {
+export function enableLog(on) {
   log = on ? logFunc : null
+}
+
+export function enableDump(on) {
+  dumpEnabled = on
 }
 
 export function isIdentical(a, b) {
