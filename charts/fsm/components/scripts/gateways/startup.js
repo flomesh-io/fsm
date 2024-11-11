@@ -92,6 +92,9 @@ function makeListener(gateway, listener) {
       return new Data
     })
     .pipe(pipelines, () => $ctx)
+    .onEnd(() => {
+      log?.(`Inb #${$ctx.inbound.id} closed`)
+    })
   )
 
   log?.(`Start listening on ${wireProto} port ${port}`)

@@ -2,7 +2,7 @@ import makeBackend from './backend.js'
 import makeBackendTLS from './backend-tls.js'
 import makeSessionPersistence from './session-persistence.js'
 import makeHealthCheck from './health-check.js'
-import { log, stringifyHTTPHeaders, findPolicies } from '../utils.js'
+import { log, dumpEnabled, stringifyHTTPHeaders, findPolicies } from '../utils.js'
 
 var $ctx
 var $session
@@ -41,6 +41,7 @@ export default function (backendRef, backendResource, gateway, isHTTP2) {
         log?.(
           `Inb #${$ctx.parent.inbound.id} Req #${$ctx.id}`, evt.head.method, evt.head.path,
           `forward ${$session?.target?.address}`,
+          `session ${algo.hash($session).toString(16)}`,
           `headers ${stringifyHTTPHeaders(evt.head.headers)}`,
         )
         return $session ? forward : reject
@@ -54,7 +55,7 @@ export default function (backendRef, backendResource, gateway, isHTTP2) {
     $.handleMessageEnd(res => {
       var r = $ctx.response
       r.tail = res.tail
-      r.tailTime = res.tailTime
+      r.tailTime = Date.now()
     })
 
     if (log) {
@@ -94,6 +95,12 @@ export default function (backendRef, backendResource, gateway, isHTTP2) {
           }).to($=>$
             .pipe(backend.connect, () => $conn)
           )
+        } else if (dumpEnabled) {
+          $.replaceMessageStart()
+          $.replaceMessageEnd()
+          $.dump(() => '>>> ' + algo.hash($session).toString(16))
+          $.pipe(backend.connect, () => $conn)
+          $.dump(() => '<<< ' + algo.hash($session).toString(16))
         } else {
           $.pipe(backend.connect, () => $conn)
         }
