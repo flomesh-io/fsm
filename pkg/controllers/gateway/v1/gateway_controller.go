@@ -50,7 +50,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	ghodssyaml "github.com/ghodss/yaml"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/ptr"
@@ -483,15 +482,41 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 	//	return gatewayAddressNotAssignedCondition(gw, "None of the addresses in Spec.Addresses have been assigned to the Gateway"), false
 	//}
 
-	deployment := r.gatewayDeployment(ctx, gw)
-	if deployment == nil || deployment.Status.AvailableReplicas == 0 {
-		addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway Deployment replicas unavailable")
-		return
-	}
+	mc := r.fctx.Configurator
+	if mc.GetTrafficInterceptionMode() == "NodeLevel" {
+		daemonSet := r.gatewayDaemonSet(ctx, gw)
+		if daemonSet == nil {
+			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway DaemonSet unavailable")
+			return
+		}
 
-	//if deployment.Status.AvailableReplicas != 0 {
-	addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
-	//}
+		if daemonSet.Status.DesiredNumberScheduled == 0 {
+			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "No nodes to schedule Gateway DaemonSet")
+			return
+		}
+
+		if daemonSet.Status.NumberAvailable == 0 {
+			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway DaemonSet pods unavailable")
+			return
+		}
+
+		addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d DaemonSet pods available", daemonSet.Status.NumberAvailable, daemonSet.Status.DesiredNumberScheduled))
+	} else {
+		deployment := r.gatewayDeployment(ctx, gw)
+		if deployment == nil {
+			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway Deployment unavailable")
+			return
+		}
+
+		if deployment.Status.AvailableReplicas == 0 {
+			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway Deployment replicas unavailable")
+			return
+		}
+
+		//if deployment.Status.AvailableReplicas != 0 {
+		addProgrammedCondition(gwv1.GatewayReasonProgrammed, fmt.Sprintf("Address assigned to the Gateway, %d/%d Deployment replicas available", deployment.Status.AvailableReplicas, deployment.Status.Replicas))
+		//}
+	}
 }
 
 func (r *gatewayReconciler) gatewayService(ctx context.Context, gateway *gwv1.Gateway) (*corev1.Service, error) {
@@ -533,6 +558,25 @@ func (r *gatewayReconciler) gatewayDeployment(ctx context.Context, gw *gwv1.Gate
 	return deployment
 }
 
+func (r *gatewayReconciler) gatewayDaemonSet(ctx context.Context, gw *gwv1.Gateway) *appsv1.DaemonSet {
+	daemonSet := &appsv1.DaemonSet{}
+	key := types.NamespacedName{
+		Namespace: gw.Namespace,
+		Name:      fmt.Sprintf("fsm-gateway-%s-%s", gw.Namespace, gw.Name),
+	}
+
+	if err := r.fctx.Get(ctx, key, daemonSet); err != nil {
+		if errors.IsNotFound(err) {
+			log.Warn().Msgf("DaemonSet %s not found", key.String())
+			return nil
+		}
+
+		log.Error().Msgf("Failed to get daemonset %s: %s", key.String(), err)
+		return nil
+	}
+
+	return daemonSet
+}
 func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, gsu *gw.GatewayStatusUpdate) (ctrl.Result, error) {
 	if len(gateway.Spec.Addresses) > 0 {
 		r.addGatewayNotProgrammedCondition(gateway, gsu, gwv1.GatewayReasonAddressNotAssigned, ".spec.addresses is not supported yet.")
@@ -602,7 +646,7 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 	actionConfig := helm.ActionConfig(gw.Namespace, log.Debug().Msgf)
 
 	resolveValues := func(object metav1.Object, mc configurator.Configurator) (map[string]interface{}, error) {
-		gatewayValues, err := r.resolveGatewayValues(object, mc, gsu)
+		immutableGatewayValues, gatewayValues, err := r.resolveGatewayValues(object, mc, gsu)
 		if err != nil {
 			return nil, err
 		}
@@ -617,9 +661,9 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 			return gatewayValues, nil
 		}
 
-		// gateway values take precedence over parameter values, means the values from MeshConfig override the values from ParametersRef
+		// parameter values take precedence over gateway values, means the values from ParametersRef override the values from MeshConfig
 		// see the overrides variables for a complete list of values
-		return chartutil.CoalesceTables(parameterValues, gatewayValues), nil
+		return chartutil.CoalesceTables(chartutil.CoalesceTables(gatewayValues, parameterValues), immutableGatewayValues), nil
 	}
 
 	values, _ := resolveValues(gw, mc)
@@ -660,16 +704,16 @@ func (r *gatewayReconciler) kubeVersionForTemplate() *chartutil.KubeVersion {
 	return constants.KubeVersion119
 }
 
-func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc configurator.Configurator, gsu *gw.GatewayStatusUpdate) (map[string]interface{}, error) {
+func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc configurator.Configurator, gsu *gw.GatewayStatusUpdate) (map[string]interface{}, map[string]interface{}, error) {
 	gateway, ok := object.(*gwv1.Gateway)
 	if !ok {
-		return nil, fmt.Errorf("object %v is not type of *gwv1.Gateway", object)
+		return nil, nil, fmt.Errorf("object %v is not type of *gwv1.Gateway", object)
 	}
 
 	log.Debug().Msgf("[GW] Resolving Values ...")
 
 	// these values are from MeshConfig and Gateway resource, it will not be overridden by values from ParametersRef
-	gwBytes, err := ghodssyaml.Marshal(map[string]interface{}{
+	immutableValues, err := parseValuesMap(map[string]interface{}{
 		"fsm": map[string]interface{}{
 			"fsmNamespace": mc.GetFSMNamespace(),
 			"meshName":     r.fctx.MeshName,
@@ -679,7 +723,20 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 				"serviceName":    gatewayServiceName(gateway),
 				"listeners":      r.listenersForTemplate(gateway, gsu),
 				"infrastructure": infraForTemplate(gateway),
-				"logLevel":       mc.GetFSMGatewayLogLevel(),
+			},
+		},
+		"hasTCP": hasTCP(gateway),
+		"hasUDP": hasUDP(gateway),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	values, err := parseValuesMap(map[string]interface{}{
+		"fsm": map[string]interface{}{
+			"trafficInterceptionMode": mc.GetTrafficInterceptionMode(),
+			"gateway": map[string]interface{}{
+				"logLevel": mc.GetFSMGatewayLogLevel(),
 			},
 			"image": map[string]interface{}{
 				"registry":   mc.GetImageRegistry(),
@@ -687,16 +744,21 @@ func (r *gatewayReconciler) resolveGatewayValues(object metav1.Object, mc config
 				"pullPolicy": mc.GetImagePullPolicy(),
 			},
 		},
-		"hasTCP": hasTCP(gateway),
-		"hasUDP": hasUDP(gateway),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("convert values map to yaml, err = %v", err)
+		return nil, nil, err
 	}
 
-	log.Debug().Msgf("\n\nGATEWAY VALUES YAML:\n\n\n%s\n\n", string(gwBytes))
+	return immutableValues, values, nil
+}
 
-	gwValues, err := chartutil.ReadValues(gwBytes)
+func parseValuesMap(values map[string]interface{}) (map[string]interface{}, error) {
+	valuesBytes, err := yaml.Marshal(values)
+	if err != nil {
+		return nil, err
+	}
+
+	gwValues, err := chartutil.ReadValues(valuesBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -918,7 +980,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if err := ctrl.NewControllerManagedBy(mgr).
+	bldr := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.Gateway{}, builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
 			gateway, ok := obj.(*gwv1.Gateway)
 			if !ok {
@@ -988,7 +1050,34 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}
 			})),
 		).
-		Watches(
+		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
+		Watches(&extv1alpha1.ListenerFilter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways))
+
+	if r.fctx.Configurator.GetTrafficInterceptionMode() == "NodeLevel" {
+		bldr.Watches(
+			&appsv1.DaemonSet{},
+			handler.EnqueueRequestsFromMapFunc(r.daemonSetToGateways),
+			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
+				daemonSet, ok := obj.(*appsv1.DaemonSet)
+				if !ok {
+					log.Error().Msgf("unexpected object type: %T", obj)
+					return false
+				}
+
+				if len(daemonSet.Labels) == 0 {
+					return false
+				}
+
+				app, ok := daemonSet.Labels[constants.AppLabel]
+				if !ok {
+					return false
+				}
+
+				return app == constants.FSMGatewayName
+			})),
+		)
+	} else {
+		bldr.Watches(
 			&appsv1.Deployment{},
 			handler.EnqueueRequestsFromMapFunc(r.deploymentToGateways),
 			builder.WithPredicates(predicate.NewPredicateFuncs(func(obj client.Object) bool {
@@ -1009,10 +1098,10 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 				return app == constants.FSMGatewayName
 			})),
-		).
-		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
-		Watches(&extv1alpha1.ListenerFilter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways)).
-		Complete(r); err != nil {
+		)
+	}
+
+	if err := bldr.Complete(r); err != nil {
 		return err
 	}
 
@@ -1184,6 +1273,40 @@ func (r *gatewayReconciler) deploymentToGateways(_ context.Context, object clien
 	}
 
 	log.Debug().Msgf("[GW] Found Gateway Deployment %s/%s", ns, name)
+
+	return []reconcile.Request{
+		{
+			NamespacedName: types.NamespacedName{
+				Namespace: ns,
+				Name:      name,
+			},
+		},
+	}
+}
+
+func (r *gatewayReconciler) daemonSetToGateways(_ context.Context, object client.Object) []reconcile.Request {
+	daemonSet, ok := object.(*appsv1.DaemonSet)
+	if !ok {
+		log.Error().Msgf("unexpected object type: %T", object)
+		return nil
+	}
+
+	// Gateway daemonSet should have labels:
+	//   app: fsm-gateway
+	//   gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
+	//   gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
+
+	ns, ok := daemonSet.Labels[constants.GatewayNamespaceLabel]
+	if !ok {
+		return nil
+	}
+
+	name, ok := daemonSet.Labels[constants.GatewayNameLabel]
+	if !ok {
+		return nil
+	}
+
+	log.Debug().Msgf("[GW] Found Gateway DaemonSet %s/%s", ns, name)
 
 	return []reconcile.Request{
 		{

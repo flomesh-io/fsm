@@ -1,6 +1,6 @@
-{{- if and (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) (ne .Values.fsm.trafficInterceptionMode "NodeLevel") }}
+{{- if and (semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion) (eq .Values.fsm.trafficInterceptionMode "NodeLevel") }}
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: {{ printf "fsm-gateway-%s-%s" .Values.fsm.gateway.namespace .Values.fsm.gateway.name }}
   namespace: {{ .Values.fsm.gateway.namespace }}
@@ -22,17 +22,11 @@ metadata:
     gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
     meshName: {{ .Values.fsm.meshName }}
 spec:
-  replicas: {{ default 1 .Values.fsm.gateway.replicas }}
   selector:
     matchLabels:
       app: fsm-gateway
       gateway.flomesh.io/ns: {{ .Values.fsm.gateway.namespace }}
       gateway.flomesh.io/name: {{ .Values.fsm.gateway.name }}
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -148,39 +142,6 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/os
-                    operator: In
-                    values:
-                      - linux
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
-                      - arm64
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - fsm-gateway
-                    - key: gateway.flomesh.io/ns
-                      operator: In
-                      values:
-                        - {{ .Values.fsm.gateway.namespace }}
-                    - key: gateway.flomesh.io/name
-                      operator: In
-                      values:
-                        - {{ .Values.fsm.gateway.name }}
-                topologyKey: kubernetes.io/hostname
-              weight: 100
       {{- with .Values.fsm.gateway.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
