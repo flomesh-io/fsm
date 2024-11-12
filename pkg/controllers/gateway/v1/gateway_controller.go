@@ -657,8 +657,8 @@ func (r *gatewayReconciler) deployGateway(gw *gwv1.Gateway, mc configurator.Conf
 			return gatewayValues, nil
 		}
 
-		if parameterValues == nil {
-			return gatewayValues, nil
+		if len(parameterValues) == 0 {
+			return chartutil.CoalesceTables(gatewayValues, immutableGatewayValues), nil
 		}
 
 		// parameter values take precedence over gateway values, means the values from ParametersRef override the values from MeshConfig
