@@ -3,7 +3,7 @@ ARG GO_VERSION
 ARG DISTROLESS_TAG
 
 # Build the fsm-ingress binary
-FROM --platform=$BUILDPLATFORM golang:$GO_VERSION as builder
+FROM --platform=$BUILDPLATFORM golang:$GO_VERSION AS builder
 ARG LDFLAGS
 ARG TARGETOS
 ARG TARGETARCH

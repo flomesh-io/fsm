@@ -1,5 +1,5 @@
 # 基础镜像
-FROM flomesh/euler:22.03 as builder
+FROM openeuler/openeuler:22.03 AS builder
 
 LABEL maintainer="reaver@flomesh.io"
 
@@ -27,7 +27,7 @@ RUN cd /tmp/ && \
     cd pipy && \
     ./build.sh -t $PIPY_VERSION
 
-FROM flomesh/euler:22.03 as prod
+FROM flomesh/euler:22.03 AS prod
 
 COPY --from=builder /tmp/pipy/bin/pipy /usr/local/bin/pipy
 
