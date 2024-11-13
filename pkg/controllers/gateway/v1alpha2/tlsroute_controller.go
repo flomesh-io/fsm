@@ -27,6 +27,12 @@ package v1alpha2
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+
+	"k8s.io/apimachinery/pkg/fields"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -123,11 +129,71 @@ func (r *tlsRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TLSRoute{}).
+		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToTLSRoutes)).
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToTLSRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
 
 	return addTLSRouteIndexers(context.Background(), mgr)
+}
+
+func (r *tlsRouteReconciler) gatewayToTLSRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	gateway, ok := object.(*gwv1.Gateway)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.TLSRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTLSRouteIndex, client.ObjectKeyFromObject(gateway).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
+}
+
+func (r *tlsRouteReconciler) serviceToTLSRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	service, ok := object.(*corev1.Service)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.TLSRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.BackendTLSRouteIndex, client.ObjectKeyFromObject(service).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list TLSRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
 }
 
 func addTLSRouteIndexers(ctx context.Context, mgr manager.Manager) error {
