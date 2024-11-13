@@ -137,6 +137,7 @@ func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.GRPCRoute{}).
+		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToGRPCRoutes)).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToGRPCRoutes)).
 		Watches(&gwpav1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToGRPCRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGRPCRoutes)).
@@ -145,6 +146,35 @@ func (r *grpcRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return addGRPCRouteIndexers(context.Background(), mgr)
+}
+
+func (r *grpcRouteReconciler) gatewayToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	gateway, ok := object.(*gwv1.Gateway)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1.GRPCRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayGRPCRouteIndex, client.ObjectKeyFromObject(gateway).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list GRPCRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
 }
 
 func (r *grpcRouteReconciler) backendTLSToGRPCRoutes(ctx context.Context, object client.Object) []reconcile.Request {

@@ -137,6 +137,7 @@ func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1.HTTPRoute{}).
+		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToHTTPRoutes)).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToHTTPRoutes)).
 		Watches(&gwpav1alpha2.BackendLBPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendLBToHTTPRoutes)).
 		Watches(&gwpav1alpha2.HealthCheckPolicy{}, handler.EnqueueRequestsFromMapFunc(r.healthCheckToHTTPRoutes)).
@@ -146,6 +147,35 @@ func (r *httpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return addHTTPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *httpRouteReconciler) gatewayToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	gateway, ok := object.(*gwv1.Gateway)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1.HTTPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayHTTPRouteIndex, client.ObjectKeyFromObject(gateway).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list HTTPRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
 }
 
 func (r *httpRouteReconciler) backendTLSToHTTPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
