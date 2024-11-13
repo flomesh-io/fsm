@@ -129,6 +129,8 @@ func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.TCPRoute{}).
+		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToTCPRoutes)).
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToTCPRoutes)).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToTCPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToTCPRoutes)).
 		Complete(r); err != nil {
@@ -136,6 +138,64 @@ func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return addTCPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *tcpRouteReconciler) gatewayToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	gateway, ok := object.(*gwv1.Gateway)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.TCPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayTCPRouteIndex, client.ObjectKeyFromObject(gateway).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
+}
+
+func (r *tcpRouteReconciler) serviceToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	service, ok := object.(*corev1.Service)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.TCPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.BackendTCPRouteIndex, client.ObjectKeyFromObject(service).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list TCPRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
 }
 
 func (r *tcpRouteReconciler) backendTLSToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {

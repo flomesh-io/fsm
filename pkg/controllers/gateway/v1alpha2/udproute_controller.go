@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -126,12 +128,72 @@ func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gwv1alpha2.UDPRoute{}).
+		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToUDPRoutes)).
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToUDPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToUDPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
 
 	return addUDPRouteIndexers(context.Background(), mgr)
+}
+
+func (r *udpRouteReconciler) gatewayToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	gateway, ok := object.(*gwv1.Gateway)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.UDPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.GatewayUDPRouteIndex, client.ObjectKeyFromObject(gateway).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
+}
+
+func (r *udpRouteReconciler) serviceToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	service, ok := object.(*corev1.Service)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	list := &gwv1alpha2.UDPRouteList{}
+	if err := r.fctx.Manager.GetCache().List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(constants.BackendUDPRouteIndex, client.ObjectKeyFromObject(service).String()),
+	}); err != nil {
+		log.Error().Msgf("Failed to list UDPRoutes: %v", err)
+		return nil
+	}
+
+	for _, route := range list.Items {
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: route.Namespace,
+				Name:      route.Name,
+			},
+		})
+	}
+
+	return requests
 }
 
 func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj client.Object) []reconcile.Request {
