@@ -243,7 +243,7 @@ func deployAppForTestingIngress() {
 					Containers: []corev1.Container{
 						{
 							Name:  "pipy",
-							Image: "flomesh/pipy:1.5.3",
+							Image: "flomesh/pipy:1.5.4",
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "pipy",
