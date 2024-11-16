@@ -1,6 +1,6 @@
 package filtermanager
 
-import "github.com/flomesh-io/fsm/pkg/cli/common"
+import "sigs.k8s.io/gwctl/pkg/common"
 
 type FilterManager struct {
 	Fetcher common.GroupKindFetcher
