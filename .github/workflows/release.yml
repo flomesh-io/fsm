@@ -32,6 +32,8 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Generate Chart Files
+        run: make generate-cli-chart
       - name: Generate Release Notes
         run: scripts/release-notes.sh $VERSION > /tmp/release-notes.md
       - name: Run GoReleaser
