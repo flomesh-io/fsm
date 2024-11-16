@@ -16,6 +16,7 @@ env:
 before:
   hooks:
     - go mod download
+    - make generate-cli-chart
 
 builds:
   # fsm build steps
