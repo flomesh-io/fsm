@@ -7,6 +7,12 @@ version: 2
 
 project_name: fsm
 
+# Global environment variables for builds.
+env:
+  - CGO_ENABLED=0
+  - GO111MODULE=on
+  - REPO=github.com/flomesh-io/fsm
+
 before:
   hooks:
     - go mod download
@@ -17,12 +23,10 @@ builds:
     main: ./cmd/cli
     binary: fsm
     mod_timestamp: "{{ .CommitTimestamp }}"
-    env:
-      - CGO_ENABLED=0
     ldflags: &build-ldflags
-      - -X pkg/version.Version={{ .Env.VERSION }}
-      - -X pkg/version.GitCommit={{ .Commit }}
-      - -X pkg/version.BuildDate={{ .Env.BUILD_DATE }}
+      - -X {{ .Env.REPO }}/pkg/version.Version={{ .Env.VERSION }}
+      - -X {{ .Env.REPO }}/pkg/version.GitCommit={{ .FullCommit }}
+      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Env.BUILD_DATE }}
       - -s
       - -w
     goos:
