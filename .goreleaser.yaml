@@ -1,0 +1,91 @@
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+project_name: fsm
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  # fsm build steps
+  - id: fsm
+    main: ./cmd/cli
+    binary: fsm
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    env:
+      - CGO_ENABLED=0
+    ldflags: &build-ldflags
+      - -X pkg/version.Version={{ .Env.VERSION }}
+      - -X pkg/version.GitCommit={{ .Commit }}
+      - -X pkg/version.BuildDate={{ .Env.BUILD_DATE }}
+      - -s
+      - -w
+    goos:
+      - darwin
+#      - windows
+      - linux
+    goarch:
+      - amd64
+      - arm64
+#    ignore:
+#      - goos: windows
+#        goarch: arm64
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Env.VERSION }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - none*
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "sha256sums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^revert:'
+      - '^chore:'
+      - typo
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
+release:
+  prerelease: auto
+  mode: replace
+  replace_existing_artifacts: true
+  header: |
+    ## {{ tolower .ProjectName }} {{ .Tag }}
+    
+    Welcome to this new release!
+  footer: |
+    ## Thanks!
+    
+    Those were the changes on {{ .Tag }}!

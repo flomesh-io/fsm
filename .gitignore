@@ -82,3 +82,5 @@ rootfs/
 
 # Interim files that can stick around from a bad mockgen run.
 gomock_reflect_*/
+
+dist/
