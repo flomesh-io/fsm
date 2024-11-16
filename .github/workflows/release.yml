@@ -33,11 +33,11 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: Generate Release Notes
-        run: scripts/release-notes.sh $VERSION > release-notes.md
+        run: scripts/release-notes.sh $VERSION > /tmp/release-notes.md
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          args: release --clean --parallelism 5 --release-notes release-notes.md
+          args: release --clean --parallelism 5 --release-notes /tmp/release-notes.md
 
   images:
     name: Docker Images
