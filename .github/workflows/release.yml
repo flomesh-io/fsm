@@ -23,6 +23,10 @@ jobs:
       BUILD_DATE: '$$(date +%Y-%m-%d-%H:%M)'
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Debug
+        run: |
+          echo $VERSION
+          echo $BUILD_DATE
       - name: Checkout
         uses: actions/checkout@v4
         with:
