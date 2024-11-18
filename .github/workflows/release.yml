@@ -20,7 +20,6 @@ jobs:
     needs: version
     env:
       VERSION: ${{ needs.version.outputs.version }}
-      BUILD_DATE: '$$(date +%Y-%m-%d-%H:%M)'
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
@@ -32,83 +31,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Build Binaries
-        run: |
-          make release-artifacts
       - name: Generate Release Notes
-        run: scripts/release-notes.sh $VERSION > release-notes.md
-      - name: Create Release
-        id: create_release
-        uses: ncipollo/release-action@v1
+        run: scripts/release-notes.sh $VERSION > /tmp/release-notes.md
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          allowUpdates: true
-          tag: ${{ env.VERSION }}
-          name: ${{ env.VERSION }}
-          bodyFile: "release-notes.md"
-          prerelease: ${{ contains(env.VERSION, '-alpha.') || contains(env.VERSION, '-beta.') || contains(env.VERSION, '-rc.') || contains(env.VERSION, '-nightly.') }}
-      - name: Upload macOS (amd64).zip
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-darwin-amd64.zip"
-          asset_name: "fsm-${{ env.VERSION }}-darwin-amd64.zip"
-          asset_content_type: application/zip
-      - name: Upload macOS (amd64).tar.gz
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-darwin-amd64.tar.gz"
-          asset_name: "fsm-${{ env.VERSION }}-darwin-amd64.tar.gz"
-          asset_content_type: application/gzip
-      - name: Upload macOS (arm64).zip
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-darwin-arm64.zip"
-          asset_name: "fsm-${{ env.VERSION }}-darwin-arm64.zip"
-          asset_content_type: application/zip
-      - name: Upload macOS (arm64).tar.gz
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-darwin-arm64.tar.gz"
-          asset_name: "fsm-${{ env.VERSION }}-darwin-arm64.tar.gz"
-          asset_content_type: application/gzip
-      - name: Upload Linux (amd64).zip
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-linux-amd64.zip"
-          asset_name: "fsm-${{ env.VERSION }}-linux-amd64.zip"
-          asset_content_type: application/zip
-      - name: Upload Linux (amd64).tar.gz
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-linux-amd64.tar.gz"
-          asset_name: "fsm-${{ env.VERSION }}-linux-amd64.tar.gz"
-          asset_content_type: application/gzip
-      - name: Upload Linux (arm64).zip
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-linux-arm64.zip"
-          asset_name: "fsm-${{ env.VERSION }}-linux-arm64.zip"
-          asset_content_type: application/zip
-      - name: Upload Linux (arm64).tar.gz
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: "_dist/fsm-${{ env.VERSION }}-linux-arm64.tar.gz"
-          asset_name: "fsm-${{ env.VERSION }}-linux-arm64.tar.gz"
-          asset_content_type: application/gzip
-      - name: Upload Checksums
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: _dist/sha256sums.txt
-          asset_name: sha256sums.txt
-          asset_content_type: text/plain
+          args: release --clean --parallelism 5 --release-notes /tmp/release-notes.md --verbose
 
   images:
     name: Docker Images
