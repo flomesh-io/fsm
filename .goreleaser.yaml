@@ -45,11 +45,13 @@ archives:
       {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
-    files:
-      - none*
-    format_overrides:
-      - goos: windows
-        format: zip
+  - format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Env.VERSION }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
 
 checksum:
   name_template: "sha256sums.txt"
