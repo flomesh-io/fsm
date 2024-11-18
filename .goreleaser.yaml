@@ -1,0 +1,96 @@
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+project_name: fsm
+
+# Global environment variables for builds.
+env:
+  - CGO_ENABLED=0
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod download
+    - make generate-cli-chart
+
+builds:
+  # fsm build steps
+  - id: fsm
+    main: ./cmd/cli
+    binary: fsm
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags: &build-ldflags
+      - -X {{ .GitURL }}/pkg/version.Version={{ .Env.VERSION }}
+      - -X {{ .GitURL }}/pkg/version.GitCommit={{ .FullCommit }}
+      - -X {{ .GitURL }}/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
+      - -s
+      - -w
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+
+archives:
+  - id: tar-gz
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Env.VERSION }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+  - id: zip
+    format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Env.VERSION }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+
+checksum:
+  name_template: "sha256sums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^revert:'
+      - '^chore:'
+      - typo
+      - Merge pull request
+      - Merge branch
+      - go mod tidy
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Bug fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
+release:
+  prerelease: auto
+  mode: replace
+  replace_existing_artifacts: true
+  header: |
+    ## {{ tolower .ProjectName }} {{ .Tag }}
+    
+    Welcome to this new release!
+  footer: |
+    ## Thanks!
+    
+    Those were the changes on {{ .Tag }}!

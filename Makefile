@@ -369,6 +369,9 @@ install-git-pre-push-hook:
 # -------------------------------------------
 ##@ Release Targets
 
+.PHONY: generate-cli-chart
+generate-cli-chart: helm-update-dep cmd/cli/chart.tgz
+
 .PHONY: build-cross
 build-cross: helm-update-dep cmd/cli/chart.tgz
 	GO111MODULE=on CGO_ENABLED=0 $(GOX) -ldflags $(LDFLAGS) -parallel=5 -output="_dist/{{.OS}}-{{.Arch}}/$(BINNAME)" -osarch='$(TARGETS)' ./cmd/cli
