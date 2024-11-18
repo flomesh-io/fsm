@@ -38,14 +38,16 @@ builds:
 
 
 archives:
-  - format: tar.gz
+  - id: tar-gz
+    format: tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- .Env.VERSION }}_
       {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
-  - format: zip
+  - id: zip
+    format: zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Env.VERSION }}_
