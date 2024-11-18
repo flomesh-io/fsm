@@ -27,19 +27,16 @@ builds:
     ldflags: &build-ldflags
       - -X {{ .Env.REPO }}/pkg/version.Version={{ .Env.VERSION }}
       - -X {{ .Env.REPO }}/pkg/version.GitCommit={{ .FullCommit }}
-      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Env.BUILD_DATE }}
+      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Now.Format ""2006-01-02-15:04" }}
       - -s
       - -w
     goos:
       - darwin
-#      - windows
       - linux
     goarch:
       - amd64
       - arm64
-#    ignore:
-#      - goos: windows
-#        goarch: arm64
+
 
 archives:
   - format: tar.gz
