@@ -27,7 +27,7 @@ builds:
     ldflags: &build-ldflags
       - -X {{ .Env.REPO }}/pkg/version.Version={{ .Env.VERSION }}
       - -X {{ .Env.REPO }}/pkg/version.GitCommit={{ .FullCommit }}
-      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Now.Format ""2006-01-02-15:04" }}
+      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
       - -s
       - -w
     goos:
