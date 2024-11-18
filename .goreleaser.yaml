@@ -11,7 +11,6 @@ project_name: fsm
 env:
   - CGO_ENABLED=0
   - GO111MODULE=on
-  - REPO=github.com/flomesh-io/fsm
 
 before:
   hooks:
@@ -25,9 +24,9 @@ builds:
     binary: fsm
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags: &build-ldflags
-      - -X {{ .Env.REPO }}/pkg/version.Version={{ .Env.VERSION }}
-      - -X {{ .Env.REPO }}/pkg/version.GitCommit={{ .FullCommit }}
-      - -X {{ .Env.REPO }}/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
+      - -X {{ .GitURL }}/pkg/version.Version={{ .Env.VERSION }}
+      - -X {{ .GitURL }}/pkg/version.GitCommit={{ .FullCommit }}
+      - -X {{ .GitURL }}/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
       - -s
       - -w
     goos:
