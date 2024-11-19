@@ -117,3 +117,4 @@ brews:
       - name: go
         type: optional
       - name: git
+        type: optional
