@@ -94,3 +94,26 @@ release:
     ## Thanks!
     
     Those were the changes on {{ .Tag }}!
+
+brews:
+  - repository:
+      owner: flomesh-io
+      name: homebrew-fsm
+      token: "{{ .Env.HOMEBREW_RELEASE_PAT }}"
+    ids:
+      - tar-gz
+    commit_author:
+      name: reaver-flomesh
+      email: reaver@flomesh.io
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    directory: Formula
+    goarm: "7"
+    homepage: https://flomesh.io/fsm
+    description: Lightweight service mesh for Kubernetes East-West and North-South traffic management
+    license: Apache 2.0
+    test: |
+      system "#{bin}/fsm --version"
+    dependencies:
+      - name: go
+        type: optional
+      - name: git
