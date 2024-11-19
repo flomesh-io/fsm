@@ -24,9 +24,9 @@ builds:
     binary: fsm
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags: &build-ldflags
-      - -X {{ .GitURL }}/pkg/version.Version={{ .Env.VERSION }}
-      - -X {{ .GitURL }}/pkg/version.GitCommit={{ .FullCommit }}
-      - -X {{ .GitURL }}/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
+      - -X github.com/flomesh-io/fsm/pkg/version.Version={{ .Env.VERSION }}
+      - -X github.com/flomesh-io/fsm/pkg/version.GitCommit={{ .FullCommit }}
+      - -X github.com/flomesh-io/fsm/pkg/version.BuildDate={{ .Now.Format "2006-01-02-15:04" }}
       - -s
       - -w
     goos:
@@ -117,3 +117,4 @@ brews:
       - name: go
         type: optional
       - name: git
+        type: optional
