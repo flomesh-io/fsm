@@ -99,6 +99,8 @@ brews:
   - repository:
       owner: flomesh-io
       name: homebrew-fsm
+    ids:
+      - tar-gz
     directory: Formula
     goarm: "7"
     homepage: https://flomesh.io/fsm
