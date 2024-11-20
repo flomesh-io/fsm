@@ -29,8 +29,8 @@ fsm:
       fsmPreinstall: fsm-preinstall
       # -- fsm-healthcheck's image name
       fsmHealthcheck: fsm-healthcheck
-      # -- fsm-interceptor's image name
-      fsmInterceptor: fsm-interceptor
+      # -- fsm-xnetmgmt's image name
+      fsmXnetmgmt: fsm-xnetmgmt
       # -- fsm-connector's image name
       fsmConnector: fsm-connector
       # -- fsm-ingress's image name
@@ -55,8 +55,8 @@ fsm:
       fsmPreinstall: ""
       # -- fsm-healthcheck's image digest
       fsmHealthcheck: ""
-      # -- fsm-interceptor's image digest
-      fsmInterceptor: ""
+      # -- fsm-xnetwork's image digest
+      fsmXnetmgmt: ""
       # -- fsm-connector's image digest
       fsmConnector: ""
       # -- fsm-ingress's image digest
@@ -242,18 +242,64 @@ fsm:
         memory: "256M"
 
   #
-  # -- FSM interceptor parameters
-  fsmInterceptor:
-    kernelTracing: true
-    cniMode: true
-    kindMode: false
-    resource:
-      limits:
-        cpu: "1.5"
-        memory: "1G"
-      requests:
-        cpu: "0.5"
-        memory: "256M"
+  # -- FSM xnetwork parameters
+  fsmXnetwork:
+    # -- xmgt
+    xmgt:
+      kernelTracing: true
+      cniMode: true
+      kindMode: false
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
+    # -- xnet
+    xnet:
+      image:
+        # -- Registry for xnet image
+        registry: cybwan
+        # -- xnet image name
+        name: xnet
+        # -- xnet image tag
+        tag: 0.9.1
+      resource:
+        limits:
+          cpu: "1.5"
+          memory: "1G"
+        requests:
+          cpu: "0.5"
+          memory: "256M"
+      filter:
+        ports:
+          inbound: "mesh"
+          outbound: "mesh"
+      flush:
+        conntrack:
+          tcp:
+            crontab: "30 3 */1 * *" ## At 3:30am every day
+            idleSeconds: 3600
+            batchSize: 4096
+          udp:
+            crontab: "*/2 * * * *" ## Every 120 seconds
+            idleSeconds: 120
+            batchSize: 4096
+      nodePaths:
+        k8s:
+          kubeToken: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          cniBin: "/opt/cni/bin"
+          cniNetd: "/etc/cni/net.d"
+          sysFs: "/opt"
+          sysRun: "/var/run"
+        k3s:
+          enable: true
+          kubeToken: "/var/lib/rancher/k3s/server/token"
+          cniBin: "/bin"
+          cniNetd: "/var/lib/rancher/k3s/agent/etc/cni/net.d"
+          sysFs: "/opt"
+          sysRun: "/var/run"
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:
@@ -278,7 +324,7 @@ fsm:
                   - key: app
                     operator: In
                     values:
-                      - fsm-controller
+                      - fsm-xnetwork
               topologyKey: kubernetes.io/hostname
             weight: 100
 
@@ -450,7 +496,7 @@ fsm:
   serviceAccessMode: mixed
 
   # -- Traffic interception mode in the mesh
-  trafficInterceptionMode: iptables
+  trafficInterceptionMode: PodLevel
 
   # -- Enable egress in the mesh
   enableEgress: true

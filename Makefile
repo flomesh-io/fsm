@@ -70,7 +70,7 @@ labels: kustomize ## Attach required labels to gateway-api resources
 .PHONY: build
 build: charts-tgz manifests go-fmt go-vet ## Build commands with release args, the result will be optimized.
 	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-interceptor,fsm-preinstall}
+	CGO_ENABLED=0 go build -v -o $(BUILD_DIR) -ldflags ${LDFLAGS} ./cmd/{fsm-bootstrap,fsm-connector,fsm-controller,fsm-gateway,fsm-healthcheck,fsm-ingress,fsm-injector,fsm-xnetmgmt,fsm-preinstall}
 
 .PHONY: build-fsm
 build-fsm: helm-update-dep cmd/cli/chart.tgz
@@ -195,7 +195,7 @@ kind-reset:
 
 .PHONY: test-e2e
 test-e2e: DOCKER_BUILDX_OUTPUT=type=docker
-test-e2e: docker-build-e2e build-fsm docker-build-tcp-echo-server
+test-e2e: docker-build-fsm build-fsm docker-build-tcp-echo-server
 	E2E_FLAGS="--timeout=0" go test ./tests/e2e $(E2E_FLAGS_DEFAULT) $(E2E_FLAGS)
 
 .env:
@@ -253,9 +253,9 @@ docker-build-fsm-preinstall:
 docker-build-fsm-healthcheck:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-healthcheck:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-healthcheck --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
-.PHONY: docker-build-fsm-interceptor
-docker-build-fsm-interceptor:
-	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-interceptor:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-interceptor --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
+.PHONY: docker-build-fsm-xnetmgmt
+docker-build-fsm-xnetmgmt:
+	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-xnetmgmt:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-xnetmgmt --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) .
 
 .PHONY: docker-build-fsm-connector
 docker-build-fsm-connector:
@@ -269,27 +269,16 @@ docker-build-fsm-ingress:
 docker-build-fsm-gateway:
 	docker buildx build --builder fsm --platform=$(DOCKER_BUILDX_PLATFORM) -o $(DOCKER_BUILDX_OUTPUT) -t $(CTR_REGISTRY)/fsm-gateway:$(CTR_TAG) -f dockerfiles/Dockerfile.fsm-gateway --build-arg GO_VERSION=$(DOCKER_GO_VERSION) --build-arg LDFLAGS=$(LDFLAGS) --build-arg DISTROLESS_TAG=$(DISTROLESS_TAG) .
 
-TRI_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
-FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-interceptor fsm-ingress fsm-gateway
-E2E_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-ingress fsm-gateway
-MIN_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck
+FSM_TARGETS = fsm-curl fsm-sidecar-init fsm-controller fsm-injector fsm-crds fsm-bootstrap fsm-preinstall fsm-healthcheck fsm-connector fsm-xnetmgmt fsm-ingress fsm-gateway
 
 DOCKER_FSM_TARGETS = $(addprefix docker-build-, $(FSM_TARGETS))
-DOCKER_E2E_TARGETS = $(addprefix docker-build-, $(E2E_TARGETS))
-DOCKER_MIN_TARGETS = $(addprefix docker-build-, $(MIN_TARGETS))
 
 .PHONY: docker-build-fsm
 docker-build-fsm: charts-tgz $(DOCKER_FSM_TARGETS)
 
-.PHONY: docker-build-e2e
-docker-build-e2e: charts-tgz $(DOCKER_E2E_TARGETS)
-
-.PHONY: docker-build-min
-docker-build-min: charts-tgz $(DOCKER_MIN_TARGETS)
-
 .PHONY: buildx-context
 buildx-context:
-	@if ! docker buildx ls | grep -q "^fsm "; then docker buildx create --name fsm --driver-opt network=host; fi
+	@if ! docker buildx ls | grep -q "^fsm"; then docker buildx create --name fsm --driver-opt network=host; fi
 
 check-image-exists-%: NAME=$(@:check-image-exists-%=%)
 check-image-exists-%:
@@ -352,8 +341,8 @@ trivy-scan-fail-%:
 	  "$(CTR_REGISTRY)/$(NAME):$(CTR_TAG)"
 
 .PHONY: trivy-scan-images trivy-scan-images-fail trivy-scan-images-verbose
-trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(TRI_TARGETS))
-trivy-scan-images-fail: $(addprefix trivy-scan-fail-, $(TRI_TARGETS))
+trivy-scan-images-verbose: $(addprefix trivy-scan-verbose-, $(FSM_TARGETS))
+trivy-scan-images-fail: $(addprefix trivy-scan-fail-, $(FSM_TARGETS))
 trivy-scan-images: trivy-scan-images-verbose trivy-scan-images-fail
 
 .PHONY: shellcheck

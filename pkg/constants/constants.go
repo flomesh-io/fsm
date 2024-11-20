@@ -384,14 +384,11 @@ const (
 )
 
 const (
-	//TrafficInterceptionModeIptables defines the iptables traffic interception mode
-	TrafficInterceptionModeIptables = "iptables"
+	//TrafficInterceptionModeNodeLevel defines node level traffic interception mode
+	TrafficInterceptionModeNodeLevel = "NodeLevel"
 
-	//TrafficInterceptionModeEBPF defines the ebpf traffic interception mode
-	TrafficInterceptionModeEBPF = "ebpf"
-
-	//TrafficInterceptionModeNone defines the none traffic interception mode
-	TrafficInterceptionModeNone = "none"
+	//TrafficInterceptionModePodLevel defines pod level traffic interception mode
+	TrafficInterceptionModePodLevel = "PodLevel"
 )
 
 // GatewayAPI Group and Kinds

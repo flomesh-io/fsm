@@ -50,7 +50,7 @@ jobs:
       BUILD_GITCOMMIT_VAR: 'github.com/flomesh-io/fsm/pkg/version.GitCommit'
     strategy:
       matrix:
-        id: [ "curl", "sidecar-init", "controller", "injector", "connector", "crds", "bootstrap", "preinstall", "healthcheck", "interceptor", "ingress", "gateway" ]
+        id: [ "curl", "sidecar-init", "controller", "injector", "connector", "crds", "bootstrap", "preinstall", "healthcheck", "xnetmgmt", "ingress", "gateway" ]
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.2.0

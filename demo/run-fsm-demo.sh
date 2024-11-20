@@ -93,7 +93,7 @@ if [ "$DEPLOY_ON_OPENSHIFT" = true ] ; then
 fi
 
 if [ "$PUBLISH_IMAGES" = true ]; then
-    make docker-build-min
+    make docker-build-fsm
     make docker-build-demo
 fi
 

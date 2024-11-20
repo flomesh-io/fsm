@@ -3,10 +3,10 @@ ARG DISTROLESS_TAG
 ARG PIPY_VERSION
 
 # Build the pipy binary
-FROM flomesh/pipy:${PIPY_VERSION}-debian AS builder
+FROM --platform=$BUILDPLATFORM flomesh/pipy:${PIPY_VERSION}-debian AS builder
 
 # Build the final image
-FROM gcr.io/distroless/cc-debian12:$DISTROLESS_TAG
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/cc-debian12:$DISTROLESS_TAG
 WORKDIR /
 COPY --from=builder /usr/local/bin/pipy /usr/local/bin/pipy
 

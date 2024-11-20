@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1.4
 # Build the pipy binary
-FROM debian:12 AS builder
+FROM --platform=$BUILDPLATFORM debian:12 AS builder
 
 ENV  pkg_prefix              /usr/local
 ENV  pkg_confdir             /etc/pipy

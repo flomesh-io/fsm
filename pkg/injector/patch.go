@@ -28,6 +28,18 @@ import (
 )
 
 func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.AdmissionRequest, proxyUUID uuid.UUID) ([]byte, error) {
+	// This will append a label to the pod, which points to the unique Sidecar ID used in the
+	// xDS certificate for that Sidecar. This label will help xDS match the actual pod to the Sidecar that
+	// connects to xDS (with the certificate's CN matching this label).
+	if pod.Labels == nil {
+		pod.Labels = make(map[string]string)
+	}
+	pod.Labels[constants.SidecarUniqueIDLabelName] = proxyUUID.String()
+
+	if wh.configurator.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeNodeLevel {
+		return json.Marshal(makePodPatches(req, pod))
+	}
+
 	namespace := req.Namespace
 
 	podOS := pod.Spec.NodeSelector["kubernetes.io/os"]
@@ -48,14 +60,6 @@ func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.Admi
 		pod.Annotations[constants.PrometheusPortAnnotation] = strconv.Itoa(constants.SidecarPrometheusInboundListenerPort)
 		pod.Annotations[constants.PrometheusPathAnnotation] = constants.PrometheusScrapePath
 	}
-
-	// This will append a label to the pod, which points to the unique Sidecar ID used in the
-	// xDS certificate for that Sidecar. This label will help xDS match the actual pod to the Sidecar that
-	// connects to xDS (with the certificate's CN matching this label).
-	if pod.Labels == nil {
-		pod.Labels = make(map[string]string)
-	}
-	pod.Labels[constants.SidecarUniqueIDLabelName] = proxyUUID.String()
 
 	// Issue a certificate for the proxy sidecar - used for Sidecar to connect to XDS (not Sidecar-to-Sidecar connections)
 	cnPrefix := sidecar.NewCertCNPrefix(proxyUUID, models.KindSidecar, identity.New(pod.Spec.ServiceAccountName, namespace))
@@ -184,6 +188,10 @@ func (wh *mutatingWebhook) createVmPatch(vm *machinev1alpha1.VirtualMachine, req
 		vm.Labels = make(map[string]string)
 	}
 	vm.Labels[constants.SidecarUniqueIDLabelName] = proxyUUID.String()
+
+	if wh.configurator.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeNodeLevel {
+		return json.Marshal(makeVmPatches(req, vm))
+	}
 
 	return json.Marshal(makeVmPatches(req, vm))
 }

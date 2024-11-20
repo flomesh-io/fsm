@@ -201,6 +201,7 @@ type SidecarSpec struct {
 // TrafficSpec is the type used to represent FSM's traffic management configuration.
 type TrafficSpec struct {
 	// InterceptionMode defines a string indicating which traffic interception mode is used.
+	// +kubebuilder:validation:Enum=NodeLevel;PodLevel
 	InterceptionMode string `json:"interceptionMode"`
 
 	// EnableEgress defines a boolean indicating if mesh-wide Egress is enabled.

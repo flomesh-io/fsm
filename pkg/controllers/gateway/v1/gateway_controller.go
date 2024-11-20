@@ -483,7 +483,7 @@ func (r *gatewayReconciler) computeGatewayProgrammedCondition(ctx context.Contex
 	//}
 
 	mc := r.fctx.Configurator
-	if mc.GetTrafficInterceptionMode() == "NodeLevel" {
+	if mc.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeNodeLevel {
 		daemonSet := r.gatewayDaemonSet(ctx, gw)
 		if daemonSet == nil {
 			addNotProgrammedCondition(gwv1.GatewayReasonNoResources, "Gateway DaemonSet unavailable")
@@ -1053,7 +1053,7 @@ func (r *gatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToGateways)).
 		Watches(&extv1alpha1.ListenerFilter{}, handler.EnqueueRequestsFromMapFunc(r.filterToGateways))
 
-	if r.fctx.Configurator.GetTrafficInterceptionMode() == "NodeLevel" {
+	if r.fctx.Configurator.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeNodeLevel {
 		bldr.Watches(
 			&appsv1.DaemonSet{},
 			handler.EnqueueRequestsFromMapFunc(r.daemonSetToGateways),

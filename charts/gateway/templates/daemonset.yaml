@@ -128,6 +128,10 @@ spec:
             scheme: HTTP
             path: /healthz
             port: 59091
+      - name: curl
+        image: cybwan/ubuntu:22.04
+        imagePullPolicy: IfNotPresent
+        command: [ "sleep", "365d" ]
       terminationGracePeriodSeconds: 60
       {{- with .Values.fsm.gateway.podSecurityContext }}
       securityContext:
