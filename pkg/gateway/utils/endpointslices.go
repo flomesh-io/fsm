@@ -20,9 +20,9 @@ func FilterEndpointSliceList(endpointSliceList *discoveryv1.EndpointSliceList, p
 }
 
 func ignoreEndpointSlice(endpointSlice *discoveryv1.EndpointSlice, port corev1.ServicePort) bool {
-	if endpointSlice.AddressType != discoveryv1.AddressTypeIPv4 {
-		return true
-	}
+	//if endpointSlice.AddressType != discoveryv1.AddressTypeIPv4 {
+	//	return true
+	//}
 
 	// ignore endpoint slices that don't have a matching port.
 	return FindEndpointSlicePort(endpointSlice.Ports, port) == 0
