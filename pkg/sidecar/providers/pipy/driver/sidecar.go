@@ -54,6 +54,10 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 		return errors.New("missing Injector Context")
 	}
 	injCtx := parentCtx.(*driver.InjectorContext)
+	if injCtx.Configurator.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeNodeLevel {
+		return nil
+	}
+
 	configurator := injCtx.Configurator
 	fsmNamespace := injCtx.FsmNamespace
 	fsmContainerPullPolicy := injCtx.FsmContainerPullPolicy
@@ -111,11 +115,9 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 	// Create volume for the pipy bootstrap config Secret
 	pod.Spec.Volumes = append(pod.Spec.Volumes, injector.GetVolumeSpec(pipyBootstrapConfigName))
 
-	if injCtx.Configurator.GetTrafficInterceptionMode() == constants.TrafficInterceptionModeIptables {
-		err := injector.ConfigurePodInit(configurator, podOS, pod, fsmContainerPullPolicy)
-		if err != nil {
-			return err
-		}
+	err := injector.ConfigurePodInit(configurator, podOS, pod, fsmContainerPullPolicy)
+	if err != nil {
+		return err
 	}
 
 	if originalHealthProbes.UsesTCP() {

@@ -2378,6 +2378,9 @@ spec:
                   interceptionMode:
                     description: InterceptionMode defines a string indicating which
                       traffic interception mode is used.
+                    enum:
+                    - NodeLevel
+                    - PodLevel
                     type: string
                   networkInterfaceExclusionList:
                     description: |-

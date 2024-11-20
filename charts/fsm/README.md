@@ -238,27 +238,25 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmIngress.tls.sslPassthrough.enabled | bool | `false` |  |
 | fsm.fsmIngress.tls.sslPassthrough.upstreamPort | int | `443` |  |
 | fsm.fsmIngress.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].key | string | `"kubernetes.io/arch"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].operator | string | `"In"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
-| fsm.fsmInterceptor.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
-| fsm.fsmInterceptor.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].key | string | `"app"` |  |
-| fsm.fsmInterceptor.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].operator | string | `"In"` |  |
-| fsm.fsmInterceptor.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-controller"` |  |
-| fsm.fsmInterceptor.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
-| fsm.fsmInterceptor.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
-| fsm.fsmInterceptor.cniMode | bool | `true` |  |
-| fsm.fsmInterceptor.kernelTracing | bool | `true` |  |
-| fsm.fsmInterceptor.kindMode | bool | `false` |  |
-| fsm.fsmInterceptor.resource.limits.cpu | string | `"1.5"` |  |
-| fsm.fsmInterceptor.resource.limits.memory | string | `"1G"` |  |
-| fsm.fsmInterceptor.resource.requests.cpu | string | `"0.5"` |  |
-| fsm.fsmInterceptor.resource.requests.memory | string | `"256M"` |  |
-| fsm.fsmInterceptor.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmNamespace | string | `""` | Namespace to deploy FSM in. If not specified, the Helm release namespace is used. |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].key | string | `"kubernetes.io/arch"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].operator | string | `"In"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[0] | string | `"amd64"` |  |
+| fsm.fsmXnetwork.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[1].values[1] | string | `"arm64"` |  |
+| fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].key | string | `"app"` |  |
+| fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].operator | string | `"In"` |  |
+| fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-xnetwork"` |  |
+| fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
+| fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
+| fsm.fsmXnetwork.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
+| fsm.fsmXnetwork.xmgt | object | `{"cniMode":true,"kernelTracing":true,"kindMode":false,"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xmgt |
+| fsm.fsmXnetwork.xnet | object | `{"filter":{"ports":{"inbound":"mesh","outbound":"mesh"}},"flush":{"conntrack":{"tcp":{"batchSize":4096,"crontab":"30 3 */1 * *","idleSeconds":3600},"udp":{"batchSize":4096,"crontab":"*/2 * * * *","idleSeconds":120}}},"image":{"name":"xnet","registry":"cybwan","tag":"0.9.1"},"nodePaths":{"k3s":{"cniBin":"/bin","cniNetd":"/var/lib/rancher/k3s/agent/etc/cni/net.d","enable":true,"kubeToken":"/var/lib/rancher/k3s/server/token","sysFs":"/opt","sysRun":"/var/run"},"k8s":{"cniBin":"/opt/cni/bin","cniNetd":"/etc/cni/net.d","kubeToken":"/var/run/secrets/kubernetes.io/serviceaccount/token","sysFs":"/opt","sysRun":"/var/run"}},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |
+| fsm.fsmXnetwork.xnet.image.name | string | `"xnet"` | xnet image name |
+| fsm.fsmXnetwork.xnet.image.registry | string | `"cybwan"` | Registry for xnet image |
+| fsm.fsmXnetwork.xnet.image.tag | string | `"0.9.1"` | xnet image tag |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator | string | `"In"` |  |
 | fsm.grafana.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0] | string | `"linux"` |  |
@@ -283,7 +281,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.grafana.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.http1PerRequestLoadBalancing | bool | `false` | Specifies a boolean indicating if load balancing based on request is enabled for http1. |
 | fsm.http2PerRequestLoadBalancing | bool | `true` | Specifies a boolean indicating if load balancing based on request is enabled for http2. |
-| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmCurl":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmInterceptor":"","fsmPreinstall":"","fsmSidecarInit":""}` | Image digest (defaults to latest compatible tag) |
+| fsm.image.digest | object | `{"fsmBootstrap":"","fsmCRDs":"","fsmConnector":"","fsmController":"","fsmCurl":"","fsmGateway":"","fsmHealthcheck":"","fsmIngress":"","fsmInjector":"","fsmPreinstall":"","fsmSidecarInit":"","fsmXnetmgmt":""}` | Image digest (defaults to latest compatible tag) |
 | fsm.image.digest.fsmBootstrap | string | `""` | fsm-boostrap's image digest |
 | fsm.image.digest.fsmCRDs | string | `""` | fsm-crds' image digest |
 | fsm.image.digest.fsmConnector | string | `""` | fsm-connector's image digest |
@@ -293,10 +291,10 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.digest.fsmHealthcheck | string | `""` | fsm-healthcheck's image digest |
 | fsm.image.digest.fsmIngress | string | `""` | fsm-ingress's image digest |
 | fsm.image.digest.fsmInjector | string | `""` | fsm-injector's image digest |
-| fsm.image.digest.fsmInterceptor | string | `""` | fsm-interceptor's image digest |
 | fsm.image.digest.fsmPreinstall | string | `""` | fsm-preinstall's image digest |
 | fsm.image.digest.fsmSidecarInit | string | `""` | Sidecar init container's image digest |
-| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmCurl":"fsm-curl","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmInterceptor":"fsm-interceptor","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init"}` | Image name defaults |
+| fsm.image.digest.fsmXnetmgmt | string | `""` | fsm-xnetwork's image digest |
+| fsm.image.name | object | `{"fsmBootstrap":"fsm-bootstrap","fsmCRDs":"fsm-crds","fsmConnector":"fsm-connector","fsmController":"fsm-controller","fsmCurl":"fsm-curl","fsmGateway":"fsm-gateway","fsmHealthcheck":"fsm-healthcheck","fsmIngress":"fsm-ingress","fsmInjector":"fsm-injector","fsmPreinstall":"fsm-preinstall","fsmSidecarInit":"fsm-sidecar-init","fsmXnetmgmt":"fsm-xnetmgmt"}` | Image name defaults |
 | fsm.image.name.fsmBootstrap | string | `"fsm-bootstrap"` | fsm-boostrap's image name |
 | fsm.image.name.fsmCRDs | string | `"fsm-crds"` | fsm-crds' image name |
 | fsm.image.name.fsmConnector | string | `"fsm-connector"` | fsm-connector's image name |
@@ -306,9 +304,9 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmHealthcheck | string | `"fsm-healthcheck"` | fsm-healthcheck's image name |
 | fsm.image.name.fsmIngress | string | `"fsm-ingress"` | fsm-ingress's image name |
 | fsm.image.name.fsmInjector | string | `"fsm-injector"` | fsm-injector's image name |
-| fsm.image.name.fsmInterceptor | string | `"fsm-interceptor"` | fsm-interceptor's image name |
 | fsm.image.name.fsmPreinstall | string | `"fsm-preinstall"` | fsm-preinstall's image name |
 | fsm.image.name.fsmSidecarInit | string | `"fsm-sidecar-init"` | Sidecar init container's image name |
+| fsm.image.name.fsmXnetmgmt | string | `"fsm-xnetmgmt"` | fsm-xnetmgmt's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
 | fsm.image.tag | string | `"1.4.0"` | Container image tag for control plane images |
@@ -476,7 +474,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.tracing.nodeSelector | object | `{}` |  |
 | fsm.tracing.port | int | `9411` | Port of the tracing collector service |
 | fsm.tracing.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
-| fsm.trafficInterceptionMode | string | `"iptables"` | Traffic interception mode in the mesh |
+| fsm.trafficInterceptionMode | string | `"PodLevel"` | Traffic interception mode in the mesh |
 | fsm.trustDomain | string | `"cluster.local"` | The trust domain to use as part of the common name when requesting new certificates. |
 | fsm.validatorWebhook.webhookConfigurationName | string | `""` | Name of the ValidatingWebhookConfiguration |
 | fsm.vault.host | string | `""` | Hashicorp Vault host/service - where Vault is installed |

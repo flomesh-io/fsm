@@ -191,7 +191,7 @@
                 "remoteLogging",
                 "webhookConfigNamePrefix",
                 "fsmController",
-                "fsmInterceptor",
+                "fsmXnetwork",
                 "enablePrivilegedInitContainer",
                 "injector",
                 "fsmBootstrap",
@@ -260,23 +260,21 @@
                     },
                     "additionalProperties": false
                 },
-                "fsmInterceptor": {
-                    "$id": "#/properties/fsm/properties/fsmInterceptor",
+                "fsmXnetwork": {
+                    "$id": "#/properties/fsm/properties/fsmXnetwork",
                     "type": "object",
-                    "title": "The fsmInterceptor schema",
-                    "description": "The details of the fsmInterceptor.",
+                    "title": "The fsmXnetwork schema",
+                    "description": "The details of the fsmXnetwork.",
                     "required": [
-                        "resource"
+                      "xmgt",
+                      "xnet"
                     ],
                     "properties": {
-                        "resource": {
-                            "$ref": "#/definitions/containerResources"
-                        },
                         "podLabels": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/podLabels",
+                            "$id": "#/properties/fsm/properties/fsmXnetwork/properties/podLabels",
                             "type": "object",
                             "title": "The podLabels schema",
-                            "description": "Labels for the fsmInterceptor pod.",
+                            "description": "Labels for the fsmXnetwork pod.",
                             "default": {}
                         },
                         "affinity": {
@@ -285,32 +283,311 @@
                         "tolerations": {
                             "type": "array"
                         },
-                        "kernelTracing": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/kernelTracing",
-                            "type": "boolean",
-                            "title": "kernel tracing enable",
-                            "description": "Indicates whether kernel tracing should be enabled or not.",
-                            "examples": [
+                        "xmgt": {
+                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt",
+                          "type": "object",
+                          "title": "xnet",
+                          "description": "xnet",
+                          "required": [
+                            "resource"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "kernelTracing": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/kernelTracing",
+                              "type": "boolean",
+                              "title": "kernel tracing enable",
+                              "description": "Indicates whether kernel tracing should be enabled or not.",
+                              "examples": [
                                 false
-                            ]
+                              ]
+                            },
+                            "cniMode": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/cniMode",
+                              "type": "boolean",
+                              "title": "cni plugin enable",
+                              "description": "Indicates whether cni plugin should be enabled or not.",
+                              "examples": [
+                                false
+                              ]
+                            },
+                            "kindMode": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/kindMode",
+                              "type": "boolean",
+                              "title": "running kind cluster",
+                              "description": "Indicates whether running kind cluster.",
+                              "examples": [
+                                false
+                              ]
+                            },
+                            "resource": {
+                              "$ref": "#/definitions/containerResources"
+                            }
+                          }
                         },
-                        "cniMode": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/cniMode",
-                            "type": "boolean",
-                            "title": "cni plugin enable",
-                            "description": "Indicates whether cni plugin should be enabled or not.",
-                            "examples": [
-                                false
-                            ]
-                        },
-                        "kindMode": {
-                            "$id": "#/properties/fsm/properties/fsmInterceptor/properties/kindMode",
-                            "type": "boolean",
-                            "title": "running kind cluster",
-                            "description": "Indicates whether running kind cluster.",
-                            "examples": [
-                                false
-                            ]
+                        "xnet": {
+                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet",
+                          "type": "object",
+                          "title": "xnet",
+                          "description": "xnet",
+                          "required": [
+                            "image",
+                            "resource",
+                            "filter",
+                            "flush",
+                            "nodePaths"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "image": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image",
+                              "type": "object",
+                              "title": "xnet's image schema",
+                              "description": "Image used for xnet",
+                              "required": [
+                                "name",
+                                "tag"
+                              ],
+                              "properties": {
+                                "name": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image/properties/name",
+                                  "type": "string",
+                                  "title": "The name schema"
+                                },
+                                "registry": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image/properties/registry",
+                                  "type": "string",
+                                  "title": "The registry schema"
+                                },
+                                "tag": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/image/properties/tag",
+                                  "type": "string",
+                                  "title": "The tag schema"
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "resource": {
+                              "$ref": "#/definitions/containerResources"
+                            },
+                            "filter": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter",
+                              "type": "object",
+                              "title": "filter schema",
+                              "description": "filter used for xnet",
+                              "required": [
+                                "ports"
+                              ],
+                              "properties": {
+                                "ports": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports",
+                                  "type": "object",
+                                  "title": "ports schema",
+                                  "required": [
+                                    "inbound",
+                                    "outbound"
+                                  ],
+                                  "properties": {
+                                    "inbound": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports/properties/inbound",
+                                      "type": "string",
+                                      "title": "The inbound port filter schema"
+                                    },
+                                    "outbound": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/filter/properties/ports/properties/outbound",
+                                      "type": "string",
+                                      "title": "The outbound port filter schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "flush": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush",
+                              "type": "object",
+                              "title": "flush schema",
+                              "description": "flush xnet data",
+                              "required": [
+                                "conntrack"
+                              ],
+                              "properties": {
+                                "conntrack": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack",
+                                  "type": "object",
+                                  "title": "The conn track schema",
+                                  "required": [
+                                    "tcp",
+                                    "udp"
+                                  ],
+                                  "properties": {
+                                    "tcp": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp",
+                                      "type": "object",
+                                      "title": "The tcp schema",
+                                      "required": [
+                                        "crontab",
+                                        "idleSeconds",
+                                        "batchSize"
+                                      ],
+                                      "properties": {
+                                        "crontab": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/crontab",
+                                          "type": "string",
+                                          "title": "The crontab schema"
+                                        },
+                                        "idleSeconds": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/idleSeconds",
+                                          "type": "integer",
+                                          "title": "The idle seconds schema",
+                                          "minimum": 60
+                                        },
+                                        "batchSize": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/tcp/properties/batchSize",
+                                          "type": "integer",
+                                          "minimum": 512,
+                                          "maximum": 10240
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "udp": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp",
+                                      "type": "object",
+                                      "title": "The udp schema",
+                                      "required": [
+                                        "crontab",
+                                        "idleSeconds",
+                                        "batchSize"
+                                      ],
+                                      "properties": {
+                                        "crontab": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/crontab",
+                                          "type": "string",
+                                          "title": "The crontab schema"
+                                        },
+                                        "idleSeconds": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/idleSeconds",
+                                          "type": "integer",
+                                          "title": "The idle seconds schema",
+                                          "minimum": 60
+                                        },
+                                        "batchSize": {
+                                          "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/flush/properties/conntrack/properties/udp/properties/batchSize",
+                                          "type": "integer",
+                                          "minimum": 512,
+                                          "maximum": 10240
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            },
+                            "nodePaths": {
+                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths",
+                              "type": "object",
+                              "title": "volume mounts schema",
+                              "description": "volume mounts",
+                              "required": [
+                                "k8s",
+                                "k3s"
+                              ],
+                              "properties": {
+                                "k8s": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s",
+                                  "type": "object",
+                                  "title": "k8s volume mounts schema",
+                                  "required": [
+                                    "kubeToken",
+                                    "cniBin",
+                                    "cniNetd",
+                                    "sysFs",
+                                    "sysRun"
+                                  ],
+                                  "properties": {
+                                    "kubeToken": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/kubeToken",
+                                      "type": "string",
+                                      "title": "The kube token schema"
+                                    },
+                                    "cniBin": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniBin",
+                                      "type": "string",
+                                      "title": "The cni bin schema"
+                                    },
+                                    "cniNetd": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/cniNetd",
+                                      "type": "string",
+                                      "title": "The cni netd schema"
+                                    },
+                                    "sysFs": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/sysFs",
+                                      "type": "string",
+                                      "title": "The sys fs schema"
+                                    },
+                                    "sysRun": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k8s/properties/sysRun",
+                                      "type": "string",
+                                      "title": "The sys run schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                },
+                                "k3s": {
+                                  "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s",
+                                  "type": "object",
+                                  "title": "k8s volume mounts schema",
+                                  "required": [
+                                    "enable",
+                                    "kubeToken",
+                                    "cniBin",
+                                    "cniNetd",
+                                    "sysFs",
+                                    "sysRun"
+                                  ],
+                                  "properties": {
+                                    "enable": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/enable",
+                                      "type": "boolean",
+                                      "title": "The enable schema"
+                                    },
+                                    "kubeToken": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/kubeToken",
+                                      "type": "string",
+                                      "title": "The kube token schema"
+                                    },
+                                    "cniBin": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/cniBin",
+                                      "type": "string",
+                                      "title": "The cni bin schema"
+                                    },
+                                    "cniNetd": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/cniNetd",
+                                      "type": "string",
+                                      "title": "The cni netd schema"
+                                    },
+                                    "sysFs": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/sysFs",
+                                      "type": "string",
+                                      "title": "The sys fs schema"
+                                    },
+                                    "sysRun": {
+                                      "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xnet/properties/nodePaths/properties/k3s/properties/sysRun",
+                                      "type": "string",
+                                      "title": "The sys run schema"
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          }
                         }
                     },
                     "additionalProperties": false
@@ -357,7 +634,7 @@
                               "fsmCRDs",
                               "fsmPreinstall",
                               "fsmHealthcheck",
-                              "fsmInterceptor",
+                              "fsmXnetmgmt",
                               "fsmConnector",
                               "fsmIngress",
                               "fsmGateway",
@@ -406,11 +683,11 @@
                                 "title": "fsm-healthcheck's image name",
                                 "description": "fsm-healthcheck container's image name."
                               },
-                              "fsmInterceptor": {
-                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmInterceptor",
+                              "fsmXnetmgmt": {
+                                "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmXnetmgmt",
                                 "type": "string",
-                                "title": "fsm-interceptor's image name",
-                                "description": "fsm-interceptor container's image name."
+                                "title": "fsm-xnetmgnt's image name",
+                                "description": "fsm-xnetmgnt container's image name."
                               },
                               "fsmConnector": {
                                 "$id": "#/properties/fsm/properties/image/properties/name/properties/fsmConnector",
@@ -470,7 +747,7 @@
                               "fsmBootstrap",
                               "fsmPreinstall",
                               "fsmHealthcheck",
-                              "fsmInterceptor",
+                              "fsmXnetmgmt",
                               "fsmConnector",
                               "fsmIngress",
                               "fsmGateway",
@@ -519,11 +796,11 @@
                                 "title": "fsm-healthcheck's image digest",
                                 "description": "fsm-healthcheck container's image digest."
                               },
-                              "fsmInterceptor": {
-                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmInterceptor",
+                              "fsmXnetmgmt": {
+                                "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmXnetmgmt",
                                 "type": "string",
-                                "title": "fsm-interceptor's image digest",
-                                "description": "fsm-interceptor container's image digest."
+                                "title": "fsm-xnetmgmt's image digest",
+                                "description": "fsm-xnetmgmt container's image digest."
                               },
                               "fsmConnector": {
                                 "$id": "#/properties/fsm/properties/image/properties/digest/properties/fsmConnector",
@@ -979,12 +1256,11 @@
                     "title": "The trafficInterceptionMode schema",
                     "description": "Traffic interception mode in the mesh.",
                     "enum": [
-                        "iptables",
-                        "ebpf",
-                        "none"
+                        "NodeLevel",
+                        "PodLevel"
                     ],
                     "examples": [
-                        "iptables"
+                        "NodeLevel"
                     ]
                 },
                 "enableEgress": {

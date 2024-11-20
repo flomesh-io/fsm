@@ -9,7 +9,8 @@ WORKDIR /fsm
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-preinstall -ldflags "$LDFLAGS" ./cmd/fsm-preinstall
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-xnet-mgmt -ldflags "$LDFLAGS" ./cmd/fsm-xnetmgmt
 
-FROM --platform=$BUILDPLATFORM gcr.io/distroless/static
-COPY --from=builder /fsm/fsm-preinstall /
+#FROM gcr.io/distroless/static
+FROM --platform=$BUILDPLATFORM ubuntu:22.04
+COPY --from=builder /fsm/fsm-xnet-mgmt /

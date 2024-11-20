@@ -1,1 +1,2 @@
-FROM flomesh/curl:latest
+# syntax = docker/dockerfile:1.4
+FROM --platform=$BUILDPLATFORM flomesh/curl:latest
