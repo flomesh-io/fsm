@@ -2,7 +2,6 @@ package flb
 
 import (
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
@@ -36,20 +35,20 @@ func lbIPs(addresses []string) []string {
 		return nil
 	}
 
-	ips := make([]string, 0)
-	for _, addr := range addresses {
-		if strings.Contains(addr, ":") {
-			host, _, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil
-			}
-			ips = append(ips, host)
-		} else {
-			ips = append(ips, addr)
-		}
-	}
+	//ips := make([]string, 0)
+	//for _, addr := range addresses {
+	//	if strings.Contains(addr, ":") {
+	//		host, _, err := net.SplitHostPort(addr)
+	//		if err != nil {
+	//			return nil
+	//		}
+	//		ips = append(ips, host)
+	//	} else {
+	//		ips = append(ips, addr)
+	//	}
+	//}
 
-	return ips
+	return addresses
 }
 
 func getValidAlgo(value string) string {
