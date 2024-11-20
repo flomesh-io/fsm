@@ -12,5 +12,5 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -v -o fsm-xnet-mgmt -ldflags "$LDFLAGS" ./cmd/fsm-xnetmgmt
 
 #FROM gcr.io/distroless/static
-FROM --platform=$BUILDPLATFORM ubuntu:22.04
+FROM ubuntu:22.04
 COPY --from=builder /fsm/fsm-xnet-mgmt /
