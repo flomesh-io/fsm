@@ -11,6 +11,7 @@ project_name: fsm
 env:
   - CGO_ENABLED=0
   - GO111MODULE=on
+  - BREWS_SKIP_UPLOAD={{ if and (index .Env "HOMEBREW_RELEASE_PAT") .Env.HOMEBREW_RELEASE_PAT }}false{{ else }}true{{ end }}
 
 before:
   hooks:
@@ -112,9 +113,10 @@ brews:
     description: Lightweight service mesh for Kubernetes East-West and North-South traffic management
     license: Apache 2.0
     test: |
-      system "#{bin}/fsm --version"
+      system "#{bin}/fsm version"
     dependencies:
       - name: go
         type: optional
       - name: git
         type: optional
+    skip_upload: "{{ .Env.BREWS_SKIP_UPLOAD }}"
