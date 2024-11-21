@@ -11,6 +11,7 @@ project_name: fsm
 env:
   - CGO_ENABLED=0
   - GO111MODULE=on
+  - BREWS_SKIP_UPLOAD={{ if and (index .Env "HOMEBREW_RELEASE_PAT") .Env.HOMEBREW_RELEASE_PAT }}false{{ else }}true{{ end }}
 
 before:
   hooks:
@@ -118,4 +119,4 @@ brews:
         type: optional
       - name: git
         type: optional
-    skip_upload: "{{ if index .Env 'HOMEBREW_RELEASE_PAT' }}false{{ else }}true{{ end }}"
+    skip_upload: "{{ .Env.BREWS_SKIP_UPLOAD }}"
