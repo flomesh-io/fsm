@@ -118,3 +118,4 @@ brews:
         type: optional
       - name: git
         type: optional
+    skip_upload: {{ if .Env.HOMEBREW_RELEASE_PAT }}false{{ else }}true{{ end }}
