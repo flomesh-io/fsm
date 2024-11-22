@@ -55,6 +55,20 @@ func (mr *MockControllerMockRecorder) GetEndpoints(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEndpoints", reflect.TypeOf((*MockController)(nil).GetEndpoints), arg0)
 }
 
+// GetK8sNamespace mocks base method.
+func (m *MockController) GetK8sNamespace(arg0 string) *v1.Namespace {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetK8sNamespace", arg0)
+	ret0, _ := ret[0].(*v1.Namespace)
+	return ret0
+}
+
+// GetK8sNamespace indicates an expected call of GetK8sNamespace.
+func (mr *MockControllerMockRecorder) GetK8sNamespace(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetK8sNamespace", reflect.TypeOf((*MockController)(nil).GetK8sNamespace), arg0)
+}
+
 // GetNamespace mocks base method.
 func (m *MockController) GetNamespace(arg0 string) *v1.Namespace {
 	m.ctrl.T.Helper()
