@@ -11,6 +11,7 @@ import (
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 )
@@ -91,7 +92,8 @@ func (s *Server) stop() {
 }
 
 var (
-	cfg configurator.Configurator
+	k8sClient k8s.Controller
+	cfg       configurator.Configurator
 
 	server = &Server{
 		host:     fmt.Sprintf(":%d", constants.FSMDNSProxyPort),
@@ -100,7 +102,8 @@ var (
 	}
 )
 
-func Init(configurator configurator.Configurator) {
+func Init(kubeController k8s.Controller, configurator configurator.Configurator) {
+	k8sClient = kubeController
 	cfg = configurator
 	if cfg.IsLocalDNSProxyEnabled() {
 		Start()

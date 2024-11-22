@@ -99,6 +99,9 @@ type Controller interface {
 	// GetNamespace returns k8s namespace present in cache
 	GetNamespace(string) *corev1.Namespace
 
+	// GetK8sNamespace returns k8s namespace present in cache
+	GetK8sNamespace(string) *corev1.Namespace
+
 	// ListPods returns a list of pods part of the mesh
 	ListPods() []*corev1.Pod
 
