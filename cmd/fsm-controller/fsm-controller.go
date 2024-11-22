@@ -289,7 +289,6 @@ func main() {
 	}
 
 	k8sClient := k8s.NewKubernetesController(informerCollection, policyClient, pluginClient, msgBroker)
-
 	meshSpec := smi.NewSMIClient(informerCollection, fsmNamespace, k8sClient, msgBroker)
 
 	certOpts, err := getCertOptions()
@@ -372,7 +371,7 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting the validating webhook server")
 	}
 
-	dns.Init(cfg)
+	dns.Init(k8sClient, cfg)
 
 	version.SetMetric()
 

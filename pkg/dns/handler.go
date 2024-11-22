@@ -73,6 +73,36 @@ func NewHandler(config *Config) *DNSHandler {
 	return handler
 }
 
+func (h *DNSHandler) getTrustDomainSearches(trustDomain, namespace string) []string {
+	searches := []string{fmt.Sprintf(`.svc.%s`, namespace)}
+	sections := strings.Split(trustDomain, `.`)
+	for index := range sections {
+		searches = append(searches, fmt.Sprintf(`.svc.%s.%s`, strings.Join(sections[0:index+1], `.`), namespace))
+	}
+	searches = append(searches, fmt.Sprintf(`.%s`, namespace))
+	return searches
+}
+
+func (h *DNSHandler) getRawQName(qname string, suffixDomain string, trustDomain string) (string, string) {
+	fromNamespace := `default`
+	if strings.HasSuffix(qname, suffixDomain) {
+		qname = strings.TrimSuffix(qname, suffixDomain)
+		sections := strings.Split(qname, `.`)
+		ndots := len(sections)
+		if ndots > 2 {
+			fromNamespace = sections[len(sections)-1]
+			searches := h.getTrustDomainSearches(trustDomain, fromNamespace)
+			for _, search := range searches {
+				if strings.HasSuffix(qname, search) {
+					qname = strings.TrimSuffix(qname, search)
+					break
+				}
+			}
+		}
+	}
+	return qname, fromNamespace
+}
+
 func (h *DNSHandler) do(cfg *Config) {
 	trustDomain := service.GetTrustDomain()
 	suffixDomain := fmt.Sprintf(".svc.%s.", trustDomain)
@@ -87,16 +117,24 @@ func (h *DNSHandler) do(cfg *Config) {
 			}(w)
 
 			for index, q := range req.Question {
-				if strings.HasSuffix(q.Name, suffixDomain) {
-					if segs := strings.Split(q.Name, "."); len(segs) == 7 {
-						req.Question[index].Name = fmt.Sprintf("%s.%s.svc.%s.", segs[0], segs[1], trustDomain)
+				qname, fromNamespace := h.getRawQName(q.Name, suffixDomain, trustDomain)
+				segs := strings.Split(qname, `.`)
+				sections := len(segs)
+				if sections == 1 { //internal domain name
+					req.Question[index].Name = fmt.Sprintf(`%s.%s.svc.%s.`, segs[0], fromNamespace, trustDomain)
+				} else if sections > 2 { //external domain name
+					req.Question[index].Name = fmt.Sprintf(`%s.`, qname)
+				} else {
+					if k8sClient.GetK8sNamespace(segs[1]) != nil {
+						req.Question[index].Name = fmt.Sprintf(`%s.%s.svc.%s.`, segs[0], segs[1], trustDomain)
+					} else { //external domain name
+						req.Question[index].Name = fmt.Sprintf(`%s.`, qname)
 					}
 				}
 			}
 
 			q := req.Question[0]
 			Q := Question{UnFqdn(q.Name), dns.TypeToString[q.Qtype], dns.ClassToString[q.Qclass]}
-
 			var remote net.IP
 			if Net == "tcp" {
 				remote = w.RemoteAddr().(*net.TCPAddr).IP
