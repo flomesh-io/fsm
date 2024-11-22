@@ -221,6 +221,15 @@ func (c *client) GetNamespace(ns string) *corev1.Namespace {
 	return nil
 }
 
+// GetK8sNamespace returns a Namespace resource if found, nil otherwise.
+func (c *client) GetK8sNamespace(ns string) *corev1.Namespace {
+	nsIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyNamespaceAll, ns)
+	if exists && err == nil {
+		return nsIf.(*corev1.Namespace)
+	}
+	return nil
+}
+
 // ListPods returns a list of pods part of the mesh
 // Kubecontroller does not currently segment pod notifications, hence it receives notifications
 // for all k8s Pods.

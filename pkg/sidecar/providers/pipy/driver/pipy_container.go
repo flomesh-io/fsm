@@ -176,10 +176,8 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 			dots := "4"
 			searches := make([]string, 0)
 			if len(pod.Namespace) > 0 {
-				dots = "5"
 				searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))
 			} else if len(injCtx.PodNamespace) > 0 {
-				dots = "5"
 				searches = append(searches, fmt.Sprintf("%s.svc.%s", injCtx.PodNamespace, trustDomain))
 			}
 

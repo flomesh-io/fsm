@@ -46,8 +46,8 @@ func (r *Resolver) Lookup(net string, req *dns.Msg, timeout int, interval int, n
 		defer wg.Done()
 		r, _, err := c.Exchange(req, nameserver)
 		if err != nil {
-			log.Error().Msgf("%s socket error on %s", qname, nameserver)
-			log.Error().Msgf("error:%s", err.Error())
+			log.Warn().Msgf("%s socket error on %s", qname, nameserver)
+			log.Warn().Msgf("error:%s", err.Error())
 			return
 		}
 		if r != nil && r.Rcode != dns.RcodeSuccess {

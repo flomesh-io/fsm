@@ -124,7 +124,7 @@ func (job *PipyConfGeneratorJob) Run() {
 	job.publishSidecarConf(s.repoClient, proxy, pipyConf)
 	end := time.Now()
 
-	log.Log().Str("proxy", proxy.GetCNPrefix()).
+	log.Debug().Str("proxy", proxy.GetCNPrefix()).
 		Int("maxprocs", runtime.GOMAXPROCS(-1)).
 		Str("elapsed", end.Sub(start).String()).
 		Msg("Codebase Recalculated")
@@ -598,7 +598,7 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client.PipyRepoC
 				_, _ = repoClient.Delete(codebase)
 			} else {
 				proxy.ETag = codebaseCurV
-				log.Log().Str("proxy", proxy.GetCNPrefix()).
+				log.Debug().Str("proxy", proxy.GetCNPrefix()).
 					Str("id", fmt.Sprintf("%05d", proxy.ID)).
 					Str("prev", fmt.Sprintf("%020d", codebasePreV)).
 					Str("curv", fmt.Sprintf("%020d", codebaseCurV)).
