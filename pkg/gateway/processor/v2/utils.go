@@ -4,6 +4,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
@@ -60,9 +62,24 @@ func toFGWAppProtocol(appProtocol *string) *string {
 	} {
 		if strings.HasPrefix(*appProtocol, prefix) {
 			after, _ := strings.CutPrefix(*appProtocol, prefix)
-			return ptr.To(after)
+			if isFGWAppProtocolSupported(after) {
+				return ptr.To(after)
+			}
 		}
 	}
 
-	return appProtocol
+	if isFGWAppProtocolSupported(*appProtocol) {
+		return appProtocol
+	}
+
+	return nil
+}
+
+func isFGWAppProtocolSupported(appProtocol string) bool {
+	switch appProtocol {
+	case constants.AppProtocolH2C, constants.AppProtocolWS, constants.AppProtocolWSS:
+		return true
+	default:
+		return false
+	}
 }
