@@ -568,9 +568,21 @@ const (
 
 // GatewayAPI Backend Protocol Selection constants
 const (
-	AppProtocolH2C = "kubernetes.io/h2c"
-	AppProtocolWS  = "kubernetes.io/ws"
-	AppProtocolWSS = "kubernetes.io/wss"
+	// standard app protocols
+
+	K8sAppProtocolH2C      = "kubernetes.io/h2c"
+	K8sAppProtocolWS       = "kubernetes.io/ws"
+	K8sAppProtocolWSS      = "kubernetes.io/wss"
+	FlomeshAppProtocolHTTP = "gateway.flomesh.io/http"
+	FlomeshAppProtocolGRPC = "gateway.flomesh.io/grpc"
+
+	// shortcuts for the standard app protocol
+
+	AppProtocolH2C  = "h2c"
+	AppProtocolWS   = "ws"
+	AppProtocolWSS  = "wss"
+	AppProtocolHTTP = "http"
+	AppProtocolGRPC = "grpc"
 )
 
 // PIPY Repo constants

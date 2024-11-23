@@ -7,8 +7,6 @@ import (
 
 	"k8s.io/client-go/tools/record"
 
-	"github.com/flomesh-io/fsm/pkg/logger"
-
 	corev1 "k8s.io/api/core/v1"
 
 	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
@@ -22,9 +20,9 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
-var (
-	log = logger.New("fsm-gateway/status/route")
-)
+//var (
+//	log = logger.New("fsm-gateway/status/route")
+//)
 
 type PolicyObjectReferenceConditionProvider struct {
 	ancestorStatus status.PolicyAncestorStatusObject
