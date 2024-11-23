@@ -293,33 +293,6 @@
                           ],
                           "additionalProperties": false,
                           "properties": {
-                            "kernelTracing": {
-                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/kernelTracing",
-                              "type": "boolean",
-                              "title": "kernel tracing enable",
-                              "description": "Indicates whether kernel tracing should be enabled or not.",
-                              "examples": [
-                                false
-                              ]
-                            },
-                            "cniMode": {
-                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/cniMode",
-                              "type": "boolean",
-                              "title": "cni plugin enable",
-                              "description": "Indicates whether cni plugin should be enabled or not.",
-                              "examples": [
-                                false
-                              ]
-                            },
-                            "kindMode": {
-                              "$id": "#/properties/fsm/properties/fsmXnetwork/properties/xmgt/properties/kindMode",
-                              "type": "boolean",
-                              "title": "running kind cluster",
-                              "description": "Indicates whether running kind cluster.",
-                              "examples": [
-                                false
-                              ]
-                            },
                             "resource": {
                               "$ref": "#/definitions/containerResources"
                             }

@@ -246,9 +246,6 @@ fsm:
   fsmXnetwork:
     # -- xmgt
     xmgt:
-      kernelTracing: true
-      cniMode: true
-      kindMode: false
       resource:
         limits:
           cpu: "1.5"
@@ -260,11 +257,11 @@ fsm:
     xnet:
       image:
         # -- Registry for xnet image
-        registry: cybwan
+        registry: flomesh
         # -- xnet image name
         name: xnet
         # -- xnet image tag
-        tag: 0.9.1
+        tag: latest
       resource:
         limits:
           cpu: "1.5"
