@@ -10,7 +10,7 @@ import (
 )
 
 func (p *RouteStatusProcessor) addNotAcceptedCondition(route client.Object, rps status.RouteConditionAccessor, reason gwv1.RouteConditionReason, message string) {
-	defer p.recorder.Eventf(route, corev1.EventTypeWarning, string(reason), message)
+	p.addWarningEvent(route, string(reason), message)
 
 	rps.AddCondition(
 		gwv1.RouteConditionAccepted,
@@ -21,7 +21,7 @@ func (p *RouteStatusProcessor) addNotAcceptedCondition(route client.Object, rps 
 }
 
 func (p *RouteStatusProcessor) addNotResolvedRefsCondition(route client.Object, rps status.RouteConditionAccessor, reason gwv1.RouteConditionReason, message string) {
-	defer p.recorder.Eventf(route, corev1.EventTypeWarning, string(reason), message)
+	p.addWarningEvent(route, string(reason), message)
 
 	rps.AddCondition(
 		gwv1.RouteConditionResolvedRefs,
@@ -32,7 +32,7 @@ func (p *RouteStatusProcessor) addNotResolvedRefsCondition(route client.Object, 
 }
 
 func (p *RouteStatusProcessor) addResolvedRefsCondition(route client.Object, rps status.RouteConditionAccessor, reason gwv1.RouteConditionReason, message string) {
-	defer p.recorder.Eventf(route, corev1.EventTypeNormal, string(reason), message)
+	p.addNormalEvent(route, string(reason), message)
 
 	rps.AddCondition(
 		gwv1.RouteConditionResolvedRefs,
@@ -40,4 +40,12 @@ func (p *RouteStatusProcessor) addResolvedRefsCondition(route client.Object, rps
 		reason,
 		message,
 	)
+}
+
+func (p *RouteStatusProcessor) addNormalEvent(route client.Object, reason string, message string) {
+	defer p.recorder.Eventf(route, corev1.EventTypeNormal, reason, message)
+}
+
+func (p *RouteStatusProcessor) addWarningEvent(route client.Object, reason string, message string) {
+	defer p.recorder.Eventf(route, corev1.EventTypeWarning, reason, message)
 }

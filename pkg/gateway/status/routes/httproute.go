@@ -10,6 +10,19 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
+var (
+	validHTTPRouteAppProtocols = []string{
+		constants.K8sAppProtocolH2C,
+		constants.K8sAppProtocolWS,
+		constants.K8sAppProtocolWSS,
+		constants.FlomeshAppProtocolHTTP,
+		constants.AppProtocolH2C,
+		constants.AppProtocolWS,
+		constants.AppProtocolWSS,
+		constants.AppProtocolHTTP,
+	}
+)
+
 func (p *RouteStatusProcessor) processHTTPRouteStatus(route *gwv1.HTTPRoute, parentRef gwv1.ParentReference, rps status.RouteParentStatusObject) bool {
 	for _, rule := range route.Spec.Rules {
 		if !p.processHTTPRouteRuleBackendRefs(route, parentRef, rule.BackendRefs, rps) {
@@ -39,18 +52,19 @@ func (p *RouteStatusProcessor) processHTTPRouteBackend(route *gwv1.HTTPRoute, pa
 		return false
 	}
 
+	if svcPort.Protocol != corev1.ProtocolTCP {
+		p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported protocol %q for backend %s", svcPort.Protocol, svcPort.String()))
+		return false
+	}
+
 	if svcPort.AppProtocol != nil {
-		switch *svcPort.AppProtocol {
-		case constants.AppProtocolH2C, constants.AppProtocolWS, constants.AppProtocolWSS:
-			log.Debug().Msgf("Backend Protocol: %q for service port %q", *svcPort.AppProtocol, svcPort.String())
-			if svcPort.Protocol != corev1.ProtocolTCP {
-				p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q for protocol %q", *svcPort.AppProtocol, svcPort.Protocol))
-				return false
-			}
-		default:
+		if !isSupportedAppProtocol(*svcPort.AppProtocol, validHTTPRouteAppProtocols) {
 			p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q", *svcPort.AppProtocol))
 			return false
 		}
+	} else {
+		// Default to HTTP
+		p.addNormalEvent(route, "AppProtocol", fmt.Sprintf("Defaulting to HTTP/1 app protocol for backend %s", svcPort.String()))
 	}
 
 	if !func() bool {
@@ -58,7 +72,7 @@ func (p *RouteStatusProcessor) processHTTPRouteBackend(route *gwv1.HTTPRoute, pa
 		p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef, func(found bool) {
 			if !found {
 				if svcPort.AppProtocol != nil &&
-					*svcPort.AppProtocol == constants.AppProtocolWSS &&
+					*svcPort.AppProtocol == constants.K8sAppProtocolWSS &&
 					svcPort.Protocol == corev1.ProtocolTCP {
 					p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("No matching BackendTLSPolicy was found for the backend protocol %q and appProtocol %q", svcPort.Protocol, *svcPort.AppProtocol))
 					valid = false

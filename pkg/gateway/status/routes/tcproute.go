@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
@@ -33,6 +36,11 @@ func (p *RouteStatusProcessor) processTCPRouteRuleBackendRefs(route *gwv1alpha2.
 func (p *RouteStatusProcessor) processTCPRouteBackend(route *gwv1alpha2.TCPRoute, parentRef gwv1.ParentReference, bk gwv1alpha2.BackendRef, rps status.RouteParentStatusObject) bool {
 	svcPort := p.backendRefToServicePortName(route, bk.BackendObjectReference, rps)
 	if svcPort == nil {
+		return false
+	}
+
+	if svcPort.Protocol != corev1.ProtocolTCP {
+		p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported protocol %q for backend %s", svcPort.Protocol, svcPort.String()))
 		return false
 	}
 

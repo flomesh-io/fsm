@@ -10,6 +10,21 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
+var (
+	validGRPCRouteAppProtocols = []string{
+		constants.K8sAppProtocolH2C,
+		constants.K8sAppProtocolWS,
+		constants.K8sAppProtocolWSS,
+		constants.FlomeshAppProtocolHTTP,
+		constants.FlomeshAppProtocolGRPC,
+		constants.AppProtocolH2C,
+		constants.AppProtocolWS,
+		constants.AppProtocolWSS,
+		constants.AppProtocolHTTP,
+		constants.AppProtocolGRPC,
+	}
+)
+
 func (p *RouteStatusProcessor) processGRPCRouteStatus(route *gwv1.GRPCRoute, parentRef gwv1.ParentReference, rps status.RouteParentStatusObject) bool {
 	for _, rule := range route.Spec.Rules {
 		if !p.processGRPCRouteRuleBackendRefs(route, rps, parentRef, rule.BackendRefs) {
@@ -39,18 +54,19 @@ func (p *RouteStatusProcessor) processGRPCRouteBackend(route *gwv1.GRPCRoute, pa
 		return false
 	}
 
+	if svcPort.Protocol != corev1.ProtocolTCP {
+		p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported protocol %q for backend %s", svcPort.Protocol, svcPort.String()))
+		return false
+	}
+
 	if svcPort.AppProtocol != nil {
-		switch *svcPort.AppProtocol {
-		case constants.AppProtocolH2C:
-			log.Debug().Msgf("Backend Protocol: %q for service port %q", *svcPort.AppProtocol, svcPort.String())
-			if svcPort.Protocol != corev1.ProtocolTCP {
-				p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q for protocol %q", *svcPort.AppProtocol, svcPort.Protocol))
-				return false
-			}
-		default:
+		if !isSupportedAppProtocol(*svcPort.AppProtocol, validGRPCRouteAppProtocols) {
 			p.addNotResolvedRefsCondition(route, rps, gwv1.RouteReasonUnsupportedProtocol, fmt.Sprintf("Unsupported AppProtocol %q", *svcPort.AppProtocol))
 			return false
 		}
+	} else {
+		// Default to HTTP
+		p.addNormalEvent(route, "AppProtocol", fmt.Sprintf("Defaulting to HTTP/1 app protocol for backend %s", svcPort.String()))
 	}
 
 	p.computeBackendTLSPolicyStatus(route, bk.BackendObjectReference, svcPort, parentRef, func(found bool) {})
