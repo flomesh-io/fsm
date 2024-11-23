@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-logr/zerologr"
 
+	"github.com/flomesh-io/fsm/pkg/debugger"
 	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
 
 	"github.com/flomesh-io/fsm/pkg/dns"
@@ -72,7 +73,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/certificate/providers"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
-	"github.com/flomesh-io/fsm/pkg/debugger"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/health"
@@ -283,11 +283,6 @@ func main() {
 
 	// This component will be watching resources in the config.flomesh.io API group
 	cfg := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, msgBroker)
-	err = sidecar.InstallDriver(cfg.GetSidecarClass())
-	if err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating sidecar driver")
-	}
-
 	k8sClient := k8s.NewKubernetesController(informerCollection, policyClient, pluginClient, msgBroker)
 	meshSpec := smi.NewSMIClient(informerCollection, fsmNamespace, k8sClient, msgBroker)
 
@@ -347,23 +342,46 @@ func main() {
 		msgBroker,
 	)
 
-	proxyServiceCert, err := certManager.IssueCertificate(xdsServerCertificateCommonName, certificate.Internal)
-	if err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.CertificateIssuanceFailure, "Error issuing XDS certificate to ADS server")
-	}
-
 	background.Configurator = cfg
 	background.MeshCatalog = meshCatalog
 	background.CertManager = certManager
 	background.MsgBroker = msgBroker
-	background.ProxyServiceCert = proxyServiceCert
-	background.ProxyServerPort = cfg.GetProxyServerPort()
 
-	// Create and start the sidecar proxy service
-	healthProbes, err := sidecar.Start(ctx)
-	if err != nil {
-		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error initializing proxy control server")
+	// Health/Liveness probes
+	var funcProbes []health.Probes
+	if cfg.GetTrafficInterceptionMode() == constants.TrafficInterceptionModePodLevel {
+		err = sidecar.InstallDriver(cfg.GetSidecarClass())
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating sidecar driver")
+		}
+
+		proxyServiceCert, err := certManager.IssueCertificate(xdsServerCertificateCommonName, certificate.Internal)
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.CertificateIssuanceFailure, "Error issuing XDS certificate to ADS server")
+		}
+
+		background.ProxyServiceCert = proxyServiceCert
+		background.ProxyServerPort = cfg.GetProxyServerPort()
+
+		// Create and start the sidecar proxy service
+		healthProbes, err := sidecar.Start(ctx)
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error initializing proxy control server")
+		}
+
+		// Create DebugServer and start its config event listener.
+		// Listener takes care to start and stop the debug server as appropriate
+		debugConfig := debugger.NewDebugConfig(certManager, meshCatalog, kubeConfig, kubeClient, cfg, k8sClient, msgBroker)
+		go debugConfig.StartDebugServerConfigListener(background.DebugHandlers, stop)
+
+		go dns.WatchAndUpdateLocalDNSProxy(msgBroker, stop)
+		// Start the k8s pod watcher that updates corresponding k8s secrets
+		go k8s.WatchAndUpdateProxyBootstrapSecret(kubeClient, msgBroker, stop)
+
+		funcProbes = append(funcProbes, healthProbes)
 	}
+
+	dns.Init(k8sClient, cfg)
 
 	clientset := extensionsClientset.NewForConfigOrDie(kubeConfig)
 
@@ -371,14 +389,12 @@ func main() {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error starting the validating webhook server")
 	}
 
-	dns.Init(k8sClient, cfg)
+	funcProbes = append(funcProbes, smi.HealthChecker{DiscoveryClient: clientset.Discovery()})
 
 	version.SetMetric()
 
 	// Initialize FSM's http service server
 	httpServer := httpserver.NewHTTPServer(constants.FSMHTTPServerPort)
-	// Health/Liveness probes
-	funcProbes := []health.Probes{healthProbes, smi.HealthChecker{DiscoveryClient: clientset.Discovery()}}
 	httpServer.AddHandlers(map[string]http.Handler{
 		constants.FSMControllerReadinessPath: health.ReadinessHandler(funcProbes, nil),
 		constants.FSMControllerLivenessPath:  health.LivenessHandler(funcProbes, nil),
@@ -396,14 +412,6 @@ func main() {
 		log.Fatal().Err(err).Msgf("Failed to start FSM metrics/probes HTTP server")
 	}
 
-	// Create DebugServer and start its config event listener.
-	// Listener takes care to start and stop the debug server as appropriate
-	debugConfig := debugger.NewDebugConfig(certManager, meshCatalog, kubeConfig, kubeClient, cfg, k8sClient, msgBroker)
-	go debugConfig.StartDebugServerConfigListener(background.DebugHandlers, stop)
-
-	go dns.WatchAndUpdateLocalDNSProxy(msgBroker, stop)
-	// Start the k8s pod watcher that updates corresponding k8s secrets
-	go k8s.WatchAndUpdateProxyBootstrapSecret(kubeClient, msgBroker, stop)
 	// Start the global log level watcher that updates the log level dynamically
 	go k8s.WatchAndUpdateLogLevel(msgBroker, stop)
 
