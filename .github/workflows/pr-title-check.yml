@@ -4,6 +4,7 @@ on:
   pull_request_target:
     types: [opened, edited, reopened, synchronize]
 
+
 # IMPORTANT: No checkout actions, scripts, or builds should be added to this workflow. Permissions should always be used
 # with extreme caution. https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
 permissions: {}
@@ -24,6 +25,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: thehanimo/pr-title-checker@v1.4.3
+        id: check
+        continue-on-error: true
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          pass_on_octokit_error: false
           configuration_path: ".github/pr-title-checker-config.json"
+
+      - name: Add comment to fix PR title
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: ${{ steps.check.outputs.success == 'false'}}
+        with:
+          header: 'PR Title Check'
+          recreate: true
+          message: |
+            ### 🚨 PR Title Needs Formatting
+            The title of this PR needs to be formatted correctly. 
+            Please update the title to match the format `type: description AB#xxx`. Examples:
+            * `fix: fix typo in README.md AB#123`
+            * `chore: update dependencies AB#456`
+            * `feat: add new feature AB#789`
+            * `chore: fixing build pipeline` - no AB reference
+            
+            For more details, please refer to the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0)
+            and the [PR Title Configuration File](.github/pr-title-checker-config.json).
+
+      - name: Add comment that PR title is fixed
+        if: ${{ steps.check.outputs.success == 'true'}}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: 'PR Title Check'
+          recreate: true
+          message: |
+            ### ✅ PR Title Formatted Correctly
+            The title of this PR has been updated to match the correct format. Thank you!
