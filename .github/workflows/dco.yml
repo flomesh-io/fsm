@@ -9,6 +9,7 @@ on:
 
 jobs:
   dco-check:
+    name: "DCO Check"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
