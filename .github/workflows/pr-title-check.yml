@@ -7,7 +7,9 @@ on:
 
 # IMPORTANT: No checkout actions, scripts, or builds should be added to this workflow. Permissions should always be used
 # with extreme caution. https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request_target
-permissions: {}
+permissions:
+  pull-requests: write
+  contents: read
 
 # PR updates can happen in quick succession leading to this
 # workflow being trigger a number of times. This limits it
@@ -24,7 +26,8 @@ jobs:
     name: Validate PR Title
     runs-on: ubuntu-latest
     steps:
-      - uses: thehanimo/pr-title-checker@v1.4.3
+      - name: PR Title Check
+        uses: thehanimo/pr-title-checker@v1.4.3
         id: check
         continue-on-error: true
         with:
