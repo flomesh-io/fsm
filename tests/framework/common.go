@@ -428,7 +428,6 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		CertValidtyDuration:    time.Hour * 24,
 		SidecarLogLevel:        defaultSidecarLogLevel,
 		FSMLogLevel:            defaultFSMLogLevel,
-		EnableDebugServer:      true,
 		SetOverrides:           []string{},
 
 		EnablePrivilegedInitContainer: enablePrivilegedInitContainer,
@@ -497,8 +496,6 @@ func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.
 	meshConfig.Spec.Traffic.EnablePermissiveTrafficPolicyMode = instOpts.EnablePermissiveMode
 	meshConfig.Spec.Traffic.OutboundPortExclusionList = []int{}
 	meshConfig.Spec.Traffic.OutboundIPRangeExclusionList = []string{}
-
-	meshConfig.Spec.Observability.EnableDebugServer = instOpts.EnableDebugServer
 
 	meshConfig.Spec.Sidecar.Resources = corev1.ResourceRequirements{}
 	meshConfig.Spec.Sidecar.EnablePrivilegedInitContainer = instOpts.EnablePrivilegedInitContainer
@@ -569,7 +566,6 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.certificateProvider.kind=%s", instOpts.CertManager),
 		fmt.Sprintf("fsm.enableEgress=%v", instOpts.EgressEnabled),
 		fmt.Sprintf("fsm.enablePermissiveTrafficPolicy=%v", instOpts.EnablePermissiveMode),
-		fmt.Sprintf("fsm.enableDebugServer=%v", instOpts.EnableDebugServer),
 		fmt.Sprintf("fsm.sidecar.sidecarLogLevel=%s", instOpts.SidecarLogLevel),
 		fmt.Sprintf("fsm.deployGrafana=%v", instOpts.DeployGrafana),
 		fmt.Sprintf("fsm.deployPrometheus=%v", instOpts.DeployPrometheus),

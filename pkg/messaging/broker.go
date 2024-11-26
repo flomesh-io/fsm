@@ -56,6 +56,13 @@ const (
 	// ConnectorUpdateMaxWindow is the max window duration used to batch connector update events, and is
 	// the max amount of time a connector update event can be held for batching before being dispatched.
 	ConnectorUpdateMaxWindow = 5 * time.Second
+
+	// XNetworkUpdateSlidingWindow is the sliding window duration used to batch xnetwork update events
+	XNetworkUpdateSlidingWindow = 2 * time.Second
+
+	// XNetworkUpdateMaxWindow is the max window duration used to batch xnetwork update events, and is
+	// the max amount of time a xnetwork update event can be held for batching before being dispatched.
+	XNetworkUpdateMaxWindow = 5 * time.Second
 )
 
 // NewBroker returns a new message broker instance and starts the internal goroutine
@@ -78,6 +85,8 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 		serviceUpdateCh:       make(chan serviceUpdateEvent),
 		connectorUpdatePubSub: pubsub.New(1024 * 10),
 		connectorUpdateCh:     make(chan connectorUpdateEvent),
+		xnetworkUpdatePubSub:  pubsub.New(1024 * 10),
+		xnetworkUpdateCh:      make(chan xnetworkUpdateEvent),
 		kubeEventPubSub:       pubsub.New(1024 * 10),
 		certPubSub:            pubsub.New(1024 * 10),
 		mcsEventPubSub:        pubsub.New(1024 * 10),
@@ -90,6 +99,7 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	go b.runGatewayUpdateDispatcher(stopCh)
 	go b.runServiceUpdateDispatcher(stopCh)
 	go b.runConnectorUpdateDispatcher(stopCh)
+	go b.runXNetworkUpdateDispatcher(stopCh)
 	go b.queueLenMetric(stopCh, 5*time.Second)
 
 	return b
@@ -131,6 +141,11 @@ func (b *Broker) GetServiceUpdatePubSub() *pubsub.PubSub {
 // GetConnectorUpdatePubSub returns the PubSub instance corresponding to connector update events
 func (b *Broker) GetConnectorUpdatePubSub() *pubsub.PubSub {
 	return b.connectorUpdatePubSub
+}
+
+// GetXNetworkUpdatePubSub returns the PubSub instance corresponding to xnetwork update events
+func (b *Broker) GetXNetworkUpdatePubSub() *pubsub.PubSub {
+	return b.xnetworkUpdatePubSub
 }
 
 // GetMCSEventPubSub returns the PubSub instance corresponding to MCS update events
@@ -742,6 +757,105 @@ func (b *Broker) runConnectorUpdateDispatcher(stopCh <-chan struct{}) {
 	}
 }
 
+// runXNetworkUpdateDispatcher runs the dispatcher responsible for batching
+// xnetwork update events received in close proximity.
+// It batches xnetwork update events with the use of 2 timers:
+// 1. Sliding window timer that resets when a xnetwork update event is received
+// 2. Max window timer that caps the max duration a sliding window can be reset to
+// When either of the above timers expire, the xnetwork update event is published
+// on the dedicated pub-sub instance.
+func (b *Broker) runXNetworkUpdateDispatcher(stopCh <-chan struct{}) {
+	// batchTimer and maxTimer are updated by the dispatcher routine
+	// when events are processed and timeouts expire. They are initialized
+	// with a large timeout (a decade) so they don't time out till an event
+	// is received.
+	noTimeout := 87600 * time.Hour // A decade
+	slidingTimer := time.NewTimer(noTimeout)
+	maxTimer := time.NewTimer(noTimeout)
+
+	// dispatchPending indicates whether a xnetwork update event is pending
+	// from being published on the pub-sub. A xnetwork update event will
+	// be held for 'XNetworkUpdateSlidingWindow' duration to be able to
+	// coalesce multiple xnetwork update events within that duration, before
+	// it is dispatched on the pub-sub. The 'XNetworkUpdateSlidingWindow' duration
+	// is a sliding window, which means each event received within a window
+	// slides the window further ahead in time, up to a max of 'XNetworkUpdateMaxWindow'.
+	//
+	// This mechanism is necessary to avoid triggering xnetwork update pub-sub events in
+	// a hot loop, which would otherwise result in CPU spikes on the controller.
+	// We want to coalesce as many connector update events within the 'XNetworkUpdateMaxWindow'
+	// duration.
+	dispatchPending := false
+	batchCount := 0 // number of xnetwork update events batched per dispatch
+
+	var event xnetworkUpdateEvent
+	for {
+		select {
+		case e, ok := <-b.xnetworkUpdateCh:
+			if !ok {
+				log.Warn().Msgf("XNetwork update event chan closed, exiting dispatcher")
+				return
+			}
+			event = e
+
+			if !dispatchPending {
+				// No xnetwork update events are pending send on the pub-sub.
+				// Reset the dispatch timers. The events will be dispatched
+				// when either of the timers expire.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(XNetworkUpdateSlidingWindow)
+				if !maxTimer.Stop() {
+					<-maxTimer.C
+				}
+				maxTimer.Reset(XNetworkUpdateMaxWindow)
+				dispatchPending = true
+				batchCount++
+				log.Trace().Msgf("Pending dispatch of msg kind %s", event.msg.Kind)
+			} else {
+				// A xnetwork update event is pending dispatch. Update the sliding window.
+				if !slidingTimer.Stop() {
+					<-slidingTimer.C
+				}
+				slidingTimer.Reset(XNetworkUpdateSlidingWindow)
+				batchCount++
+				log.Trace().Msgf("Reset sliding window for msg kind %s", event.msg.Kind)
+			}
+
+		case <-slidingTimer.C:
+			slidingTimer.Reset(noTimeout) // 'slidingTimer' drained in this case statement
+			// Stop and drain 'maxTimer' before Reset()
+			if !maxTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-maxTimer.C
+			}
+			maxTimer.Reset(noTimeout)
+			b.xnetworkUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Sliding window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-maxTimer.C:
+			maxTimer.Reset(noTimeout) // 'maxTimer' drained in this case statement
+			// Stop and drain 'slidingTimer' before Reset()
+			if !slidingTimer.Stop() {
+				// Drain channel. Refer to Reset() doc for more info.
+				<-slidingTimer.C
+			}
+			slidingTimer.Reset(noTimeout)
+			b.xnetworkUpdatePubSub.Pub(event.msg, event.topic)
+			log.Trace().Msgf("Max window expired, msg kind %s, batch size %d", event.msg.Kind, batchCount)
+			dispatchPending = false
+			batchCount = 0
+
+		case <-stopCh:
+			log.Info().Msg("XNetwork update dispatcher received stop signal, exiting")
+			return
+		}
+	}
+}
+
 // processEvent processes an event dispatched from the workqueue.
 // It does the following:
 // 1. If the event must update a proxy/ingress/gateway, it publishes a proxy/ingress/gateway update message
@@ -826,6 +940,16 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 			// Pass the broadcast event to the dispatcher routine, that coalesces
 			// multiple broadcasts received in close proximity.
 			b.connectorUpdateCh <- *event
+		}
+	}
+
+	// Update xnetworks if applicable
+	if event := getXNetworkUpdateEvent(msg); event != nil {
+		log.Trace().Msgf("Msg kind %s will update xnetworks", msg.Kind)
+		if event.topic != announcements.XNetworkUpdate.String() {
+			b.xnetworkUpdatePubSub.Pub(event.msg, event.topic)
+		} else {
+			b.xnetworkUpdateCh <- *event
 		}
 	}
 
@@ -1312,6 +1436,31 @@ func getConnectorUpdateEvent(msg events.PubSubMessage) *connectorUpdateEvent {
 		return &connectorUpdateEvent{
 			msg:   msg,
 			topic: announcements.ConnectorUpdate.String(),
+		}
+	default:
+		return nil
+	}
+}
+
+// getXNetworkUpdateEvent returns a xnetworkUpdateEvent type indicating whether the given PubSubMessage should
+// result in a xnetwork policy update on an appropriate topic. Nil is returned if the PubSubMessage
+// does not result in a xnetwork policy update event.
+func getXNetworkUpdateEvent(msg events.PubSubMessage) *xnetworkUpdateEvent {
+	switch msg.Kind {
+	case
+		//
+		// K8s native resource events
+		announcements.ServiceAdded, announcements.ServiceUpdated, announcements.ServiceDeleted,
+		announcements.EndpointAdded, announcements.EndpointUpdated, announcements.EndpointDeleted,
+
+		//
+		// XNetwork event
+		announcements.XAccessControlAdded, announcements.XAccessControlUpdated, announcements.XAccessControlDeleted,
+		announcements.XNetworkUpdate:
+
+		return &xnetworkUpdateEvent{
+			msg:   msg,
+			topic: announcements.XNetworkUpdate.String(),
 		}
 	default:
 		return nil

@@ -34,7 +34,6 @@ func TestGetCertificateManager(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockConfigurator := configurator.NewMockConfigurator(mockCtrl)
 
-	mockConfigurator.EXPECT().IsDebugServerEnabled().Return(false).AnyTimes()
 	mockConfigurator.EXPECT().GetCertKeyBitSize().Return(2048).AnyTimes()
 	mockConfigurator.EXPECT().GetServiceCertValidityPeriod().Return(1 * time.Hour).AnyTimes()
 	type testCase struct {
@@ -167,7 +166,6 @@ func TestGetCertificateManagerFromMRC(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockConfigurator := configurator.NewMockConfigurator(mockCtrl)
 
-	mockConfigurator.EXPECT().IsDebugServerEnabled().Return(false).AnyTimes()
 	mockConfigurator.EXPECT().GetCertKeyBitSize().Return(2048).AnyTimes()
 	mockConfigurator.EXPECT().GetServiceCertValidityPeriod().Return(1 * time.Hour).AnyTimes()
 

@@ -15,13 +15,12 @@ import (
 
 	"github.com/go-logr/zerologr"
 
-	"github.com/flomesh-io/fsm/pkg/debugger"
-	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
-
 	"github.com/flomesh-io/fsm/pkg/dns"
 	connectorClientset "github.com/flomesh-io/fsm/pkg/gen/client/connector/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+	mgrecon "github.com/flomesh-io/fsm/pkg/manager/reconciler"
+	sidecarv1 "github.com/flomesh-io/fsm/pkg/sidecar/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlwh "sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -66,7 +65,7 @@ import (
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
-	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
+	_ "github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy/driver"
 
 	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -91,7 +90,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/providers/kube"
 	"github.com/flomesh-io/fsm/pkg/reconciler"
 	"github.com/flomesh-io/fsm/pkg/service"
-	"github.com/flomesh-io/fsm/pkg/sidecar"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/smi"
 	"github.com/flomesh-io/fsm/pkg/validator"
@@ -237,9 +235,8 @@ func main() {
 	}
 
 	background := fctx.ControllerContext{
-		FsmNamespace:  fsmNamespace,
-		KubeConfig:    kubeConfig,
-		DebugHandlers: make(map[string]http.Handler),
+		FsmNamespace: fsmNamespace,
+		KubeConfig:   kubeConfig,
 	}
 	ctx, cancel := context.WithCancel(&background)
 	stop := signals.RegisterExitHandlers(cancel)
@@ -350,7 +347,7 @@ func main() {
 	// Health/Liveness probes
 	var funcProbes []health.Probes
 	if cfg.GetTrafficInterceptionMode() == constants.TrafficInterceptionModePodLevel {
-		err = sidecar.InstallDriver(cfg.GetSidecarClass())
+		err = sidecarv1.InstallDriver(cfg.GetSidecarClass())
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating sidecar driver")
 		}
@@ -364,15 +361,10 @@ func main() {
 		background.ProxyServerPort = cfg.GetProxyServerPort()
 
 		// Create and start the sidecar proxy service
-		healthProbes, err := sidecar.Start(ctx)
+		healthProbes, err := sidecarv1.Start(ctx)
 		if err != nil {
 			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error initializing proxy control server")
 		}
-
-		// Create DebugServer and start its config event listener.
-		// Listener takes care to start and stop the debug server as appropriate
-		debugConfig := debugger.NewDebugConfig(certManager, meshCatalog, kubeConfig, kubeClient, cfg, k8sClient, msgBroker)
-		go debugConfig.StartDebugServerConfigListener(background.DebugHandlers, stop)
 
 		go dns.WatchAndUpdateLocalDNSProxy(msgBroker, stop)
 		// Start the k8s pod watcher that updates corresponding k8s secrets

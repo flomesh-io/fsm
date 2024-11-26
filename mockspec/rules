@@ -11,6 +11,9 @@ smi; pkg/smi/mock_meshspec_generated.go; github.com/flomesh-io/fsm/pkg/smi; Mesh
 # pkg/policy
 policy; pkg/policy/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/policy; Controller
 
+# pkg/xnetwork
+xnetwork; pkg/xnetwork/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/xnetwork; Controller
+
 # pkg/multicluster
 multicluster; pkg/multicluster/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/multicluster; Controller
 
@@ -19,9 +22,6 @@ plugin; pkg/plugin/mock_client_generated.go; github.com/flomesh-io/fsm/pkg/plugi
 
 # pkg/catalog
 catalog; pkg/catalog/mock_catalog_generated.go; github.com/flomesh-io/fsm/pkg/catalog; MeshCataloger
-
-# pkg/debugger
-debugger; pkg/debugger/mock_debugger_generated.go; github.com/flomesh-io/fsm/pkg/debugger; CertificateManagerDebugger,MeshCatalogDebugger
 
 # pkg/health
 health; pkg/health/mock_probes_generated.go; github.com/flomesh-io/fsm/pkg/health; Probes

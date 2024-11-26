@@ -43,6 +43,8 @@ import (
 	pluginInformers "github.com/flomesh-io/fsm/pkg/gen/client/plugin/informers/externalversions"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 	policyInformers "github.com/flomesh-io/fsm/pkg/gen/client/policy/informers/externalversions"
+	xnetworkClientset "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/clientset/versioned"
+	xnetworkInformers "github.com/flomesh-io/fsm/pkg/gen/client/xnetwork/informers/externalversions"
 
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	policyAttachmentInformers "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/informers/externalversions"
@@ -199,6 +201,15 @@ func WithConnectorClient(connectorClient connectorClientset.Interface) InformerC
 		ic.informers[InformerKeyNacosConnector] = informerFactory.Connector().V1alpha1().NacosConnectors().Informer()
 		ic.informers[InformerKeyMachineConnector] = informerFactory.Connector().V1alpha1().MachineConnectors().Informer()
 		ic.informers[InformerKeyGatewayConnector] = informerFactory.Connector().V1alpha1().GatewayConnectors().Informer()
+	}
+}
+
+// WithXNetworkClient sets the xnetwork client for the InformerCollection
+func WithXNetworkClient(xnetworkClient xnetworkClientset.Interface) InformerCollectionOption {
+	return func(ic *InformerCollection) {
+		informerFactory := xnetworkInformers.NewSharedInformerFactory(xnetworkClient, DefaultKubeEventResyncInterval)
+
+		ic.informers[InformerKeyXNetworkAccessControl] = informerFactory.Xnetwork().V1alpha1().AccessControls().Informer()
 	}
 }
 

@@ -108,7 +108,7 @@ func (c *client) syncKtoG() {
 		}
 	}
 
-	gatewaySource := &ktog.GatewaySource{}
+	gatewaySource := &ktog.GatewaySource{InterceptionMode: meshConfig.Spec.Traffic.InterceptionMode}
 
 	syncer := ktog.NewKtoGSyncer(c, gatewaySource)
 

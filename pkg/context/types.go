@@ -2,7 +2,6 @@ package context
 
 import (
 	"context"
-	"net/http"
 
 	gwtypes "github.com/flomesh-io/fsm/pkg/gateway/types"
 
@@ -40,7 +39,6 @@ type ControllerContext struct {
 	MeshCatalog      catalog.MeshCataloger
 	CertManager      *certificate.Manager
 	MsgBroker        *messaging.Broker
-	DebugHandlers    map[string]http.Handler
 	CancelFunc       func()
 	Stop             chan struct{}
 

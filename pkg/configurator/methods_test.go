@@ -62,8 +62,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 					EnableEgress:                      true,
 				},
 				Observability: configv1alpha3.ObservabilitySpec{
-					FSMLogLevel:       constants.DefaultFSMLogLevel,
-					EnableDebugServer: true,
+					FSMLogLevel: constants.DefaultFSMLogLevel,
 					Tracing: configv1alpha3.TracingSpec{
 						Enable: true,
 					},
@@ -86,8 +85,7 @@ func TestCreateUpdateConfig(t *testing.T) {
 						EnableEgress:                      true,
 					},
 					Observability: configv1alpha3.ObservabilitySpec{
-						FSMLogLevel:       constants.DefaultFSMLogLevel,
-						EnableDebugServer: true,
+						FSMLogLevel: constants.DefaultFSMLogLevel,
 						Tracing: configv1alpha3.TracingSpec{
 							Enable: true,
 						},
@@ -140,25 +138,6 @@ func TestCreateUpdateConfig(t *testing.T) {
 			},
 			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
 				assert.False(cfg.IsEgressEnabled())
-			},
-		},
-		{
-			name: "IsDebugServerEnabled",
-			initialMeshConfigData: &configv1alpha3.MeshConfigSpec{
-				Observability: configv1alpha3.ObservabilitySpec{
-					EnableDebugServer: true,
-				},
-			},
-			checkCreate: func(assert *tassert.Assertions, cfg Configurator) {
-				assert.True(cfg.IsDebugServerEnabled())
-			},
-			updatedMeshConfigData: &configv1alpha3.MeshConfigSpec{
-				Observability: configv1alpha3.ObservabilitySpec{
-					EnableDebugServer: false,
-				},
-			},
-			checkUpdate: func(assert *tassert.Assertions, cfg Configurator) {
-				assert.False(cfg.IsDebugServerEnabled())
 			},
 		},
 		{

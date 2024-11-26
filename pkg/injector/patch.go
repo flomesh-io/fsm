@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"gomodules.xyz/jsonpatch/v2"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -23,8 +22,8 @@ import (
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/models"
-	"github.com/flomesh-io/fsm/pkg/sidecar"
-	"github.com/flomesh-io/fsm/pkg/sidecar/driver"
+	sidecarv1 "github.com/flomesh-io/fsm/pkg/sidecar/v1"
+	"github.com/flomesh-io/fsm/pkg/sidecar/v1/driver"
 )
 
 func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.AdmissionRequest, proxyUUID uuid.UUID) ([]byte, error) {
@@ -62,7 +61,7 @@ func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.Admi
 	}
 
 	// Issue a certificate for the proxy sidecar - used for Sidecar to connect to XDS (not Sidecar-to-Sidecar connections)
-	cnPrefix := sidecar.NewCertCNPrefix(proxyUUID, models.KindSidecar, identity.New(pod.Spec.ServiceAccountName, namespace))
+	cnPrefix := sidecarv1.NewCertCNPrefix(proxyUUID, models.KindSidecar, identity.New(pod.Spec.ServiceAccountName, namespace))
 	log.Debug().Msgf("Patching POD spec: service-account=%s, namespace=%s with certificate CN prefix=%s", pod.Spec.ServiceAccountName, namespace, cnPrefix)
 	startTime := time.Now()
 	bootstrapCertificate, err := wh.certManager.IssueCertificate(cnPrefix, certificate.Internal)
@@ -93,7 +92,7 @@ func (wh *mutatingWebhook) createPodPatch(pod *corev1.Pod, req *admissionv1.Admi
 	ctx, cancel := context.WithCancel(&background)
 	defer cancel()
 
-	if err = sidecar.Patch(ctx); err != nil {
+	if err = sidecarv1.Patch(ctx); err != nil {
 		return nil, err
 	}
 

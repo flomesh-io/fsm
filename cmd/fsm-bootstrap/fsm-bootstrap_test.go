@@ -66,7 +66,6 @@ var testPresetMeshConfigMap = &corev1.ConfigMap{
 	"outboundIPRangeExclusionList": []
 },
 "observability": {
-	"enableDebugServer": false,
 	"fsmLogLevel": "trace",
 	"tracing": {
 	 "enable": false
@@ -137,7 +136,6 @@ func TestBuildDefaultMeshConfig(t *testing.T) {
 	assert.False(meshConfig.Spec.Sidecar.EnablePrivilegedInitContainer)
 	assert.True(meshConfig.Spec.Traffic.EnablePermissiveTrafficPolicyMode)
 	assert.True(meshConfig.Spec.Traffic.EnableEgress)
-	assert.False(meshConfig.Spec.Observability.EnableDebugServer)
 	assert.Equal(meshConfig.Spec.Certificate.ServiceCertValidityDuration, "23h")
 	assert.True(meshConfig.Spec.FeatureFlags.EnableIngressBackendPolicy)
 	assert.True(meshConfig.Spec.FeatureFlags.EnableAccessControlPolicy)

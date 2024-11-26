@@ -169,7 +169,6 @@
                 "sidecar",
                 "pluginChains",
                 "caBundleSecretName",
-                "enableDebugServer",
                 "enablePermissiveTrafficPolicy",
                 "http1PerRequestLoadBalancing",
                 "http2PerRequestLoadBalancing",
@@ -267,7 +266,8 @@
                     "description": "The details of the fsmXnetwork.",
                     "required": [
                       "xmgt",
-                      "xnet"
+                      "xnet",
+                      "initResources"
                     ],
                     "properties": {
                         "podLabels": {
@@ -561,6 +561,9 @@
                               "additionalProperties": false
                             }
                           }
+                        },
+                        "initResources": {
+                          "$ref": "#/definitions/containerResources"
                         }
                     },
                     "additionalProperties": false
@@ -1176,15 +1179,6 @@
                     "description": "An explanation about the purpose of this instance.",
                     "examples": [
                         "fsm-ca-bundle"
-                    ]
-                },
-                "enableDebugServer": {
-                    "$id": "#/properties/fsm/properties/enableDebugServer",
-                    "type": "boolean",
-                    "title": "The enableDebugServer schema",
-                    "description": "Indicates whether the Debug Server should be enabled or not.",
-                    "examples": [
-                        false
                     ]
                 },
                 "enablePermissiveTrafficPolicy": {
