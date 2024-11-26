@@ -68,6 +68,10 @@ fsm:
 
   # -- `fsm-controller` image pull secret
   imagePullSecrets: [ ]
+
+  # -- Traffic interception mode in the mesh
+  trafficInterceptionMode: PodLevel
+
   # -- Sidecar supported by fsm
   sidecar:
     image:
@@ -328,6 +332,15 @@ fsm:
     # -- Node tolerations applied to control plane pods.
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
+
+    # -- FSM xnetwork's init-container resource parameters.
+    initResources:
+      limits:
+        cpu: "500m"
+        memory: "512M"
+      requests:
+        cpu: "200m"
+        memory: "128M"
   #
   # -- Prometheus parameters
   prometheus:
@@ -477,9 +490,6 @@ fsm:
     # The specified tolerations allow pods to schedule onto nodes with matching taints.
     tolerations: [ ]
 
-  # -- Enable the debug HTTP server on FSM controller
-  enableDebugServer: false
-
   # -- Enable permissive traffic policy mode
   enablePermissiveTrafficPolicy: true
 
@@ -491,9 +501,6 @@ fsm:
 
   # -- Service access mode
   serviceAccessMode: mixed
-
-  # -- Traffic interception mode in the mesh
-  trafficInterceptionMode: PodLevel
 
   # -- Enable egress in the mesh
   enableEgress: true

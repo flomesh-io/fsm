@@ -96,6 +96,9 @@ generate_client "machine" "v1alpha1"
 echo "##### Generating flomesh.io connector client ######"
 generate_client "connector" "v1alpha1"
 
+echo "##### Generating flomesh.io xnetwork client ######"
+generate_client "xnetwork" "v1alpha1"
+
 echo "##### Generating networking.flomesh.io client ######"
 generate_client "namespacedingress" "v1alpha1"
 

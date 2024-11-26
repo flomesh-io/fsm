@@ -98,7 +98,6 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.egressGateway.port | int | `1080` |  |
 | fsm.egressGateway.replicaCount | int | `1` | FSM Egress Gateway's replica count (ignored when autoscale.enable is true) |
 | fsm.egressGateway.resources | object | `{"limits":{"cpu":"1000m","memory":"512M"},"requests":{"cpu":"300m","memory":"128M"}}` | FSM Egress Gateway's container resource parameters. |
-| fsm.enableDebugServer | bool | `false` | Enable the debug HTTP server on FSM controller |
 | fsm.enableEgress | bool | `true` | Enable egress in the mesh |
 | fsm.enableFluentbit | bool | `false` | Enable Fluent Bit sidecar deployment on FSM controller's pod |
 | fsm.enableMultiClusters | bool | `false` |  |
@@ -251,6 +250,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.labelSelector.matchExpressions[0].values[0] | string | `"fsm-xnetwork"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey | string | `"kubernetes.io/hostname"` |  |
 | fsm.fsmXnetwork.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight | int | `100` |  |
+| fsm.fsmXnetwork.initResources | object | `{"limits":{"cpu":"500m","memory":"512M"},"requests":{"cpu":"200m","memory":"128M"}}` | FSM xnetwork's init-container resource parameters. |
 | fsm.fsmXnetwork.tolerations | list | `[]` | Node tolerations applied to control plane pods. The specified tolerations allow pods to schedule onto nodes with matching taints. |
 | fsm.fsmXnetwork.xmgt | object | `{"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xmgt |
 | fsm.fsmXnetwork.xnet | object | `{"filter":{"ports":{"inbound":"mesh","outbound":"mesh"}},"flush":{"conntrack":{"tcp":{"batchSize":4096,"crontab":"30 3 */1 * *","idleSeconds":3600},"udp":{"batchSize":4096,"crontab":"*/2 * * * *","idleSeconds":120}}},"image":{"name":"xnet","registry":"flomesh","tag":"latest"},"nodePaths":{"k3s":{"cniBin":"/bin","cniNetd":"/var/lib/rancher/k3s/agent/etc/cni/net.d","enable":true,"kubeToken":"/var/lib/rancher/k3s/server/token","sysFs":"/opt","sysRun":"/var/run"},"k8s":{"cniBin":"/opt/cni/bin","cniNetd":"/etc/cni/net.d","kubeToken":"/var/run/secrets/kubernetes.io/serviceaccount/token","sysFs":"/opt","sysRun":"/var/run"}},"resource":{"limits":{"cpu":"1.5","memory":"1G"},"requests":{"cpu":"0.5","memory":"256M"}}}` | xnet |

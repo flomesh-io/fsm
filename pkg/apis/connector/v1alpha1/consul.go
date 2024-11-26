@@ -105,7 +105,7 @@ type ConsulSyncToK8SSpec struct {
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
 
-	// +kubebuilder:default=true
+	// +kubebuilder:default=false
 	// +optional
 	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 }

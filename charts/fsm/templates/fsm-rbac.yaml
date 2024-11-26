@@ -132,6 +132,11 @@ rules:
     resources: ["consulconnectors/status", "eurekaconnectors/status", "nacosconnectors/status", "machineconnectors/status", "gatewayconnectors/status"]
     verbs: ["update"]
 
+  # FSM's custom xnetwork API
+  - apiGroups: ["xnetwork.flomesh.io"]
+    resources: ["accesscontrols" ]
+    verbs: ["list", "get", "watch"]
+
   # FSM's NamespacedIngress API
   - apiGroups: [ "networking.flomesh.io" ]
     resources: [ "namespacedingresses" ]

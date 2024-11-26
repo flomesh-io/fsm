@@ -9,7 +9,6 @@ import (
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 
-	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
 )
@@ -50,9 +49,6 @@ type Configurator interface {
 
 	// IsEgressEnabled determines whether egress is globally enabled in the mesh or not
 	IsEgressEnabled() bool
-
-	// IsDebugServerEnabled determines whether fsm debug HTTP server is enabled
-	IsDebugServerEnabled() bool
 
 	// IsTracingEnabled returns whether tracing is enabled
 	IsTracingEnabled() bool
@@ -166,9 +162,6 @@ type Configurator interface {
 
 	// GetInjectedHealthcheckResources returns the `Resources` configured for proxies, if any
 	GetInjectedHealthcheckResources() corev1.ResourceRequirements
-
-	// GetInboundExternalAuthConfig returns the External Authentication configuration for incoming traffic, if any
-	GetInboundExternalAuthConfig() auth.ExtAuthConfig
 
 	// GetFeatureFlags returns FSM's feature flags
 	GetFeatureFlags() configv1alpha3.FeatureFlags

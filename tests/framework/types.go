@@ -139,7 +139,6 @@ type InstallFSMOpts struct {
 	SidecarLogLevel      string
 	SidecarClass         string
 	LocalProxyMode       configv1alpha3.LocalProxyMode
-	EnableDebugServer    bool
 
 	SetOverrides []string
 

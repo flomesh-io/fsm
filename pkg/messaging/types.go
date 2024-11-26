@@ -27,6 +27,8 @@ type Broker struct {
 	serviceUpdateCh                    chan serviceUpdateEvent
 	connectorUpdatePubSub              *pubsub.PubSub
 	connectorUpdateCh                  chan connectorUpdateEvent
+	xnetworkUpdatePubSub               *pubsub.PubSub
+	xnetworkUpdateCh                   chan xnetworkUpdateEvent
 	mcsEventPubSub                     *pubsub.PubSub
 	kubeEventPubSub                    *pubsub.PubSub
 	certPubSub                         *pubsub.PubSub
@@ -81,6 +83,13 @@ type serviceUpdateEvent struct {
 // connectorUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a connector config update
 type connectorUpdateEvent struct {
+	msg   events.PubSubMessage
+	topic string
+}
+
+// xnetworkUpdateEvent specifies the PubSubMessage and topic for an event that
+// results in a xnet policy update
+type xnetworkUpdateEvent struct {
 	msg   events.PubSubMessage
 	topic string
 }
