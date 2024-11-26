@@ -2,7 +2,7 @@ name: "Lint PR"
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled]
 
 
 # IMPORTANT: No checkout actions, scripts, or builds should be added to this workflow. Permissions should always be used
@@ -46,6 +46,10 @@ jobs:
             * `chore: update dependencies AB#456`
             * `feat: add new feature AB#789`
             * `chore: fixing build pipeline` - no AB reference
+            * `build(deps): bump BlahBlah from 1.0 to 1.1`
+            * `[WIP] feat: add new feature AB#123`
+            * `[CHERRY-PICK] fix: fix typo in README.md AB#123`
+            * `[BACKPORT] fix: fix typo in README.md AB#123`
             
             For more details, please refer to the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0)
             and the [PR Title Configuration File](.github/pr-title-checker-config.json).
