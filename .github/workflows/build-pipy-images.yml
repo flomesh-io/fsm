@@ -101,7 +101,7 @@ jobs:
             type=raw,${{ inputs.tag }}-${{ matrix.id }}
 
       - name: Build and Push
-        uses: docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@v6.10.0
         with:
           context: .
           file: ./dockerfiles/Dockerfile.pipy-nonroot
