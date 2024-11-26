@@ -96,7 +96,7 @@ jobs:
           echo "GIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Build and Push - ${{ matrix.id }}
-        uses: docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@v6.10.0
         with:
           context: .
           file: ./dockerfiles/Dockerfile.fsm-${{ matrix.id }}
@@ -153,7 +153,7 @@ jobs:
             latest=auto
 
       - name: Build and Push - ${{ matrix.id }}
-        uses: docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@v6.10.0
         with:
           context: .
           file: ./dockerfiles/Dockerfile.demo
