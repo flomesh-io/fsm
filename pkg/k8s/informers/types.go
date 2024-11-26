@@ -146,6 +146,9 @@ const (
 	InformerKeyGatewayZipkin InformerKey = "Gateway-Zipkin"
 	// InformerKeyGatewayProxyTag is the InformerKey for a ProxyTag informer
 	InformerKeyGatewayProxyTag InformerKey = "Gateway-ProxyTag"
+
+	// InformerKeyXNetworkAccessControl is the InformerKey for a XNetwork AccessControl informer
+	InformerKeyXNetworkAccessControl InformerKey = "XNetwork-AccessControl"
 )
 
 const (

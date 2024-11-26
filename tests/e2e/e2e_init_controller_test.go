@@ -30,7 +30,6 @@ var _ = FSMDescribe("Test fsm-mesh-config functionalities",
 				Expect(meshConfig.Spec.Traffic.EnablePermissiveTrafficPolicyMode).Should(BeFalse())
 				Expect(meshConfig.Spec.Traffic.EnableEgress).Should(BeFalse())
 				Expect(meshConfig.Spec.Sidecar.LogLevel).Should(Equal("debug"))
-				Expect(meshConfig.Spec.Observability.EnableDebugServer).Should(BeTrue())
 				Expect(meshConfig.Spec.Observability.Tracing.Enable).Should(BeFalse())
 				Expect(meshConfig.Spec.Certificate.ServiceCertValidityDuration).Should(Equal("24h"))
 			})

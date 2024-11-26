@@ -22,6 +22,13 @@ spec:
       {{- toYaml .Values.fsm.fsmXnetwork.affinity | nindent 8 }}
       {{- end }}
       hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - name: fsm-init
+        image: "{{ include "fsmCurl.image" . }}"
+        command: [ "curl", "http://fsm-bootstrap.{{ include "fsm.namespace" . }}:9091/healthz", "--connect-timeout", "2", "--retry", "50", "--retry-connrefused", "--retry-delay", "5"]
+        resources:
+          {{- toYaml .Values.fsm.fsmXnetwork.initResources | nindent 12 }}
       containers:
       - name: fsm-xmgt
         image: "{{ include "fsmXnetwork.xmgt.image" . }}"
@@ -92,7 +99,6 @@ spec:
           - mountPath: /host/run
             name: host-run
             mountPropagation: Bidirectional
-      dnsPolicy: ClusterFirst
       priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccountName: {{ .Release.Name }}

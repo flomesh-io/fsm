@@ -9,7 +9,6 @@ import (
 	time "time"
 
 	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
-	auth "github.com/flomesh-io/fsm/pkg/auth"
 	trafficpolicy "github.com/flomesh-io/fsm/pkg/trafficpolicy"
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/api/core/v1"
@@ -246,20 +245,6 @@ func (m *MockConfigurator) GetImageTag() string {
 func (mr *MockConfiguratorMockRecorder) GetImageTag() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageTag", reflect.TypeOf((*MockConfigurator)(nil).GetImageTag))
-}
-
-// GetInboundExternalAuthConfig mocks base method.
-func (m *MockConfigurator) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetInboundExternalAuthConfig")
-	ret0, _ := ret[0].(auth.ExtAuthConfig)
-	return ret0
-}
-
-// GetInboundExternalAuthConfig indicates an expected call of GetInboundExternalAuthConfig.
-func (mr *MockConfiguratorMockRecorder) GetInboundExternalAuthConfig() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInboundExternalAuthConfig", reflect.TypeOf((*MockConfigurator)(nil).GetInboundExternalAuthConfig))
 }
 
 // GetIngressGatewayCertValidityPeriod mocks base method.
@@ -779,20 +764,6 @@ func (m *MockConfigurator) GetTrafficInterceptionMode() string {
 func (mr *MockConfiguratorMockRecorder) GetTrafficInterceptionMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrafficInterceptionMode", reflect.TypeOf((*MockConfigurator)(nil).GetTrafficInterceptionMode))
-}
-
-// IsDebugServerEnabled mocks base method.
-func (m *MockConfigurator) IsDebugServerEnabled() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsDebugServerEnabled")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsDebugServerEnabled indicates an expected call of IsDebugServerEnabled.
-func (mr *MockConfiguratorMockRecorder) IsDebugServerEnabled() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDebugServerEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsDebugServerEnabled))
 }
 
 // IsEgressEnabled mocks base method.

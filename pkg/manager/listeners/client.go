@@ -6,7 +6,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
-	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
 )
@@ -84,11 +83,6 @@ func (c *client) GetServiceAccessNames() *configv1alpha3.ServiceAccessNames {
 }
 
 func (c *client) IsEgressEnabled() bool {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *client) IsDebugServerEnabled() bool {
 	//TODO implement me
 	panic("implement me")
 }
@@ -262,11 +256,6 @@ func (c *client) GetInjectedInitResources() corev1.ResourceRequirements {
 }
 
 func (c *client) GetInjectedHealthcheckResources() corev1.ResourceRequirements {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (c *client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
 	//TODO implement me
 	panic("implement me")
 }

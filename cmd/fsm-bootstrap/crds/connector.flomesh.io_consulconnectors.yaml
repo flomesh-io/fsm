@@ -359,7 +359,7 @@ spec:
                     format: int32
                     type: integer
                   generateInternalServiceHealthCheck:
-                    default: true
+                    default: false
                     type: boolean
                   passingOnly:
                     default: true

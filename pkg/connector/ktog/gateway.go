@@ -37,6 +37,7 @@ type GatewaySource struct {
 	serviceResource  *KtoGSource
 	gatewaysInformer cache.SharedIndexInformer
 	informers        *fsminformers.InformerCollection
+	InterceptionMode string
 }
 
 func (gw *GatewaySource) SetServiceResource(serviceResource *KtoGSource) {
@@ -126,8 +127,6 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			for _, gatewayEntry := range gatewayList {
 				gateway := gatewayEntry.(*gwv1.Gateway)
 				for _, gatewayListener := range gateway.Spec.Listeners {
-					//glProtocol := strings.ToUpper(string(gatewayListener.Protocol))
-					//glName := strings.ToUpper(string(gatewayListener.Name))
 					if internalSource {
 						if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
@@ -154,7 +153,8 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 								Port:      &gatewayPort})
 						}
 					}
-					if externalSource {
+					if externalSource ||
+						(internalSource && gw.InterceptionMode == constants.TrafficInterceptionModeNodeLevel) {
 						if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
 							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
 							uint(gatewayListener.Port) == httpPort {

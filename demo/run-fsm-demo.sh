@@ -28,7 +28,6 @@ CTR_REGISTRY_CREDS_NAME="${CTR_REGISTRY_CREDS_NAME:-acr-creds}"
 DEPLOY_TRAFFIC_SPLIT="${DEPLOY_TRAFFIC_SPLIT:-true}"
 CTR_TAG="${CTR_TAG:-latest}"
 IMAGE_PULL_POLICY="${IMAGE_PULL_POLICY:-Always}"
-ENABLE_DEBUG_SERVER="${ENABLE_DEBUG_SERVER:-false}"
 ENABLE_EGRESS="${ENABLE_EGRESS:-false}"
 ENABLE_RECONCILER="${ENABLE_RECONCILER:-false}"
 DEPLOY_GRAFANA="${DEPLOY_GRAFANA:-false}"
@@ -115,7 +114,6 @@ if [ "$CERT_MANAGER" = "vault" ]; then
       --set=fsm.imagePullSecrets[0].name="$CTR_REGISTRY_CREDS_NAME" \
       --set=fsm.image.tag="$CTR_TAG" \
       --set=fsm.image.pullPolicy="$IMAGE_PULL_POLICY" \
-      --set=fsm.enableDebugServer="$ENABLE_DEBUG_SERVER" \
       --set=fsm.enableEgress="$ENABLE_EGRESS" \
       --set=fsm.enableReconciler="$ENABLE_RECONCILER" \
       --set=fsm.deployGrafana="$DEPLOY_GRAFANA" \
@@ -142,7 +140,6 @@ else
       --set=fsm.imagePullSecrets[0].name="$CTR_REGISTRY_CREDS_NAME" \
       --set=fsm.image.tag="$CTR_TAG" \
       --set=fsm.image.pullPolicy="$IMAGE_PULL_POLICY" \
-      --set=fsm.enableDebugServer="$ENABLE_DEBUG_SERVER" \
       --set=fsm.enableEgress="$ENABLE_EGRESS" \
       --set=fsm.enableReconciler="$ENABLE_RECONCILER" \
       --set=fsm.deployGrafana="$DEPLOY_GRAFANA" \

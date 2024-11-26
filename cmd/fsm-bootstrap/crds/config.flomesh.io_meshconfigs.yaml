@@ -172,10 +172,6 @@ spec:
                 description: Observalility defines the observability configurations
                   for a mesh instance.
                 properties:
-                  enableDebugServer:
-                    description: EnableDebugServer defines if the debug endpoint on
-                      the FSM controller pod is enabled.
-                    type: boolean
                   fsmLogLevel:
                     description: FSMLogLevel defines the log level for FSM control
                       plane logs.
@@ -233,8 +229,6 @@ spec:
                     required:
                     - enable
                     type: object
-                required:
-                - enableDebugServer
                 type: object
               pluginChains:
                 description: PluginChains defines the default plugin chains.
@@ -729,10 +723,6 @@ spec:
                 description: Observalility defines the observability configurations
                   for a mesh instance.
                 properties:
-                  enableDebugServer:
-                    description: EnableDebugServer defines if the debug endpoint on
-                      the FSM controller pod is enabled.
-                    type: boolean
                   fsmLogLevel:
                     description: FSMLogLevel defines the log level for FSM control
                       plane logs.
@@ -790,8 +780,6 @@ spec:
                     required:
                     - enable
                     type: object
-                required:
-                - enableDebugServer
                 type: object
               pluginChains:
                 description: PluginChains defines the default plugin chains.
@@ -1754,10 +1742,6 @@ spec:
                 description: Observalility defines the observability configurations
                   for a mesh instance.
                 properties:
-                  enableDebugServer:
-                    description: EnableDebugServer defines if the debug endpoint on
-                      the FSM controller pod is enabled.
-                    type: boolean
                   fsmLogLevel:
                     description: FSMLogLevel defines the log level for FSM control
                       plane logs.
@@ -1828,8 +1812,6 @@ spec:
                     required:
                     - enable
                     type: object
-                required:
-                - enableDebugServer
                 type: object
               pluginChains:
                 description: PluginChains defines the default plugin chains.

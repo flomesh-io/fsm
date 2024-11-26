@@ -27,10 +27,13 @@ import (
 
 	pluginClientset "github.com/flomesh-io/fsm/pkg/gen/client/plugin/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/service"
+	sidecarv1 "github.com/flomesh-io/fsm/pkg/sidecar/v1"
 
 	configClientset "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	machineClientset "github.com/flomesh-io/fsm/pkg/gen/client/machine/clientset/versioned"
 	policyClientset "github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
+
+	_ "github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy/driver"
 
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/certificate/providers"
@@ -47,8 +50,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/metricsstore"
 	"github.com/flomesh-io/fsm/pkg/reconciler"
-	"github.com/flomesh-io/fsm/pkg/sidecar"
-	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/version"
 )
@@ -212,7 +213,7 @@ func main() {
 
 	// Initialize Configurator to watch resources in the config.flomesh.io API group
 	cfg := configurator.NewConfigurator(informerCollection, fsmNamespace, fsmMeshConfigName, msgBroker)
-	err = sidecar.InstallDriver(cfg.GetSidecarClass())
+	err = sidecarv1.InstallDriver(cfg.GetSidecarClass())
 	if err != nil {
 		events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating sidecar driver")
 	}

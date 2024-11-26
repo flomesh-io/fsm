@@ -45,7 +45,6 @@ data:
         "networkInterfaceExclusionList": {{.Values.fsm.networkInterfaceExclusionList | mustToJson}}
       },
       "observability": {
-        "enableDebugServer": {{.Values.fsm.enableDebugServer | mustToJson}},
         "fsmLogLevel": {{.Values.fsm.controllerLogLevel | mustToJson}},
         "tracing": {
           "enable": {{.Values.fsm.tracing.enable | mustToJson}}{{- if .Values.fsm.tracing.enable }},{{- end }}

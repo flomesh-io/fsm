@@ -12,7 +12,6 @@ import (
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 
-	"github.com/flomesh-io/fsm/pkg/auth"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/errcode"
 	"github.com/flomesh-io/fsm/pkg/trafficpolicy"
@@ -91,11 +90,6 @@ func (c *Client) GetServiceAccessNames() *configv1alpha3.ServiceAccessNames {
 // IsEgressEnabled determines whether egress is globally enabled in the mesh or not.
 func (c *Client) IsEgressEnabled() bool {
 	return c.getMeshConfig().Spec.Traffic.EnableEgress
-}
-
-// IsDebugServerEnabled determines whether fsm debug HTTP server is enabled
-func (c *Client) IsDebugServerEnabled() bool {
-	return c.getMeshConfig().Spec.Observability.EnableDebugServer
 }
 
 // IsTracingEnabled returns whether tracing is enabled
@@ -380,27 +374,6 @@ func (c *Client) GetInjectedInitResources() corev1.ResourceRequirements {
 // GetInjectedHealthcheckResources returns the `Resources` configured for proxies, if any
 func (c *Client) GetInjectedHealthcheckResources() corev1.ResourceRequirements {
 	return c.getMeshConfig().Spec.Sidecar.HealthcheckResources
-}
-
-// GetInboundExternalAuthConfig returns the External Authentication configuration for incoming traffic, if any
-func (c *Client) GetInboundExternalAuthConfig() auth.ExtAuthConfig {
-	extAuthConfig := auth.ExtAuthConfig{}
-	inboundExtAuthzMeshConfig := c.getMeshConfig().Spec.Traffic.InboundExternalAuthorization
-
-	extAuthConfig.Enable = inboundExtAuthzMeshConfig.Enable
-	extAuthConfig.Address = inboundExtAuthzMeshConfig.Address
-	extAuthConfig.Port = uint16(inboundExtAuthzMeshConfig.Port)
-	extAuthConfig.StatPrefix = inboundExtAuthzMeshConfig.StatPrefix
-	extAuthConfig.FailureModeAllow = inboundExtAuthzMeshConfig.FailureModeAllow
-
-	duration, err := time.ParseDuration(inboundExtAuthzMeshConfig.Timeout)
-	if err != nil {
-		log.Debug().Err(err).Msgf("ExternAuthzTimeout: Not a valid duration %s. defaulting to 1s.", duration)
-		duration = 1 * time.Second
-	}
-	extAuthConfig.AuthzTimeout = duration
-
-	return extAuthConfig
 }
 
 // GetFeatureFlags returns FSM's feature flags

@@ -125,9 +125,6 @@ type ObservabilitySpec struct {
 	// FSMLogLevel defines the log level for FSM control plane logs.
 	FSMLogLevel string `json:"fsmLogLevel,omitempty"`
 
-	// EnableDebugServer defines if the debug endpoint on the FSM controller pod is enabled.
-	EnableDebugServer bool `json:"enableDebugServer"`
-
 	// Tracing defines FSM's tracing configuration.
 	Tracing TracingSpec `json:"tracing,omitempty"`
 

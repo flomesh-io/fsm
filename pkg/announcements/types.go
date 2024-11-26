@@ -25,6 +25,9 @@ const (
 	// ConnectorUpdate is the event kind used to trigger an update to subscribed connectors
 	ConnectorUpdate Kind = "connector-update"
 
+	// XNetworkUpdate is the event kind used to trigger an update to subscribed xnetwork policies
+	XNetworkUpdate Kind = "xnetwork-update"
+
 	// MCSUpdate is the event kind used to trigger an update to subscribed gateways
 	MCSUpdate Kind = "mcs-update"
 
@@ -369,6 +372,17 @@ const (
 
 	// VirtualMachineUpdated is the type of announcement emitted when we observe an update to vms.machine.flomesh.io
 	VirtualMachineUpdated Kind = "virtualmachine-updated"
+
+	// ---
+
+	// XAccessControlAdded is the type of announcement emitted when we observe an addition of accesscontrols.xnetwork.flomesh.io
+	XAccessControlAdded Kind = "accesscontrol-added"
+
+	// XAccessControlDeleted the type of announcement emitted when we observe a deletion of accesscontrols.xnetwork.flomesh.io
+	XAccessControlDeleted Kind = "accesscontrol-deleted"
+
+	// XAccessControlUpdated is the type of announcement emitted when we observe an update to accesscontrols.xnetwork.flomesh.io
+	XAccessControlUpdated Kind = "accesscontrol-updated"
 
 	// ---
 

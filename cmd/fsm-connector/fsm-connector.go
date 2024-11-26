@@ -37,7 +37,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/logger"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/service"
-	_ "github.com/flomesh-io/fsm/pkg/sidecar/providers/pipy/driver"
 	"github.com/flomesh-io/fsm/pkg/signals"
 	"github.com/flomesh-io/fsm/pkg/version"
 )
