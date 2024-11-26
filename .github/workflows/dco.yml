@@ -21,6 +21,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DCO_CHECK_VERBOSE: '1'
+          DCO_CHECK_DEFAULT_BRANCH: 'main'
+          DCO_CHECK_EXCLUDE_PATTERN: '^\S+@users\.noreply\.github\.com$'
         run: |
           pip3 install -U dco-check
           dco-check
