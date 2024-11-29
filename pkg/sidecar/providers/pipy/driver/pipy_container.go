@@ -173,7 +173,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 
 			pod.Spec.DNSPolicy = "None"
 			trustDomain := injCtx.CertManager.GetTrustDomain()
-			dots := "4"
+			dots := fmt.Sprintf("%d", len(strings.Split(trustDomain, `.`))+3)
 			searches := make([]string, 0)
 			if len(pod.Namespace) > 0 {
 				searches = append(searches, fmt.Sprintf("%s.svc.%s", pod.Namespace, trustDomain))

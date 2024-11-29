@@ -73,6 +73,15 @@ func NewHandler(config *Config) *DNSHandler {
 	return handler
 }
 
+func (h *DNSHandler) getSuffixDomains(trustDomain string) []string {
+	suffixes := []string{fmt.Sprintf(`.svc.%s.`, trustDomain)}
+	sections := strings.Split(trustDomain, `.`)
+	for index := range sections {
+		suffixes = append(suffixes, fmt.Sprintf(`.%s.`, strings.Join(sections[index:], `.`)))
+	}
+	return suffixes
+}
+
 func (h *DNSHandler) getTrustDomainSearches(trustDomain, namespace string) []string {
 	searches := []string{fmt.Sprintf(`.svc.%s`, namespace)}
 	sections := strings.Split(trustDomain, `.`)
@@ -83,29 +92,32 @@ func (h *DNSHandler) getTrustDomainSearches(trustDomain, namespace string) []str
 	return searches
 }
 
-func (h *DNSHandler) getRawQName(qname string, suffixDomain string, trustDomain string) (string, string) {
+func (h *DNSHandler) getRawQName(qname, trustDomain string) (string, string) {
 	fromNamespace := `default`
-	if strings.HasSuffix(qname, suffixDomain) {
-		qname = strings.TrimSuffix(qname, suffixDomain)
-		sections := strings.Split(qname, `.`)
-		ndots := len(sections)
-		if ndots > 2 {
-			fromNamespace = sections[len(sections)-1]
-			searches := h.getTrustDomainSearches(trustDomain, fromNamespace)
-			for _, search := range searches {
-				if strings.HasSuffix(qname, search) {
-					qname = strings.TrimSuffix(qname, search)
-					break
+	suffixDomains := h.getSuffixDomains(trustDomain)
+	for _, suffixDomain := range suffixDomains {
+		if strings.HasSuffix(qname, suffixDomain) {
+			qname = strings.TrimSuffix(qname, suffixDomain)
+			sections := strings.Split(qname, `.`)
+			ndots := len(sections)
+			if ndots > 1 {
+				fromNamespace = sections[len(sections)-1]
+				searches := h.getTrustDomainSearches(trustDomain, fromNamespace)
+				for _, search := range searches {
+					if strings.HasSuffix(qname, search) {
+						qname = strings.TrimSuffix(qname, search)
+						break
+					}
 				}
 			}
+			break
 		}
 	}
-	return qname, fromNamespace
+	return strings.TrimSuffix(qname, `.`), fromNamespace
 }
 
 func (h *DNSHandler) do(cfg *Config) {
 	trustDomain := service.GetTrustDomain()
-	suffixDomain := fmt.Sprintf(".svc.%s.", trustDomain)
 	for {
 		data, ok := <-h.requestChannel
 		if !ok {
@@ -116,8 +128,20 @@ func (h *DNSHandler) do(cfg *Config) {
 				_ = w.Close()
 			}(w)
 
+			var remote net.IP
+			if Net == "tcp" {
+				remote = w.RemoteAddr().(*net.TCPAddr).IP
+			} else {
+				remote = w.RemoteAddr().(*net.UDPAddr).IP
+			}
+
+			var origQuestions []dns.Question
+
 			for index, q := range req.Question {
-				qname, fromNamespace := h.getRawQName(q.Name, suffixDomain, trustDomain)
+				origQuestions = append(origQuestions, q)
+				qname, fromNamespace := h.getRawQName(q.Name, trustDomain)
+				log.Debug().Msgf("%s lookup q.Name:%s qname:%s namespace:%s　trustDomain:%s", remote, q.Name, qname, fromNamespace, trustDomain)
+
 				segs := strings.Split(qname, `.`)
 				sections := len(segs)
 				if sections == 1 { //internal domain name
@@ -135,20 +159,15 @@ func (h *DNSHandler) do(cfg *Config) {
 
 			q := req.Question[0]
 			Q := Question{UnFqdn(q.Name), dns.TypeToString[q.Qtype], dns.ClassToString[q.Qclass]}
-			var remote net.IP
-			if Net == "tcp" {
-				remote = w.RemoteAddr().(*net.TCPAddr).IP
-			} else {
-				remote = w.RemoteAddr().(*net.UDPAddr).IP
-			}
 
-			log.Info().Msgf("%s lookup　%s\n", remote, Q.String())
+			log.Debug().Msgf("%s lookup %s", remote, Q.String())
 
 			ipQuery := h.isIPQuery(q)
 			if ipQuery == 0 {
 				m := new(dns.Msg)
 				m.SetReply(req)
 				m.SetRcode(req, dns.RcodeNameError)
+				m.Question = origQuestions
 				h.WriteReplyMsg(w, m)
 				return
 			}
@@ -156,9 +175,11 @@ func (h *DNSHandler) do(cfg *Config) {
 			resp, err := h.resolver.Lookup(Net, req, cfg.GetTimeout(), cfg.GetInterval(), cfg.GetNameservers())
 			if err != nil {
 				log.Error().Msgf("resolve query error %s\n", err)
+				req.Question = origQuestions
 				h.HandleFailed(w, req)
 				return
 			}
+			resp.Question = origQuestions
 
 			if resp.Truncated && Net == "udp" {
 				resp, err = h.resolver.Lookup("tcp", req, cfg.GetTimeout(), cfg.GetInterval(), cfg.GetNameservers())
@@ -169,7 +190,10 @@ func (h *DNSHandler) do(cfg *Config) {
 				}
 			}
 
+			log.Debug().Msgf("%s lookup　%s rcode:%d", remote, Q.String(), resp.Rcode)
+
 			if resp.Rcode == dns.RcodeNameError && cfg.IsWildcard() {
+				req.Question = origQuestions
 				h.HandleWildcard(req, cfg, ipQuery, &q, w)
 				return
 			}
@@ -194,6 +218,20 @@ func (h *DNSHandler) do(cfg *Config) {
 								break
 							}
 						}
+					case dns.TypeAAAA:
+						resp.Answer = nil
+						//aaaa := rr.(*dns.AAAA)
+						//ip := aaaa.AAAA
+						//if ip.IsUnspecified() || ip.IsLoopback() {
+						//	for _, db := range dbs {
+						//		if len(db.IPv6) > 0 {
+						//			aaaa.AAAA = net.ParseIP(db.IPv6)
+						//			resp.Answer[idx] = aaaa
+						//			break
+						//		}
+						//	}
+						//	break
+						//}
 					}
 				}
 			}
