@@ -4,11 +4,13 @@
     "color": "EEEEEE"
   },
   "CHECKS": {
-    "regexp": "^(\\[WIP\\]|\\[BACKPORT\\]|\\[CHERRY-PICK\\])?( )?(feat|fix|docs|build|test|ci|chore|refactor|perf)!?(\\(.*\\))?!?:.*"
+    "regexp": "^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?( )?(feat|fix|docs|build|test|ci|chore|refactor|perf)!?(\\(.*\\))?!?:.*",
+    "regexpFlags": "i",
+    "ignoreLabels" : ["dont-check-PR-title"]
   },
   "MESSAGES": {
     "success": "PR title is valid",
     "failure": "PR title is invalid",
-    "notice": "PR Title needs to pass regex '^(\\[WIP\\]|\\[BACKPORT\\]|\\[CHERRY-PICK\\])?( )?(feat|fix|docs|build|test|ci|chore|refactor|perf)!?(\\(.*\\))?!?:.*'"
+    "notice": "PR Title needs to pass case insensitive regex '^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?( )?(feat|fix|docs|build|test|ci|chore|refactor|perf)!?(\\(.*\\))?!?:.*'"
   }
 }
