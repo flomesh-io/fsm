@@ -51,12 +51,12 @@ func (r *Resolver) Lookup(net string, req *dns.Msg, timeout int, interval int, n
 			return
 		}
 		if r != nil && r.Rcode != dns.RcodeSuccess {
-			log.Warn().Msgf("%s failed to get an valid answer on %s", qname, nameserver)
+			log.Debug().Msgf("%s failed to get a valid answer on %s", qname, nameserver)
 			if r.Rcode == dns.RcodeServerFailure {
 				return
 			}
 		} else {
-			log.Debug().Msgf("%s resolv on %s (%s)\n", UnFqdn(qname), nameserver, net)
+			log.Debug().Msgf("%s resolv on %s (%s)", UnFqdn(qname), nameserver, net)
 		}
 		select {
 		case res <- r:
