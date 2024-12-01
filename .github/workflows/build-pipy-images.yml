@@ -1,4 +1,4 @@
-name: build-pipy-images
+name: Build pipy images
 
 on:
   workflow_dispatch:
