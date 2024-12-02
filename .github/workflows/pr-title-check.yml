@@ -26,14 +26,20 @@ jobs:
       - name: PR Title Check
         uses: thehanimo/pr-title-checker@v1.4.3
         id: check
+        continue-on-error: true
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           pass_on_octokit_error: false
           configuration_path: ".github/pr-title-checker-config.json"
 
+  fail:
+    name: PR Title Check Failed
+    runs-on: ubuntu-latest
+    if: ${{ steps.check.outputs.success == 'false'}}
+    steps:
       - name: Add comment to fix PR title
         uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ always() && steps.check.outputs.success == 'false'}}
+        id: comment-fail
         with:
           header: 'PR Title Check'
           recreate: true
@@ -46,15 +52,21 @@ jobs:
             * `feat: add new feature AB#789`
             * `chore: fixing build pipeline` - no AB reference
             * `build(deps): bump BlahBlah from 1.0 to 1.1`
-            * `[WIP] feat: add new feature AB#123`
-            * `[CHERRY-PICK] fix: fix typo in README.md AB#123`
-            * `[BACKPORT] fix: fix typo in README.md AB#123`
+            * `[wip] feat: add new feature AB#123`
+            * `[cherry-pick] fix: fix typo in README.md AB#123`
+            * `[backport] fix: fix typo in README.md AB#123`
             
             For more details, please refer to the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0)
             and the [PR Title Configuration File](.github/pr-title-checker-config.json).
+      - name: Set action status to failed
+        run: exit 1
 
+  success:
+    name: PR Title Check Passed
+    runs-on: ubuntu-latest
+    if: ${{ steps.check.outputs.success == 'true'}}
+    steps:
       - name: Add comment that PR title is fixed
-        if: ${{ always() && steps.check.outputs.success == 'true'}}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: 'PR Title Check'
