@@ -26,7 +26,6 @@ jobs:
       - name: PR Title Check
         uses: thehanimo/pr-title-checker@v1.4.3
         id: check
-        continue-on-error: true
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           pass_on_octokit_error: false
@@ -34,7 +33,7 @@ jobs:
 
       - name: Add comment to fix PR title
         uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ steps.check.outputs.success == 'false'}}
+        if: ${{ always() && steps.check.outputs.success == 'false'}}
         with:
           header: 'PR Title Check'
           recreate: true
@@ -55,7 +54,7 @@ jobs:
             and the [PR Title Configuration File](.github/pr-title-checker-config.json).
 
       - name: Add comment that PR title is fixed
-        if: ${{ steps.check.outputs.success == 'true'}}
+        if: ${{ always() && steps.check.outputs.success == 'true'}}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: 'PR Title Check'
