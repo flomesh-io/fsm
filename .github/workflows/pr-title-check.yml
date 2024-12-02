@@ -60,7 +60,6 @@ jobs:
             For more details, please refer to the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0)
             and the [PR Title Configuration File](.github/pr-title-checker-config.json).
       - name: Set action status to failed
-        if: ${{ needs.check.outputs.success == 'false'}}
         run: |
           echo "❌ PR Title Check Failed"
           exit 1
