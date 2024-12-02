@@ -22,6 +22,7 @@ jobs:
   validate:
     name: Validate PR Title
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: PR Title Check
         uses: thehanimo/pr-title-checker@v1.4.3
@@ -34,7 +35,8 @@ jobs:
   fail:
     name: PR Title Check Failed
     runs-on: ubuntu-latest
-    if: ${{ always() && steps.check.outputs.success == 'false'}}
+    needs: validate
+    if: ${{ always() && needs.check.outputs.success == 'false'}}
     steps:
       - name: Add comment to fix PR title
         uses: marocchino/sticky-pull-request-comment@v2
@@ -58,12 +60,14 @@ jobs:
             For more details, please refer to the [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0)
             and the [PR Title Configuration File](.github/pr-title-checker-config.json).
       - name: Set action status to failed
-        run: exit 1
+        run: |
+          echo "❌ PR Title Check Failed"
+          exit 1
 
   success:
     name: PR Title Check Passed
     runs-on: ubuntu-latest
-    if: ${{ always() && steps.check.outputs.success == 'true'}}
+    needs: validate
     steps:
       - name: Add comment that PR title is fixed
         uses: marocchino/sticky-pull-request-comment@v2
