@@ -22,6 +22,8 @@ jobs:
   validate:
     name: Validate PR Title
     runs-on: ubuntu-latest
+    outputs:
+      success: ${{ steps.check.outputs.success }}
     steps:
       - name: PR Title Check
         uses: thehanimo/pr-title-checker@v1.4.3
@@ -35,11 +37,10 @@ jobs:
     name: PR Title Check Failed
     runs-on: ubuntu-latest
     needs: validate
-    if: ${{ always() }}
+    if: ${{ always() && needs.validate.outputs.success == 'false'}}
     steps:
       - name: Add comment to fix PR title
         uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ needs.check.outputs.success == 'false'}}
         with:
           header: 'PR Title Check'
           recreate: true
@@ -68,11 +69,10 @@ jobs:
     name: PR Title Check Passed
     runs-on: ubuntu-latest
     needs: validate
-    if: ${{ always()}}
+    if: ${{ always() && needs.validate.outputs.success == 'true' }}
     steps:
       - name: Add comment that PR title is fixed
         uses: marocchino/sticky-pull-request-comment@v2
-        if: ${{ needs.check.outputs.success == 'true'}}
         with:
           header: 'PR Title Check'
           recreate: true
