@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"sigs.k8s.io/gwctl/pkg/common"
 )
 
 const proxyCmdDescription = `

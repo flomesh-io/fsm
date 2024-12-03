@@ -11,8 +11,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
+	"sigs.k8s.io/gwctl/pkg/common"
+
 	"github.com/flomesh-io/fsm/pkg/cli"
-	"github.com/flomesh-io/fsm/pkg/cli/common"
 	"github.com/flomesh-io/fsm/pkg/constants"
 )
 

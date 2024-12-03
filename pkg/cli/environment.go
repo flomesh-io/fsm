@@ -54,7 +54,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	"github.com/flomesh-io/fsm/pkg/cli/common"
+	"sigs.k8s.io/gwctl/pkg/common"
 )
 
 const (
