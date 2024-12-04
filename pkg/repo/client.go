@@ -343,11 +343,22 @@ func (p *PipyRepoClient) Batch(batches []Batch) error {
 	return nil
 }
 
+// DeriveCodebase derives a codebase from a base codebase and commit it
 func (p *PipyRepoClient) DeriveCodebase(path, base string) error {
-	log.Debug().Msgf("Checking if exists, codebase %q", path)
-	exists, _ := p.codebaseExists(path)
+	return p.deriveCodebaseAndCommit(path, base, true)
+}
 
-	if exists {
+// DeriveCodebaseOnly derives a codebase from a base codebase without committing it
+func (p *PipyRepoClient) DeriveCodebaseOnly(path, base string) error {
+	return p.deriveCodebaseAndCommit(path, base, false)
+}
+
+func (p *PipyRepoClient) deriveCodebaseAndCommit(path, base string, commit bool) error {
+	if baseExists, _ := p.codebaseExists(base); !baseExists {
+		return fmt.Errorf("base codebase %q doesn't exist", base)
+	}
+
+	if exists, _ := p.codebaseExists(path); exists {
 		log.Debug().Msgf("Codebase %q already exists, ignore deriving ...", path)
 	} else {
 		log.Debug().Msgf("Codebase %q doesn't exist, deriving ...", path)
@@ -358,12 +369,14 @@ func (p *PipyRepoClient) DeriveCodebase(path, base string) error {
 		}
 		log.Debug().Msgf("Successfully derived codebase %q", path)
 
-		log.Debug().Msgf("Committing the changes of codebase %q", path)
-		if err = p.commit(path, result.Version); err != nil {
-			log.Error().Msgf("Committing codebase %q error: %v", path, err)
-			return err
+		if commit {
+			log.Debug().Msgf("Committing the changes of codebase %q", path)
+			if err = p.commit(path, result.Version); err != nil {
+				log.Error().Msgf("Committing codebase %q error: %v", path, err)
+				return err
+			}
+			log.Debug().Msgf("Successfully committed codebase %q", path)
 		}
-		log.Debug().Msgf("Successfully committed codebase %q", path)
 	}
 
 	return nil
