@@ -29,7 +29,6 @@ import (
 	_ "embed"
 	"fmt"
 	"sync"
-	"time"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
@@ -606,13 +605,13 @@ func (r *gatewayReconciler) applyGateway(gateway *gwv1.Gateway, gsu *gw.GatewayS
 }
 
 func (r *gatewayReconciler) deriveCodebases(gw *gwv1.Gateway, _ configurator.Configurator) (ctrl.Result, error) {
-	gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
-	parentPath := utils.GetDefaultGatewaysPath()
-	if err := r.fctx.RepoClient.DeriveCodebase(gwPath, parentPath); err != nil {
-		r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase: %s", err)
-
-		return ctrl.Result{RequeueAfter: 1 * time.Second}, err
-	}
+	//gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
+	//parentPath := utils.GetDefaultGatewaysPath()
+	//if err := r.fctx.RepoClient.DeriveCodebaseOnly(gwPath, parentPath); err != nil {
+	//	defer r.recorder.Eventf(gw, corev1.EventTypeWarning, "Codebase", "Failed to derive codebase of gateway: %s", err)
+	//
+	//	return ctrl.Result{RequeueAfter: 1 * time.Second}, err
+	//}
 
 	return ctrl.Result{}, nil
 }
