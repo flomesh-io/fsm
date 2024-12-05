@@ -349,7 +349,7 @@ func (c *GatewayProcessor) IsFilterConfigReferred(kind string, config client.Obj
 func (c *GatewayProcessor) IsHeadlessServiceWithoutSelector(key client.ObjectKey) bool {
 	service, err := c.getServiceFromCache(key)
 	if err != nil {
-		log.Error().Msgf("failed to get service from processor: %v", err)
+		log.Warn().Msgf("failed to get service from processor: %v", err)
 		return false
 	}
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/flomesh-io/fsm/pkg/constants"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/ghodss/yaml"
@@ -16,6 +18,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
+	mrepo "github.com/flomesh-io/fsm/pkg/manager/repo"
 	"github.com/flomesh-io/fsm/pkg/repo"
 	"github.com/flomesh-io/fsm/pkg/utils"
 )
@@ -25,11 +28,39 @@ func (c *GatewayProcessor) BuildConfigs() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	if !c.preCheck() {
+		return
+	}
+
 	for _, gw := range gwutils.GetActiveGateways(c.client) {
 		cfg := NewGatewayConfigGenerator(gw, c, c.client, c.cfg).Generate()
 
 		go c.syncConfigDir(gw, cfg)
 	}
+}
+
+func (c *GatewayProcessor) preCheck() bool {
+	if !c.repoClient.IsRepoUp() {
+		log.Trace().Msg("Repo is not up, ignore ...")
+		return false
+	}
+
+	if !c.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
+		if err := c.repoClient.Batch([]repo.Batch{mrepo.GatewaysBatch()}); err != nil {
+			log.Error().Msgf("Failed to write gateway scripts to repo: %s", err)
+			return false
+		}
+	}
+
+	defaultGatewaysPath := utils.GetDefaultGatewaysPath()
+	if !c.repoClient.CodebaseExists(defaultGatewaysPath) {
+		if err := c.repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
+			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
+			return false
+		}
+	}
+
+	return true
 }
 
 //func (c *GatewayProcessor) syncConfig(gateway *gwv1.Gateway, config fgw.Config) {
@@ -67,10 +98,11 @@ func (c *GatewayProcessor) BuildConfigs() {
 //}
 
 func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Config) {
-	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
-	if exists := c.repoClient.CodebaseExists(gatewayPath); !exists {
+	if !c.checkGatewayCodebase(gateway) {
 		return
 	}
+
+	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
 
 	jsonVersion, err := c.getVersion(gatewayPath, "config/version.json")
 	if err != nil {
@@ -143,6 +175,21 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
 		return
 	}
+}
+
+func (c *GatewayProcessor) checkGatewayCodebase(gateway *gwv1.Gateway) bool {
+	gatewayPath := utils.GatewayCodebasePath(gateway.Namespace, gateway.Name)
+	parentPath := utils.GetDefaultGatewaysPath()
+
+	if !c.repoClient.CodebaseExists(gatewayPath) {
+		// Derive codebase only, don't commit it, the codebase will be committed when all configs are ready
+		if err := c.repoClient.DeriveCodebaseOnly(gatewayPath, parentPath); err != nil {
+			log.Error().Msgf("Failed to derive codebase %q: %s", gatewayPath, err)
+			return false
+		}
+	}
+
+	return true
 }
 
 func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]string, error) {

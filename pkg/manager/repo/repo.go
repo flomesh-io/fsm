@@ -38,10 +38,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	nsigv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/namespacedingress/v1alpha1"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	mutils "github.com/flomesh-io/fsm/pkg/manager/utils"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -144,6 +142,10 @@ func gatewaysBatch() repo.Batch {
 	return createBatch(constants.DefaultGatewayBasePath, fmt.Sprintf("%s/gateways", scriptsRoot))
 }
 
+func GatewaysBatch() repo.Batch {
+	return gatewaysBatch()
+}
+
 func createBatch(repoPath, scriptsDir string) repo.Batch {
 	batch := repo.Batch{
 		Basepath: repoPath,
@@ -233,9 +235,9 @@ func (r *rebuilder) rebuildRepoJob() error {
 	if !r.repoClient.CodebaseExists(constants.DefaultServiceBasePath) {
 		batches = append(batches, servicesBatch())
 	}
-	if !r.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
-		batches = append(batches, gatewaysBatch())
-	}
+	//if !r.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
+	//	batches = append(batches, gatewaysBatch())
+	//}
 
 	if len(batches) > 0 {
 		if err := r.repoClient.Batch(batches); err != nil {
@@ -279,36 +281,36 @@ func (r *rebuilder) rebuildRepoJob() error {
 		}
 	}
 
-	if r.mc.IsGatewayAPIEnabled() {
-		defaultGatewaysPath := utils.GetDefaultGatewaysPath()
-		if err := r.repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
-			log.Error().Msgf("%q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
-			return err
-		}
+	//if r.mc.IsGatewayAPIEnabled() {
+	//	defaultGatewaysPath := utils.GetDefaultGatewaysPath()
+	//	if err := r.repoClient.DeriveCodebase(defaultGatewaysPath, constants.DefaultGatewayBasePath); err != nil {
+	//		log.Error().Msgf("%q failed to derive codebase %q: %s", defaultGatewaysPath, constants.DefaultGatewayBasePath, err)
+	//		return err
+	//	}
 
-		gatewayList := &gwv1.GatewayList{}
-		if err := r.client.List(
-			context.TODO(),
-			gatewayList,
-			client.InNamespace(corev1.NamespaceAll),
-		); err != nil {
-			log.Error().Msgf("Failed to list all gateways: %s", err)
-			return err
-		}
-
-		log.Debug().Msgf("Found %d gateways", len(gatewayList.Items))
-
-		for _, gw := range gatewayList.Items {
-			gw := gw // fix lint GO-LOOP-REF
-			if gwutils.IsActiveGateway(&gw) {
-				gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
-				parentPath := utils.GetDefaultGatewaysPath()
-				if err := r.repoClient.DeriveCodebase(gwPath, parentPath); err != nil {
-					return err
-				}
-			}
-		}
-	}
+	//gatewayList := &gwv1.GatewayList{}
+	//if err := r.client.List(
+	//	context.TODO(),
+	//	gatewayList,
+	//	client.InNamespace(corev1.NamespaceAll),
+	//); err != nil {
+	//	log.Error().Msgf("Failed to list all gateways: %s", err)
+	//	return err
+	//}
+	//
+	//log.Debug().Msgf("Found %d gateways", len(gatewayList.Items))
+	//
+	//for _, gw := range gatewayList.Items {
+	//	gw := gw // fix lint GO-LOOP-REF
+	//	if gwutils.IsActiveGateway(&gw) {
+	//		gwPath := utils.GatewayCodebasePath(gw.Namespace, gw.Name)
+	//		parentPath := utils.GetDefaultGatewaysPath()
+	//		if err := r.repoClient.DeriveCodebaseOnly(gwPath, parentPath); err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
+	//}
 
 	log.Trace().Msg("<<<<<< rebuilding repo - end >>>>>> ")
 	return nil
