@@ -82,10 +82,10 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-co-op/gocron v1.31.0
+	github.com/go-co-op/gocron v1.37.0
 	github.com/go-logr/logr v1.4.2
 	github.com/go-logr/zerologr v1.2.3
-	github.com/go-resty/resty/v2 v2.14.0
+	github.com/go-resty/resty/v2 v2.16.2
 	github.com/gobwas/glob v0.2.3
 	github.com/hashicorp/consul/api v1.29.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7
@@ -97,7 +97,7 @@ require (
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
-	github.com/tidwall/gjson v1.14.4
+	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/time v0.6.0

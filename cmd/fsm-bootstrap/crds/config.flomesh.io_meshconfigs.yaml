@@ -1732,7 +1732,7 @@ spec:
                 description: Misc defines the configurations of misc info
                 properties:
                   repoServerImage:
-                    default: flomesh/pipy-repo:1.5.7
+                    default: flomesh/pipy-repo:1.5.8
                     description: RepoServerImage defines the image of repo server.
                     type: string
                 required:
