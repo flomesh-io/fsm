@@ -107,3 +107,6 @@ generate_client "policyattachment" "v1alpha1,v1alpha2"
 
 echo "##### Generating extension.gateway.flomesh.io extension client ######"
 generate_client "extension" "v1alpha1"
+
+echo "##### Generating traffic.flomesh.io extension client ######"
+generate_client "traffic" "v1alpha1"
