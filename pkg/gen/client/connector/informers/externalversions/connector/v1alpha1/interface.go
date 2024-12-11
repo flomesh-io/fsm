@@ -31,6 +31,8 @@ type Interface interface {
 	MachineConnectors() MachineConnectorInformer
 	// NacosConnectors returns a NacosConnectorInformer.
 	NacosConnectors() NacosConnectorInformer
+	// ZookeeperConnectors returns a ZookeeperConnectorInformer.
+	ZookeeperConnectors() ZookeeperConnectorInformer
 }
 
 type version struct {
@@ -67,4 +69,9 @@ func (v *version) MachineConnectors() MachineConnectorInformer {
 // NacosConnectors returns a NacosConnectorInformer.
 func (v *version) NacosConnectors() NacosConnectorInformer {
 	return &nacosConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ZookeeperConnectors returns a ZookeeperConnectorInformer.
+func (v *version) ZookeeperConnectors() ZookeeperConnectorInformer {
+	return &zookeeperConnectorInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

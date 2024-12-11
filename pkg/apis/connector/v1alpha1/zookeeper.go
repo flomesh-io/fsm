@@ -10,7 +10,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:metadata:labels=app.kubernetes.io/name=flomesh.io
-// +kubebuilder:resource:shortName=consulconnector,scope=Cluster
+// +kubebuilder:resource:shortName=zookeeperconnector,scope=Cluster
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="HttpAddr",type=string,JSONPath=`.spec.httpAddr`
@@ -19,8 +19,8 @@ import (
 // +kubebuilder:printcolumn:name="toK8SServices",type=integer,JSONPath=`.status.toK8SServiceCnt`
 // +kubebuilder:printcolumn:name="fromK8SServices",type=integer,JSONPath=`.status.fromK8SServiceCnt`
 
-// ConsulConnector is the type used to represent a Consul Connector resource.
-type ConsulConnector struct {
+// ZookeeperConnector is the type used to represent a Zookeeper Connector resource.
+type ZookeeperConnector struct {
 	// Object's type metadata
 	metav1.TypeMeta `json:",inline"`
 
@@ -28,60 +28,47 @@ type ConsulConnector struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec is the Consul Connector specification
-	Spec ConsulSpec `json:"spec"`
+	// Spec is the Zookeeper Connector specification
+	Spec ZookeeperSpec `json:"spec"`
 
-	// Status is the status of the Consul Connector configuration.
+	// Status is the status of the Zookeeper Connector configuration.
 	// +optional
-	Status ConsulStatus `json:"status,omitempty"`
+	Status ZookeeperStatus `json:"status,omitempty"`
 }
 
-func (c *ConsulConnector) GetProvider() DiscoveryServiceProvider {
-	return ConsulDiscoveryService
+func (c *ZookeeperConnector) GetProvider() DiscoveryServiceProvider {
+	return ZookeeperDiscoveryService
 }
 
-func (c *ConsulConnector) GetReplicas() *int32 {
+func (c *ZookeeperConnector) GetReplicas() *int32 {
 	return c.Spec.Replicas
 }
 
-func (c *ConsulConnector) GetResources() *corev1.ResourceRequirements {
+func (c *ZookeeperConnector) GetResources() *corev1.ResourceRequirements {
 	return &c.Spec.Resources
 }
 
-func (c *ConsulConnector) GetImagePullSecrets() []corev1.LocalObjectReference {
+func (c *ZookeeperConnector) GetImagePullSecrets() []corev1.LocalObjectReference {
 	return c.Spec.ImagePullSecrets
 }
 
-func (c *ConsulConnector) GetLeaderElection() *bool {
+func (c *ZookeeperConnector) GetLeaderElection() *bool {
 	return c.Spec.LeaderElection
 }
 
-// ConsulSyncToK8SSpec is the type used to represent the sync from Consul to K8S specification.
-type ConsulSyncToK8SSpec struct {
+// ZookeeperSyncToK8SSpec is the type used to represent the sync from Zookeeper to K8S specification.
+type ZookeeperSyncToK8SSpec struct {
 	Enable bool `json:"enable"`
 
 	// +kubebuilder:default=""
 	// +optional
 	ClusterId string `json:"clusterId,omitempty"`
 
-	// +kubebuilder:default=true
-	// +optional
-	PassingOnly bool `json:"passingOnly,omitempty"`
-
 	// +optional
 	FilterIPRanges []string `json:"filterIpRanges,omitempty"`
 
 	// +optional
 	ExcludeIPRanges []string `json:"excludeIpRanges,omitempty"`
-
-	// +optional
-	FilterTag string `json:"filterTag,omitempty"`
-
-	// +optional
-	PrefixTag string `json:"prefixTag,omitempty"`
-
-	// +optional
-	SuffixTag string `json:"suffixTag,omitempty"`
 
 	// +optional
 	FilterMetadatas []Metadata `json:"filterMetadatas,omitempty"`
@@ -101,14 +88,10 @@ type ConsulSyncToK8SSpec struct {
 	// +kubebuilder:default={enable: false, multiGateways: true}
 	// +optional
 	WithGateway C2KGateway `json:"withGateway,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
-	GenerateInternalServiceHealthCheck bool `json:"generateInternalServiceHealthCheck,omitempty"`
 }
 
-// ConsulSyncFromK8SSpec is the type used to represent the sync from K8S to Consul specification.
-type ConsulSyncFromK8SSpec struct {
+// ZookeeperSyncFromK8SSpec is the type used to represent the sync from K8S to Zookeeper specification.
+type ZookeeperSyncFromK8SSpec struct {
 	Enable bool `json:"enable"`
 
 	// +kubebuilder:default=true
@@ -144,9 +127,6 @@ type ConsulSyncFromK8SSpec struct {
 	AddK8SNamespaceAsServiceSuffix bool `json:"addK8SNamespaceAsServiceSuffix,omitempty"`
 
 	// +optional
-	AppendTags []string `json:"appendTags,omitempty"`
-
-	// +optional
 	AppendMetadatas []Metadata `json:"appendMetadatas,omitempty"`
 
 	// +kubebuilder:validation:MinItems=1
@@ -169,35 +149,16 @@ type ConsulSyncFromK8SSpec struct {
 	// +kubebuilder:default={enable: false, gatewayMode: forward}
 	// +optional
 	WithGateway K2CGateway `json:"withGateway,omitempty"`
-
-	// +optional
-	ConsulNodeName string `json:"consulNodeName,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
-	ConsulEnableNamespaces bool `json:"consulEnableNamespaces,omitempty"`
-
-	// +kubebuilder:default=default
-	// +optional
-	ConsulDestinationNamespace string `json:"consulDestinationNamespace,omitempty"`
-
-	// +kubebuilder:default=false
-	// +optional
-	ConsulEnableK8SNSMirroring bool `json:"consulEnableK8SNSMirroring,omitempty"`
-
-	// +kubebuilder:default=""
-	// +optional
-	ConsulK8SNSMirroringPrefix string `json:"consulK8SNSMirroringPrefix,omitempty"`
-
-	// +kubebuilder:default=""
-	// +optional
-	ConsulCrossNamespaceACLPolicy string `json:"consulCrossNamespaceACLPolicy,omitempty"`
 }
 
-// ConsulSpec is the type used to represent the Consul Connector specification.
-type ConsulSpec struct {
+// ZookeeperSpec is the type used to represent the Zookeeper Connector specification.
+type ZookeeperSpec struct {
 	HTTPAddr        string `json:"httpAddr"`
 	DeriveNamespace string `json:"deriveNamespace"`
+
+	BasePath string `json:"basePath"`
+	Category string `json:"category"`
+	Adaptor  string `json:"adaptor"`
 
 	// +kubebuilder:default=false
 	// +optional
@@ -209,18 +170,18 @@ type ConsulSpec struct {
 
 	// +kubebuilder:default={}
 	// +optional
-	Auth NacosAuthSpec `json:"auth,omitempty"`
+	Auth ZookeeperAuthSpec `json:"auth,omitempty"`
 
 	// +kubebuilder:validation:Format="duration"
 	// +kubebuilder:default="5s"
 	// +optional
-	SyncPeriod  metav1.Duration       `json:"syncPeriod"`
-	SyncToK8S   ConsulSyncToK8SSpec   `json:"syncToK8S"`
-	SyncFromK8S ConsulSyncFromK8SSpec `json:"syncFromK8S"`
+	SyncPeriod  metav1.Duration          `json:"syncPeriod"`
+	SyncToK8S   ZookeeperSyncToK8SSpec   `json:"syncToK8S"`
+	SyncFromK8S ZookeeperSyncFromK8SSpec `json:"syncFromK8S"`
 
 	// +kubebuilder:default={limit:500, burst:750}
 	// +optional
-	Limiter *Limiter `json:"limiter,omitempty"`
+	Limiter *Limiter `json:"Limiter,omitempty"`
 
 	// Compute Resources required by connector container.
 	// +optional
@@ -246,24 +207,20 @@ type ConsulSpec struct {
 	LeaderElection *bool `json:"leaderElection,omitempty"`
 }
 
-// ConsulAuthSpec is the type used to represent the Consul auth specification.
-type ConsulAuthSpec struct {
-	// +kubebuilder:default=""
-	// +optional
-	Username string `json:"username,omitempty"`
-
+// ZookeeperAuthSpec is the type used to represent the Zookeeper auth specification.
+type ZookeeperAuthSpec struct {
 	// +kubebuilder:default=""
 	// +optional
 	Password string `json:"password,omitempty"`
 }
 
-// ConsulStatus is the type used to represent the status of a Consul Connector resource.
-type ConsulStatus struct {
-	// CurrentStatus defines the current status of a Consul Connector resource.
+// ZookeeperStatus is the type used to represent the status of a Zookeeper Connector resource.
+type ZookeeperStatus struct {
+	// CurrentStatus defines the current status of a Zookeeper Connector resource.
 	// +optional
 	CurrentStatus string `json:"currentStatus,omitempty"`
 
-	// Reason defines the reason for the current status of a Consul Connector resource.
+	// Reason defines the reason for the current status of a Zookeeper Connector resource.
 	// +optional
 	Reason string `json:"reason,omitempty"`
 
@@ -274,10 +231,10 @@ type ConsulStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ConsulConnectorList contains a list of Consul Connectors.
-type ConsulConnectorList struct {
+// ZookeeperConnectorList contains a list of Zookeeper Connectors.
+type ZookeeperConnectorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []ConsulConnector `json:"items"`
+	Items []ZookeeperConnector `json:"items"`
 }

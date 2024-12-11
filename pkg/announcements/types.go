@@ -249,6 +249,15 @@ const (
 	// NacosConnectorUpdated is the type of announcement emitted when we observe an update to nacosconnectors.connector.flomesh.io
 	NacosConnectorUpdated Kind = "nacosconnector-updated"
 
+	// ZookeeperConnectorAdded is the type of announcement emitted when we observe an addition of zookeeperconnectors.connector.flomesh.io
+	ZookeeperConnectorAdded Kind = "zookeeperconnector-added"
+
+	// ZookeeperConnectorDeleted the type of announcement emitted when we observe a deletion of zookeeperconnectors.connector.flomesh.io
+	ZookeeperConnectorDeleted Kind = "zookeeperconnector-deleted"
+
+	// ZookeeperConnectorUpdated is the type of announcement emitted when we observe an update to zookeeperconnectors.connector.flomesh.io
+	ZookeeperConnectorUpdated Kind = "zookeeperconnector-updated"
+
 	// MachineConnectorAdded is the type of announcement emitted when we observe an addition of machineconnectors.connector.flomesh.io
 	MachineConnectorAdded Kind = "machineconnector-added"
 

@@ -248,6 +248,7 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 	reconcilers[ConnectorConsulConnector] = ctv1.NewConsulConnectorReconciler(ctx)
 	reconcilers[ConnectorEurekaConnector] = ctv1.NewEurekaConnectorReconciler(ctx)
 	reconcilers[ConnectorNacosConnector] = ctv1.NewNacosConnectorReconciler(ctx)
+	reconcilers[ConnectorZookeeperConnector] = ctv1.NewZookeeperConnectorReconciler(ctx)
 	reconcilers[ConnectorMachineConnector] = ctv1.NewMachineConnectorReconciler(ctx)
 	reconcilers[ConnectorGatewayConnector] = ctv1.NewGatewayConnectorReconciler(ctx)
 

@@ -45,6 +45,10 @@ func (c *FakeConnectorV1alpha1) NacosConnectors() v1alpha1.NacosConnectorInterfa
 	return &FakeNacosConnectors{c}
 }
 
+func (c *FakeConnectorV1alpha1) ZookeeperConnectors() v1alpha1.ZookeeperConnectorInterface {
+	return &FakeZookeeperConnectors{c}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeConnectorV1alpha1) RESTClient() rest.Interface {

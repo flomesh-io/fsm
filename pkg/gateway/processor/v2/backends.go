@@ -125,10 +125,7 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 			if found {
 				endpointSet := make(map[endpointContext]struct{})
 				for address, metadata := range svcMeta.Endpoints {
-					if len(metadata.Native.ViaGatewayHTTP) == 0 {
-						ep := endpointContext{address: string(address), port: targetPort}
-						endpointSet[ep] = struct{}{}
-					} else {
+					if len(metadata.Native.ViaGatewayHTTP) > 0 {
 						if segs := strings.Split(metadata.Native.ViaGatewayHTTP, ":"); len(segs) == 2 {
 							if portStr, convErr := strconv.Atoi(segs[1]); convErr == nil {
 								viaPort := int32(portStr & 0xFFFF)
@@ -137,6 +134,18 @@ func (c *ConfigGenerator) upstreamsByEndpointSlices(svc *corev1.Service, port *i
 								endpointSet[ep] = struct{}{}
 							}
 						}
+					} else if len(metadata.Native.ViaGatewayGRPC) > 0 {
+						if segs := strings.Split(metadata.Native.ViaGatewayGRPC, ":"); len(segs) == 2 {
+							if portStr, convErr := strconv.Atoi(segs[1]); convErr == nil {
+								viaPort := int32(portStr & 0xFFFF)
+								viaAddr := segs[0]
+								ep := endpointContext{address: viaAddr, port: viaPort}
+								endpointSet[ep] = struct{}{}
+							}
+						}
+					} else {
+						ep := endpointContext{address: string(address), port: targetPort}
+						endpointSet[ep] = struct{}{}
 					}
 				}
 				if len(endpointSet) > 0 {

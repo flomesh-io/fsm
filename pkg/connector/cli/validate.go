@@ -47,5 +47,26 @@ func (c *client) validateConnectorSpec(spec interface{}) error {
 			}
 		}
 	}
+
+	if zookeeperSpec, ok := spec.(ctv1.ZookeeperSpec); ok {
+		if len(zookeeperSpec.HTTPAddr) == 0 {
+			return fmt.Errorf("please specify service discovery and registration server address")
+		}
+		if zookeeperSpec.SyncFromK8S.Enable || zookeeperSpec.SyncToK8S.Enable {
+			if len(zookeeperSpec.DeriveNamespace) == 0 {
+				return fmt.Errorf("please specify the cloud derive namespace")
+			}
+			if len(zookeeperSpec.BasePath) == 0 {
+				return fmt.Errorf("please specify the zookeeper base path")
+			}
+			if len(zookeeperSpec.Category) == 0 {
+				return fmt.Errorf("please specify the zookeeper category")
+			}
+			if len(zookeeperSpec.Adaptor) == 0 {
+				return fmt.Errorf("please specify the zookeeper adaptor")
+			}
+		}
+	}
+
 	return nil
 }

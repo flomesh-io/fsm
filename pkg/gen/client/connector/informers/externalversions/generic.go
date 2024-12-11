@@ -60,6 +60,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Connector().V1alpha1().MachineConnectors().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("nacosconnectors"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Connector().V1alpha1().NacosConnectors().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("zookeeperconnectors"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Connector().V1alpha1().ZookeeperConnectors().Informer()}, nil
 
 	}
 

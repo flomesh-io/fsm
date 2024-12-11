@@ -34,3 +34,7 @@ type MachineConnectorListerExpansion interface{}
 // NacosConnectorListerExpansion allows custom methods to be added to
 // NacosConnectorLister.
 type NacosConnectorListerExpansion interface{}
+
+// ZookeeperConnectorListerExpansion allows custom methods to be added to
+// ZookeeperConnectorLister.
+type ZookeeperConnectorListerExpansion interface{}

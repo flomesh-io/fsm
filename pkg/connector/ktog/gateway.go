@@ -2,6 +2,7 @@ package ktog
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/mitchellh/hashstructure/v2"
@@ -21,14 +22,14 @@ import (
 
 var (
 	pathMatchType  = gwv1.PathMatchPathPrefix
-	pathMatchValue = "/"
-)
+	pathMatchValue = string(os.PathSeparator)
 
-var (
 	gatewayGroup = gwv1.Group(gwv1.GroupName)
 	gatewayKind  = gwv1.Kind("Gateway")
 	serviceGroup = gwv1.Group("")
 	serviceKind  = gwv1.Kind("Service")
+
+	grpcMatchType = gwv1.GRPCMethodMatchExact
 )
 
 // GatewaySource implements controller.Resource and starts
@@ -111,83 +112,40 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 			log.Warn().Msgf("error list gateways in namespace:%s", svcResource.fsmNamespace)
 			return nil
 		}
+
 		externalSource := false
 		internalSource := true
+		var svcMeta *connector.MicroSvcMeta = nil
 		if len(k8sSvc.Annotations) > 0 {
-			internalSource, externalSource = gw.checkServiceType(k8sSvc)
+			internalSource, externalSource, svcMeta = gw.checkServiceType(k8sSvc)
 		}
+
 		for _, portSpec := range k8sSvc.Spec.Ports {
 			protocol := string(portSpec.Protocol)
 			if portSpec.AppProtocol != nil && len(*portSpec.AppProtocol) > 0 {
 				protocol = *portSpec.AppProtocol
 			}
 			protocol = strings.ToUpper(protocol)
-
-			var parentRefs []gwv1.ParentReference
-			for _, gatewayEntry := range gatewayList {
-				gateway := gatewayEntry.(*gwv1.Gateway)
-				for _, gatewayListener := range gateway.Spec.Listeners {
-					if internalSource {
-						if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
-							uint(gatewayListener.Port) == httpPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-						if grpcPort := gw.serviceResource.controller.GetViaIngressGRPCPort(); grpcPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
-							uint(gatewayListener.Port) == grpcPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-					}
-					if externalSource ||
-						(internalSource && gw.InterceptionMode == constants.TrafficInterceptionModeNodeLevel) {
-						if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
-							uint(gatewayListener.Port) == httpPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-						if grpcPort := gw.serviceResource.controller.GetViaEgressGRPCPort(); grpcPort > 0 &&
-							strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
-							uint(gatewayListener.Port) == grpcPort {
-							gatewayNs := gwv1.Namespace(gateway.Namespace)
-							gatewayPort := gatewayListener.Port
-							parentRefs = append(parentRefs, gwv1.ParentReference{
-								Group:     &gatewayGroup,
-								Kind:      &gatewayKind,
-								Namespace: &gatewayNs,
-								Name:      gwv1.ObjectName(gateway.Name),
-								Port:      &gatewayPort})
-						}
-					}
-				}
-			}
-
+			parentRefs := gw.findParentRefs(gatewayList, internalSource, protocol, externalSource)
 			if len(parentRefs) > 0 {
 				if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) {
 					gw.updateGatewayHTTPRoute(k8sSvc, portSpec, parentRefs)
 				} else if strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) {
-					gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs)
+					if svcMeta != nil && svcMeta.GRPCMeta != nil &&
+						len(svcMeta.GRPCMeta.Interface) > 0 && len(svcMeta.GRPCMeta.Methods) > 0 {
+						var grpcRouteMatches []gwv1.GRPCRouteMatch
+						for method := range svcMeta.GRPCMeta.Methods {
+							method := method
+							grpcRouteMatches = append(grpcRouteMatches, gwv1.GRPCRouteMatch{
+								Method: &gwv1.GRPCMethodMatch{
+									Type:    &grpcMatchType,
+									Service: &svcMeta.GRPCMeta.Interface,
+									Method:  &method,
+								},
+							})
+						}
+						gw.updateGatewayGRPCRoute(k8sSvc, portSpec, parentRefs, grpcRouteMatches)
+					}
 				} else {
 					gw.updateGatewayTCPRoute(k8sSvc, portSpec, parentRefs)
 				}
@@ -199,11 +157,74 @@ func (gw *GatewaySource) updateGatewayRoute(k8sSvc *apiv1.Service) {
 	})
 }
 
-func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool) {
+func (gw *GatewaySource) findParentRefs(gatewayList []interface{}, internalSource bool, protocol string, externalSource bool) []gwv1.ParentReference {
+	var parentRefs []gwv1.ParentReference
+	for _, gatewayEntry := range gatewayList {
+		gateway := gatewayEntry.(*gwv1.Gateway)
+		for _, gatewayListener := range gateway.Spec.Listeners {
+			if internalSource {
+				if httpPort := gw.serviceResource.controller.GetViaIngressHTTPPort(); httpPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+					uint(gatewayListener.Port) == httpPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+				if grpcPort := gw.serviceResource.controller.GetViaIngressGRPCPort(); grpcPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+					uint(gatewayListener.Port) == grpcPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+			}
+			if externalSource ||
+				(internalSource && gw.InterceptionMode == constants.TrafficInterceptionModeNodeLevel) {
+				if httpPort := gw.serviceResource.controller.GetViaEgressHTTPPort(); httpPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolHTTP)) &&
+					uint(gatewayListener.Port) == httpPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+				if grpcPort := gw.serviceResource.controller.GetViaEgressGRPCPort(); grpcPort > 0 &&
+					strings.EqualFold(protocol, strings.ToUpper(constants.ProtocolGRPC)) &&
+					uint(gatewayListener.Port) == grpcPort {
+					gatewayNs := gwv1.Namespace(gateway.Namespace)
+					gatewayPort := gatewayListener.Port
+					parentRefs = append(parentRefs, gwv1.ParentReference{
+						Group:     &gatewayGroup,
+						Kind:      &gatewayKind,
+						Namespace: &gatewayNs,
+						Name:      gwv1.ObjectName(gateway.Name),
+						Port:      &gatewayPort})
+				}
+			}
+		}
+	}
+	return parentRefs
+}
+
+func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource, externalSource bool, svcMeta *connector.MicroSvcMeta) {
 	externalSource = false
 	internalSource = true
 	if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
-		svcMeta := connector.Decode(k8sSvc, v)
+		svcMeta = connector.Decode(k8sSvc, v)
 		for _, endpointMeta := range svcMeta.Endpoints {
 			if !endpointMeta.Local.WithGateway {
 				continue
@@ -224,10 +245,11 @@ func (gw *GatewaySource) checkServiceType(k8sSvc *apiv1.Service) (internalSource
 	} else {
 		internalSource = true
 	}
-	return internalSource, externalSource
+	return
 }
 
-func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
+func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	httpRouteClient := svcResource.gatewayClient.GatewayV1().HTTPRoutes(k8sSvc.Namespace)
 	existRt := gw.GetHTTPRoute(k8sSvc.Name, k8sSvc.Namespace)
@@ -291,13 +313,12 @@ func (gw *GatewaySource) updateGatewayHTTPRoute(k8sSvc *apiv1.Service, portSpec 
 	}
 }
 
-func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
+func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+	parentRefs []gwv1.ParentReference, grpcRouteMatches []gwv1.GRPCRouteMatch) {
 	svcResource := gw.serviceResource
 	grpcRouteClient := svcResource.gatewayClient.GatewayV1().GRPCRoutes(k8sSvc.Namespace)
 	existRt := gw.GetGRPCRoute(k8sSvc.Name, k8sSvc.Namespace)
 
-	grpMethodType := gwv1.GRPCMethodMatchExact
-	grpMethodSvc := "grpc.GrpcService"
 	servicePort := gwv1.PortNumber(portSpec.Port)
 	weight := int32(constants.ClusterWeightAcceptAll)
 
@@ -310,12 +331,7 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 	newRt.Spec.CommonRouteSpec.ParentRefs = parentRefs
 	newRt.Spec.Hostnames = gw.getGatewayRouteHostnamesForService(k8sSvc)
 	newRt.Spec.Rules = []gwv1.GRPCRouteRule{{
-		Matches: []gwv1.GRPCRouteMatch{{
-			Method: &gwv1.GRPCMethodMatch{
-				Type:    &grpMethodType,
-				Service: &grpMethodSvc,
-			},
-		}},
+		Matches: grpcRouteMatches,
 		BackendRefs: []gwv1.GRPCBackendRef{
 			{
 				BackendRef: gwv1.BackendRef{
@@ -358,7 +374,8 @@ func (gw *GatewaySource) updateGatewayGRPCRoute(k8sSvc *apiv1.Service, portSpec 
 	}
 }
 
-func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort, parentRefs []gwv1.ParentReference) {
+func (gw *GatewaySource) updateGatewayTCPRoute(k8sSvc *apiv1.Service, portSpec apiv1.ServicePort,
+	parentRefs []gwv1.ParentReference) {
 	svcResource := gw.serviceResource
 	tcpRouteClient := svcResource.gatewayClient.GatewayV1alpha2().TCPRoutes(k8sSvc.Namespace)
 	existRt := gw.GetTCPRoute(k8sSvc.Name, k8sSvc.Namespace)
@@ -434,16 +451,16 @@ func (gw *GatewaySource) deleteGatewayRoute(name, namespace string) {
 
 func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Service) []gwv1.Hostname {
 	svcResource := gw.serviceResource
-	hostnames := []gwv1.Hostname{
-		gwv1.Hostname(k8sSvc.Name),
-		gwv1.Hostname(fmt.Sprintf("%s.%s", k8sSvc.Name, k8sSvc.Namespace)),
-		gwv1.Hostname(fmt.Sprintf("%s.%s.svc", k8sSvc.Name, k8sSvc.Namespace)),
-	}
+	var hostnames []gwv1.Hostname
 	cloudService := false
 	if len(k8sSvc.Annotations) > 0 {
 		if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 			cloudService = true
 			svcMeta := connector.Decode(k8sSvc, v)
+			if svcMeta.GRPCMeta != nil && len(svcMeta.GRPCMeta.Interface) > 0 {
+				hostnames = append(hostnames, gwv1.Hostname(strings.ToLower(svcMeta.GRPCMeta.Interface)))
+				return hostnames
+			}
 			for addr := range svcMeta.Endpoints {
 				hostnames = append(hostnames, gwv1.Hostname(addr))
 			}
@@ -459,6 +476,9 @@ func (gw *GatewaySource) getGatewayRouteHostnamesForService(k8sSvc *apiv1.Servic
 			}
 		}
 	}
+	hostnames = append(hostnames, gwv1.Hostname(k8sSvc.Name))
+	hostnames = append(hostnames, gwv1.Hostname(fmt.Sprintf("%s.%s", k8sSvc.Name, k8sSvc.Namespace)))
+	hostnames = append(hostnames, gwv1.Hostname(fmt.Sprintf("%s.%s.svc", k8sSvc.Name, k8sSvc.Namespace)))
 	return hostnames
 }
 

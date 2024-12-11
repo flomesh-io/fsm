@@ -88,6 +88,9 @@ const (
 	// InformerKeyNacosConnector is the InformerKey for a NacosConnector informer
 	InformerKeyNacosConnector InformerKey = "NacosConnector"
 
+	// InformerKeyZookeeperConnector is the InformerKey for a ZookeeperConnector informer
+	InformerKeyZookeeperConnector InformerKey = "ZookeeperConnector"
+
 	// InformerKeyMachineConnector is the InformerKey for a MachineConnector informer
 	InformerKeyMachineConnector InformerKey = "MachineConnector"
 

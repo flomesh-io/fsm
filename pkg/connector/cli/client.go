@@ -91,14 +91,15 @@ func newClient(provider, connectorName string,
 
 	// Initialize informers
 	informerInitHandlerMap := map[InformerKey]func(){
-		ConsulConnectors:  c.initConsulConnectorMonitor,
-		EurekaConnectors:  c.initEurekaConnectorMonitor,
-		NacosConnectors:   c.initNacosConnectorMonitor,
-		MachineConnectors: c.initMachineConnectorMonitor,
-		GatewayConnectors: c.initGatewayConnectorMonitor,
-		GatewayHTTPRoutes: c.initGatewayHTTPRouteMonitor,
-		GatewayGRPCRoutes: c.initGatewayGRPCRouteMonitor,
-		GatewayTCPRoutes:  c.initGatewayTCPRouteMonitor,
+		ConsulConnectors:    c.initConsulConnectorMonitor,
+		EurekaConnectors:    c.initEurekaConnectorMonitor,
+		NacosConnectors:     c.initNacosConnectorMonitor,
+		ZookeeperConnectors: c.initZookeeperConnectorMonitor,
+		MachineConnectors:   c.initMachineConnectorMonitor,
+		GatewayConnectors:   c.initGatewayConnectorMonitor,
+		GatewayHTTPRoutes:   c.initGatewayHTTPRouteMonitor,
+		GatewayGRPCRoutes:   c.initGatewayGRPCRouteMonitor,
+		GatewayTCPRoutes:    c.initGatewayTCPRouteMonitor,
 	}
 
 	// If specific informers are not selected to be initialized, initialize all informers
@@ -107,6 +108,7 @@ func newClient(provider, connectorName string,
 			ConsulConnectors,
 			EurekaConnectors,
 			NacosConnectors,
+			ZookeeperConnectors,
 			MachineConnectors,
 			GatewayConnectors,
 			GatewayHTTPRoutes,
@@ -149,6 +151,16 @@ func (c *client) initNacosConnectorMonitor() {
 	}
 	c.informers.AddEventHandler(fsminformers.InformerKeyNacosConnector,
 		k8s.GetEventHandlerFuncs(nil, nacosConnectorEventTypes, c.msgBroker))
+}
+
+func (c *client) initZookeeperConnectorMonitor() {
+	zookeeperConnectorEventTypes := k8s.EventTypes{
+		Add:    announcements.ZookeeperConnectorAdded,
+		Update: announcements.ZookeeperConnectorUpdated,
+		Delete: announcements.ZookeeperConnectorDeleted,
+	}
+	c.informers.AddEventHandler(fsminformers.InformerKeyZookeeperConnector,
+		k8s.GetEventHandlerFuncs(nil, zookeeperConnectorEventTypes, c.msgBroker))
 }
 
 func (c *client) initMachineConnectorMonitor() {
@@ -228,6 +240,15 @@ func (c *client) GetNacosConnector(connector string) *ctv1.NacosConnector {
 	return nil
 }
 
+// GetZookeeperConnector returns a ZookeeperConnector resource if found, nil otherwise.
+func (c *client) GetZookeeperConnector(connector string) *ctv1.ZookeeperConnector {
+	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyZookeeperConnector, connector)
+	if exists && err == nil {
+		return connectorIf.(*ctv1.ZookeeperConnector)
+	}
+	return nil
+}
+
 // GetMachineConnector returns a MachineConnector resource if found, nil otherwise.
 func (c *client) GetMachineConnector(connector string) *ctv1.MachineConnector {
 	connectorIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyMachineConnector, connector)
@@ -268,6 +289,13 @@ func (c *client) GetConnector() (connector, spec interface{}, uid string, ok boo
 			connector = nacosConnector.Spec
 			spec = nacosConnector.Spec
 			uid = string(nacosConnector.UID)
+			ok = true
+		}
+	case ctv1.ZookeeperDiscoveryService:
+		if zookeeperConnector := c.GetZookeeperConnector(c.GetConnectorName()); zookeeperConnector != nil {
+			connector = zookeeperConnector.Spec
+			spec = zookeeperConnector.Spec
+			uid = string(zookeeperConnector.UID)
 			ok = true
 		}
 	case ctv1.MachineDiscoveryService:

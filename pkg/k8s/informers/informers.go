@@ -199,6 +199,7 @@ func WithConnectorClient(connectorClient connectorClientset.Interface) InformerC
 		ic.informers[InformerKeyConsulConnector] = informerFactory.Connector().V1alpha1().ConsulConnectors().Informer()
 		ic.informers[InformerKeyEurekaConnector] = informerFactory.Connector().V1alpha1().EurekaConnectors().Informer()
 		ic.informers[InformerKeyNacosConnector] = informerFactory.Connector().V1alpha1().NacosConnectors().Informer()
+		ic.informers[InformerKeyZookeeperConnector] = informerFactory.Connector().V1alpha1().ZookeeperConnectors().Informer()
 		ic.informers[InformerKeyMachineConnector] = informerFactory.Connector().V1alpha1().MachineConnectors().Informer()
 		ic.informers[InformerKeyGatewayConnector] = informerFactory.Connector().V1alpha1().GatewayConnectors().Informer()
 	}

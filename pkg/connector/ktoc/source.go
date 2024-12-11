@@ -329,6 +329,11 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	// a new one if there is one.
 	t.controller.GetK2CContext().RegisteredServiceMap.Remove(key)
 
+	var svcMeta *connector.MicroSvcMeta
+	if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+		svcMeta = connector.Decode(svc, v)
+	}
+
 	// baseNode and baseService are the base that should be modified with
 	// service-type specific changes. These are not pointers, they should be
 	// shallow copied for each instance.
@@ -407,7 +412,7 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	// address assigned (not hostnames).
 	// If loadBalancerEndpointsSync is true sync LB endpoints instead of loadbalancer ingress.
 	case corev1.ServiceTypeLoadBalancer:
-		t.generateLoadBalanceEndpointsRegistrations(key, baseNode, baseService, overridePortName, overridePortNumber, svc)
+		t.generateLoadBalanceEndpointsRegistrations(svcMeta, key, baseNode, baseService, overridePortName, overridePortNumber, svc)
 
 	// For NodePort services, we create a service instance for each
 	// endpoint of the service, which corresponds to the nodes the service's
@@ -421,7 +426,7 @@ func (t *KtoCSource) generateRegistrations(key string) {
 	// For ClusterIP services, we register a service instance
 	// for each endpoint.
 	case corev1.ServiceTypeClusterIP:
-		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, true)
+		t.registerServiceInstance(svcMeta, baseNode, baseService, key, overridePortName, overridePortNumber, true)
 	}
 }
 
@@ -635,9 +640,16 @@ func (t *KtoCSource) generateNodeportRegistrations(key string, baseNode connecto
 	return false
 }
 
-func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseNode connector.CatalogRegistration, baseService connector.AgentService, overridePortName string, overridePortNumber int, svc *corev1.Service) {
+func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(
+	svcMeta *connector.MicroSvcMeta,
+	key string,
+	baseNode connector.CatalogRegistration,
+	baseService connector.AgentService,
+	overridePortName string,
+	overridePortNumber int,
+	svc *corev1.Service) {
 	if t.controller.GetSyncLoadBalancerEndpoints() {
-		t.registerServiceInstance(baseNode, baseService, key, overridePortName, overridePortNumber, false)
+		t.registerServiceInstance(svcMeta, baseNode, baseService, key, overridePortName, overridePortNumber, false)
 	} else {
 		seen := map[string]struct{}{}
 		for _, ingress := range svc.Status.LoadBalancer.Ingress {
@@ -702,6 +714,7 @@ func (t *KtoCSource) generateLoadBalanceEndpointsRegistrations(key string, baseN
 }
 
 func (t *KtoCSource) registerServiceInstance(
+	svcMeta *connector.MicroSvcMeta,
 	baseNode connector.CatalogRegistration,
 	baseService connector.AgentService,
 	key string,
@@ -765,7 +778,7 @@ func (t *KtoCSource) registerServiceInstance(
 			seen[addr] = struct{}{}
 
 			r := baseNode
-			r.Service = t.bindService(baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaHTTPPort, viaGRPCPort)
+			r.Service = t.bindService(svcMeta, baseService, baseService.Service, addr, httpPort, grpcPort, viaAddr, viaHTTPPort, viaGRPCPort)
 			// Deepcopy baseService.Meta into r.RegisteredInstances.Meta as baseService is shared
 			// between all nodes of a service
 			for k, v := range baseService.Meta {
@@ -875,7 +888,9 @@ func (t *KtoCSource) chooseServiceAddrPort(key string, port int, subsetAddr core
 	return addr, httpPort
 }
 
-func (t *KtoCSource) bindService(baseService connector.AgentService,
+func (t *KtoCSource) bindService(
+	svcMeta *connector.MicroSvcMeta,
+	baseService connector.AgentService,
 	service, addr string, httpPort, grpcPort int,
 	viaAddr string, viaHTTPPort, viaGRPCPort int) *connector.AgentService {
 	rs := baseService
@@ -893,6 +908,21 @@ func (t *KtoCSource) bindService(baseService connector.AgentService,
 	}
 	if len(viaAddr) > 0 && viaGRPCPort > 0 {
 		rs.Meta[connector.CloudGRPCViaGateway] = fmt.Sprintf("%s:%d", viaAddr, viaGRPCPort)
+	}
+	if rs.GRPCPort > 0 && svcMeta != nil && svcMeta.GRPCMeta != nil {
+		if len(svcMeta.GRPCMeta.Interface) > 0 {
+			rs.GRPCInterface = svcMeta.GRPCMeta.Interface
+			if len(svcMeta.GRPCMeta.Methods) > 0 {
+				for method := range svcMeta.GRPCMeta.Methods {
+					rs.GRPCMethods = append(rs.GRPCMethods, method)
+				}
+			}
+			if svcMeta.Endpoints != nil {
+				if endpointMeta, exists := svcMeta.Endpoints[connector.MicroEndpointAddr(addr)]; exists {
+					rs.GRPCInstanceMeta = endpointMeta.GRPCMeta
+				}
+			}
+		}
 	}
 	return &rs
 }

@@ -110,6 +110,7 @@ func ValidateCLIParams() error {
 	if string(ctv1.EurekaDiscoveryService) != Cfg.SdrProvider &&
 		string(ctv1.ConsulDiscoveryService) != Cfg.SdrProvider &&
 		string(ctv1.NacosDiscoveryService) != Cfg.SdrProvider &&
+		string(ctv1.ZookeeperDiscoveryService) != Cfg.SdrProvider &&
 		string(ctv1.MachineDiscoveryService) != Cfg.SdrProvider &&
 		string(ctv1.GatewayDiscoveryService) != Cfg.SdrProvider {
 		return fmt.Errorf("please specify the connector using -sdr-provider(consul/eureka/nacos/machine/gateway)")

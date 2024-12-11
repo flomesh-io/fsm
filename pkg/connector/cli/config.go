@@ -37,6 +37,9 @@ type config struct {
 			secretKey   string
 			namespaceId string
 		}
+		zookeeper struct {
+			password string
+		}
 	}
 
 	httpAddr           string
@@ -66,7 +69,6 @@ type config struct {
 		suffixMetadata string
 
 		fixedHTTPServicePort *uint32
-		fixedGRPCServicePort *uint32
 
 		withGateway   bool
 		multiGateways bool
@@ -179,6 +181,12 @@ type config struct {
 		nacosCfg struct {
 			clusterId string
 			groupId   string
+		}
+
+		zookeeperCfg struct {
+			basePath string
+			category string
+			adaptor  string
 		}
 	}
 
@@ -480,6 +488,24 @@ func (c *config) GetNacosClusterId() string {
 	return c.k2cCfg.nacosCfg.clusterId
 }
 
+func (c *config) GetZookeeperBasePath() string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.zookeeperCfg.basePath
+}
+
+func (c *config) GetZookeeperCategory() string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.zookeeperCfg.category
+}
+
+func (c *config) GetZookeeperAdaptor() string {
+	c.flock.RLock()
+	defer c.flock.RUnlock()
+	return c.k2cCfg.zookeeperCfg.adaptor
+}
+
 func (c *config) GetClusterId() string {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
@@ -601,12 +627,6 @@ func (c *config) GetFixedHTTPServicePort() *uint32 {
 	c.flock.RLock()
 	defer c.flock.RUnlock()
 	return c.c2kCfg.fixedHTTPServicePort
-}
-
-func (c *config) GetFixedGRPCServicePort() *uint32 {
-	c.flock.RLock()
-	defer c.flock.RUnlock()
-	return c.c2kCfg.fixedGRPCServicePort
 }
 
 func (c *config) GetC2KWithGateway() bool {
@@ -798,7 +818,6 @@ func (c *client) initNacosConnectorConfig(spec ctv1.NacosSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 	if len(spec.SyncToK8S.ClusterSet) == 0 {
@@ -858,7 +877,6 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
@@ -878,6 +896,7 @@ func (c *client) initEurekaConnectorConfig(spec ctv1.EurekaSpec) {
 	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
 	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
 	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
+
 	c.k2cCfg.eurekaCfg.checkServiceInstanceID = spec.SyncFromK8S.CheckServiceInstanceID
 	c.k2cCfg.eurekaCfg.heartBeatInstance = spec.SyncFromK8S.HeartBeatInstance
 	c.k2cCfg.eurekaCfg.heartBeatPeriod = spec.SyncFromK8S.HeartBeatPeriod.Duration
@@ -915,7 +934,6 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
 	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
 	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
-	c.config.c2kCfg.fixedGRPCServicePort = spec.SyncToK8S.FixedGRPCServicePort
 	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
 	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
 
@@ -944,6 +962,58 @@ func (c *client) initConsulConnectorConfig(spec ctv1.ConsulSpec) {
 	c.k2cCfg.consulCfg.consulK8SNSMirroringPrefix = spec.SyncFromK8S.ConsulK8SNSMirroringPrefix
 	c.k2cCfg.consulCfg.consulCrossNamespaceACLPolicy = spec.SyncFromK8S.ConsulCrossNamespaceACLPolicy
 	c.k2cCfg.consulCfg.consulGenerateInternalServiceHealthCheck = spec.SyncToK8S.GenerateInternalServiceHealthCheck
+
+	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
+	c.limiter.SetBurst(int(spec.Limiter.Limit))
+}
+
+func (c *client) initZookeeperConnectorConfig(spec ctv1.ZookeeperSpec) {
+	c.flock.Lock()
+	defer c.flock.Unlock()
+
+	c.httpAddr = spec.HTTPAddr
+	c.deriveNamespace = spec.DeriveNamespace
+	c.purge = spec.Purge
+	c.asInternalServices = spec.AsInternalServices
+	c.syncPeriod = spec.SyncPeriod.Duration
+	if c.syncPeriod < MinSyncPeriod {
+		c.syncPeriod = MinSyncPeriod
+	}
+
+	c.auth.zookeeper.password = spec.Auth.Password
+
+	c.config.c2kCfg.enable = spec.SyncToK8S.Enable
+	c.config.c2kCfg.clusterId = spec.SyncToK8S.ClusterId
+	c.config.c2kCfg.filterMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.FilterMetadatas...)
+	c.config.c2kCfg.filterIPRanges = append([]string{}, spec.SyncToK8S.FilterIPRanges...)
+	c.config.c2kCfg.excludeMetadatas = append([]ctv1.Metadata{}, spec.SyncToK8S.ExcludeMetadatas...)
+	c.config.c2kCfg.excludeIPRanges = append([]string{}, spec.SyncToK8S.ExcludeIPRanges...)
+	c.config.c2kCfg.prefixMetadata = spec.SyncToK8S.PrefixMetadata
+	c.config.c2kCfg.suffixMetadata = spec.SyncToK8S.SuffixMetadata
+	c.config.c2kCfg.fixedHTTPServicePort = spec.SyncToK8S.FixedHTTPServicePort
+	c.config.c2kCfg.withGateway = spec.SyncToK8S.WithGateway.Enable
+	c.config.c2kCfg.multiGateways = spec.SyncToK8S.WithGateway.MultiGateways
+
+	c.k2cCfg.enable = spec.SyncFromK8S.Enable
+	c.k2cCfg.defaultSync = spec.SyncFromK8S.DefaultSync
+	c.k2cCfg.syncClusterIPServices = spec.SyncFromK8S.SyncClusterIPServices
+	c.k2cCfg.syncLoadBalancerEndpoints = spec.SyncFromK8S.SyncLoadBalancerEndpoints
+	c.k2cCfg.nodePortSyncType = spec.SyncFromK8S.NodePortSyncType
+	c.k2cCfg.syncIngress = spec.SyncFromK8S.SyncIngress
+	c.k2cCfg.syncIngressLoadBalancerIPs = spec.SyncFromK8S.SyncIngressLoadBalancerIPs
+	c.k2cCfg.addServicePrefix = spec.SyncFromK8S.AddServicePrefix
+	c.k2cCfg.addK8SNamespaceAsServiceSuffix = spec.SyncFromK8S.AddK8SNamespaceAsServiceSuffix
+	c.k2cCfg.appendMetadataSet = ToMetaSet(spec.SyncFromK8S.AppendMetadatas)
+	c.k2cCfg.allowK8sNamespacesSet = ToSet(spec.SyncFromK8S.AllowK8sNamespaces)
+	c.k2cCfg.denyK8sNamespacesSet = ToSet(spec.SyncFromK8S.DenyK8sNamespaces)
+	c.k2cCfg.filterIPRanges = append([]string{}, spec.SyncFromK8S.FilterIPRanges...)
+	c.k2cCfg.excludeIPRanges = append([]string{}, spec.SyncFromK8S.ExcludeIPRanges...)
+	c.k2cCfg.withGateway = spec.SyncFromK8S.WithGateway.Enable
+	c.k2cCfg.withGatewayMode = spec.SyncFromK8S.WithGateway.GatewayMode
+
+	c.k2cCfg.zookeeperCfg.basePath = spec.BasePath
+	c.k2cCfg.zookeeperCfg.category = spec.Category
+	c.k2cCfg.zookeeperCfg.adaptor = spec.Adaptor
 
 	c.limiter.SetLimit(rate.Limit(spec.Limiter.Limit))
 	c.limiter.SetBurst(int(spec.Limiter.Limit))

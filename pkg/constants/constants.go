@@ -722,6 +722,8 @@ var (
 const (
 	CloudSourcedServiceLabel = "fsm-connector-cloud-sourced-service"
 
+	GRPCServiceInterfaceLabel = "fsm-connector-grpc-service-interface"
+
 	AnnotationMeshEndpointHash = "flomesh.io/cloud-endpoint-hash"
 )
 

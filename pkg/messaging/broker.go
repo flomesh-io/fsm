@@ -1429,6 +1429,7 @@ func getConnectorUpdateEvent(msg events.PubSubMessage) *connectorUpdateEvent {
 		announcements.ConsulConnectorAdded, announcements.ConsulConnectorUpdated, announcements.ConsulConnectorDeleted,
 		announcements.EurekaConnectorAdded, announcements.EurekaConnectorUpdated, announcements.EurekaConnectorDeleted,
 		announcements.NacosConnectorAdded, announcements.NacosConnectorUpdated, announcements.NacosConnectorDeleted,
+		announcements.ZookeeperConnectorAdded, announcements.ZookeeperConnectorUpdated, announcements.ZookeeperConnectorDeleted,
 		announcements.MachineConnectorAdded, announcements.MachineConnectorUpdated, announcements.MachineConnectorDeleted,
 		announcements.GatewayConnectorAdded, announcements.GatewayConnectorUpdated, announcements.GatewayConnectorDeleted,
 		announcements.ConnectorUpdate:

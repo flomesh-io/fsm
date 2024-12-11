@@ -20,6 +20,7 @@ type ConnectController interface {
 	GetConsulConnector(connector string) *ctv1.ConsulConnector
 	GetEurekaConnector(connector string) *ctv1.EurekaConnector
 	GetNacosConnector(connector string) *ctv1.NacosConnector
+	GetZookeeperConnector(connector string) *ctv1.ZookeeperConnector
 	GetMachineConnector(connector string) *ctv1.MachineConnector
 	GetGatewayConnector(connector string) *ctv1.GatewayConnector
 	GetConnector() (connector, spec interface{}, uid string, ok bool)
@@ -56,7 +57,6 @@ type ConnectController interface {
 	GetSuffixMetadata() string
 
 	GetFixedHTTPServicePort() *uint32
-	GetFixedGRPCServicePort() *uint32
 
 	GetC2KWithGateway() bool
 	GetC2KMultiGateways() bool
@@ -100,6 +100,10 @@ type ConnectController interface {
 
 	GetNacosGroupId() string
 	GetNacosClusterId() string
+
+	GetZookeeperBasePath() string
+	GetZookeeperCategory() string
+	GetZookeeperAdaptor() string
 
 	/* config for ktog source */
 
