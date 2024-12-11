@@ -24,3 +24,5 @@ type GatewayConnectorExpansion interface{}
 type MachineConnectorExpansion interface{}
 
 type NacosConnectorExpansion interface{}
+
+type ZookeeperConnectorExpansion interface{}

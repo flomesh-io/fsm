@@ -75,6 +75,16 @@ func (c *client) startSync() {
 		} else {
 			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
 		}
+	} else if zookeeperSpec, zookeeperOk := c.connectorSpec.(ctv1.ZookeeperSpec); zookeeperOk {
+		c.initZookeeperConnectorConfig(zookeeperSpec)
+
+		c.discClient, err = provider.GetZookeeperDiscoveryClient(c)
+		if err != nil {
+			events.GenericEventRecorder().FatalEvent(err, events.InitializationError, "Error creating service discovery and registration client")
+			log.Fatal().Msg("Error creating service discovery and registration client")
+		} else {
+			c.cancelFuncs = append(c.cancelFuncs, c.discClient.Close)
+		}
 	} else if machineSpec, machineOk := c.connectorSpec.(ctv1.MachineSpec); machineOk {
 		c.initMachineConnectorConfig(machineSpec)
 

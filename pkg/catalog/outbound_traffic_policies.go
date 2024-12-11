@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/endpoint"
 	"github.com/flomesh-io/fsm/pkg/errcode"
@@ -197,6 +198,19 @@ func (mc *MeshCatalog) GetOutboundMeshTrafficPolicy(downstreamIdentity identity.
 
 func (mc *MeshCatalog) getHostnamesForService(meshSvc service.MeshService, localNamespace bool, endpoints []endpoint.Endpoint) []string {
 	var httpHostNamesForServicePort []string
+	if meshSvc.Protocol == constants.ProtocolGRPC {
+		k8sSvc := mc.kubeController.GetService(meshSvc)
+		if k8sSvc != nil && len(k8sSvc.Annotations) > 0 {
+			if v, exists := k8sSvc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
+				svcMeta := connector.Decode(k8sSvc, v)
+				if svcMeta.GRPCMeta != nil && len(svcMeta.GRPCMeta.Interface) > 0 {
+					httpHostNamesForServicePort = append(httpHostNamesForServicePort, svcMeta.GRPCMeta.Interface)
+					return httpHostNamesForServicePort
+				}
+			}
+		}
+	}
+
 	sam := mc.configurator.GetServiceAccessMode()
 	san := mc.configurator.GetServiceAccessNames()
 	if sam == configv1alpha3.ServiceAccessModeDomain || sam == configv1alpha3.ServiceAccessModeMixed {

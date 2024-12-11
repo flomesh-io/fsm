@@ -80,6 +80,9 @@ const (
 	//NacosDiscoveryService defines nacos discovery service name
 	NacosDiscoveryService DiscoveryServiceProvider = "nacos"
 
+	//ZookeeperDiscoveryService defines zookeeper discovery service name
+	ZookeeperDiscoveryService DiscoveryServiceProvider = "zookeeper"
+
 	//MachineDiscoveryService defines machine discovery service name
 	MachineDiscoveryService DiscoveryServiceProvider = "machine"
 

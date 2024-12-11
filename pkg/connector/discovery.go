@@ -15,6 +15,8 @@ import (
 
 	ctv1 "github.com/flomesh-io/fsm/pkg/apis/connector/v1alpha1"
 	machinev1alpha1 "github.com/flomesh-io/fsm/pkg/apis/machine/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/constants"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
 )
 
 const (
@@ -101,6 +103,11 @@ type AgentService struct {
 	Weights     AgentWeights
 	Tags        []string
 	Meta        map[string]interface{}
+
+	GRPCInterface    string
+	GRPCMethods      []string
+	GRPCInstanceMeta map[string]interface{}
+
 	HealthCheck bool
 }
 
@@ -200,6 +207,32 @@ func (as *AgentService) FromNacos(ins *nacos.Instance) {
 	}
 }
 
+func (as *AgentService) FromZookeeper(ins discovery.ServiceInstance) {
+	if ins == nil {
+		return
+	}
+	switch strings.ToLower(ins.ServiceSchema()) {
+	case constants.ProtocolHTTP:
+		as.HTTPPort = ins.InstancePort()
+	case constants.ProtocolGRPC:
+		as.GRPCPort = ins.InstancePort()
+	default:
+		as.HTTPPort = ins.InstancePort()
+	}
+	as.ID = ins.InstanceId()
+	as.Service = ins.ServiceName()
+	as.GRPCInterface = ins.ServiceInterface()
+	as.GRPCMethods = append(as.GRPCMethods, ins.ServiceMethods()...)
+	as.InstanceId = ins.InstanceId()
+	as.Address = ins.InstanceIP()
+	if metadata := ins.Metadatas(); len(metadata) > 0 {
+		as.Meta = make(map[string]interface{})
+		for k, v := range metadata {
+			as.Meta[k] = v
+		}
+	}
+}
+
 func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1alpha1.ServiceSpec) {
 	as.ID = fmt.Sprintf("%s-%s", svc.ServiceName, vm.UID)
 	as.Service = svc.ServiceName
@@ -218,8 +251,9 @@ func (as *AgentService) FromVM(vm machinev1alpha1.VirtualMachine, svc machinev1a
 type CatalogDeregistration struct {
 	MicroService
 
-	Node      string
-	ServiceID string
+	Node       string
+	ServiceID  string
+	ServiceRef string
 }
 
 func (cdr *CatalogDeregistration) ToConsul() *consul.CatalogDeregistration {
@@ -251,6 +285,15 @@ func (cdr *CatalogDeregistration) ToNacos() *vo.DeregisterInstanceParam {
 	r.GroupName = insInfoSegs[3]
 	r.Ephemeral = true
 	return r
+}
+
+func (cdr *CatalogDeregistration) ToZookeeper(ops discovery.FuncOps) discovery.ServiceInstance {
+	instance := ops.NewInstance(cdr.Service, cdr.ServiceRef)
+	if err := instance.Unmarshal("", []byte(cdr.Node)); err == nil {
+		return instance
+	} else {
+		return nil
+	}
 }
 
 type CatalogRegistration struct {
@@ -352,10 +395,41 @@ func (cr *CatalogRegistration) ToNacos(cluster, group string, weight float64) *v
 	return r
 }
 
+func (cr *CatalogRegistration) ToZookeeper(adaptor discovery.FuncOps) (discovery.ServiceInstance, error) {
+	r := adaptor.NewInstance(cr.Service.GRPCInterface, "")
+	if err := r.Unmarshal(
+		fmt.Sprintf("%s://%s:%d", constants.AppProtocolGRPC, cr.Service.Address, cr.Service.GRPCPort),
+		[]byte(cr.Service.Address)); err != nil {
+		return nil, err
+	}
+	if cr.Service.GRPCInstanceMeta != nil {
+		for k, v := range cr.Service.GRPCInstanceMeta {
+			r.SetMetadata(k, fmt.Sprintf("%v", v))
+		}
+	}
+	if cr.Service.Meta != nil {
+		if clusterSetKey, exists := cr.Service.Meta[ClusterSetKey]; exists {
+			r.SetMetadata(ClusterSetKey, fmt.Sprintf("%v", clusterSetKey))
+		}
+		if connectUIDKey, exists := cr.Service.Meta[ConnectUIDKey]; exists {
+			r.SetMetadata(ConnectUIDKey, fmt.Sprintf("%v", connectUIDKey))
+		}
+		if grpcViaGateway, exists := cr.Service.Meta[CloudGRPCViaGateway]; exists {
+			r.SetMetadata(CloudGRPCViaGateway, fmt.Sprintf("%v", grpcViaGateway))
+		}
+		if viaGatewayMode, exists := cr.Service.Meta[CloudViaGatewayMode]; exists {
+			r.SetMetadata(CloudViaGatewayMode, fmt.Sprintf("%v", viaGatewayMode))
+		}
+	}
+	_, _ = r.Marshal()
+	return r, nil
+}
+
 type CatalogService struct {
 	Node        string
 	ServiceID   string
 	ServiceName string
+	ServiceRef  string
 }
 
 func (cs *CatalogService) FromConsul(svc *consul.CatalogService) {
@@ -383,6 +457,16 @@ func (cs *CatalogService) FromNacos(svc *nacos.Instance) {
 	cs.Node = svc.ClusterName
 	cs.ServiceID = svc.InstanceId
 	cs.ServiceName = strings.ToLower(strings.Split(svc.ServiceName, constant.SERVICE_INFO_SPLITER)[1])
+}
+
+func (cs *CatalogService) FromZookeeper(svc discovery.ServiceInstance) {
+	if svc == nil {
+		return
+	}
+	cs.Node = svc.InstanceIP()
+	cs.ServiceID = svc.InstanceId()
+	cs.ServiceName = svc.ServiceName()
+	cs.ServiceRef = svc.InstanceId()
 }
 
 // QueryOptions are used to parameterize a query

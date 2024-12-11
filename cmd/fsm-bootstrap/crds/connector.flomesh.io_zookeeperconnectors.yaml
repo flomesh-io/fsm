@@ -6,16 +6,16 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.5
   labels:
     app.kubernetes.io/name: flomesh.io
-  name: nacosconnectors.connector.flomesh.io
+  name: zookeeperconnectors.connector.flomesh.io
 spec:
   group: connector.flomesh.io
   names:
-    kind: NacosConnector
-    listKind: NacosConnectorList
-    plural: nacosconnectors
+    kind: ZookeeperConnector
+    listKind: ZookeeperConnectorList
+    plural: zookeeperconnectors
     shortNames:
-    - nacosconnector
-    singular: nacosconnector
+    - zookeeperconnector
+    singular: zookeeperconnector
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -37,8 +37,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: NacosConnector is the type used to represent a Nacos Connector
-          resource.
+        description: ZookeeperConnector is the type used to represent a Zookeeper
+          Connector resource.
         properties:
           apiVersion:
             description: |-
@@ -58,7 +58,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec is the Nacos Connector specification
+            description: Spec is the Zookeeper Connector specification
             properties:
               Limiter:
                 default:
@@ -75,30 +75,24 @@ spec:
                 - burst
                 - limit
                 type: object
+              adaptor:
+                type: string
               asInternalServices:
                 default: false
                 type: boolean
               auth:
                 default: {}
-                description: NacosAuthSpec is the type used to represent the Nacos
+                description: ZookeeperAuthSpec is the type used to represent the Zookeeper
                   auth specification.
                 properties:
-                  accessKey:
-                    default: ""
-                    type: string
-                  namespaceId:
-                    default: public
-                    type: string
                   password:
                     default: ""
                     type: string
-                  secretKey:
-                    default: ""
-                    type: string
-                  username:
-                    default: ""
-                    type: string
                 type: object
+              basePath:
+                type: string
+              category:
+                type: string
               deriveNamespace:
                 type: string
               httpAddr:
@@ -199,8 +193,8 @@ spec:
                     type: object
                 type: object
               syncFromK8S:
-                description: NacosSyncFromK8SSpec is the type used to represent the
-                  sync from K8S to Nacos specification.
+                description: ZookeeperSyncFromK8SSpec is the type used to represent
+                  the sync from K8S to Zookeeper specification.
                 properties:
                   addK8SNamespaceAsServiceSuffix:
                     default: false
@@ -227,9 +221,6 @@ spec:
                       - value
                       type: object
                     type: array
-                  clusterId:
-                    default: DEFAULT
-                    type: string
                   defaultSync:
                     default: true
                     type: boolean
@@ -250,9 +241,6 @@ spec:
                     items:
                       type: string
                     type: array
-                  groupId:
-                    default: DEFAULT_GROUP
-                    type: string
                   nodePortSyncType:
                     default: ExternalOnly
                     enum:
@@ -295,19 +283,12 @@ spec:
                 format: duration
                 type: string
               syncToK8S:
-                description: NacosSyncToK8SSpec is the type used to represent the
-                  sync from Nacos to K8S specification.
+                description: ZookeeperSyncToK8SSpec is the type used to represent
+                  the sync from Zookeeper to K8S specification.
                 properties:
                   clusterId:
                     default: ""
                     type: string
-                  clusterSet:
-                    default:
-                    - DEFAULT
-                    items:
-                      type: string
-                    minItems: 1
-                    type: array
                   enable:
                     type: boolean
                   excludeIpRanges:
@@ -345,16 +326,6 @@ spec:
                   fixedHttpServicePort:
                     format: int32
                     type: integer
-                  groupSet:
-                    default:
-                    - DEFAULT_GROUP
-                    items:
-                      type: string
-                    minItems: 1
-                    type: array
-                  passingOnly:
-                    default: true
-                    type: boolean
                   prefixMetadata:
                     type: string
                   suffixMetadata:
@@ -375,23 +346,26 @@ spec:
                 - enable
                 type: object
             required:
+            - adaptor
+            - basePath
+            - category
             - deriveNamespace
             - httpAddr
             - syncFromK8S
             - syncToK8S
             type: object
           status:
-            description: Status is the status of the Nacos Connector configuration.
+            description: Status is the status of the Zookeeper Connector configuration.
             properties:
               currentStatus:
-                description: CurrentStatus defines the current status of a Nacos Connector
-                  resource.
+                description: CurrentStatus defines the current status of a Zookeeper
+                  Connector resource.
                 type: string
               fromK8SServiceCnt:
                 type: integer
               reason:
                 description: Reason defines the reason for the current status of a
-                  Nacos Connector resource.
+                  Zookeeper Connector resource.
                 type: string
               toK8SServiceCnt:
                 type: integer

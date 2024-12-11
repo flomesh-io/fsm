@@ -39,6 +39,7 @@ const (
 	ConnectorConsulConnector            ResourceType = "Connector(ConsulConnector)"
 	ConnectorEurekaConnector            ResourceType = "Connector(EurekaConnector)"
 	ConnectorNacosConnector             ResourceType = "Connector(NacosConnector)"
+	ConnectorZookeeperConnector         ResourceType = "Connector(ZookeeperConnector)"
 	ConnectorMachineConnector           ResourceType = "Connector(MachineConnector)"
 	ConnectorGatewayConnector           ResourceType = "Connector(GatewayConnector)"
 	K8sIngress                          ResourceType = "K8s(Ingress)"

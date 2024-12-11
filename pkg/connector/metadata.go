@@ -44,22 +44,24 @@ type MicroSvcAppProtocol string
 
 // MicroEndpointMeta defines micro endpoint meta
 type MicroEndpointMeta struct {
-	Ports   map[MicroSvcPort]MicroSvcAppProtocol
-	Address MicroEndpointAddr
+	Ports   map[MicroSvcPort]MicroSvcAppProtocol `json:"ports,omitempty"`
+	Address MicroEndpointAddr                    `json:"address,omitempty"`
+
+	GRPCMeta map[string]interface{} `json:"grpcMeta,omitempty"`
 
 	Native struct {
-		ClusterSet     string
-		ClusterId      string
-		ViaGatewayHTTP string `json:"ViaGatewayHttp,omitempty"`
-		ViaGatewayGRPC string `json:"ViaGatewayGrpc,omitempty"`
-		ViaGatewayMode ctv1.WithGatewayMode
-	}
+		ClusterSet     string               `json:"clusterSet,omitempty"`
+		ClusterId      string               `json:"clusterId,omitempty"`
+		ViaGatewayHTTP string               `json:"viaGatewayHttp,omitempty"`
+		ViaGatewayGRPC string               `json:"viaGatewayGrpc,omitempty"`
+		ViaGatewayMode ctv1.WithGatewayMode `json:"viaGatewayMode,omitempty"`
+	} `json:"native"`
 	Local struct {
-		InternalService   bool
-		WithGateway       bool
-		WithMultiGateways bool
-		BindFgwPorts      map[MicroSvcPort]MicroSvcAppProtocol
-	}
+		InternalService   bool                                 `json:"internalService,omitempty"`
+		WithGateway       bool                                 `json:"withGateway,omitempty"`
+		WithMultiGateways bool                                 `json:"withMultiGateways,omitempty"`
+		BindFgwPorts      map[MicroSvcPort]MicroSvcAppProtocol `json:"bindFgwPorts,omitempty"`
+	} `json:"local"`
 }
 
 func (m *MicroEndpointMeta) Init(controller ConnectController, discClient ServiceDiscoveryClient) {
@@ -95,11 +97,19 @@ func (m *MicroEndpointMeta) Init(controller ConnectController, discClient Servic
 	}
 }
 
+type GRPCMeta struct {
+	Interface string              `json:"interface,omitempty"`
+	Methods   map[string][]string `json:"methods,omitempty"`
+}
+
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports       map[MicroSvcPort]MicroSvcAppProtocol
-	Endpoints   map[MicroEndpointAddr]*MicroEndpointMeta
-	HealthCheck bool
+	Ports     map[MicroSvcPort]MicroSvcAppProtocol     `json:"ports,omitempty"`
+	Endpoints map[MicroEndpointAddr]*MicroEndpointMeta `json:"endpoints,omitempty"`
+
+	GRPCMeta *GRPCMeta `json:"grpcMeta,omitempty"`
+
+	HealthCheck bool `json:"healthcheck,omitempty"`
 }
 
 func (m *MicroSvcMeta) Unmarshal(str string) {

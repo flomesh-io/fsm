@@ -30,6 +30,7 @@ type ConnectorV1alpha1Interface interface {
 	GatewayConnectorsGetter
 	MachineConnectorsGetter
 	NacosConnectorsGetter
+	ZookeeperConnectorsGetter
 }
 
 // ConnectorV1alpha1Client is used to interact with features provided by the connector.flomesh.io group.
@@ -55,6 +56,10 @@ func (c *ConnectorV1alpha1Client) MachineConnectors() MachineConnectorInterface 
 
 func (c *ConnectorV1alpha1Client) NacosConnectors() NacosConnectorInterface {
 	return newNacosConnectors(c)
+}
+
+func (c *ConnectorV1alpha1Client) ZookeeperConnectors() ZookeeperConnectorInterface {
+	return newZookeeperConnectors(c)
 }
 
 // NewForConfig creates a new ConnectorV1alpha1Client for the given config.

@@ -28,6 +28,8 @@ const (
 	EurekaConnectors InformerKey = "EurekaConnectors"
 	// NacosConnectors lookup identifier
 	NacosConnectors InformerKey = "NacosConnectors"
+	// ZookeeperConnectors lookup identifier
+	ZookeeperConnectors InformerKey = "ZookeeperConnectors"
 	// MachineConnectors lookup identifier
 	MachineConnectors InformerKey = "MachineConnectors"
 	// GatewayConnectors lookup identifier

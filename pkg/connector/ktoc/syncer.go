@@ -256,6 +256,7 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 				MicroService: connector.MicroService{
 					Service: instance.ServiceName,
 				},
+				ServiceRef: instance.ServiceRef,
 			}
 			if s.discClient.EnableNamespaces() {
 				deregistration.Namespace = namespace
@@ -300,6 +301,7 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 			MicroService: connector.MicroService{
 				Service: instance.ServiceName,
 			},
+			ServiceRef: instance.ServiceRef,
 		}
 		if s.discClient.EnableNamespaces() {
 			deregistration.Namespace = namespace

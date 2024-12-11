@@ -80,6 +80,7 @@ require (
 	github.com/cert-manager/cert-manager v1.12.14
 	github.com/cilium/ebpf v0.9.1
 	github.com/deckarep/golang-set v1.8.0
+	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-co-op/gocron v1.37.0
