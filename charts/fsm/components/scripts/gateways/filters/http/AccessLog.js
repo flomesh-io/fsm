@@ -23,8 +23,8 @@ export default function (config) {
         `${response.head?.statusText || ''}`,
         `"${headers['user-agent'] || ''}"`,
         `${response.headTime - $ctx.headTime}ms`,
-        `${$ctx.tail.headSize + $ctx.tail.bodySize}`,
-        `${response.tail ? response.tail.headSize + response.tail.bodySize : 0}`,
+        `${$ctx.tail ? ($ctx.tail?.headSize || 0 + $ctx.tail?.bodySize || 0) : 0}`,
+        `${response.tail ? (response.tail?.headSize || 0 + response.tail?.bodySize || 0) : 0}`,
         `"${$ctx.backendResource?.metadata?.name || ''}"`,
         `"${target || ''}"`
       )
