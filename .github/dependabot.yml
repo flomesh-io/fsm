@@ -5,3 +5,34 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    assignees:
+      - "reaver-flomesh"
+    labels:
+      - "area/CI"
+      - "kind/enhancement"
+      - "change/github-actions"
+      - "priority/P2"
+      - "size/XS"
+    milestone: v1.5.0
+  # Maintain dependencies for Golang
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    assignees:
+      - "reaver-flomesh"
+    labels:
+      - "area/control-plane"
+      - "kind/enhancement"
+      - "change/dependencies"
+      - "priority/P2"
+      - "size/XS"
+    milestone: v1.5.0
+    groups:
+      k8s:
+        applies-to: version-updates
+        patterns:
+          - "k8s.io/*"
+        update-types:
+          - "patch"
+
