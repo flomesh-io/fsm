@@ -36,6 +36,19 @@ func (pr *ProxyRegistry) GetConnectedProxy(uuid string) *pipy.Proxy {
 	return p.(*pipy.Proxy)
 }
 
+// MarkDeletionProxy marks a deletion proxy.
+func (pr *ProxyRegistry) MarkDeletionProxy(uuid string) {
+	lock.Lock()
+	defer lock.Unlock()
+	p, ok := connectedProxies.Load(uuid)
+	if !ok {
+		return
+	}
+	proxy := p.(*pipy.Proxy)
+	proxy.Deletion = true
+	connectedProxies.Store(uuid, proxy)
+}
+
 // RangeConnectedProxy calls f sequentially for each key and value present in the map.
 // If f returns false, range stops the iteration.
 func (pr *ProxyRegistry) RangeConnectedProxy(f func(key, value interface{}) bool) {

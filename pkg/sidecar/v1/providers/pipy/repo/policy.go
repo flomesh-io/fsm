@@ -276,13 +276,14 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 			ready = false
 			continue
 		}
+		if len(proxy.GetAddr()) == 0 {
+			ready = false
+			continue
+		}
 		if prettyConfig() {
 			p.AllowedEndpoints[proxy.GetAddr()] = fmt.Sprintf("%s.%s", pod.Namespace, pod.Name)
 		} else {
 			p.AllowedEndpoints[proxy.GetAddr()] = ""
-		}
-		if len(proxy.GetAddr()) == 0 {
-			ready = false
 		}
 	}
 	allVms := kubeController.ListVms()
@@ -296,13 +297,14 @@ func (p *PipyConf) copyAllowedEndpoints(kubeController k8s.Controller, proxyRegi
 			ready = false
 			continue
 		}
+		if len(proxy.GetAddr()) == 0 {
+			ready = false
+			continue
+		}
 		if prettyConfig() {
 			p.AllowedEndpoints[proxy.GetAddr()] = fmt.Sprintf("%s.%s", vm.Namespace, vm.Name)
 		} else {
 			p.AllowedEndpoints[proxy.GetAddr()] = ""
-		}
-		if len(proxy.GetAddr()) == 0 {
-			ready = false
 		}
 	}
 	if p.Inbound == nil {

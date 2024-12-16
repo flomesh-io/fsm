@@ -4,6 +4,7 @@ package messaging
 
 import (
 	"github.com/cskr/pubsub"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
@@ -18,6 +19,8 @@ var (
 type Broker struct {
 	queue                              workqueue.RateLimitingInterface
 	proxyUpdatePubSub                  *pubsub.PubSub
+	proxyCreationCh                    chan *corev1.Pod
+	proxyDeletionCh                    chan *corev1.Pod
 	proxyUpdateCh                      chan proxyUpdateEvent
 	ingressUpdatePubSub                *pubsub.PubSub
 	ingressUpdateCh                    chan ingressUpdateEvent
@@ -48,8 +51,10 @@ type Broker struct {
 // proxyUpdateEvent specifies the PubSubMessage and topic for an event that
 // results in a proxy config update
 type proxyUpdateEvent struct {
-	msg   events.PubSubMessage
-	topic string
+	msg         events.PubSubMessage
+	topic       string
+	creationPod *corev1.Pod
+	deletionPod *corev1.Pod
 }
 
 // ingressUpdateEvent specifies the PubSubMessage and topic for an event that

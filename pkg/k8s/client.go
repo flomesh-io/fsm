@@ -493,37 +493,54 @@ func GetTargetPortFromEndpoints(endpointName string, endpoints corev1.Endpoints)
 }
 
 func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
+	var pod *corev1.Pod
 	proxyUUID, svcAccount := proxy.GetUUID().String(), proxy.GetIdentity().ToK8sServiceAccount()
 	log.Trace().Msgf("Looking for pod with label %q=%q", constants.SidecarUniqueIDLabelName, proxyUUID)
-	podList := c.ListPods()
-	var pods []v1.Pod
 
-	for _, pod := range podList {
-		if uuid, labelFound := pod.Labels[constants.SidecarUniqueIDLabelName]; labelFound && uuid == proxyUUID {
-			pods = append(pods, *pod)
+	if len(proxy.GetPodNamespace()) > 0 && len(proxy.GetPodName()) > 0 {
+		podIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyPod, fmt.Sprintf("%s/%s", proxy.GetPodNamespace(), proxy.GetPodName()))
+		if podIf == nil || !exists || err != nil {
+			return nil, errDidNotFindPodForUUID
 		}
+		pod = podIf.(*corev1.Pod)
+		if uuid, labelFound := pod.Labels[constants.SidecarUniqueIDLabelName]; !labelFound || uuid != proxyUUID {
+			log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+				Msgf("Did not find Pod with label %s = %s in namespace %s",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errDidNotFindPodForUUID
+		}
+	} else {
+		var pods []v1.Pod
+		podList := c.ListPods()
+
+		for _, pod := range podList {
+			if uuid, labelFound := pod.Labels[constants.SidecarUniqueIDLabelName]; labelFound && uuid == proxyUUID {
+				pods = append(pods, *pod)
+			}
+		}
+
+		if len(pods) == 0 {
+			log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+				Msgf("Did not find Pod with label %s = %s in namespace %s",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errDidNotFindPodForUUID
+		}
+
+		// Each pod is assigned a unique UUID at the time of sidecar injection.
+		// The certificate's CommonName encodes this UUID, and we lookup the pod
+		// whose label matches this UUID.
+		// Only 1 pod must match the UUID encoded in the given certificate. If multiple
+		// pods match, it is an error.
+		if len(pods) > 1 {
+			log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrPodBelongsToMultipleServices)).
+				Msgf("Found more than one pod with label %s = %s in namespace %s. There can be only one!",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errMoreThanOnePodForUUID
+		}
+
+		pod = &pods[0]
 	}
 
-	if len(pods) == 0 {
-		log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
-			Msgf("Did not find Pod with label %s = %s in namespace %s",
-				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
-		return nil, errDidNotFindPodForUUID
-	}
-
-	// Each pod is assigned a unique UUID at the time of sidecar injection.
-	// The certificate's CommonName encodes this UUID, and we lookup the pod
-	// whose label matches this UUID.
-	// Only 1 pod must match the UUID encoded in the given certificate. If multiple
-	// pods match, it is an error.
-	if len(pods) > 1 {
-		log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrPodBelongsToMultipleServices)).
-			Msgf("Found more than one pod with label %s = %s in namespace %s. There can be only one!",
-				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
-		return nil, errMoreThanOnePodForUUID
-	}
-
-	pod := pods[0]
 	log.Trace().Msgf("Found Pod with UID=%s for proxyID %s", pod.ObjectMeta.UID, proxyUUID)
 
 	if pod.Namespace != svcAccount.Namespace {
@@ -543,41 +560,58 @@ func (c *client) GetPodForProxy(proxy models.Proxy) (*v1.Pod, error) {
 		return nil, errServiceAccountDoesNotMatchProxy
 	}
 
-	return &pod, nil
+	return pod, nil
 }
 
 func (c *client) GetVmForProxy(proxy models.Proxy) (*machinev1alpha1.VirtualMachine, error) {
+	var vm *machinev1alpha1.VirtualMachine
 	proxyUUID, svcAccount := proxy.GetUUID().String(), proxy.GetIdentity().ToK8sServiceAccount()
 	log.Trace().Msgf("Looking for VM with label %q=%q", constants.SidecarUniqueIDLabelName, proxyUUID)
-	vmList := c.ListVms()
-	var vms []machinev1alpha1.VirtualMachine
 
-	for _, vm := range vmList {
-		if uuid, labelFound := vm.Labels[constants.SidecarUniqueIDLabelName]; labelFound && uuid == proxyUUID {
-			vms = append(vms, *vm)
+	if len(proxy.GetPodNamespace()) > 0 && len(proxy.GetPodName()) > 0 {
+		vmIf, exists, err := c.informers.GetByKey(fsminformers.InformerKeyVirtualMachine, fmt.Sprintf("%s/%s", proxy.GetPodNamespace(), proxy.GetPodName()))
+		if vmIf == nil || !exists || err != nil {
+			return nil, errDidNotFindPodForUUID
 		}
+		vm = vmIf.(*machinev1alpha1.VirtualMachine)
+		if uuid, labelFound := vm.Labels[constants.SidecarUniqueIDLabelName]; !labelFound || uuid != proxyUUID {
+			log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+				Msgf("Did not find VM with label %s = %s in namespace %s",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errDidNotFindPodForUUID
+		}
+	} else {
+		vmList := c.ListVms()
+		var vms []machinev1alpha1.VirtualMachine
+
+		for _, vm := range vmList {
+			if uuid, labelFound := vm.Labels[constants.SidecarUniqueIDLabelName]; labelFound && uuid == proxyUUID {
+				vms = append(vms, *vm)
+			}
+		}
+
+		if len(vms) == 0 {
+			log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
+				Msgf("Did not find VM with label %s = %s in namespace %s",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errDidNotFindPodForUUID
+		}
+
+		// Each VM is assigned a unique UUID at the time of sidecar injection.
+		// The certificate's CommonName encodes this UUID, and we lookup the vm
+		// whose label matches this UUID.
+		// Only 1 vm must match the UUID encoded in the given certificate. If multiple
+		// vms match, it is an error.
+		if len(vms) > 1 {
+			log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrPodBelongsToMultipleServices)).
+				Msgf("Found more than one vm with label %s = %s in namespace %s. There can be only one!",
+					constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
+			return nil, errMoreThanOnePodForUUID
+		}
+
+		vm = &vms[0]
 	}
 
-	if len(vms) == 0 {
-		log.Info().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingPodFromCert)).
-			Msgf("Did not find VM with label %s = %s in namespace %s",
-				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
-		return nil, errDidNotFindPodForUUID
-	}
-
-	// Each VM is assigned a unique UUID at the time of sidecar injection.
-	// The certificate's CommonName encodes this UUID, and we lookup the vm
-	// whose label matches this UUID.
-	// Only 1 vm must match the UUID encoded in the given certificate. If multiple
-	// vms match, it is an error.
-	if len(vms) > 1 {
-		log.Error().Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrPodBelongsToMultipleServices)).
-			Msgf("Found more than one vm with label %s = %s in namespace %s. There can be only one!",
-				constants.SidecarUniqueIDLabelName, proxyUUID, svcAccount.Namespace)
-		return nil, errMoreThanOnePodForUUID
-	}
-
-	vm := vms[0]
 	log.Trace().Msgf("Found VM with UID=%s for proxyID %s", vm.ObjectMeta.UID, proxyUUID)
 
 	if vm.Namespace != svcAccount.Namespace {
@@ -597,7 +631,7 @@ func (c *client) GetVmForProxy(proxy models.Proxy) (*machinev1alpha1.VirtualMach
 		return nil, errServiceAccountDoesNotMatchProxy
 	}
 
-	return &vm, nil
+	return vm, nil
 }
 
 // GetTargetPortForServicePort returns the TargetPort corresponding to the Port used by clients

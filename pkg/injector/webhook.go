@@ -327,7 +327,7 @@ func isAnnotatedForInjection(annotations map[string]string, objectKind string, o
 	case "disabled", "no", "false":
 		enabled = false
 	default:
-		err = fmt.Errorf("Invalid annotation value for key %q: %s", constants.SidecarInjectionAnnotation, inject)
+		err = fmt.Errorf("invalid annotation value for key %q: %s", constants.SidecarInjectionAnnotation, inject)
 	}
 	return
 }

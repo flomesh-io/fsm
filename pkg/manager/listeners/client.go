@@ -112,6 +112,16 @@ func (c *client) GetLocalDNSProxySecondaryUpstream() string {
 	panic("implement me")
 }
 
+func (c *client) IsHoldApplicationUntilProxyStarts() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) IsGracefulExitUntilDownstreamEnds() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) GenerateIPv6BasedOnIPv4() bool {
 	//TODO implement me
 	panic("implement me")

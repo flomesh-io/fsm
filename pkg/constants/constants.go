@@ -215,6 +215,14 @@ const (
 	// SidecarInjectionAnnotation is the annotation used for sidecar injection
 	SidecarInjectionAnnotation = "flomesh.io/sidecar-injection"
 
+	// HoldApplicationUntilProxyStartsAnnotation is the annotation to delay application startup
+	// until the pod proxy is ready to accept traffic, mitigating some startup race conditions.
+	HoldApplicationUntilProxyStartsAnnotation = "flomesh.io/hold-application-until-proxy-starts"
+
+	// GracefulExitUntilDownstreamEndsAnnotation is the annotation to delays the pod proxy exit
+	// until active downstream connections end.
+	GracefulExitUntilDownstreamEndsAnnotation = "flomesh.io/graceful-exit-until-downstream-ends"
+
 	// SidecarImageAnnotation is the annotation used for sidecar injection
 	SidecarImageAnnotation = "flomesh.io/sidecar-image"
 

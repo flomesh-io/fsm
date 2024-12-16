@@ -76,6 +76,8 @@ func NewBroker(stopCh <-chan struct{}) *Broker {
 	b := &Broker{
 		queue:                 workqueue.NewRateLimitingQueue(rateLimiter),
 		proxyUpdatePubSub:     pubsub.New(1024 * 10),
+		proxyCreationCh:       make(chan *corev1.Pod),
+		proxyDeletionCh:       make(chan *corev1.Pod),
 		proxyUpdateCh:         make(chan proxyUpdateEvent),
 		ingressUpdatePubSub:   pubsub.New(1024 * 10),
 		ingressUpdateCh:       make(chan ingressUpdateEvent),
@@ -121,6 +123,14 @@ func (b *Broker) queueLenMetric(stop <-chan struct{}, interval time.Duration) {
 // GetProxyUpdatePubSub returns the PubSub instance corresponding to proxy update events
 func (b *Broker) GetProxyUpdatePubSub() *pubsub.PubSub {
 	return b.proxyUpdatePubSub
+}
+
+func (b *Broker) GetProxyCreationChan() chan *corev1.Pod {
+	return b.proxyCreationCh
+}
+
+func (b *Broker) GetProxyDeletionChan() chan *corev1.Pod {
+	return b.proxyDeletionCh
 }
 
 // GetIngressUpdatePubSub returns the PubSub instance corresponding to ingress update events
@@ -866,6 +876,12 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 	// Update proxies if applicable
 	if event := getProxyUpdateEvent(msg); event != nil {
 		log.Trace().Msgf("Msg kind %s will update proxies", msg.Kind)
+		if event.creationPod != nil {
+			b.proxyCreationCh <- event.creationPod
+		}
+		if event.deletionPod != nil {
+			b.proxyDeletionCh <- event.deletionPod
+		}
 		atomic.AddUint64(&b.totalQProxyEventCount, 1)
 		if event.topic != announcements.ProxyUpdate.String() {
 			// This is not a broadcast event, so it cannot be coalesced with
@@ -1201,21 +1217,24 @@ func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 			}
 		}
 	}
-	if okNewCast {
+	if okNewCast && !okPreCast {
 		if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
 			return &proxyUpdateEvent{
-				msg:   msg,
-				topic: announcements.ProxyUpdate.String(),
+				msg:         msg,
+				topic:       announcements.ProxyUpdate.String(),
+				creationPod: newPod,
 			}
 		}
 	}
-	if okPreCast {
-		if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
-			return &proxyUpdateEvent{
-				msg:   msg,
-				topic: announcements.ProxyUpdate.String(),
-			}
+	if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
+		event := &proxyUpdateEvent{
+			msg:   msg,
+			topic: announcements.ProxyUpdate.String(),
 		}
+		if okNewCast && newPod.DeletionTimestamp != nil {
+			event.deletionPod = newPod
+		}
+		return event
 	}
 	return nil
 }
