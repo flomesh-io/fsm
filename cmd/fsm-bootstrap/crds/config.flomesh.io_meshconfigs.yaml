@@ -1969,6 +1969,12 @@ spec:
                     description: EnablePrivilegedInitContainer defines a boolean indicating
                       whether the init container for a meshed pod should run as privileged.
                     type: boolean
+                  gracefulExitUntilDownstreamEnds:
+                    default: true
+                    description: |-
+                      GracefulExitUntilDownstreamEnds feature delays the pod proxy exit until active downstream connections end.
+                      Default value is 'true'.
+                    type: boolean
                   healthcheckResources:
                     description: HealthcheckResources defines the compute resources
                       for init container.

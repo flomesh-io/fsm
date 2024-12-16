@@ -159,6 +159,12 @@ type SidecarSpec struct {
 	// +optional
 	HoldApplicationUntilProxyStarts bool `json:"holdApplicationUntilProxyStarts"`
 
+	// GracefulExitUntilDownstreamEnds feature delays the pod proxy exit until active downstream connections end.
+	// Default value is 'true'.
+	// +kubebuilder:default=true
+	// +optional
+	GracefulExitUntilDownstreamEnds bool `json:"gracefulExitUntilDownstreamEnds"`
+
 	// LogLevel defines the logging level for the sidecar's logs. Non developers should generally never set this value. In production environments the LogLevel should be set to error.
 	LogLevel string `json:"logLevel,omitempty"`
 

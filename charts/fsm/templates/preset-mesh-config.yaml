@@ -26,6 +26,7 @@ data:
         "configResyncInterval": {{.Values.fsm.configResyncInterval | mustToJson}},
         "compressConfig": {{.Values.fsm.sidecar.compressConfig | mustToJson}},
         "holdApplicationUntilProxyStarts": {{.Values.fsm.sidecar.holdApplicationUntilProxyStarts | mustToJson}},
+        "gracefulExitUntilDownstreamEnds": {{.Values.fsm.sidecar.gracefulExitUntilDownstreamEnds | mustToJson}},
         "sidecarImage": "{{ include "sidecar.image" .}}",
         "sidecarDisabledMTLS": {{.Values.fsm.sidecar.sidecarDisabledMTLS | mustToJson }},
         "sidecarTimeout": {{.Values.fsm.sidecar.sidecarTimeout | mustToJson}},

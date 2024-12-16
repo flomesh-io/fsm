@@ -817,6 +817,7 @@
                     "sidecarDisabledMTLS",
                     "compressConfig",
                     "holdApplicationUntilProxyStarts",
+                    "gracefulExitUntilDownstreamEnds",
                     "sidecarLogLevel",
                     "sidecarTimeout"
                   ],
@@ -900,6 +901,15 @@
                       "type": "boolean",
                       "title": "The holdApplicationUntilProxyStarts schema",
                       "description": "This feature delays application startup until the pod proxy is ready to accept traffic, mitigating some startup race conditions.",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "gracefulExitUntilDownstreamEnds": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/gracefulExitUntilDownstreamEnds",
+                      "type": "boolean",
+                      "title": "The gracefulExitUntilDownstreamEnds schema",
+                      "description": "This feature delays the pod proxy exit until active downstream connections end.",
                       "examples": [
                         false
                       ]

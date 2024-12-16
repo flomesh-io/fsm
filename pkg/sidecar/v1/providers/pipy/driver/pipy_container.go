@@ -207,9 +207,11 @@ func getPipySidecarContainerSpec(
 	}
 
 	holdApp := isAnnotatedForHoldApplication(cfg, nsAnnotations, podAnnotations)
-	if holdApp {
-		sidecarContainer.Lifecycle = &corev1.Lifecycle{
-			PostStart: &corev1.LifecycleHandler{
+	holdProxy := isAnnotatedForHoldProxy(cfg, nsAnnotations, podAnnotations)
+	if holdApp || holdProxy {
+		lifecycle := new(corev1.Lifecycle)
+		if holdApp {
+			lifecycle.PostStart = &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
 					Command: []string{
 						`sh`,
@@ -217,8 +219,20 @@ func getPipySidecarContainerSpec(
 						`until [ $(curl -s -o /dev/null -I -w "%{http_code}" http://127.0.0.1:15000/config_dump) -eq 200 ]; do sleep 5; done;`,
 					},
 				},
-			},
+			}
 		}
+		if holdProxy {
+			lifecycle.PreStop = &corev1.LifecycleHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						`sh`,
+						`-c`,
+						`kill -SIGTERM 1`,
+					},
+				},
+			}
+		}
+		sidecarContainer.Lifecycle = lifecycle
 	}
 
 	return sidecarContainer, holdApp
@@ -384,6 +398,26 @@ func isAnnotatedForHoldApplication(cfg configurator.Configurator, nsAnnotations,
 		enabled = false
 	default:
 		log.Error().Msgf("invalid annotation value for key %q: %s", constants.HoldApplicationUntilProxyStartsAnnotation, holdApp)
+	}
+	return
+}
+
+func isAnnotatedForHoldProxy(cfg configurator.Configurator, nsAnnotations, podAnnotations map[string]string) (enabled bool) {
+	holdProxy, exists := podAnnotations[constants.GracefulExitUntilDownstreamEndsAnnotation]
+	if !exists {
+		holdProxy, exists = nsAnnotations[constants.GracefulExitUntilDownstreamEndsAnnotation]
+		if !exists {
+			return cfg.IsGracefulExitUntilDownstreamEnds()
+		}
+	}
+
+	switch strings.ToLower(holdProxy) {
+	case "enabled", "yes", "true":
+		enabled = true
+	case "disabled", "no", "false":
+		enabled = false
+	default:
+		log.Error().Msgf("invalid annotation value for key %q: %s", constants.GracefulExitUntilDownstreamEndsAnnotation, holdProxy)
 	}
 	return
 }

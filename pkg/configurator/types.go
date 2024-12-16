@@ -69,6 +69,9 @@ type Configurator interface {
 	// until the pod proxy is ready to accept traffic
 	IsHoldApplicationUntilProxyStarts() bool
 
+	// IsGracefulExitUntilDownstreamEnds returns whether delays the pod proxy exit until active downstream connections end
+	IsGracefulExitUntilDownstreamEnds() bool
+
 	// GenerateIPv6BasedOnIPv4 returns whether auto generate IPv6 based on IPv4
 	GenerateIPv6BasedOnIPv4() bool
 
