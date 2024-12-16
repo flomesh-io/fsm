@@ -26,10 +26,15 @@ type Proxy struct {
 
 	Identity identity.ServiceIdentity
 
+	podName      string
+	podNamespace string
+
 	net.Addr
 
 	// The time this Proxy connected to the FSM control plane
 	connectedAt time.Time
+
+	Deletion bool
 
 	// kind is the proxy's kind (ex. sidecar, gateway)
 	kind models.ProxyKind
@@ -134,8 +139,8 @@ func (p *Proxy) MetadataString() string {
 	return fmt.Sprintf("UID=%s, Namespace=%s, Name=%s, ServiceAccount=%s", p.Metadata.UID, p.Metadata.Namespace, p.Metadata.Name, p.Metadata.ServiceAccount.Name)
 }
 
-// GetName returns a unique name for this proxy based on the identity and uuid.
-func (p *Proxy) GetName() string {
+// GetUniqueName returns a unique name for this proxy based on the identity and uuid.
+func (p *Proxy) GetUniqueName() string {
 	return fmt.Sprintf("%s:%s", p.Identity.String(), p.UUID.String())
 }
 
@@ -147,6 +152,14 @@ func (p *Proxy) GetUUID() uuid.UUID {
 // GetIdentity returns ServiceIdentity.
 func (p *Proxy) GetIdentity() identity.ServiceIdentity {
 	return p.Identity
+}
+
+func (p *Proxy) GetPodName() string {
+	return p.podName
+}
+
+func (p *Proxy) GetPodNamespace() string {
+	return p.podNamespace
 }
 
 // GetConnectedAt returns the timestamp of when the given proxy connected to the control plane.
@@ -190,20 +203,27 @@ var (
 )
 
 // NewProxy creates a new instance of an Sidecar proxy connected to the servers.
-func NewProxy(kind models.ProxyKind, uuid uuid.UUID, svcIdentity identity.ServiceIdentity, vm bool, ip net.Addr) *Proxy {
+func NewProxy(kind models.ProxyKind,
+	uuid uuid.UUID,
+	podName, podNamespace string,
+	svcIdentity identity.ServiceIdentity,
+	vm bool,
+	ip net.Addr) *Proxy {
 	proxyLock.Lock()
 	proxyID++
 	id := proxyID
 	defer proxyLock.Unlock()
 	return &Proxy{
 		// Identity is of the form <name>.<namespace>.cluster.local
-		Identity:    svcIdentity,
-		UUID:        uuid,
-		Addr:        ip,
-		connectedAt: time.Now(),
-		kind:        kind,
-		Mutex:       new(sync.RWMutex),
-		ID:          id,
-		VM:          vm,
+		Identity:     svcIdentity,
+		UUID:         uuid,
+		podName:      podName,
+		podNamespace: podNamespace,
+		Addr:         ip,
+		connectedAt:  time.Now(),
+		kind:         kind,
+		Mutex:        new(sync.RWMutex),
+		ID:           id,
+		VM:           vm,
 	}
 }

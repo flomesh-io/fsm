@@ -56,6 +56,9 @@ func (job *PipyConfGeneratorJob) Run() {
 
 	s := job.repoServer
 	proxy := job.proxy
+	if proxy.Deletion {
+		return
+	}
 
 	atomic.AddInt32(&proxy.Backlogs, 1)
 	proxy.Mutex.Lock()
@@ -71,11 +74,12 @@ func (job *PipyConfGeneratorJob) Run() {
 	cataloger := s.catalog
 	if isolationCidrs := cataloger.GetIsolationCidrs(); len(isolationCidrs) > 0 {
 		isolation := false
-		addr := proxy.GetAddr()
-		for _, isolationCidr := range isolationCidrs {
-			if isolationCidr.Has(net.ParseIP(addr)) {
-				isolation = true
-				break
+		if addr := proxy.GetAddr(); len(addr) > 0 {
+			for _, isolationCidr := range isolationCidrs {
+				if isolationCidr.Has(net.ParseIP(addr)) {
+					isolation = true
+					break
+				}
 			}
 		}
 		if isolation {
@@ -85,8 +89,8 @@ func (job *PipyConfGeneratorJob) Run() {
 
 	proxyServices, err := s.proxyRegistry.ListProxyServices(proxy)
 	if err != nil {
-		log.Warn().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingServiceList)).
-			Msgf("Error looking up services for Sidecar with name=%s", proxy.GetName())
+		log.Debug().Err(err).Str(errcode.Kind, errcode.GetErrCodeWithMetric(errcode.ErrFetchingServiceList)).
+			Msgf("Error looking up services for Sidecar with name=%s", proxy.GetUniqueName())
 		return
 	}
 
@@ -610,5 +614,5 @@ func (job *PipyConfGeneratorJob) publishSidecarConf(repoClient *client2.PipyRepo
 
 // JobName implementation for this job, for logging purposes
 func (job *PipyConfGeneratorJob) JobName() string {
-	return fmt.Sprintf("pipyJob-%s", job.proxy.GetName())
+	return fmt.Sprintf("pipyJob-%s", job.proxy.GetUniqueName())
 }

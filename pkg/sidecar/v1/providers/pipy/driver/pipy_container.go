@@ -54,7 +54,13 @@ func getPlatformSpecificSpecComponents(injCtx *driver.InjectorContext, cfg confi
 	return
 }
 
-func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg configurator.Configurator, cnPrefix string, originalHealthProbes models.HealthProbes, podOS string) corev1.Container {
+func getPipySidecarContainerSpec(
+	injCtx *driver.InjectorContext,
+	pod *corev1.Pod,
+	cfg configurator.Configurator,
+	cnPrefix string,
+	originalHealthProbes models.HealthProbes,
+	podOS string) (corev1.Container, bool) {
 	securityContext, containerImage := getPlatformSpecificSpecComponents(injCtx, cfg, pod)
 
 	podControllerKind := ""
@@ -90,6 +96,12 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 			constants.ProtocolHTTP, repoServerIPAddr, cfg.GetProxyServerPort(), cnPrefix)
 	}
 
+	var nsAnnotations, podAnnotations map[string]string
+	podAnnotations = pod.GetAnnotations()
+	if ns, err := injCtx.KubeClient.CoreV1().Namespaces().Get(context.Background(), injCtx.PodNamespace, metav1.GetOptions{}); err == nil {
+		nsAnnotations = ns.GetAnnotations()
+	}
+
 	sidecarContainer := corev1.Container{
 		Name:            constants.SidecarContainerName,
 		Image:           containerImage,
@@ -101,7 +113,7 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 			ReadOnly:  true,
 			MountPath: bootstrap.PipyProxyConfigPath,
 		}},
-		Resources: getPipySidecarResource(injCtx, pod, cfg),
+		Resources: getPipySidecarResource(cfg, nsAnnotations, podAnnotations),
 		Args: []string{
 			"pipy",
 			fmt.Sprintf("--log-level=%s", injCtx.Configurator.GetSidecarLogLevel()),
@@ -194,7 +206,22 @@ func getPipySidecarContainerSpec(injCtx *driver.InjectorContext, pod *corev1.Pod
 		}
 	}
 
-	return sidecarContainer
+	holdApp := isAnnotatedForHoldApplication(cfg, nsAnnotations, podAnnotations)
+	if holdApp {
+		sidecarContainer.Lifecycle = &corev1.Lifecycle{
+			PostStart: &corev1.LifecycleHandler{
+				Exec: &corev1.ExecAction{
+					Command: []string{
+						`sh`,
+						`-c`,
+						`until [ $(curl -s -o /dev/null -I -w "%{http_code}" http://127.0.0.1:15000/config_dump) -eq 200 ]; do sleep 5; done;`,
+					},
+				},
+			},
+		}
+	}
+
+	return sidecarContainer, holdApp
 }
 
 func getPipyContainerPorts(originalHealthProbes models.HealthProbes) []corev1.ContainerPort {
@@ -262,7 +289,7 @@ func getFSMControllerSvc(kubeClient kubernetes.Interface, fsmNamespace string) (
 	return svc, nil
 }
 
-func getPipySidecarResource(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg configurator.Configurator) corev1.ResourceRequirements {
+func getPipySidecarResource(cfg configurator.Configurator, nsAnnotations, podAnnotations map[string]string) corev1.ResourceRequirements {
 	cfgResources := cfg.GetProxyResources()
 	resources := corev1.ResourceRequirements{}
 	if cfgResources.Limits != nil {
@@ -278,15 +305,7 @@ func getPipySidecarResource(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg
 		}
 	}
 
-	var nsAnnotations map[string]string
-	var podAnnotations map[string]string
 	resourceNames := []corev1.ResourceName{corev1.ResourceCPU, corev1.ResourceMemory, corev1.ResourceStorage, corev1.ResourceEphemeralStorage}
-
-	podAnnotations = pod.GetAnnotations()
-	if ns, err := injCtx.KubeClient.CoreV1().Namespaces().Get(context.Background(), injCtx.PodNamespace, metav1.GetOptions{}); err == nil {
-		nsAnnotations = ns.GetAnnotations()
-	}
-
 	for _, resourceName := range resourceNames {
 		podResourceLimitsExist := false
 		resourceLimitsAnnotation := fmt.Sprintf("%s-%s", constants.SidecarResourceLimitsAnnotationPrefix, resourceName)
@@ -347,4 +366,24 @@ func getPipySidecarResource(injCtx *driver.InjectorContext, pod *corev1.Pod, cfg
 		}
 	}
 	return resources
+}
+
+func isAnnotatedForHoldApplication(cfg configurator.Configurator, nsAnnotations, podAnnotations map[string]string) (enabled bool) {
+	holdApp, exists := podAnnotations[constants.HoldApplicationUntilProxyStartsAnnotation]
+	if !exists {
+		holdApp, exists = nsAnnotations[constants.HoldApplicationUntilProxyStartsAnnotation]
+		if !exists {
+			return cfg.IsHoldApplicationUntilProxyStarts()
+		}
+	}
+
+	switch strings.ToLower(holdApp) {
+	case "enabled", "yes", "true":
+		enabled = true
+	case "disabled", "no", "false":
+		enabled = false
+	default:
+		log.Error().Msgf("invalid annotation value for key %q: %s", constants.HoldApplicationUntilProxyStartsAnnotation, holdApp)
+	}
+	return
 }

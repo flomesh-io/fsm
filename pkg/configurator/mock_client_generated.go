@@ -822,6 +822,20 @@ func (mr *MockConfiguratorMockRecorder) IsGatewayAPIEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsGatewayAPIEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsGatewayAPIEnabled))
 }
 
+// IsHoldApplicationUntilProxyStarts mocks base method.
+func (m *MockConfigurator) IsHoldApplicationUntilProxyStarts() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsHoldApplicationUntilProxyStarts")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsHoldApplicationUntilProxyStarts indicates an expected call of IsHoldApplicationUntilProxyStarts.
+func (mr *MockConfiguratorMockRecorder) IsHoldApplicationUntilProxyStarts() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHoldApplicationUntilProxyStarts", reflect.TypeOf((*MockConfigurator)(nil).IsHoldApplicationUntilProxyStarts))
+}
+
 // IsIngressEnabled mocks base method.
 func (m *MockConfigurator) IsIngressEnabled() bool {
 	m.ctrl.T.Helper()

@@ -1,8 +1,11 @@
 package repo
 
 import (
+	"errors"
 	"strings"
 	"sync"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/announcements"
 	"github.com/flomesh-io/fsm/pkg/certificate"
@@ -11,10 +14,10 @@ import (
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s/events"
 	"github.com/flomesh-io/fsm/pkg/messaging"
-	pipy2 "github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy"
 )
 
-func (s *Server) informTrafficPolicies(proxyPtr **pipy2.Proxy, wg *sync.WaitGroup, callback func(**pipy2.Proxy)) error {
+func (s *Server) informTrafficPolicies(proxyPtr **pipy.Proxy, wg *sync.WaitGroup, callback func(**pipy.Proxy)) error {
 	// If maxDataPlaneConnections is enabled i.e. not 0, then check that the number of Sidecar connections is less than maxDataPlaneConnections
 	if s.cfg.GetMaxDataPlaneConnections() != 0 && s.proxyRegistry.GetConnectedProxyCount() >= s.cfg.GetMaxDataPlaneConnections() {
 		return errTooManyConnections
@@ -22,13 +25,13 @@ func (s *Server) informTrafficPolicies(proxyPtr **pipy2.Proxy, wg *sync.WaitGrou
 
 	proxy := *proxyPtr
 	if proxy.VM {
-		if initError := s.recordVmMetadata(proxy); initError == errServiceAccountMismatch {
+		if initError := s.recordVmMetadata(proxy); errors.Is(initError, errServiceAccountMismatch) {
 			// Service Account mismatch
 			log.Error().Err(initError).Str("proxy", proxy.String()).Msg("Mismatched service account for proxy")
 			return initError
 		}
 	} else {
-		if initError := s.recordPodMetadata(proxy); initError == errServiceAccountMismatch {
+		if initError := s.recordPodMetadata(proxy, nil); errors.Is(initError, errServiceAccountMismatch) {
 			// Service Account mismatch
 			log.Error().Err(initError).Str("proxy", proxy.String()).Msg("Mismatched service account for proxy")
 			return initError
@@ -93,7 +96,7 @@ func (s *Server) informTrafficPolicies(proxyPtr **pipy2.Proxy, wg *sync.WaitGrou
 // isCNforProxy returns true if the given CN for the workload certificate matches the given proxy's identity.
 // Proxy identity corresponds to the k8s service account, while the workload certificate is of the form
 // <svc-account>.<namespace>.<trust-domain>.
-func isCNforProxy(proxy *pipy2.Proxy, cn certificate.CommonName) bool {
+func isCNforProxy(proxy *pipy.Proxy, cn certificate.CommonName) bool {
 	// Workload certificate CN is of the form <svc-account>.<namespace>.<trust-domain>
 	chunks := strings.Split(cn.String(), constants.DomainDelimiter)
 	if len(chunks) < 3 {
@@ -106,12 +109,14 @@ func isCNforProxy(proxy *pipy2.Proxy, cn certificate.CommonName) bool {
 
 // recordPodMetadata records pod metadata and verifies the certificate issued for this pod
 // is for the same service account as seen on the pod's service account
-func (s *Server) recordPodMetadata(p *pipy2.Proxy) error {
+func (s *Server) recordPodMetadata(p *pipy.Proxy, pod *v1.Pod) error {
+	var err error
 	if p.Metadata == nil {
-		pod, err := s.kubeController.GetPodForProxy(p)
-		if err != nil {
-			log.Warn().Str("proxy", p.String()).Msg("Could not find pod for connecting proxy. No metadata was recorded.")
-			return nil
+		if pod == nil {
+			if pod, err = s.kubeController.GetPodForProxy(p); err != nil {
+				log.Warn().Str("proxy", p.String()).Msg("Could not find pod for connecting proxy. No metadata was recorded.")
+				return nil
+			}
 		}
 
 		workloadKind := ""
@@ -124,7 +129,7 @@ func (s *Server) recordPodMetadata(p *pipy2.Proxy) error {
 			}
 		}
 
-		p.Metadata = &pipy2.ProxyMetadata{
+		p.Metadata = &pipy.ProxyMetadata{
 			UID:       string(pod.UID),
 			Name:      pod.Name,
 			Namespace: pod.Namespace,
@@ -148,9 +153,17 @@ func (s *Server) recordPodMetadata(p *pipy2.Proxy) error {
 				p.Metadata.StartupProbes = append(p.Metadata.StartupProbes, pod.Spec.Containers[idx].StartupProbe)
 			}
 		}
+	}
 
+	if p.Addr == nil {
+		if pod == nil {
+			if pod, err = s.kubeController.GetPodForProxy(p); err != nil {
+				log.Warn().Str("proxy", p.String()).Msg("Could not find pod for connecting proxy. No metadata was recorded.")
+				return nil
+			}
+		}
 		if len(pod.Status.PodIP) > 0 {
-			p.Addr = pipy2.NewNetAddress(pod.Status.PodIP)
+			p.Addr = pipy.NewNetAddress(pod.Status.PodIP)
 		}
 	}
 
@@ -166,7 +179,7 @@ func (s *Server) recordPodMetadata(p *pipy2.Proxy) error {
 
 // recordVmMetadata records vm metadata and verifies the certificate issued for this vm
 // is for the same service account as seen on the vm's service account
-func (s *Server) recordVmMetadata(p *pipy2.Proxy) error {
+func (s *Server) recordVmMetadata(p *pipy.Proxy) error {
 	if p.Metadata == nil {
 		vm, err := s.kubeController.GetVmForProxy(p)
 		if err != nil {
@@ -184,7 +197,7 @@ func (s *Server) recordVmMetadata(p *pipy2.Proxy) error {
 			}
 		}
 
-		p.Metadata = &pipy2.ProxyMetadata{
+		p.Metadata = &pipy.ProxyMetadata{
 			UID:       string(vm.UID),
 			Name:      vm.Name,
 			Namespace: vm.Namespace,
@@ -208,7 +221,7 @@ func (s *Server) recordVmMetadata(p *pipy2.Proxy) error {
 		}
 
 		if len(vm.Spec.MachineIP) > 0 {
-			p.Addr = pipy2.NewNetAddress(vm.Spec.MachineIP)
+			p.Addr = pipy.NewNetAddress(vm.Spec.MachineIP)
 		}
 	}
 

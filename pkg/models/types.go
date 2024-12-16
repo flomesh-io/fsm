@@ -27,5 +27,7 @@ const (
 type Proxy interface {
 	GetUUID() uuid.UUID
 	GetIdentity() identity.ServiceIdentity
+	GetPodName() string
+	GetPodNamespace() string
 	GetConnectedAt() time.Time
 }

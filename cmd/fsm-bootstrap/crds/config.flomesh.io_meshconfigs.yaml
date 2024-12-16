@@ -2029,6 +2029,13 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
                     type: object
+                  holdApplicationUntilProxyStarts:
+                    default: true
+                    description: |-
+                      HoldApplicationUntilProxyStarts feature delays application startup until the pod proxy
+                      is ready to accept traffic, mitigating some startup race conditions.
+                      Default value is 'true'.
+                    type: boolean
                   initResources:
                     description: InitResources defines the compute resources for init
                       container.

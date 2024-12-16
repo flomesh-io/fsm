@@ -152,6 +152,13 @@ type SidecarSpec struct {
 	// +optional
 	CompressConfig bool `json:"compressConfig"`
 
+	// HoldApplicationUntilProxyStarts feature delays application startup until the pod proxy
+	// is ready to accept traffic, mitigating some startup race conditions.
+	// Default value is 'true'.
+	// +kubebuilder:default=true
+	// +optional
+	HoldApplicationUntilProxyStarts bool `json:"holdApplicationUntilProxyStarts"`
+
 	// LogLevel defines the logging level for the sidecar's logs. Non developers should generally never set this value. In production environments the LogLevel should be set to error.
 	LogLevel string `json:"logLevel,omitempty"`
 

@@ -18,6 +18,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/models"
 	"github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy"
 	"github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy/registry"
+	"github.com/flomesh-io/fsm/pkg/workerpool"
 )
 
 // Routine which fulfills listening to proxy broadcasts
@@ -26,6 +27,10 @@ func (s *Server) broadcastListener() {
 	proxyUpdatePubSub := s.msgBroker.GetProxyUpdatePubSub()
 	proxyUpdateChan := proxyUpdatePubSub.Sub(announcements.ProxyUpdate.String())
 	defer s.msgBroker.Unsub(proxyUpdatePubSub, proxyUpdateChan)
+
+	proxyCreationChan := s.msgBroker.GetProxyCreationChan()
+	proxyDeletionChan := s.msgBroker.GetProxyDeletionChan()
+	proxyWorkQueues := workerpool.NewWorkerPool(64)
 
 	timerDuration := time.Second * 20
 
@@ -47,6 +52,14 @@ func (s *Server) broadcastListener() {
 
 	for {
 		select {
+		case creationPod, ok := <-proxyCreationChan:
+			if ok {
+				s.fireNewConnectProxy(creationPod, proxyWorkQueues)
+			}
+		case deletionPod, ok := <-proxyDeletionChan:
+			if ok {
+				s.fireTermConnectProxy(deletionPod)
+			}
 		case <-proxyUpdateChan:
 			timerLock.Lock()
 			if !reconfirm {
@@ -61,60 +74,10 @@ func (s *Server) broadcastListener() {
 			blockChan = false
 			timerDuration = time.Second * 10
 		case <-slidingTimer.C:
-			connectedProxies := make(map[string]*pipy.Proxy)
-			disconnectedProxies := make(map[string]*pipy.Proxy)
-			proxies := s.fireExistProxies()
-			metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
-
-			missing := false
-
-			for _, proxy := range proxies {
-				if proxy.Metadata == nil {
-					if proxy.VM {
-						if err := s.recordVmMetadata(proxy); err != nil {
-							missing = true
-							continue
-						}
-					} else {
-						if err := s.recordPodMetadata(proxy); err != nil {
-							missing = true
-							continue
-						}
-					}
-				}
-				if proxy.Metadata == nil || proxy.Addr == nil || len(proxy.GetAddr()) == 0 {
-					missing = true
-					continue
-				}
-				connectedProxies[proxy.UUID.String()] = proxy
-			}
-
-			s.proxyRegistry.RangeConnectedProxy(func(key, value interface{}) bool {
-				proxyUUID := key.(string)
-				if _, exists := connectedProxies[proxyUUID]; !exists {
-					disconnectedProxies[proxyUUID] = value.(*pipy.Proxy)
-				}
-				return true
-			})
-
-			if len(connectedProxies) > 0 {
-				for _, proxy := range connectedProxies {
-					if backlogs := atomic.LoadInt32(&proxy.Backlogs); backlogs > 0 {
-						continue
-					}
-					newJob := func() *PipyConfGeneratorJob {
-						return &PipyConfGeneratorJob{
-							proxy:      proxy,
-							repoServer: s,
-							done:       make(chan struct{}),
-						}
-					}
-					<-s.workQueues.AddJob(newJob())
-				}
-			}
+			disconnectedProxies, missing := s.fireConnectedProxies()
 
 			timerLock.Lock()
-			if reconfirm || pending || missing || blockChan {
+			if reconfirm || pending || blockChan || missing {
 				reconfirm = false
 				pending = false
 				slidingTimer.Reset(timerDuration)
@@ -135,27 +98,119 @@ func (s *Server) broadcastListener() {
 	}
 }
 
+func (s *Server) fireNewConnectProxy(pod *v1.Pod, proxyNewWorkQueues *workerpool.WorkerPool) {
+	if proxy, err := s.fireExistProxy(pod); err == nil {
+		if proxy.Metadata == nil || proxy.Addr == nil {
+			_ = s.recordPodMetadata(proxy, pod)
+		}
+		if backlogs := atomic.LoadInt32(&proxy.Backlogs); backlogs > 0 {
+			return
+		}
+		newJob := func() *PipyConfGeneratorJob {
+			return &PipyConfGeneratorJob{
+				proxy:      proxy,
+				repoServer: s,
+				done:       make(chan struct{}),
+			}
+		}
+		<-proxyNewWorkQueues.AddJob(newJob())
+	}
+}
+
+func (s *Server) fireTermConnectProxy(pod *v1.Pod) {
+	if uuid, exists := pod.Labels[constants.SidecarUniqueIDLabelName]; exists {
+		s.proxyRegistry.MarkDeletionProxy(uuid)
+	}
+}
+
+func (s *Server) fireConnectedProxies() (map[string]*pipy.Proxy, bool) {
+	connectedProxies := make(map[string]*pipy.Proxy)
+	disconnectedProxies := make(map[string]*pipy.Proxy)
+	proxies := s.fireExistProxies()
+	metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
+	missing := false
+	for _, proxy := range proxies {
+		if proxy.Metadata == nil {
+			if proxy.VM {
+				if err := s.recordVmMetadata(proxy); err != nil {
+					missing = true
+					continue
+				}
+			} else {
+				if err := s.recordPodMetadata(proxy, nil); err != nil {
+					missing = true
+					continue
+				}
+			}
+		}
+		if proxy.Metadata == nil || proxy.Addr == nil || len(proxy.GetAddr()) == 0 {
+			missing = true
+			continue
+		}
+		connectedProxies[proxy.UUID.String()] = proxy
+	}
+
+	s.proxyRegistry.RangeConnectedProxy(func(key, value interface{}) bool {
+		proxyUUID := key.(string)
+		if _, exists := connectedProxies[proxyUUID]; !exists {
+			disconnectedProxies[proxyUUID] = value.(*pipy.Proxy)
+		}
+		return true
+	})
+
+	if len(connectedProxies) > 0 {
+		for _, proxy := range connectedProxies {
+			if backlogs := atomic.LoadInt32(&proxy.Backlogs); backlogs > 0 {
+				continue
+			}
+			newJob := func() *PipyConfGeneratorJob {
+				return &PipyConfGeneratorJob{
+					proxy:      proxy,
+					repoServer: s,
+					done:       make(chan struct{}),
+				}
+			}
+			<-s.workQueues.AddJob(newJob())
+		}
+	}
+	return disconnectedProxies, missing
+}
+
 func (s *Server) fireExistProxies() []*pipy.Proxy {
 	var allProxies []*pipy.Proxy
 	allPods := s.kubeController.ListPods()
 	for _, pod := range allPods {
+		if pod.DeletionTimestamp != nil {
+			continue
+		}
 		proxy, err := GetProxyFromPod(pod)
 		if err != nil {
 			continue
 		}
 		proxy = s.fireUpdatedProxy(s.proxyRegistry, proxy)
-		allProxies = append(allProxies, proxy)
+		if !proxy.Deletion {
+			allProxies = append(allProxies, proxy)
+		}
 	}
 	allVms := s.kubeController.ListVms()
 	for _, vm := range allVms {
+		if vm.DeletionTimestamp != nil {
+			continue
+		}
 		proxy, err := GetProxyFromVm(vm)
 		if err != nil {
 			continue
 		}
 		proxy = s.fireUpdatedProxy(s.proxyRegistry, proxy)
-		allProxies = append(allProxies, proxy)
+		if !proxy.Deletion {
+			allProxies = append(allProxies, proxy)
+		}
 	}
 	return allProxies
+}
+
+func (s *Server) fireExistProxy(pod *v1.Pod) (*pipy.Proxy, error) {
+	return GetProxyFromPod(pod)
 }
 
 func (s *Server) fireUpdatedProxy(proxyRegistry *registry.ProxyRegistry, proxy *pipy.Proxy) *pipy.Proxy {
@@ -197,10 +252,13 @@ func GetProxyFromPod(pod *v1.Pod) (*pipy.Proxy, error) {
 		return nil, fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 
-	sa := pod.Spec.ServiceAccountName
-	namespace := pod.Namespace
-
-	return pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), false, nil), nil
+	return pipy.NewProxy(models.KindSidecar,
+		proxyUUID,
+		pod.Name,
+		pod.Namespace,
+		identity.New(pod.Spec.ServiceAccountName, pod.Namespace),
+		false,
+		nil), nil
 }
 
 // GetProxyFromVm infers and creates a Proxy data structure from a VM.
@@ -218,10 +276,13 @@ func GetProxyFromVm(vm *machinev1alpha1.VirtualMachine) (*pipy.Proxy, error) {
 		return nil, fmt.Errorf("Could not parse UUID label into UUID type (%s): %w", uuidString, err)
 	}
 
-	sa := vm.Spec.ServiceAccountName
-	namespace := vm.Namespace
-	proxy := pipy.NewProxy(models.KindSidecar, proxyUUID, identity.New(sa, namespace), true, nil)
-	return proxy, nil
+	return pipy.NewProxy(models.KindSidecar,
+		proxyUUID,
+		vm.Name,
+		vm.Namespace,
+		identity.New(vm.Spec.ServiceAccountName, vm.Namespace),
+		true,
+		nil), nil
 }
 
 // GetProxyUUIDFromPod infers and creates a Proxy UUID from a Pod.

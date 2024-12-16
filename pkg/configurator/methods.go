@@ -117,6 +117,11 @@ func (c *Client) GetLocalDNSProxySecondaryUpstream() string {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SecondaryUpstreamDNSServerIPAddr
 }
 
+// IsHoldApplicationUntilProxyStarts returns whether hold application until proxy starts
+func (c *Client) IsHoldApplicationUntilProxyStarts() bool {
+	return c.getMeshConfig().Spec.Sidecar.HoldApplicationUntilProxyStarts
+}
+
 // GenerateIPv6BasedOnIPv4 returns whether auto generate IPv6 based on IPv4
 func (c *Client) GenerateIPv6BasedOnIPv4() bool {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.GenerateIPv6BasedOnIPv4

@@ -65,6 +65,10 @@ type Configurator interface {
 	// GetLocalDNSProxySecondaryUpstream returns the secondary upstream DNS server for local DNS Proxy
 	GetLocalDNSProxySecondaryUpstream() string
 
+	// IsHoldApplicationUntilProxyStarts returns whether delay application startup
+	// until the pod proxy is ready to accept traffic
+	IsHoldApplicationUntilProxyStarts() bool
+
 	// GenerateIPv6BasedOnIPv4 returns whether auto generate IPv6 based on IPv4
 	GenerateIPv6BasedOnIPv4() bool
 

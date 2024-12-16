@@ -447,8 +447,9 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.serviceLB.image.name | string | `"mirrored-klipper-lb"` | service-lb image name |
 | fsm.serviceLB.image.registry | string | `"flomesh"` | Registry for service-lb image |
 | fsm.serviceLB.image.tag | string | `"v0.4.7"` | service-lb image tag |
-| fsm.sidecar | object | `{"compressConfig":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.8"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
+| fsm.sidecar | object | `{"compressConfig":true,"holdApplicationUntilProxyStarts":true,"image":{"name":"pipy","registry":"flomesh","tag":"1.5.8"},"sidecarDisabledMTLS":false,"sidecarLogLevel":"error","sidecarTimeout":60}` | Sidecar supported by fsm |
 | fsm.sidecar.compressConfig | bool | `true` | Sidecar compresses config.json |
+| fsm.sidecar.holdApplicationUntilProxyStarts | bool | `true` | This feature delays application startup until the pod proxy is ready to accept traffic, mitigating some startup race conditions. |
 | fsm.sidecar.image.name | string | `"pipy"` | Sidecar image name |
 | fsm.sidecar.image.registry | string | `"flomesh"` | Registry for sidecar image |
 | fsm.sidecar.image.tag | string | `"1.5.8"` | Sidecar image tag |

@@ -12,19 +12,19 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector/ctok"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/service"
-	pipy2 "github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy"
+	"github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy"
 )
 
 // ProxyServiceMapper knows how to map Sidecar instances to services.
 type ProxyServiceMapper interface {
-	ListProxyServices(*pipy2.Proxy) ([]service.MeshService, error)
+	ListProxyServices(*pipy.Proxy) ([]service.MeshService, error)
 }
 
 // ExplicitProxyServiceMapper is a custom ProxyServiceMapper implementation.
-type ExplicitProxyServiceMapper func(*pipy2.Proxy) ([]service.MeshService, error)
+type ExplicitProxyServiceMapper func(*pipy.Proxy) ([]service.MeshService, error)
 
 // ListProxyServices executes the given mapping.
-func (e ExplicitProxyServiceMapper) ListProxyServices(p *pipy2.Proxy) ([]service.MeshService, error) {
+func (e ExplicitProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.MeshService, error) {
 	return e(p)
 }
 
@@ -34,7 +34,7 @@ type KubeProxyServiceMapper struct {
 }
 
 // ListProxyServices maps an Pipy instance to a number of Kubernetes services.
-func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy2.Proxy) ([]service.MeshService, error) {
+func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy.Proxy) ([]service.MeshService, error) {
 	var meshServices []service.MeshService
 	if p.VM {
 		vm, err := k.KubeController.GetVmForProxy(p)
@@ -42,7 +42,7 @@ func (k *KubeProxyServiceMapper) ListProxyServices(p *pipy2.Proxy) ([]service.Me
 			return nil, err
 		}
 
-		p.MachineIP = pipy2.NewNetAddress(vm.Spec.MachineIP)
+		p.MachineIP = pipy.NewNetAddress(vm.Spec.MachineIP)
 		if _, internal := vm.Annotations[connector.AnnotationMeshServiceInternalSync]; internal {
 			p.ClusterID = ""
 		} else {

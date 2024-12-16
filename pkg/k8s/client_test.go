@@ -1106,7 +1106,9 @@ type proxy struct {
 	// UUID of the proxy
 	uuid.UUID
 	// Identity is of the form <name>.<namespace>.cluster.local
-	Identity identity.ServiceIdentity
+	Identity     identity.ServiceIdentity
+	podName      string
+	podNamespace string
 	// kind is the proxy's kind (ex. sidecar, gateway)
 	kind models.ProxyKind
 }
@@ -1117,6 +1119,14 @@ func (p proxy) GetUUID() uuid.UUID {
 
 func (p proxy) GetIdentity() identity.ServiceIdentity {
 	return p.Identity
+}
+
+func (p *proxy) GetPodName() string {
+	return p.podName
+}
+
+func (p *proxy) GetPodNamespace() string {
+	return p.podNamespace
 }
 
 func (p proxy) GetConnectedAt() time.Time {

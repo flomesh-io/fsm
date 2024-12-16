@@ -137,9 +137,13 @@ func (sd PipySidecarDriver) Patch(ctx context.Context) error {
 	}
 
 	// Add the Pipy sidecar
-	sidecar := getPipySidecarContainerSpec(injCtx, pod, configurator, cnPrefix, originalHealthProbes, podOS)
-	pod.Spec.Containers = append(pod.Spec.Containers, sidecar)
-
+	sidecar, holdApp := getPipySidecarContainerSpec(injCtx, pod, configurator, cnPrefix, originalHealthProbes, podOS)
+	if holdApp {
+		containers := []corev1.Container{sidecar}
+		pod.Spec.Containers = append(containers, pod.Spec.Containers...)
+	} else {
+		pod.Spec.Containers = append(pod.Spec.Containers, sidecar)
+	}
 	return nil
 }
 

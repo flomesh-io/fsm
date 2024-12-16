@@ -816,6 +816,7 @@
                     "image",
                     "sidecarDisabledMTLS",
                     "compressConfig",
+                    "holdApplicationUntilProxyStarts",
                     "sidecarLogLevel",
                     "sidecarTimeout"
                   ],
@@ -890,6 +891,15 @@
                       "type": "boolean",
                       "title": "The compressConfig schema",
                       "description": "Compress sidecar's config.json",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "holdApplicationUntilProxyStarts": {
+                      "$id": "#/properties/fsm/properties/sidecar/properties/holdApplicationUntilProxyStarts",
+                      "type": "boolean",
+                      "title": "The holdApplicationUntilProxyStarts schema",
+                      "description": "This feature delays application startup until the pod proxy is ready to accept traffic, mitigating some startup race conditions.",
                       "examples": [
                         false
                       ]

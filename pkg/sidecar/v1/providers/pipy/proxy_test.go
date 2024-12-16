@@ -19,7 +19,12 @@ import (
 var _ = Describe("Test proxy methods", func() {
 	proxyUUID := uuid.New()
 	podUID := uuid.New().String()
-	proxy := NewProxy(models.KindSidecar, proxyUUID, identity.New("svc-acc", "namespace"), false, tests.NewMockAddress("1.2.3.4"))
+	proxy := NewProxy(models.KindSidecar,
+		proxyUUID,
+		"",
+		"namespace",
+		identity.New("svc-acc", "namespace"),
+		false, tests.NewMockAddress("1.2.3.4"))
 
 	It("creates a valid proxy", func() {
 		Expect(proxy).ToNot((BeNil()))
