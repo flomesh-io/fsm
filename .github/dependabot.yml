@@ -13,7 +13,6 @@ updates:
       - "change/github-actions"
       - "priority/P2"
       - "size/XS"
-    milestone: v1.5.0
   # Maintain dependencies for Golang
   - package-ecosystem: "gomod"
     directory: "/"
@@ -27,7 +26,6 @@ updates:
       - "change/dependencies"
       - "priority/P2"
       - "size/XS"
-    milestone: v1.5.0
     groups:
       k8s:
         applies-to: version-updates
