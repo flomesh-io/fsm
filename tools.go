@@ -8,7 +8,7 @@ import (
 	_ "github.com/axw/gocov/gocov"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/jstemmer/go-junit-report"
-	_ "github.com/matm/gocov-html"
+	_ "github.com/matm/gocov-html/cmd/gocov-html"
 	_ "github.com/mitchellh/gox"
 	_ "github.com/norwoodj/helm-docs/cmd/helm-docs"
 	_ "k8s.io/code-generator/cmd/client-gen"
