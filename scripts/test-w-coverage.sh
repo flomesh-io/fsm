@@ -31,4 +31,4 @@ go run github.com/AlekSi/gocov-xml < coverage.json > coverage.xml
 
 mkdir -p coverage
 
-go run github.com/matm/gocov-html < coverage.json > coverage/index.html
+go run github.com/matm/gocov-html/cmd/gocov-html < coverage.json > coverage/index.html
