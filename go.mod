@@ -24,7 +24,6 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/vault/api v1.15.0
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/matm/gocov-html v0.0.0-20200509184451-71874e2e203b
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
