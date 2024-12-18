@@ -595,6 +595,8 @@ require (
 	k8s.io/helm v2.14.3+incompatible // indirect
 	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	mvdan.cc/gofumpt v0.7.0 // indirect
+	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
+	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
 	mvdan.cc/unparam v0.0.0-20240528143540-8a5130ca722f // indirect
 	oras.land/oras-go v1.2.5 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
