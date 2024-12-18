@@ -32,7 +32,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.34.2
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_golang v1.20.4
 	github.com/prometheus/common v0.55.0
 	github.com/rs/zerolog v1.29.0
 	github.com/servicemeshinterface/smi-sdk-go v0.5.0
@@ -53,7 +53,7 @@ require (
 	k8s.io/cli-runtime v0.31.4
 	k8s.io/client-go v0.31.4
 	k8s.io/code-generator v0.31.4
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
+	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	sigs.k8s.io/controller-runtime v0.19.3
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/gwctl v0.1.0
@@ -65,7 +65,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/hashicorp/vault v1.18.1
 	github.com/hashicorp/vault/sdk v0.14.0
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/net v0.31.0
 	golang.org/x/sync v0.10.0
@@ -78,7 +78,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.19.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cert-manager/cert-manager v1.12.14
+	github.com/cert-manager/cert-manager v1.16.2
 	github.com/cilium/ebpf v0.9.1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/dubbogo/go-zookeeper v1.0.3
@@ -104,7 +104,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/time v0.6.0
-	k8s.io/gengo/v2 v2.0.0-20240228010128-51d4e06bde70
+	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.31.4
 	k8s.io/kubernetes v1.31.4
@@ -225,7 +225,7 @@ require (
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
 	github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba // indirect
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
-	github.com/digitalocean/godo v1.93.0 // indirect
+	github.com/digitalocean/godo v1.125.0 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
@@ -236,7 +236,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/duosecurity/duo_api_golang v0.0.0-20190308151101-6c680f768e74 // indirect
-	github.com/emicklei/go-restful/v3 v3.12.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
 	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
@@ -593,7 +593,7 @@ require (
 	k8s.io/component-base v0.31.4 // indirect
 	k8s.io/component-helpers v0.31.4 // indirect
 	k8s.io/helm v2.14.3+incompatible // indirect
-	k8s.io/kube-openapi v0.0.0-20240423202451-8948a665c108 // indirect
+	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	mvdan.cc/gofumpt v0.7.0 // indirect
 	mvdan.cc/unparam v0.0.0-20240528143540-8a5130ca722f // indirect
 	oras.land/oras-go v1.2.5 // indirect
