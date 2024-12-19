@@ -2,6 +2,7 @@ package nebula
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/flomesh-io/fsm/pkg/connector"
@@ -105,7 +106,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if pid, err := strconv.Atoi(value); err == nil {
-					ins.PID = uint32(pid)
+					if pid >= 0 && pid < math.MaxUint32 {
+						ins.PID = uint32(pid)
+					} else {
+						ins.PID = 0
+					}
 					return nil
 				} else {
 					return err
@@ -131,7 +136,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if weight, err := strconv.Atoi(value); err == nil {
-					ins.Weight = uint32(weight)
+					if weight >= 0 && weight < math.MaxUint32 {
+						ins.Weight = uint32(weight)
+					} else {
+						ins.Weight = 0
+					}
 					return nil
 				} else {
 					return err
@@ -192,7 +201,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if connections, err := strconv.Atoi(value); err == nil {
-					ins.DefaultConnections = uint32(connections)
+					if connections >= 0 && connections < math.MaxUint32 {
+						ins.DefaultConnections = uint32(connections)
+					} else {
+						ins.DefaultConnections = 0
+					}
 					return nil
 				} else {
 					return err
@@ -214,7 +227,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if requests, err := strconv.Atoi(value); err == nil {
-					ins.DefaultRequests = uint32(requests)
+					if requests >= 0 && requests < math.MaxUint32 {
+						ins.DefaultRequests = uint32(requests)
+					} else {
+						ins.DefaultRequests = 0
+					}
 					return nil
 				} else {
 					return err
@@ -227,7 +244,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if reties, err := strconv.Atoi(value); err == nil {
-					ins.DefaultReties = uint32(reties)
+					if reties >= 0 && reties < math.MaxUint32 {
+						ins.DefaultReties = uint32(reties)
+					} else {
+						ins.DefaultReties = 0
+					}
 					return nil
 				} else {
 					return err
@@ -240,7 +261,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if timeout, err := strconv.Atoi(value); err == nil {
-					ins.DefaultTimeout = uint32(timeout)
+					if timeout >= 0 && timeout < math.MaxUint32 {
+						ins.DefaultTimeout = uint32(timeout)
+					} else {
+						ins.DefaultTimeout = 0
+					}
 					return nil
 				} else {
 					return err
@@ -271,7 +296,11 @@ var (
 			},
 			setter: func(ins *ServiceInstance, value string) error {
 				if port, err := strconv.Atoi(value); err == nil {
-					ins.RealPort = uint16(port)
+					if port >= 0 && port < math.MaxUint16 {
+						ins.RealPort = uint16(port)
+					} else {
+						ins.RealPort = 0
+					}
 					return nil
 				} else {
 					return err
