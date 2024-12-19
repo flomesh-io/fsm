@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/nebula/urlenc"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/urlenc"
 )
 
 const (
@@ -61,6 +61,8 @@ type ServiceInstance struct {
 	Token     bool   `urlenc:"token"`
 	Side      string `urlenc:"side"`
 	Version   string `urlenc:"version"`
+
+	Extends map[string]string `urlenc:"-"`
 
 	FsmConnectorServiceClusterSet     string `urlenc:"fsm.connector.service.cluster.set,omitempty"`
 	FsmConnectorServiceConnectorUid   string `urlenc:"fsm.connector.service.connector.uid,omitempty"`
@@ -117,16 +119,33 @@ func (ins *ServiceInstance) Marshal() ([]byte, error) {
 	if bytes, err := urlenc.Encode(ins); err != nil {
 		return nil, err
 	} else {
-		instanceUrl := url.URL{
-			Scheme:   ins.Schema,
-			Host:     ins.Addr,
-			RawQuery: string(bytes),
+		if rawValues, err := url.ParseQuery(string(bytes)); err != nil {
+			return nil, err
+		} else {
+			if len(ins.Extends) > 0 {
+				if bytes, err = urlenc.Encode(ins.Extends); err != nil {
+					return nil, err
+				} else {
+					if extValues, err := url.ParseQuery(string(bytes)); err == nil {
+						for k, v := range extValues {
+							rawValues[k] = v
+						}
+					} else {
+						return nil, err
+					}
+				}
+			}
+			instanceUrl := url.URL{
+				Scheme:   ins.Schema,
+				Host:     ins.Addr,
+				RawQuery: rawValues.Encode(),
+			}
+			if len(instanceUrl.Host) == 0 {
+				instanceUrl.Host = fmt.Sprintf("%s:%d", ins.IP, ins.Port)
+			}
+			ins.instanceId = url.QueryEscape(instanceUrl.String())
+			return []byte(ins.instanceId), nil
 		}
-		if len(instanceUrl.Host) == 0 {
-			instanceUrl.Host = fmt.Sprintf("%s:%d", ins.IP, ins.Port)
-		}
-		ins.instanceId = url.QueryEscape(instanceUrl.String())
-		return []byte(ins.instanceId), nil
 	}
 }
 
@@ -149,9 +168,13 @@ func (ins *ServiceInstance) Unmarshal(instanceId string, data []byte) error {
 		return err
 	}
 	if len(instanceUrl.RawQuery) > 0 {
-		if err = urlenc.Decode([]byte(instanceUrl.RawQuery), ins); err != nil {
-			fmt.Println(err.Error())
+		if extQuery, err := urlenc.Decode([]byte(instanceUrl.RawQuery), ins); err != nil {
 			return err
+		} else if len(extQuery) > 0 {
+			ins.Extends = make(map[string]string)
+			if _, err = urlenc.Decode(extQuery, &ins.Extends); err != nil {
+				return err
+			}
 		}
 	}
 	ins.Schema = instanceUrl.Scheme

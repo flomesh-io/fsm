@@ -2,6 +2,7 @@ package urlenc
 
 import (
 	"errors"
+	"math"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -10,7 +11,7 @@ import (
 	"sync"
 )
 
-type structfield struct {
+type structField struct {
 	// FieldName is the name of the field, so we can use FieldByName to
 	// index into the struct. This is better (albeit less efficient) than
 	// using numeric indices, because then we can work directly with
@@ -26,13 +27,13 @@ type structfield struct {
 }
 
 var t2f = &type2fields{
-	types: make(map[reflect.Type][]structfield),
+	types: make(map[reflect.Type][]structField),
 	lock:  new(sync.RWMutex),
 }
 
 type type2fields struct {
 	lock  *sync.RWMutex
-	types map[reflect.Type][]structfield
+	types map[reflect.Type][]structField
 }
 
 func isStringOrNumeric(rk reflect.Kind) bool {
@@ -65,14 +66,14 @@ type Valuer interface {
 	Value() interface{}
 }
 
-var valuerif = reflect.TypeOf((*Valuer)(nil)).Elem()
+var valuerIf = reflect.TypeOf((*Valuer)(nil)).Elem()
 
 func getValuerMethod(fv reflect.Value) reflect.Value {
 	const methodName = "Value"
 	var mv reflect.Value
-	if fv.Type().Implements(valuerif) {
+	if fv.Type().Implements(valuerIf) {
 		mv = fv.MethodByName(methodName)
-	} else if fv.CanAddr() && fv.Addr().Type().Implements(valuerif) {
+	} else if fv.CanAddr() && fv.Addr().Type().Implements(valuerIf) {
 		mv = fv.Addr().MethodByName(methodName)
 	}
 	return mv
@@ -94,115 +95,141 @@ func convertToString(rv reflect.Value) (string, error) {
 	case reflect.Float32, reflect.Float64:
 		return strconv.FormatFloat(rv.Float(), 'f', -1, 64), nil
 	}
-
 	return "", errors.New("urlenc: unsupported type to convert: " + rv.Type().String())
 }
 
 func convertFromString(k reflect.Kind, v string) (reflect.Value, error) {
-	switch k {
-	case reflect.Bool:
-		bv, err := strconv.ParseBool(v)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(bv), nil
-	case reflect.String:
-		return reflect.ValueOf(v), nil
-	case reflect.Int:
-		nv, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(int(nv)), nil
-	case reflect.Int64:
-		nv, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(nv), nil
-	case reflect.Int8:
-		nv, err := strconv.ParseInt(v, 10, 8)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(int8(nv)), nil
-	case reflect.Int16:
-		nv, err := strconv.ParseInt(v, 10, 16)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(int16(nv)), nil
-	case reflect.Int32:
-		nv, err := strconv.ParseInt(v, 10, 32)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(int32(nv)), nil
-	case reflect.Uint:
-		nv, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(uint(nv)), nil
-	case reflect.Uint64:
-		nv, err := strconv.ParseUint(v, 10, 64)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(nv), nil
-	case reflect.Uint8:
-		nv, err := strconv.ParseUint(v, 10, 8)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(uint8(nv)), nil
-	case reflect.Uint16:
-		nv, err := strconv.ParseUint(v, 10, 16)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(uint16(nv)), nil
-	case reflect.Uint32:
-		nv, err := strconv.ParseUint(v, 10, 32)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(uint32(nv)), nil
-	case reflect.Float64:
-		nv, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(float64(nv)), nil
-	case reflect.Float32:
-		nv, err := strconv.ParseFloat(v, 32)
-		if err != nil {
-			return zeroval, err
-		}
-		return reflect.ValueOf(float32(nv)), nil
-	default:
+	if convFunc, exists := _kindConvFuncs[k]; exists {
+		return convFunc(v)
+	} else {
 		return zeroval, errors.New("unsupported type")
 	}
 }
 
+type kindConverter func(v string) (reflect.Value, error)
+
 var _nameToType map[string]reflect.Type
+var _kindConvFuncs map[reflect.Kind]kindConverter
 
 func init() {
-	_nameToType = make(map[string]reflect.Type)
-	_nameToType["string"] = reflect.TypeOf("")
-	_nameToType["int"] = reflect.TypeOf(int(0))
-	_nameToType["int8"] = reflect.TypeOf(int8(0))
-	_nameToType["int16"] = reflect.TypeOf(int16(0))
-	_nameToType["int32"] = reflect.TypeOf(int32(0))
-	_nameToType["int64"] = reflect.TypeOf(int64(0))
-	_nameToType["uint"] = reflect.TypeOf(uint(0))
-	_nameToType["uint8"] = reflect.TypeOf(uint8(0))
-	_nameToType["uint16"] = reflect.TypeOf(uint16(0))
-	_nameToType["uint32"] = reflect.TypeOf(uint32(0))
-	_nameToType["uint64"] = reflect.TypeOf(uint64(0))
-	_nameToType["float32"] = reflect.TypeOf(float32(0))
-	_nameToType["float64"] = reflect.TypeOf(float64(0))
+	_nameToType = map[string]reflect.Type{
+		"string":  reflect.TypeOf(""),
+		"int":     reflect.TypeOf(int(0)),
+		"int8":    reflect.TypeOf(int8(0)),
+		"int16":   reflect.TypeOf(int16(0)),
+		"int32":   reflect.TypeOf(int32(0)),
+		"int64":   reflect.TypeOf(int64(0)),
+		"uint":    reflect.TypeOf(uint(0)),
+		"uint8":   reflect.TypeOf(uint8(0)),
+		"uint16":  reflect.TypeOf(uint16(0)),
+		"uint32":  reflect.TypeOf(uint32(0)),
+		"uint64":  reflect.TypeOf(uint64(0)),
+		"float32": reflect.TypeOf(float32(0)),
+		"float64": reflect.TypeOf(float64(0)),
+	}
+
+	_kindConvFuncs = map[reflect.Kind]kindConverter{
+		reflect.Bool: func(v string) (reflect.Value, error) {
+			if bv, err := strconv.ParseBool(v); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(bv), nil
+			}
+		},
+		reflect.String: func(v string) (reflect.Value, error) {
+			return reflect.ValueOf(v), nil
+		},
+		reflect.Int: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseInt(v, 10, 64); err != nil {
+				return zeroval, err
+			} else if nv >= math.MinInt && nv <= math.MaxInt {
+				return reflect.ValueOf(int(nv)), nil
+			} else {
+				return reflect.ValueOf(int(0)), nil
+			}
+		},
+		reflect.Int64: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseInt(v, 10, 64); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(nv), nil
+			}
+		},
+		reflect.Int8: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseInt(v, 10, 8); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(int8(nv)), nil
+			}
+		},
+		reflect.Int16: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseInt(v, 10, 16); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(int16(nv)), nil
+			}
+		},
+		reflect.Int32: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseInt(v, 10, 32); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(int32(nv)), nil
+			}
+		},
+		reflect.Uint: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseUint(v, 10, 64); err != nil {
+				return zeroval, err
+			} else if nv <= math.MaxUint {
+				return reflect.ValueOf(uint(nv)), nil
+			} else {
+				return reflect.ValueOf(uint(0)), nil
+			}
+		},
+		reflect.Uint64: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseUint(v, 10, 64); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(nv), nil
+			}
+		},
+		reflect.Uint8: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseUint(v, 10, 8); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(uint8(nv)), nil
+			}
+		},
+		reflect.Uint16: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseUint(v, 10, 16); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(uint16(nv)), nil
+			}
+		},
+		reflect.Uint32: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseUint(v, 10, 32); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(uint32(nv)), nil
+			}
+		},
+		reflect.Float64: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseFloat(v, 64); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(float64(nv)), nil
+			}
+		},
+		reflect.Float32: func(v string) (reflect.Value, error) {
+			if nv, err := strconv.ParseFloat(v, 32); err != nil {
+				return zeroval, err
+			} else {
+				return reflect.ValueOf(float32(nv)), nil
+			}
+		},
+	}
 }
+
 func nameToType(s string, recurse bool) reflect.Type {
 	if strings.HasPrefix(s, "[]") {
 		t := nameToType(s[2:], false)
@@ -219,7 +246,7 @@ func nameToType(s string, recurse bool) reflect.Type {
 
 var wssplitRx = regexp.MustCompile(`\s+`)
 
-func (tkm type2fields) getStructFields(t reflect.Type) ([]structfield, error) {
+func (tkm type2fields) getStructFields(t reflect.Type) ([]structField, error) {
 	if t.Kind() != reflect.Struct {
 		return nil, errors.New("target is not a struct (Kind: " + t.Kind().String() + ")")
 	}
@@ -233,7 +260,7 @@ func (tkm type2fields) getStructFields(t reflect.Type) ([]structfield, error) {
 	}
 
 	// the fields did not exist in the registry. create and register
-	km = make([]structfield, 0, t.NumField())
+	km = make([]structField, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if len(f.PkgPath) > 0 {
@@ -304,7 +331,7 @@ func (tkm type2fields) getStructFields(t reflect.Type) ([]structfield, error) {
 			return nil, errors.New("urlenc: unsupported type on struct field " + f.Name + ": " + f.Type.String())
 		}
 
-		sf := structfield{
+		sf := structField{
 			FieldName: f.Name,
 			KeyName:   keyname,
 			OmitEmpty: omitempty,
@@ -462,19 +489,19 @@ func marshalStruct(rv reflect.Value) ([]byte, error) {
 
 var zeroval = reflect.Value{}
 
-func Decode(data []byte, v interface{}) error {
+func Decode(data []byte, v interface{}) ([]byte, error) {
 	if u, ok := v.(Unmarshaler); ok {
-		return u.UnmarshalURL(data)
+		return nil, u.UnmarshalURL(data)
 	}
 
 	rv := reflect.ValueOf(v)
 	if rv == zeroval {
-		return errors.New("can not unmarshal into a nil value")
+		return nil, errors.New("can not unmarshal into a nil value")
 	}
 
 	// This better be a pointer
 	if rv.Kind() != reflect.Ptr {
-		return errors.New("pointer value required")
+		return nil, errors.New("pointer value required")
 	}
 
 	// Get the value beyond the pointer
@@ -483,13 +510,13 @@ func Decode(data []byte, v interface{}) error {
 	switch rv.Kind() {
 	case reflect.Map:
 		if kk := rv.Type().Key().Kind(); kk != reflect.String {
-			return errors.New("urlenc.Unmarshal: map key must be string type (Kind: " + kk.String() + ")")
+			return nil, errors.New("urlenc.Unmarshal: map key must be string type (Kind: " + kk.String() + ")")
 		}
-		return unmarshalMap(data, rv)
+		return nil, unmarshalMap(data, rv)
 	case reflect.Struct:
 		return unmarshalStruct(data, rv)
 	default:
-		return errors.New("urlenc.Unmarshal: unsupported type (Kind: " + rv.Kind().String() + ")")
+		return nil, errors.New("urlenc.Unmarshal: unsupported type (Kind: " + rv.Kind().String() + ")")
 	}
 }
 
@@ -514,32 +541,35 @@ type Setter interface {
 	Set(interface{}) error
 }
 
-var setterif = reflect.TypeOf((*Setter)(nil)).Elem()
+var setterIf = reflect.TypeOf((*Setter)(nil)).Elem()
 
 func getSetterMethod(fv reflect.Value) reflect.Value {
 	const methodName = "Set"
 	var mv reflect.Value
-	if fv.Type().Implements(setterif) {
+	if fv.Type().Implements(setterIf) {
 		mv = fv.MethodByName(methodName)
-	} else if fv.CanAddr() && fv.Addr().Type().Implements(setterif) {
+	} else if fv.CanAddr() && fv.Addr().Type().Implements(setterIf) {
 		mv = fv.Addr().MethodByName(methodName)
 	}
 	return mv
 }
 
-func unmarshalStruct(data []byte, rv reflect.Value) error {
+func unmarshalStruct(data []byte, rv reflect.Value) ([]byte, error) {
 	// Grab the mapping from struct tags
 	fields, err := t2f.getStructFields(rv.Type())
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	q, err := url.ParseQuery(string(data))
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	for _, f := range fields {
-		values := q[f.KeyName]
+		values, exists := q[f.KeyName]
+		if exists {
+			delete(q, f.KeyName)
+		}
 		if len(values) <= 0 {
 			continue
 		}
@@ -559,22 +589,21 @@ func unmarshalStruct(data []byte, rv reflect.Value) error {
 			sv = reflect.MakeSlice(reflect.SliceOf(et), len(values), len(values))
 			for i := 0; i < len(values); i++ {
 				ev := sv.Index(i)
-				cv, err := convertFromString(ek, values[i])
-				if err != nil {
-					return err
+				if cv, err := convertFromString(ek, values[i]); err != nil {
+					return nil, err
+				} else {
+					ev.Set(cv)
 				}
-				ev.Set(cv)
 			}
 		default:
 			// This is checking for the REGISTERED type, not the actual type of the field
 			if !isStringOrNumeric(rk) {
-				return errors.New("urlenc.Unmarshal: unsupported type for field " + f.FieldName + " (Kind: " + rk.String() + ")")
+				return nil, errors.New("urlenc.Unmarshal: unsupported type for field " + f.FieldName + " (Kind: " + rk.String() + ")")
 			}
 
 			// Now convert the value
-			sv, err = convertFromString(f.Type.Kind(), values[0])
-			if err != nil {
-				return err
+			if sv, err = convertFromString(f.Type.Kind(), values[0]); err != nil {
+				return nil, err
 			}
 		}
 
@@ -586,9 +615,13 @@ func unmarshalStruct(data []byte, rv reflect.Value) error {
 		} else {
 			out := mv.Call([]reflect.Value{sv})
 			if !out[0].IsNil() {
-				return out[0].Interface().(error)
+				return nil, out[0].Interface().(error)
 			}
 		}
 	}
-	return nil
+
+	if len(q) > 0 {
+		return []byte(q.Encode()), nil
+	}
+	return nil, nil
 }
