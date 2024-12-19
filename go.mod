@@ -24,7 +24,6 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/vault/api v1.15.0
 	github.com/jstemmer/go-junit-report v0.9.1
-	github.com/matm/gocov-html v0.0.0-20200509184451-71874e2e203b
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -96,6 +95,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/jonboulle/clockwork v0.2.2
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/matm/gocov-html v1.4.0
 	github.com/miekg/dns v1.1.62
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
@@ -487,6 +487,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/rotisserie/eris v0.5.4 // indirect
 	github.com/rubenv/sql-migrate v1.7.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/ryancurrah/gomodguard v1.3.5 // indirect
