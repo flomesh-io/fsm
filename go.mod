@@ -89,7 +89,7 @@ require (
 	github.com/go-logr/zerologr v1.2.3
 	github.com/go-resty/resty/v2 v2.16.2
 	github.com/gobwas/glob v0.2.3
-	github.com/hashicorp/consul/api v1.29.1
+	github.com/hashicorp/consul/api v1.30.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hudl/fargo v1.4.0
 	github.com/jinzhu/copier v0.4.0
