@@ -273,7 +273,7 @@ func (cdr *CatalogDeregistration) ToEureka() *eureka.Instance {
 
 func (cdr *CatalogDeregistration) ToNacos() *vo.DeregisterInstanceParam {
 	svcInfoSegs := strings.Split(cdr.ServiceID, constant.SERVICE_INFO_SPLITER)
-	if len(svcInfoSegs) < 4 {
+	if len(svcInfoSegs) < 2 {
 		return nil
 	}
 	r := new(vo.DeregisterInstanceParam)
