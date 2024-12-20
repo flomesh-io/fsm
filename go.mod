@@ -97,7 +97,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matm/gocov-html v1.4.0
 	github.com/miekg/dns v1.1.62
-	github.com/nacos-group/nacos-sdk-go/v2 v2.2.5
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.18.0
