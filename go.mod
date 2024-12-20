@@ -103,7 +103,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	golang.org/x/time v0.6.0
+	golang.org/x/time v0.8.0
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.31.4
