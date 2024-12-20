@@ -93,7 +93,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hudl/fargo v1.4.0
 	github.com/jinzhu/copier v0.4.0
-	github.com/jonboulle/clockwork v0.2.2
+	github.com/jonboulle/clockwork v0.4.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matm/gocov-html v1.4.0
 	github.com/miekg/dns v1.1.62
