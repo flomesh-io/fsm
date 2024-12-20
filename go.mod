@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.4
 
 require (
-	github.com/AlekSi/gocov-xml v0.0.0-20190121064608-3a14fb1c4737
+	github.com/AlekSi/gocov-xml v1.1.0
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/axw/gocov v1.2.1
 	github.com/containerd/containerd v1.7.23 // indirect
