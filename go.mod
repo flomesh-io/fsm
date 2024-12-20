@@ -23,7 +23,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/vault/api v1.15.0
-	github.com/jstemmer/go-junit-report v0.9.1
+	github.com/jstemmer/go-junit-report v1.0.0
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
