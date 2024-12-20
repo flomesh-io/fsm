@@ -1,6 +1,6 @@
 # Flomesh Service Mesh Helm Chart
 
-![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.4.0](https://img.shields.io/badge/AppVersion-v1.4.0-informational?style=flat-square)
+![Version: 1.5.0-alpha.1](https://img.shields.io/badge/Version-1.5.0--alpha.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v1.5.0-alpha.1](https://img.shields.io/badge/AppVersion-v1.5.0--alpha.1-informational?style=flat-square)
 
 A Helm chart to install the [fsm](https://github.com/flomesh-io/fsm) control plane on Kubernetes.
 
@@ -309,7 +309,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.image.name.fsmXnetmgmt | string | `"fsm-xnetmgmt"` | fsm-xnetmgmt's image name |
 | fsm.image.pullPolicy | string | `"IfNotPresent"` | Container image pull policy for control plane containers |
 | fsm.image.registry | string | `"flomesh"` | Container image registry for control plane images |
-| fsm.image.tag | string | `"1.4.0"` | Container image tag for control plane images |
+| fsm.image.tag | string | `"1.5.0-alpha.1"` | Container image tag for control plane images |
 | fsm.imagePullSecrets | list | `[]` | `fsm-controller` image pull secret |
 | fsm.inboundPortExclusionList | list | `[]` | Specifies a global list of ports to exclude from inbound traffic interception by the sidecar proxy. If specified, must be a list of positive integers. |
 | fsm.injector.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key | string | `"kubernetes.io/os"` |  |
