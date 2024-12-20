@@ -57,7 +57,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.19.3
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/gwctl v0.1.0
-	sigs.k8s.io/kind v0.25.0
+	sigs.k8s.io/kind v0.26.0
 )
 
 require (
