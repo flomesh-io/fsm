@@ -44,7 +44,7 @@ require (
 	google.golang.org/grpc v1.66.2
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/mysql v1.1.1
+	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.12
 	helm.sh/helm/v3 v3.16.4
 	k8s.io/api v0.31.4
