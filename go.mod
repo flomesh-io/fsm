@@ -75,7 +75,7 @@ require (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/briandowns/spinner v1.19.0
+	github.com/briandowns/spinner v1.23.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cert-manager/cert-manager v1.16.2
 	github.com/cilium/ebpf v0.9.1
