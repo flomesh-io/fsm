@@ -45,7 +45,7 @@ require (
 	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.1.1
-	gorm.io/gorm v1.21.12
+	gorm.io/gorm v1.24.6
 	helm.sh/helm/v3 v3.16.4
 	k8s.io/api v0.31.4
 	k8s.io/apiextensions-apiserver v0.31.4
@@ -388,7 +388,7 @@ require (
 	github.com/jgautheron/goconst v1.7.1 // indirect
 	github.com/jingyugao/rowserrcheck v1.1.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.2 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jjti/go-spancheck v0.6.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	github.com/jmoiron/sqlx v1.4.0 // indirect
