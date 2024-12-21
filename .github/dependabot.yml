@@ -15,6 +15,10 @@ updates:
       - "size/XS"
     # Milestone v1.5.0
     milestone: 22
+    groups:
+      actions-deps:
+        patterns:
+          - "*"
   # Maintain dependencies for Golang
   - package-ecosystem: "gomod"
     directory: "/"
@@ -32,10 +36,22 @@ updates:
     milestone: 22
     groups:
       k8s:
-        applies-to: version-updates
         patterns:
           - "k8s.io/*"
+    ignore:
+      - dependency-name: "k8s.io/*"
         update-types:
-          - "patch"
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+      - dependency-name: "github.com/docker/docker"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "github.com/norwoodj/helm-docs"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+      - dependency-name: "github.com/hashicorp/vault"
+        update-types:
+          - "version-update:semver-patch"
     open-pull-requests-limit: 10
 
