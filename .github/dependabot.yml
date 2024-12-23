@@ -42,6 +42,10 @@ updates:
       k8s:
         patterns:
           - "k8s.io/*"
+      gorm:
+        patterns:
+          - "gorm.io/gorm"
+          - "gorm.io/driver/mysql"
     ignore:
       - dependency-name: "k8s.io/*"
         update-types:
