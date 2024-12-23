@@ -8,30 +8,56 @@ require (
 	github.com/AlekSi/gocov-xml v1.1.0
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/axw/gocov v1.2.1
-	github.com/containerd/containerd v1.7.23 // indirect
+	github.com/blang/semver v3.5.1+incompatible
+	github.com/briandowns/spinner v1.23.1
+	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/cert-manager/cert-manager v1.16.2
+	github.com/cilium/ebpf v0.16.0
 	github.com/cskr/pubsub v1.0.2
+	github.com/deckarep/golang-set v1.8.0
 	github.com/deckarep/golang-set/v2 v2.7.0
+	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v26.1.5+incompatible
+	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
+	github.com/gin-gonic/gin v1.10.0
+	github.com/go-co-op/gocron v1.37.0
+	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/zerologr v1.2.3
+	github.com/go-resty/resty/v2 v2.16.2
+	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golangci/golangci-lint v1.62.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
+	github.com/hashicorp/consul/api v1.30.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
+	github.com/hashicorp/golang-lru/v2 v2.0.7
+	github.com/hashicorp/vault v1.18.1
 	github.com/hashicorp/vault/api v1.15.0
+	github.com/hashicorp/vault/sdk v0.14.0
+	github.com/hudl/fargo v1.4.0
+	github.com/jinzhu/copier v0.4.0
+	github.com/jonboulle/clockwork v0.4.0
 	github.com/jstemmer/go-junit-report v1.0.0
+	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/matm/gocov-html v1.4.0
 	github.com/mholt/archiver/v3 v3.5.1
+	github.com/miekg/dns v1.1.62
 	github.com/mitchellh/gox v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
 	github.com/norwoodj/helm-docs v1.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.1
+	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.61.0
 	github.com/rs/zerolog v1.33.0
@@ -40,9 +66,15 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
+	github.com/tidwall/gjson v1.18.0
+	github.com/tidwall/sjson v1.2.5
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
+	golang.org/x/net v0.33.0
+	golang.org/x/sync v0.10.0
+	golang.org/x/sys v0.28.0
+	golang.org/x/time v0.8.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/grpc v1.69.2
-	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/mysql v1.1.1
 	gorm.io/gorm v1.21.12
@@ -53,61 +85,15 @@ require (
 	k8s.io/cli-runtime v0.31.4
 	k8s.io/client-go v0.31.4
 	k8s.io/code-generator v0.31.4
+	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7
+	k8s.io/klog/v2 v2.130.1
+	k8s.io/kubectl v0.31.4
+	k8s.io/kubernetes v1.31.4
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	sigs.k8s.io/controller-runtime v0.19.3
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/gwctl v0.1.0
 	sigs.k8s.io/kind v0.26.0
-)
-
-require (
-	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/docker/distribution v2.8.3+incompatible
-	github.com/hashicorp/vault v1.18.1
-	github.com/hashicorp/vault/sdk v0.14.0
-	github.com/klauspost/compress v1.17.9 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
-	golang.org/x/net v0.33.0
-	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.28.0
-	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	honnef.co/go/tools v0.5.1 // indirect
-)
-
-require (
-	github.com/blang/semver v3.5.1+incompatible
-	github.com/briandowns/spinner v1.23.1
-	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cert-manager/cert-manager v1.16.2
-	github.com/cilium/ebpf v0.16.0
-	github.com/deckarep/golang-set v1.8.0
-	github.com/dubbogo/go-zookeeper v1.0.3
-	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/gin-gonic/gin v1.10.0
-	github.com/go-co-op/gocron v1.37.0
-	github.com/go-logr/logr v1.4.2
-	github.com/go-logr/zerologr v1.2.3
-	github.com/go-resty/resty/v2 v2.16.2
-	github.com/gobwas/glob v0.2.3
-	github.com/hashicorp/consul/api v1.30.0
-	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/hudl/fargo v1.4.0
-	github.com/jinzhu/copier v0.4.0
-	github.com/jonboulle/clockwork v0.4.0
-	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/matm/gocov-html v1.4.0
-	github.com/miekg/dns v1.1.62
-	github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
-	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
-	github.com/pkg/errors v0.9.1
-	github.com/tidwall/gjson v1.18.0
-	github.com/tidwall/sjson v1.2.5
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	golang.org/x/time v0.8.0
-	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7
-	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.31.4
-	k8s.io/kubernetes v1.31.4
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -161,6 +147,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
 	github.com/alecthomas/go-check-sumtype v0.2.0 // indirect
@@ -212,6 +199,7 @@ require (
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/containerd/containerd v1.7.23 // indirect
 	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -294,6 +282,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/golangci/dupl v0.0.0-20180902072040-3e9179ac440a // indirect
 	github.com/golangci/go-printf-func-name v0.1.0 // indirect
@@ -400,6 +389,7 @@ require (
 	github.com/karamaru-alpha/copyloopvar v1.1.0 // indirect
 	github.com/kisielk/errcheck v1.8.0 // indirect
 	github.com/kkHAIKE/contextcheck v1.1.5 // indirect
+	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kulti/thelper v0.6.3 // indirect
@@ -518,6 +508,7 @@ require (
 	github.com/spf13/viper v1.12.0 // indirect
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
 	github.com/stbenjam/no-sprintf-host-port v0.1.1 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/tdakkota/asciicheck v0.2.0 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go v1.0.162 // indirect
@@ -578,8 +569,10 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
 	google.golang.org/api v0.198.0 // indirect
+	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
+	google.golang.org/protobuf v1.35.2 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -589,6 +582,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	honnef.co/go/tools v0.5.1 // indirect
 	k8s.io/apiserver v0.31.4 // indirect
 	k8s.io/component-base v0.31.4 // indirect
 	k8s.io/component-helpers v0.31.4 // indirect
