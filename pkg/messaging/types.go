@@ -19,7 +19,9 @@ var (
 type Broker struct {
 	queue                              workqueue.RateLimitingInterface
 	proxyUpdatePubSub                  *pubsub.PubSub
+	proxyCreationChOn                  bool
 	proxyCreationCh                    chan *corev1.Pod
+	proxyDeletionChOn                  bool
 	proxyDeletionCh                    chan *corev1.Pod
 	proxyUpdateCh                      chan proxyUpdateEvent
 	ingressUpdatePubSub                *pubsub.PubSub

@@ -126,10 +126,12 @@ func (b *Broker) GetProxyUpdatePubSub() *pubsub.PubSub {
 }
 
 func (b *Broker) GetProxyCreationChan() chan *corev1.Pod {
+	b.proxyCreationChOn = true
 	return b.proxyCreationCh
 }
 
 func (b *Broker) GetProxyDeletionChan() chan *corev1.Pod {
+	b.proxyDeletionChOn = true
 	return b.proxyDeletionCh
 }
 
@@ -876,10 +878,10 @@ func (b *Broker) processEvent(msg events.PubSubMessage) {
 	// Update proxies if applicable
 	if event := getProxyUpdateEvent(msg); event != nil {
 		log.Trace().Msgf("Msg kind %s will update proxies", msg.Kind)
-		if event.creationPod != nil {
+		if b.proxyCreationChOn && event.creationPod != nil {
 			b.proxyCreationCh <- event.creationPod
 		}
-		if event.deletionPod != nil {
+		if b.proxyDeletionChOn && event.deletionPod != nil {
 			b.proxyDeletionCh <- event.deletionPod
 		}
 		atomic.AddUint64(&b.totalQProxyEventCount, 1)
