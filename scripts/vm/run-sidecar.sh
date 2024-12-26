@@ -80,7 +80,7 @@ then
     exit 1
 fi
 
-if ! grep $PIPY_DNS /etc/resolv.conf >/dev/null
+if ! grep "$PIPY_DNS" /etc/resolv.conf >/dev/null
 then
     sed -i "0,/^nameserver/!b;//i\nameserver $PIPY_DNS" /etc/resolv.conf
 fi
@@ -90,7 +90,7 @@ then
     sed -i '0,/^search/{s/search/search svc.cluster.local cluster.local/}' /etc/resolv.conf
 fi
 
-ns=$(grep "^nameserver" /etc/resolv.conf | grep -v $PIPY_DNS | head -n 1 | awk '{print $2}')
+ns=$(grep "^nameserver" /etc/resolv.conf | grep -v "$PIPY_DNS" | head -n 1 | awk '{print $2}')
 if [ -n "$ns" ]
 then
     # export PIPY_NAMESERVER=$ns
