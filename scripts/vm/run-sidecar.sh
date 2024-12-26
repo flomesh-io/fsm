@@ -22,6 +22,12 @@ then
       exit 1
 fi
 
+if [ -z "$PIPY_DNS" ]
+then
+      echo "Please set the PIPY_DNS environment variable, for example: PIPY_DNS=8.8.8.8"
+      exit 1
+fi
+
 ip=$(ip -4 addr show "$PIPY_NIC" 2>/dev/null | grep inet | sed 's/\// /g' | awk '{print $2}')
 if [ -z "$ip" ]
 then
@@ -65,7 +71,6 @@ COMMIT
 -A FSM_PROXY_OUTBOUND -o lo -m owner ! --uid-owner 1500 -j RETURN
 -A FSM_PROXY_OUTBOUND -m owner --uid-owner 1500 -j RETURN
 -A FSM_PROXY_OUTBOUND -d 127.0.0.1/32 -j RETURN
--A OUTPUT -p udp -d 127.0.0.153 --dport 53 -j DNAT --to-destination 127.0.0.153:5300
 -A FSM_PROXY_OUTBOUND -j FSM_PROXY_OUT_REDIRECT
 COMMIT
 EOF
@@ -75,9 +80,9 @@ then
     exit 1
 fi
 
-if ! grep 127.0.0.153 /etc/resolv.conf >/dev/null
+if ! grep $PIPY_DNS /etc/resolv.conf >/dev/null
 then
-    sed -i '0,/^nameserver/!b;//i\nameserver 127.0.0.153' /etc/resolv.conf
+    sed -i "0,/^nameserver/!b;//i\nameserver $PIPY_DNS" /etc/resolv.conf
 fi
 
 if ! grep '^search svc.cluster.local' /etc/resolv.conf >/dev/null
@@ -85,7 +90,7 @@ then
     sed -i '0,/^search/{s/search/search svc.cluster.local cluster.local/}' /etc/resolv.conf
 fi
 
-ns=$(grep "^nameserver" /etc/resolv.conf | grep -v 127.0.0.153 | head -n 1 | awk '{print $2}')
+ns=$(grep "^nameserver" /etc/resolv.conf | grep -v $PIPY_DNS | head -n 1 | awk '{print $2}')
 if [ -n "$ns" ]
 then
     # export PIPY_NAMESERVER=$ns

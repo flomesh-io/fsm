@@ -12,8 +12,7 @@ func GetInitContainerSpec(containerName string, cfg configurator.Configurator, o
 	outboundIPRangeInclusionList []string, outboundPortExclusionList []int,
 	inboundPortExclusionList []int, enablePrivilegedInitContainer bool, pullPolicy corev1.PullPolicy, networkInterfaceExclusionList []string) corev1.Container {
 	proxyMode := cfg.GetMeshConfig().Spec.Sidecar.LocalProxyMode
-	enabledDNSProxy := cfg.IsLocalDNSProxyEnabled()
-	iptablesInitCommand := GenerateIptablesCommands(proxyMode, enabledDNSProxy, outboundIPRangeExclusionList, outboundIPRangeInclusionList, outboundPortExclusionList, inboundPortExclusionList, networkInterfaceExclusionList)
+	iptablesInitCommand := GenerateIptablesCommands(proxyMode, outboundIPRangeExclusionList, outboundIPRangeInclusionList, outboundPortExclusionList, inboundPortExclusionList, networkInterfaceExclusionList)
 
 	return corev1.Container{
 		Name:            containerName,

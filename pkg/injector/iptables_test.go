@@ -129,7 +129,7 @@ EOF
 		t.Run(tc.name, func(t *testing.T) {
 			a := assert.New(t)
 
-			actual := GenerateIptablesCommands(tc.proxyMode, false, tc.outboundIPRangeExclusions, tc.outboundIPRangeInclusions, tc.outboundPortExclusions, tc.inboundPortExclusions, tc.networkInterfaceExclusions)
+			actual := GenerateIptablesCommands(tc.proxyMode, tc.outboundIPRangeExclusions, tc.outboundIPRangeInclusions, tc.outboundPortExclusions, tc.inboundPortExclusions, tc.networkInterfaceExclusions)
 			a.Equal(tc.expected, actual)
 		})
 	}
