@@ -597,7 +597,7 @@ func (td *FsmTestData) GetOSSpecificTCPEchoPod(podName string, namespace string,
 	var image string
 	var command string
 	installOpts := Td.GetFSMInstallOpts()
-	image = fmt.Sprintf("%s/fsm-demo-tcp-echo-server:%s", installOpts.ContainerRegistryLoc, installOpts.FsmImagetag)
+	image = fmt.Sprintf("%s/fsm-demo-tcp-echo-server:%s", installOpts.ContainerRegistryLoc, installOpts.FsmImageTag)
 	command = "/tcp-echo-server"
 	return Td.SimplePodApp(
 		SimplePodAppDef{
