@@ -13,8 +13,8 @@ func (s *Server) BroadcastListener() {
 	gatewayUpdateChan := gatewayUpdatePubSub.Sub(announcements.GatewayUpdate.String())
 	defer s.msgBroker.Unsub(gatewayUpdatePubSub, gatewayUpdateChan)
 
-	// Wait for two informer synchronization periods
-	slidingTimer := time.NewTimer(time.Second * 20)
+	// Wait for one informer synchronization periods
+	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
 
 	reconfirm := true
@@ -23,11 +23,10 @@ func (s *Server) BroadcastListener() {
 		select {
 		case <-gatewayUpdateChan:
 			// Wait for an informer synchronization period
-			slidingTimer.Reset(time.Second * 5)
+			slidingTimer.Reset(time.Second * 10)
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
-			//metricsstore.DefaultMetricsStore.ProxyConnectCount.Set(float64(len(proxies)))
 			newJob := func() *GatewayConfGeneratorJob {
 				return &GatewayConfGeneratorJob{
 					processor: s.processor,
