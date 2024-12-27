@@ -249,7 +249,7 @@ jobs:
     strategy:
       matrix:
         k8s_version: ["", "v1.19.16", "v1.21.14", "v1.23.17"]
-        bucket: [6]
+        bucket: [6,7]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
@@ -263,6 +263,10 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get clean
           rm -rf /usr/share/dotnet/
+      - name: Remove netscript
+        run: |
+          sudo apt-get remove -y netscript-2.4
+          sudo systemctl restart docker
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
