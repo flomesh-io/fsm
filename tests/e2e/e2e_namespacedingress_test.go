@@ -14,7 +14,7 @@ import (
 var _ = FSMDescribe("Test traffic among FSM NamespacedIngress",
 	FSMDescribeInfo{
 		Tier:   2,
-		Bucket: 7,
+		Bucket: 10,
 		OS:     OSCrossPlatform,
 	},
 	func() {
