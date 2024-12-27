@@ -37,12 +37,6 @@ var iptablesOutboundStaticRules = []string{
 	"-A FSM_PROXY_OUTBOUND -d 127.0.0.1/32 -j RETURN",
 }
 
-// iptablesDNSOutboundStaticRules is the list of iptables rules related to DNS outbound traffic interception and redirection
-var iptablesDNSOutboundStaticRules = []string{
-	// Redirects outbound UDP traffic to Sidecar's local DNS proxy listener port
-	"-A OUTPUT -p udp -d 127.0.0.153 --dport 53 -j DNAT --to-destination 127.0.0.153:5300",
-}
-
 // iptablesInboundStaticRules is the list of iptables rules related to inbound traffic interception and redirection
 var iptablesInboundStaticRules = []string{
 	// Redirects inbound TCP traffic hitting the FSM_PROXY_IN_REDIRECT chain to Sidecar's inbound listener port
@@ -68,7 +62,7 @@ var iptablesInboundStaticRules = []string{
 }
 
 // GenerateIptablesCommands generates a list of iptables commands to set up sidecar interception and redirection
-func GenerateIptablesCommands(proxyMode configv1alpha3.LocalProxyMode, enabledDNSProxy bool, outboundIPRangeExclusionList []string, outboundIPRangeInclusionList []string, outboundPortExclusionList []int, inboundPortExclusionList []int, networkInterfaceExclusionList []string) string {
+func GenerateIptablesCommands(proxyMode configv1alpha3.LocalProxyMode, outboundIPRangeExclusionList []string, outboundIPRangeInclusionList []string, outboundPortExclusionList []int, inboundPortExclusionList []int, networkInterfaceExclusionList []string) string {
 	var rules strings.Builder
 
 	fmt.Fprintln(&rules, `# FSM sidecar interception rules
@@ -102,9 +96,6 @@ func GenerateIptablesCommands(proxyMode configv1alpha3.LocalProxyMode, enabledDN
 
 	// 3. Create outbound rules
 	cmds = append(cmds, iptablesOutboundStaticRules...)
-	if enabledDNSProxy {
-		cmds = append(cmds, iptablesDNSOutboundStaticRules...)
-	}
 
 	if proxyMode == configv1alpha3.LocalProxyModePodIP {
 		// For sidecar -> local service container proxying, send traffic to pod IP instead of localhost
