@@ -9,8 +9,16 @@ import (
 	"github.com/flomesh-io/fsm/pkg/connector"
 	"github.com/flomesh-io/fsm/pkg/zookeeper"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery"
+	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/dubbo"
 	"github.com/flomesh-io/fsm/pkg/zookeeper/discovery/nebula"
 )
+
+const (
+	NebulaAdaptor = CodecAdaptor(`nebula`)
+	DubboAdaptor  = CodecAdaptor(`dubbo`)
+)
+
+type CodecAdaptor string
 
 type ZookeeperDiscoveryClient struct {
 	connectController connector.ConnectController
@@ -57,11 +65,15 @@ func (dc *ZookeeperDiscoveryClient) zookeeperClient() *discovery.ServiceDiscover
 			log.Fatal().Err(err).Msg("failed to connect zookeeper")
 		}
 
-		if strings.EqualFold(dc.adaptor, `nebula`) {
+		switch CodecAdaptor(dc.adaptor) {
+		case NebulaAdaptor:
 			dc.adaptorOps = nebula.NewAdaptor()
-		} else {
+		case DubboAdaptor:
+			dc.adaptorOps = dubbo.NewAdaptor()
+		default:
 			log.Fatal().Msgf("invalid grpc adaptor: %s", dc.adaptor)
 		}
+
 		dc.namingClient = discovery.NewServiceDiscovery(client, dc.basePath, dc.category, dc.adaptorOps)
 	}
 
@@ -166,12 +178,12 @@ func (dc *ZookeeperDiscoveryClient) CatalogInstances(service string, _ *connecto
 	return agentServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.MicroService
+	var catalogServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			instances, _ := dc.selectInstances(svc)
@@ -239,7 +251,7 @@ func (dc *ZookeeperDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -261,7 +273,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 				if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
 					catalogService := new(connector.CatalogService)
 					catalogService.FromZookeeper(instance)
-					catalogService.ServiceID = dc.connectController.GetServiceInstanceID(strings.ToLower(service), instance.InstanceIP(), 0, instance.InstancePort())
+					catalogService.ServiceID = dc.connectController.GetServiceInstanceID(strings.ToLower(service), instance.InstanceIP(), connector.MicroServicePort(instance.InstancePort()), connector.ProtocolGRPC)
 					catalogServices = append(catalogServices, catalogService)
 				}
 			}
@@ -270,12 +282,12 @@ func (dc *ZookeeperDiscoveryClient) RegisteredInstances(service string, _ *conne
 	return catalogServices, nil
 }
 
-func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.MicroService
+	var registeredServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			svc := strings.ToLower(svc)
@@ -291,7 +303,7 @@ func (dc *ZookeeperDiscoveryClient) RegisteredServices(*connector.QueryOptions) 
 				instance := instance
 				if connectUID, connectUIDExist := instance.GetMetadata(connector.ConnectUIDKey); connectUIDExist {
 					if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-						registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+						registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 						break
 					}
 				}
@@ -348,9 +360,12 @@ func GetZookeeperDiscoveryClient(connectController connector.ConnectController) 
 	zookeeperDiscoveryClient := new(ZookeeperDiscoveryClient)
 	zookeeperDiscoveryClient.connectController = connectController
 	adaptor := connectController.GetZookeeperAdaptor()
-	if strings.EqualFold(adaptor, `nebula`) {
+	switch CodecAdaptor(adaptor) {
+	case NebulaAdaptor:
 		zookeeperDiscoveryClient.adaptorOps = nebula.NewAdaptor()
-	} else {
+	case DubboAdaptor:
+		zookeeperDiscoveryClient.adaptorOps = dubbo.NewAdaptor()
+	default:
 		log.Fatal().Msgf("invalid grpc adaptor: %s", adaptor)
 	}
 	return zookeeperDiscoveryClient, nil

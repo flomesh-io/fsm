@@ -171,12 +171,12 @@ func (dc *EurekaDiscoveryClient) CatalogInstances(service string, _ *connector.Q
 	return agentServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.MicroService
+	var catalogServices []connector.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -248,7 +248,7 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -256,12 +256,12 @@ func (dc *EurekaDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]con
 	return catalogServices, nil
 }
 
-func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	servicesMap, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.MicroService
+	var registeredServices []connector.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc, svcApp := range servicesMap {
 			svc := strings.ToLower(svc)
@@ -281,7 +281,11 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]
 						if dc.connectController.GetEurekaCheckServiceInstanceID() {
 							agentService := new(connector.AgentService)
 							agentService.FromEureka(instance)
-							if !strings.EqualFold(instance.InstanceId, dc.connectController.GetServiceInstanceID(svc, agentService.Address, agentService.HTTPPort, agentService.GRPCPort)) {
+							instanceId := dc.connectController.GetServiceInstanceID(svc,
+								agentService.MicroService.EndpointAddress().Get(),
+								*agentService.MicroService.EndpointPort(),
+								*agentService.MicroService.Protocol())
+							if !strings.EqualFold(instance.InstanceId, instanceId) {
 								continue
 							}
 						}
@@ -305,7 +309,7 @@ func (dc *EurekaDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]
 				}
 			}
 			if hasLocalInstances {
-				registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+				registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 			}
 		}
 	}
@@ -328,7 +332,11 @@ func (dc *EurekaDiscoveryClient) RegisteredInstances(service string, _ *connecto
 					if dc.connectController.GetEurekaCheckServiceInstanceID() {
 						agentService := new(connector.AgentService)
 						agentService.FromEureka(instance)
-						if !strings.EqualFold(instance.InstanceId, dc.connectController.GetServiceInstanceID(strings.ToLower(service), agentService.Address, agentService.HTTPPort, agentService.GRPCPort)) {
+						instanceId := dc.connectController.GetServiceInstanceID(strings.ToLower(service),
+							agentService.MicroService.EndpointAddress().Get(),
+							*agentService.MicroService.EndpointPort(),
+							*agentService.MicroService.Protocol())
+						if !strings.EqualFold(instance.InstanceId, instanceId) {
 							continue
 						}
 					}

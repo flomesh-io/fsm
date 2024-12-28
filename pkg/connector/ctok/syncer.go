@@ -447,7 +447,7 @@ func (s *CtoKSyncer) fillService(svcMeta *connector.MicroSvcMeta, createSvc *api
 	}
 }
 
-func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroSvcPort, appProtocol connector.MicroSvcAppProtocol) bool {
+func (s *CtoKSyncer) existPort(svc *apiv1.Service, port connector.MicroServicePort, appProtocol connector.MicroServiceProtocol) bool {
 	if len(svc.Spec.Ports) > 0 {
 		for _, specPort := range svc.Spec.Ports {
 			if specPort.Port == int32(port) ||
@@ -504,13 +504,13 @@ func (s *CtoKSyncer) serviceHash(service *apiv1.Service) uint64 {
 }
 
 func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta) {
-	stats := make(map[connector.MicroSvcPort]map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
+	stats := make(map[connector.MicroServicePort]map[connector.MicroServiceAddress]*connector.MicroEndpointMeta)
 	for addr, ep := range meta.Endpoints {
 		for port, protocol := range ep.Ports {
 			if strings.EqualFold(string(protocol), constants.ProtocolHTTP) {
 				epsCache, exists := stats[port]
 				if !exists {
-					epsCache = make(map[connector.MicroEndpointAddr]*connector.MicroEndpointMeta)
+					epsCache = make(map[connector.MicroServiceAddress]*connector.MicroEndpointMeta)
 					stats[port] = epsCache
 				}
 				epsCache[addr] = ep
@@ -519,7 +519,7 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 	}
 
 	var peak = 0
-	var targetPorts map[connector.MicroSvcPort]int
+	var targetPorts map[connector.MicroServicePort]int
 	for port, epsCache := range stats {
 		cnt := len(epsCache)
 		if cnt == 0 {
@@ -528,20 +528,20 @@ func (s *CtoKSyncer) mergeFixedHTTPServiceEndpoints(meta *connector.MicroSvcMeta
 			targetPorts[port] = cnt
 		} else if cnt > peak {
 			peak = cnt
-			targetPorts = make(map[connector.MicroSvcPort]int)
+			targetPorts = make(map[connector.MicroServicePort]int)
 			targetPorts[port] = cnt
 		}
 	}
 
 	if len(targetPorts) > 0 {
-		valley := connector.MicroSvcPort(0)
+		valley := connector.MicroServicePort(0)
 		for port := range targetPorts {
 			if port > valley {
 				valley = port
 			}
 		}
-		meta.Ports = make(map[connector.MicroSvcPort]connector.MicroSvcAppProtocol)
-		meta.Ports[valley] = constants.ProtocolHTTP
+		meta.Ports = make(map[connector.MicroServicePort]connector.MicroServiceProtocol)
+		meta.Ports[valley] = connector.ProtocolHTTP
 		meta.Endpoints = stats[valley]
 	}
 }

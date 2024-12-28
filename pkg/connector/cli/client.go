@@ -348,14 +348,11 @@ func (c *client) SetServiceInstanceIDFunc(f connector.ServiceInstanceIDFunc) {
 
 // GetServiceInstanceID generates a unique ID for a service. This ID is not meant
 // to be particularly human-friendly.
-func (c *client) GetServiceInstanceID(name, addr string, httpPort, grpcPort int) string {
+func (c *client) GetServiceInstanceID(name, addr string, port connector.MicroServicePort, protocol connector.MicroServiceProtocol) string {
 	if c.serviceInstanceIDFunc != nil {
-		return c.serviceInstanceIDFunc(name, addr, httpPort, grpcPort)
+		return c.serviceInstanceIDFunc(name, addr, port, protocol)
 	}
-	if grpcPort > 0 {
-		return strings.ToLower(fmt.Sprintf("%s-%s-%d-%d-%s", name, addr, httpPort, grpcPort, c.clusterSet))
-	}
-	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, httpPort, c.clusterSet))
+	return strings.ToLower(fmt.Sprintf("%s-%s-%d-%s", name, addr, port, c.clusterSet))
 }
 
 func (c *client) updateConnectorMetrics() {

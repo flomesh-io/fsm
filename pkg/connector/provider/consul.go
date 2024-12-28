@@ -65,7 +65,7 @@ func (dc *ConsulDiscoveryClient) IsInternalServices() bool {
 	return dc.connectController.AsInternalServices()
 }
 
-func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
 	opts := q.ToConsul()
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
@@ -86,7 +86,7 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 	}
 	q.WaitIndex = meta.LastIndex
 
-	var catalogServices []connector.MicroService
+	var catalogServices []connector.NamespacedService
 	if len(servicesMap) > 0 {
 		for svc := range servicesMap {
 			if strings.EqualFold(svc, consulServiceName) {
@@ -96,7 +96,7 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 				log.Info().Msgf("invalid format, ignore service: %s, errors:%s", svc, strings.Join(errMsgs, "; "))
 				continue
 			}
-			catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+			catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 		}
 	}
 	return catalogServices, nil
@@ -181,7 +181,7 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 			checkService := new(connector.AgentService)
 			checkService.FromConsul(instance.Service)
 			checkService.ClusterId = dc.connectController.GetClusterId()
-			checkService.Service = fmt.Sprintf("%s-health-check", instance.Service.Service)
+			checkService.MicroService.Service = fmt.Sprintf("%s-health-check", instance.Service.Service)
 			checkService.HealthCheck = true
 			checkService.Tags = nil
 			checkService.Meta = nil
@@ -191,8 +191,8 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 	return agentServices, nil
 }
 
-func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.MicroService, error) {
-	var registeredServices []connector.MicroService
+func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) ([]connector.NamespacedService, error) {
+	var registeredServices []connector.NamespacedService
 	var opts = q.ToConsul()
 	opts.Filter = fmt.Sprintf("ServiceMeta.%s == `%s`",
 		connector.ConnectUIDKey,
@@ -205,7 +205,7 @@ func (dc *ConsulDiscoveryClient) RegisteredServices(q *connector.QueryOptions) (
 				if strings.EqualFold(svc, consulServiceName) {
 					continue
 				}
-				registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+				registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 			}
 		}
 	}

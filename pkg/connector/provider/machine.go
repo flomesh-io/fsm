@@ -104,14 +104,14 @@ func (dc *MachineDiscoveryClient) CatalogInstances(service string, _ *connector.
 	return agentServices, nil
 }
 
-func (dc *MachineDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *MachineDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	vms, err := dc.machineClient.MachineV1alpha1().VirtualMachines(dc.connectController.GetDeriveNamespace()).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.MicroService
+	var catalogServices []connector.NamespacedService
 	if len(vms.Items) > 0 {
 		for _, vm := range vms.Items {
 			if len(vm.Spec.Services) == 0 {
@@ -142,7 +142,7 @@ func (dc *MachineDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]co
 				}
 			}
 			for _, svc := range vm.Spec.Services {
-				catalogServices = append(catalogServices, connector.MicroService{Service: svc.ServiceName})
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc.ServiceName})
 			}
 		}
 	}
@@ -156,7 +156,7 @@ func (dc *MachineDiscoveryClient) RegisteredInstances(string, *connector.QueryOp
 	return catalogServices, nil
 }
 
-func (dc *MachineDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *MachineDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	// useless
 	return nil, nil
 }
