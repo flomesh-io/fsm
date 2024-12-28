@@ -155,8 +155,6 @@ func registerFlags(td *FsmTestData) {
 	flag.BoolVar(&td.EnableNsMetricTag, "EnableMetricsTag", true, "Enable tagging Namespaces for metrics collection")
 	flag.BoolVar(&td.DeployOnOpenShift, "deployOnOpenShift", false, "Configure tests to run on OpenShift")
 	flag.BoolVar(&td.RetryAppPodCreation, "retryAppPodCreation", true, "Retry app pod creation on error")
-
-	flag.BoolVar(&td.InstallFlannelCNI, "installFlannelCNI", utils.GetEnvBool("INSTALL_FLANNEL_CNI", false), "Install Flannel CNI plugin")
 }
 
 // ValidateStringParams validates input string parameters are valid
@@ -298,16 +296,6 @@ nodeRegistration:
 				},
 			},
 		}
-
-		if Td.InstallFlannelCNI {
-			clusterConfig.Networking = v1alpha4.Networking{DisableDefaultCNI: true}
-			for i := 0; i < len(clusterConfig.Nodes); i++ {
-				clusterConfig.Nodes[i].ExtraMounts = append(clusterConfig.Nodes[i].ExtraMounts, v1alpha4.Mount{
-					ContainerPath: "/opt/cni/bin",
-					HostPath:      "/opt/cni/bin",
-				})
-			}
-		}
 		if Td.ClusterVersion != "" {
 			for i := 0; i < len(clusterConfig.Nodes); i++ {
 				clusterConfig.Nodes[i].Image = fmt.Sprintf("kindest/node:%s", td.ClusterVersion)
@@ -315,28 +303,6 @@ nodeRegistration:
 		}
 		if err := td.ClusterProvider.Create(td.ClusterName, cluster.CreateWithV1Alpha4Config(clusterConfig)); err != nil {
 			return fmt.Errorf("failed to create kind cluster: %w", err)
-		}
-
-		if Td.InstallFlannelCNI {
-			// Install Flannel CNI
-			stdout, stderr, err := td.RunLocal("kubectl", "apply", "-f", "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml")
-			if err != nil {
-				td.T.Logf("error installing Flannel CNI: %s", err)
-			}
-			td.T.Logf("stdout:\n%s", stdout)
-			td.T.Logf("stderr:\n%s", stderr)
-
-			if err := td.WaitForPodsRunningReady("kube-flannel", 2, nil); err != nil {
-				return fmt.Errorf("failed to wait for kube-flannel pods")
-			}
-
-			if err := td.WaitForPodsRunningReady("kube-system", 2, &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"k8s-app": "kube-dns",
-				},
-			}); err != nil {
-				return fmt.Errorf("failed to wait for kube-flannel pods")
-			}
 		}
 	}
 
