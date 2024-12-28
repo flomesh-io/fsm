@@ -265,7 +265,7 @@ jobs:
           rm -rf /usr/share/dotnet/
       - name: Remove netscript
         run: |
-          sudo apt-get remove -y netscript-2.4
+          sudo apt-get remove -y netscript
           sudo systemctl restart docker
       - name: Checkout
         uses: actions/checkout@v4
