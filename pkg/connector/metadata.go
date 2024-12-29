@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"net"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,31 +20,10 @@ type MicroSvcName string
 // MicroSvcDomainName defines string as microservice domain name
 type MicroSvcDomainName string
 
-// MicroEndpointAddr defines string as micro endpoint addr
-type MicroEndpointAddr string
-
-// To4 converts the IPv4 address ip to a 4-byte representation.
-// If ip is not an IPv4 address, To4 returns nil.
-func (addr MicroEndpointAddr) To4() net.IP {
-	return net.ParseIP(string(addr)).To4()
-}
-
-// To16 converts the IP address ip to a 16-byte representation.
-// If ip is not an IP address (it is the wrong length), To16 returns nil.
-func (addr MicroEndpointAddr) To16() net.IP {
-	return net.ParseIP(string(addr)).To16()
-}
-
-// MicroSvcPort defines int as micro service port
-type MicroSvcPort int
-
-// MicroSvcAppProtocol defines app protocol
-type MicroSvcAppProtocol string
-
 // MicroEndpointMeta defines micro endpoint meta
 type MicroEndpointMeta struct {
-	Ports   map[MicroSvcPort]MicroSvcAppProtocol `json:"ports,omitempty"`
-	Address MicroEndpointAddr                    `json:"address,omitempty"`
+	Ports   map[MicroServicePort]MicroServiceProtocol `json:"ports,omitempty"`
+	Address MicroServiceAddress                       `json:"address,omitempty"`
 
 	GRPCMeta map[string]interface{} `json:"grpcMeta,omitempty"`
 
@@ -57,10 +35,10 @@ type MicroEndpointMeta struct {
 		ViaGatewayMode ctv1.WithGatewayMode `json:"viaGatewayMode,omitempty"`
 	} `json:"native"`
 	Local struct {
-		InternalService   bool                                 `json:"internalService,omitempty"`
-		WithGateway       bool                                 `json:"withGateway,omitempty"`
-		WithMultiGateways bool                                 `json:"withMultiGateways,omitempty"`
-		BindFgwPorts      map[MicroSvcPort]MicroSvcAppProtocol `json:"bindFgwPorts,omitempty"`
+		InternalService   bool                                      `json:"internalService,omitempty"`
+		WithGateway       bool                                      `json:"withGateway,omitempty"`
+		WithMultiGateways bool                                      `json:"withMultiGateways,omitempty"`
+		BindFgwPorts      map[MicroServicePort]MicroServiceProtocol `json:"bindFgwPorts,omitempty"`
 	} `json:"local"`
 }
 
@@ -79,20 +57,20 @@ func (m *MicroEndpointMeta) Init(controller ConnectController, discClient Servic
 		m.Local.WithMultiGateways = false
 	}
 
-	m.Local.BindFgwPorts = make(map[MicroSvcPort]MicroSvcAppProtocol)
+	m.Local.BindFgwPorts = make(map[MicroServicePort]MicroServiceProtocol)
 	if m.Local.InternalService {
 		if port := controller.GetViaIngressHTTPPort(); port > 0 {
-			m.Local.BindFgwPorts[MicroSvcPort(port)] = constants.ProtocolHTTP
+			m.Local.BindFgwPorts[MicroServicePort(port)] = constants.ProtocolHTTP
 		}
 		if port := controller.GetViaIngressGRPCPort(); port > 0 {
-			m.Local.BindFgwPorts[MicroSvcPort(port)] = constants.ProtocolGRPC
+			m.Local.BindFgwPorts[MicroServicePort(port)] = constants.ProtocolGRPC
 		}
 	} else {
 		if port := controller.GetViaEgressHTTPPort(); port > 0 {
-			m.Local.BindFgwPorts[MicroSvcPort(port)] = constants.ProtocolHTTP
+			m.Local.BindFgwPorts[MicroServicePort(port)] = constants.ProtocolHTTP
 		}
 		if port := controller.GetViaEgressGRPCPort(); port > 0 {
-			m.Local.BindFgwPorts[MicroSvcPort(port)] = constants.ProtocolGRPC
+			m.Local.BindFgwPorts[MicroServicePort(port)] = constants.ProtocolGRPC
 		}
 	}
 }
@@ -104,8 +82,8 @@ type GRPCMeta struct {
 
 // MicroSvcMeta defines micro service meta
 type MicroSvcMeta struct {
-	Ports     map[MicroSvcPort]MicroSvcAppProtocol     `json:"ports,omitempty"`
-	Endpoints map[MicroEndpointAddr]*MicroEndpointMeta `json:"endpoints,omitempty"`
+	Ports     map[MicroServicePort]MicroServiceProtocol  `json:"ports,omitempty"`
+	Endpoints map[MicroServiceAddress]*MicroEndpointMeta `json:"endpoints,omitempty"`
 
 	GRPCMeta *GRPCMeta `json:"grpcMeta,omitempty"`
 

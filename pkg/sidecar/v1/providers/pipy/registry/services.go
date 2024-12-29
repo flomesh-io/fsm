@@ -111,7 +111,7 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 			if len(svc.Annotations) > 0 {
 				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 					svcMeta := connector.Decode(svc, v)
-					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(pod.Status.PodIP)]; ok {
+					if _, ok := svcMeta.Endpoints[connector.MicroServiceAddress(pod.Status.PodIP)]; ok {
 						serviceList = append(serviceList, *svc)
 						attachedToServices[svc.Name] = svc.Namespace
 					}
@@ -172,7 +172,7 @@ func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Co
 			if len(svc.Annotations) > 0 {
 				if v, exists := svc.Annotations[connector.AnnotationMeshEndpointAddr]; exists {
 					svcMeta := connector.Decode(svc, v)
-					if _, ok := svcMeta.Endpoints[connector.MicroEndpointAddr(vm.Spec.MachineIP)]; ok {
+					if _, ok := svcMeta.Endpoints[connector.MicroServiceAddress(vm.Spec.MachineIP)]; ok {
 						serviceList = append(serviceList, *svc)
 					}
 				}

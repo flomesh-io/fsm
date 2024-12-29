@@ -245,12 +245,12 @@ func (dc *NacosDiscoveryClient) CatalogInstances(service string, _ *connector.Qu
 	return agentServices, nil
 }
 
-func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var catalogServices []connector.MicroService
+	var catalogServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			if errMsgs := validation.IsDNS1035Label(svc); len(errMsgs) > 0 {
@@ -322,7 +322,7 @@ func (dc *NacosDiscoveryClient) CatalogServices(*connector.QueryOptions) ([]conn
 						continue
 					}
 				}
-				catalogServices = append(catalogServices, connector.MicroService{Service: svc})
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
 				break
 			}
 		}
@@ -352,12 +352,12 @@ func (dc *NacosDiscoveryClient) RegisteredInstances(service string, _ *connector
 	return catalogServices, nil
 }
 
-func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.MicroService, error) {
+func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]connector.NamespacedService, error) {
 	serviceList, err := dc.selectServices()
 	if err != nil {
 		return nil, err
 	}
-	var registeredServices []connector.MicroService
+	var registeredServices []connector.NamespacedService
 	if len(serviceList) > 0 {
 		for _, svc := range serviceList {
 			svc := strings.ToLower(svc)
@@ -374,7 +374,7 @@ func (dc *NacosDiscoveryClient) RegisteredServices(*connector.QueryOptions) ([]c
 				if len(instance.Metadata) > 0 {
 					if connectUID, connectUIDExist := instance.Metadata[connector.ConnectUIDKey]; connectUIDExist {
 						if strings.EqualFold(connectUID, dc.connectController.GetConnectorUID()) {
-							registeredServices = append(registeredServices, connector.MicroService{Service: svc})
+							registeredServices = append(registeredServices, connector.NamespacedService{Service: svc})
 							break
 						}
 					}
@@ -391,7 +391,7 @@ func (dc *NacosDiscoveryClient) Deregister(dereg *connector.CatalogDeregistratio
 		return nil
 	}
 	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
-	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0)
+	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheDeregisterInstance(instanceId, func() error {
 		conn := dc.nacosClient(instanceId)
 		_, err := conn.DeregisterInstance(*ins)
@@ -421,7 +421,7 @@ func (dc *NacosDiscoveryClient) Register(reg *connector.CatalogRegistration) err
 		}
 	}
 	port, _ := strconv.Atoi(fmt.Sprintf("%d", ins.Port))
-	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, port, 0)
+	instanceId := dc.getServiceInstanceID(ins.ServiceName, ins.Ip, connector.MicroServicePort(port), connector.ProtocolHTTP)
 	return dc.connectController.CacheRegisterInstance(instanceId, ins, func() error {
 		_, err := dc.nacosClient(instanceId).RegisterInstance(*ins)
 		return err
@@ -448,7 +448,7 @@ func (dc *NacosDiscoveryClient) MicroServiceProvider() ctv1.DiscoveryServiceProv
 	return ctv1.NacosDiscoveryService
 }
 
-func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort, _ int) string {
+func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, port connector.MicroServicePort, _ connector.MicroServiceProtocol) string {
 	k2cGroupId := dc.connectController.GetNacosGroupId()
 	if len(k2cGroupId) == 0 {
 		k2cGroupId = constant.DEFAULT_GROUP
@@ -459,8 +459,7 @@ func (dc *NacosDiscoveryClient) getServiceInstanceID(name, addr string, httpPort
 		k2cClusterId = connector.NACOS_DEFAULT_CLUSTER
 	}
 
-	return fmt.Sprintf("%s#%d#%s#%s@@%s",
-		addr, httpPort, k2cClusterId, k2cGroupId, name)
+	return fmt.Sprintf("%s#%d#%s#%s@@%s", addr, port, k2cClusterId, k2cGroupId, name)
 }
 
 func (dc *NacosDiscoveryClient) Close() {

@@ -60,7 +60,7 @@ func (s *KtoCSyncer) Sync(rs []*connector.CatalogRegistration) {
 		// Determine the namespace the service is in to use for indexing
 		// against the s.serviceNames and s.namespaces maps.
 		// This will be "" for OSS.
-		ns := r.Service.Namespace
+		ns := r.Service.MicroService.Namespace
 
 		// Mark this as a valid service, initializing state if necessary
 		set, ok := s.controller.GetK2CContext().ServiceNames.Get(ns)
@@ -68,8 +68,9 @@ func (s *KtoCSyncer) Sync(rs []*connector.CatalogRegistration) {
 			s.controller.GetK2CContext().ServiceNames.SetIfAbsent(ns, mapset.NewSet())
 			set, _ = s.controller.GetK2CContext().ServiceNames.Get(ns)
 		}
-		set.Add(r.Service.Service)
-		log.Debug().Msgf("[Sync] adding service to serviceNames set service:%v service name:%s", r.Service, r.Service.Service)
+		set.Add(r.Service.MicroService.Service)
+		log.Debug().Msgf("[Sync] adding service to serviceNames set service:%v service name:%s",
+			r.Service, r.Service.MicroService.Service)
 
 		// Add service to namespaces map, initializing if necessary
 		nsSet, nsOk := s.controller.GetK2CContext().Namespaces.Get(ns)
@@ -140,7 +141,7 @@ func (s *KtoCSyncer) watchReapableServices(ctx context.Context) {
 	// This prevents a lot of churn in services causing high CPU usage.
 	minWait := s.controller.GetSyncPeriod()
 	minWaitCh := time.After(minWait)
-	var services []connector.MicroService
+	var services []connector.NamespacedService
 	var err error
 	for {
 		// Wait our minimum time before continuing or retrying
@@ -253,7 +254,7 @@ func (s *KtoCSyncer) watchService(ctx context.Context, name, namespace string) {
 			deregistration := &connector.CatalogDeregistration{
 				Node:      instance.Node,
 				ServiceID: instance.ServiceID,
-				MicroService: connector.MicroService{
+				NamespacedService: connector.NamespacedService{
 					Service: instance.ServiceName,
 				},
 				ServiceRef: instance.ServiceRef,
@@ -298,7 +299,7 @@ func (s *KtoCSyncer) scheduleReapServiceLocked(name, namespace string) error {
 		deregistration := &connector.CatalogDeregistration{
 			Node:      instance.Node,
 			ServiceID: instance.ServiceID,
-			MicroService: connector.MicroService{
+			NamespacedService: connector.NamespacedService{
 				Service: instance.ServiceName,
 			},
 			ServiceRef: instance.ServiceRef,
@@ -440,7 +441,7 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 					err := s.discClient.Register(r)
 					if err != nil {
 						log.Error().Msgf("error registering service service-name:%s err:%v",
-							r.Service.Service,
+							r.Service.MicroService.Service,
 							err)
 						maxRetries--
 						if maxRetries > 0 {
@@ -450,8 +451,8 @@ func (s *KtoCSyncer) syncFull(ctx context.Context) {
 						}
 					} else {
 						log.Debug().Msgf("registered service instance service-name:%s namespace-name:%s",
-							r.Service.Service,
-							r.Service.Namespace)
+							r.Service.MicroService.Service,
+							r.Service.MicroService.Namespace)
 						break
 					}
 				}
