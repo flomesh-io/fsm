@@ -77,9 +77,10 @@ pull_request_rules:
       - label = backport/v1.4
     actions:
       backport:
+        bot_account: reaver-flomesh
         branches:
           - "release/v1.4"
-        title: "[backport] {{ title }}"
+        title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
   - name: Backport features/patches to the release/v1.3 branch
@@ -88,9 +89,10 @@ pull_request_rules:
       - label = backport/v1.3
     actions:
       backport:
+        bot_account: reaver-flomesh
         branches:
           - "release/v1.3"
-        title: "[backport] {{ title }}"
+        title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
   - name: Backport features/patches to the release/v1.2 branch
@@ -99,9 +101,10 @@ pull_request_rules:
       - label = backport/v1.2
     actions:
       backport:
+        bot_account: reaver-flomesh
         branches:
           - "release/v1.2"
-        title: "[backport] {{ title }}"
+        title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
   - name: Cherry-pick patches from release/v* to the main branch
@@ -110,9 +113,10 @@ pull_request_rules:
       - label = cherry-pick/main
     actions:
       backport:
+        bot_account: reaver-flomesh
         branches:
           - main
-        title: "[cherry-pick] {{ title }}"
+        title: "[cherry-pick] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
 merge_protections:
@@ -126,4 +130,12 @@ merge_protections:
       - "title ~= ^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?(
         )?(fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\\(.+\
         \\))?:"
+  - name: Enforce verified commits
+    description: Make sure that we have verified commits
+    if:
+      - or:
+        - base=main
+        - base~=^release\/v
+    success_conditions:
+      - "#commits-unverified = 0"
 
