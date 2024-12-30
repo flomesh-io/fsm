@@ -29,12 +29,12 @@ pull_request_rules:
       - check-success=Go mesh test e2e (3)
       - check-success=Go mesh test e2e (4)
       - check-success=Go mesh test e2e (5)
-      - "check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
-      - "check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
+      - check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from client to server with a Kubernetes Service ...
+      - check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from client to server with a Kubernetes Service ...
       - check-success=Go gateway test e2e (6)
-      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to backend service routing by FSM Gateway)
+      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to backend service routing by FSM Gateway...
+      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to backend service routing by FSM Gateway...
+      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to backend service routing by FSM Gateway...
       - check-success=Go ingress test e2e (7)
       - check-success=Go statefulset test e2e (8)
       - check-success=Go retry test e2e (9)
@@ -52,7 +52,12 @@ pull_request_rules:
     actions:
       rebase:
   - name: Add a label auto-squash to the PR automatically
-    conditions: []
+    conditions:
+      - -closed
+      - -label=wip
+      - -label=do-not-merge/hold
+      - -label=auto-merge
+      - -label=auto-rebase
     actions:
       label:
         add:
@@ -66,6 +71,50 @@ pull_request_rules:
       label:
         toggle:
           - conflict
+  - name: Backport features/patches to the release/v1.4 branch
+    conditions:
+      - base=main
+      - label = backport/v1.4
+    actions:
+      backport:
+        branches:
+          - "release/v1.4"
+        title: "[backport] {{ title }}"
+        assignees:
+          - "{{ author }}"
+  - name: Backport features/patches to the release/v1.3 branch
+    conditions:
+      - base=main
+      - label = backport/v1.3
+    actions:
+      backport:
+        branches:
+          - "release/v1.3"
+        title: "[backport] {{ title }}"
+        assignees:
+          - "{{ author }}"
+  - name: Backport features/patches to the release/v1.2 branch
+    conditions:
+      - base=main
+      - label = backport/v1.2
+    actions:
+      backport:
+        branches:
+          - "release/v1.2"
+        title: "[backport] {{ title }}"
+        assignees:
+          - "{{ author }}"
+  - name: Cherry-pick patches from release/v* to the main branch
+    conditions:
+      - base~=^release\/v
+      - label = cherry-pick/main
+    actions:
+      backport:
+        branches:
+          - main
+        title: "[cherry-pick] {{ title }}"
+        assignees:
+          - "{{ author }}"
 merge_protections:
   - name: Enforce conventional commit
     description: Make sure that we follow https://www.conventionalcommits.org/en/v1.0.0/
