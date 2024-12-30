@@ -23,24 +23,18 @@ pull_request_rules:
       - check-success=Chart checks
       - check-success=Go test
       - check-success=Scan images for security vulnerabilities
-      - check-success=Integration Test with Tresor, SMI traffic policies, and
-        egress disabled
+      - check-success=Integration Test with Tresor, SMI traffic policies, and egress disabled
       - check-success=Go mesh test e2e (1)
       - check-success=Go mesh test e2e (2)
       - check-success=Go mesh test e2e (3)
       - check-success=Go mesh test e2e (4)
       - check-success=Go mesh test e2e (5)
-      - "check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from
-        client to server with a Kubernetes Service for the Source: HTTP)"
-      - "check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from
-        client to server with a Kubernetes Service for the Source: HTTP)"
+      - "check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
+      - "check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
       - check-success=Go gateway test e2e (6)
-      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to
-        backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to
-        backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to
-        backend service routing by FSM Gateway)
+      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to backend service routing by FSM Gateway)
+      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to backend service routing by FSM Gateway)
+      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to backend service routing by FSM Gateway)
       - check-success=Go ingress test e2e (7)
       - check-success=Go statefulset test e2e (8)
       - check-success=Go retry test e2e (9)
@@ -51,7 +45,7 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-- name: Rebase pull request when it's more than 3 commits behind main
+  - name: Rebase pull request when it's more than 3 commits behind main
     conditions:
       - base = main
       - "#commits-behind >= 3"
@@ -76,7 +70,9 @@ merge_protections:
   - name: Enforce conventional commit
     description: Make sure that we follow https://www.conventionalcommits.org/en/v1.0.0/
     if:
-      - base = main
+      - or:
+        - base=main
+        - base~=^release\/v
     success_conditions:
       - "title ~= ^(\\[wip\\]|\\[backport\\]|\\[cherry-pick\\])?(
         )?(fix|feat|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\\(.+\
