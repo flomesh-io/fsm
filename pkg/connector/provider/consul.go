@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	consulServiceName = "consul"
+	consulServiceName        = "consul"
+	healthCheckServiceSuffix = "-health-check"
 )
 
 type ConsulDiscoveryClient struct {
@@ -97,12 +98,22 @@ func (dc *ConsulDiscoveryClient) CatalogServices(q *connector.QueryOptions) ([]c
 				continue
 			}
 			catalogServices = append(catalogServices, connector.NamespacedService{Service: svc})
+			if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
+				catalogServices = append(catalogServices, connector.NamespacedService{Service: fmt.Sprintf("%s%s", svc, healthCheckServiceSuffix)})
+			}
 		}
 	}
 	return catalogServices, nil
 }
 
 func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.QueryOptions) ([]*connector.AgentService, error) {
+	healthCheck := false
+	if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
+		if strings.HasSuffix(service, healthCheckServiceSuffix) {
+			healthCheck = true
+			service = strings.TrimSuffix(service, healthCheckServiceSuffix)
+		}
+	}
 	opts := q.ToConsul()
 	filters := []string{fmt.Sprintf("Service.Meta.%s != `%s`",
 		connector.ClusterSetKey,
@@ -125,7 +136,7 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 
 	agentServices := make([]*connector.AgentService, 0)
 	for _, instance := range instances {
-		if !dc.connectController.GetPassingOnly() {
+		if !healthCheck && !dc.connectController.GetPassingOnly() {
 			agentService := new(connector.AgentService)
 			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
@@ -170,18 +181,18 @@ func (dc *ConsulDiscoveryClient) CatalogInstances(service string, q *connector.Q
 			}
 		}
 
-		if healthPassing {
+		if !healthCheck && healthPassing {
 			agentService := new(connector.AgentService)
 			agentService.FromConsul(instance.Service)
 			agentService.ClusterId = dc.connectController.GetClusterId()
 			agentServices = append(agentServices, agentService)
 		}
 
-		if dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
+		if healthCheck && dc.IsInternalServices() && dc.connectController.GetConsulGenerateInternalServiceHealthCheck() {
 			checkService := new(connector.AgentService)
 			checkService.FromConsul(instance.Service)
 			checkService.ClusterId = dc.connectController.GetClusterId()
-			checkService.MicroService.Service = fmt.Sprintf("%s-health-check", instance.Service.Service)
+			checkService.MicroService.Service = fmt.Sprintf("%s%s", instance.Service.Service, healthCheckServiceSuffix)
 			checkService.HealthCheck = true
 			checkService.Tags = nil
 			checkService.Meta = nil
