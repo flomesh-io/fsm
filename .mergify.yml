@@ -29,12 +29,12 @@ pull_request_rules:
       - check-success=Go mesh test e2e (3)
       - check-success=Go mesh test e2e (4)
       - check-success=Go mesh test e2e (5)
-      - "check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
-      - "check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP)"
+      - check-success=Go mesh test e2e (v1.19.16, Test traffic flowing from client to server with a Kubernetes Service ...
+      - check-success=Go mesh test e2e (v1.27.11, Test traffic flowing from client to server with a Kubernetes Service ...
       - check-success=Go gateway test e2e (6)
-      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to backend service routing by FSM Gateway)
-      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to backend service routing by FSM Gateway)
+      - check-success=Go gateway test e2e (v1.19.16, Test traffic from client to backend service routing by FSM Gateway...
+      - check-success=Go gateway test e2e (v1.21.14, Test traffic from client to backend service routing by FSM Gateway...
+      - check-success=Go gateway test e2e (v1.23.17, Test traffic from client to backend service routing by FSM Gateway...
       - check-success=Go ingress test e2e (7)
       - check-success=Go statefulset test e2e (8)
       - check-success=Go retry test e2e (9)
