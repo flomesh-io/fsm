@@ -56,8 +56,6 @@ pull_request_rules:
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
-        labels:
-          - "{{ label }}"
   - name: Backport features/patches to the release/v1.3 branch
     conditions:
       - base=main
