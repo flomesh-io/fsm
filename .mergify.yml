@@ -1,14 +1,4 @@
 pull_request_rules:
-  - name: Ping PR author when conflicting
-    description: Warn the pull request author when their PR are conflicting
-    conditions:
-      - conflict
-      - -closed
-    actions:
-      comment:
-        message: >
-          👋 {{author}} your PR is conflicting and needs to be updated to be
-          merged
   - name: Automatic squash and merge when CI passes and reviews approve
     conditions:
       - or:
@@ -39,7 +29,11 @@ pull_request_rules:
       - check-success=Go statefulset test e2e (8)
       - check-success=Go retry test e2e (9)
       - "#approved-reviews-by >= 1"
-      - label=auto-squash
+      - or:
+          - and:
+            - label=ok-to-merge
+            - label=squash
+          - label=ok-to-squash
       - -label=wip
       - -label=do-not-merge/hold
     actions:
@@ -51,45 +45,25 @@ pull_request_rules:
       - "#commits-behind >= 3"
     actions:
       rebase:
-  - name: Add a label auto-squash to the PR automatically
-    conditions:
-      - -closed
-      - -label=wip
-      - -label=do-not-merge/hold
-      - -label=auto-merge
-      - -label=auto-rebase
-    actions:
-      label:
-        add:
-          - auto-squash
-  - name: Label conflicting pull requests
-    description: Add a label to a pull request with conflict to spot it easily
-    conditions:
-      - conflict
-      - -closed
-    actions:
-      label:
-        toggle:
-          - conflict
   - name: Backport features/patches to the release/v1.4 branch
     conditions:
       - base=main
       - label = backport/v1.4
     actions:
       backport:
-        bot_account: reaver-flomesh
         branches:
           - "release/v1.4"
         title: "[backport] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+        labels:
+          - "{{ label }}"
   - name: Backport features/patches to the release/v1.3 branch
     conditions:
       - base=main
       - label = backport/v1.3
     actions:
       backport:
-        bot_account: reaver-flomesh
         branches:
           - "release/v1.3"
         title: "[backport] {{ title }} (#{{ number }})"
@@ -101,7 +75,6 @@ pull_request_rules:
       - label = backport/v1.2
     actions:
       backport:
-        bot_account: reaver-flomesh
         branches:
           - "release/v1.2"
         title: "[backport] {{ title }} (#{{ number }})"
@@ -113,12 +86,38 @@ pull_request_rules:
       - label = cherry-pick/main
     actions:
       backport:
-        bot_account: reaver-flomesh
         branches:
           - main
         title: "[cherry-pick] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+  - name: Ping PR author when conflicting and Label conflicting pull requests
+    description: Warn the pull request author when their PR are conflicting, and add a label to a pull request with conflict to spot it easily
+    conditions:
+      - conflict
+      - -closed
+    actions:
+      comment:
+        message: >
+          👋 {{author}} your PR is conflicting and needs to be updated to be merged
+      label:
+        toggle:
+          - conflicts
+  - name: Comment when a pull request has unverified commits
+    conditions:
+      - -closed
+      - "#commits-unverified > 0"
+    actions:
+      comment:
+        message: |
+          ❗❗❗
+          All commits in this PR must be signed off. 
+          Please sign all commits by:
+          
+          ```shell
+          git rebase HEAD~{{ commits | length }} --signoff
+          git push --force-with-lease origin {{ head }}
+          ```
 merge_protections:
   - name: Enforce conventional commit
     description: Make sure that we follow https://www.conventionalcommits.org/en/v1.0.0/
@@ -138,4 +137,12 @@ merge_protections:
         - base~=^release\/v
     success_conditions:
       - "#commits-unverified = 0"
+  - name: Enforce linear history
+    description: Make sure that we have a linear history, no merge commits are allowed
+    if:
+      - or:
+        - base=main
+        - base~=^release\/v
+    success_conditions:
+      - "linear-history"
 
