@@ -7,7 +7,16 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: wow-actions/slash-commands@v1
+      - name: Check user permission
+        id: check
+        uses: scherermichael-oss/action-has-permission@master
+        with:
+          required-permission: admin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Execute slash command
+        if: steps.check.outputs.has-permission
+        uses: wow-actions/slash-commands@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG_FILE: .github/slash-commands-config.yml
