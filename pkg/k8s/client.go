@@ -52,6 +52,7 @@ func newClient(informerCollection *fsminformers.InformerCollection, policyClient
 		ServiceAccounts: c.initServiceAccountsMonitor,
 		Pods:            c.initPodMonitor,
 		Endpoints:       c.initEndpointMonitor,
+		VirtualMachine:  c.initVirtualMachineMonitor,
 	}
 
 	// If specific informers are not selected to be initialized, initialize all informers
@@ -122,6 +123,15 @@ func (c *client) initEndpointMonitor() {
 		Delete: announcements.EndpointDeleted,
 	}
 	c.informers.AddEventHandler(fsminformers.InformerKeyEndpoints, GetEventHandlerFuncs(c.shouldObserve, eptEventTypes, c.msgBroker))
+}
+
+func (c *client) initVirtualMachineMonitor() {
+	podEventTypes := EventTypes{
+		Add:    announcements.VirtualMachineAdded,
+		Update: announcements.VirtualMachineUpdated,
+		Delete: announcements.VirtualMachineDeleted,
+	}
+	c.informers.AddEventHandler(fsminformers.InformerKeyVirtualMachine, GetEventHandlerFuncs(c.shouldObserve, podEventTypes, c.msgBroker))
 }
 
 // IsMonitoredNamespace returns a boolean indicating if the namespace is among the list of monitored namespaces

@@ -63,6 +63,8 @@ const (
 	Pods InformerKey = "Pods"
 	// Endpoints lookup identifier
 	Endpoints InformerKey = "Endpoints"
+	// VirtualMachine lookup identifier
+	VirtualMachine InformerKey = "VirtualMachine"
 	// ServiceAccounts lookup identifier
 	ServiceAccounts InformerKey = "ServiceAccounts"
 	// EndpointSlices lookup identifier
