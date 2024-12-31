@@ -1,0 +1,104 @@
+# Specify commands for issues and pull requests
+# ---------------------------------------------
+
+hi:
+  # Post a comment, `{{ author }}` is an author placeholder
+  comment: hi @{{ author }}
+
+wow:
+  # Post a comment
+  # `{{ args.* }}` is command args placeholder
+  # `{{ input }}` is command input placeholder
+  comment: wow {{ args.0 }}, and the command args is {{ input }}
+  # Reactions to be added to comment
+  reactions: ['+1']
+
+heated:
+  # Lock the thread
+  lock: true
+  # Set a lock reason, such as `off-topic`, `too heated`, `resolved` or `spam`
+  lockReason: too heated
+  # Reactions to be added to comment
+  reactions: ['eyes', 'heart']
+  # Post a comment
+  comment: The thread has been temporarily locked.
+
+unheated:
+  # Unlock the thread
+  unlock: true
+
+lgtm:
+  # Add a reaction
+  reactions: ['+1']
+  label:
+    - ok-to-merge
+    - squash
+
+ok-to-squash:
+  label:
+    - ok-to-merge
+    - squash
+
+label:
+  label:
+    # Add labels from args
+    - '{{ input }}'
+
+unlabel:
+  label:
+    # Remove labels from args
+    - '-{{ input }}'
+
+relabel:
+  label:
+    # Remove all labels
+    - -*
+    # add label from args
+    - '{{ input }}'
+
+handover:
+  # handover issues/PRs to the given users
+  assign:
+    - '-*' # first remove all the old assignees
+    - '{{ input }}'
+
+assign:
+  # assign issues/PRs to the given users
+  assign:
+    - '{{ input }}'
+
+# Optionally, specify commands just for issues
+# --------------------------------------------
+issues:
+  pin:
+    # Pin the issue
+    pin: true
+
+  unpin:
+    # UnPin the issue
+    unpin: true
+
+  feature:
+    # Close the issue
+    close: true
+    # Post a comment, `{{ author }}` is an author placeholder
+    comment: >
+      :wave: @{{ author }}, please use our idea board to request new features.
+
+
+  needs-more-info:
+    # Close the issue
+    close: true
+    # Post a comment, `{{ author }}` is author placeholder
+    comment: >
+      @{{ author }}
+      
+      In order to communicate effectively, we have a certain format requirement for the issue, your issue is automatically closed because there is no recurring step or reproducible warehouse, and will be REOPEN after the offer.
+
+
+# Optionally, specify commands just for pull requests
+# ---------------------------------------------------
+pulls:
+  hello:
+    # Post a comment, `{{ input }}` is command input placeholder
+    comment: hello {{ input }}
