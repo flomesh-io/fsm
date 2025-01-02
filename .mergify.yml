@@ -89,6 +89,24 @@ pull_request_rules:
         title: "[cherry-pick] {{ title }} (#{{ number }})"
         assignees:
           - "{{ author }}"
+  - name: Add label copy/v1.5 to milestone v1.5 pull requests
+    conditions:
+      - base=main
+      - milestone~=^v1\.5\.[0-9]+$
+      - -closed
+    actions:
+      label:
+        add:
+          - copy/v1.5
+  - name: Copy features/patches to the release/v1.5 branch
+    conditions:
+      - merged
+      - base=main
+      - label = copy/v1.5
+    actions:
+      copy:
+        branches:
+          - release/v1.5
   - name: Ping PR author when conflicting and Label conflicting pull requests
     description: Warn the pull request author when their PR are conflicting, and add a label to a pull request with conflict to spot it easily
     conditions:
