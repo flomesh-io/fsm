@@ -42,7 +42,7 @@ require (
 	github.com/hashicorp/vault/sdk v0.14.0
 	github.com/hudl/fargo v1.4.0
 	github.com/jinzhu/copier v0.4.0
-	github.com/jonboulle/clockwork v0.4.0
+	github.com/jonboulle/clockwork v0.5.0
 	github.com/jstemmer/go-junit-report v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matm/gocov-html v1.4.0
