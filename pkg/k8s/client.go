@@ -57,7 +57,7 @@ func newClient(informerCollection *fsminformers.InformerCollection, policyClient
 
 	// If specific informers are not selected to be initialized, initialize all informers
 	if len(selectInformers) == 0 {
-		selectInformers = []InformerKey{Namespaces, Services, ServiceAccounts, Pods, Endpoints}
+		selectInformers = []InformerKey{Namespaces, Services, ServiceAccounts, Pods, Endpoints, VirtualMachine}
 	}
 
 	for _, informer := range selectInformers {
