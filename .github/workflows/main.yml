@@ -248,19 +248,8 @@ jobs:
     needs: build
     strategy:
       matrix:
-        k8s_version: [""]
-        focus: [""]
-        bucket: [6]
-        include:
-          - k8s_version: v1.19.16
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
-          - k8s_version: v1.21.14
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
-          - k8s_version: v1.23.17
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
+        k8s_version: ["", "v1.19.16", "v1.21.14", "v1.23.17"]
+        bucket: [6,7]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
@@ -274,6 +263,10 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get clean
           rm -rf /usr/share/dotnet/
+      - name: Remove netscript
+        run: |
+          sudo apt-get remove -y netscript
+          sudo systemctl restart docker
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -332,7 +325,7 @@ jobs:
       matrix:
         k8s_version: [ "" ]
         focus: [ "" ]
-        bucket: [ 7 ]
+        bucket: [ 10 ]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
