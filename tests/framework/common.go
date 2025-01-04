@@ -20,6 +20,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/k3d-io/k3d/v5/pkg/config"
 
 	"github.com/k3d-io/k3d/v5/pkg/runtimes"
@@ -70,6 +72,7 @@ import (
 	k3dCluster "github.com/k3d-io/k3d/v5/pkg/client"
 	k3dTypes "github.com/k3d-io/k3d/v5/pkg/config/types"
 	k3dCfg "github.com/k3d-io/k3d/v5/pkg/config/v1alpha5"
+	k3dLogger "github.com/k3d-io/k3d/v5/pkg/logger"
 	k3d "github.com/k3d-io/k3d/v5/pkg/types"
 	k3dutil "github.com/k3d-io/k3d/v5/pkg/util"
 )
@@ -257,6 +260,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		clusterConfig := td.k3dClusterConfig()
 		td.ClusterConfig = clusterConfig
 
+		k3dLogger.Logger.SetLevel(logrus.DebugLevel)
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
 			// rollback if creation failed
 			td.T.Error(err)
@@ -519,7 +523,7 @@ mirrors:
 	if err != nil {
 		td.T.Fatal(err)
 	}
-	td.T.Log("===== Merged Cluster Config =====\n%+v\n===== ===== =====\n", clusterConfig)
+	td.T.Logf("===== Merged Cluster Config =====\n%+v\n===== ===== =====\n", clusterConfig)
 
 	clusterConfig, err = config.ProcessClusterConfig(*clusterConfig)
 	if err != nil {
