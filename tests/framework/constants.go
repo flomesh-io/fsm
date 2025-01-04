@@ -46,6 +46,9 @@ const (
 	// KindCluster Creates Kind cluster on docker and uses it as cluster, FSM installs through CLI
 	KindCluster InstallType = "KindCluster"
 
+	// K3dCluster Creates K3d cluster on docker and uses it as cluster, FSM installs through CLI
+	K3dCluster InstallType = "K3dCluster"
+
 	// NoInstall uses current kube cluster, assumes an FSM is present in `FsmNamespace`
 	NoInstall InstallType = "NoInstall"
 

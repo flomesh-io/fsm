@@ -49,7 +49,7 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 				installOpts := Td.GetFSMInstallOpts()
 				installOpts.EnableIngress = false
 				installOpts.EnableGateway = true
-				installOpts.EnableServiceLB = true
+				installOpts.EnableServiceLB = Td.InstType == KindCluster
 
 				Expect(Td.InstallFSM(installOpts)).To(Succeed())
 				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, &metav1.LabelSelector{

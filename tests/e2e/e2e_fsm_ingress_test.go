@@ -32,7 +32,7 @@ var _ = FSMDescribe("Test traffic among FSM Ingress",
 				installOpts.EnableIngress = true
 				installOpts.EnableIngressTLS = true
 				installOpts.EnableGateway = false
-				installOpts.EnableServiceLB = true
+				installOpts.EnableServiceLB = Td.InstType == KindCluster
 				installOpts.IngressHTTPPort = 8090
 				installOpts.IngressTLSPort = 9443
 

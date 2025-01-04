@@ -15,9 +15,14 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/k3d-io/k3d/v5/pkg/config"
+
+	"github.com/k3d-io/k3d/v5/pkg/runtimes"
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
@@ -60,6 +65,13 @@ import (
 	"github.com/flomesh-io/fsm/pkg/cli"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
+
+	k3dClient "github.com/k3d-io/k3d/v5/pkg/client"
+	k3dCluster "github.com/k3d-io/k3d/v5/pkg/client"
+	k3dTypes "github.com/k3d-io/k3d/v5/pkg/config/types"
+	k3dCfg "github.com/k3d-io/k3d/v5/pkg/config/v1alpha5"
+	k3d "github.com/k3d-io/k3d/v5/pkg/types"
+	k3dutil "github.com/k3d-io/k3d/v5/pkg/util"
 )
 
 // Td the global context for test.
@@ -107,11 +119,11 @@ var HttpbinCmd = []string{"gunicorn", "-b", fmt.Sprintf("0.0.0.0:%d", DefaultUps
 // Verifies the instType string flag option is a valid enum type
 func verifyValidInstallType(t InstallType) error {
 	switch t {
-	case SelfInstall, KindCluster, NoInstall:
+	case SelfInstall, KindCluster, K3dCluster, NoInstall:
 		return nil
 	default:
-		return fmt.Errorf("%s is not a valid InstallType (%s, %s, %s) ",
-			t, SelfInstall, KindCluster, NoInstall)
+		return fmt.Errorf("%s is not a valid InstallType (%s, %s, %s, %s) ",
+			t, SelfInstall, KindCluster, K3dCluster, NoInstall)
 	}
 }
 
@@ -138,11 +150,11 @@ func registerFlags(td *FsmTestData) {
 	flag.StringVar((*string)(&td.InstType), "installType", string(SelfInstall), "Type of install/deployment for FSM")
 	flag.StringVar((*string)(&td.CollectLogs), "collectLogs", string(CollectLogsIfErrorOnly), "Defines if/when to collect logs.")
 
-	flag.StringVar(&td.ClusterName, "kindClusterName", "fsm-e2e", "Name of the Kind cluster to be created")
+	flag.StringVar(&td.ClusterName, "clusterName", "fsm-e2e", "Name of the Kind/K3d cluster to be created")
 
-	flag.BoolVar(&td.CleanupKindCluster, "cleanupKindCluster", true, "Cleanup kind cluster upon exit")
-	flag.BoolVar(&td.CleanupKindClusterBetweenTests, "cleanupKindClusterBetweenTests", false, "Cleanup kind cluster between tests")
-	flag.StringVar(&td.ClusterVersion, "kindClusterVersion", "", "Kind cluster version, ex. v.1.20.2")
+	flag.BoolVar(&td.CleanupCluster, "cleanupCluster", true, "Cleanup kind/k3d cluster upon exit")
+	flag.BoolVar(&td.CleanupClusterBetweenTests, "cleanupClusterBetweenTests", false, "Cleanup kind/k3d cluster between tests")
+	flag.StringVar(&td.ClusterVersion, "kindClusterVersion", "", "Kind/K3d cluster version, ex. v.1.20.2")
 
 	flag.StringVar(&td.CtrRegistryServer, "ctrRegistry", os.Getenv("CTR_REGISTRY"), "Container registry")
 	flag.StringVar(&td.CtrRegistryUser, "ctrRegistryUser", os.Getenv("CTR_REGISTRY_USER"), "Container registry")
@@ -306,6 +318,134 @@ nodeRegistration:
 		}
 	}
 
+	if td.InstType == K3dCluster && td.ClusterConfig == nil {
+		simpleCfg := k3dCfg.SimpleConfig{
+			TypeMeta: k3dTypes.TypeMeta{
+				APIVersion: "k3d.io/v1alpha5",
+				Kind:       "Simple",
+			},
+			ObjectMeta: k3dTypes.ObjectMeta{
+				Name: td.ClusterName,
+			},
+			Servers: 1,
+			Agents:  1,
+			Network: "fsm",
+			Ports: []k3dCfg.PortWithNodeFilters{
+				{
+					Port:        "80:80",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "8090:8090",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "9090:9090",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "7443:7443",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "8443:8443",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "9443:9443",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "3000:3000",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "3001:3001",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "4000:4000/udp",
+					NodeFilters: []string{"loadbalancer"},
+				},
+				{
+					Port:        "4001:4001/udp",
+					NodeFilters: []string{"loadbalancer"},
+				},
+			},
+			Registries: k3dCfg.SimpleConfigRegistries{
+				Use: []string{"k3d-registry:5001"},
+				Config: `
+mirrors:
+  "localhost:5001":
+    endpoint:
+      - http://k3d-registry:5001
+`,
+			},
+			Options: k3dCfg.SimpleConfigOptions{
+				K3dOptions: k3dCfg.SimpleConfigOptionsK3d{
+					Wait:                true,
+					Timeout:             5 * time.Minute,
+					DisableLoadbalancer: false,
+					DisableImageVolume:  false,
+					NoRollback:          false,
+					Loadbalancer: k3dCfg.SimpleConfigOptionsK3dLoadbalancer{
+						ConfigOverrides: []string{"settings.workerConnections=2048"},
+					},
+				},
+				K3sOptions: k3dCfg.SimpleConfigOptionsK3s{
+					ExtraArgs: []k3dCfg.K3sArgWithNodeFilters{
+						{
+							Arg:         "--disable=traefik",
+							NodeFilters: []string{"server:*"},
+						},
+					},
+					NodeLabels: []k3dCfg.LabelWithNodeFilters{
+						{
+							Label:       "ingress-ready=true",
+							NodeFilters: []string{"agent:*"},
+						},
+					},
+				},
+				KubeconfigOptions: k3dCfg.SimpleConfigOptionsKubeconfig{
+					UpdateDefaultKubeconfig: true,
+					SwitchCurrentContext:    true,
+				},
+			},
+		}
+
+		if Td.ClusterVersion != "" {
+			simpleCfg.Image = fmt.Sprintf("rancher/k3s:%s", Td.ClusterVersion)
+		}
+
+		clusterConfig, err := config.TransformSimpleToClusterConfig(context.TODO(), runtimes.SelectedRuntime, simpleCfg, "")
+		if err != nil {
+			td.T.Fatal(err)
+		}
+		td.T.Log("===== Merged Cluster Config =====\n%+v\n===== ===== =====\n", clusterConfig)
+
+		clusterConfig, err = config.ProcessClusterConfig(*clusterConfig)
+		if err != nil {
+			td.T.Fatalf("error processing cluster configuration: %v", err)
+		}
+
+		if err := config.ValidateClusterConfig(context.TODO(), runtimes.SelectedRuntime, *clusterConfig); err != nil {
+			td.T.Fatal("Failed Cluster Configuration Validation: ", err)
+		}
+
+		td.ClusterConfig = clusterConfig
+
+		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
+			// rollback if creation failed
+			td.T.Error(err)
+			td.T.Error("Failed to create cluster >>> Rolling Back")
+			if err := k3dCluster.ClusterDelete(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, k3d.ClusterDeleteOpts{SkipRegistryCheck: true}); err != nil {
+				td.T.Error(err)
+				td.T.Fatal("Cluster creation FAILED, also FAILED to rollback changes!")
+			}
+			td.T.Fatal("Cluster creation FAILED, all changes have been rolled back!")
+		}
+	}
+
 	clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
 		&clientcmd.ConfigOverrides{},
@@ -364,6 +504,12 @@ nodeRegistration:
 	// Ballparking pod number. kind has a large number of containers to run by default
 	if (td.InstType == KindCluster) && td.ClusterProvider != nil {
 		if err := td.WaitForPodsRunningReady("kube-system", 5, nil); err != nil {
+			return fmt.Errorf("failed to wait for kube-system pods")
+		}
+	}
+
+	if (td.InstType == K3dCluster) && td.ClusterConfig != nil {
+		if err := td.WaitForPodsRunningReady("kube-system", 3, nil); err != nil {
 			return fmt.Errorf("failed to wait for kube-system pods")
 		}
 	}
@@ -1311,10 +1457,10 @@ func (td *FsmTestData) Cleanup(ct CleanupType) {
 	}
 
 	cleanupTrigger := td.CleanupTest
-	// If we are on kind env
-	if td.InstType == KindCluster {
+	// If we are on kind/k3d env
+	if td.InstType == KindCluster || td.InstType == K3dCluster {
 		// Check if we can/want to avoid K8s cleanup
-		cleanupTrigger = cleanupTrigger && td.shouldCleanupK8sOnKind(ct)
+		cleanupTrigger = cleanupTrigger && td.shouldCleanupK8sCluster(ct)
 	}
 
 	if cleanupTrigger {
@@ -1357,12 +1503,53 @@ func (td *FsmTestData) Cleanup(ct CleanupType) {
 
 	// Kind cluster deletion, if needed
 	if (td.InstType == KindCluster) && td.ClusterProvider != nil {
-		if ct == Test && td.CleanupKindClusterBetweenTests || ct == Suite && td.CleanupKindCluster {
+		if ct == Test && td.CleanupClusterBetweenTests || ct == Suite && td.CleanupCluster {
 			td.T.Logf("Deleting kind cluster: %s", td.ClusterName)
 			if err := td.ClusterProvider.Delete(td.ClusterName, clientcmd.RecommendedHomeFile); err != nil {
 				td.T.Logf("error deleting cluster: %v", err)
 			}
 			td.ClusterProvider = nil
+		}
+	}
+
+	// K3d cluster deletion, if needed
+	if td.InstType == K3dCluster && td.ClusterConfig != nil {
+		if ct == Test && td.CleanupClusterBetweenTests || ct == Suite && td.CleanupCluster {
+			clusters, err := k3dClient.ClusterList(context.TODO(), runtimes.SelectedRuntime)
+			if err != nil {
+				td.T.Fatal(err)
+			}
+
+			if len(clusters) == 0 {
+				td.T.Log("No clusters found")
+			} else {
+				for _, c := range clusters {
+					if err := k3dClient.ClusterDelete(context.TODO(), runtimes.SelectedRuntime, c, k3d.ClusterDeleteOpts{SkipRegistryCheck: false}); err != nil {
+						td.T.Fatal(err)
+					}
+					td.T.Log("Removing cluster details from default kubeconfig...")
+					if err := k3dClient.KubeconfigRemoveClusterFromDefaultConfig(context.TODO(), c); err != nil {
+						td.T.Log("Failed to remove cluster details from default kubeconfig")
+						td.T.Log(err)
+					}
+					td.T.Log("Removing standalone kubeconfig file (if there is one)...")
+					configDir, err := k3dutil.GetConfigDirOrCreate()
+					if err != nil {
+						td.T.Logf("Failed to delete kubeconfig file: %+v", err)
+					} else {
+						kubeconfigfile := path.Join(configDir, fmt.Sprintf("kubeconfig-%s.yaml", c.Name))
+						if err := os.Remove(kubeconfigfile); err != nil {
+							if !os.IsNotExist(err) {
+								td.T.Logf("Failed to delete kubeconfig file '%s'", kubeconfigfile)
+							}
+						}
+					}
+
+					td.T.Logf("Successfully deleted cluster %s!", c.Name)
+				}
+			}
+
+			td.ClusterConfig = nil
 		}
 	}
 
@@ -1404,22 +1591,22 @@ func (td *FsmTestData) CreateDockerRegistrySecret(ns string) {
 	}
 }
 
-// shouldCleanupK8sOnKind returns whether k8s cleanup can be avoided on kind when the
-// kind cluster is not going to be kept anyway, when the test/suite is running on kind.
+// shouldCleanupK8sCluster returns whether k8s cleanup can be avoided on kind/k3d when the
+// kind/k3d cluster is not going to be kept anyway, when the test/suite is running on kind/k3d.
 // This optimization considerably speeds up the test suite when running on kind as we don't wait
 // for k8s cleanup after every test.
-func (td *FsmTestData) shouldCleanupK8sOnKind(ct CleanupType) bool {
-	cleanupK8sOnKind := false
+func (td *FsmTestData) shouldCleanupK8sCluster(ct CleanupType) bool {
+	cleanupK8s := false
 
 	if ct == Test {
-		// If Kind cluster is going away, no need to trigger and wait for k8s cleanup
-		cleanupK8sOnKind = !td.CleanupKindClusterBetweenTests
+		// If Kind/K3d cluster is going away, no need to trigger and wait for k8s cleanup
+		cleanupK8s = !td.CleanupClusterBetweenTests
 	} else if ct == Suite {
-		// If Kind cluster is going away, no need to trigger and wait for k8s cleanup
-		cleanupK8sOnKind = !td.CleanupKindCluster
+		// If Kind/K3d cluster is going away, no need to trigger and wait for k8s cleanup
+		cleanupK8s = !td.CleanupCluster
 	}
 
-	return cleanupK8sOnKind
+	return cleanupK8s
 }
 
 // RetryFuncOnError runs the given function and retries for the given number of times if an error is encountered
@@ -1570,6 +1757,11 @@ func (td *FsmTestData) GrabLogs() error {
 			td.T.Logf("stdout:\n%s", stdout)
 			td.T.Logf("stderr:\n%s", stderr)
 		}
+	}
+
+	if td.InstType == K3dCluster {
+		//k3dExportPath := td.GetTestFilePath("k3dExport")
+		td.T.Logf("Collecting logs of k3d cluster %q (Not implemented yet)", td.ClusterName)
 	}
 
 	// TODO: Eventually a CLI command should implement collection of configurations necessary for debugging

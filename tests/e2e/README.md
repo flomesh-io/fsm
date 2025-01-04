@@ -91,7 +91,7 @@ make docker-build-fsm    # Add DOCKER_BUILDX_OUTPUT=type=docker when using kind
 #### Test specific flags
 
 Worth mentioning `cleanupTest` is especially useful for debugging or leaving the test in a certain state at test-exit.
-When using Kind, you need to use `cleanupKindCluster` and `cleanupKindClusterBetweenTests` in conjunction, or else the cluster
+When using Kind, you need to use `cleanupCluster` and `cleanupClusterBetweenTests` in conjunction, or else the cluster
 will anyway be destroyed.
 ```
 -cleanupTest
@@ -125,11 +125,15 @@ The different values of installType are as follows:
 
     The e2es will run on the cluster currently in the user's kubeconfig, which is already expected to have FSM installed prior to the test run. The tests will not install FSM before, or uninstall FSM after any of the tests run. The cluster can be of any CNCF certified distribution (though the k8s version cannot be an outdated version).
 
-1. `installType=KindCluster`
+2. `installType=KindCluster`
 
 	Each test in the e2e suite will spin up a kind cluster, and run that specific test on that kind cluster. Each test will install FSM via the FSM cli, and then uninstall FSM after the test finishes running. The user is not expected to have created any cluster beforehand.
 
-1. `installType=SelfInstall` (default)
+3. `installType=K3dCluster`
+
+   Each test in the e2e suite will spin up a k3d cluster, and run that specific test on that k3d cluster. Each test will install FSM via the FSM cli, and then uninstall FSM after the test finishes running. The user is not expected to have created any cluster beforehand.
+
+4. `installType=SelfInstall` (default)
 
 	By default, the e2es will run on the cluster currently in the user's kubeconfig. Each test will install FSM via the FSM cli, and then uninstall FSM after the test finishes running. The cluster can be of any CNCF certified distribution (though the k8s version cannot be an outdated version). The user is should not have FSM installed beforehand.
 
@@ -138,12 +142,24 @@ The different values of installType are as follows:
 Testing implements support for Kind. If `installType=KindCluster` is enabled, a new Kind cluster will be provisioned and it will be automatically used for the test.
 
 ```
--kindClusterName string
+-clusterName string
 		Name of the Kind cluster to be created (default "fsm-e2e")
--cleanupKindCluster
+-cleanupCluster
 		Cleanup kind cluster upon exit (default true)
--cleanupKindClusterBetweenTests
+-cleanupClusterBetweenTests
 		Cleanup kind cluster between tests (default true)
+```
+
+#### Use K3d for testing
+Testing implements support for K3d. If `installType=K3dCluster` is enabled, a new K3d cluster will be provisioned and it will be automatically used for the test.
+
+```
+-clusterName string
+		Name of the K3d cluster to be created (default "fsm-e2e")
+-cleanupCluster
+		Cleanup k3d cluster upon exit (default true)
+-cleanupClusterBetweenTests
+		Cleanup k3d cluster between tests (default true)
 ```
 
 #### Setting test timeout:

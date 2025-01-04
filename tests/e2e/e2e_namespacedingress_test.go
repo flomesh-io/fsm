@@ -25,7 +25,7 @@ var _ = FSMDescribe("Test traffic among FSM NamespacedIngress",
 				installOpts.EnableIngress = true
 				installOpts.EnableNamespacedIngress = true
 				installOpts.EnableGateway = false
-				installOpts.EnableServiceLB = true
+				installOpts.EnableServiceLB = Td.InstType == KindCluster
 
 				Expect(Td.InstallFSM(installOpts)).To(Succeed())
 
