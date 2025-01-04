@@ -17,7 +17,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/docker/docker v27.2.1+incompatible
 	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
@@ -349,7 +349,7 @@ require (
 	github.com/hashicorp/go-secure-stdlib/mlock v0.1.3 // indirect
 	github.com/hashicorp/go-secure-stdlib/nonceutil v0.1.0 // indirect
 	github.com/hashicorp/go-secure-stdlib/parseutil v0.1.8 // indirect
-	github.com/hashicorp/go-secure-stdlib/plugincontainer v0.4.0 // indirect
+	github.com/hashicorp/go-secure-stdlib/plugincontainer v0.4.1 // indirect
 	github.com/hashicorp/go-secure-stdlib/reloadutil v0.1.1 // indirect
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2 // indirect
 	github.com/hashicorp/go-secure-stdlib/tlsutil v0.1.3 // indirect
