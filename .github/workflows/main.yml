@@ -278,6 +278,9 @@ jobs:
         if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
         run: |
           k3d registry create "registry" --port "127.0.0.1:5001" --default-network bridge
+      - name: Check Docker version
+        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
+        run: docker version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
