@@ -265,10 +265,31 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get clean
           rm -rf /usr/share/dotnet/
-      - name: Update OS to latest
+      - name: Upgrade Docker
+        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
         run: |
-          sudo apt-get update -y 
-          sudo apt-get upgrade -y
+          # Run the following command to uninstall all conflicting packages:
+          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+          
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          
+          # Install Docker:
+          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+          
+          #Check Docker version:
+          docker version
       - name: Change container registry in case it's k3d cluster
         if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
         run: |
@@ -282,9 +303,6 @@ jobs:
         if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
         run: |
           k3d registry create "registry" --port "127.0.0.1:5001" --default-network bridge
-      - name: Check Docker version
-        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-        run: docker version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
