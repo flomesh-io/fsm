@@ -242,72 +242,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 	if (td.InstType == KindCluster) && td.ClusterProvider == nil {
 		td.ClusterProvider = cluster.NewProvider()
 		td.T.Logf("Creating local kind cluster")
-		clusterConfig := &v1alpha4.Cluster{
-			Nodes: []v1alpha4.Node{
-				{
-					Role: v1alpha4.ControlPlaneRole,
-				},
-				{
-					Role: v1alpha4.WorkerRole,
-					KubeadmConfigPatches: []string{`kind: JoinConfiguration
-nodeRegistration:
-  kubeletExtraArgs:
-    node-labels: "ingress-ready=true"`},
-					ExtraPortMappings: []v1alpha4.PortMapping{
-						{
-							ContainerPort: 80,
-							HostPort:      80,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 8090,
-							HostPort:      8090,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 9090,
-							HostPort:      9090,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 7443,
-							HostPort:      7443,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 8443,
-							HostPort:      8443,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 9443,
-							HostPort:      9443,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 3000,
-							HostPort:      3000,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 4000,
-							HostPort:      4000,
-							Protocol:      v1alpha4.PortMappingProtocolUDP,
-						},
-						{
-							ContainerPort: 3001,
-							HostPort:      3001,
-							Protocol:      v1alpha4.PortMappingProtocolTCP,
-						},
-						{
-							ContainerPort: 4001,
-							HostPort:      4001,
-							Protocol:      v1alpha4.PortMappingProtocolUDP,
-						},
-					},
-				},
-			},
-		}
+		clusterConfig := td.kindClusterConfig()
 		if Td.ClusterVersion != "" {
 			for i := 0; i < len(clusterConfig.Nodes); i++ {
 				clusterConfig.Nodes[i].Image = fmt.Sprintf("kindest/node:%s", td.ClusterVersion)
@@ -319,119 +254,7 @@ nodeRegistration:
 	}
 
 	if td.InstType == K3dCluster && td.ClusterConfig == nil {
-		simpleCfg := k3dCfg.SimpleConfig{
-			TypeMeta: k3dTypes.TypeMeta{
-				APIVersion: "k3d.io/v1alpha5",
-				Kind:       "Simple",
-			},
-			ObjectMeta: k3dTypes.ObjectMeta{
-				Name: td.ClusterName,
-			},
-			Servers: 1,
-			Agents:  1,
-			Network: "fsm",
-			Ports: []k3dCfg.PortWithNodeFilters{
-				{
-					Port:        "80:80",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "8090:8090",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "9090:9090",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "7443:7443",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "8443:8443",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "9443:9443",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "3000:3000",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "3001:3001",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "4000:4000/udp",
-					NodeFilters: []string{"loadbalancer"},
-				},
-				{
-					Port:        "4001:4001/udp",
-					NodeFilters: []string{"loadbalancer"},
-				},
-			},
-			Registries: k3dCfg.SimpleConfigRegistries{
-				Use: []string{"k3d-registry:5001"},
-				Config: `
-mirrors:
-  "localhost:5001":
-    endpoint:
-      - http://k3d-registry:5001
-`,
-			},
-			Options: k3dCfg.SimpleConfigOptions{
-				K3dOptions: k3dCfg.SimpleConfigOptionsK3d{
-					Wait:                true,
-					Timeout:             5 * time.Minute,
-					DisableLoadbalancer: false,
-					DisableImageVolume:  false,
-					NoRollback:          false,
-					Loadbalancer: k3dCfg.SimpleConfigOptionsK3dLoadbalancer{
-						ConfigOverrides: []string{"settings.workerConnections=2048"},
-					},
-				},
-				K3sOptions: k3dCfg.SimpleConfigOptionsK3s{
-					ExtraArgs: []k3dCfg.K3sArgWithNodeFilters{
-						{
-							Arg:         "--disable=traefik",
-							NodeFilters: []string{"server:*"},
-						},
-					},
-					NodeLabels: []k3dCfg.LabelWithNodeFilters{
-						{
-							Label:       "ingress-ready=true",
-							NodeFilters: []string{"agent:*"},
-						},
-					},
-				},
-				KubeconfigOptions: k3dCfg.SimpleConfigOptionsKubeconfig{
-					UpdateDefaultKubeconfig: true,
-					SwitchCurrentContext:    true,
-				},
-			},
-		}
-
-		if Td.ClusterVersion != "" {
-			simpleCfg.Image = fmt.Sprintf("rancher/k3s:%s", Td.ClusterVersion)
-		}
-
-		clusterConfig, err := config.TransformSimpleToClusterConfig(context.TODO(), runtimes.SelectedRuntime, simpleCfg, "")
-		if err != nil {
-			td.T.Fatal(err)
-		}
-		td.T.Log("===== Merged Cluster Config =====\n%+v\n===== ===== =====\n", clusterConfig)
-
-		clusterConfig, err = config.ProcessClusterConfig(*clusterConfig)
-		if err != nil {
-			td.T.Fatalf("error processing cluster configuration: %v", err)
-		}
-
-		if err := config.ValidateClusterConfig(context.TODO(), runtimes.SelectedRuntime, *clusterConfig); err != nil {
-			td.T.Fatal("Failed Cluster Configuration Validation: ", err)
-		}
-
+		clusterConfig := td.k3dClusterConfig()
 		td.ClusterConfig = clusterConfig
 
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
@@ -522,6 +345,191 @@ mirrors:
 	// Logs v<major>.<minor>.<patch>
 	td.T.Logf("> k8s server version: v%s\n", strings.Trim(strings.Join(strings.Fields(fmt.Sprint(k8sServerVersion)), "."), "[]"))
 	return nil
+}
+
+func (td *FsmTestData) kindClusterConfig() *v1alpha4.Cluster {
+	return &v1alpha4.Cluster{
+		Nodes: []v1alpha4.Node{
+			{
+				Role: v1alpha4.ControlPlaneRole,
+			},
+			{
+				Role: v1alpha4.WorkerRole,
+				KubeadmConfigPatches: []string{`kind: JoinConfiguration
+nodeRegistration:
+  kubeletExtraArgs:
+    node-labels: "ingress-ready=true"`},
+				ExtraPortMappings: []v1alpha4.PortMapping{
+					{
+						ContainerPort: 80,
+						HostPort:      80,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 8090,
+						HostPort:      8090,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 9090,
+						HostPort:      9090,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 7443,
+						HostPort:      7443,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 8443,
+						HostPort:      8443,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 9443,
+						HostPort:      9443,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 3000,
+						HostPort:      3000,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 4000,
+						HostPort:      4000,
+						Protocol:      v1alpha4.PortMappingProtocolUDP,
+					},
+					{
+						ContainerPort: 3001,
+						HostPort:      3001,
+						Protocol:      v1alpha4.PortMappingProtocolTCP,
+					},
+					{
+						ContainerPort: 4001,
+						HostPort:      4001,
+						Protocol:      v1alpha4.PortMappingProtocolUDP,
+					},
+				},
+			},
+		},
+	}
+}
+
+func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
+	simpleCfg := k3dCfg.SimpleConfig{
+		TypeMeta: k3dTypes.TypeMeta{
+			APIVersion: "k3d.io/v1alpha5",
+			Kind:       "Simple",
+		},
+		ObjectMeta: k3dTypes.ObjectMeta{
+			Name: td.ClusterName,
+		},
+		Servers: 1,
+		Agents:  1,
+		Network: "fsm",
+		Ports: []k3dCfg.PortWithNodeFilters{
+			{
+				Port:        "80:80",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "8090:8090",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "9090:9090",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "7443:7443",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "8443:8443",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "9443:9443",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "3000:3000",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "3001:3001",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "4000:4000/udp",
+				NodeFilters: []string{"loadbalancer"},
+			},
+			{
+				Port:        "4001:4001/udp",
+				NodeFilters: []string{"loadbalancer"},
+			},
+		},
+		Registries: k3dCfg.SimpleConfigRegistries{
+			Use: []string{"k3d-registry:5001"},
+			Config: `
+mirrors:
+  "localhost:5001":
+    endpoint:
+      - http://k3d-registry:5001
+`,
+		},
+		Options: k3dCfg.SimpleConfigOptions{
+			K3dOptions: k3dCfg.SimpleConfigOptionsK3d{
+				Wait:                true,
+				Timeout:             5 * time.Minute,
+				DisableLoadbalancer: false,
+				DisableImageVolume:  false,
+				NoRollback:          false,
+				Loadbalancer: k3dCfg.SimpleConfigOptionsK3dLoadbalancer{
+					ConfigOverrides: []string{"settings.workerConnections=2048"},
+				},
+			},
+			K3sOptions: k3dCfg.SimpleConfigOptionsK3s{
+				ExtraArgs: []k3dCfg.K3sArgWithNodeFilters{
+					{
+						Arg:         "--disable=traefik",
+						NodeFilters: []string{"server:*"},
+					},
+				},
+				NodeLabels: []k3dCfg.LabelWithNodeFilters{
+					{
+						Label:       "ingress-ready=true",
+						NodeFilters: []string{"agent:*"},
+					},
+				},
+			},
+			KubeconfigOptions: k3dCfg.SimpleConfigOptionsKubeconfig{
+				UpdateDefaultKubeconfig: true,
+				SwitchCurrentContext:    true,
+			},
+		},
+	}
+
+	if Td.ClusterVersion != "" {
+		simpleCfg.Image = fmt.Sprintf("rancher/k3s:%s", Td.ClusterVersion)
+	}
+
+	clusterConfig, err := config.TransformSimpleToClusterConfig(context.TODO(), runtimes.SelectedRuntime, simpleCfg, "")
+	if err != nil {
+		td.T.Fatal(err)
+	}
+	td.T.Log("===== Merged Cluster Config =====\n%+v\n===== ===== =====\n", clusterConfig)
+
+	clusterConfig, err = config.ProcessClusterConfig(*clusterConfig)
+	if err != nil {
+		td.T.Fatalf("error processing cluster configuration: %v", err)
+	}
+
+	if err := config.ValidateClusterConfig(context.TODO(), runtimes.SelectedRuntime, *clusterConfig); err != nil {
+		td.T.Fatal("Failed Cluster Configuration Validation: ", err)
+	}
+	return clusterConfig
 }
 
 // WithLocalProxyMode sets the LocalProxyMode for FSM
