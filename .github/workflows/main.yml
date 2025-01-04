@@ -248,16 +248,9 @@ jobs:
     needs: build
     strategy:
       matrix:
-        k8s_version: [""]
+        k8s_version: ["", "v1.19.16-k3s1", "v1.21.16-k3s1", "v1.23.17-k3s1"]
         focus: [""]
         bucket: [6]
-        include:
-          - k8s_version: v1.19.16-k3s1
-            bucket: ".*"
-          - k8s_version: v1.21.16-k3s1
-            bucket: ".*"
-          - k8s_version: v1.23.17-k3s1
-            bucket: ".*"
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -284,7 +277,7 @@ jobs:
       - name: Create k3d managed registry
         if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
         run: |
-          k3d registry create "registry" --port "127.0.0.1:5001"
+          k3d registry create "registry" --port "127.0.0.1:5001" --default-network bridge
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go

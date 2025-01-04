@@ -431,7 +431,7 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 		},
 		Servers: 1,
 		Agents:  1,
-		Network: "fsm",
+		Network: "bridge",
 		Ports: []k3dCfg.PortWithNodeFilters{
 			{
 				Port:        "80:80",
