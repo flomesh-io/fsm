@@ -260,7 +260,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		clusterConfig := td.k3dClusterConfig()
 		td.ClusterConfig = clusterConfig
 
-		k3dLogger.Logger.SetLevel(logrus.DebugLevel)
+		k3dLogger.Logger.SetLevel(logrus.TraceLevel)
 		if err := k3dCluster.ClusterRun(context.TODO(), runtimes.SelectedRuntime, clusterConfig); err != nil {
 			// rollback if creation failed
 			td.T.Error(err)
