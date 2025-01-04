@@ -248,7 +248,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        k8s_version: ["", "v1.19.16-k3s1", "v1.21.16-k3s1", "v1.23.17-k3s1"]
+        k8s_version: ["", "v1.19.16-k3s1", "v1.21.14-k3s1", "v1.23.17-k3s1"]
         focus: [""]
         bucket: [6]
     env:
