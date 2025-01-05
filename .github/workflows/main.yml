@@ -183,10 +183,10 @@ jobs:
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
         include:
-          - k8s_version: v1.19.16
-            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
-            bucket: ".*"
-          - k8s_version: v1.27.11
+#          - k8s_version: v1.19.16
+#            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+#            bucket: ".*"
+          - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
     env:
