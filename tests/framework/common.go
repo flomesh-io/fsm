@@ -17,8 +17,11 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docker/go-connections/nat"
 
 	"sigs.k8s.io/yaml"
 
@@ -72,6 +75,7 @@ import (
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/utils"
 
+	k3dcliutil "github.com/k3d-io/k3d/v5/cmd/util"
 	k3dcliconfig "github.com/k3d-io/k3d/v5/cmd/util/config"
 	k3dClient "github.com/k3d-io/k3d/v5/pkg/client"
 	k3dCluster "github.com/k3d-io/k3d/v5/pkg/client"
@@ -462,134 +466,41 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 		return nil
 	}
 
-	//	exposeAPI := &k3d.ExposureOpts{
-	//		PortMapping: nat.PortMapping{
-	//			Binding: nat.PortBinding{
-	//				HostIP:   "",
-	//				HostPort: "",
-	//			},
-	//		},
-	//		Host: "",
-	//	}
-	//
-	//	// Set to random port if port is empty string
-	//	if len(exposeAPI.Binding.HostPort) == 0 {
-	//		var freePort string
-	//		port, err := k3dcliutil.GetFreePort()
-	//		freePort = strconv.Itoa(port)
-	//		if err != nil || port == 0 {
-	//			td.T.Logf("Failed to get random free port: %+v", err)
-	//			td.T.Logf("Falling back to internal port %s (may be blocked though)...", k3d.DefaultAPIPort)
-	//			freePort = k3d.DefaultAPIPort
-	//		}
-	//		exposeAPI.Binding.HostPort = freePort
-	//	}
-	//
-	//	simpleCfg := k3dCfg.SimpleConfig{
-	//		TypeMeta: k3dTypes.TypeMeta{
-	//			APIVersion: "k3d.io/v1alpha5",
-	//			Kind:       "Simple",
-	//		},
-	//		ObjectMeta: k3dTypes.ObjectMeta{
-	//			Name: td.ClusterName,
-	//		},
-	//		Servers: 1,
-	//		Agents:  1,
-	//		Network: "bridge",
-	//		Ports: []k3dCfg.PortWithNodeFilters{
-	//			{
-	//				Port:        "80:80",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "8090:8090",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "9090:9090",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "7443:7443",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "8443:8443",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "9443:9443",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "3000:3000",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "3001:3001",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "4000:4000/udp",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//			{
-	//				Port:        "4001:4001/udp",
-	//				NodeFilters: []string{"loadbalancer"},
-	//			},
-	//		},
-	//		Registries: k3dCfg.SimpleConfigRegistries{
-	//			Use: []string{"k3d-registry:5001"},
-	//			Config: `
-	//mirrors:
-	//  "localhost:5001":
-	//    endpoint:
-	//      - http://k3d-registry:5001
-	//`,
-	//		},
-	//		Options: k3dCfg.SimpleConfigOptions{
-	//			K3dOptions: k3dCfg.SimpleConfigOptionsK3d{
-	//				Wait:                true,
-	//				Timeout:             60 * time.Second,
-	//				DisableLoadbalancer: false,
-	//				DisableImageVolume:  false,
-	//				NoRollback:          false,
-	//				Loadbalancer: k3dCfg.SimpleConfigOptionsK3dLoadbalancer{
-	//					ConfigOverrides: []string{"settings.workerConnections=2048"},
-	//				},
-	//			},
-	//			K3sOptions: k3dCfg.SimpleConfigOptionsK3s{
-	//				ExtraArgs: []k3dCfg.K3sArgWithNodeFilters{
-	//					{
-	//						Arg:         "--disable=traefik",
-	//						NodeFilters: []string{"server:*"},
-	//					},
-	//				},
-	//				NodeLabels: []k3dCfg.LabelWithNodeFilters{
-	//					{
-	//						Label:       "ingress-ready=true",
-	//						NodeFilters: []string{"agent:*"},
-	//					},
-	//				},
-	//			},
-	//			KubeconfigOptions: k3dCfg.SimpleConfigOptionsKubeconfig{
-	//				UpdateDefaultKubeconfig: true,
-	//				SwitchCurrentContext:    true,
-	//			},
-	//		},
-	//		Image: fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, "latest"),
-	//		ExposeAPI: k3dCfg.SimpleExposureOpts{
-	//			Host:     exposeAPI.Host,
-	//			HostIP:   exposeAPI.Binding.HostIP,
-	//			HostPort: exposeAPI.Binding.HostPort,
-	//		},
-	//	}
-
 	tag := "latest"
 	if Td.ClusterVersion != "" {
 		tag = Td.ClusterVersion
 	}
 	simpleCfg.Image = fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, tag)
+
+	// Apply config file values as defaults
+	exposeAPI := &k3d.ExposureOpts{
+		PortMapping: nat.PortMapping{
+			Binding: nat.PortBinding{
+				HostIP:   simpleCfg.ExposeAPI.HostIP,
+				HostPort: simpleCfg.ExposeAPI.HostPort,
+			},
+		},
+		Host: simpleCfg.ExposeAPI.Host,
+	}
+
+	// Set to random port if port is empty string
+	if len(exposeAPI.Binding.HostPort) == 0 {
+		var freePort string
+		port, err := k3dcliutil.GetFreePort()
+		freePort = strconv.Itoa(port)
+		if err != nil || port == 0 {
+			td.T.Logf("Failed to get random free port: %+v", err)
+			td.T.Logf("Falling back to internal port %s (may be blocked though)...", k3d.DefaultAPIPort)
+			freePort = k3d.DefaultAPIPort
+		}
+		exposeAPI.Binding.HostPort = freePort
+	}
+
+	simpleCfg.ExposeAPI = k3dCfg.SimpleExposureOpts{
+		Host:     exposeAPI.Host,
+		HostIP:   exposeAPI.Binding.HostIP,
+		HostPort: exposeAPI.Binding.HostPort,
+	}
 
 	if err := config.ProcessSimpleConfig(&simpleCfg); err != nil {
 		td.T.Fatalf("error processing/sanitizing simple config: %v", err)
