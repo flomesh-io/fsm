@@ -278,7 +278,7 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 	}
 
 	if td.InstType == K3dCluster && td.ClusterConfig == nil {
-		k3dLogger.Logger.SetLevel(logrus.TraceLevel)
+		k3dLogger.Logger.SetLevel(logrus.DebugLevel)
 		clusterConfig := td.k3dClusterConfig()
 		if clusterConfig == nil {
 			return fmt.Errorf("failed to create k3d cluster")
@@ -679,7 +679,7 @@ func (td *FsmTestData) LoadImagesToK3d(imageNames []string) error {
 	}
 
 	td.T.Logf("Importing image(s) into cluster '%s'", td.ClusterName)
-	loadImageOpts := k3d.ImageImportOpts{KeepTar: false, KeepToolsNode: false, Mode: k3d.ImportModeAutoDetect}
+	loadImageOpts := k3d.ImageImportOpts{KeepTar: false, KeepToolsNode: false, Mode: k3d.ImportModeDirect}
 	if err := k3dClient.ImageImportIntoClusterMulti(context.TODO(), runtimes.SelectedRuntime, images, kc, loadImageOpts); err != nil {
 		td.T.Errorf("Failed to import image(s) into cluster '%s': %+v", td.ClusterName, err)
 		return err
@@ -822,7 +822,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 			fmt.Sprintf("fsm.certmanager.issuerGroup=%s", instOpts.CertmanagerIssuerGroup))
 	}
 
-	if !(td.InstType == KindCluster) {
+	if !(td.InstType == KindCluster || td.InstType == K3dCluster) {
 		// Making sure the image is always pulled in registry-based testing
 		instOpts.SetOverrides = append(instOpts.SetOverrides,
 			"fsm.image.pullPolicy=Always")

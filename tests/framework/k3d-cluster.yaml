@@ -38,14 +38,6 @@ ports:
   - port: 4001:4001/udp
     nodeFilters:
       - loadbalancer
-#registries:
-#  use:
-#    - k3d-registry:5000
-#  config: |
-#    mirrors:
-#      "localhost:5001":
-#        endpoint:
-#          - http://k3d-registry:5000
 options:
   k3d:
     wait: true
@@ -63,14 +55,16 @@ options:
           - server:*
       - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
         nodeFilters:
+          - server:*
           - agent:*
       - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
         nodeFilters:
+          - server:*
           - agent:*
     nodeLabels:
-      - label: ingress-ready=true # same as `--k3s-node-label 'foo=bar@agent:1'` -> this results in a Kubernetes node label
+      - label: ingress-ready=true
         nodeFilters:
           - agent:*
   kubeconfig:
-    updateDefaultKubeconfig: true # add new cluster to your default Kubeconfig; same as `--kubeconfig-update-default` (default: true)
+    updateDefaultKubeconfig: true
     switchCurrentContext: true
