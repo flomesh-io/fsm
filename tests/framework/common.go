@@ -75,6 +75,7 @@ import (
 	k3dLogger "github.com/k3d-io/k3d/v5/pkg/logger"
 	k3d "github.com/k3d-io/k3d/v5/pkg/types"
 	k3dutil "github.com/k3d-io/k3d/v5/pkg/util"
+	k3dVersion "github.com/k3d-io/k3d/v5/version"
 )
 
 // Td the global context for test.
@@ -513,10 +514,11 @@ mirrors:
 				SwitchCurrentContext:    true,
 			},
 		},
+		Image: fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, k3dVersion.K3sVersion),
 	}
 
 	if Td.ClusterVersion != "" {
-		simpleCfg.Image = fmt.Sprintf("rancher/k3s:%s", Td.ClusterVersion)
+		simpleCfg.Image = fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, Td.ClusterVersion)
 	}
 
 	clusterConfig, err := config.TransformSimpleToClusterConfig(context.TODO(), runtimes.SelectedRuntime, simpleCfg, "")
