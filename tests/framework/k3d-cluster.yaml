@@ -38,12 +38,12 @@ ports:
       - loadbalancer
 registries:
   use:
-    - k3d-registry:5001
+    - k3d-registry:5000
   config: |
     mirrors:
       "localhost:5001":
         endpoint:
-          - http://k3d-registry:5001
+          - http://k3d-registry:5000
 options:
   k3d:
     wait: true
@@ -59,6 +59,12 @@ options:
       - arg: --disable=traefik
         nodeFilters:
           - server:*
+      - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
+        nodeFilters:
+          - agent:*
+      - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
+        nodeFilters:
+          - agent:*
     nodeLabels:
       - label: ingress-ready=true # same as `--k3s-node-label 'foo=bar@agent:1'` -> this results in a Kubernetes node label
         nodeFilters:
