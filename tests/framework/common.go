@@ -274,17 +274,22 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 			// rollback if creation failed
 			td.T.Error(err)
 			td.T.Error("Failed to create cluster >>> Rolling Back")
+
 			if err := k3dCluster.ClusterDelete(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, k3d.ClusterDeleteOpts{SkipRegistryCheck: true}); err != nil {
 				td.T.Error(err)
 				td.T.Fatal("Cluster creation FAILED, also FAILED to rollback changes!")
+				return err
 			}
+
 			td.T.Fatal("Cluster creation FAILED, all changes have been rolled back!")
+			return err
 		}
 		td.T.Logf("Cluster '%s' created successfully!", clusterConfig.Cluster.Name)
 
 		td.T.Logf("Updating default kubeconfig with a new context for cluster %s", clusterConfig.Cluster.Name)
 		if _, err := k3dCluster.KubeconfigGetWrite(context.TODO(), runtimes.SelectedRuntime, &clusterConfig.Cluster, "", &k3dCluster.WriteKubeConfigOptions{UpdateExisting: true, OverwriteExisting: false, UpdateCurrentContext: true}); err != nil {
-			td.T.Log(err)
+			td.T.Logf("Failed to write kubeconfig: %s", err)
+			return err
 		}
 	}
 
@@ -580,11 +585,11 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 	//		},
 	//	}
 
+	tag := "latest"
 	if Td.ClusterVersion != "" {
-		simpleCfg.Image = fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, Td.ClusterVersion)
-	} else {
-		simpleCfg.Image = fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, "latest")
+		tag = Td.ClusterVersion
 	}
+	simpleCfg.Image = fmt.Sprintf("%s:%s", k3d.DefaultK3sImageRepo, tag)
 
 	if err := config.ProcessSimpleConfig(&simpleCfg); err != nil {
 		td.T.Fatalf("error processing/sanitizing simple config: %v", err)
