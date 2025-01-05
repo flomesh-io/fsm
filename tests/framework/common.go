@@ -88,6 +88,19 @@ import (
 // Td the global context for test.
 var Td FsmTestData
 
+var imageNames = []string{
+	"fsm-controller",
+	"fsm-injector",
+	"fsm-sidecar-init",
+	"fsm-crds",
+	"fsm-bootstrap",
+	"fsm-preinstall",
+	"fsm-healthcheck",
+	"fsm-ingress",
+	"fsm-gateway",
+	"fsm-curl",
+}
+
 // Since parseFlags is global, this is the Ginkgo way to do it.
 // "init" is usually called by the go test runtime
 // https://github.com/onsi/ginkgo/issues/265
@@ -466,6 +479,10 @@ func (td *FsmTestData) k3dClusterConfig() *k3dCfg.ClusterConfig {
 		return nil
 	}
 
+	if td.ClusterName != "" {
+		simpleCfg.Name = td.ClusterName
+	}
+
 	tag := "latest"
 	if Td.ClusterVersion != "" {
 		tag = Td.ClusterVersion
@@ -642,6 +659,37 @@ func (td *FsmTestData) LoadImagesToKind(imageNames []string) error {
 	return nil
 }
 
+// LoadImagesToK3d loads the list of images to the node for K3d clusters
+func (td *FsmTestData) LoadImagesToK3d(imageNames []string) error {
+	if td.InstType != K3dCluster {
+		td.T.Log("Not a K3d cluster, nothing to load")
+		return nil
+	}
+
+	kc, err := k3dClient.ClusterGet(context.TODO(), runtimes.SelectedRuntime, &k3d.Cluster{Name: td.ClusterName})
+	if err != nil {
+		td.T.Fatalf("failed to get cluster %s: %v", td.ClusterName, err)
+		return err
+	}
+
+	var images []string
+	for _, name := range imageNames {
+		imageName := fmt.Sprintf("%s/%s:%s", td.CtrRegistryServer, name, td.FsmImageTag)
+		images = append(images, imageName)
+	}
+
+	td.T.Logf("Importing image(s) into cluster '%s'", td.ClusterName)
+	loadImageOpts := k3d.ImageImportOpts{KeepTar: false, KeepToolsNode: false, Mode: k3d.ImportModeAutoDetect}
+	if err := k3dClient.ImageImportIntoClusterMulti(context.TODO(), runtimes.SelectedRuntime, images, kc, loadImageOpts); err != nil {
+		td.T.Errorf("Failed to import image(s) into cluster '%s': %+v", td.ClusterName, err)
+		return err
+	}
+
+	td.T.Logf("Successfully imported %d image(s) into cluster %q", len(images), td.ClusterName)
+
+	return nil
+}
+
 func setMeshConfigToDefault(instOpts InstallFSMOpts, meshConfig *configv1alpha3.MeshConfig) *configv1alpha3.MeshConfig {
 	meshConfig.Spec.Traffic.EnableEgress = instOpts.EgressEnabled
 	meshConfig.Spec.Traffic.EnablePermissiveTrafficPolicyMode = instOpts.EnablePermissiveMode
@@ -697,6 +745,12 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 	if td.InstType == KindCluster {
 		if err := td.LoadFSMImagesIntoKind(); err != nil {
 			return fmt.Errorf("failed to load FSM images to nodes for Kind cluster")
+		}
+	}
+
+	if td.InstType == K3dCluster {
+		if err := td.LoadFSMImagesIntoK3d(); err != nil {
+			return fmt.Errorf("failed to load FSM images to nodes for K3d cluster")
 		}
 	}
 
@@ -868,20 +922,12 @@ func (td *FsmTestData) GetSidecarClass(namespace string) string {
 
 // LoadFSMImagesIntoKind loads the FSM images to the node for Kind clusters
 func (td *FsmTestData) LoadFSMImagesIntoKind() error {
-	imageNames := []string{
-		"fsm-controller",
-		"fsm-injector",
-		"fsm-sidecar-init",
-		"fsm-crds",
-		"fsm-bootstrap",
-		"fsm-preinstall",
-		"fsm-healthcheck",
-		"fsm-ingress",
-		"fsm-gateway",
-		"fsm-curl",
-	}
-
 	return td.LoadImagesToKind(imageNames)
+}
+
+// LoadFSMImagesIntoK3d loads the FSM images to the node for K3d clusters
+func (td *FsmTestData) LoadFSMImagesIntoK3d() error {
+	return td.LoadImagesToK3d(imageNames)
 }
 
 func (td *FsmTestData) installVault(instOpts InstallFSMOpts) error {

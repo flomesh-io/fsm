@@ -38,14 +38,14 @@ ports:
   - port: 4001:4001/udp
     nodeFilters:
       - loadbalancer
-registries:
-  use:
-    - k3d-registry:5000
-  config: |
-    mirrors:
-      "localhost:5001":
-        endpoint:
-          - http://k3d-registry:5000
+#registries:
+#  use:
+#    - k3d-registry:5000
+#  config: |
+#    mirrors:
+#      "localhost:5001":
+#        endpoint:
+#          - http://k3d-registry:5000
 options:
   k3d:
     wait: true

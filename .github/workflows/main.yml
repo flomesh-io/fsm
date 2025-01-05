@@ -266,19 +266,19 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get clean
           rm -rf /usr/share/dotnet/
-      - name: Change container registry in case it's k3d cluster
-        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-        run: |
-          echo "CTR_REGISTRY=localhost:5001" >> $GITHUB_ENV
-      - name: Install k3d CLI
-        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-        run: |
-          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          k3d version
-      - name: Create k3d managed registry
-        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-        run: |
-          k3d registry create registry --port "127.0.0.1:5001"
+#      - name: Change container registry in case it's k3d cluster
+#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
+#        run: |
+#          echo "CTR_REGISTRY=localhost:5001" >> $GITHUB_ENV
+#      - name: Install k3d CLI
+#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
+#        run: |
+#          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+#          k3d version
+#      - name: Create k3d managed registry
+#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
+#        run: |
+#          k3d registry create registry --port "127.0.0.1:5001"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
