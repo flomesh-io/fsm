@@ -29,6 +29,7 @@ env:
   CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
   CI_MIN_SUCCESS_THRESHOLD: 1
   FSM_HUMAN_DEBUG_LOG: true
+  CLUSTER_INSTALL_TYPE: K3dCluster
 
 jobs:
   shellcheck:
@@ -190,7 +191,7 @@ jobs:
             bucket: ".*"
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free space
         run: |
@@ -219,7 +220,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -255,7 +256,6 @@ jobs:
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
-      CLUSTER_INSTALL_TYPE: "K3dCluster"
     steps:
       - name: Free space
         run: |
@@ -266,19 +266,6 @@ jobs:
           sudo apt-get autoremove -y
           sudo apt-get clean
           rm -rf /usr/share/dotnet/
-#      - name: Change container registry in case it's k3d cluster
-#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-#        run: |
-#          echo "CTR_REGISTRY=localhost:5001" >> $GITHUB_ENV
-#      - name: Install k3d CLI
-#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-#        run: |
-#          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-#          k3d version
-#      - name: Create k3d managed registry
-#        if: ${{ env.CLUSTER_INSTALL_TYPE == 'K3dCluster' }}
-#        run: |
-#          k3d registry create registry --port "127.0.0.1:5001"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -340,7 +327,7 @@ jobs:
         bucket: [ 7 ]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free space
         run: |
@@ -372,7 +359,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -406,7 +393,7 @@ jobs:
         bucket: [9]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free space
         run: |
@@ -435,7 +422,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -469,7 +456,7 @@ jobs:
         bucket: [8]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
       - name: Free space
         run: |
@@ -498,7 +485,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
