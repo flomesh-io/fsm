@@ -4,7 +4,9 @@ metadata:
   name: fsm-e2e
 servers: 1
 agents: 1
-network: fsm
+kubeAPI:
+  hostIP: "0.0.0.0"
+  hostPort: "6443"
 ports:
   - port: 80:80
     nodeFilters:

@@ -165,7 +165,7 @@ func registerFlags(td *FsmTestData) {
 
 	flag.BoolVar(&td.CleanupCluster, "cleanupCluster", true, "Cleanup kind/k3d cluster upon exit")
 	flag.BoolVar(&td.CleanupClusterBetweenTests, "cleanupClusterBetweenTests", false, "Cleanup kind/k3d cluster between tests")
-	flag.StringVar(&td.ClusterVersion, "kindClusterVersion", "", "Kind/K3d cluster version, ex. v.1.20.2")
+	flag.StringVar(&td.ClusterVersion, "clusterVersion", "", "Kind/K3d cluster version, ex. v.1.20.2")
 
 	flag.StringVar(&td.CtrRegistryServer, "ctrRegistry", os.Getenv("CTR_REGISTRY"), "Container registry")
 	flag.StringVar(&td.CtrRegistryUser, "ctrRegistryUser", os.Getenv("CTR_REGISTRY_USER"), "Container registry")
