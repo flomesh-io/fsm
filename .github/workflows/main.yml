@@ -245,14 +245,21 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test e2e
-    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
-#        k8s_version: ["", "v1.19.16-k3s1", "v1.21.14-k3s1", "v1.23.17-k3s1"]
-        k8s_version: ["", "v1.21.14-k3s1", "v1.23.17-k3s1"]
-        focus: [""]
-        bucket: [6]
+        focus: [ "" ]
+        bucket: [ 6 ]
+        k8s:
+          - version: "v1.19.16-k3s1"
+            os: ubuntu-20.04
+          - version: ""
+            os: ubuntu-22.04
+          - version: v1.21.14-k3s1
+            os: ubuntu-22.04
+          - version: v1.23.17-k3s1
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.k8s.os }}
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -293,13 +300,13 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s.version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
+          if [[ -n "${{ matrix.k8s.version }}" ]]; then
+            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s.version }}" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
           fi
