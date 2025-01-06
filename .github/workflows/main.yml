@@ -175,20 +175,23 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test e2e
-    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
+        os: ["ubuntu-22.04"]
         include:
-#          - k8s_version: v1.19.16
-#            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
-#            bucket: ".*"
+          - k8s_version: v1.19.16
+            focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
+            bucket: ".*"
+            os: "ubuntu-20.04"
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+            os: "ubuntu-22.04"
+    runs-on: ${{ matrix.os }}
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
