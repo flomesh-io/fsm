@@ -34,7 +34,7 @@ env:
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
 
   codegen:
     name: Codegen
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
 
   mocks:
     name: Mocks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
 
   charts:
     name: Chart checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,7 +114,7 @@ jobs:
 
   build:
     name: Go build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -130,7 +130,7 @@ jobs:
 
   unittest:
     name: Go test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - name: Checkout
@@ -152,7 +152,7 @@ jobs:
 
   imagescan:
     name: Scan images for security vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -181,16 +181,16 @@ jobs:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
-        os: ["ubuntu-22.04"]
+        os: [ubuntu-22.04]
         include:
           - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: "ubuntu-20.04"
+            os: ubuntu-20.04
           - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-            os: "ubuntu-22.04"
+            os: ubuntu-22.04
     runs-on: ${{ matrix.os }}
     env:
       CTR_TAG: ${{ github.sha }}
@@ -254,10 +254,10 @@ jobs:
         focus: [ "" ]
         bucket: [ 6 ]
         k8s:
-          - version: "v1.19.16-k3s1"
-            os: ubuntu-20.04
-          - version: ""
+          - version: "latest"
             os: ubuntu-22.04
+          - version: v1.19.16-k3s1
+            os: ubuntu-20.04
           - version: v1.21.14-k3s1
             os: ubuntu-22.04
           - version: v1.23.17-k3s1
@@ -328,7 +328,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     strategy:
       matrix:
@@ -394,7 +394,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: mesh-statefulset-e2e-test
     strategy:
       matrix:
@@ -457,7 +457,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: integration-tresor
     strategy:
       matrix:
@@ -520,7 +520,7 @@ jobs:
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build]
     steps:
       - name: Free space
@@ -558,7 +558,7 @@ jobs:
 
   images:
     name: Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
     env:
       DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}
