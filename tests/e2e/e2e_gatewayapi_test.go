@@ -36,7 +36,7 @@ const (
 	nsUDPSvc    = "udp"
 )
 
-var _ = FSMDescribe("Test traffic among FSM Gateway",
+var _ = FSMDescribe("Test traffic routing by FSM Gateway with trafficInterceptionMode(PodLevel)",
 	FSMDescribeInfo{
 		Tier:   1,
 		Bucket: 6,
@@ -45,39 +45,58 @@ var _ = FSMDescribe("Test traffic among FSM Gateway",
 	func() {
 		Context("Test traffic from client to backend service routing by FSM Gateway", func() {
 			It("allow traffic of multiple protocols through Gateway", func() {
-				// Install FSM
-				installOpts := Td.GetFSMInstallOpts()
-				installOpts.EnableIngress = false
-				installOpts.EnableGateway = true
-				installOpts.EnableServiceLB = Td.InstType == KindCluster
-
-				Expect(Td.InstallFSM(installOpts)).To(Succeed())
-				Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"app.kubernetes.io/instance": "fsm",
-						"app.kubernetes.io/name":     "flomesh.io",
-					},
-				})).To(Succeed())
-
-				testDeployFSMGateway()
-
-				testFSMGatewayHTTPTrafficSameNamespace()
-				testFSMGatewayHTTPTrafficCrossNamespace()
-				testFSMGatewayHTTPSTraffic()
-				testFSMGatewayTLSTerminate()
-				testFSMGatewayTLSPassthrough()
-
-				testFSMGatewayGRPCTrafficSameNamespace()
-				testFSMGatewayGRPCTrafficCrossNamespace()
-				testFSMGatewayGRPCSTraffic()
-
-				testFSMGatewayTCPTrafficSameNamespace()
-				testFSMGatewayTCPTrafficCrossNamespace()
-				testFSMGatewayUDPTrafficSameNamespace()
-				testFSMGatewayUDPTrafficCrossNamespace()
+				testGatewayAPI(constants.TrafficInterceptionModePodLevel)
 			})
 		})
 	})
+
+var _ = FSMDescribe("Test traffic routing by FSM Gateway with trafficInterceptionMode(NodeLevel)",
+	FSMDescribeInfo{
+		Tier:   1,
+		Bucket: 7,
+		OS:     OSCrossPlatform,
+	},
+	func() {
+		Context("Test traffic from client to backend service routing by FSM Gateway", func() {
+			It("allow traffic of multiple protocols through Gateway", func() {
+				testGatewayAPI(constants.TrafficInterceptionModeNodeLevel)
+			})
+		})
+	})
+
+func testGatewayAPI(trafficInterceptionMode string) {
+	// Install FSM
+	installOpts := Td.GetFSMInstallOpts()
+	installOpts.EnableIngress = false
+	installOpts.EnableGateway = true
+	installOpts.EnableServiceLB = Td.InstType == KindCluster
+	installOpts.TrafficInterceptionMode = trafficInterceptionMode
+
+	Expect(Td.InstallFSM(installOpts)).To(Succeed())
+	Expect(Td.WaitForPodsRunningReady(Td.FsmNamespace, 3, &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"app.kubernetes.io/instance": "fsm",
+			"app.kubernetes.io/name":     "flomesh.io",
+		},
+	})).To(Succeed())
+
+	testDeployFSMGateway()
+
+	testFSMGatewayHTTPTrafficSameNamespace()
+	testFSMGatewayHTTPTrafficCrossNamespace()
+	testFSMGatewayHTTPSTraffic()
+	testFSMGatewayTLSTerminate()
+	testFSMGatewayTLSPassthrough()
+
+	testFSMGatewayGRPCTrafficSameNamespace()
+	testFSMGatewayGRPCTrafficCrossNamespace()
+	testFSMGatewayGRPCSTraffic()
+
+	testFSMGatewayTCPTrafficSameNamespace()
+	testFSMGatewayTCPTrafficCrossNamespace()
+	testFSMGatewayUDPTrafficSameNamespace()
+	testFSMGatewayUDPTrafficCrossNamespace()
+}
 
 func testDeployFSMGateway() {
 	// Create namespaces
@@ -1554,7 +1573,6 @@ func testFSMGatewayGRPCSTraffic() {
 	}, 5, Td.ReqSuccessTimeout)
 
 	Expect(cond).To(BeTrue(), "Failed testing GRPCs traffic from grpcurl(localhost) to destination %s/%s", grpcReq.Destination, grpcReq.Symbol)
-
 }
 
 func testFSMGatewayTLSPassthrough() {

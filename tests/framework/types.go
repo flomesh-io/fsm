@@ -107,7 +107,7 @@ type InstallFSMOpts struct {
 	CertManager             string
 	ContainerRegistryLoc    string
 	ContainerRegistrySecret string
-	FsmImagetag             string
+	FsmImageTag             string
 	DeployGrafana           bool
 	DeployPrometheus        bool
 	DeployJaeger            bool
@@ -150,6 +150,8 @@ type InstallFSMOpts struct {
 	EnableIngressBackendPolicy    bool
 	EnableAccessControlPolicy     bool
 	EnableRetryPolicy             bool
+
+	TrafficInterceptionMode string
 }
 
 // InstallFsmOpt is a function type for setting install options

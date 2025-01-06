@@ -25,9 +25,13 @@ pull_request_rules:
       - check-success=Go gateway test e2e (6, v1.19.16-k3s1, ubuntu-20.04)
       - check-success=Go gateway test e2e (6, v1.21.16-k3s1, ubuntu-22.04)
       - check-success=Go gateway test e2e (6, v1.23.17-k3s1, ubuntu-22.04)
-      - check-success=Go ingress test e2e (7)
+      - check-success=Go gateway test e2e (7, latest, ubuntu-22.04)
+      - check-success=Go gateway test e2e (7, v1.19.16-k3s1, ubuntu-20.04)
+      - check-success=Go gateway test e2e (7, v1.21.16-k3s1, ubuntu-22.04)
+      - check-success=Go gateway test e2e (7, v1.23.17-k3s1, ubuntu-22.04)
       - check-success=Go statefulset test e2e (8)
       - check-success=Go retry test e2e (9)
+      - check-success=Go ingress test e2e (10)
       - "#approved-reviews-by >= 1"
       - or:
           - and:

@@ -101,6 +101,7 @@ var imageNames = []string{
 	"fsm-ingress",
 	"fsm-gateway",
 	"fsm-curl",
+	"fsm-xnetmgmt",
 }
 
 // Since parseFlags is global, this is the Ginkgo way to do it.
@@ -567,7 +568,7 @@ func (td *FsmTestData) GetFSMInstallOpts(options ...InstallFsmOpt) InstallFSMOpt
 		CertManager:             defaultCertManager,
 		ContainerRegistryLoc:    td.CtrRegistryServer,
 		ContainerRegistrySecret: td.CtrRegistryPassword,
-		FsmImagetag:             td.FsmImageTag,
+		FsmImageTag:             td.FsmImageTag,
 		DeployGrafana:           false,
 		DeployPrometheus:        false,
 		DeployJaeger:            false,
@@ -769,7 +770,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 
 	instOpts.SetOverrides = append(instOpts.SetOverrides,
 		fmt.Sprintf("fsm.image.registry=%s", instOpts.ContainerRegistryLoc),
-		fmt.Sprintf("fsm.image.tag=%s", instOpts.FsmImagetag),
+		fmt.Sprintf("fsm.image.tag=%s", instOpts.FsmImageTag),
 		fmt.Sprintf("fsm.certificateProvider.kind=%s", instOpts.CertManager),
 		fmt.Sprintf("fsm.enableEgress=%v", instOpts.EgressEnabled),
 		fmt.Sprintf("fsm.enablePermissiveTrafficPolicy=%v", instOpts.EnablePermissiveMode),
@@ -793,6 +794,11 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 		fmt.Sprintf("fsm.serviceLB.enabled=%v", instOpts.EnableServiceLB),
 		fmt.Sprintf("fsm.egressGateway.enabled=%v", instOpts.EnableEgressGateway),
 	)
+
+	if instOpts.TrafficInterceptionMode != "" &&
+		(instOpts.TrafficInterceptionMode == constants.TrafficInterceptionModeNodeLevel || instOpts.TrafficInterceptionMode == constants.TrafficInterceptionModePodLevel) {
+		instOpts.SetOverrides = append(instOpts.SetOverrides, fmt.Sprintf("fsm.trafficInterceptionMode=%v", instOpts.TrafficInterceptionMode))
+	}
 
 	if instOpts.LocalProxyMode != "" {
 		instOpts.SetOverrides = append(instOpts.SetOverrides, fmt.Sprintf("fsm.localProxyMode=%s", instOpts.LocalProxyMode))

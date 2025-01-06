@@ -30,7 +30,7 @@ var _ = FSMDescribe("Test reinstalling FSM in the same namespace with the same m
 			By("Reinstalling FSM")
 			// Invoke the CLI directly because Td.InstallFSM unconditionally
 			// creates the namespace which fails when it already exists.
-			stdout, stderr, err = Td.RunLocal(filepath.FromSlash("../../bin/fsm"), "install", "--verbose", "--timeout=5m", "--fsm-namespace", opts.ControlPlaneNS, "--set", "fsm.image.registry="+opts.ContainerRegistryLoc+",fsm.image.tag="+opts.FsmImagetag, "--set", "fsm.fsmIngress.enabled=false")
+			stdout, stderr, err = Td.RunLocal(filepath.FromSlash("../../bin/fsm"), "install", "--verbose", "--timeout=5m", "--fsm-namespace", opts.ControlPlaneNS, "--set", "fsm.image.registry="+opts.ContainerRegistryLoc+",fsm.image.tag="+opts.FsmImageTag, "--set", "fsm.fsmIngress.enabled=false")
 			Td.T.Log(stdout)
 			if err != nil {
 				Td.T.Logf("stderr:\n%s", stderr)
