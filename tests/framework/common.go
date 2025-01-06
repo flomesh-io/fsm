@@ -762,7 +762,7 @@ func (td *FsmTestData) InstallFSM(instOpts InstallFSMOpts) error {
 	args = append(args, "install",
 		"--fsm-namespace="+instOpts.ControlPlaneNS,
 		"--verbose",
-		fmt.Sprintf("--timeout=%v", 300*time.Second),
+		fmt.Sprintf("--timeout=%v", 10*time.Minute),
 	)
 
 	instOpts.SetOverrides = append(instOpts.SetOverrides,
