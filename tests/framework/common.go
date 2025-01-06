@@ -1283,6 +1283,10 @@ func (td *FsmTestData) DeleteNs(nsName string) error {
 		} else {
 			del := action.NewUninstall(helm)
 			del.Wait = true
+			del.Timeout = 90 * time.Second
+			del.DeletionPropagation = "background"
+			del.IgnoreNotFound = true
+			del.KeepHistory = false
 			for _, release := range releases {
 				if _, err := del.Run(release.Name); err != nil {
 					td.T.Logf("WARNING: failed to delete helm release %s in namespace %s: %v", release.Name, nsName, err)
