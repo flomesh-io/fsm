@@ -552,7 +552,7 @@ jobs:
           USE_PRIVATE_REGISTRY: "false"
         run: |
           touch .env
-          make kind-up
+          make k3d-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
