@@ -71,6 +71,14 @@ type RetryListerExpansion interface{}
 // RetryNamespaceLister.
 type RetryNamespaceListerExpansion interface{}
 
+// TrafficWarmupListerExpansion allows custom methods to be added to
+// TrafficWarmupLister.
+type TrafficWarmupListerExpansion interface{}
+
+// TrafficWarmupNamespaceListerExpansion allows custom methods to be added to
+// TrafficWarmupNamespaceLister.
+type TrafficWarmupNamespaceListerExpansion interface{}
+
 // UpstreamTrafficSettingListerExpansion allows custom methods to be added to
 // UpstreamTrafficSettingLister.
 type UpstreamTrafficSettingListerExpansion interface{}

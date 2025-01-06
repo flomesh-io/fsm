@@ -1,6 +1,7 @@
 package v1alpha3
 
 import (
+	"math"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +41,9 @@ type MeshConfigSpec struct {
 
 	// Traffic defines the traffic management configurations for a mesh instance.
 	Traffic TrafficSpec `json:"traffic,omitempty"`
+
+	// Warmup defines the traffic warm up policy
+	Warmup TrafficWarmupSpec `json:"warmup,omitempty"`
 
 	// Observalility defines the observability configurations for a mesh instance.
 	Observability ObservabilitySpec `json:"observability,omitempty"`
@@ -209,6 +213,66 @@ type SidecarSpec struct {
 
 	// LocalDNSProxy improves the performance of your computer by caching the responses coming from your DNS servers
 	LocalDNSProxy LocalDNSProxy `json:"localDNSProxy,omitempty"`
+}
+
+// TrafficWarmupSpec is the specification for a TrafficWarmup
+type TrafficWarmupSpec struct {
+	// +kubebuilder:default=true
+	// +optional
+	Enable bool `json:"enable"`
+
+	// +kubebuilder:validation:Format="duration"
+	// +kubebuilder:default="90s"
+	// +optional
+	Duration metav1.Duration `json:"duration,omitempty"`
+
+	// MinWeight configures the minimum percentage of origin weight
+	// If unspecified, defaults to 10
+	// +kubebuilder:default=10
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:validation:Minimum=0
+	MinWeight *uint64 `json:"minWeight,omitempty"`
+
+	// MaxWeight configures the maximum percentage of origin weight
+	// If unspecified, defaults to 100
+	// +kubebuilder:default=100
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:validation:Minimum=0
+	MaxWeight *uint64 `json:"maxWeight,omitempty"`
+
+	// Aggression controls the speed of traffic increase over the warmup duration. Defaults to 1.0, so that endpoints would
+	// get linearly increasing amount of traffic. When increasing the value for this parameter,
+	// the speed of traffic ramp-up increases non-linearly.
+	// +kubebuilder:default=1.0
+	// +kubebuilder:validation:Minimum=1
+	Aggression *float64 `json:"aggression,omitempty"`
+}
+
+func (tw *TrafficWarmupSpec) Weight(startTimestampSeconds, currTimestampSeconds int64) float64 {
+	maxWeight := uint64(100)
+	minWeight := uint64(10)
+	aggression := float64(1)
+	slowStartWindowSeconds := tw.Duration.Seconds()
+
+	if tw.MaxWeight != nil {
+		maxWeight = *tw.MaxWeight
+	}
+
+	if tw.MinWeight != nil {
+		minWeight = *tw.MinWeight
+	}
+
+	if tw.Aggression != nil {
+		aggression = *tw.Aggression
+	}
+
+	if currTimestampSeconds <= startTimestampSeconds {
+		return float64(minWeight)
+	}
+
+	timeFactor := float64(currTimestampSeconds-startTimestampSeconds) / slowStartWindowSeconds
+	newWeight := float64(maxWeight) * math.Max(float64(minWeight)/float64(maxWeight), math.Pow(timeFactor, 1/float64(aggression)))
+	return math.Min(newWeight, float64(maxWeight))
 }
 
 // TrafficSpec is the type used to represent FSM's traffic management configuration.
@@ -435,6 +499,9 @@ type FeatureFlags struct {
 
 	// EnableAccessCertPolicy defines if FSM can issue certificates for external services..
 	EnableAccessCertPolicy bool `json:"enableAccessCertPolicy"`
+
+	// EnableTrafficWarmupPolicy defines if FSM will use the TrafficWarmup API to allow traffic warmup
+	EnableTrafficWarmupPolicy bool `json:"enableTrafficWarmupPolicy"`
 
 	// EnableSidecarPrettyConfig defines if pretty sidecar config is enabled.
 	EnableSidecarPrettyConfig bool `json:"enableSidecarPrettyConfig"`

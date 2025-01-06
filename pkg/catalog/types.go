@@ -7,6 +7,7 @@ package catalog
 import (
 	corev1 "k8s.io/api/core/v1"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	"github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/certificate"
 	"github.com/flomesh-io/fsm/pkg/configurator"
@@ -100,6 +101,8 @@ type MeshCataloger interface {
 
 	// GetRetryPolicy returns the RetryPolicySpec for the given downstream identity and upstream service
 	GetRetryPolicy(downstreamIdentity identity.ServiceIdentity, upstreamSvc service.MeshService) *v1alpha1.RetryPolicySpec
+
+	GetTrafficWarmupPolicy(svc service.MeshService) *configv1alpha3.TrafficWarmupSpec
 
 	// GetExportTrafficPolicy returns the export policy for the given mesh service
 	GetExportTrafficPolicy(svc service.MeshService) (*trafficpolicy.ServiceExportTrafficPolicy, error)

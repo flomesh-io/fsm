@@ -118,6 +118,7 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.featureFlags.enableSidecarActiveHealthChecks | bool | `false` | Enable Sidecar active health checks |
 | fsm.featureFlags.enableSidecarPrettyConfig | bool | `true` | Enable Sidecar Pretty Config |
 | fsm.featureFlags.enableSnapshotCacheMode | bool | `false` | Enables SnapshotCache feature for Sidecar xDS server. |
+| fsm.featureFlags.enableTrafficWarmupPolicy | bool | `false` | Enables traffic warmup feature |
 | fsm.featureFlags.enableValidateGRPCRouteHostnames | bool | `true` | Enable validate GRPC route hostnames, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateGatewayListenerHostname | bool | `true` | Enable validate Gateway listener hostname, enforce the hostname is DNS name not IP address |
 | fsm.featureFlags.enableValidateHTTPRouteHostnames | bool | `true` | Enable validate HTTP route hostnames, enforce the hostname is DNS name not IP address |
@@ -487,6 +488,9 @@ The following table lists the configurable parameters of the fsm chart and their
 | fsm.vault.secret.key | string | `""` | The Kubernetes secret key with the value bring the Vault token |
 | fsm.vault.secret.name | string | `""` | The Kubernetes secret name storing the Vault token used in FSM |
 | fsm.vault.token | string | `""` | token that should be used to connect to Vault |
+| fsm.warmup | object | `{"duration":"90s","enable":false,"maxWeight":100,"minWeight":10}` | Global Traffic Warmup policy |
+| fsm.warmup.maxWeight | int | `100` | MaxWeight configures the maximum percentage of origin weight -- If unspecified, defaults to 100 |
+| fsm.warmup.minWeight | int | `10` | MinWeight configures the minimum percentage of origin weight -- If unspecified, defaults to 10 |
 | fsm.webhookConfigNamePrefix | string | `"fsm-webhook"` | Prefix used in name of the webhook configuration resources |
 | smi.validateTrafficTarget | bool | `true` | Enables validation of SMI Traffic Target |
 

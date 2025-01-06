@@ -7,12 +7,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	policyV1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
-	"github.com/flomesh-io/fsm/pkg/k8s/informers"
-
 	"github.com/flomesh-io/fsm/pkg/announcements"
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
+	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
+	"github.com/flomesh-io/fsm/pkg/k8s/informers"
 	"github.com/flomesh-io/fsm/pkg/messaging"
 	"github.com/flomesh-io/fsm/pkg/service"
 )
@@ -87,6 +87,13 @@ func NewPolicyController(informerCollection *informers.InformerCollection, kubeC
 	}
 	client.informers.AddEventHandler(informers.InformerKeyRetry, k8s.GetEventHandlerFuncs(shouldObserve, retryEventTypes, msgBroker))
 
+	warmupEventTypes := k8s.EventTypes{
+		Add:    announcements.TrafficWarmupAdded,
+		Update: announcements.TrafficWarmupUpdated,
+		Delete: announcements.TrafficWarmupDeleted,
+	}
+	client.informers.AddEventHandler(informers.InformerKeyTrafficWarmup, k8s.GetEventHandlerFuncs(shouldObserve, warmupEventTypes, msgBroker))
+
 	upstreamTrafficSettingEventTypes := k8s.EventTypes{
 		Add:    announcements.UpstreamTrafficSettingAdded,
 		Update: announcements.UpstreamTrafficSettingUpdated,
@@ -98,10 +105,10 @@ func NewPolicyController(informerCollection *informers.InformerCollection, kubeC
 }
 
 // ListIsolationPolicies returns the Isolation policies
-func (c *Client) ListIsolationPolicies() []*policyV1alpha1.Isolation {
-	var isolations []*policyV1alpha1.Isolation
+func (c *Client) ListIsolationPolicies() []*policyv1alpha1.Isolation {
+	var isolations []*policyv1alpha1.Isolation
 	for _, isolationIface := range c.informers.List(informers.InformerKeyIsolation) {
-		isolation := isolationIface.(*policyV1alpha1.Isolation)
+		isolation := isolationIface.(*policyv1alpha1.Isolation)
 		isolations = append(isolations, isolation)
 	}
 
@@ -109,10 +116,10 @@ func (c *Client) ListIsolationPolicies() []*policyV1alpha1.Isolation {
 }
 
 // ListEgressGateways lists egress gateways
-func (c *Client) ListEgressGateways() []*policyV1alpha1.EgressGateway {
-	var egressGateways []*policyV1alpha1.EgressGateway
+func (c *Client) ListEgressGateways() []*policyv1alpha1.EgressGateway {
+	var egressGateways []*policyv1alpha1.EgressGateway
 	for _, egressGatewayIface := range c.informers.List(informers.InformerKeyEgressGateway) {
-		egressGateway := egressGatewayIface.(*policyV1alpha1.EgressGateway)
+		egressGateway := egressGatewayIface.(*policyv1alpha1.EgressGateway)
 		egressGateways = append(egressGateways, egressGateway)
 	}
 
@@ -120,11 +127,11 @@ func (c *Client) ListEgressGateways() []*policyV1alpha1.EgressGateway {
 }
 
 // ListEgressPoliciesForSourceIdentity lists the Egress policies for the given source identity based on service accounts
-func (c *Client) ListEgressPoliciesForSourceIdentity(source identity.K8sServiceAccount) []*policyV1alpha1.Egress {
-	var policies []*policyV1alpha1.Egress
+func (c *Client) ListEgressPoliciesForSourceIdentity(source identity.K8sServiceAccount) []*policyv1alpha1.Egress {
+	var policies []*policyv1alpha1.Egress
 
 	for _, egressIface := range c.informers.List(informers.InformerKeyEgress) {
-		egressPolicy := egressIface.(*policyV1alpha1.Egress)
+		egressPolicy := egressIface.(*policyv1alpha1.Egress)
 
 		if !c.kubeController.IsMonitoredNamespace(egressPolicy.Namespace) {
 			continue
@@ -147,9 +154,9 @@ func (c *Client) GetEgressSourceSecret(secretReference corev1.SecretReference) (
 }
 
 // GetIngressBackendPolicy returns the IngressBackend policy for the given backend MeshService
-func (c *Client) GetIngressBackendPolicy(svc service.MeshService) *policyV1alpha1.IngressBackend {
+func (c *Client) GetIngressBackendPolicy(svc service.MeshService) *policyv1alpha1.IngressBackend {
 	for _, ingressBackendIface := range c.informers.List(informers.InformerKeyIngressBackend) {
-		ingressBackend := ingressBackendIface.(*policyV1alpha1.IngressBackend)
+		ingressBackend := ingressBackendIface.(*policyv1alpha1.IngressBackend)
 
 		if ingressBackend.Namespace != svc.Namespace {
 			continue
@@ -170,11 +177,11 @@ func (c *Client) GetIngressBackendPolicy(svc service.MeshService) *policyV1alpha
 }
 
 // ListRetryPolicies returns the retry policies for the given source identity based on service accounts.
-func (c *Client) ListRetryPolicies(source identity.K8sServiceAccount) []*policyV1alpha1.Retry {
-	var retries []*policyV1alpha1.Retry
+func (c *Client) ListRetryPolicies(source identity.K8sServiceAccount) []*policyv1alpha1.Retry {
+	var retries []*policyv1alpha1.Retry
 
 	for _, retryInterface := range c.informers.List(informers.InformerKeyRetry) {
-		retry := retryInterface.(*policyV1alpha1.Retry)
+		retry := retryInterface.(*policyv1alpha1.Retry)
 		if retry.Spec.Source.Kind == kindSvcAccount && retry.Spec.Source.Name == source.Name && retry.Spec.Source.Namespace == source.Namespace {
 			retries = append(retries, retry)
 		}
@@ -184,10 +191,10 @@ func (c *Client) ListRetryPolicies(source identity.K8sServiceAccount) []*policyV
 }
 
 // GetAccessControlPolicy returns the AccessControl policy for the given backend MeshService
-func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyV1alpha1.AccessControl {
+func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyv1alpha1.AccessControl {
 	aclIfaces := c.informers.List(informers.InformerKeyAccessControl)
 	for _, aclIface := range aclIfaces {
-		acl := aclIface.(*policyV1alpha1.AccessControl)
+		acl := aclIface.(*policyv1alpha1.AccessControl)
 
 		if acl.Namespace != svc.Namespace {
 			continue
@@ -204,7 +211,7 @@ func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyV1alpha1
 		}
 	}
 	for _, aclIface := range aclIfaces {
-		acl := aclIface.(*policyV1alpha1.AccessControl)
+		acl := aclIface.(*policyv1alpha1.AccessControl)
 		if len(acl.Spec.Backends) == 0 {
 			return acl
 		}
@@ -212,8 +219,22 @@ func (c *Client) GetAccessControlPolicy(svc service.MeshService) *policyV1alpha1
 	return nil
 }
 
+// GetTrafficWarmupPolicy returns the TrafficWarmup policy for the given backend MeshService
+func (c *Client) GetTrafficWarmupPolicy(svc service.MeshService) *configv1alpha3.TrafficWarmupSpec {
+	warmupIf, exists, err := c.informers.GetByKey(informers.InformerKeyTrafficWarmup, svc.NamespacedKey())
+	if exists && err == nil {
+		warmup := warmupIf.(*policyv1alpha1.TrafficWarmup)
+		if !c.kubeController.IsMonitoredNamespace(warmup.Namespace) {
+			log.Warn().Msgf("TrafficWarmup %s found, but belongs to a namespace that is not monitored, ignoring it", svc.NamespacedKey())
+			return nil
+		}
+		return &warmup.Spec
+	}
+	return nil
+}
+
 // GetUpstreamTrafficSetting returns the UpstreamTrafficSetting resource that matches the given options
-func (c *Client) GetUpstreamTrafficSetting(options UpstreamTrafficSettingGetOpt) *policyV1alpha1.UpstreamTrafficSetting {
+func (c *Client) GetUpstreamTrafficSetting(options UpstreamTrafficSettingGetOpt) *policyv1alpha1.UpstreamTrafficSetting {
 	if options.MeshService == nil && options.NamespacedName == nil && options.Host == "" {
 		log.Error().Msgf("No option specified to get UpstreamTrafficSetting resource")
 		return nil
@@ -223,14 +244,14 @@ func (c *Client) GetUpstreamTrafficSetting(options UpstreamTrafficSettingGetOpt)
 		// Filter by namespaced name
 		resource, exists, err := c.informers.GetByKey(informers.InformerKeyUpstreamTrafficSetting, options.NamespacedName.String())
 		if exists && err == nil {
-			return resource.(*policyV1alpha1.UpstreamTrafficSetting)
+			return resource.(*policyv1alpha1.UpstreamTrafficSetting)
 		}
 		return nil
 	}
 
 	// Filter by MeshService
 	for _, resource := range c.informers.List(informers.InformerKeyUpstreamTrafficSetting) {
-		upstreamTrafficSetting := resource.(*policyV1alpha1.UpstreamTrafficSetting)
+		upstreamTrafficSetting := resource.(*policyv1alpha1.UpstreamTrafficSetting)
 
 		if upstreamTrafficSetting.Spec.Host == options.Host {
 			return upstreamTrafficSetting

@@ -7,6 +7,7 @@ package policy
 import (
 	reflect "reflect"
 
+	v1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	v1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	identity "github.com/flomesh-io/fsm/pkg/identity"
 	service "github.com/flomesh-io/fsm/pkg/service"
@@ -78,6 +79,20 @@ func (m *MockController) GetIngressBackendPolicy(arg0 service.MeshService) *v1al
 func (mr *MockControllerMockRecorder) GetIngressBackendPolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIngressBackendPolicy", reflect.TypeOf((*MockController)(nil).GetIngressBackendPolicy), arg0)
+}
+
+// GetTrafficWarmupPolicy mocks base method.
+func (m *MockController) GetTrafficWarmupPolicy(arg0 service.MeshService) *v1alpha3.TrafficWarmupSpec {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTrafficWarmupPolicy", arg0)
+	ret0, _ := ret[0].(*v1alpha3.TrafficWarmupSpec)
+	return ret0
+}
+
+// GetTrafficWarmupPolicy indicates an expected call of GetTrafficWarmupPolicy.
+func (mr *MockControllerMockRecorder) GetTrafficWarmupPolicy(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrafficWarmupPolicy", reflect.TypeOf((*MockController)(nil).GetTrafficWarmupPolicy), arg0)
 }
 
 // GetUpstreamTrafficSetting mocks base method.

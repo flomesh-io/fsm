@@ -234,6 +234,12 @@ const (
 
 	// ServiceExclusionAnnotation is the annotation used for service exclusion
 	ServiceExclusionAnnotation = "flomesh.io/service-exclusion"
+
+	TrafficWarmupEnableAnnotation     = "flomesh.io/traffic-warmup-enable"
+	TrafficWarmupDurationAnnotation   = "flomesh.io/traffic-warmup-duration"
+	TrafficWarmupMinWeightAnnotation  = "flomesh.io/traffic-warmup-minweight"
+	TrafficWarmupMaxWeightAnnotation  = "flomesh.io/traffic-warmup-maxweight"
+	TrafficWarmupAggressionAnnotation = "flomesh.io/traffic-warmup-aggression"
 )
 
 // Annotations and labels used by the MeshRootCertificate

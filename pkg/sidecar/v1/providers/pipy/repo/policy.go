@@ -2,20 +2,24 @@ package repo
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/hashstructure/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	multiclusterv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/multicluster/v1alpha1"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
+	"github.com/flomesh-io/fsm/pkg/catalog"
 	"github.com/flomesh-io/fsm/pkg/configurator"
 	"github.com/flomesh-io/fsm/pkg/constants"
 	"github.com/flomesh-io/fsm/pkg/identity"
 	"github.com/flomesh-io/fsm/pkg/k8s"
+	"github.com/flomesh-io/fsm/pkg/service"
 	"github.com/flomesh-io/fsm/pkg/sidecar/v1/providers/pipy/registry"
 	"github.com/flomesh-io/fsm/pkg/utils/cidr"
 )
@@ -190,14 +194,17 @@ func (p *PipyConf) rebalancedTargetClusters() {
 	}
 }
 
-func (p *PipyConf) rebalancedOutboundClusters() {
+func (p *PipyConf) rebalancedOutboundClusters(catalog catalog.MeshCataloger) (warmUpping bool) {
 	if p.Outbound == nil {
 		return
 	}
 	if p.Outbound.ClustersConfigs == nil || len(p.Outbound.ClustersConfigs) == 0 {
 		return
 	}
-	for _, clusterConfigs := range p.Outbound.ClustersConfigs {
+
+	var uptimes map[string]int64
+
+	for clusterName, clusterConfigs := range p.Outbound.ClustersConfigs {
 		weightedEndpoints := clusterConfigs.Endpoints
 		if weightedEndpoints == nil || len(*weightedEndpoints) == 0 {
 			continue
@@ -209,7 +216,22 @@ func (p *PipyConf) rebalancedOutboundClusters() {
 				break
 			}
 		}
-		for _, wze := range *weightedEndpoints {
+
+		meshSvc := clusterName.MeshService()
+		warmupPolicy := catalog.GetTrafficWarmupPolicy(meshSvc)
+		if warmupPolicy != nil {
+			if uptimes == nil {
+				uptimes = make(map[string]int64)
+				pods := catalog.GetKubeController().ListPods()
+				for _, pod := range pods {
+					for _, podIP := range pod.Status.PodIPs {
+						uptimes[podIP.IP] = pod.CreationTimestamp.Unix()
+					}
+				}
+			}
+		}
+
+		for hostport, wze := range *weightedEndpoints {
 			if len(wze.Cluster) > 0 {
 				if multiclusterv1alpha1.FailOverLbType == multiclusterv1alpha1.LoadBalancerType(wze.LBType) {
 					if hasLocalEndpoints {
@@ -227,8 +249,16 @@ func (p *PipyConf) rebalancedOutboundClusters() {
 					wze.Weight = constants.ClusterWeightAcceptAll
 				}
 			}
+			if warmupPolicy != nil && len(uptimes) > 0 {
+				if startTimestampSeconds, exists := uptimes[hostport.Host()]; exists {
+					weight := warmupPolicy.Weight(startTimestampSeconds, time.Now().Unix())
+					warmUpping = uint64(weight) < *warmupPolicy.MaxWeight
+					wze.Weight = Weight(math.Min(weight, float64(wze.Weight)))
+				}
+			}
 		}
 	}
+	return
 }
 
 func (p *PipyConf) rebalancedForwardClusters() {
@@ -1144,4 +1174,17 @@ func (ps *PluginSlice) Swap(i, j int) {
 func (ps *PluginSlice) Less(i, j int) bool {
 	a, b := (*ps)[i], (*ps)[j]
 	return a.Priority > b.Priority
+}
+
+func (c ClusterName) MeshService() service.MeshService {
+	clusterName := string(c)
+	nameSegs := strings.Split(clusterName, `/`)
+	namespace := nameSegs[0]
+	name := strings.Split(nameSegs[1], `|`)[0]
+	return service.MeshService{Namespace: namespace, Name: name}
+}
+
+func (c HTTPHostPort) Host() string {
+	hostPort := string(c)
+	return strings.Split(hostPort, `:`)[0]
 }
