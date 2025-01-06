@@ -1511,7 +1511,6 @@ func testFSMGatewayGRPCSTraffic() {
 	}, 5, Td.ReqSuccessTimeout)
 
 	Expect(cond).To(BeTrue(), "Failed testing GRPCs traffic from grpcurl(localhost) to destination %s/%s", grpcReq.Destination, grpcReq.Symbol)
-
 }
 
 func testFSMGatewayTLSPassthrough() {
