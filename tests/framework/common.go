@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/utils/ptr"
+
 	"github.com/docker/go-connections/nat"
 
 	"sigs.k8s.io/yaml"
@@ -1292,7 +1294,7 @@ func (td *FsmTestData) DeleteNs(nsName string) error {
 	backgroundDelete := metav1.DeletePropagationBackground
 
 	td.T.Logf("Deleting namespace %v", nsName)
-	err := td.Client.CoreV1().Namespaces().Delete(context.Background(), nsName, metav1.DeleteOptions{PropagationPolicy: &backgroundDelete})
+	err := td.Client.CoreV1().Namespaces().Delete(context.Background(), nsName, metav1.DeleteOptions{PropagationPolicy: &backgroundDelete, GracePeriodSeconds: ptr.To(int64(0))})
 	if err != nil {
 		return fmt.Errorf("failed to delete namespace " + nsName)
 	}
