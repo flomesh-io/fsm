@@ -766,8 +766,9 @@ func (td *FsmTestData) InstallNginxIngress() (string, error) {
 
 	providerID := nodes.Items[0].Spec.ProviderID
 	isKind := strings.HasPrefix(providerID, "kind://")
+	isK3d := strings.HasPrefix(providerID, "k3s://")
 	var vals map[string]interface{}
-	if isKind {
+	if isKind || isK3d {
 		vals = map[string]interface{}{
 			"controller": map[string]interface{}{
 				"hostPort": map[string]interface{}{
@@ -817,7 +818,7 @@ func (td *FsmTestData) InstallNginxIngress() (string, error) {
 	}
 
 	ingressAddr := "localhost"
-	if !isKind {
+	if !isKind && !isK3d {
 		svc, err := Td.Client.CoreV1().Services(NginxIngressSvc.Namespace).Get(context.Background(), NginxIngressSvc.Name, metav1.GetOptions{})
 		if err != nil {
 			return "", fmt.Errorf("Error getting service: %s/%s: %w", NginxIngressSvc.Namespace, NginxIngressSvc.Name, err)
