@@ -33,6 +33,7 @@ jq_reg_running=".[] | select(.name == \"$final_reg_name\" and .State.Running == 
 num_of_exists=$(k3d registry list -o json | jq "$jq_reg_exists" | jq -s 'length')
 if [ "${num_of_exists}" == '0' ]; then
   # no k3d managed registry found, kill any running registry container and create a new one
+  #shellcheck disable=SC2046
   docker kill $(docker ps --format json | jq -r 'select(.Image == "registry:2" and .State == "running") | .ID')
   k3d registry create "$reg_name" --port "127.0.0.1:$reg_port"
 else
@@ -40,6 +41,7 @@ else
   if [ "${num_of_running}" == '0' ]; then
     k3d registry delete --all
     # no k3d managed registry found, kill any running registry container and create a new one
+    #shellcheck disable=SC2046
     docker kill $(docker ps --format json | jq -r 'select(.Image == "registry:2" and .State == "running") | .ID')
     k3d registry create "$reg_name" --port "127.0.0.1:$reg_port"
   fi
