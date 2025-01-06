@@ -17,6 +17,8 @@ import (
 	versioned2 "github.com/flomesh-io/fsm/pkg/gen/client/config/clientset/versioned"
 	"github.com/flomesh-io/fsm/pkg/gen/client/policy/clientset/versioned"
 
+	k3dCfg "github.com/k3d-io/k3d/v5/pkg/config/v1alpha5"
+
 	"github.com/flomesh-io/fsm/pkg/cli"
 )
 
@@ -66,11 +68,11 @@ type FsmTestData struct {
 	CtrRegistryPassword string // registry password, if any
 	CtrRegistryServer   string // server name. Has to be network reachable
 
-	// Kind cluster related vars
-	ClusterName                    string // Kind cluster name (used if kindCluster)
-	CleanupKindClusterBetweenTests bool   // Clean and re-create kind cluster between tests
-	CleanupKindCluster             bool   // Cleanup kind cluster upon test finish
-	ClusterVersion                 string // Kind cluster version, ex. v1.20.2
+	// Kind && cluster related vars
+	ClusterName                string // Kind/K3d cluster name (used if kindCluster/k3dCluster)
+	CleanupClusterBetweenTests bool   // Clean and re-create kind/k3d cluster between tests
+	CleanupCluster             bool   // Cleanup kind/k3d cluster upon test finish
+	ClusterVersion             string // Kind/K3d cluster version, ex. v1.20.2
 
 	ClusterOS string // The operating system of the working nodes in the cluster. Mixed OS traffic is not supported.
 
@@ -91,6 +93,8 @@ type FsmTestData struct {
 	NsigClient       nsigClientset.Interface
 
 	ClusterProvider *cluster.Provider // provider, used when kindCluster is used
+
+	ClusterConfig *k3dCfg.ClusterConfig
 
 	DeployOnOpenShift bool // Determines whether to configure tests for OpenShift
 

@@ -209,6 +209,11 @@ var _ = FSMDescribe("Upgrade from latest",
 				Expect(Td.LoadFSMImagesIntoKind()).To(Succeed())
 			}
 
+			if Td.InstType == K3dCluster {
+				pullPolicy = corev1.PullIfNotPresent
+				Expect(Td.LoadFSMImagesIntoK3d()).To(Succeed())
+			}
+
 			setArgs := "--set=fsm.image.tag=" + Td.FsmImageTag + ",fsm.image.registry=" + Td.CtrRegistryServer + ",fsm.image.pullPolicy=" + string(pullPolicy) + ",fsm.deployPrometheus=true,fsm.enablePrivilegedInitContainer=" + strconv.FormatBool(Td.DeployOnOpenShift) + ",fsm.fsmController.resource.requests.cpu=0.3,fsm.injector.resource.requests.cpu=0.1,fsm.prometheus.resources.requests.cpu=0.1,fsm.prometheus.resources.requests.memory=256M"
 			stdout, stderr, err := Td.RunLocal(filepath.FromSlash("../../bin/fsm"), "mesh", "upgrade", "--fsm-namespace="+Td.FsmNamespace, setArgs)
 			Td.T.Log(stdout.String())

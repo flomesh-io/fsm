@@ -29,11 +29,12 @@ env:
   CI_MAX_WAIT_FOR_POD_TIME_SECONDS: 60
   CI_MIN_SUCCESS_THRESHOLD: 1
   FSM_HUMAN_DEBUG_LOG: true
+  CLUSTER_INSTALL_TYPE: K3dCluster
 
 jobs:
   shellcheck:
     name: Shellcheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,7 +43,7 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,7 +62,7 @@ jobs:
 
   codegen:
     name: Codegen
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,7 +84,7 @@ jobs:
 
   mocks:
     name: Mocks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,7 +100,7 @@ jobs:
 
   charts:
     name: Chart checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,7 +114,7 @@ jobs:
 
   build:
     name: Go build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -129,7 +130,7 @@ jobs:
 
   unittest:
     name: Go test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - name: Checkout
@@ -151,7 +152,7 @@ jobs:
 
   imagescan:
     name: Scan images for security vulnerabilities
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
@@ -174,33 +175,37 @@ jobs:
 
   mesh-e2e-test:
     name: Go mesh test e2e
-    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
         k8s_version: [""]
         focus: [""]
         bucket: [1, 2, 3, 4, 5]
+        os: [ubuntu-22.04]
         include:
-          - k8s_version: v1.19.16
+          - k8s_version: v1.19.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
-          - k8s_version: v1.27.11
+            os: ubuntu-20.04
+          - k8s_version: v1.27.16-k3s1
             focus: "Test traffic flowing from client to server with a Kubernetes Service for the Source: HTTP"
             bucket: ".*"
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -219,7 +224,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -244,36 +249,35 @@ jobs:
 
   gateway-e2e-test:
     name: Go gateway test e2e
-    runs-on: ubuntu-latest
     needs: build
     strategy:
       matrix:
-        k8s_version: [""]
-        focus: [""]
-        bucket: [6]
-        include:
-          - k8s_version: v1.19.16
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
-          - k8s_version: v1.21.14
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
-          - k8s_version: v1.23.17
-            focus: "Test traffic from client to backend service routing by FSM Gateway"
-            bucket: ".*"
+        focus: [ "" ]
+        bucket: [ 6 ]
+        k8s:
+          - version: "latest"
+            os: ubuntu-22.04
+          - version: v1.19.16-k3s1
+            os: ubuntu-20.04
+          - version: v1.21.14-k3s1
+            os: ubuntu-22.04
+          - version: v1.23.17-k3s1
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.k8s.os }}
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -301,13 +305,13 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s.version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
         run: |
-          if [[ -n "${{ matrix.k8s_version }}" ]]; then
-            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s_version }}" >> $GITHUB_ENV
+          if [[ -n "${{ matrix.k8s.version }}" ]]; then
+            echo "ARTIFACT_NAME=test_logs_k8s_version_${{ matrix.k8s.version }}" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=test_logs_bucket_${{ matrix.bucket }}" >> $GITHUB_ENV
           fi
@@ -326,7 +330,7 @@ jobs:
 
   ingress-e2e-test:
     name: Go ingress test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     strategy:
       matrix:
@@ -335,17 +339,18 @@ jobs:
         bucket: [ 7 ]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -367,7 +372,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -392,7 +397,7 @@ jobs:
 
   mesh-retry-e2e-test:
     name: Go retry test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: mesh-statefulset-e2e-test
     strategy:
       matrix:
@@ -401,17 +406,18 @@ jobs:
         bucket: [9]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -430,7 +436,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -455,7 +461,7 @@ jobs:
 
   mesh-statefulset-e2e-test:
     name: Go statefulset test e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: integration-tresor
     strategy:
       matrix:
@@ -464,17 +470,18 @@ jobs:
         bucket: [8]
     env:
       CTR_TAG: ${{ github.sha }}
-      CTR_REGISTRY: "localhost:5000" # unused for kind, but currently required in framework
+      CTR_REGISTRY: "localhost:5000"
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -493,7 +500,7 @@ jobs:
         run: |
           export PATH=$PWD/bin:$PATH
           echo "PATH=$PATH"
-          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=KindCluster -kindClusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
+          go test ./tests/e2e -test.v -ginkgo.v -ginkgo.progress -installType=${{ env.CLUSTER_INSTALL_TYPE }} -clusterVersion='${{ matrix.k8s_version }}' -test.timeout 0 -test.failfast -ginkgo.failFast -ginkgo.focus='\[Bucket ${{ matrix.bucket }}\].*${{ matrix.focus }}'
         continue-on-error: true
       - name: Set Logs name
         if: ${{ steps.test.conclusion != 'skipped' }}
@@ -518,18 +525,19 @@ jobs:
 
   integration-tresor:
     name: Integration Test with Tresor, SMI traffic policies, and egress disabled
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [build]
     steps:
-      - name: Free space
-        run: |
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-cli google-chrome-stable firefox powershell mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          rm -rf /usr/share/dotnet/
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
@@ -537,6 +545,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Install k3d CLI
+        run: |
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d version
       - name: Run Simulation w/ Tresor, SMI policies, egress disabled and reconciler disabled
         env:
           CERT_MANAGER: "tresor"
@@ -550,13 +562,13 @@ jobs:
           USE_PRIVATE_REGISTRY: "false"
         run: |
           touch .env
-          make kind-up
+          make k3d-up
           ./demo/run-fsm-demo.sh
           go run ./ci/cmd/maestro.go
 
   images:
     name: Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     if: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')) && github.event_name == 'push' }}
     env:
       DOCKER_USER: ${{ secrets.RELEASE_DOCKER_USER }}

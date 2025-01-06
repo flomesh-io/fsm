@@ -12,6 +12,12 @@ func (td *FsmTestData) HelmInstallFSM(release, namespace string) error {
 		}
 	}
 
+	if td.InstType == K3dCluster {
+		if err := td.LoadFSMImagesIntoK3d(); err != nil {
+			return err
+		}
+	}
+
 	values := fmt.Sprintf("fsm.image.registry=%s,fsm.image.tag=%s,fsm.meshName=%s,fsm.fsmIngress.enabled=false", td.CtrRegistryServer, td.FsmImageTag, release)
 	args := []string{"install", release, "../../charts/fsm", "--set", values, "--namespace", namespace, "--create-namespace", "--wait"}
 	stdout, stderr, err := td.RunLocal("helm", args...)

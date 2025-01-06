@@ -1,0 +1,70 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: fsm-e2e
+servers: 1
+agents: 1
+kubeAPI:
+  hostIP: "0.0.0.0"
+  hostPort: "6443"
+ports:
+  - port: 80:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8090:8090
+    nodeFilters:
+      - loadbalancer
+  - port: 9090:9090
+    nodeFilters:
+      - loadbalancer
+  - port: 7443:7443
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:8443
+    nodeFilters:
+      - loadbalancer
+  - port: 9443:9443
+    nodeFilters:
+      - loadbalancer
+  - port: 3000:3000
+    nodeFilters:
+      - loadbalancer
+  - port: 4000:4000/udp
+    nodeFilters:
+      - loadbalancer
+  - port: 3001:3001
+    nodeFilters:
+      - loadbalancer
+  - port: 4001:4001/udp
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d:
+    wait: true
+    timeout: "300s"
+    disableLoadbalancer: false
+    disableImageVolume: false
+    disableRollback: false
+    loadbalancer:
+      configOverrides:
+        - settings.workerConnections=2048
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --kubelet-arg=eviction-hard=imagefs.available<1%,nodefs.available<1%
+        nodeFilters:
+          - server:*
+          - agent:*
+      - arg: --kubelet-arg=eviction-minimum-reclaim=imagefs.available=1%,nodefs.available=1%
+        nodeFilters:
+          - server:*
+          - agent:*
+    nodeLabels:
+      - label: ingress-ready=true
+        nodeFilters:
+          - agent:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

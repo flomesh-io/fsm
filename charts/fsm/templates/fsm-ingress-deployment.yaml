@@ -37,7 +37,7 @@ spec:
       initContainers:
       - name: wait-controller
         image: "{{ include "fsmCurl.image" . }}"
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .Values.fsm.image.pullPolicy }}
         {{- with .Values.fsm.fsmIngress.securityContext }}
         securityContext:
           {{- toYaml . | nindent 10 }}

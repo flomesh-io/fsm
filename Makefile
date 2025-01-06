@@ -33,7 +33,7 @@ DOCKER_BUILDX_OUTPUT ?= type=registry
 LDFLAGS ?= "-X $(BUILD_DATE_VAR)=$(BUILD_DATE) -X $(BUILD_VERSION_VAR)=$(VERSION) -X $(BUILD_GITCOMMIT_VAR)=$(GIT_SHA) -s -w"
 
 # These two values are combined and passed to go test
-E2E_FLAGS ?= -installType=KindCluster
+E2E_FLAGS ?= -installType=K3dCluster
 E2E_FLAGS_DEFAULT := -test.v -ginkgo.v -ginkgo.progress -ctrRegistry $(CTR_REGISTRY) -fsmImageTag $(CTR_TAG)
 
 # Installed Go version
@@ -189,9 +189,17 @@ format-c:
 kind-up:
 	./scripts/kind-with-registry.sh
 
+.PHONY: k3d-up
+k3d-up:
+	./scripts/k3d-with-registry.sh
+
 .PHONY: kind-reset
 kind-reset:
 	kind delete cluster --name fsm
+
+.PHONY: k3d-reset
+k3d-reset:
+	k3d cluster delete fsm
 
 .PHONY: test-e2e
 test-e2e: DOCKER_BUILDX_OUTPUT=type=docker
@@ -204,6 +212,11 @@ test-e2e: docker-build-fsm build-fsm docker-build-tcp-echo-server
 .PHONY: kind-demo
 kind-demo: export CTR_REGISTRY=localhost:5000
 kind-demo: .env kind-up clean-fsm
+	./demo/run-fsm-demo.sh
+
+.PHONY: k3d-demo
+k3d-demo: export CTR_REGISTRY=localhost:5000
+k3d-demo: .env k3d-up clean-fsm
 	./demo/run-fsm-demo.sh
 
 .PHONE: build-bookwatcher
