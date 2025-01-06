@@ -253,7 +253,7 @@ jobs:
     strategy:
       matrix:
         focus: [ "" ]
-        bucket: [ 6 ]
+        bucket: [ 6, 7 ]
         k8s:
           - version: "latest"
             os: ubuntu-22.04
@@ -336,7 +336,7 @@ jobs:
       matrix:
         k8s_version: [ "" ]
         focus: [ "" ]
-        bucket: [ 7 ]
+        bucket: [ 10 ]
     env:
       CTR_TAG: ${{ github.sha }}
       CTR_REGISTRY: "localhost:5000"
