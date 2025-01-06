@@ -39,12 +39,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-  - name: Rebase pull request when it's more than 3 commits behind main
-    conditions:
-      - base = main
-      - "#commits-behind >= 3"
-    actions:
-      rebase:
   - name: Backport features/patches to the release/v1.4 branch
     conditions:
       - base=main
