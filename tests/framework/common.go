@@ -101,6 +101,7 @@ var imageNames = []string{
 	"fsm-ingress",
 	"fsm-gateway",
 	"fsm-curl",
+	"fsm-xnetmgmt",
 }
 
 // Since parseFlags is global, this is the Ginkgo way to do it.
