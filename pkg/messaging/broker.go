@@ -1083,6 +1083,8 @@ func getProxyUpdateEvent(msg events.PubSubMessage) *proxyUpdateEvent {
 		announcements.IsolationPolicyAdded, announcements.IsolationPolicyDeleted, announcements.IsolationPolicyUpdated,
 		// Retry event
 		announcements.RetryPolicyAdded, announcements.RetryPolicyDeleted, announcements.RetryPolicyUpdated,
+		// TrafficWarmup event
+		announcements.TrafficWarmupAdded, announcements.TrafficWarmupDeleted, announcements.TrafficWarmupUpdated,
 		// UpstreamTrafficSetting event
 		announcements.UpstreamTrafficSettingAdded, announcements.UpstreamTrafficSettingDeleted, announcements.UpstreamTrafficSettingUpdated,
 		//

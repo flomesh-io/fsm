@@ -32,6 +32,7 @@ type PolicyV1alpha1Interface interface {
 	IngressBackendsGetter
 	IsolationsGetter
 	RetriesGetter
+	TrafficWarmupsGetter
 	UpstreamTrafficSettingsGetter
 }
 
@@ -66,6 +67,10 @@ func (c *PolicyV1alpha1Client) Isolations(namespace string) IsolationInterface {
 
 func (c *PolicyV1alpha1Client) Retries(namespace string) RetryInterface {
 	return newRetries(c, namespace)
+}
+
+func (c *PolicyV1alpha1Client) TrafficWarmups(namespace string) TrafficWarmupInterface {
+	return newTrafficWarmups(c, namespace)
 }
 
 func (c *PolicyV1alpha1Client) UpstreamTrafficSettings(namespace string) UpstreamTrafficSettingInterface {

@@ -1473,6 +1473,10 @@ spec:
                     description: EnableSnapshotCacheMode defines if XDS server starts
                       with snapshot cache.
                     type: boolean
+                  enableTrafficWarmupPolicy:
+                    description: EnableTrafficWarmupPolicy defines if FSM will use
+                      the TrafficWarmup API to allow traffic warmup
+                    type: boolean
                   enableValidateGRPCRouteHostnames:
                     description: EnableValidateGRPCRouteHostnames defines if validate
                       grpc route hostnames is enabled.
@@ -1506,6 +1510,7 @@ spec:
                 - enableSidecarActiveHealthChecks
                 - enableSidecarPrettyConfig
                 - enableSnapshotCacheMode
+                - enableTrafficWarmupPolicy
                 - enableValidateGRPCRouteHostnames
                 - enableValidateGatewayListenerHostname
                 - enableValidateHTTPRouteHostnames
@@ -2450,6 +2455,43 @@ spec:
                 - outboundIPRangeInclusionList
                 - outboundPortExclusionList
                 - serviceAccessMode
+                type: object
+              warmup:
+                description: Warmup defines the traffic warm up policy
+                properties:
+                  aggression:
+                    default: 1
+                    description: |-
+                      Aggression controls the speed of traffic increase over the warmup duration. Defaults to 1.0, so that endpoints would
+                      get linearly increasing amount of traffic. When increasing the value for this parameter,
+                      the speed of traffic ramp-up increases non-linearly.
+                    minimum: 1
+                    type: number
+                  duration:
+                    default: 90s
+                    format: duration
+                    type: string
+                  enable:
+                    default: true
+                    type: boolean
+                  maxWeight:
+                    default: 100
+                    description: |-
+                      MaxWeight configures the maximum percentage of origin weight
+                      If unspecified, defaults to 100
+                    format: int64
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  minWeight:
+                    default: 10
+                    description: |-
+                      MinWeight configures the minimum percentage of origin weight
+                      If unspecified, defaults to 10
+                    format: int64
+                    maximum: 100
+                    minimum: 0
+                    type: integer
                 type: object
             required:
             - connector

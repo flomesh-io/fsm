@@ -121,9 +121,9 @@ func (job *PipyConfGeneratorJob) Run() {
 	egress(cataloger, s, pipyConf, proxy, desiredSuffix)
 	forward(cataloger, s, pipyConf, proxy)
 	cloudConnector(cataloger, pipyConf, s.cfg, proxy)
-	balance(pipyConf)
+	warmUpping := balance(cataloger, pipyConf)
 	reorder(pipyConf)
-	allowedEndpoints(pipyConf, s)
+	allowedEndpoints(pipyConf, s, warmUpping)
 	dnsResolveDB(pipyConf, s.cfg)
 	job.publishSidecarConf(s.repoClient, proxy, pipyConf)
 	end := time.Now()
@@ -134,19 +134,19 @@ func (job *PipyConfGeneratorJob) Run() {
 		Msg("Codebase Recalculated")
 }
 
-func allowedEndpoints(pipyConf *PipyConf, s *Server) {
-	ready := pipyConf.copyAllowedEndpoints(s.kubeController, s.proxyRegistry)
-	if !ready {
+func allowedEndpoints(pipyConf *PipyConf, s *Server, warmUpping bool) {
+	if ready := pipyConf.copyAllowedEndpoints(s.kubeController, s.proxyRegistry); !ready || warmUpping {
 		if s.retryProxiesJob != nil {
 			s.retryProxiesJob()
 		}
 	}
 }
 
-func balance(pipyConf *PipyConf) {
+func balance(catalog catalog.MeshCataloger, pipyConf *PipyConf) (warmUpping bool) {
 	pipyConf.rebalancedTargetClusters()
-	pipyConf.rebalancedOutboundClusters()
+	warmUpping = pipyConf.rebalancedOutboundClusters(catalog)
 	pipyConf.rebalancedForwardClusters()
+	return
 }
 
 func reorder(pipyConf *PipyConf) {

@@ -35,6 +35,8 @@ type Interface interface {
 	Isolations() IsolationInformer
 	// Retries returns a RetryInformer.
 	Retries() RetryInformer
+	// TrafficWarmups returns a TrafficWarmupInformer.
+	TrafficWarmups() TrafficWarmupInformer
 	// UpstreamTrafficSettings returns a UpstreamTrafficSettingInformer.
 	UpstreamTrafficSettings() UpstreamTrafficSettingInformer
 }
@@ -83,6 +85,11 @@ func (v *version) Isolations() IsolationInformer {
 // Retries returns a RetryInformer.
 func (v *version) Retries() RetryInformer {
 	return &retryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// TrafficWarmups returns a TrafficWarmupInformer.
+func (v *version) TrafficWarmups() TrafficWarmupInformer {
+	return &trafficWarmupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // UpstreamTrafficSettings returns a UpstreamTrafficSettingInformer.

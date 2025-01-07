@@ -46,6 +46,12 @@ data:
         "outboundIPRangeInclusionList": {{.Values.fsm.outboundIPRangeInclusionList | mustToJson}},
         "networkInterfaceExclusionList": {{.Values.fsm.networkInterfaceExclusionList | mustToJson}}
       },
+      "warmup": {
+        "enable": {{.Values.fsm.warmup.enable | mustToJson}},
+        "duration": {{.Values.fsm.warmup.duration | mustToJson}},
+        "minWeight": {{.Values.fsm.warmup.minWeight | mustToJson}},
+        "maxWeight": {{.Values.fsm.warmup.maxWeight | mustToJson}}
+      },
       "observability": {
         "fsmLogLevel": {{.Values.fsm.controllerLogLevel | mustToJson}},
         "tracing": {
@@ -86,6 +92,7 @@ data:
         "enableIngressBackendPolicy": {{.Values.fsm.featureFlags.enableIngressBackendPolicy | mustToJson}},
         "enableAccessControlPolicy": {{.Values.fsm.featureFlags.enableAccessControlPolicy | mustToJson}},
         "enableAccessCertPolicy": {{.Values.fsm.featureFlags.enableAccessCertPolicy | mustToJson}},
+        "enableTrafficWarmupPolicy": {{.Values.fsm.featureFlags.enableTrafficWarmupPolicy | mustToJson}},
         "enableSidecarPrettyConfig": {{.Values.fsm.featureFlags.enableSidecarPrettyConfig | mustToJson}},
         "enableSidecarActiveHealthChecks": {{.Values.fsm.featureFlags.enableSidecarActiveHealthChecks | mustToJson}},
         "enableRetryPolicy": {{.Values.fsm.featureFlags.enableRetryPolicy | mustToJson}},

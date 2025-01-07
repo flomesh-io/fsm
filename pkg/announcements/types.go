@@ -333,6 +333,15 @@ const (
 	// RetryPolicyUpdated is the type of announcement emitted when we observe an update to retries.policy.flomesh.io
 	RetryPolicyUpdated Kind = "retry-updated"
 
+	// TrafficWarmupAdded is the type of announcement emitted when we observe an addition of trafficwarmups.policy.flomesh.io
+	TrafficWarmupAdded Kind = "trafficwarmup-added"
+
+	// TrafficWarmupDeleted the type of announcement emitted when we observe a deletion of trafficwarmups.policy.flomesh.io
+	TrafficWarmupDeleted Kind = "trafficwarmup-deleted"
+
+	// TrafficWarmupUpdated is the type of announcement emitted when we observe an update to trafficwarmups.policy.flomesh.io
+	TrafficWarmupUpdated Kind = "trafficwarmup-updated"
+
 	// UpstreamTrafficSettingAdded is the type of announcement emitted when we observe an addition of upstreamtrafficsettings.policy.flomesh.io
 	UpstreamTrafficSettingAdded Kind = "upstreamtrafficsetting-added"
 
