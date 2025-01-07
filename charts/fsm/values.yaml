@@ -112,6 +112,17 @@ fsm:
     # -- codebase is the folder used by fsmController.
     codebase: ""
 
+  # -- Global Traffic Warmup policy
+  warmup:
+    enable: false
+    duration: 90s
+    # -- MinWeight configures the minimum percentage of origin weight
+    # -- If unspecified, defaults to 10
+    minWeight: 10
+    # -- MaxWeight configures the maximum percentage of origin weight
+    # -- If unspecified, defaults to 100
+    maxWeight: 100
+
   pluginChains:
     inbound-tcp:
       - plugin: modules/inbound-tls-termination
@@ -780,6 +791,8 @@ fsm:
     enableAccessControlPolicy: true
     # When enabled, FSM can issue certificates for external services.
     enableAccessCertPolicy: false
+    # -- Enables traffic warmup feature
+    enableTrafficWarmupPolicy: false
     # -- Enable Sidecar Pretty Config
     enableSidecarPrettyConfig: true
     # -- Enable Sidecar active health checks

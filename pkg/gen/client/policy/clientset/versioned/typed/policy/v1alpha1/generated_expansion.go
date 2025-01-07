@@ -29,4 +29,6 @@ type IsolationExpansion interface{}
 
 type RetryExpansion interface{}
 
+type TrafficWarmupExpansion interface{}
+
 type UpstreamTrafficSettingExpansion interface{}

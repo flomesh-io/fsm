@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
+	configv1alpha3 "github.com/flomesh-io/fsm/pkg/apis/config/v1alpha3"
 	policyv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/policy/v1alpha1"
 	"github.com/flomesh-io/fsm/pkg/k8s"
 	"github.com/flomesh-io/fsm/pkg/k8s/informers"
@@ -48,6 +49,9 @@ type Controller interface {
 
 	// GetAccessControlPolicy returns the AccessControl policy for the given backend MeshService
 	GetAccessControlPolicy(service.MeshService) *policyv1alpha1.AccessControl
+
+	// GetTrafficWarmupPolicy returns the TrafficWarmup policy for the given backend MeshService
+	GetTrafficWarmupPolicy(svc service.MeshService) *configv1alpha3.TrafficWarmupSpec
 
 	// GetUpstreamTrafficSetting returns the UpstreamTrafficSetting resource that matches the given options
 	GetUpstreamTrafficSetting(UpstreamTrafficSettingGetOpt) *policyv1alpha1.UpstreamTrafficSetting

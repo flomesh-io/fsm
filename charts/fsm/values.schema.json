@@ -1140,6 +1140,47 @@
                       }
                     }
                 },
+                "warmup": {
+                  "$id": "#/properties/fsm/properties/warmup",
+                  "type": "object",
+                  "title": "The traffic warmup schema",
+                  "required": [
+                    "enable",
+                    "duration",
+                    "minWeight",
+                    "maxWeight"
+                  ],
+                  "properties": {
+                    "enable": {
+                      "$id": "#/properties/fsm/properties/warmup/properties/enable",
+                      "type": "boolean",
+                      "title": "The enable schema for traffic warmup",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "duration": {
+                      "$id": "#/properties/fsm/properties/warmup/properties/duration",
+                      "type": "string",
+                      "title": "The duration schema",
+                      "description": "The traffic warmup duration.",
+                      "examples": [
+                        "90s"
+                      ]
+                    },
+                    "minWeight": {
+                      "$id": "#/properties/fsm/properties/warmup/properties/minWeight",
+                      "type": "integer",
+                      "title": "minWeight configures the minimum percentage"
+                    },
+                    "maxWeight": {
+                      "$id": "#/properties/fsm/properties/warmup/properties/maxWeight",
+                      "type": "integer",
+                      "title": "maxWeight configures the maximum percentage"
+                    }
+                  },
+                  "additionalProperties": false
+                },
                 "trustDomain": {
                     "$id": "#/properties/fsm/properties/trustDomain",
                     "type": "string",
@@ -2417,6 +2458,7 @@
                         "enableIngressBackendPolicy",
                         "enableAccessControlPolicy",
                         "enableAccessCertPolicy",
+                        "enableTrafficWarmupPolicy",
                         "enableSidecarPrettyConfig",
                         "enableSidecarActiveHealthChecks",
                         "enableSnapshotCacheMode",
@@ -2476,6 +2518,15 @@
                             "examples": [
                                 true
                             ]
+                        },
+                        "enableTrafficWarmupPolicy": {
+                          "$id": "#/properties/fsm/properties/featureFlags/properties/enableTrafficWarmupPolicy",
+                          "type": "boolean",
+                          "title": "Enable traffic warmup feature",
+                          "description": "Enable traffic warmup feature",
+                          "examples": [
+                            true
+                          ]
                         },
                         "enableSidecarPrettyConfig": {
                           "$id": "#/properties/fsm/properties/featureFlags/properties/enableSidecarPrettyConfig",

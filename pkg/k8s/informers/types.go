@@ -60,6 +60,8 @@ const (
 	InformerKeyAccessControl InformerKey = "AccessControl"
 	// InformerKeyAccessCert is the InformerKey for a AccessCert informer
 	InformerKeyAccessCert InformerKey = "AccessCert"
+	// InformerKeyTrafficWarmup is the InformerKey for a TrafficWarmup informer
+	InformerKeyTrafficWarmup InformerKey = "TrafficWarmup"
 	// InformerKeyServiceImport is the InformerKey for a ServiceImport informer
 	InformerKeyServiceImport InformerKey = "ServiceImport"
 	// InformerKeyServiceExport is the InformerKey for a ServiceExport informer
