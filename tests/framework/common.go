@@ -682,7 +682,7 @@ func (td *FsmTestData) LoadImagesToK3d(imageNames []string) error {
 	}
 
 	td.T.Logf("Importing image(s) into cluster '%s'", td.ClusterName)
-	loadImageOpts := k3d.ImageImportOpts{KeepTar: false, KeepToolsNode: false, Mode: k3d.ImportModeDirect}
+	loadImageOpts := k3d.ImageImportOpts{KeepTar: false, KeepToolsNode: false, Mode: k3d.ImportModeToolsNode}
 	if err := k3dClient.ImageImportIntoClusterMulti(context.TODO(), runtimes.SelectedRuntime, images, kc, loadImageOpts); err != nil {
 		td.T.Errorf("Failed to import image(s) into cluster '%s': %+v", td.ClusterName, err)
 		return err
