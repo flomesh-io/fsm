@@ -94,7 +94,7 @@ require (
 	k8s.io/kubectl v0.31.4
 	k8s.io/kubernetes v1.31.4
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
-	sigs.k8s.io/controller-runtime v0.19.3
+	sigs.k8s.io/controller-runtime v0.19.4
 	sigs.k8s.io/gateway-api v1.2.1
 	sigs.k8s.io/gwctl v0.1.0
 	sigs.k8s.io/kind v0.26.0
