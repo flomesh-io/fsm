@@ -12,7 +12,7 @@ fsm:
     # -- Container image pull policy for control plane containers
     pullPolicy: IfNotPresent
     # -- Container image tag for control plane images
-    tag: "1.4.16"
+    tag: "1.4.17"
     # -- Image name defaults
     name:
       # -- fsm-controller's image name
