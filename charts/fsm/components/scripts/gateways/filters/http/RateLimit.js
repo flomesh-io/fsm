@@ -4,6 +4,7 @@ export default function (config) {
   var interval = Number.parseFloat(config.rateLimit.interval)
   var burst = Number.parseInt(config.rateLimit.burst)
   var backlog = Number.parseInt(config.rateLimit.backlog)
+  var blocking = config.rateLimit.blocking === 'true'
 
   var response = new Message(
     {
@@ -36,7 +37,7 @@ export default function (config) {
         }
       }, {
         'pass': ($=>$
-          .throttleMessageRate(rateQuota)
+          .throttleMessageRate(rateQuota, { blockInput: blocking })
           .pipeNext()
           .handleMessageStart(() => {
             if (backlog) {
