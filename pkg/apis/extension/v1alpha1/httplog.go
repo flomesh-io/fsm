@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // HTTPLogSpec defines the desired state of HTTPLog
@@ -12,13 +13,12 @@ type HTTPLogSpec struct {
 
 	// +optional
 	// +kubebuilder:default="POST"
-	// +kubebuilder:validation:Enum=GET;POST;PUT;DELETE;PATCH;HEAD;OPTIONS
 	// Method is the HTTP method of the HTTPLog service, default is POST
-	Method *string `json:"method,omitempty"`
+	Method *gwv1.HTTPMethod `json:"method,omitempty"`
 
 	// +optional
 	// Headers is the HTTP headers of the log request
-	Headers map[string]string `json:"headers,omitempty"`
+	Headers map[gwv1.HeaderName]string `json:"headers,omitempty"`
 
 	// +optional
 	// +kubebuilder:default=1048576

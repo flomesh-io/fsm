@@ -100,3 +100,9 @@ const (
 	// FilterAspectRoute is the aspect of filter for route
 	FilterAspectRoute FilterAspect = "Route"
 )
+
+// HostPort is a host name with optional port number
+// +kubebuilder:validation:MinLength=1
+// +kubebuilder:validation:MaxLength=253
+// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*(:[0-9]{1,5})?$`
+type HostPort string

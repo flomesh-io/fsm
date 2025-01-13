@@ -676,6 +676,50 @@ const (
 
 	// GatewayProxyTagUpdated is the type of announcement emitted when we observe an update to proxytags.extension.gateway.flomesh.io
 	GatewayProxyTagUpdated Kind = "gatewayproxytag-updated"
+
+	// ---
+
+	// GatewayIPRestrictionAdded is the type of announcement emitted when we observe an addition of iprestrictions.extension.gateway.flomesh.io
+	GatewayIPRestrictionAdded Kind = "gatewayiprestriction-added"
+
+	// GatewayIPRestrictionDeleted the type of announcement emitted when we observe a deletion of iprestrictions.extension.gateway.flomesh.io
+	GatewayIPRestrictionDeleted Kind = "gatewayiprestriction-deleted"
+
+	// GatewayIPRestrictionUpdated is the type of announcement emitted when we observe an update to iprestrictions.extension.gateway.flomesh.io
+	GatewayIPRestrictionUpdated Kind = "gatewayiprestriction-updated"
+
+	// ---
+
+	// GatewayConcurrencyLimitAdded is the type of announcement emitted when we observe an addition of concurrencylimits.extension.gateway.flomesh.io
+	GatewayConcurrencyLimitAdded Kind = "gatewayconcurrencylimit-added"
+
+	// GatewayConcurrencyLimitDeleted the type of announcement emitted when we observe a deletion of concurrencylimits.extension.gateway.flomesh.io
+	GatewayConcurrencyLimitDeleted Kind = "gatewayconcurrencylimit-deleted"
+
+	// GatewayConcurrencyLimitUpdated is the type of announcement emitted when we observe an update to concurrencylimits.extension.gateway.flomesh.io
+	GatewayConcurrencyLimitUpdated Kind = "gatewayconcurrencylimit-updated"
+
+	// ---
+
+	// GatewayExternalRateLimitAdded is the type of announcement emitted when we observe an addition of externalratelimits.extension.gateway.flomesh.io
+	GatewayExternalRateLimitAdded Kind = "gatewayexternalratelimit-added"
+
+	// GatewayExternalRateLimitDeleted the type of announcement emitted when we observe a deletion of externalratelimits.extension.gateway.flomesh.io
+	GatewayExternalRateLimitDeleted Kind = "gatewayexternalratelimit-deleted"
+
+	// GatewayExternalRateLimitUpdated is the type of announcement emitted when we observe an update to externalratelimits.extension.gateway.flomesh.io
+	GatewayExternalRateLimitUpdated Kind = "gatewayexternalratelimit-updated"
+
+	// ---
+
+	// GatewayRequestTerminationAdded is the type of announcement emitted when we observe an addition of requestterminations.extension.gateway.flomesh.io
+	GatewayRequestTerminationAdded Kind = "gatewayrequesttermination-added"
+
+	// GatewayRequestTerminationDeleted the type of announcement emitted when we observe a deletion of requestterminations.extension.gateway.flomesh.io
+	GatewayRequestTerminationDeleted Kind = "gatewayrequesttermination-deleted"
+
+	// GatewayRequestTerminationUpdated is the type of announcement emitted when we observe an update to requestterminations.extension.gateway.flomesh.io
+	GatewayRequestTerminationUpdated Kind = "gatewayrequesttermination-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

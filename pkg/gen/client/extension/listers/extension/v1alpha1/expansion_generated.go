@@ -23,6 +23,22 @@ type CircuitBreakerListerExpansion interface{}
 // CircuitBreakerNamespaceLister.
 type CircuitBreakerNamespaceListerExpansion interface{}
 
+// ConcurrencyLimitListerExpansion allows custom methods to be added to
+// ConcurrencyLimitLister.
+type ConcurrencyLimitListerExpansion interface{}
+
+// ConcurrencyLimitNamespaceListerExpansion allows custom methods to be added to
+// ConcurrencyLimitNamespaceLister.
+type ConcurrencyLimitNamespaceListerExpansion interface{}
+
+// ExternalRateLimitListerExpansion allows custom methods to be added to
+// ExternalRateLimitLister.
+type ExternalRateLimitListerExpansion interface{}
+
+// ExternalRateLimitNamespaceListerExpansion allows custom methods to be added to
+// ExternalRateLimitNamespaceLister.
+type ExternalRateLimitNamespaceListerExpansion interface{}
+
 // FaultInjectionListerExpansion allows custom methods to be added to
 // FaultInjectionLister.
 type FaultInjectionListerExpansion interface{}
@@ -59,6 +75,14 @@ type HTTPLogListerExpansion interface{}
 // HTTPLogNamespaceLister.
 type HTTPLogNamespaceListerExpansion interface{}
 
+// IPRestrictionListerExpansion allows custom methods to be added to
+// IPRestrictionLister.
+type IPRestrictionListerExpansion interface{}
+
+// IPRestrictionNamespaceListerExpansion allows custom methods to be added to
+// IPRestrictionNamespaceLister.
+type IPRestrictionNamespaceListerExpansion interface{}
+
 // ListenerFilterListerExpansion allows custom methods to be added to
 // ListenerFilterLister.
 type ListenerFilterListerExpansion interface{}
@@ -90,6 +114,14 @@ type RateLimitListerExpansion interface{}
 // RateLimitNamespaceListerExpansion allows custom methods to be added to
 // RateLimitNamespaceLister.
 type RateLimitNamespaceListerExpansion interface{}
+
+// RequestTerminationListerExpansion allows custom methods to be added to
+// RequestTerminationLister.
+type RequestTerminationListerExpansion interface{}
+
+// RequestTerminationNamespaceListerExpansion allows custom methods to be added to
+// RequestTerminationNamespaceLister.
+type RequestTerminationNamespaceListerExpansion interface{}
 
 // ZipkinListerExpansion allows custom methods to be added to
 // ZipkinLister.

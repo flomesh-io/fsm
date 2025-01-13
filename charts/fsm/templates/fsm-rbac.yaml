@@ -161,13 +161,58 @@ rules:
 
   # GatewayAPI Extension
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters", "filterdefinitions", "listenerfilters", "circuitbreakers", "faultinjections", "ratelimits", "httplogs", "metrics", "zipkins", "filterconfigs", "proxytags" ]
+    resources:
+      - "filters"
+      - "filterdefinitions"
+      - "listenerfilters"
+      - "circuitbreakers"
+      - "faultinjections"
+      - "ratelimits"
+      - "httplogs"
+      - "metrics"
+      - "zipkins"
+      - "filterconfigs"
+      - "proxytags"
+      - "iprestrictions"
+      - "externalratelimits"
+      - "concurrencylimits"
+      - "requestterminations"
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/finalizers", "filterdefinitions/finalizers", "listenerfilters/finalizers", "circuitbreakers/finalizers", "faultinjections/finalizers", "ratelimits/finalizers", "httplogs/finalizers", "metrics/finalizers", "zipkins/finalizers", "filterconfigs/finalizers", "proxytags/finalizers" ]
+    resources:
+      - "filters/finalizers"
+      - "filterdefinitions/finalizers"
+      - "listenerfilters/finalizers"
+      - "circuitbreakers/finalizers"
+      - "faultinjections/finalizers"
+      - "ratelimits/finalizers"
+      - "httplogs/finalizers"
+      - "metrics/finalizers"
+      - "zipkins/finalizers"
+      - "filterconfigs/finalizers"
+      - "proxytags/finalizers"
+      - "iprestrictions/finalizers"
+      - "externalratelimits/finalizers"
+      - "concurrencylimits/finalizers"
+      - "requestterminations/finalizers"
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
-    resources: [ "filters/status", "filterdefinitions/status", "listenerfilters/status", "circuitbreakers/status", "faultinjections/status", "ratelimits/status", "httplogs/status", "metrics/status", "zipkins/status", "filterconfigs/status", "proxytags/status" ]
+    resources:
+      - "filters/status"
+      - "filterdefinitions/status"
+      - "listenerfilters/status"
+      - "circuitbreakers/status"
+      - "faultinjections/status"
+      - "ratelimits/status"
+      - "httplogs/status"
+      - "metrics/status"
+      - "zipkins/status"
+      - "filterconfigs/status"
+      - "proxytags/status"
+      - "iprestrictions/status"
+      - "externalratelimits/status"
+      - "concurrencylimits/status"
+      - "requestterminations/status"
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment

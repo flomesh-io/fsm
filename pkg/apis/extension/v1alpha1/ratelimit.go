@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // RateLimitSpec defines the desired state of RateLimit
@@ -36,6 +37,11 @@ type RateLimitSpec struct {
 	// +kubebuilder:default={status: 429, body: "Rate limit reached"}
 	// RateLimitResponse is the response when Rate limit reached
 	RateLimitResponse *RateLimitResponse `json:"response,omitempty"`
+
+	// +optional
+	// +kubebuilder:default=false
+	// Blocking is the flag to enable blocking mode, default is false
+	Blocking *bool `json:"blocking,omitempty"`
 }
 
 type RateLimitResponse struct {
@@ -48,7 +54,7 @@ type RateLimitResponse struct {
 
 	// +optional
 	// Headers is the HTTP headers of response
-	Headers map[string]string `json:"headers,omitempty"`
+	Headers map[gwv1.HeaderName]string `json:"headers,omitempty"`
 
 	// +optional
 	// +kubebuilder:default="Rate limit reached"

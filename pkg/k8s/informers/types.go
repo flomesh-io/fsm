@@ -151,6 +151,14 @@ const (
 	InformerKeyGatewayZipkin InformerKey = "Gateway-Zipkin"
 	// InformerKeyGatewayProxyTag is the InformerKey for a ProxyTag informer
 	InformerKeyGatewayProxyTag InformerKey = "Gateway-ProxyTag"
+	// InformerKeyGatewayIPRestriction is the InformerKey for a IPRestriction informer
+	InformerKeyGatewayIPRestriction InformerKey = "Gateway-IPRestriction"
+	// InformerKeyGatewayConcurrencyLimit is the InformerKey for a ConcurrencyLimit informer
+	InformerKeyGatewayConcurrencyLimit InformerKey = "Gateway-ConcurrencyLimit"
+	// InformerKeyGatewayRequestTermination is the InformerKey for a RequestTermination informer
+	InformerKeyGatewayRequestTermination InformerKey = "Gateway-RequestTermination"
+	// InformerKeyGatewayExternalRateLimit is the InformerKey for a ExternalRateLimit informer
+	InformerKeyGatewayExternalRateLimit InformerKey = "Gateway-ExternalRateLimit"
 
 	// InformerKeyXNetworkAccessControl is the InformerKey for a XNetwork AccessControl informer
 	InformerKeyXNetworkAccessControl InformerKey = "XNetwork-AccessControl"
@@ -267,4 +275,16 @@ const (
 
 	// ProxyTagResourceType is the type used to represent the proxy tag resource
 	ProxyTagResourceType ResourceType = "proxytags"
+
+	// IPRestrictionResourceType is the type used to represent the ip restriction resource
+	IPRestrictionResourceType ResourceType = "iprestrictions"
+
+	// ConcurrencyLimitResourceType is the type used to represent the concurrency limit resource
+	ConcurrencyLimitResourceType ResourceType = "concurrencylimits"
+
+	// RequestTerminationResourceType is the type used to represent the request termination resource
+	RequestTerminationResourceType ResourceType = "requestterminations"
+
+	// ExternalRateLimitResourceType is the type used to represent the external rate limit resource
+	ExternalRateLimitResourceType ResourceType = "externalratelimits"
 )

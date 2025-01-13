@@ -50,6 +50,8 @@ type GatewayProcessor struct {
 }
 
 // NewGatewayProcessor creates a new gateway processor
+//
+//gocyclo:ignore
 func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 	cfg := ctx.Configurator
 	repoBaseURL := fmt.Sprintf("%s://%s:%d", "http", cfg.GetRepoServerIPAddr(), cfg.GetProxyServerPort())
@@ -88,6 +90,10 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.ZipkinResourceType:              &extensiontrigger.ZipkinTrigger{},
 			informers.FilterConfigsResourceType:       &extensiontrigger.FilterConfigTrigger{},
 			informers.ProxyTagResourceType:            &extensiontrigger.ProxyTagTrigger{},
+			informers.IPRestrictionResourceType:       &extensiontrigger.IPRestrictionTrigger{},
+			informers.ExternalRateLimitResourceType:   &extensiontrigger.ExternalRateLimitTrigger{},
+			informers.RequestTerminationResourceType:  &extensiontrigger.RequestTerminationTrigger{},
+			informers.ConcurrencyLimitResourceType:    &extensiontrigger.ConcurrencyLimitTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -115,6 +121,7 @@ func (c *GatewayProcessor) Delete(obj interface{}) bool {
 	return false
 }
 
+//gocyclo:ignore
 func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 	switch obj.(type) {
 	case *corev1.Endpoints:
@@ -173,6 +180,14 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.FilterConfigsResourceType]
 	case *extv1alpha1.ProxyTag:
 		return c.triggers[informers.ProxyTagResourceType]
+	case *extv1alpha1.IPRestriction:
+		return c.triggers[informers.IPRestrictionResourceType]
+	case *extv1alpha1.ExternalRateLimit:
+		return c.triggers[informers.ExternalRateLimitResourceType]
+	case *extv1alpha1.RequestTermination:
+		return c.triggers[informers.RequestTerminationResourceType]
+	case *extv1alpha1.ConcurrencyLimit:
+		return c.triggers[informers.ConcurrencyLimitResourceType]
 	}
 
 	return nil

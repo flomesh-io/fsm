@@ -508,6 +508,18 @@ const (
 
 	// GatewayProxyTagKind is the kind name of ProxyTag used in Flomesh API
 	GatewayProxyTagKind = "ProxyTag"
+
+	// GatewayIPRestrictionKind is the kind name of IPRestriction used in Flomesh API
+	GatewayIPRestrictionKind = "IPRestriction"
+
+	// GatewayExternalRateLimitKind is the kind name of ExternalRateLimit used in Flomesh API
+	GatewayExternalRateLimitKind = "ExternalRateLimit"
+
+	// GatewayRequestTerminationKind is the kind name of RequestTermination used in Flomesh API
+	GatewayRequestTerminationKind = "RequestTermination"
+
+	// GatewayConcurrencyLimitKind is the kind name of ConcurrencyLimit used in Flomesh API
+	GatewayConcurrencyLimitKind = "ConcurrencyLimit"
 )
 
 // Gateway API Annotations and Labels

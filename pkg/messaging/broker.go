@@ -1344,6 +1344,14 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayZipkinAdded, announcements.GatewayZipkinDeleted, announcements.GatewayZipkinUpdated,
 		// ProxyTag event
 		announcements.GatewayProxyTagAdded, announcements.GatewayProxyTagDeleted, announcements.GatewayProxyTagUpdated,
+		// IPRestriction event
+		announcements.GatewayIPRestrictionAdded, announcements.GatewayIPRestrictionDeleted, announcements.GatewayIPRestrictionUpdated,
+		// ConcurrencyLimit event
+		announcements.GatewayConcurrencyLimitAdded, announcements.GatewayConcurrencyLimitDeleted, announcements.GatewayConcurrencyLimitUpdated,
+		// ExternalRateLimit event
+		announcements.GatewayExternalRateLimitAdded, announcements.GatewayExternalRateLimitDeleted, announcements.GatewayExternalRateLimitUpdated,
+		// RequestTermination event
+		announcements.GatewayRequestTerminationAdded, announcements.GatewayRequestTerminationDeleted, announcements.GatewayRequestTerminationUpdated,
 
 		//
 		// MultiCluster events

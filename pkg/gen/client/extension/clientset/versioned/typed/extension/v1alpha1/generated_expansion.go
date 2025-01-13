@@ -17,6 +17,10 @@ package v1alpha1
 
 type CircuitBreakerExpansion interface{}
 
+type ConcurrencyLimitExpansion interface{}
+
+type ExternalRateLimitExpansion interface{}
+
 type FaultInjectionExpansion interface{}
 
 type FilterExpansion interface{}
@@ -27,6 +31,8 @@ type FilterDefinitionExpansion interface{}
 
 type HTTPLogExpansion interface{}
 
+type IPRestrictionExpansion interface{}
+
 type ListenerFilterExpansion interface{}
 
 type MetricsExpansion interface{}
@@ -34,5 +40,7 @@ type MetricsExpansion interface{}
 type ProxyTagExpansion interface{}
 
 type RateLimitExpansion interface{}
+
+type RequestTerminationExpansion interface{}
 
 type ZipkinExpansion interface{}

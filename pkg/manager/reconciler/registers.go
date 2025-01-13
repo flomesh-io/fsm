@@ -319,6 +319,15 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		reconcilers[GatewayAPIExtensionProxyTag] = extensionv1alpha1.NewProxyTagReconciler(ctx)
 
+		webhooks[GatewayAPIIPRestriction] = extwhv1alpha1.NewIPRestrictionWebhook(regCfg)
+		reconcilers[GatewayAPIIPRestriction] = extensionv1alpha1.NewIPRestrictionReconciler(ctx, webhooks[GatewayAPIIPRestriction])
+
+		reconcilers[GatewayAPIExternalRateLimit] = extensionv1alpha1.NewExternalRateLimitReconciler(ctx)
+
+		reconcilers[GatewayAPIRequestTermination] = extensionv1alpha1.NewRequestTerminationReconciler(ctx)
+
+		reconcilers[GatewayAPIConcurrencyLimit] = extensionv1alpha1.NewConcurrencyLimitReconciler(ctx)
+
 		webhooks[GatewayAPIExtensionFaultInjection] = extwhv1alpha1.NewFaultInjectionWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx, webhooks[GatewayAPIExtensionFaultInjection])
 	}
