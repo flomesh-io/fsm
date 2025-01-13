@@ -36,6 +36,11 @@ type RateLimitSpec struct {
 	// +kubebuilder:default={status: 429, body: "Rate limit reached"}
 	// RateLimitResponse is the response when Rate limit reached
 	RateLimitResponse *RateLimitResponse `json:"response,omitempty"`
+
+	// +optional
+	// +kubebuilder:default=false
+	// Blocking is the flag to enable blocking mode, default is false
+	Blocking *bool `json:"blocking,omitempty"`
 }
 
 type RateLimitResponse struct {

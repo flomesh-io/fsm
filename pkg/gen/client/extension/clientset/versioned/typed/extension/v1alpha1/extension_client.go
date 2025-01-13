@@ -26,15 +26,19 @@ import (
 type ExtensionV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CircuitBreakersGetter
+	ConcurrencyLimitsGetter
+	ExternalRateLimitsGetter
 	FaultInjectionsGetter
 	FiltersGetter
 	FilterConfigsGetter
 	FilterDefinitionsGetter
 	HTTPLogsGetter
+	IPRestrictionsGetter
 	ListenerFiltersGetter
 	MetricsesGetter
 	ProxyTagsGetter
 	RateLimitsGetter
+	RequestTerminationsGetter
 	ZipkinsGetter
 }
 
@@ -45,6 +49,14 @@ type ExtensionV1alpha1Client struct {
 
 func (c *ExtensionV1alpha1Client) CircuitBreakers(namespace string) CircuitBreakerInterface {
 	return newCircuitBreakers(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) ConcurrencyLimits(namespace string) ConcurrencyLimitInterface {
+	return newConcurrencyLimits(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) ExternalRateLimits(namespace string) ExternalRateLimitInterface {
+	return newExternalRateLimits(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) FaultInjections(namespace string) FaultInjectionInterface {
@@ -67,6 +79,10 @@ func (c *ExtensionV1alpha1Client) HTTPLogs(namespace string) HTTPLogInterface {
 	return newHTTPLogs(c, namespace)
 }
 
+func (c *ExtensionV1alpha1Client) IPRestrictions(namespace string) IPRestrictionInterface {
+	return newIPRestrictions(c, namespace)
+}
+
 func (c *ExtensionV1alpha1Client) ListenerFilters(namespace string) ListenerFilterInterface {
 	return newListenerFilters(c, namespace)
 }
@@ -81,6 +97,10 @@ func (c *ExtensionV1alpha1Client) ProxyTags(namespace string) ProxyTagInterface 
 
 func (c *ExtensionV1alpha1Client) RateLimits(namespace string) RateLimitInterface {
 	return newRateLimits(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) RequestTerminations(namespace string) RequestTerminationInterface {
+	return newRequestTerminations(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) Zipkins(namespace string) ZipkinInterface {

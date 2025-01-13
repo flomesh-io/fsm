@@ -29,6 +29,14 @@ func (c *FakeExtensionV1alpha1) CircuitBreakers(namespace string) v1alpha1.Circu
 	return &FakeCircuitBreakers{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) ConcurrencyLimits(namespace string) v1alpha1.ConcurrencyLimitInterface {
+	return &FakeConcurrencyLimits{c, namespace}
+}
+
+func (c *FakeExtensionV1alpha1) ExternalRateLimits(namespace string) v1alpha1.ExternalRateLimitInterface {
+	return &FakeExternalRateLimits{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) FaultInjections(namespace string) v1alpha1.FaultInjectionInterface {
 	return &FakeFaultInjections{c, namespace}
 }
@@ -49,6 +57,10 @@ func (c *FakeExtensionV1alpha1) HTTPLogs(namespace string) v1alpha1.HTTPLogInter
 	return &FakeHTTPLogs{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) IPRestrictions(namespace string) v1alpha1.IPRestrictionInterface {
+	return &FakeIPRestrictions{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) ListenerFilters(namespace string) v1alpha1.ListenerFilterInterface {
 	return &FakeListenerFilters{c, namespace}
 }
@@ -63,6 +75,10 @@ func (c *FakeExtensionV1alpha1) ProxyTags(namespace string) v1alpha1.ProxyTagInt
 
 func (c *FakeExtensionV1alpha1) RateLimits(namespace string) v1alpha1.RateLimitInterface {
 	return &FakeRateLimits{c, namespace}
+}
+
+func (c *FakeExtensionV1alpha1) RequestTerminations(namespace string) v1alpha1.RequestTerminationInterface {
+	return &FakeRequestTerminations{c, namespace}
 }
 
 func (c *FakeExtensionV1alpha1) Zipkins(namespace string) v1alpha1.ZipkinInterface {

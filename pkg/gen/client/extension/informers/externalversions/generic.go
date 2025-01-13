@@ -52,6 +52,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=extension.gateway.flomesh.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("circuitbreakers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().CircuitBreakers().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("concurrencylimits"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ConcurrencyLimits().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("externalratelimits"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ExternalRateLimits().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("faultinjections"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().FaultInjections().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("filters"):
@@ -62,6 +66,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().FilterDefinitions().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("httplogs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().HTTPLogs().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("iprestrictions"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().IPRestrictions().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("listenerfilters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ListenerFilters().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("metricses"):
@@ -70,6 +76,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ProxyTags().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("ratelimits"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().RateLimits().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("requestterminations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().RequestTerminations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("zipkins"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().Zipkins().Informer()}, nil
 

@@ -23,6 +23,10 @@ import (
 type Interface interface {
 	// CircuitBreakers returns a CircuitBreakerInformer.
 	CircuitBreakers() CircuitBreakerInformer
+	// ConcurrencyLimits returns a ConcurrencyLimitInformer.
+	ConcurrencyLimits() ConcurrencyLimitInformer
+	// ExternalRateLimits returns a ExternalRateLimitInformer.
+	ExternalRateLimits() ExternalRateLimitInformer
 	// FaultInjections returns a FaultInjectionInformer.
 	FaultInjections() FaultInjectionInformer
 	// Filters returns a FilterInformer.
@@ -33,6 +37,8 @@ type Interface interface {
 	FilterDefinitions() FilterDefinitionInformer
 	// HTTPLogs returns a HTTPLogInformer.
 	HTTPLogs() HTTPLogInformer
+	// IPRestrictions returns a IPRestrictionInformer.
+	IPRestrictions() IPRestrictionInformer
 	// ListenerFilters returns a ListenerFilterInformer.
 	ListenerFilters() ListenerFilterInformer
 	// Metricses returns a MetricsInformer.
@@ -41,6 +47,8 @@ type Interface interface {
 	ProxyTags() ProxyTagInformer
 	// RateLimits returns a RateLimitInformer.
 	RateLimits() RateLimitInformer
+	// RequestTerminations returns a RequestTerminationInformer.
+	RequestTerminations() RequestTerminationInformer
 	// Zipkins returns a ZipkinInformer.
 	Zipkins() ZipkinInformer
 }
@@ -59,6 +67,16 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // CircuitBreakers returns a CircuitBreakerInformer.
 func (v *version) CircuitBreakers() CircuitBreakerInformer {
 	return &circuitBreakerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ConcurrencyLimits returns a ConcurrencyLimitInformer.
+func (v *version) ConcurrencyLimits() ConcurrencyLimitInformer {
+	return &concurrencyLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ExternalRateLimits returns a ExternalRateLimitInformer.
+func (v *version) ExternalRateLimits() ExternalRateLimitInformer {
+	return &externalRateLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // FaultInjections returns a FaultInjectionInformer.
@@ -86,6 +104,11 @@ func (v *version) HTTPLogs() HTTPLogInformer {
 	return &hTTPLogInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
+// IPRestrictions returns a IPRestrictionInformer.
+func (v *version) IPRestrictions() IPRestrictionInformer {
+	return &iPRestrictionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // ListenerFilters returns a ListenerFilterInformer.
 func (v *version) ListenerFilters() ListenerFilterInformer {
 	return &listenerFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -104,6 +127,11 @@ func (v *version) ProxyTags() ProxyTagInformer {
 // RateLimits returns a RateLimitInformer.
 func (v *version) RateLimits() RateLimitInformer {
 	return &rateLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RequestTerminations returns a RequestTerminationInformer.
+func (v *version) RequestTerminations() RequestTerminationInformer {
+	return &requestTerminationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Zipkins returns a ZipkinInformer.

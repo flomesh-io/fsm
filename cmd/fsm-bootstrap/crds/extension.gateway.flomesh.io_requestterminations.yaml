@@ -7,16 +7,16 @@ metadata:
   labels:
     app.kubernetes.io/name: flomesh.io
     gateway.flomesh.io/extension: Filter
-  name: ratelimits.extension.gateway.flomesh.io
+  name: requestterminations.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io
   names:
     categories:
     - gateway-api
-    kind: RateLimit
-    listKind: RateLimitList
-    plural: ratelimits
-    singular: ratelimit
+    kind: RequestTermination
+    listKind: RequestTerminationList
+    plural: requestterminations
+    singular: requesttermination
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -26,7 +26,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: RateLimit is the Schema for the RateLimit API
+        description: RequestTermination is the Schema for the RequestTermination API
         properties:
           apiVersion:
             description: |-
@@ -46,50 +46,16 @@ spec:
           metadata:
             type: object
           spec:
-            description: RateLimitSpec defines the desired state of RateLimit
+            description: RequestTerminationSpec defines the desired state of RequestTermination
             properties:
-              backlog:
-                default: 5
-                description: Backlog is the maximum number of requests that can be
-                  queued
-                format: int32
-                minimum: 0
-                type: integer
-              blocking:
-                default: false
-                description: Blocking is the flag to enable blocking mode, default
-                  is false
-                type: boolean
-              burst:
-                default: 10
-                description: Burst is the maximum number of requests that can be made
-                  in Interval, default is 10
-                format: int32
-                minimum: 0
-                type: integer
-              interval:
-                default: 10s
-                description: Interval is the time period in which the requests are
-                  counted
-                pattern: ^([0-9]{1,5}(h|m|s|ms)){1,4}$
-                type: string
-              requests:
-                default: 5
-                description: Requests is the number of requests that can be made in
-                  Interval, default is 5
-                format: int32
-                minimum: 0
-                type: integer
               response:
-                default:
-                  body: Rate limit reached
-                  status: 429
-                description: RateLimitResponse is the response when Rate limit reached
+                description: RequestTerminationResponse is the response when circuit
+                  breaker triggered
                 properties:
                   body:
-                    default: Rate limit reached
+                    default: Request termination triggered
                     description: Body is the content of response body, default is
-                      "Rate limit reached"
+                      "Request termination triggered"
                     type: string
                   headers:
                     additionalProperties:
@@ -97,9 +63,9 @@ spec:
                     description: Headers is the HTTP headers of response
                     type: object
                   status:
-                    default: 429
+                    default: 500
                     description: StatusCode is the HTTP status code of the response,
-                      default is 429
+                      default is 500
                     format: int32
                     maximum: 600
                     minimum: 0
@@ -107,10 +73,10 @@ spec:
                 type: object
             type: object
           status:
-            description: RateLimitStatus defines the observed state of RateLimit
+            description: RequestTerminationStatus defines the observed state of RequestTermination
             properties:
               conditions:
-                description: Conditions describe the current conditions of the RateLimit.
+                description: Conditions describe the current conditions of the RequestTermination.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
