@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // FaultInjectionSpec defines the desired state of FaultInjection
@@ -61,7 +62,7 @@ type FaultInjectionResponse struct {
 
 	// +optional
 	// Headers is the HTTP headers of response
-	Headers map[string]string `json:"headers,omitempty"`
+	Headers map[gwv1.HeaderName]string `json:"headers,omitempty"`
 
 	// +optional
 	// +kubebuilder:default="Fault injection triggered"

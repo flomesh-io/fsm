@@ -42,6 +42,7 @@ func (c *ConfigGenerator) resolveFilterDefinition(filterType extv1alpha1.FilterT
 	return definition
 }
 
+//gocyclo:ignore
 func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) map[string]interface{} {
 	if ref == nil {
 		return map[string]interface{}{}
@@ -137,6 +138,38 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("proxyTag", &obj.Spec)
+	case constants.GatewayIPRestrictionKind:
+		obj := &extv1alpha1.IPRestriction{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve IPRestriction: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("ipRestriction", &obj.Spec)
+	case constants.GatewayExternalRateLimitKind:
+		obj := &extv1alpha1.ExternalRateLimit{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve ExternalRateLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("externalRateLimit", &obj.Spec)
+	case constants.GatewayRequestTerminationKind:
+		obj := &extv1alpha1.RequestTermination{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve RequestTermination: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("requestTermination", &obj.Spec)
+	case constants.GatewayConcurrencyLimitKind:
+		obj := &extv1alpha1.ConcurrencyLimit{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve ConcurrencyLimit: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("concurrencyLimit", &obj.Spec)
 	case constants.GatewayAPIExtensionFilterConfigKind:
 		obj := &extv1alpha1.FilterConfig{}
 		if err := c.client.Get(ctx, key, obj); err != nil {

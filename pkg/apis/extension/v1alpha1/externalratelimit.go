@@ -11,7 +11,7 @@ type ExternalRateLimitSpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=32
 	// ThrottleHosts is the list of hosts to be throttled
-	ThrottleHosts []string `json:"throttleHost,omitempty"`
+	ThrottleHosts []HostPort `json:"throttleHost,omitempty"`
 
 	// +optional
 	// +listType=set

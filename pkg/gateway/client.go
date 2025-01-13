@@ -105,6 +105,10 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyGatewayMetrics:            &extv1alpha1.Metrics{},
 		fsminformers.InformerKeyGatewayZipkin:             &extv1alpha1.Zipkin{},
 		fsminformers.InformerKeyGatewayProxyTag:           &extv1alpha1.ProxyTag{},
+		fsminformers.InformerKeyGatewayExternalRateLimit:  &extv1alpha1.ExternalRateLimit{},
+		fsminformers.InformerKeyGatewayIPRestriction:      &extv1alpha1.IPRestriction{},
+		fsminformers.InformerKeyGatewayRequestTermination: &extv1alpha1.RequestTermination{},
+		fsminformers.InformerKeyGatewayConcurrencyLimit:   &extv1alpha1.ConcurrencyLimit{},
 	}
 
 	if version.IsEndpointSliceEnabled(ctx.KubeClient) {

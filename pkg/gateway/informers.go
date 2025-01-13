@@ -17,6 +17,7 @@ import (
 	fsminformers "github.com/flomesh-io/fsm/pkg/k8s/informers"
 )
 
+//gocyclo:ignore
 func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 	switch obj.(type) {
 	case *corev1.Service:
@@ -75,11 +76,20 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyFilterConfig)
 	case *extv1alpha1.ProxyTag:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayProxyTag)
+	case *extv1alpha1.ExternalRateLimit:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayExternalRateLimit)
+	case *extv1alpha1.IPRestriction:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayIPRestriction)
+	case *extv1alpha1.RequestTermination:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayRequestTermination)
+	case *extv1alpha1.ConcurrencyLimit:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayConcurrencyLimit)
 	}
 
 	return nil
 }
 
+//gocyclo:ignore
 func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.EventTypes {
 	switch informerKey {
 	case fsminformers.InformerKeyService:
@@ -250,6 +260,30 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayProxyTagAdded,
 			Update: announcements.GatewayProxyTagUpdated,
 			Delete: announcements.GatewayProxyTagDeleted,
+		}
+	case fsminformers.InformerKeyGatewayExternalRateLimit:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayExternalRateLimitAdded,
+			Update: announcements.GatewayExternalRateLimitUpdated,
+			Delete: announcements.GatewayExternalRateLimitDeleted,
+		}
+	case fsminformers.InformerKeyGatewayIPRestriction:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayIPRestrictionAdded,
+			Update: announcements.GatewayIPRestrictionUpdated,
+			Delete: announcements.GatewayIPRestrictionDeleted,
+		}
+	case fsminformers.InformerKeyGatewayRequestTermination:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayRequestTerminationAdded,
+			Update: announcements.GatewayRequestTerminationUpdated,
+			Delete: announcements.GatewayRequestTerminationDeleted,
+		}
+	case fsminformers.InformerKeyGatewayConcurrencyLimit:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayConcurrencyLimitAdded,
+			Update: announcements.GatewayConcurrencyLimitUpdated,
+			Delete: announcements.GatewayConcurrencyLimitDeleted,
 		}
 	}
 

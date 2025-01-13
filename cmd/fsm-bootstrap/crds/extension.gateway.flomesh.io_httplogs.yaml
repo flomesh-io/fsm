@@ -103,12 +103,14 @@ spec:
                   is POST
                 enum:
                 - GET
+                - HEAD
                 - POST
                 - PUT
                 - DELETE
-                - PATCH
-                - HEAD
+                - CONNECT
                 - OPTIONS
+                - TRACE
+                - PATCH
                 type: string
               target:
                 description: Target is the URL of the HTTPLog service
