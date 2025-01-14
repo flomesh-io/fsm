@@ -7,11 +7,8 @@ import (
 
 // ExternalRateLimitSpec defines the desired state of ExternalRateLimit
 type ExternalRateLimitSpec struct {
-	// +listType=set
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:MaxItems=32
-	// ThrottleHosts is the list of hosts to be throttled
-	ThrottleHosts []HostPort `json:"throttleHost,omitempty"`
+	// ThrottleHost is the host to be throttled
+	ThrottleHost HostPort `json:"throttleHost,omitempty"`
 
 	// +optional
 	// +listType=set

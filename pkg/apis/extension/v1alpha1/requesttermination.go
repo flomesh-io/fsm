@@ -7,7 +7,7 @@ import (
 
 // RequestTerminationSpec defines the desired state of RequestTermination
 type RequestTerminationSpec struct {
-	// RequestTerminationResponse is the response when circuit breaker triggered
+	// RequestTerminationResponse is the response when request termination triggered
 	RequestTerminationResponse RequestTerminationResponse `json:"response,omitempty"`
 }
 
