@@ -49,8 +49,8 @@ spec:
             description: RequestTerminationSpec defines the desired state of RequestTermination
             properties:
               response:
-                description: RequestTerminationResponse is the response when circuit
-                  breaker triggered
+                description: RequestTerminationResponse is the response when request
+                  termination triggered
                 properties:
                   body:
                     default: Request termination triggered
