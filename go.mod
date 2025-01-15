@@ -17,7 +17,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/deckarep/golang-set/v2 v2.7.0
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/docker/docker v27.5.0+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/dubbogo/go-zookeeper v1.0.3
 	github.com/dustin/go-humanize v1.0.1
