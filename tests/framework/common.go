@@ -1823,8 +1823,23 @@ func (td *FsmTestData) GrabLogs() error {
 	}
 
 	if td.InstType == K3dCluster {
-		//k3dExportPath := td.GetTestFilePath("k3dExport")
-		td.T.Logf("Collecting logs of k3d cluster %q (Not implemented yet)", td.ClusterName)
+		td.T.Logf("Collecting logs of k3d cluster %q", td.ClusterName)
+
+		k3dLogScript := "../../scripts/get-k3d-logs.sh"
+		absK3dLogScriptPath, err := filepath.Abs(k3dLogScript)
+		if err != nil {
+			return err
+		}
+
+		k3dExportPath := td.GetTestFilePath("k3dExport")
+
+		td.T.Logf("Collecting logs, using \"%s %s %s\"", absK3dLogScriptPath, td.ClusterName, k3dExportPath)
+		stdout, stderr, err := td.RunLocal(absK3dLogScriptPath, td.ClusterName, k3dExportPath)
+		if err != nil {
+			td.T.Logf("error running get-k3d-logs.sh script")
+			td.T.Logf("stdout:\n%s", stdout)
+			td.T.Logf("stderr:\n%s", stderr)
+		}
 	}
 
 	// TODO: Eventually a CLI command should implement collection of configurations necessary for debugging
