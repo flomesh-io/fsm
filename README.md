@@ -114,8 +114,19 @@ Read more about [FSM's high level goals, design, and architecture](DESIGN.md).
 The simplest way of installing Flomesh Service Mesh on a Kubernetes cluster is by using the `fsm` CLI.
 
 Download the `fsm` binary from the [Releases page](https://github.com/flomesh-io/fsm/releases). Unpack the `fsm` binary and add it to `$PATH` to get started.
+#### On Linux
 ```shell
 sudo mv ./fsm /usr/local/bin/fsm
+```
+#### On Mac
+```shell
+sudo install ./fsm /usr/local/bin
+```
+
+Or, if you have HomeBrew installed, you can install it by:
+```shell
+brew tap flomesh-io/fsm
+brew install fsm
 ```
 
 ### Install FSM
