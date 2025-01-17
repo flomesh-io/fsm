@@ -1210,10 +1210,10 @@ func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 		return nil
 	}
 
-	if okPreCast && okNewCast {
+	if okPreCast && okNewCast && len(prePod.Annotations) > 0 && len(newPod.Annotations) > 0 {
 		prevMetricAnnotation := prePod.Annotations[constants.PrometheusScrapeAnnotation]
 		newMetricAnnotation := newPod.Annotations[constants.PrometheusScrapeAnnotation]
-		if prevMetricAnnotation != newMetricAnnotation {
+		if prevMetricAnnotation != newMetricAnnotation && len(newPod.Labels) > 0 {
 			proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]
 			return &proxyUpdateEvent{
 				msg:   msg,
@@ -1221,7 +1221,7 @@ func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 			}
 		}
 	}
-	if okNewCast && !okPreCast {
+	if okNewCast && !okPreCast && len(newPod.Labels) > 0 {
 		if proxyUUID := newPod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
 			return &proxyUpdateEvent{
 				msg:         msg,
@@ -1230,15 +1230,17 @@ func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 			}
 		}
 	}
-	if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
-		event := &proxyUpdateEvent{
-			msg:   msg,
-			topic: announcements.ProxyUpdate.String(),
+	if okPreCast && len(prePod.Labels) > 0 {
+		if proxyUUID := prePod.Labels[constants.SidecarUniqueIDLabelName]; len(proxyUUID) > 0 {
+			event := &proxyUpdateEvent{
+				msg:   msg,
+				topic: announcements.ProxyUpdate.String(),
+			}
+			if okNewCast && newPod.DeletionTimestamp != nil {
+				event.deletionPod = newPod
+			}
+			return event
 		}
-		if okNewCast && newPod.DeletionTimestamp != nil {
-			event.deletionPod = newPod
-		}
-		return event
 	}
 	return nil
 }

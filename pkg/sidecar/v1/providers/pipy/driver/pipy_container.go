@@ -214,9 +214,7 @@ func getPipySidecarContainerSpec(
 			lifecycle.PostStart = &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
 					Command: []string{
-						`sh`,
-						`-c`,
-						`until [ $(curl -s -o /dev/null -I -w "%{http_code}" http://127.0.0.1:15000/config_dump) -eq 200 ]; do sleep 5; done;`,
+						`/usr/local/bin/wait-pipy`,
 					},
 				},
 			}
@@ -225,9 +223,7 @@ func getPipySidecarContainerSpec(
 			lifecycle.PreStop = &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
 					Command: []string{
-						`sh`,
-						`-c`,
-						`kill -SIGTERM 1`,
+						`/usr/local/bin/gkill`,
 					},
 				},
 			}
