@@ -45,7 +45,7 @@ require (
 	github.com/jinzhu/copier v0.4.0
 	github.com/jonboulle/clockwork v0.5.0
 	github.com/jstemmer/go-junit-report v1.0.0
-	github.com/k3d-io/k3d/v5 v5.7.5
+	github.com/k3d-io/k3d/v5 v5.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/matm/gocov-html v1.4.0
 	github.com/mholt/archiver/v3 v3.5.1
