@@ -72,7 +72,6 @@ spec:
           "--flush-udp-conn-track-cron-tab", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.crontab}}",
           "--flush-udp-conn-track-idle-seconds", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.idleSeconds}}",
           "--flush-udp-conn-track-batch-size", "{{.Values.fsm.fsmXnetwork.xnet.flush.conntrack.udp.batchSize}}",
-          "--node-path-kube-token", "{{ include "fsmXnetwork.xnet.node.kubeToken.path" . }}",
           "--node-path-cni-bin", "{{ include "fsmXnetwork.xnet.node.cniBin.path" . }}",
           "--node-path-cni-netd", "{{ include "fsmXnetwork.xnet.node.cniNetd.path" . }}",
           "--node-path-sys-fs", "{{ include "fsmXnetwork.xnet.node.sysFs.path" . }}",
