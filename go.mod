@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/AlekSi/gocov-xml v1.1.0
-	github.com/Azure/go-autorest/autorest/to v0.4.0
+	github.com/Azure/go-autorest/autorest/to v0.4.1
 	github.com/axw/gocov v1.2.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/briandowns/spinner v1.23.2
