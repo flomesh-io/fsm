@@ -190,16 +190,16 @@ func (c *client) GetService(svc service.MeshService) *corev1.Service {
 	return nil
 }
 
-// ListServices returns a list of services that are part of monitored namespaces
-func (c *client) ListServices() []*corev1.Service {
+// ListServices returns a list of services
+func (c *client) ListServices(onlyMonitored, filterExclusion bool) []*corev1.Service {
 	var services []*corev1.Service
 
 	for _, serviceInterface := range c.informers.List(fsminformers.InformerKeyService) {
 		svc := serviceInterface.(*corev1.Service)
-		if !c.IsMonitoredNamespace(svc.Namespace) {
+		if onlyMonitored && !c.IsMonitoredNamespace(svc.Namespace) {
 			continue
 		}
-		if c.isExclusionService(svc) {
+		if filterExclusion && c.isExclusionService(svc) {
 			continue
 		}
 		services = append(services, svc)
@@ -207,14 +207,14 @@ func (c *client) ListServices() []*corev1.Service {
 	return services
 }
 
-// ListServiceAccounts returns a list of service accounts that are part of monitored namespaces
-func (c *client) ListServiceAccounts() []*corev1.ServiceAccount {
+// ListServiceAccounts returns a list of service accounts
+func (c *client) ListServiceAccounts(onlyMonitored bool) []*corev1.ServiceAccount {
 	var serviceAccounts []*corev1.ServiceAccount
 
 	for _, serviceInterface := range c.informers.List(fsminformers.InformerKeyServiceAccount) {
 		sa := serviceInterface.(*corev1.ServiceAccount)
 
-		if !c.IsMonitoredNamespace(sa.Namespace) {
+		if onlyMonitored && !c.IsMonitoredNamespace(sa.Namespace) {
 			continue
 		}
 		serviceAccounts = append(serviceAccounts, sa)

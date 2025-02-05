@@ -94,7 +94,7 @@ func listServiceNames(meshServices []service.MeshService) (serviceNames []string
 // listServicesForPod lists Kubernetes services whose selectors match pod labels
 func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.MeshService {
 	var serviceList []v1.Service
-	svcList := kubeController.ListServices()
+	svcList := kubeController.ListServices(true, true)
 
 	var attachedFromServiceList []*v1.Service
 	attachedToServices := make(map[string]string)
@@ -164,7 +164,7 @@ func listServicesForPod(pod *v1.Pod, kubeController k8s.Controller) []service.Me
 // listServicesForVm lists Kubernetes services whose selectors match vm labels
 func listServicesForVm(vm *machinev1alpha1.VirtualMachine, kubeController k8s.Controller) []service.MeshService {
 	var serviceList []v1.Service
-	svcList := kubeController.ListServices()
+	svcList := kubeController.ListServices(true, true)
 
 	for _, svc := range svcList {
 		ns := kubeController.GetNamespace(svc.Namespace)

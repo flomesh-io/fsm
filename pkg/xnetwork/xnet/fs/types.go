@@ -7,8 +7,8 @@ import (
 	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/util"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/volume"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/volume"
 )
 
 var (

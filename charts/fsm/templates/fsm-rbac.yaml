@@ -134,7 +134,7 @@ rules:
 
   # FSM's custom xnetwork API
   - apiGroups: ["xnetwork.flomesh.io"]
-    resources: ["accesscontrols" ]
+    resources: ["accesscontrols", "eipadvertisements" ]
     verbs: ["list", "get", "watch"]
 
   # FSM's NamespacedIngress API

@@ -5,11 +5,11 @@ import (
 
 	"github.com/cilium/ebpf"
 
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/bpf"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/fs"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/bpf"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/fs"
 )
 
-func GetAclEntries() map[AclKey]AclVal {
+func GetAclEntries(sysId SysID) map[AclKey]AclVal {
 	items := make(map[AclKey]AclVal)
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_ACL)
 	aclMap, mapErr := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{})
@@ -21,25 +21,33 @@ func GetAclEntries() map[AclKey]AclVal {
 	aclVal := new(AclVal)
 	it := aclMap.Iterate()
 	for it.Next(unsafe.Pointer(aclKey), unsafe.Pointer(aclVal)) {
-		items[*aclKey] = *aclVal
+		if aclKey.Sys == uint32(sysId) {
+			items[*aclKey] = *aclVal
+		}
 	}
 	return items
 }
 
-func AddAclEntries(aclKeys []AclKey, aclVals []AclVal) (int, error) {
+func AddAclEntries(sysId SysID, aclKeys []AclKey, aclVals []AclVal) (int, error) {
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_ACL)
 	if aclMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer aclMap.Close()
+		for _, aclKey := range aclKeys {
+			aclKey.Sys = uint32(sysId)
+		}
 		return aclMap.BatchUpdate(aclKeys, aclVals, &ebpf.BatchOptions{})
 	} else {
 		return 0, err
 	}
 }
 
-func DelAclEntries(aclKeys []AclKey) (int, error) {
+func DelAclEntries(sysId SysID, aclKeys []AclKey) (int, error) {
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_ACL)
 	if aclMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer aclMap.Close()
+		for _, aclKey := range aclKeys {
+			aclKey.Sys = uint32(sysId)
+		}
 		return aclMap.BatchDelete(aclKeys, &ebpf.BatchOptions{})
 	} else {
 		return 0, err

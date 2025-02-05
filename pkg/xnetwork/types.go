@@ -21,4 +21,7 @@ type Client struct {
 type Controller interface {
 	// GetAccessControls lists AccessControls
 	GetAccessControls() []*xnetv1alpha1.AccessControl
+
+	// GetEIPAdvertisements lists EIPAdvertisements
+	GetEIPAdvertisements() []*xnetv1alpha1.EIPAdvertisement
 }

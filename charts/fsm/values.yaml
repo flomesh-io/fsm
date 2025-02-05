@@ -274,6 +274,9 @@ fsm:
           memory: "256M"
     # -- xnet
     xnet:
+      features:
+        mesh: true
+        e4lb: false
       image:
         # -- Registry for xnet image
         registry: flomesh
@@ -304,14 +307,13 @@ fsm:
             batchSize: 4096
       nodePaths:
         k8s:
-          kubeToken: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          enable: false
           cniBin: "/opt/cni/bin"
           cniNetd: "/etc/cni/net.d"
           sysFs: "/opt"
           sysRun: "/var/run"
         k3s:
           enable: true
-          kubeToken: "/var/lib/rancher/k3s/server/token"
           cniBin: "/bin"
           cniNetd: "/var/lib/rancher/k3s/agent/etc/cni/net.d"
           sysFs: "/opt"

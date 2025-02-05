@@ -186,17 +186,17 @@ func (mr *MockControllerMockRecorder) ListPods() *gomock.Call {
 }
 
 // ListServiceAccounts mocks base method.
-func (m *MockController) ListServiceAccounts() []*v1.ServiceAccount {
+func (m *MockController) ListServiceAccounts(arg0 bool) []*v1.ServiceAccount {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListServiceAccounts")
+	ret := m.ctrl.Call(m, "ListServiceAccounts", arg0)
 	ret0, _ := ret[0].([]*v1.ServiceAccount)
 	return ret0
 }
 
 // ListServiceAccounts indicates an expected call of ListServiceAccounts.
-func (mr *MockControllerMockRecorder) ListServiceAccounts() *gomock.Call {
+func (mr *MockControllerMockRecorder) ListServiceAccounts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServiceAccounts", reflect.TypeOf((*MockController)(nil).ListServiceAccounts))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServiceAccounts", reflect.TypeOf((*MockController)(nil).ListServiceAccounts), arg0)
 }
 
 // ListServiceIdentitiesForService mocks base method.
@@ -215,17 +215,17 @@ func (mr *MockControllerMockRecorder) ListServiceIdentitiesForService(arg0 inter
 }
 
 // ListServices mocks base method.
-func (m *MockController) ListServices() []*v1.Service {
+func (m *MockController) ListServices(arg0, arg1 bool) []*v1.Service {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListServices")
+	ret := m.ctrl.Call(m, "ListServices", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.Service)
 	return ret0
 }
 
 // ListServices indicates an expected call of ListServices.
-func (mr *MockControllerMockRecorder) ListServices() *gomock.Call {
+func (mr *MockControllerMockRecorder) ListServices(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*MockController)(nil).ListServices))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*MockController)(nil).ListServices), arg0, arg1)
 }
 
 // ListVms mocks base method.

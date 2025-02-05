@@ -286,7 +286,7 @@ func TestListServices(t *testing.T) {
 				_ = ic.Add(informers.InformerKeyService, s, t)
 			}
 
-			actual := c.ListServices()
+			actual := c.ListServices(true, true)
 			a.ElementsMatch(tc.expected, actual)
 		})
 	}
@@ -343,7 +343,7 @@ func TestListServiceAccounts(t *testing.T) {
 				_ = ic.Add(informers.InformerKeyServiceAccount, s, t)
 			}
 
-			actual := c.ListServiceAccounts()
+			actual := c.ListServiceAccounts(true)
 			a.ElementsMatch(tc.expected, actual)
 		})
 	}

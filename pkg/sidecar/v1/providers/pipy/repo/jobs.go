@@ -440,7 +440,7 @@ func cloudConnector(cataloger catalog.MeshCataloger, pipyConf *PipyConf, cfg con
 		return
 	}
 	kubeController := cataloger.GetKubeController()
-	svcList := kubeController.ListServices()
+	svcList := kubeController.ListServices(true, true)
 	for _, svc := range svcList {
 		ns := kubeController.GetNamespace(svc.Namespace)
 		if !ctok.IsSyncCloudNamespace(ns) {

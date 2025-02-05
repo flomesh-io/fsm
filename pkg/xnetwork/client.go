@@ -39,6 +39,14 @@ func NewXNetworkController(informerCollection *informers.InformerCollection, kub
 	client.informers.AddEventHandler(informers.InformerKeyXNetworkAccessControl,
 		k8s.GetEventHandlerFuncs(shouldObserve, xAccessControlEventTypes, msgBroker))
 
+	xEIPAdvertisementEventTypes := k8s.EventTypes{
+		Add:    announcements.XEIPAdvertisementAdded,
+		Update: announcements.XEIPAdvertisementUpdated,
+		Delete: announcements.XEIPAdvertisementDeleted,
+	}
+	client.informers.AddEventHandler(informers.InformerKeyXNetworkEIPAdvertisement,
+		k8s.GetEventHandlerFuncs(shouldObserve, xEIPAdvertisementEventTypes, msgBroker))
+
 	svcEventTypes := k8s.EventTypes{
 		Add:    announcements.ServiceAdded,
 		Update: announcements.ServiceUpdated,
@@ -100,4 +108,14 @@ func (c *Client) GetAccessControls() []*xnetv1alpha1.AccessControl {
 		accessControls = append(accessControls, accessControl)
 	}
 	return accessControls
+}
+
+// GetEIPAdvertisements lists EIPAdvertisements
+func (c *Client) GetEIPAdvertisements() []*xnetv1alpha1.EIPAdvertisement {
+	var eipAdvertisements []*xnetv1alpha1.EIPAdvertisement
+	for _, accessControlIface := range c.informers.List(informers.InformerKeyXNetworkEIPAdvertisement) {
+		eipAdvertisement := accessControlIface.(*xnetv1alpha1.EIPAdvertisement)
+		eipAdvertisements = append(eipAdvertisements, eipAdvertisement)
+	}
+	return eipAdvertisements
 }

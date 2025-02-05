@@ -399,7 +399,7 @@ func TestGetServicesForServiceIdentity(t *testing.T) {
 
 			mockKubeController.EXPECT().ListVms().Return(nil)
 			mockKubeController.EXPECT().ListPods().Return(tc.pods)
-			mockKubeController.EXPECT().ListServices().Return(tc.services)
+			mockKubeController.EXPECT().ListServices(true, true).Return(tc.services)
 			mockKubeController.EXPECT().GetEndpoints(gomock.Any()).Return(nil, nil).AnyTimes()
 
 			actual := c.GetServicesForServiceIdentity(tc.svcIdentity)

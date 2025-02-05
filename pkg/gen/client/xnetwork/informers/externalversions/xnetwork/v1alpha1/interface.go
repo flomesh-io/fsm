@@ -23,6 +23,8 @@ import (
 type Interface interface {
 	// AccessControls returns a AccessControlInformer.
 	AccessControls() AccessControlInformer
+	// EIPAdvertisements returns a EIPAdvertisementInformer.
+	EIPAdvertisements() EIPAdvertisementInformer
 }
 
 type version struct {
@@ -39,4 +41,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // AccessControls returns a AccessControlInformer.
 func (v *version) AccessControls() AccessControlInformer {
 	return &accessControlInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// EIPAdvertisements returns a EIPAdvertisementInformer.
+func (v *version) EIPAdvertisements() EIPAdvertisementInformer {
+	return &eIPAdvertisementInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

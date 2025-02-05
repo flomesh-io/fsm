@@ -64,7 +64,7 @@ func NewFakeMeshCatalog(kubeClient kubernetes.Interface, meshConfigClient config
 	certManager := tresorFake.NewFake(nil, 1*time.Hour)
 
 	// #1683 tracks potential improvements to the following dynamic mocks
-	mockKubeController.EXPECT().ListServices().DoAndReturn(func() []*corev1.Service {
+	mockKubeController.EXPECT().ListServices(true, true).DoAndReturn(func() []*corev1.Service {
 		// play pretend this call queries a controller cache
 		var services []*corev1.Service
 
@@ -76,7 +76,7 @@ func NewFakeMeshCatalog(kubeClient kubernetes.Interface, meshConfigClient config
 
 		return services
 	}).AnyTimes()
-	mockKubeController.EXPECT().ListServiceAccounts().DoAndReturn(func() []*corev1.ServiceAccount {
+	mockKubeController.EXPECT().ListServiceAccounts(true).DoAndReturn(func() []*corev1.ServiceAccount {
 		// play pretend this call queries a controller cache
 		var serviceAccounts []*corev1.ServiceAccount
 

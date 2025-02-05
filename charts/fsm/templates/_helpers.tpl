@@ -243,47 +243,46 @@ securityContext:
 {{- end }}
 {{- end }}
 
-{{/* fsm-xnet node path of kube token */}}
-{{- define "fsmXnetwork.xnet.node.kubeToken.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.kubeToken -}}
-{{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.kubeToken -}}
-{{- end -}}
-{{- end -}}
-
 {{/* fsm-xnet node path of cni bin */}}
 {{- define "fsmXnetwork.xnet.node.cniBin.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.cniBin -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin -}}
 {{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.cniBin -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniBin -}}
 {{- end -}}
 {{- end -}}
 
 {{/* fsm-xnet node path of cni netd */}}
 {{- define "fsmXnetwork.xnet.node.cniNetd.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.cniNetd -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniNetd -}}
 {{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.cniNetd -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.cniNetd -}}
 {{- end -}}
 {{- end -}}
 
 {{/* fsm-xnet node path of sys fs */}}
 {{- define "fsmXnetwork.xnet.node.sysFs.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.sysFs -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysFs -}}
 {{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.sysFs -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysFs -}}
 {{- end -}}
 {{- end -}}
 
 {{/* fsm-xnet node path of sys run */}}
 {{- define "fsmXnetwork.xnet.node.sysRun.path" -}}
-{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.sysRun -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysRun -}}
 {{- else -}}
-{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.sysRun -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysRun -}}
 {{- end -}}
 {{- end -}}

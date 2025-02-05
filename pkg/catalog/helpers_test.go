@@ -107,7 +107,7 @@ func newFakeMeshCatalogForRoutes(t *testing.T, testParams testParams) *MeshCatal
 	})
 
 	// #1683 tracks potential improvements to the following dynamic mocks
-	mockKubeController.EXPECT().ListServices().DoAndReturn(func() []*corev1.Service {
+	mockKubeController.EXPECT().ListServices(true, true).DoAndReturn(func() []*corev1.Service {
 		// play pretend this call queries a controller cache
 		var services []*corev1.Service
 
