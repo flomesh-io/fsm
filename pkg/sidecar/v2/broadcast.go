@@ -16,6 +16,9 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 	slidingTimer := time.NewTimer(time.Second * 10)
 	defer slidingTimer.Stop()
 
+	scheduleTimer := time.NewTimer(time.Second * 5)
+	defer scheduleTimer.Stop()
+
 	reconfirm := true
 
 	for {
@@ -40,6 +43,15 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 				reconfirm = false
 				slidingTimer.Reset(time.Second * 10)
 			}
+		case <-scheduleTimer.C:
+			newJob := func() *xnetworkE4lbJob {
+				return &xnetworkE4lbJob{
+					done:   make(chan struct{}),
+					server: s,
+				}
+			}
+			<-s.workQueues.AddJob(newJob())
+			scheduleTimer.Reset(time.Second * 5)
 		}
 	}
 }

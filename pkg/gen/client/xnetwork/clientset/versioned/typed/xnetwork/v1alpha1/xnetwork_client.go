@@ -26,6 +26,7 @@ import (
 type XnetworkV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AccessControlsGetter
+	EIPAdvertisementsGetter
 }
 
 // XnetworkV1alpha1Client is used to interact with features provided by the xnetwork.flomesh.io group.
@@ -35,6 +36,10 @@ type XnetworkV1alpha1Client struct {
 
 func (c *XnetworkV1alpha1Client) AccessControls(namespace string) AccessControlInterface {
 	return newAccessControls(c, namespace)
+}
+
+func (c *XnetworkV1alpha1Client) EIPAdvertisements(namespace string) EIPAdvertisementInterface {
+	return newEIPAdvertisements(c, namespace)
 }
 
 // NewForConfig creates a new XnetworkV1alpha1Client for the given config.

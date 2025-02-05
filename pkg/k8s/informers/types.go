@@ -162,6 +162,9 @@ const (
 
 	// InformerKeyXNetworkAccessControl is the InformerKey for a XNetwork AccessControl informer
 	InformerKeyXNetworkAccessControl InformerKey = "XNetwork-AccessControl"
+
+	// InformerKeyXNetworkEIPAdvertisement is the InformerKey for a XNetwork EIPAdvertisement informer
+	InformerKeyXNetworkEIPAdvertisement InformerKey = "XNetwork-EIPAdvertisement"
 )
 
 const (

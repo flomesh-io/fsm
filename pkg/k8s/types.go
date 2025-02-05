@@ -83,10 +83,10 @@ type client struct {
 type Controller interface {
 
 	// ListServices returns a list of all (monitored-namespace filtered) services in the mesh
-	ListServices() []*corev1.Service
+	ListServices(onlyMonitored, filterExclusion bool) []*corev1.Service
 
 	// ListServiceAccounts returns a list of all (monitored-namespace filtered) service accounts in the mesh
-	ListServiceAccounts() []*corev1.ServiceAccount
+	ListServiceAccounts(onlyMonitored bool) []*corev1.ServiceAccount
 
 	// GetService returns a corev1 Service representation if the MeshService exists in cache, otherwise nil
 	GetService(service.MeshService) *corev1.Service

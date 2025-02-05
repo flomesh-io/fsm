@@ -1490,6 +1490,7 @@ func getXNetworkUpdateEvent(msg events.PubSubMessage) *xnetworkUpdateEvent {
 		//
 		// XNetwork event
 		announcements.XAccessControlAdded, announcements.XAccessControlUpdated, announcements.XAccessControlDeleted,
+		announcements.XEIPAdvertisementAdded, announcements.XEIPAdvertisementUpdated, announcements.XEIPAdvertisementDeleted,
 		announcements.XNetworkUpdate:
 
 		return &xnetworkUpdateEvent{

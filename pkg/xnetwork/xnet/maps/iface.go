@@ -5,8 +5,8 @@ import (
 
 	"github.com/cilium/ebpf"
 
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/bpf"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/fs"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/bpf"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/fs"
 )
 
 func AddIFaceEntry(ifaceKey *IFaceKey, ifaceVal *IFaceVal) error {

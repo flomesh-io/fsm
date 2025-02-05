@@ -221,7 +221,7 @@ func (c *client) GetServicesForServiceIdentity(svcIdentity identity.ServiceIdent
 // getServicesByLabels gets Kubernetes services whose selectors match the given labels
 func (c *client) getServicesByLabels(podLabels map[string]string, targetNamespace string) []service.MeshService {
 	var finalList []service.MeshService
-	serviceList := c.kubeController.ListServices()
+	serviceList := c.kubeController.ListServices(true, true)
 
 	for _, svc := range serviceList {
 		// TODO: #1684 Introduce APIs to dynamically allow applying selectors, instead of callers implementing
@@ -301,7 +301,7 @@ func (c *client) GetResolvableEndpointsForService(svc service.MeshService) []end
 // ListServices returns a list of services that are part of monitored namespaces
 func (c *client) ListServices() []service.MeshService {
 	var services []service.MeshService
-	for _, svc := range c.kubeController.ListServices() {
+	for _, svc := range c.kubeController.ListServices(true, true) {
 		if len(svc.Annotations) > 0 {
 			if _, exists := svc.Annotations[connector.AnnotationCloudHealthCheckService]; exists {
 				continue

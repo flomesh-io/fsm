@@ -22,3 +22,11 @@ type AccessControlListerExpansion interface{}
 // AccessControlNamespaceListerExpansion allows custom methods to be added to
 // AccessControlNamespaceLister.
 type AccessControlNamespaceListerExpansion interface{}
+
+// EIPAdvertisementListerExpansion allows custom methods to be added to
+// EIPAdvertisementLister.
+type EIPAdvertisementListerExpansion interface{}
+
+// EIPAdvertisementNamespaceListerExpansion allows custom methods to be added to
+// EIPAdvertisementNamespaceLister.
+type EIPAdvertisementNamespaceListerExpansion interface{}

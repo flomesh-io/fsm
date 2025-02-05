@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/flomesh-io/fsm/pkg/service"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/maps"
-	"github.com/flomesh-io/fsm/pkg/sidecar/v2/xnet/util"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/maps"
+	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
 
 var dnsNatDone = false
@@ -58,13 +58,13 @@ func (s *Server) setupDnsNat(dnsAddr string) {
 		break
 	}
 
-	if cfgVal, err = maps.GetXNetCfg(); err != nil {
+	if cfgVal, err = maps.GetXNetCfg(maps.SysMesh); err != nil {
 		log.Fatal().Err(err).Msg(`failed to get xnet config`)
 	} else {
 		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPProtoAllowAll)
 		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPProtoAllowNatEscape)
 		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPNatByPortOn)
-		if err = maps.SetXNetCfg(cfgVal); err != nil {
+		if err = maps.SetXNetCfg(maps.SysMesh, cfgVal); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store xnet config`)
 		}
 	}
@@ -73,23 +73,23 @@ func (s *Server) setupDnsNat(dnsAddr string) {
 	natKey.Dport = util.HostToNetShort(53)
 	natKey.Proto = uint8(maps.IPPROTO_UDP)
 	natVal := new(maps.NatVal)
-	natVal.AddEp(net.ParseIP(dnsAddr), 53, brVal.Mac[:], false)
+	natVal.AddEp(net.ParseIP(dnsAddr), 53, brVal.Mac[:], 0, 0, nil, true)
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
-		if err = maps.AddNatEntry(natKey, natVal); err != nil {
+		if err = maps.AddNatEntry(maps.SysMesh, natKey, natVal); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store dns nat`)
 		}
 	}
 }
 
 func (s *Server) resetDnsNat() {
-	if cfgVal, err := maps.GetXNetCfg(); err != nil {
+	if cfgVal, err := maps.GetXNetCfg(maps.SysMesh); err != nil {
 		log.Fatal().Err(err).Msg(`failed to get xnet config`)
 	} else {
 		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPProtoAllowAll)
 		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPProtoAllowNatEscape)
 		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPNatByPortOn)
-		if err = maps.SetXNetCfg(cfgVal); err != nil {
+		if err = maps.SetXNetCfg(maps.SysMesh, cfgVal); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store xnet config`)
 		}
 	}
@@ -99,7 +99,7 @@ func (s *Server) resetDnsNat() {
 	natKey.Proto = uint8(maps.IPPROTO_UDP)
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {
 		natKey.TcDir = uint8(tcDir)
-		if err := maps.DelNatEntry(natKey); err != nil {
+		if err := maps.DelNatEntry(maps.SysMesh, natKey); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store dns nat`)
 		}
 	}

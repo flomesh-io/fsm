@@ -404,6 +404,17 @@ const (
 
 	// ---
 
+	// XEIPAdvertisementAdded is the type of announcement emitted when we observe an addition of eipadvertisements.xnetwork.flomesh.io
+	XEIPAdvertisementAdded Kind = "eipadvertisement-added"
+
+	// XEIPAdvertisementDeleted the type of announcement emitted when we observe a deletion of eipadvertisements.xnetwork.flomesh.io
+	XEIPAdvertisementDeleted Kind = "eipadvertisement-deleted"
+
+	// XEIPAdvertisementUpdated is the type of announcement emitted when we observe an update to eipadvertisements.xnetwork.flomesh.io
+	XEIPAdvertisementUpdated Kind = "eipadvertisement-updated"
+
+	// ---
+
 	// EndpointSlicesAdded is the type of announcement emitted when we observe an addition of a Kubernetes EndpointSlices
 	EndpointSlicesAdded Kind = "endpointslices-added"
 

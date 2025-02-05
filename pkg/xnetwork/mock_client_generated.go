@@ -47,3 +47,17 @@ func (mr *MockControllerMockRecorder) GetAccessControls() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessControls", reflect.TypeOf((*MockController)(nil).GetAccessControls))
 }
+
+// GetEIPAdvertisements mocks base method.
+func (m *MockController) GetEIPAdvertisements() []*v1alpha1.EIPAdvertisement {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEIPAdvertisements")
+	ret0, _ := ret[0].([]*v1alpha1.EIPAdvertisement)
+	return ret0
+}
+
+// GetEIPAdvertisements indicates an expected call of GetEIPAdvertisements.
+func (mr *MockControllerMockRecorder) GetEIPAdvertisements() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEIPAdvertisements", reflect.TypeOf((*MockController)(nil).GetEIPAdvertisements))
+}

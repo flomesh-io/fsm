@@ -212,6 +212,7 @@ func WithXNetworkClient(xnetworkClient xnetworkClientset.Interface) InformerColl
 		informerFactory := xnetworkInformers.NewSharedInformerFactory(xnetworkClient, DefaultKubeEventResyncInterval)
 
 		ic.informers[InformerKeyXNetworkAccessControl] = informerFactory.Xnetwork().V1alpha1().AccessControls().Informer()
+		ic.informers[InformerKeyXNetworkEIPAdvertisement] = informerFactory.Xnetwork().V1alpha1().EIPAdvertisements().Informer()
 	}
 }
 

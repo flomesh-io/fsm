@@ -29,6 +29,10 @@ func (c *FakeXnetworkV1alpha1) AccessControls(namespace string) v1alpha1.AccessC
 	return &FakeAccessControls{c, namespace}
 }
 
+func (c *FakeXnetworkV1alpha1) EIPAdvertisements(namespace string) v1alpha1.EIPAdvertisementInterface {
+	return &FakeEIPAdvertisements{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeXnetworkV1alpha1) RESTClient() rest.Interface {

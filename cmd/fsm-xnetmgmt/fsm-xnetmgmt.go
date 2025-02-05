@@ -42,6 +42,7 @@ var (
 	fsmMeshConfigName string
 	fsmVersion        string
 	trustDomain       string
+	nodeName          string
 
 	scheme = runtime.NewScheme()
 
@@ -57,6 +58,7 @@ func init() {
 	flags.StringVar(&fsmMeshConfigName, "fsm-config-name", "fsm-mesh-config", "Name of the FSM MeshConfig")
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&trustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
+	flags.StringVar(&nodeName, "node-name", os.Getenv("NODE_NAME"), "name of this Kubernetes node (spec.nodeName)")
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = xnetworkscheme.AddToScheme(scheme)
 }
@@ -130,7 +132,7 @@ func main() {
 
 	xnetworkController := xnetwork.NewXNetworkController(informerCollection, kubeClient, kubeController, msgBroker)
 
-	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeController, msgBroker)
+	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, msgBroker, nodeName)
 	server.Start()
 	go server.BroadcastListener(stop)
 
