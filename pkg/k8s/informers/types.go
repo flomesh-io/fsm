@@ -159,6 +159,8 @@ const (
 	InformerKeyGatewayRequestTermination InformerKey = "Gateway-RequestTermination"
 	// InformerKeyGatewayExternalRateLimit is the InformerKey for a ExternalRateLimit informer
 	InformerKeyGatewayExternalRateLimit InformerKey = "Gateway-ExternalRateLimit"
+	// InformerKeyGatewayDNSModifier is the InformerKey for a DNSModifier informer
+	InformerKeyGatewayDNSModifier InformerKey = "Gateway-DNSModifier"
 
 	// InformerKeyXNetworkAccessControl is the InformerKey for a XNetwork AccessControl informer
 	InformerKeyXNetworkAccessControl InformerKey = "XNetwork-AccessControl"
@@ -290,4 +292,7 @@ const (
 
 	// ExternalRateLimitResourceType is the type used to represent the external rate limit resource
 	ExternalRateLimitResourceType ResourceType = "externalratelimits"
+
+	// DNSModifierResourceType is the type used to represent the dns modifier resource
+	DNSModifierResourceType ResourceType = "dnsmodifiers"
 )

@@ -170,6 +170,14 @@ func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) ma
 		}
 
 		return toMap("concurrencyLimit", &obj.Spec)
+	case constants.GatewayDNSModifierKind:
+		obj := &extv1alpha1.DNSModifier{}
+		if err := c.client.Get(ctx, key, obj); err != nil {
+			log.Error().Msgf("Failed to resolve DNSModifier: %s", err)
+			return map[string]interface{}{}
+		}
+
+		return toMap("dnsModifier", &obj.Spec)
 	case constants.GatewayAPIExtensionFilterConfigKind:
 		obj := &extv1alpha1.FilterConfig{}
 		if err := c.client.Get(ctx, key, obj); err != nil {

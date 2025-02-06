@@ -84,6 +84,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayRequestTermination)
 	case *extv1alpha1.ConcurrencyLimit:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayConcurrencyLimit)
+	case *extv1alpha1.DNSModifier:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyGatewayDNSModifier)
 	}
 
 	return nil
@@ -284,6 +286,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.GatewayConcurrencyLimitAdded,
 			Update: announcements.GatewayConcurrencyLimitUpdated,
 			Delete: announcements.GatewayConcurrencyLimitDeleted,
+		}
+	case fsminformers.InformerKeyGatewayDNSModifier:
+		return &k8s.EventTypes{
+			Add:    announcements.GatewayDNSModifierAdded,
+			Update: announcements.GatewayDNSModifierUpdated,
+			Delete: announcements.GatewayDNSModifierDeleted,
 		}
 	}
 

@@ -177,6 +177,7 @@ rules:
       - "externalratelimits"
       - "concurrencylimits"
       - "requestterminations"
+      - "dnsmodifiers"
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
     resources:
@@ -195,6 +196,7 @@ rules:
       - "externalratelimits/finalizers"
       - "concurrencylimits/finalizers"
       - "requestterminations/finalizers"
+      - "dnsmodifiers/finalizers"
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
     resources:
@@ -213,6 +215,7 @@ rules:
       - "externalratelimits/status"
       - "concurrencylimits/status"
       - "requestterminations/status"
+      - "dnsmodifiers/status"
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment

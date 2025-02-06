@@ -94,6 +94,7 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 			informers.ExternalRateLimitResourceType:   &extensiontrigger.ExternalRateLimitTrigger{},
 			informers.RequestTerminationResourceType:  &extensiontrigger.RequestTerminationTrigger{},
 			informers.ConcurrencyLimitResourceType:    &extensiontrigger.ConcurrencyLimitTrigger{},
+			informers.DNSModifierResourceType:         &extensiontrigger.DNSModifierTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -188,6 +189,8 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.RequestTerminationResourceType]
 	case *extv1alpha1.ConcurrencyLimit:
 		return c.triggers[informers.ConcurrencyLimitResourceType]
+	case *extv1alpha1.DNSModifier:
+		return c.triggers[informers.DNSModifierResourceType]
 	}
 
 	return nil

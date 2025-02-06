@@ -1354,6 +1354,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayExternalRateLimitAdded, announcements.GatewayExternalRateLimitDeleted, announcements.GatewayExternalRateLimitUpdated,
 		// RequestTermination event
 		announcements.GatewayRequestTerminationAdded, announcements.GatewayRequestTerminationDeleted, announcements.GatewayRequestTerminationUpdated,
+		// DNSModifier event
+		announcements.GatewayDNSModifierAdded, announcements.GatewayDNSModifierDeleted, announcements.GatewayDNSModifierUpdated,
 
 		//
 		// MultiCluster events
