@@ -7,17 +7,17 @@ metadata:
   labels:
     app.kubernetes.io/name: flomesh.io
     gateway.flomesh.io/extension: Filter
-  name: filterdefinitions.extension.gateway.flomesh.io
+  name: dnsmodifiers.extension.gateway.flomesh.io
 spec:
   group: extension.gateway.flomesh.io
   names:
     categories:
     - gateway-api
-    kind: FilterDefinition
-    listKind: FilterDefinitionList
-    plural: filterdefinitions
-    singular: filterdefinition
-  scope: Cluster
+    kind: DNSModifier
+    listKind: DNSModifierList
+    plural: dnsmodifiers
+    singular: dnsmodifier
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -26,8 +26,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: FilterDefinition provides a way to configure FilterDefinitions
-          for HTTP/HTTPS/GRPC/GRPCS/TCP protocols
+        description: DNSModifier is the Schema for the DNSModifier API
         properties:
           apiVersion:
             description: |-
@@ -47,44 +46,50 @@ spec:
           metadata:
             type: object
           spec:
-            description: Spec defines the desired state of FilterDefinition.
+            description: DNSModifierSpec defines the desired state of DNSModifier
             properties:
-              protocol:
-                default: http
-                description: Protocol is the protocol of FilterDefinition
-                enum:
-                - http
-                - tcp
-                - udp
-                type: string
-              scope:
-                default: Route
-                description: Scope is the scope of FilterDefinition
-                enum:
-                - Route
-                - Listener
-                type: string
-              script:
-                description: Script is the list of scripts to be executed
-                minLength: 1
-                type: string
-              type:
-                description: Type is the type of the FilterDefinition in PascalCase,
-                  it should be unique within the namespace
-                maxLength: 63
-                minLength: 1
-                pattern: ^[A-Z]+(([A-Z]*[a-z0-9]+[A-Z]*)*)$
-                type: string
+              domains:
+                description: Domains is the list of domains to apply the DNS modifier
+                items:
+                  properties:
+                    answer:
+                      description: Answer is the DNS answer to be returned for the
+                        domain Name
+                      properties:
+                        rdata:
+                          description: |-
+                            RData is the resource record data to be returned for the domain Name
+                            it should be a valid IP address, either IPv4 or IPv6
+                          minLength: 1
+                          type: string
+                      required:
+                      - rdata
+                      type: object
+                    name:
+                      description: |-
+                        Name is the fully qualified domain name of a network host. This
+                        matches the RFC 1123 definition of a hostname with 1 notable exception that
+                        numeric IP addresses are not allowed.
+                      maxLength: 253
+                      minLength: 1
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                  required:
+                  - answer
+                  - name
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - name
+                x-kubernetes-list-type: map
             required:
-            - script
-            - type
+            - domains
             type: object
           status:
-            description: Status defines the current state of FilterDefinition.
+            description: DNSModifierStatus defines the observed state of DNSModifier
             properties:
               conditions:
-                description: Conditions describes the status of the FilterDefinition
-                  with respect to the given Ancestor.
+                description: Conditions describe the current conditions of the DNSModifier.
                 items:
                   description: Condition contains details for one aspect of the current
                     state of this API Resource.
@@ -140,7 +145,6 @@ spec:
                   - type
                   type: object
                 maxItems: 8
-                minItems: 1
                 type: array
                 x-kubernetes-list-map-keys:
                 - type

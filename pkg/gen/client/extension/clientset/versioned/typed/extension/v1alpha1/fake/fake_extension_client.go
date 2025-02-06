@@ -33,6 +33,10 @@ func (c *FakeExtensionV1alpha1) ConcurrencyLimits(namespace string) v1alpha1.Con
 	return &FakeConcurrencyLimits{c, namespace}
 }
 
+func (c *FakeExtensionV1alpha1) DNSModifiers(namespace string) v1alpha1.DNSModifierInterface {
+	return &FakeDNSModifiers{c, namespace}
+}
+
 func (c *FakeExtensionV1alpha1) ExternalRateLimits(namespace string) v1alpha1.ExternalRateLimitInterface {
 	return &FakeExternalRateLimits{c, namespace}
 }

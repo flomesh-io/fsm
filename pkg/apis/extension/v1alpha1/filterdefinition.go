@@ -15,7 +15,7 @@ type FilterDefinitionSpec struct {
 	// Protocol is the protocol of FilterDefinition
 	// +optional
 	// +kubebuilder:default=http
-	// +kubebuilder:validation:Enum=http;tcp
+	// +kubebuilder:validation:Enum=http;tcp;udp
 	Protocol *FilterProtocol `json:"protocol,omitempty"`
 
 	// Type is the type of the FilterDefinition in PascalCase, it should be unique within the namespace

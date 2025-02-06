@@ -27,6 +27,7 @@ type ExtensionV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CircuitBreakersGetter
 	ConcurrencyLimitsGetter
+	DNSModifiersGetter
 	ExternalRateLimitsGetter
 	FaultInjectionsGetter
 	FiltersGetter
@@ -53,6 +54,10 @@ func (c *ExtensionV1alpha1Client) CircuitBreakers(namespace string) CircuitBreak
 
 func (c *ExtensionV1alpha1Client) ConcurrencyLimits(namespace string) ConcurrencyLimitInterface {
 	return newConcurrencyLimits(c, namespace)
+}
+
+func (c *ExtensionV1alpha1Client) DNSModifiers(namespace string) DNSModifierInterface {
+	return newDNSModifiers(c, namespace)
 }
 
 func (c *ExtensionV1alpha1Client) ExternalRateLimits(namespace string) ExternalRateLimitInterface {

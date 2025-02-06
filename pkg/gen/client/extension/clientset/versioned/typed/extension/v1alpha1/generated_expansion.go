@@ -19,6 +19,8 @@ type CircuitBreakerExpansion interface{}
 
 type ConcurrencyLimitExpansion interface{}
 
+type DNSModifierExpansion interface{}
+
 type ExternalRateLimitExpansion interface{}
 
 type FaultInjectionExpansion interface{}

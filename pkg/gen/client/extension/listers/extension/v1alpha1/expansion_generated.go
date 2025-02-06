@@ -31,6 +31,14 @@ type ConcurrencyLimitListerExpansion interface{}
 // ConcurrencyLimitNamespaceLister.
 type ConcurrencyLimitNamespaceListerExpansion interface{}
 
+// DNSModifierListerExpansion allows custom methods to be added to
+// DNSModifierLister.
+type DNSModifierListerExpansion interface{}
+
+// DNSModifierNamespaceListerExpansion allows custom methods to be added to
+// DNSModifierNamespaceLister.
+type DNSModifierNamespaceListerExpansion interface{}
+
 // ExternalRateLimitListerExpansion allows custom methods to be added to
 // ExternalRateLimitLister.
 type ExternalRateLimitListerExpansion interface{}
