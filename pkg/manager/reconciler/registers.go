@@ -319,17 +319,20 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 
 		reconcilers[GatewayAPIExtensionProxyTag] = extensionv1alpha1.NewProxyTagReconciler(ctx)
 
-		webhooks[GatewayAPIIPRestriction] = extwhv1alpha1.NewIPRestrictionWebhook(regCfg)
-		reconcilers[GatewayAPIIPRestriction] = extensionv1alpha1.NewIPRestrictionReconciler(ctx, webhooks[GatewayAPIIPRestriction])
+		webhooks[GatewayAPIExtensionIPRestriction] = extwhv1alpha1.NewIPRestrictionWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionIPRestriction] = extensionv1alpha1.NewIPRestrictionReconciler(ctx, webhooks[GatewayAPIExtensionIPRestriction])
 
-		reconcilers[GatewayAPIExternalRateLimit] = extensionv1alpha1.NewExternalRateLimitReconciler(ctx)
+		reconcilers[GatewayAPIExtensionExternalRateLimit] = extensionv1alpha1.NewExternalRateLimitReconciler(ctx)
 
-		reconcilers[GatewayAPIRequestTermination] = extensionv1alpha1.NewRequestTerminationReconciler(ctx)
+		reconcilers[GatewayAPIExtensionRequestTermination] = extensionv1alpha1.NewRequestTerminationReconciler(ctx)
 
-		reconcilers[GatewayAPIConcurrencyLimit] = extensionv1alpha1.NewConcurrencyLimitReconciler(ctx)
+		reconcilers[GatewayAPIExtensionConcurrencyLimit] = extensionv1alpha1.NewConcurrencyLimitReconciler(ctx)
 
 		webhooks[GatewayAPIExtensionFaultInjection] = extwhv1alpha1.NewFaultInjectionWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFaultInjection] = extensionv1alpha1.NewFaultInjectionReconciler(ctx, webhooks[GatewayAPIExtensionFaultInjection])
+
+		webhooks[GatewayAPIExtensionDNSModifier] = extwhv1alpha1.NewDNSModifierWebhook(regCfg)
+		reconcilers[GatewayAPIExtensionDNSModifier] = extensionv1alpha1.NewDNSModifierReconciler(ctx, webhooks[GatewayAPIExtensionDNSModifier])
 	}
 
 	if mc.IsServiceLBEnabled() {
