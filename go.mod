@@ -74,7 +74,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
-	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/vishvananda/netlink v1.3.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.34.0
 	golang.org/x/sync v0.11.0
