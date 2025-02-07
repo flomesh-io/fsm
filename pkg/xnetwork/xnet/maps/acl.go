@@ -32,8 +32,8 @@ func AddAclEntries(sysId SysID, aclKeys []AclKey, aclVals []AclVal) (int, error)
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_ACL)
 	if aclMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer aclMap.Close()
-		for _, aclKey := range aclKeys {
-			aclKey.Sys = uint32(sysId)
+		for idx := range aclKeys {
+			aclKeys[idx].Sys = uint32(sysId)
 		}
 		return aclMap.BatchUpdate(aclKeys, aclVals, &ebpf.BatchOptions{})
 	} else {
@@ -45,8 +45,8 @@ func DelAclEntries(sysId SysID, aclKeys []AclKey) (int, error) {
 	pinnedFile := fs.GetPinningFile(bpf.FSM_MAP_NAME_ACL)
 	if aclMap, err := ebpf.LoadPinnedMap(pinnedFile, &ebpf.LoadPinOptions{}); err == nil {
 		defer aclMap.Close()
-		for _, aclKey := range aclKeys {
-			aclKey.Sys = uint32(sysId)
+		for idx := range aclKeys {
+			aclKeys[idx].Sys = uint32(sysId)
 		}
 		return aclMap.BatchDelete(aclKeys, &ebpf.BatchOptions{})
 	} else {
