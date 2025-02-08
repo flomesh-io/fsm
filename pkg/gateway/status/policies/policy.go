@@ -206,6 +206,19 @@ func NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(resource client.Ob
 	return newPolicyStatusUpdate(resource, gvk, targetRefs, policyAncestorStatuses)
 }
 
+func NewPolicyStatusUpdateWithLocalFilterPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwpav1alpha2.LocalFilterPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+	refs := make([]PolicyTargetReference, len(targetRefs))
+	for i, ref := range targetRefs {
+		refs[i] = PolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
+		}
+	}
+
+	return newPolicyStatusUpdate(resource, gvk, refs, policyAncestorStatuses)
+}
 func newPolicyStatusUpdate(resource client.Object, gvk schema.GroupVersionKind, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	return &PolicyStatusUpdate{
 		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{

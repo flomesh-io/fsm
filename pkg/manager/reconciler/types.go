@@ -41,6 +41,7 @@ const (
 	PolicyAttachmentHealthCheck           ResourceType = "PolicyAttachment(HealthCheck)"
 	PolicyAttachmentBackendLB             ResourceType = "PolicyAttachment(BackendLB)"
 	PolicyAttachmentBackendTLS            ResourceType = "PolicyAttachment(BackendTLS)"
+	PolicyAttachmentRouteRuleFilter       ResourceType = "PolicyAttachment(RouteRuleFilter)"
 	ConnectorConsulConnector              ResourceType = "Connector(ConsulConnector)"
 	ConnectorEurekaConnector              ResourceType = "Connector(EurekaConnector)"
 	ConnectorNacosConnector               ResourceType = "Connector(NacosConnector)"

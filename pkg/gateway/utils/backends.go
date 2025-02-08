@@ -136,7 +136,7 @@ func FindBackendTLSPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetR
 		return nil, false
 	}
 
-	for _, policy := range ToSlicePtr(list.Items) {
+	for _, policy := range SortResources(ToSlicePtr(list.Items)) {
 		for _, ref := range policy.Spec.TargetRefs {
 			sectionNameMatches := ref.SectionName != nil && targetRef.SectionName != nil &&
 				*ref.SectionName == *targetRef.SectionName
@@ -176,7 +176,7 @@ func FindBackendLBPolicy(c cache.Cache, targetRef gwv1alpha2.LocalPolicyTargetRe
 		return nil, false
 	}
 
-	for _, policy := range ToSlicePtr(list.Items) {
+	for _, policy := range SortResources(ToSlicePtr(list.Items)) {
 		for _, ref := range policy.Spec.TargetRefs {
 			// Compare the LocalPolicyTargetReference
 			if cmp.Equal(ref, targetRef) {
@@ -207,7 +207,7 @@ func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyT
 		return nil, nil, false
 	}
 
-	for _, policy := range ToSlicePtr(list.Items) {
+	for _, policy := range SortResources(ToSlicePtr(list.Items)) {
 		for _, ref := range policy.Spec.TargetRefs {
 			if cmp.Equal(ref, targetRef) {
 				for i, port := range policy.Spec.Ports {
@@ -220,4 +220,29 @@ func FindHealthCheckPolicy(c cache.Cache, targetRef gwv1alpha2.NamespacedPolicyT
 	}
 
 	return nil, nil, false
+}
+
+// FindRouteRuleFilterPolicy finds the RouteRuleFilterPolicy for the given LocalFilterPolicyTargetReference.
+func FindRouteRuleFilterPolicy(c cache.Cache, targetRef gwpav1alpha2.LocalFilterPolicyTargetReference, routeNamespace string) (*gwpav1alpha2.RouteRuleFilterPolicy, bool) {
+	list := &gwpav1alpha2.RouteRuleFilterPolicyList{}
+	if err := c.List(context.Background(), list, &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(
+			constants.RouteRouteRuleFilterPolicyAttachmentIndex,
+			fmt.Sprintf("%s/%s/%s/%s", targetRef.Kind, routeNamespace, string(targetRef.Name), targetRef.Rule),
+		),
+		Namespace: routeNamespace,
+	}); err != nil {
+		return nil, false
+	}
+
+	for _, policy := range SortResources(ToSlicePtr(list.Items)) {
+		for _, ref := range policy.Spec.TargetRefs {
+			// Compare the LocalPolicyTargetReference
+			if cmp.Equal(ref, targetRef) {
+				return policy, true
+			}
+		}
+	}
+
+	return nil, false
 }

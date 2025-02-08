@@ -30,3 +30,11 @@ type HealthCheckPolicyListerExpansion interface{}
 // HealthCheckPolicyNamespaceListerExpansion allows custom methods to be added to
 // HealthCheckPolicyNamespaceLister.
 type HealthCheckPolicyNamespaceListerExpansion interface{}
+
+// RouteRuleFilterPolicyListerExpansion allows custom methods to be added to
+// RouteRuleFilterPolicyLister.
+type RouteRuleFilterPolicyListerExpansion interface{}
+
+// RouteRuleFilterPolicyNamespaceListerExpansion allows custom methods to be added to
+// RouteRuleFilterPolicyNamespaceLister.
+type RouteRuleFilterPolicyNamespaceListerExpansion interface{}

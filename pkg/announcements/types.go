@@ -602,6 +602,17 @@ const (
 
 	// --
 
+	// RouteRuleFilterPolicyAdded is the type of announcement emitted when we observe an addition of routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyAdded Kind = "routerulefilterpolicy-added"
+
+	// RouteRuleFilterPolicyDeleted the type of announcement emitted when we observe a deletion of routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyDeleted Kind = "routerulefilterpolicy-deleted"
+
+	// RouteRuleFilterPolicyUpdated is the type of announcement emitted when we observe an update to routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyUpdated Kind = "routerulefilterpolicy-updated"
+
+	// --
+
 	// FilterAdded is the type of announcement emitted when we observe an addition of filters.extension.gateway.flomesh.io
 	FilterAdded Kind = "filter-added"
 

@@ -15,6 +15,8 @@ func (p *RouteStatusProcessor) processTCPRouteStatus(route *gwv1alpha2.TCPRoute,
 		if !p.processTCPRouteRuleBackendRefs(route, parentRef, rule, rps) {
 			return false
 		}
+
+		p.computeRouteRuleFilterPolicyStatus(route, rule.Name, parentRef)
 	}
 
 	// All backend references of all rules have been resolved successfully for the parent

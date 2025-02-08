@@ -29,6 +29,8 @@ import (
 	"sort"
 	"strings"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	"github.com/flomesh-io/fsm/pkg/webhook"
 
 	"github.com/jinzhu/copier"
@@ -311,6 +313,23 @@ func ToSlicePtr[T any](slice []T) []*T {
 		ptrs[i] = &v
 	}
 	return ptrs
+}
+
+// SortFilterRefs sorts the resources by creation timestamp and name
+func SortFilterRefs(filterRefs []gwpav1alpha2.LocalFilterReference) []gwpav1alpha2.LocalFilterReference {
+	sort.Slice(filterRefs, func(i, j int) bool {
+		if filterRefs[i].Priority != nil && filterRefs[j].Priority != nil {
+			if *filterRefs[i].Priority == *filterRefs[j].Priority {
+				return filterRefs[i].Name < filterRefs[j].Name
+			}
+
+			return *filterRefs[i].Priority < *filterRefs[j].Priority
+		}
+
+		return filterRefs[i].Name < filterRefs[j].Name
+	})
+
+	return filterRefs
 }
 
 // IsValidRefToGroupKindOfCA returns true if the reference is to a ConfigMap or Secret in the core group

@@ -295,6 +295,8 @@ func getRegisters(regCfg *whtypes.RegisterConfig, mc configurator.Configurator) 
 		webhooks[PolicyAttachmentBackendTLS] = pawhv1alpha3.NewBackendTLSPolicyWebhook(regCfg)
 		reconcilers[PolicyAttachmentBackendTLS] = pav1alpha3.NewBackendTLSPolicyReconciler(ctx, webhooks[PolicyAttachmentBackendTLS])
 
+		reconcilers[PolicyAttachmentRouteRuleFilter] = pav1alpha2.NewRouteRuleFilterPolicyReconciler(ctx)
+
 		webhooks[GatewayAPIExtensionFilter] = extwhv1alpha1.NewFilterWebhook(regCfg)
 		reconcilers[GatewayAPIExtensionFilter] = extensionv1alpha1.NewFilterReconciler(ctx, webhooks[GatewayAPIExtensionFilter])
 

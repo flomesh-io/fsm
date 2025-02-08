@@ -213,7 +213,8 @@ type TCPRouteSpec struct {
 }
 
 type TCPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
+	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
 // ---
@@ -247,7 +248,32 @@ type UDPRouteSpec struct {
 }
 
 type UDPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
+	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+}
+
+type NonHTTPRouteFilter struct {
+	Type            NonHTTPRouteFilterType `json:"type"`
+	ExtensionConfig map[string]interface{} `json:"-"`
+	Key             string                 `json:"key,omitempty"`
+	Priority        int32                  `json:"-"`
+}
+
+type NonHTTPRouteFilterType string
+
+func (f NonHTTPRouteFilter) MarshalJSON() ([]byte, error) {
+	type NHRF NonHTTPRouteFilter
+	b, _ := json.Marshal(NHRF(f))
+
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+
+	for k, v := range f.ExtensionConfig {
+		b, _ = json.Marshal(v)
+		m[k] = b
+	}
+
+	return json.Marshal(m)
 }
 
 // ---

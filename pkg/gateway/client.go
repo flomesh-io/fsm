@@ -93,6 +93,7 @@ func newClient(ctx *cctx.ControllerContext) *client {
 		fsminformers.InformerKeyHealthCheckPolicyV1alpha2: &gwpav1alpha2.HealthCheckPolicy{},
 		fsminformers.InformerKeyBackendTLSPolicy:          &gwv1alpha3.BackendTLSPolicy{},
 		fsminformers.InformerKeyBackendLBPolicy:           &gwpav1alpha2.BackendLBPolicy{},
+		fsminformers.InformerKeyRouteRuleFilterPolicy:     &gwpav1alpha2.RouteRuleFilterPolicy{},
 		fsminformers.InformerKeyNamespace:                 &corev1.Namespace{},
 		fsminformers.InformerKeyFilter:                    &extv1alpha1.Filter{},
 		fsminformers.InformerKeyFilterDefinition:          &extv1alpha1.FilterDefinition{},

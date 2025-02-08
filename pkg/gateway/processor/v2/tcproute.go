@@ -3,6 +3,11 @@ package v2
 import (
 	"context"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	"github.com/google/uuid"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	routestatus "github.com/flomesh-io/fsm/pkg/gateway/status/routes"
@@ -90,6 +95,15 @@ func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule g
 		return nil
 	}
 
+	var filterRefs []gwpav1alpha2.LocalFilterReference
+	for _, processor := range c.getFilterPolicyProcessors(tcpRoute) {
+		filterRefs = append(filterRefs, processor.Process(tcpRoute, holder.GetParentRef(), rule.Name)...)
+	}
+
+	if len(filterRefs) > 0 {
+		r2.Filters = c.toV2TCPRouteFilters(tcpRoute, filterRefs)
+	}
+
 	return r2
 }
 
@@ -161,4 +175,42 @@ func (c *ConfigGenerator) ignoreTCPRoute(tcpRoute *gwv1alpha2.TCPRoute, rsh stat
 	}
 
 	return true
+}
+
+func (c *ConfigGenerator) toV2TCPRouteFilters(udpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
+	var filters []fgwv2.NonHTTPRouteFilter
+
+	for _, filterRef := range gwutils.SortFilterRefs(filterRefs) {
+		filter := gwutils.FilterRefToFilter(c.client, udpRoute, filterRef)
+		if filter == nil {
+			continue
+		}
+
+		filterType := filter.Spec.Type
+		filters = append(filters, fgwv2.NonHTTPRouteFilter{
+			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
+			ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+			Key:             uuid.NewString(),
+			Priority:        ptr.Deref(filterRef.Priority, 100),
+		})
+
+		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
+		if definition == nil {
+			continue
+		}
+
+		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
+		if filterProtocol != extv1alpha1.FilterProtocolTCP {
+			continue
+		}
+
+		if c.filters[filterProtocol] == nil {
+			c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
+		}
+		if _, ok := c.filters[filterProtocol][filterType]; !ok {
+			c.filters[filterProtocol][filterType] = definition.Spec.Script
+		}
+	}
+
+	return filters
 }

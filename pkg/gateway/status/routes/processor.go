@@ -190,7 +190,7 @@ func (p *RouteStatusProcessor) computeRouteParentStatus(rs status.RouteStatusObj
 			return
 		}
 	case *gwv1alpha2.UDPRoute:
-		if !p.processUDPRouteStatus(route, rps) {
+		if !p.processUDPRouteStatus(route, parentRef, rps) {
 			return
 		}
 	default:

@@ -135,6 +135,8 @@ const (
 	InformerKeyBackendLBPolicy InformerKey = "BackendLBPolicy"
 	// InformerKeyHealthCheckPolicyV1alpha2 is the InformerKey for a HealthCheckPolicy informer
 	InformerKeyHealthCheckPolicyV1alpha2 InformerKey = "HealthCheckPolicy-v1alpha2"
+	// InformerKeyRouteRuleFilterPolicy is the InformerKey for a RouteRuleFilterPolicy informer
+	InformerKeyRouteRuleFilterPolicy InformerKey = "RouteRuleFilterPolicy"
 	// InformerKeyFilter is the InformerKey for a Filter informer
 	InformerKeyFilter InformerKey = "Filter"
 	// InformerKeyListenerFilter is the InformerKey for a ListenerFilter informer
@@ -256,6 +258,9 @@ const (
 
 	// BackendLBPoliciesResourceType is the type used to represent the backend lb policies resource
 	BackendLBPoliciesResourceType ResourceType = "backendlbs"
+
+	// RouteRuleFilterPoliciesResourceType is the type used to represent the route filter policies resource
+	RouteRuleFilterPoliciesResourceType ResourceType = "routerulefilters"
 
 	// FiltersResourceType is the type used to represent the filters resource
 	FiltersResourceType ResourceType = "filters"

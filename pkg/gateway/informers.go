@@ -54,6 +54,8 @@ func getEventTypesByObjectType(obj interface{}) *k8s.EventTypes {
 		return getEventTypesByInformerKey(fsminformers.InformerKeyBackendTLSPolicy)
 	case *gwpav1alpha2.HealthCheckPolicy:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyHealthCheckPolicyV1alpha2)
+	case *gwpav1alpha2.RouteRuleFilterPolicy:
+		return getEventTypesByInformerKey(fsminformers.InformerKeyRouteRuleFilterPolicy)
 	case *extv1alpha1.Filter:
 		return getEventTypesByInformerKey(fsminformers.InformerKeyFilter)
 	case *extv1alpha1.FilterDefinition:
@@ -196,6 +198,12 @@ func getEventTypesByInformerKey(informerKey fsminformers.InformerKey) *k8s.Event
 			Add:    announcements.HealthCheckPolicyAdded,
 			Update: announcements.HealthCheckPolicyUpdated,
 			Delete: announcements.HealthCheckPolicyDeleted,
+		}
+	case fsminformers.InformerKeyRouteRuleFilterPolicy:
+		return &k8s.EventTypes{
+			Add:    announcements.RouteRuleFilterPolicyAdded,
+			Update: announcements.RouteRuleFilterPolicyUpdated,
+			Delete: announcements.RouteRuleFilterPolicyDeleted,
 		}
 	case fsminformers.InformerKeyFilter:
 		return &k8s.EventTypes{
