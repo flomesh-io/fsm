@@ -3,14 +3,15 @@ package routes
 import (
 	"fmt"
 
-	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
-	"github.com/flomesh-io/fsm/pkg/gateway/status"
-	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
-	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+	"github.com/flomesh-io/fsm/pkg/gateway/status"
+	"github.com/flomesh-io/fsm/pkg/gateway/status/policies"
+	gwutils "github.com/flomesh-io/fsm/pkg/gateway/utils"
 )
 
 func (p *RouteStatusProcessor) computeRouteRuleFilterPolicyStatus(route client.Object, rule *gwv1.SectionName, routeParentRef gwv1.ParentReference) {
