@@ -7,11 +7,12 @@ package processor
 import (
 	reflect "reflect"
 
+	v1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 	gomock "github.com/golang/mock/gomock"
 	types "k8s.io/apimachinery/pkg/types"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 	v1 "sigs.k8s.io/gateway-api/apis/v1"
-	v1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
+	v1alpha20 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 // MockProcessor is a mock of Processor interface.
@@ -106,7 +107,7 @@ func (mr *MockProcessorMockRecorder) IsEffectiveRoute(arg0 interface{}) *gomock.
 }
 
 // IsEffectiveTargetRef mocks base method.
-func (m *MockProcessor) IsEffectiveTargetRef(arg0 client.Object, arg1 v1alpha2.NamespacedPolicyTargetReference) bool {
+func (m *MockProcessor) IsEffectiveTargetRef(arg0 client.Object, arg1 v1alpha20.NamespacedPolicyTargetReference) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsEffectiveTargetRef", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -190,7 +191,7 @@ func (mr *MockProcessorMockRecorder) IsListenerFilterReferred(arg0 interface{}) 
 }
 
 // IsRoutableLocalTargetServices mocks base method.
-func (m *MockProcessor) IsRoutableLocalTargetServices(arg0 client.Object, arg1 []v1alpha2.LocalPolicyTargetReference) bool {
+func (m *MockProcessor) IsRoutableLocalTargetServices(arg0 client.Object, arg1 []v1alpha20.LocalPolicyTargetReference) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRoutableLocalTargetServices", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -204,7 +205,7 @@ func (mr *MockProcessorMockRecorder) IsRoutableLocalTargetServices(arg0, arg1 in
 }
 
 // IsRoutableNamespacedTargetServices mocks base method.
-func (m *MockProcessor) IsRoutableNamespacedTargetServices(arg0 client.Object, arg1 []v1alpha2.NamespacedPolicyTargetReference) bool {
+func (m *MockProcessor) IsRoutableNamespacedTargetServices(arg0 client.Object, arg1 []v1alpha20.NamespacedPolicyTargetReference) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRoutableNamespacedTargetServices", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -232,7 +233,7 @@ func (mr *MockProcessorMockRecorder) IsRoutableService(arg0 interface{}) *gomock
 }
 
 // IsRoutableTargetService mocks base method.
-func (m *MockProcessor) IsRoutableTargetService(arg0 client.Object, arg1 v1alpha2.NamespacedPolicyTargetReference) bool {
+func (m *MockProcessor) IsRoutableTargetService(arg0 client.Object, arg1 v1alpha20.NamespacedPolicyTargetReference) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRoutableTargetService", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -257,6 +258,20 @@ func (m *MockProcessor) IsSecretReferred(arg0 types.NamespacedName) bool {
 func (mr *MockProcessorMockRecorder) IsSecretReferred(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSecretReferred", reflect.TypeOf((*MockProcessor)(nil).IsSecretReferred), arg0)
+}
+
+// IsValidLocalTargetRoutes mocks base method.
+func (m *MockProcessor) IsValidLocalTargetRoutes(arg0 client.Object, arg1 []v1alpha2.LocalFilterPolicyTargetReference) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsValidLocalTargetRoutes", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsValidLocalTargetRoutes indicates an expected call of IsValidLocalTargetRoutes.
+func (mr *MockProcessorMockRecorder) IsValidLocalTargetRoutes(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidLocalTargetRoutes", reflect.TypeOf((*MockProcessor)(nil).IsValidLocalTargetRoutes), arg0, arg1)
 }
 
 // UseEndpointSlices mocks base method.
