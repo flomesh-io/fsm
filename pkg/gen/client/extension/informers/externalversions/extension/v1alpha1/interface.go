@@ -25,6 +25,8 @@ type Interface interface {
 	CircuitBreakers() CircuitBreakerInformer
 	// ConcurrencyLimits returns a ConcurrencyLimitInformer.
 	ConcurrencyLimits() ConcurrencyLimitInformer
+	// DNSModifiers returns a DNSModifierInformer.
+	DNSModifiers() DNSModifierInformer
 	// ExternalRateLimits returns a ExternalRateLimitInformer.
 	ExternalRateLimits() ExternalRateLimitInformer
 	// FaultInjections returns a FaultInjectionInformer.
@@ -72,6 +74,11 @@ func (v *version) CircuitBreakers() CircuitBreakerInformer {
 // ConcurrencyLimits returns a ConcurrencyLimitInformer.
 func (v *version) ConcurrencyLimits() ConcurrencyLimitInformer {
 	return &concurrencyLimitInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DNSModifiers returns a DNSModifierInformer.
+func (v *version) DNSModifiers() DNSModifierInformer {
+	return &dNSModifierInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ExternalRateLimits returns a ExternalRateLimitInformer.

@@ -1330,6 +1330,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.BackendTLSPolicyAdded, announcements.BackendTLSPolicyDeleted, announcements.BackendTLSPolicyUpdated,
 		// BackendLBPolicy event
 		announcements.BackendLBPolicyAdded, announcements.BackendLBPolicyDeleted, announcements.BackendLBPolicyUpdated,
+		// RouteRuleFilterPolicy event
+		announcements.RouteRuleFilterPolicyAdded, announcements.RouteRuleFilterPolicyDeleted, announcements.RouteRuleFilterPolicyUpdated,
 		// Filter event
 		announcements.FilterAdded, announcements.FilterDeleted, announcements.FilterUpdated,
 		// ListenerFilter event
@@ -1354,6 +1356,8 @@ func getGatewayUpdateEvent(msg events.PubSubMessage) *gatewayUpdateEvent {
 		announcements.GatewayExternalRateLimitAdded, announcements.GatewayExternalRateLimitDeleted, announcements.GatewayExternalRateLimitUpdated,
 		// RequestTermination event
 		announcements.GatewayRequestTerminationAdded, announcements.GatewayRequestTerminationDeleted, announcements.GatewayRequestTerminationUpdated,
+		// DNSModifier event
+		announcements.GatewayDNSModifierAdded, announcements.GatewayDNSModifierDeleted, announcements.GatewayDNSModifierUpdated,
 
 		//
 		// MultiCluster events

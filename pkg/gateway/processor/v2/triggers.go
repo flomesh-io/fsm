@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	gwv1alpha3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
@@ -365,6 +367,24 @@ func (c *GatewayProcessor) getServiceFromCache(key client.ObjectKey) (*corev1.Se
 	return obj, nil
 }
 
+func (c *GatewayProcessor) getTCPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.TCPRoute, error) {
+	obj := &gwv1alpha2.TCPRoute{}
+	if err := c.client.Get(context.TODO(), key, obj); err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
+func (c *GatewayProcessor) getUDPRouteFromCache(key client.ObjectKey) (*gwv1alpha2.UDPRoute, error) {
+	obj := &gwv1alpha2.UDPRoute{}
+	if err := c.client.Get(context.TODO(), key, obj); err != nil {
+		return nil, err
+	}
+
+	return obj, nil
+}
+
 func (c *GatewayProcessor) IsRoutableNamespacedTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool {
 	for _, targetRef := range targetRefs {
 		if (targetRef.Group == constants.KubernetesCoreGroup && targetRef.Kind == constants.KubernetesServiceKind) ||
@@ -389,6 +409,29 @@ func (c *GatewayProcessor) IsRoutableLocalTargetServices(policy client.Object, t
 				Namespace: policy.GetNamespace(),
 				Name:      string(targetRef.Name),
 			}) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (c *GatewayProcessor) IsValidLocalTargetRoutes(policy client.Object, targetRefs []gwpav1alpha2.LocalFilterPolicyTargetReference) bool {
+	for _, targetRef := range targetRefs {
+		switch targetRef.Kind {
+		case constants.GatewayAPITCPRouteKind:
+			if _, err := c.getTCPRouteFromCache(types.NamespacedName{
+				Namespace: policy.GetNamespace(),
+				Name:      string(targetRef.Name),
+			}); err == nil {
+				return true
+			}
+		case constants.GatewayAPIUDPRouteKind:
+			if _, err := c.getUDPRouteFromCache(types.NamespacedName{
+				Namespace: policy.GetNamespace(),
+				Name:      string(targetRef.Name),
+			}); err == nil {
 				return true
 			}
 		}

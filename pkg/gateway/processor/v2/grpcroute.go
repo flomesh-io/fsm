@@ -40,19 +40,14 @@ func (c *ConfigGenerator) processGRPCRoutes() []fgwv2.Resource {
 			gwutils.ToSlicePtr(grpcRoute.Status.Parents),
 		)
 
-		if c.ignoreGRPCRoute(grpcRoute, rsh) {
+		if parentRef := c.getGRPCRouteParentRefToGateway(grpcRoute, rsh); parentRef == nil {
 			continue
-		}
+		} else {
+			holder := rsh.StatusUpdateFor(*parentRef)
 
-		holder := rsh.StatusUpdateFor(
-			gwv1.ParentReference{
-				Namespace: ptr.To(gwv1.Namespace(c.gateway.Namespace)),
-				Name:      gwv1.ObjectName(c.gateway.Name),
-			},
-		)
-
-		if g2 := c.toV2GRPCRoute(grpcRoute, holder); g2 != nil {
-			routes = append(routes, g2)
+			if g2 := c.toV2GRPCRoute(grpcRoute, holder); g2 != nil {
+				routes = append(routes, g2)
+			}
 		}
 	}
 
@@ -157,7 +152,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 			filterType := filter.Spec.Type
 			filters = append(filters, fgwv2.GRPCRouteFilter{
 				Type:            gwv1.GRPCRouteFilterType(filterType),
-				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+				ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 				Key:             uuid.NewString(),
 			})
 
@@ -190,8 +185,10 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 	return filters
 }
 
-func (c *ConfigGenerator) ignoreGRPCRoute(grpcRoute *gwv1.GRPCRoute, rsh status.RouteStatusObject) bool {
+func (c *ConfigGenerator) getGRPCRouteParentRefToGateway(grpcRoute *gwv1.GRPCRoute, rsh status.RouteStatusObject) *gwv1.ParentReference {
 	for _, parentRef := range grpcRoute.Spec.ParentRefs {
+		parentRef := parentRef
+
 		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
@@ -216,9 +213,9 @@ func (c *ConfigGenerator) ignoreGRPCRoute(grpcRoute *gwv1.GRPCRoute, rsh status.
 				continue
 			}
 
-			return false
+			return &parentRef
 		}
 	}
 
-	return true
+	return nil
 }

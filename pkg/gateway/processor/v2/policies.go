@@ -27,3 +27,14 @@ func (c *ConfigGenerator) getBackendPolicyProcessors(route client.Object) []Back
 		return nil
 	}
 }
+
+func (c *ConfigGenerator) getFilterPolicyProcessors(route client.Object) []FilterPolicyProcessor {
+	switch route.(type) {
+	case *gwv1alpha2.TCPRoute, *gwv1alpha2.UDPRoute:
+		return []FilterPolicyProcessor{
+			NewRouteRuleFilterPolicyProcessor(c),
+		}
+	}
+
+	return nil
+}

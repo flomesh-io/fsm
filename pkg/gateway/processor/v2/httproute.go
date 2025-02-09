@@ -40,19 +40,14 @@ func (c *ConfigGenerator) processHTTPRoutes() []fgwv2.Resource {
 			gwutils.ToSlicePtr(httpRoute.Status.Parents),
 		)
 
-		if c.ignoreHTTPRoute(httpRoute, rsh) {
+		if parentRef := c.getHTTPRouteParentRefToGateway(httpRoute, rsh); parentRef == nil {
 			continue
-		}
+		} else {
+			holder := rsh.StatusUpdateFor(*parentRef)
 
-		holder := rsh.StatusUpdateFor(
-			gwv1.ParentReference{
-				Namespace: ptr.To(gwv1.Namespace(c.gateway.Namespace)),
-				Name:      gwv1.ObjectName(c.gateway.Name),
-			},
-		)
-
-		if h2 := c.toV2HTTPRoute(httpRoute, holder); h2 != nil {
-			routes = append(routes, h2)
+			if h2 := c.toV2HTTPRoute(httpRoute, holder); h2 != nil {
+				routes = append(routes, h2)
+			}
 		}
 	}
 
@@ -157,7 +152,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			filterType := filter.Spec.Type
 			filters = append(filters, fgwv2.HTTPRouteFilter{
 				Type:            gwv1.HTTPRouteFilterType(filterType),
-				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+				ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 				Key:             uuid.NewString(),
 			})
 
@@ -190,8 +185,10 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 	return filters
 }
 
-func (c *ConfigGenerator) ignoreHTTPRoute(httpRoute *gwv1.HTTPRoute, rsh status.RouteStatusObject) bool {
+func (c *ConfigGenerator) getHTTPRouteParentRefToGateway(httpRoute *gwv1.HTTPRoute, rsh status.RouteStatusObject) *gwv1.ParentReference {
 	for _, parentRef := range httpRoute.Spec.ParentRefs {
+		parentRef := parentRef
+
 		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
@@ -216,9 +213,9 @@ func (c *ConfigGenerator) ignoreHTTPRoute(httpRoute *gwv1.HTTPRoute, rsh status.
 				continue
 			}
 
-			return false
+			return &parentRef
 		}
 	}
 
-	return true
+	return nil
 }

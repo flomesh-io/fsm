@@ -169,6 +169,10 @@ func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses
 		return policy
+	case *gwpav1alpha2.RouteRuleFilterPolicy:
+		policy := o.DeepCopy()
+		policy.Status.Ancestors = newPolicyAncestorStatuses
+		return policy
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator", obj, p.fullName.Namespace, p.fullName.Name))
 	}
@@ -206,6 +210,19 @@ func NewPolicyStatusUpdateWithNamespacedPolicyTargetReference(resource client.Ob
 	return newPolicyStatusUpdate(resource, gvk, targetRefs, policyAncestorStatuses)
 }
 
+func NewPolicyStatusUpdateWithLocalFilterPolicyTargetReference(resource client.Object, gvk schema.GroupVersionKind, targetRefs []gwpav1alpha2.LocalFilterPolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
+	refs := make([]PolicyTargetReference, len(targetRefs))
+	for i, ref := range targetRefs {
+		refs[i] = PolicyTargetReference{
+			Group:     ref.Group,
+			Kind:      ref.Kind,
+			Name:      ref.Name,
+			Namespace: ptr.To(gwv1.Namespace(resource.GetNamespace())),
+		}
+	}
+
+	return newPolicyStatusUpdate(resource, gvk, refs, policyAncestorStatuses)
+}
 func newPolicyStatusUpdate(resource client.Object, gvk schema.GroupVersionKind, targetRefs []PolicyTargetReference, policyAncestorStatuses []*gwv1alpha2.PolicyAncestorStatus) *PolicyStatusUpdate {
 	return &PolicyStatusUpdate{
 		DefaultPolicyStatusObject: &DefaultPolicyStatusObject{

@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -133,6 +135,7 @@ func (r *tcpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToTCPRoutes)).
 		Watches(&gwv1alpha3.BackendTLSPolicy{}, handler.EnqueueRequestsFromMapFunc(r.backendTLSToTCPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToTCPRoutes)).
+		Watches(&gwpav1alpha2.RouteRuleFilterPolicy{}, handler.EnqueueRequestsFromMapFunc(r.routeRuleFilterPolicyToTCPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -312,6 +315,51 @@ func (r *tcpRouteReconciler) referenceGrantToTCPRoutes(ctx context.Context, obj 
 					Name:      h.Name,
 				},
 			})
+		}
+	}
+
+	return requests
+}
+
+func (r *tcpRouteReconciler) routeRuleFilterPolicyToTCPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwpav1alpha2.RouteRuleFilterPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	for _, targetRef := range policy.Spec.TargetRefs {
+		if targetRef.Kind != constants.GatewayAPITCPRouteKind {
+			continue
+		}
+
+		tcpRoute := &gwv1alpha2.TCPRoute{}
+		key := types.NamespacedName{
+			Namespace: policy.Namespace,
+			Name:      string(targetRef.Name),
+		}
+		if err := r.fctx.Manager.GetCache().Get(ctx, key, tcpRoute); err != nil {
+			log.Error().Msgf("Failed to get TCPRoute: %v", key.String())
+			continue
+		}
+
+		for _, rule := range tcpRoute.Spec.Rules {
+			if rule.Name == nil {
+				continue
+			}
+
+			if targetRef.Rule == *rule.Name {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: tcpRoute.Namespace,
+						Name:      tcpRoute.Name,
+					},
+				})
+
+				break
+			}
 		}
 	}
 

@@ -21,6 +21,10 @@ import (
 	"strings"
 	"time"
 
+	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
+
+	extClientset "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
+
 	"k8s.io/utils/ptr"
 
 	"github.com/docker/go-connections/nat"
@@ -245,6 +249,8 @@ func (td *FsmTestData) AreRegistryCredsPresent() bool {
 
 // InitTestData Initializes the test structures
 // Called by Ginkgo BeforeEach
+//
+//gocyclo:ignore
 func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 	td.T = t
 
@@ -353,6 +359,16 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 		return fmt.Errorf("failed to create NamespacedIngress client: %w", err)
 	}
 
+	extClient, err := extClientset.NewForConfig(kubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create extension client: %w", err)
+	}
+
+	policyAttachmentClient, err := policyAttachmentClientset.NewForConfig(kubeConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create policy attachment client: %w", err)
+	}
+
 	td.RestConfig = kubeConfig
 	td.Client = clientset
 	td.ConfigClient = configClient
@@ -360,6 +376,8 @@ func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 	td.APIServerClient = apiServerClient
 	td.GatewayAPIClient = gatewayAPIClient
 	td.NsigClient = nsigClient
+	td.ExtensionClient = extClient
+	td.PolicyAttachmentClient = policyAttachmentClient
 
 	td.Env = cli.New()
 

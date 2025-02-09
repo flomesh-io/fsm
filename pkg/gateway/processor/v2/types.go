@@ -6,6 +6,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
 
 	"github.com/flomesh-io/fsm/pkg/logger"
@@ -25,6 +27,11 @@ type calculateBackendTargetsFunc func(svc *corev1.Service, port *int32) []fgwv2.
 // BackendPolicyProcessor is an interface for enriching backend level policies
 type BackendPolicyProcessor interface {
 	Process(route client.Object, routeParentRef gwv1.ParentReference, routeRule any, backendRef gwv1.BackendObjectReference, svcPort *fgwv2.ServicePortName)
+}
+
+// FilterPolicyProcessor is an interface for enriching filters for non-HTTP route rule
+type FilterPolicyProcessor interface {
+	Process(route client.Object, routeParentRef gwv1.ParentReference, rule *gwv1.SectionName) []gwpav1alpha2.LocalFilterReference
 }
 
 // ---

@@ -177,6 +177,7 @@ rules:
       - "externalratelimits"
       - "concurrencylimits"
       - "requestterminations"
+      - "dnsmodifiers"
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
     resources:
@@ -195,6 +196,7 @@ rules:
       - "externalratelimits/finalizers"
       - "concurrencylimits/finalizers"
       - "requestterminations/finalizers"
+      - "dnsmodifiers/finalizers"
     verbs: [ "update" ]
   - apiGroups: [ "extension.gateway.flomesh.io" ]
     resources:
@@ -213,17 +215,18 @@ rules:
       - "externalratelimits/status"
       - "concurrencylimits/status"
       - "requestterminations/status"
+      - "dnsmodifiers/status"
     verbs: [ "get", "patch", "update" ]
 
   # PolicyAttachment
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "healthcheckpolicies", "retrypolicies", "backendlbpolicies" ]
+    resources: [ "healthcheckpolicies", "retrypolicies", "backendlbpolicies", "routerulefilterpolicies" ]
     verbs: [ "get", "list", "watch", "create", "update", "patch", "delete" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "healthcheckpolicies/finalizers", "retrypolicies/finalizers", "backendlbpolicies/finalizers" ]
+    resources: [ "healthcheckpolicies/finalizers", "retrypolicies/finalizers", "backendlbpolicies/finalizers", "routerulefilterpolicies/finalizers" ]
     verbs: [ "update" ]
   - apiGroups: [ "gateway.flomesh.io" ]
-    resources: [ "healthcheckpolicies/status", "retrypolicies/status", "backendlbpolicies/status" ]
+    resources: [ "healthcheckpolicies/status", "retrypolicies/status", "backendlbpolicies/status", "routerulefilterpolicies/status" ]
     verbs: [ "get", "patch", "update" ]
 
   # Used for interacting with cert-manager CertificateRequest resources.

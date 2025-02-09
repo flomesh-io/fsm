@@ -2,6 +2,11 @@ package e2e
 
 import (
 	"fmt"
+	"strings"
+
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -25,15 +30,17 @@ import (
 )
 
 const (
-	nsGateway   = "test"
-	nsHTTPRoute = "http-route"
-	nsHTTPSvc   = "http"
-	nsGRPCRoute = "grpc-route"
-	nsGRPCSvc   = "grpc"
-	nsTCPRoute  = "tcp-route"
-	nsTCPSvc    = "tcp"
-	nsUDPRoute  = "udp-route"
-	nsUDPSvc    = "udp"
+	nsGateway    = "test"
+	nsHTTPRoute  = "http-route"
+	nsHTTPSvc    = "http"
+	nsGRPCRoute  = "grpc-route"
+	nsGRPCSvc    = "grpc"
+	nsTCPRoute   = "tcp-route"
+	nsTCPSvc     = "tcp"
+	nsUDPRoute   = "udp-route"
+	nsUDPSvc     = "udp"
+	nsKubeSystem = "kube-system"
+	nsDefault    = "default"
 )
 
 var _ = FSMDescribe("Test traffic routing by FSM Gateway with trafficInterceptionMode(PodLevel)",
@@ -96,6 +103,8 @@ func testGatewayAPI(trafficInterceptionMode string) {
 	testFSMGatewayTCPTrafficCrossNamespace()
 	testFSMGatewayUDPTrafficSameNamespace()
 	testFSMGatewayUDPTrafficCrossNamespace()
+	testFSMGatewayDNSTraffic()
+	testFSMGatewayDNSModifierFilterTraffic()
 }
 
 func testDeployFSMGateway() {
@@ -256,6 +265,16 @@ fsm:
 					Port:     4000,
 					Name:     "udp",
 					Protocol: gwv1.UDPProtocolType,
+				},
+				{
+					Port:     5053,
+					Name:     "dns",
+					Protocol: gwv1.UDPProtocolType,
+					AllowedRoutes: &gwv1.AllowedRoutes{
+						Namespaces: &gwv1.RouteNamespaces{
+							From: ptr.To(gwv1.NamespacesFromAll),
+						},
+					},
 				},
 				{
 					Port:     4001,
@@ -1296,6 +1315,172 @@ func testFSMGatewayUDPTrafficSameNamespace() {
 	}, 5, Td.ReqSuccessTimeout)
 
 	Expect(cond).To(BeTrue(), "Failed testing UDP traffic from echo/nc(localhost) to destination %s:%d", udpReq.DestinationHost, udpReq.DestinationPort)
+}
+
+func testFSMGatewayDNSTraffic() {
+	By("Creating UDPRoute for exposing DNS service")
+	udpRoute := gwv1alpha2.UDPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsKubeSystem,
+			Name:      "udp-dns-1",
+		},
+		Spec: gwv1alpha2.UDPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Namespace: namespacePtr(nsGateway),
+						Name:      "test-gw-1",
+						Port:      portPtr(5053),
+					},
+				},
+			},
+			Rules: []gwv1alpha2.UDPRouteRule{
+				{
+					Name: ptr.To(gwv1.SectionName("dns")),
+					BackendRefs: []gwv1alpha2.BackendRef{
+						{
+							BackendObjectReference: gwv1.BackendObjectReference{
+								Name: "kube-dns",
+								Port: portPtr(53),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := Td.CreateGatewayAPIUDPRoute(nsKubeSystem, udpRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing UDPRoute - DIG DNS query")
+	dnsReq := DNSRequestDef{
+		DNSServer: "udptest.localhost",
+		DNSPort:   5053,
+		QueryHost: "kubernetes.default.svc.cluster.local",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsReq.DNSServer, dnsReq.DNSPort)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalDIGDNSRequest(dnsReq)
+
+		response := strings.TrimSpace(result.Response)
+		if result.Err != nil {
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, response, result.Err)
+			return false
+		}
+
+		if response == "10.43.0.1" {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, response)
+			return true
+		}
+
+		Td.T.Logf("> (%s) DNS req failed, expect: 10.43.0.1, response: %q", srcToDestStr, response)
+		return false
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsReq.DNSServer, dnsReq.DNSPort)
+}
+
+func testFSMGatewayDNSModifierFilterTraffic() {
+	By("Creating DNSModifier configuration for modifying DNS response")
+	dnsModifier := extv1alpha1.DNSModifier{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsKubeSystem,
+			Name:      "dns-mod-1",
+		},
+
+		Spec: extv1alpha1.DNSModifierSpec{
+			Domains: []extv1alpha1.DNSDomain{
+				{
+					Name: gwv1.PreciseHostname("test.flomesh.io"),
+					Answer: extv1alpha1.DNSAnswer{
+						RData: "1.11.11.111",
+					},
+				},
+			},
+		},
+	}
+
+	_, err := Td.CreateGatewayAPIDNSModifier(nsKubeSystem, dnsModifier)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating Filter for modifying DNS response")
+	filter := extv1alpha1.Filter{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsKubeSystem,
+			Name:      "test-dns-1",
+		},
+
+		Spec: extv1alpha1.FilterSpec{
+			Type: "DNSModifier",
+			ConfigRef: &gwv1.LocalObjectReference{
+				Group: extv1alpha1.GroupName,
+				Kind:  "DNSModifier",
+				Name:  "dns-mod-1",
+			},
+		},
+	}
+
+	_, err = Td.CreateGatewayAPIFilter(nsKubeSystem, filter)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Creating RouteRuleFilterPolicy for attaching Filter to RouteRule")
+
+	policy := gwpav1alpha2.RouteRuleFilterPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsKubeSystem,
+			Name:      "dns-policy-1",
+		},
+
+		Spec: gwpav1alpha2.RouteRuleFilterPolicySpec{
+			TargetRefs: []gwpav1alpha2.LocalFilterPolicyTargetReference{
+				{
+					Group: gwv1.GroupName,
+					Kind:  constants.GatewayAPIUDPRouteKind,
+					Name:  "udp-dns-1",
+					Rule:  "dns",
+				},
+			},
+			FilterRefs: []gwpav1alpha2.LocalFilterReference{
+				{
+					Group: extv1alpha1.GroupName,
+					Kind:  constants.GatewayAPIExtensionFilterKind,
+					Name:  "test-dns-1",
+				},
+			},
+		},
+	}
+
+	_, err = Td.CreateGatewayAPIRouteRuleFilterPolicy(nsKubeSystem, policy)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing UDPRoute - DIG DNS query")
+	dnsReq := DNSRequestDef{
+		DNSServer: "udptest.localhost",
+		DNSPort:   5053,
+		QueryHost: "test.flomesh.io",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsReq.DNSServer, dnsReq.DNSPort)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalDIGDNSRequest(dnsReq)
+
+		response := strings.TrimSpace(result.Response)
+		if result.Err != nil {
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, response, result.Err)
+			return false
+		}
+
+		if response == "1.11.11.111" {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, response)
+			return true
+		}
+
+		Td.T.Logf("> (%s) DNS req failed, expect: 1.11.11.111, response: %q", srcToDestStr, response)
+		return false
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsReq.DNSServer, dnsReq.DNSPort)
 }
 
 func testFSMGatewayUDPTrafficCrossNamespace() {

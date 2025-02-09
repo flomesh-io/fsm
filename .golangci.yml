@@ -65,6 +65,9 @@ issues:
         - govet
       text: "printf: non-constant format string in call to"
   exclude-use-default: false
+  # Make issues output unique by line.
+  # Default: true
+  uniq-by-line: true
 
 # output configuration options
 output:
@@ -84,9 +87,6 @@ output:
   # Print linter name in the end of issue text.
   # Default: true
   print-linter-name: true
-  # Make issues output unique by line.
-  # Default: true
-  uniq-by-line: true
   # Add a prefix to the output file references.
   # Default is no prefix.
   path-prefix: ""

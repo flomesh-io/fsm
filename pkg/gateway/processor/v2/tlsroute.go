@@ -36,21 +36,16 @@ func (c *ConfigGenerator) processTLSRoutes() []fgwv2.Resource {
 			gwutils.ToSlicePtr(tlsRoute.Status.Parents),
 		)
 
-		if c.ignoreTLSRoute(tlsRoute, rsh) {
+		if parentRef := c.getTLSRouteParentRefToGateway(tlsRoute, rsh); parentRef == nil {
 			continue
-		}
+		} else {
+			holder := rsh.StatusUpdateFor(*parentRef)
 
-		holder := rsh.StatusUpdateFor(
-			gwv1.ParentReference{
-				Namespace: ptr.To(gwv1.Namespace(c.gateway.Namespace)),
-				Name:      gwv1.ObjectName(c.gateway.Name),
-			},
-		)
-
-		t2, bks := c.toV2TLSRoute(tlsRoute, holder)
-		if t2 != nil {
-			resources = append(resources, t2)
-			resources = append(resources, bks...)
+			t2, bks := c.toV2TLSRoute(tlsRoute, holder)
+			if t2 != nil {
+				resources = append(resources, t2)
+				resources = append(resources, bks...)
+			}
 		}
 	}
 
@@ -137,8 +132,10 @@ func tlsBackendPort(port *gwv1alpha2.PortNumber) *int32 {
 	return ptr.To(int32(*port))
 }
 
-func (c *ConfigGenerator) ignoreTLSRoute(tlsRoute *gwv1alpha2.TLSRoute, rsh status.RouteStatusObject) bool {
+func (c *ConfigGenerator) getTLSRouteParentRefToGateway(tlsRoute *gwv1alpha2.TLSRoute, rsh status.RouteStatusObject) *gwv1.ParentReference {
 	for _, parentRef := range tlsRoute.Spec.ParentRefs {
+		parentRef := parentRef
+
 		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
@@ -179,9 +176,9 @@ func (c *ConfigGenerator) ignoreTLSRoute(tlsRoute *gwv1alpha2.TLSRoute, rsh stat
 				continue
 			}
 
-			return false
+			return &parentRef
 		}
 	}
 
-	return true
+	return nil
 }

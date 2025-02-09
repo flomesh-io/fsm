@@ -62,38 +62,40 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 		cfg:        cfg,
 
 		triggers: map[informers.ResourceType]processor.Trigger{
-			informers.EndpointsResourceType:           &k8strigger.EndpointsTrigger{},
-			informers.ServicesResourceType:            &k8strigger.ServicesTrigger{},
-			informers.ServiceImportsResourceType:      &k8strigger.ServiceImportsTrigger{},
-			informers.EndpointSlicesResourceType:      &k8strigger.EndpointSlicesTrigger{},
-			informers.SecretsResourceType:             &k8strigger.SecretTrigger{},
-			informers.ConfigMapsResourceType:          &k8strigger.ConfigMapTrigger{},
-			informers.GatewayClassesResourceType:      &gatewaytrigger.GatewayClassesTrigger{},
-			informers.GatewaysResourceType:            &gatewaytrigger.GatewaysTrigger{},
-			informers.HTTPRoutesResourceType:          &gatewaytrigger.HTTPRoutesTrigger{},
-			informers.GRPCRoutesResourceType:          &gatewaytrigger.GRPCRoutesTrigger{},
-			informers.TCPRoutesResourceType:           &gatewaytrigger.TCPRoutesTrigger{},
-			informers.TLSRoutesResourceType:           &gatewaytrigger.TLSRoutesTrigger{},
-			informers.UDPRoutesResourceType:           &gatewaytrigger.UDPRoutesTrigger{},
-			informers.ReferenceGrantResourceType:      &gatewaytrigger.ReferenceGrantTrigger{},
-			informers.HealthCheckPoliciesResourceType: &policytriggerv2.HealthCheckPoliciesTrigger{},
-			informers.BackendLBPoliciesResourceType:   &policytriggerv2.BackendLBPoliciesTrigger{},
-			informers.BackendTLSPoliciesResourceType:  &policytriggerv2.BackendTLSPoliciesTrigger{},
-			informers.FiltersResourceType:             &extensiontrigger.FilterTrigger{},
-			informers.ListenerFiltersResourceType:     &extensiontrigger.ListenerFilterTrigger{},
-			informers.FilterDefinitionsResourceType:   &extensiontrigger.FilterDefinitionTrigger{},
-			informers.CircuitBreakersResourceType:     &extensiontrigger.CircuitBreakerTrigger{},
-			informers.FaultInjectionsResourceType:     &extensiontrigger.FaultInjectionTrigger{},
-			informers.RateLimitsResourceType:          &extensiontrigger.RateLimitTrigger{},
-			informers.HTTPLogsResourceType:            &extensiontrigger.HTTPLogTrigger{},
-			informers.MetricsResourceType:             &extensiontrigger.MetricsTrigger{},
-			informers.ZipkinResourceType:              &extensiontrigger.ZipkinTrigger{},
-			informers.FilterConfigsResourceType:       &extensiontrigger.FilterConfigTrigger{},
-			informers.ProxyTagResourceType:            &extensiontrigger.ProxyTagTrigger{},
-			informers.IPRestrictionResourceType:       &extensiontrigger.IPRestrictionTrigger{},
-			informers.ExternalRateLimitResourceType:   &extensiontrigger.ExternalRateLimitTrigger{},
-			informers.RequestTerminationResourceType:  &extensiontrigger.RequestTerminationTrigger{},
-			informers.ConcurrencyLimitResourceType:    &extensiontrigger.ConcurrencyLimitTrigger{},
+			informers.EndpointsResourceType:               &k8strigger.EndpointsTrigger{},
+			informers.ServicesResourceType:                &k8strigger.ServicesTrigger{},
+			informers.ServiceImportsResourceType:          &k8strigger.ServiceImportsTrigger{},
+			informers.EndpointSlicesResourceType:          &k8strigger.EndpointSlicesTrigger{},
+			informers.SecretsResourceType:                 &k8strigger.SecretTrigger{},
+			informers.ConfigMapsResourceType:              &k8strigger.ConfigMapTrigger{},
+			informers.GatewayClassesResourceType:          &gatewaytrigger.GatewayClassesTrigger{},
+			informers.GatewaysResourceType:                &gatewaytrigger.GatewaysTrigger{},
+			informers.HTTPRoutesResourceType:              &gatewaytrigger.HTTPRoutesTrigger{},
+			informers.GRPCRoutesResourceType:              &gatewaytrigger.GRPCRoutesTrigger{},
+			informers.TCPRoutesResourceType:               &gatewaytrigger.TCPRoutesTrigger{},
+			informers.TLSRoutesResourceType:               &gatewaytrigger.TLSRoutesTrigger{},
+			informers.UDPRoutesResourceType:               &gatewaytrigger.UDPRoutesTrigger{},
+			informers.ReferenceGrantResourceType:          &gatewaytrigger.ReferenceGrantTrigger{},
+			informers.HealthCheckPoliciesResourceType:     &policytriggerv2.HealthCheckPoliciesTrigger{},
+			informers.BackendLBPoliciesResourceType:       &policytriggerv2.BackendLBPoliciesTrigger{},
+			informers.BackendTLSPoliciesResourceType:      &policytriggerv2.BackendTLSPoliciesTrigger{},
+			informers.RouteRuleFilterPoliciesResourceType: &policytriggerv2.RouteRuleFilterPoliciesTrigger{},
+			informers.FiltersResourceType:                 &extensiontrigger.FilterTrigger{},
+			informers.ListenerFiltersResourceType:         &extensiontrigger.ListenerFilterTrigger{},
+			informers.FilterDefinitionsResourceType:       &extensiontrigger.FilterDefinitionTrigger{},
+			informers.CircuitBreakersResourceType:         &extensiontrigger.CircuitBreakerTrigger{},
+			informers.FaultInjectionsResourceType:         &extensiontrigger.FaultInjectionTrigger{},
+			informers.RateLimitsResourceType:              &extensiontrigger.RateLimitTrigger{},
+			informers.HTTPLogsResourceType:                &extensiontrigger.HTTPLogTrigger{},
+			informers.MetricsResourceType:                 &extensiontrigger.MetricsTrigger{},
+			informers.ZipkinResourceType:                  &extensiontrigger.ZipkinTrigger{},
+			informers.FilterConfigsResourceType:           &extensiontrigger.FilterConfigTrigger{},
+			informers.ProxyTagResourceType:                &extensiontrigger.ProxyTagTrigger{},
+			informers.IPRestrictionResourceType:           &extensiontrigger.IPRestrictionTrigger{},
+			informers.ExternalRateLimitResourceType:       &extensiontrigger.ExternalRateLimitTrigger{},
+			informers.RequestTerminationResourceType:      &extensiontrigger.RequestTerminationTrigger{},
+			informers.ConcurrencyLimitResourceType:        &extensiontrigger.ConcurrencyLimitTrigger{},
+			informers.DNSModifierResourceType:             &extensiontrigger.DNSModifierTrigger{},
 		},
 
 		mutex:             new(sync.RWMutex),
@@ -158,6 +160,8 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.BackendLBPoliciesResourceType]
 	case *gwv1alpha3.BackendTLSPolicy:
 		return c.triggers[informers.BackendTLSPoliciesResourceType]
+	case *gwpav1alpha2.RouteRuleFilterPolicy:
+		return c.triggers[informers.RouteRuleFilterPoliciesResourceType]
 	case *extv1alpha1.Filter:
 		return c.triggers[informers.FiltersResourceType]
 	case *extv1alpha1.ListenerFilter:
@@ -188,6 +192,8 @@ func (c *GatewayProcessor) getTrigger(obj interface{}) processor.Trigger {
 		return c.triggers[informers.RequestTerminationResourceType]
 	case *extv1alpha1.ConcurrencyLimit:
 		return c.triggers[informers.ConcurrencyLimitResourceType]
+	case *extv1alpha1.DNSModifier:
+		return c.triggers[informers.DNSModifierResourceType]
 	}
 
 	return nil

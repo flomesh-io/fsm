@@ -55,6 +55,7 @@ spec:
                 enum:
                 - http
                 - tcp
+                - udp
                 type: string
               scope:
                 default: Route

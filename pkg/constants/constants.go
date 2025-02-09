@@ -520,6 +520,9 @@ const (
 
 	// GatewayConcurrencyLimitKind is the kind name of ConcurrencyLimit used in Flomesh API
 	GatewayConcurrencyLimitKind = "ConcurrencyLimit"
+
+	// GatewayDNSModifierKind is the kind name of DNSModifier used in Flomesh API
+	GatewayDNSModifierKind = "DNSModifier"
 )
 
 // Gateway API Annotations and Labels
@@ -580,6 +583,7 @@ const (
 	BackendUDPRouteIndex                         = "backendUDPRouteIndex"
 	CrossNamespaceBackendNamespaceUDPRouteIndex  = "crossNamespaceBackendNamespaceUDPRouteIndex"
 	ServicePolicyAttachmentIndex                 = "servicePolicyAttachmentIndex"
+	RouteRouteRuleFilterPolicyAttachmentIndex    = "routeRouteRuleFilterPolicyAttachmentIndex"
 	SecretBackendTLSPolicyIndex                  = "secretBackendTLSPolicyIndex"
 	ConfigmapBackendTLSPolicyIndex               = "cmBackendTLSPolicyIndex"
 	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"

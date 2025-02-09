@@ -54,6 +54,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().CircuitBreakers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("concurrencylimits"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ConcurrencyLimits().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("dnsmodifiers"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().DNSModifiers().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("externalratelimits"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Extension().V1alpha1().ExternalRateLimits().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("faultinjections"):

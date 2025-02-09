@@ -30,6 +30,8 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	"github.com/flomesh-io/fsm/pkg/gateway/fgw"
 )
 
@@ -51,6 +53,7 @@ type Processor interface {
 	IsRoutableTargetService(policy client.Object, targetRef gwv1alpha2.NamespacedPolicyTargetReference) bool
 	IsRoutableNamespacedTargetServices(policy client.Object, targetRefs []gwv1alpha2.NamespacedPolicyTargetReference) bool
 	IsRoutableLocalTargetServices(policy client.Object, targetRefs []gwv1alpha2.LocalPolicyTargetReference) bool
+	IsValidLocalTargetRoutes(policy client.Object, targetRefs []gwpav1alpha2.LocalFilterPolicyTargetReference) bool
 	IsConfigMapReferred(cm client.ObjectKey) bool
 	IsSecretReferred(secret client.ObjectKey) bool
 	IsFilterReferred(filter client.ObjectKey) bool

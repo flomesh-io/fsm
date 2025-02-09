@@ -27,6 +27,8 @@ package v1alpha2
 import (
 	"context"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/flomesh-io/fsm/pkg/gateway/status/routes"
@@ -131,6 +133,7 @@ func (r *udpRouteReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&gwv1.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.gatewayToUDPRoutes)).
 		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(r.serviceToUDPRoutes)).
 		Watches(&gwv1beta1.ReferenceGrant{}, handler.EnqueueRequestsFromMapFunc(r.referenceGrantToUDPRoutes)).
+		Watches(&gwpav1alpha2.RouteRuleFilterPolicy{}, handler.EnqueueRequestsFromMapFunc(r.routeRuleFilterPolicyToUDPRoutes)).
 		Complete(r); err != nil {
 		return err
 	}
@@ -254,6 +257,51 @@ func (r *udpRouteReconciler) referenceGrantToUDPRoutes(ctx context.Context, obj 
 					Name:      h.Name,
 				},
 			})
+		}
+	}
+
+	return requests
+}
+
+func (r *udpRouteReconciler) routeRuleFilterPolicyToUDPRoutes(ctx context.Context, object client.Object) []reconcile.Request {
+	policy, ok := object.(*gwpav1alpha2.RouteRuleFilterPolicy)
+	if !ok {
+		log.Error().Msgf("Unexpected type %T", object)
+		return nil
+	}
+
+	var requests []reconcile.Request
+
+	for _, targetRef := range policy.Spec.TargetRefs {
+		if targetRef.Kind != constants.GatewayAPIUDPRouteKind {
+			continue
+		}
+
+		udpRoute := &gwv1alpha2.UDPRoute{}
+		key := types.NamespacedName{
+			Namespace: policy.Namespace,
+			Name:      string(targetRef.Name),
+		}
+		if err := r.fctx.Manager.GetCache().Get(ctx, key, udpRoute); err != nil {
+			log.Error().Msgf("Failed to get UDPRoute: %v", key.String())
+			continue
+		}
+
+		for _, rule := range udpRoute.Spec.Rules {
+			if rule.Name == nil {
+				continue
+			}
+
+			if targetRef.Rule == *rule.Name {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: udpRoute.Namespace,
+						Name:      udpRoute.Name,
+					},
+				})
+
+				break
+			}
 		}
 	}
 

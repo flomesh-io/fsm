@@ -10,11 +10,13 @@ import (
 	"github.com/flomesh-io/fsm/pkg/gateway/status"
 )
 
-func (p *RouteStatusProcessor) processUDPRouteStatus(route *gwv1alpha2.UDPRoute, rps status.RouteParentStatusObject) bool {
+func (p *RouteStatusProcessor) processUDPRouteStatus(route *gwv1alpha2.UDPRoute, parentRef gwv1.ParentReference, rps status.RouteParentStatusObject) bool {
 	for _, rule := range route.Spec.Rules {
 		if !p.processUDPRouteRuleBackendRefs(route, rule.BackendRefs, rps) {
 			return false
 		}
+
+		p.computeRouteRuleFilterPolicyStatus(route, rule.Name, parentRef)
 	}
 
 	// All backend references of all rules have been resolved successfully for the parent

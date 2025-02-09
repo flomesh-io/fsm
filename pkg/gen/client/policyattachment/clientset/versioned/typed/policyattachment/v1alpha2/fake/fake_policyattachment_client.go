@@ -33,6 +33,10 @@ func (c *FakeGatewayV1alpha2) HealthCheckPolicies(namespace string) v1alpha2.Hea
 	return &FakeHealthCheckPolicies{c, namespace}
 }
 
+func (c *FakeGatewayV1alpha2) RouteRuleFilterPolicies(namespace string) v1alpha2.RouteRuleFilterPolicyInterface {
+	return &FakeRouteRuleFilterPolicies{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeGatewayV1alpha2) RESTClient() rest.Interface {

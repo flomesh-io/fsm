@@ -38,6 +38,9 @@ ports:
   - port: 4001:4001/udp
     nodeFilters:
       - loadbalancer
+  - port: 5053:5053/udp
+    nodeFilters:
+      - loadbalancer
 options:
   k3d:
     wait: true

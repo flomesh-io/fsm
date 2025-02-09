@@ -155,6 +155,7 @@ type HTTPRouteSpec struct {
 	Rules           []HTTPRouteRule `json:"rules,omitempty" copier:"-" hash:"set"`
 }
 type HTTPRouteRule struct {
+	Name               *gwv1.SectionName        `json:"name,omitempty"`
 	Matches            []gwv1.HTTPRouteMatch    `json:"matches,omitempty" hash:"set"`
 	Filters            []HTTPRouteFilter        `json:"filters,omitempty" hash:"set"`
 	BackendRefs        []HTTPBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
@@ -193,6 +194,7 @@ type GRPCRouteSpec struct {
 }
 
 type GRPCRouteRule struct {
+	Name               *gwv1.SectionName        `json:"name,omitempty"`
 	Matches            []gwv1.GRPCRouteMatch    `json:"matches,omitempty" hash:"set"`
 	Filters            []GRPCRouteFilter        `json:"filters,omitempty" hash:"set"`
 	BackendRefs        []GRPCBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
@@ -213,7 +215,9 @@ type TCPRouteSpec struct {
 }
 
 type TCPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+	Name        *gwv1.SectionName    `json:"name,omitempty"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" copier:"-" hash:"set"`
+	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
 // ---
@@ -231,7 +235,8 @@ type TLSRouteSpec struct {
 }
 
 type TLSRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" hash:"set"`
+	Name        *gwv1.SectionName `json:"name,omitempty"`
+	BackendRefs []BackendRef      `json:"backendRefs,omitempty" hash:"set"`
 }
 
 // ---
@@ -247,7 +252,33 @@ type UDPRouteSpec struct {
 }
 
 type UDPRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+	Name        *gwv1.SectionName    `json:"name,omitempty"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" copier:"-" hash:"set"`
+	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
+}
+
+type NonHTTPRouteFilter struct {
+	Type            NonHTTPRouteFilterType `json:"type"`
+	ExtensionConfig map[string]interface{} `json:"-"`
+	Key             string                 `json:"key,omitempty"`
+	Priority        int32                  `json:"-"`
+}
+
+type NonHTTPRouteFilterType string
+
+func (f NonHTTPRouteFilter) MarshalJSON() ([]byte, error) {
+	type NHRF NonHTTPRouteFilter
+	b, _ := json.Marshal(NHRF(f))
+
+	var m map[string]json.RawMessage
+	_ = json.Unmarshal(b, &m)
+
+	for k, v := range f.ExtensionConfig {
+		b, _ = json.Marshal(v)
+		m[k] = b
+	}
+
+	return json.Marshal(m)
 }
 
 // ---

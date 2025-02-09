@@ -25,6 +25,8 @@ type Interface interface {
 	BackendLBPolicies() BackendLBPolicyInformer
 	// HealthCheckPolicies returns a HealthCheckPolicyInformer.
 	HealthCheckPolicies() HealthCheckPolicyInformer
+	// RouteRuleFilterPolicies returns a RouteRuleFilterPolicyInformer.
+	RouteRuleFilterPolicies() RouteRuleFilterPolicyInformer
 }
 
 type version struct {
@@ -46,4 +48,9 @@ func (v *version) BackendLBPolicies() BackendLBPolicyInformer {
 // HealthCheckPolicies returns a HealthCheckPolicyInformer.
 func (v *version) HealthCheckPolicies() HealthCheckPolicyInformer {
 	return &healthCheckPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RouteRuleFilterPolicies returns a RouteRuleFilterPolicyInformer.
+func (v *version) RouteRuleFilterPolicies() RouteRuleFilterPolicyInformer {
+	return &routeRuleFilterPolicyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

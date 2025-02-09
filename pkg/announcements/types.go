@@ -602,6 +602,17 @@ const (
 
 	// --
 
+	// RouteRuleFilterPolicyAdded is the type of announcement emitted when we observe an addition of routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyAdded Kind = "routerulefilterpolicy-added"
+
+	// RouteRuleFilterPolicyDeleted the type of announcement emitted when we observe a deletion of routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyDeleted Kind = "routerulefilterpolicy-deleted"
+
+	// RouteRuleFilterPolicyUpdated is the type of announcement emitted when we observe an update to routerulefilterpolicies.gateway.networking.k8s.io
+	RouteRuleFilterPolicyUpdated Kind = "routerulefilterpolicy-updated"
+
+	// --
+
 	// FilterAdded is the type of announcement emitted when we observe an addition of filters.extension.gateway.flomesh.io
 	FilterAdded Kind = "filter-added"
 
@@ -731,6 +742,17 @@ const (
 
 	// GatewayRequestTerminationUpdated is the type of announcement emitted when we observe an update to requestterminations.extension.gateway.flomesh.io
 	GatewayRequestTerminationUpdated Kind = "gatewayrequesttermination-updated"
+
+	// ---
+
+	// GatewayDNSModifierAdded is the type of announcement emitted when we observe an addition of dnsmodifiers.extension.gateway.flomesh.io
+	GatewayDNSModifierAdded Kind = "gatewaydnsmodifier-added"
+
+	// GatewayDNSModifierDeleted the type of announcement emitted when we observe a deletion of dnsmodifiers.extension.gateway.flomesh.io
+	GatewayDNSModifierDeleted Kind = "gatewaydnsmodifier-deleted"
+
+	// GatewayDNSModifierUpdated is the type of announcement emitted when we observe an update to dnsmodifiers.extension.gateway.flomesh.io
+	GatewayDNSModifierUpdated Kind = "gatewaydnsmodifier-updated"
 )
 
 // Announcement is a struct for messages between various components of FSM signaling a need for a change in Sidecar proxy configuration

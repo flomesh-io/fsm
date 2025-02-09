@@ -135,6 +135,8 @@ const (
 	InformerKeyBackendLBPolicy InformerKey = "BackendLBPolicy"
 	// InformerKeyHealthCheckPolicyV1alpha2 is the InformerKey for a HealthCheckPolicy informer
 	InformerKeyHealthCheckPolicyV1alpha2 InformerKey = "HealthCheckPolicy-v1alpha2"
+	// InformerKeyRouteRuleFilterPolicy is the InformerKey for a RouteRuleFilterPolicy informer
+	InformerKeyRouteRuleFilterPolicy InformerKey = "RouteRuleFilterPolicy"
 	// InformerKeyFilter is the InformerKey for a Filter informer
 	InformerKeyFilter InformerKey = "Filter"
 	// InformerKeyListenerFilter is the InformerKey for a ListenerFilter informer
@@ -159,6 +161,8 @@ const (
 	InformerKeyGatewayRequestTermination InformerKey = "Gateway-RequestTermination"
 	// InformerKeyGatewayExternalRateLimit is the InformerKey for a ExternalRateLimit informer
 	InformerKeyGatewayExternalRateLimit InformerKey = "Gateway-ExternalRateLimit"
+	// InformerKeyGatewayDNSModifier is the InformerKey for a DNSModifier informer
+	InformerKeyGatewayDNSModifier InformerKey = "Gateway-DNSModifier"
 
 	// InformerKeyXNetworkAccessControl is the InformerKey for a XNetwork AccessControl informer
 	InformerKeyXNetworkAccessControl InformerKey = "XNetwork-AccessControl"
@@ -255,6 +259,9 @@ const (
 	// BackendLBPoliciesResourceType is the type used to represent the backend lb policies resource
 	BackendLBPoliciesResourceType ResourceType = "backendlbs"
 
+	// RouteRuleFilterPoliciesResourceType is the type used to represent the route filter policies resource
+	RouteRuleFilterPoliciesResourceType ResourceType = "routerulefilters"
+
 	// FiltersResourceType is the type used to represent the filters resource
 	FiltersResourceType ResourceType = "filters"
 
@@ -290,4 +297,7 @@ const (
 
 	// ExternalRateLimitResourceType is the type used to represent the external rate limit resource
 	ExternalRateLimitResourceType ResourceType = "externalratelimits"
+
+	// DNSModifierResourceType is the type used to represent the dns modifier resource
+	DNSModifierResourceType ResourceType = "dnsmodifiers"
 )

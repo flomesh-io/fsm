@@ -62,6 +62,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&CircuitBreakerList{},
 		&ConcurrencyLimit{},
 		&ConcurrencyLimitList{},
+		&DNSModifier{},
+		&DNSModifierList{},
 		&ExternalRateLimit{},
 		&ExternalRateLimitList{},
 		&FaultInjection{},
