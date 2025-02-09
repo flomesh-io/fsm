@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"strings"
 
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
@@ -1357,17 +1358,18 @@ func testFSMGatewayDNSTraffic() {
 	cond := Td.WaitForRepeatedSuccess(func() bool {
 		result := Td.LocalDIGDNSRequest(dnsReq)
 
+		response := strings.TrimSpace(result.Response)
 		if result.Err != nil {
-			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, result.Response, result.Err)
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, response, result.Err)
 			return false
 		}
 
-		if result.Response == "10.43.0.1" {
-			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, result.Response)
+		if response == "10.43.0.1" {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, response)
 			return true
 		}
 
-		Td.T.Logf("> (%s) DNS req failed, expect: 10.43.0.1, response: %s", srcToDestStr, result.Response)
+		Td.T.Logf("> (%s) DNS req failed, expect: 10.43.0.1, response: %q", srcToDestStr, response)
 		return false
 	}, 5, Td.ReqSuccessTimeout)
 
