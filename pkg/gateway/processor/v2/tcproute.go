@@ -43,19 +43,14 @@ func (c *ConfigGenerator) processTCPRoutes() []fgwv2.Resource {
 			gwutils.ToSlicePtr(tcpRoute.Status.Parents),
 		)
 
-		if c.ignoreTCPRoute(tcpRoute, rsh) {
+		if parentRef := c.getTCPRouteParentRefToGateway(tcpRoute, rsh); parentRef == nil {
 			continue
-		}
+		} else {
+			holder := rsh.StatusUpdateFor(*parentRef)
 
-		holder := rsh.StatusUpdateFor(
-			gwv1.ParentReference{
-				Namespace: ptr.To(gwv1.Namespace(c.gateway.Namespace)),
-				Name:      gwv1.ObjectName(c.gateway.Name),
-			},
-		)
-
-		if t2 := c.toV2TCPRoute(tcpRoute, holder); t2 != nil {
-			routes = append(routes, t2)
+			if t2 := c.toV2TCPRoute(tcpRoute, holder); t2 != nil {
+				routes = append(routes, t2)
+			}
 		}
 	}
 
@@ -128,8 +123,48 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	return backendRefs
 }
 
-func (c *ConfigGenerator) ignoreTCPRoute(tcpRoute *gwv1alpha2.TCPRoute, rsh status.RouteStatusObject) bool {
+func (c *ConfigGenerator) toV2TCPRouteFilters(udpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
+	var filters []fgwv2.NonHTTPRouteFilter
+
+	for _, filterRef := range gwutils.SortFilterRefs(filterRefs) {
+		filter := gwutils.FilterRefToFilter(c.client, udpRoute, filterRef)
+		if filter == nil {
+			continue
+		}
+
+		filterType := filter.Spec.Type
+		filters = append(filters, fgwv2.NonHTTPRouteFilter{
+			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
+			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
+			Key:             uuid.NewString(),
+			Priority:        ptr.Deref(filterRef.Priority, 100),
+		})
+
+		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
+		if definition == nil {
+			continue
+		}
+
+		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
+		if filterProtocol != extv1alpha1.FilterProtocolTCP {
+			continue
+		}
+
+		if c.filters[filterProtocol] == nil {
+			c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
+		}
+		if _, ok := c.filters[filterProtocol][filterType]; !ok {
+			c.filters[filterProtocol][filterType] = definition.Spec.Script
+		}
+	}
+
+	return filters
+}
+
+func (c *ConfigGenerator) getTCPRouteParentRefToGateway(tcpRoute *gwv1alpha2.TCPRoute, rsh status.RouteStatusObject) *gwv1.ParentReference {
 	for _, parentRef := range tcpRoute.Spec.ParentRefs {
+		parentRef := parentRef
+
 		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
 			continue
 		}
@@ -168,50 +203,12 @@ func (c *ConfigGenerator) ignoreTCPRoute(tcpRoute *gwv1alpha2.TCPRoute, rsh stat
 					continue
 				}
 
-				return false
+				return &parentRef
 			case gwv1.TCPProtocolType:
-				return false
+				return &parentRef
 			}
 		}
 	}
 
-	return true
-}
-
-func (c *ConfigGenerator) toV2TCPRouteFilters(udpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
-	var filters []fgwv2.NonHTTPRouteFilter
-
-	for _, filterRef := range gwutils.SortFilterRefs(filterRefs) {
-		filter := gwutils.FilterRefToFilter(c.client, udpRoute, filterRef)
-		if filter == nil {
-			continue
-		}
-
-		filterType := filter.Spec.Type
-		filters = append(filters, fgwv2.NonHTTPRouteFilter{
-			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
-			ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
-			Key:             uuid.NewString(),
-			Priority:        ptr.Deref(filterRef.Priority, 100),
-		})
-
-		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
-		if definition == nil {
-			continue
-		}
-
-		filterProtocol := ptr.Deref(definition.Spec.Protocol, extv1alpha1.FilterProtocolHTTP)
-		if filterProtocol != extv1alpha1.FilterProtocolTCP {
-			continue
-		}
-
-		if c.filters[filterProtocol] == nil {
-			c.filters[filterProtocol] = map[extv1alpha1.FilterType]string{}
-		}
-		if _, ok := c.filters[filterProtocol][filterType]; !ok {
-			c.filters[filterProtocol][filterType] = definition.Spec.Script
-		}
-	}
-
-	return filters
+	return nil
 }

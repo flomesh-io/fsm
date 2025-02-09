@@ -175,7 +175,7 @@ func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerF
 
 		result = append(result, fgwv2.ListenerFilter{
 			Type:            filterType,
-			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
+			ExtensionConfig: c.resolveFilterConfig(f.Namespace, f.Spec.ConfigRef),
 			Key:             uuid.NewString(),
 		})
 

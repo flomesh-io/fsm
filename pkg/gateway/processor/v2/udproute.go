@@ -44,19 +44,14 @@ func (c *ConfigGenerator) processUDPRoutes() []fgwv2.Resource {
 			gwutils.ToSlicePtr(udpRoute.Status.Parents),
 		)
 
-		if c.ignoreUDPRoute(udpRoute, rsh) {
+		if parentRef := c.getUDPRouteParentRefToGateway(udpRoute, rsh); parentRef == nil {
 			continue
-		}
+		} else {
+			holder := rsh.StatusUpdateFor(*parentRef)
 
-		holder := rsh.StatusUpdateFor(
-			gwv1.ParentReference{
-				Namespace: ptr.To(gwv1.Namespace(c.gateway.Namespace)),
-				Name:      gwv1.ObjectName(c.gateway.Name),
-			},
-		)
-
-		if u2 := c.toV2UDPRoute(udpRoute, holder); u2 != nil {
-			routes = append(routes, u2)
+			if u2 := c.toV2UDPRoute(udpRoute, holder); u2 != nil {
+				routes = append(routes, u2)
+			}
 		}
 	}
 
@@ -125,35 +120,6 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 	return backendRefs
 }
 
-func (c *ConfigGenerator) ignoreUDPRoute(udpRoute *gwv1alpha2.UDPRoute, rsh status.RouteStatusObject) bool {
-	for _, parentRef := range udpRoute.Spec.ParentRefs {
-		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
-			continue
-		}
-
-		h := rsh.StatusUpdateFor(parentRef)
-
-		if !gwutils.IsEffectiveRouteForParent(rsh, parentRef) {
-			continue
-		}
-
-		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
-		allowedListeners := resolver.GetAllowedListeners(c.gateway)
-		if len(allowedListeners) == 0 {
-			continue
-		}
-
-		for _, listener := range allowedListeners {
-			switch listener.Protocol {
-			case gwv1.UDPProtocolType:
-				return false
-			}
-		}
-	}
-
-	return true
-}
-
 func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
 	var filters []fgwv2.NonHTTPRouteFilter
 
@@ -166,7 +132,7 @@ func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, fil
 		filterType := filter.Spec.Type
 		filters = append(filters, fgwv2.NonHTTPRouteFilter{
 			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
-			ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
+			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 			Key:             uuid.NewString(),
 			Priority:        ptr.Deref(filterRef.Priority, 100),
 		})
@@ -190,4 +156,35 @@ func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, fil
 	}
 
 	return filters
+}
+
+func (c *ConfigGenerator) getUDPRouteParentRefToGateway(udpRoute *gwv1alpha2.UDPRoute, rsh status.RouteStatusObject) *gwv1.ParentReference {
+	for _, parentRef := range udpRoute.Spec.ParentRefs {
+		parentRef := parentRef
+
+		if !gwutils.IsRefToGateway(parentRef, client.ObjectKeyFromObject(c.gateway)) {
+			continue
+		}
+
+		h := rsh.StatusUpdateFor(parentRef)
+
+		if !gwutils.IsEffectiveRouteForParent(rsh, parentRef) {
+			continue
+		}
+
+		resolver := gwutils.NewGatewayListenerResolver(&DummyGatewayListenerConditionProvider{}, c.client, h)
+		allowedListeners := resolver.GetAllowedListeners(c.gateway)
+		if len(allowedListeners) == 0 {
+			continue
+		}
+
+		for _, listener := range allowedListeners {
+			switch listener.Protocol {
+			case gwv1.UDPProtocolType:
+				return &parentRef
+			}
+		}
+	}
+
+	return nil
 }

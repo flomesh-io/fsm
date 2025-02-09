@@ -43,12 +43,12 @@ func (c *ConfigGenerator) resolveFilterDefinition(filterType extv1alpha1.FilterT
 }
 
 //gocyclo:ignore
-func (c *ConfigGenerator) resolveFilterConfig(ref *gwv1.LocalObjectReference) map[string]interface{} {
+func (c *ConfigGenerator) resolveFilterConfig(ns string, ref *gwv1.LocalObjectReference) map[string]interface{} {
 	if ref == nil {
 		return map[string]interface{}{}
 	}
 
-	key := types.NamespacedName{Namespace: c.gateway.Namespace, Name: string(ref.Name)}
+	key := types.NamespacedName{Namespace: ns, Name: string(ref.Name)}
 	ctx := context.Background()
 
 	switch ref.Kind {

@@ -216,7 +216,7 @@ type TCPRouteSpec struct {
 
 type TCPRouteRule struct {
 	Name        *gwv1.SectionName    `json:"name,omitempty"`
-	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" copier:"-" hash:"set"`
 	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
@@ -253,7 +253,7 @@ type UDPRouteSpec struct {
 
 type UDPRouteRule struct {
 	Name        *gwv1.SectionName    `json:"name,omitempty"`
-	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
+	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" copier:"-" hash:"set"`
 	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
 
