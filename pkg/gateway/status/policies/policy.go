@@ -169,6 +169,10 @@ func (p *PolicyStatusUpdate) Mutate(obj client.Object) client.Object {
 		policy := o.DeepCopy()
 		policy.Status.Ancestors = newPolicyAncestorStatuses
 		return policy
+	case *gwpav1alpha2.RouteRuleFilterPolicy:
+		policy := o.DeepCopy()
+		policy.Status.Ancestors = newPolicyAncestorStatuses
+		return policy
 	default:
 		panic(fmt.Sprintf("Unsupported %T object %s/%s in status mutator", obj, p.fullName.Namespace, p.fullName.Name))
 	}
