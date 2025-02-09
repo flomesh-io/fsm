@@ -1329,6 +1329,7 @@ func testFSMGatewayDNSTraffic() {
 			},
 			Rules: []gwv1alpha2.UDPRouteRule{
 				{
+					Name: ptr.To(gwv1.SectionName("dns")),
 					BackendRefs: []gwv1alpha2.BackendRef{
 						{
 							BackendObjectReference: gwv1.BackendObjectReference{
@@ -1341,7 +1342,7 @@ func testFSMGatewayDNSTraffic() {
 			},
 		},
 	}
-	_, err := Td.CreateGatewayAPIUDPRoute(nsGateway, udpRoute)
+	_, err := Td.CreateGatewayAPIUDPRoute(nsKubeSystem, udpRoute)
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Testing UDPRoute - DIG DNS query")
