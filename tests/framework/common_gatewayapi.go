@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
+
+	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
+
 	gwv1beta1 "sigs.k8s.io/gateway-api/apis/v1beta1"
 
 	gwv1alpha2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
@@ -81,4 +85,34 @@ func (td *FsmTestData) CreateGatewayAPIUDPRoute(ns string, r gwv1alpha2.UDPRoute
 	}
 
 	return hr, nil
+}
+
+// CreateGatewayAPIDNSModifier Creates a DNSModifier config
+func (td *FsmTestData) CreateGatewayAPIDNSModifier(ns string, r extv1alpha1.DNSModifier) (*extv1alpha1.DNSModifier, error) {
+	dm, err := td.ExtensionClient.ExtensionV1alpha1().DNSModifiers(ns).Create(context.Background(), &r, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DNSModifier: %w", err)
+	}
+
+	return dm, nil
+}
+
+// CreateGatewayAPIFilter Creates a Filter
+func (td *FsmTestData) CreateGatewayAPIFilter(ns string, r extv1alpha1.Filter) (*extv1alpha1.Filter, error) {
+	f, err := td.ExtensionClient.ExtensionV1alpha1().Filters(ns).Create(context.Background(), &r, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Filter: %w", err)
+	}
+
+	return f, nil
+}
+
+// CreateGatewayAPIRouteRuleFilterPolicy Creates a RouteRuleFilterPolicy
+func (td *FsmTestData) CreateGatewayAPIRouteRuleFilterPolicy(ns string, r gwpav1alpha2.RouteRuleFilterPolicy) (*gwpav1alpha2.RouteRuleFilterPolicy, error) {
+	p, err := td.PolicyAttachmentClient.GatewayV1alpha2().RouteRuleFilterPolicies(ns).Create(context.Background(), &r, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create RouteRuleFilterPolicy: %w", err)
+	}
+
+	return p, nil
 }

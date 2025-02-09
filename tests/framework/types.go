@@ -5,6 +5,8 @@ import (
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
+	extClientset "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
+	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
 	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/onsi/ginkgo"
@@ -87,10 +89,12 @@ type FsmTestData struct {
 	SmiClients *smiClients
 
 	// FSM's API clients
-	PolicyClient     *versioned.Clientset
-	ConfigClient     *versioned2.Clientset
-	GatewayAPIClient gatewayApiClientset.Interface
-	NsigClient       nsigClientset.Interface
+	PolicyClient           *versioned.Clientset
+	ConfigClient           *versioned2.Clientset
+	GatewayAPIClient       gatewayApiClientset.Interface
+	NsigClient             nsigClientset.Interface
+	ExtensionClient        extClientset.Interface
+	PolicyAttachmentClient policyAttachmentClientset.Interface
 
 	ClusterProvider *cluster.Provider // provider, used when kindCluster is used
 
