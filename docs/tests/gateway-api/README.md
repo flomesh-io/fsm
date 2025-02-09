@@ -223,6 +223,12 @@ spec:
       port: 4000
       name: udp
     - protocol: UDP
+      port: 5053
+      name: dns
+      allowedRoutes:
+        namespaces:
+          from: All
+    - protocol: UDP
       port: 4001
       name: udp-cross
       allowedRoutes:

@@ -25,15 +25,17 @@ import (
 )
 
 const (
-	nsGateway   = "test"
-	nsHTTPRoute = "http-route"
-	nsHTTPSvc   = "http"
-	nsGRPCRoute = "grpc-route"
-	nsGRPCSvc   = "grpc"
-	nsTCPRoute  = "tcp-route"
-	nsTCPSvc    = "tcp"
-	nsUDPRoute  = "udp-route"
-	nsUDPSvc    = "udp"
+	nsGateway    = "test"
+	nsHTTPRoute  = "http-route"
+	nsHTTPSvc    = "http"
+	nsGRPCRoute  = "grpc-route"
+	nsGRPCSvc    = "grpc"
+	nsTCPRoute   = "tcp-route"
+	nsTCPSvc     = "tcp"
+	nsUDPRoute   = "udp-route"
+	nsUDPSvc     = "udp"
+	nsKubeSystem = "kube-system"
+	nsDefault    = "default"
 )
 
 var _ = FSMDescribe("Test traffic routing by FSM Gateway with trafficInterceptionMode(PodLevel)",
@@ -96,6 +98,7 @@ func testGatewayAPI(trafficInterceptionMode string) {
 	testFSMGatewayTCPTrafficCrossNamespace()
 	testFSMGatewayUDPTrafficSameNamespace()
 	testFSMGatewayUDPTrafficCrossNamespace()
+	testFSMGatewayDNSTraffic()
 }
 
 func testDeployFSMGateway() {
@@ -256,6 +259,16 @@ fsm:
 					Port:     4000,
 					Name:     "udp",
 					Protocol: gwv1.UDPProtocolType,
+				},
+				{
+					Port:     5053,
+					Name:     "dns",
+					Protocol: gwv1.UDPProtocolType,
+					AllowedRoutes: &gwv1.AllowedRoutes{
+						Namespaces: &gwv1.RouteNamespaces{
+							From: ptr.To(gwv1.NamespacesFromAll),
+						},
+					},
 				},
 				{
 					Port:     4001,
@@ -1296,6 +1309,67 @@ func testFSMGatewayUDPTrafficSameNamespace() {
 	}, 5, Td.ReqSuccessTimeout)
 
 	Expect(cond).To(BeTrue(), "Failed testing UDP traffic from echo/nc(localhost) to destination %s:%d", udpReq.DestinationHost, udpReq.DestinationPort)
+}
+
+func testFSMGatewayDNSTraffic() {
+	By("Creating UDPRoute for exposing DNS service")
+	udpRoute := gwv1alpha2.UDPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: nsKubeSystem,
+			Name:      "udp-dns-1",
+		},
+		Spec: gwv1alpha2.UDPRouteSpec{
+			CommonRouteSpec: gwv1.CommonRouteSpec{
+				ParentRefs: []gwv1.ParentReference{
+					{
+						Name: "test-gw-1",
+						Port: portPtr(5053),
+					},
+				},
+			},
+			Rules: []gwv1alpha2.UDPRouteRule{
+				{
+					BackendRefs: []gwv1alpha2.BackendRef{
+						{
+							BackendObjectReference: gwv1.BackendObjectReference{
+								Name: "kube-dns",
+								Port: portPtr(53),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err := Td.CreateGatewayAPIUDPRoute(nsGateway, udpRoute)
+	Expect(err).NotTo(HaveOccurred())
+
+	By("Testing UDPRoute - DIG DNS query")
+	dnsReq := DNSRequestDef{
+		DNSServer: "udptest.localhost",
+		DNSPort:   5053,
+		QueryHost: "kubernetes.default.svc.cluster.local",
+	}
+	srcToDestStr := fmt.Sprintf("%s -> %s:%d", "client", dnsReq.DNSServer, dnsReq.DNSPort)
+
+	cond := Td.WaitForRepeatedSuccess(func() bool {
+		result := Td.LocalDIGDNSRequest(dnsReq)
+
+		if result.Err != nil {
+			Td.T.Logf("> (%s) DNS req failed, response: %s, err: %s", srcToDestStr, result.Response, result.Err)
+			return false
+		}
+
+		if result.Response == "10.43.0.1" {
+			Td.T.Logf("> (%s) DNS req succeeded, response: %s", srcToDestStr, result.Response)
+			return true
+		}
+
+		Td.T.Logf("> (%s) DNS req failed, expect: 10.43.0.1, response: %s", srcToDestStr, result.Response)
+		return false
+	}, 5, Td.ReqSuccessTimeout)
+
+	Expect(cond).To(BeTrue(), "Failed testing DNS traffic from dig(localhost) to destination %s:%d", dnsReq.DNSServer, dnsReq.DNSPort)
 }
 
 func testFSMGatewayUDPTrafficCrossNamespace() {

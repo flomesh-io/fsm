@@ -102,6 +102,15 @@ type UDPRequestDef struct {
 	Message string
 }
 
+// DNSRequestDef defines a DNS request intent
+type DNSRequestDef struct {
+	// The DNS server host (FQDN or IP address) and port the request is directed to
+	DNSServer string
+	DNSPort   int32
+	// The DNS query host
+	QueryHost string
+}
+
 // HTTPRequestResult represents results of an HTTPRequest call
 type HTTPRequestResult struct {
 	StatusCode int
@@ -351,6 +360,26 @@ func (td *FsmTestData) LocalGRPCRequest(req GRPCRequestDef) GRPCRequestResult {
 // LocalUDPRequest runs a synchronous UDP request to run the UDPRequestDef and return a UDPRequestResult
 func (td *FsmTestData) LocalUDPRequest(req UDPRequestDef) UDPRequestResult {
 	stdout, stderr, err := td.RunLocal("echo", fmt.Sprintf(`"%s"`, req.Message), "|", "nc", "-4u", "-w1", req.DestinationHost, strconv.Itoa(req.DestinationPort))
+	if err != nil {
+		// Error codes from the execution come through err
+		return UDPRequestResult{
+			stdout.String(),
+			fmt.Errorf("exec err: %w | stderr: %s", err, stderr.String()),
+		}
+	}
+	if stderr != nil {
+		// no error from execution and proper exit code, we got some stderr though
+		td.T.Logf("[warn] Stderr: %v", stderr.String())
+	}
+
+	return UDPRequestResult{
+		stdout.String(),
+		nil,
+	}
+}
+
+func (td *FsmTestData) LocalDIGDNSRequest(req DNSRequestDef) UDPRequestResult {
+	stdout, stderr, err := td.RunLocal("dig", fmt.Sprintf("@%s", req.DNSServer), "-p", fmt.Sprintf("%d", req.DNSPort), req.QueryHost, "+short")
 	if err != nil {
 		// Error codes from the execution come through err
 		return UDPRequestResult{
