@@ -155,6 +155,7 @@ type HTTPRouteSpec struct {
 	Rules           []HTTPRouteRule `json:"rules,omitempty" copier:"-" hash:"set"`
 }
 type HTTPRouteRule struct {
+	Name               *gwv1.SectionName        `json:"name,omitempty"`
 	Matches            []gwv1.HTTPRouteMatch    `json:"matches,omitempty" hash:"set"`
 	Filters            []HTTPRouteFilter        `json:"filters,omitempty" hash:"set"`
 	BackendRefs        []HTTPBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
@@ -193,6 +194,7 @@ type GRPCRouteSpec struct {
 }
 
 type GRPCRouteRule struct {
+	Name               *gwv1.SectionName        `json:"name,omitempty"`
 	Matches            []gwv1.GRPCRouteMatch    `json:"matches,omitempty" hash:"set"`
 	Filters            []GRPCRouteFilter        `json:"filters,omitempty" hash:"set"`
 	BackendRefs        []GRPCBackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
@@ -213,6 +215,7 @@ type TCPRouteSpec struct {
 }
 
 type TCPRouteRule struct {
+	Name        *gwv1.SectionName    `json:"name,omitempty"`
 	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
@@ -232,7 +235,8 @@ type TLSRouteSpec struct {
 }
 
 type TLSRouteRule struct {
-	BackendRefs []BackendRef `json:"backendRefs,omitempty" hash:"set"`
+	Name        *gwv1.SectionName `json:"name,omitempty"`
+	BackendRefs []BackendRef      `json:"backendRefs,omitempty" hash:"set"`
 }
 
 // ---
@@ -248,6 +252,7 @@ type UDPRouteSpec struct {
 }
 
 type UDPRouteRule struct {
+	Name        *gwv1.SectionName    `json:"name,omitempty"`
 	Filters     []NonHTTPRouteFilter `json:"filters,omitempty" hash:"set"`
 	BackendRefs []BackendRef         `json:"backendRefs,omitempty" copier:"-" hash:"set"`
 }
