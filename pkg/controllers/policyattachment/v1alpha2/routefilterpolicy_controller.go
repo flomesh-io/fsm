@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -87,22 +85,6 @@ func addRouteRuleFilterPolicyIndexer(ctx context.Context, mgr manager.Manager) e
 		}
 
 		return targets
-	}); err != nil {
-		return err
-	}
-
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &gwpav1alpha2.RouteRuleFilterPolicy{}, constants.FilterRouteRuleFilterPolicyAttachmentIndex, func(obj client.Object) []string {
-		policy := obj.(*gwpav1alpha2.RouteRuleFilterPolicy)
-
-		var filters []string
-		for _, filterRef := range policy.Spec.FilterRefs {
-			filters = append(filters, types.NamespacedName{
-				Namespace: policy.Namespace,
-				Name:      string(filterRef.Name),
-			}.String())
-		}
-
-		return filters
 	}); err != nil {
 		return err
 	}
