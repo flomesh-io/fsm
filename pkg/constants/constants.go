@@ -584,7 +584,6 @@ const (
 	CrossNamespaceBackendNamespaceUDPRouteIndex  = "crossNamespaceBackendNamespaceUDPRouteIndex"
 	ServicePolicyAttachmentIndex                 = "servicePolicyAttachmentIndex"
 	RouteRouteRuleFilterPolicyAttachmentIndex    = "routeRouteRuleFilterPolicyAttachmentIndex"
-	FilterRouteRuleFilterPolicyAttachmentIndex   = "filterRouteRuleFilterPolicyAttachmentIndex"
 	SecretBackendTLSPolicyIndex                  = "secretBackendTLSPolicyIndex"
 	ConfigmapBackendTLSPolicyIndex               = "cmBackendTLSPolicyIndex"
 	ExtensionFilterHTTPRouteIndex                = "filterHTTPRouteIndex"
