@@ -5,9 +5,10 @@ import (
 
 	nsigClientset "github.com/flomesh-io/fsm/pkg/gen/client/namespacedingress/clientset/versioned"
 
+	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
+
 	extClientset "github.com/flomesh-io/fsm/pkg/gen/client/extension/clientset/versioned"
 	policyAttachmentClientset "github.com/flomesh-io/fsm/pkg/gen/client/policyattachment/clientset/versioned"
-	gatewayApiClientset "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned"
 
 	"github.com/onsi/ginkgo"
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

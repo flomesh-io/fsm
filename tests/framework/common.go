@@ -249,6 +249,8 @@ func (td *FsmTestData) AreRegistryCredsPresent() bool {
 
 // InitTestData Initializes the test structures
 // Called by Ginkgo BeforeEach
+//
+//gocyclo:ignore
 func (td *FsmTestData) InitTestData(t GinkgoTInterface) error {
 	td.T = t
 
