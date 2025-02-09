@@ -1322,8 +1322,9 @@ func testFSMGatewayDNSTraffic() {
 			CommonRouteSpec: gwv1.CommonRouteSpec{
 				ParentRefs: []gwv1.ParentReference{
 					{
-						Name: "test-gw-1",
-						Port: portPtr(5053),
+						Namespace: namespacePtr(nsGateway),
+						Name:      "test-gw-1",
+						Port:      portPtr(5053),
 					},
 				},
 			},
