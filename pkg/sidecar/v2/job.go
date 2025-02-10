@@ -1,20 +1,20 @@
 package v2
 
-type xnetworkConfigJob struct {
+type xnetworkMeshJob struct {
 	done   chan struct{}
 	server *Server
 }
 
-func (job *xnetworkConfigJob) GetDoneCh() <-chan struct{} {
+func (job *xnetworkMeshJob) GetDoneCh() <-chan struct{} {
 	return job.done
 }
 
-func (job *xnetworkConfigJob) Run() {
+func (job *xnetworkMeshJob) Run() {
 	defer close(job.done)
 	job.server.doConfigAcls()
 }
 
-func (job *xnetworkConfigJob) JobName() string {
+func (job *xnetworkMeshJob) JobName() string {
 	return "fsm-xnetwork-config-job"
 }
 

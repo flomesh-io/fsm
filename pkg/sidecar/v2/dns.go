@@ -61,9 +61,9 @@ func (s *Server) setupDnsNat(dnsAddr string) {
 	if cfgVal, err = maps.GetXNetCfg(maps.SysMesh); err != nil {
 		log.Fatal().Err(err).Msg(`failed to get xnet config`)
 	} else {
-		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPProtoAllowAll)
-		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPProtoAllowNatEscape)
-		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPNatByPortOn)
+		cfgVal.IPv4().Clear(maps.CfgFlagOffsetUDPProtoAllowAll)
+		cfgVal.IPv4().Set(maps.CfgFlagOffsetUDPProtoAllowNatEscape)
+		cfgVal.IPv4().Set(maps.CfgFlagOffsetUDPNatByPortOn)
 		if err = maps.SetXNetCfg(maps.SysMesh, cfgVal); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store xnet config`)
 		}
@@ -86,9 +86,9 @@ func (s *Server) resetDnsNat() {
 	if cfgVal, err := maps.GetXNetCfg(maps.SysMesh); err != nil {
 		log.Fatal().Err(err).Msg(`failed to get xnet config`)
 	} else {
-		cfgVal.Set(maps.CfgFlagOffsetIPv4UDPProtoAllowAll)
-		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPProtoAllowNatEscape)
-		cfgVal.Clear(maps.CfgFlagOffsetIPv4UDPNatByPortOn)
+		cfgVal.IPv4().Set(maps.CfgFlagOffsetUDPProtoAllowAll)
+		cfgVal.IPv4().Clear(maps.CfgFlagOffsetUDPProtoAllowNatEscape)
+		cfgVal.IPv4().Clear(maps.CfgFlagOffsetUDPNatByPortOn)
 		if err = maps.SetXNetCfg(maps.SysMesh, cfgVal); err != nil {
 			log.Fatal().Err(err).Msg(`failed to store xnet config`)
 		}
