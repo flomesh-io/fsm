@@ -31,8 +31,8 @@ func (s *Server) BroadcastListener(stopCh <-chan struct{}) {
 			// Avoid data omission
 			reconfirm = true
 		case <-slidingTimer.C:
-			newJob := func() *xnetworkConfigJob {
-				return &xnetworkConfigJob{
+			newJob := func() *xnetworkMeshJob {
+				return &xnetworkMeshJob{
 					done:   make(chan struct{}),
 					server: s,
 				}
