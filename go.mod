@@ -39,7 +39,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/hashicorp/vault v1.18.1
-	github.com/hashicorp/vault/api v1.15.0
+	github.com/hashicorp/vault/api v1.16.0
 	github.com/hashicorp/vault/sdk v0.14.0
 	github.com/hudl/fargo v1.4.0
 	github.com/jinzhu/copier v0.4.0
