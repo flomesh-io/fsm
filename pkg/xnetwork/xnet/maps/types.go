@@ -89,37 +89,45 @@ type NatVal struct {
 }
 
 const (
-	CfgFlagOffsetIPv6ProtoDenyAll uint8 = iota
-	CfgFlagOffsetIPv4TCPProtoDenyAll
-	CfgFlagOffsetIPv4TCPProtoAllowAll
-	CfgFlagOffsetIPv4TCPProtoAllowNatEscape
-	CfgFlagOffsetIPv4UDPProtoDenyAll
-	CfgFlagOffsetIPv4UDPProtoAllowAll
-	CfgFlagOffsetIPv4UDPProtoAllowNatEscape
-	CfgFlagOffsetIPv4OTHProtoDenyAll
-	CfgFlagOffsetIPv4TCPNatByIpPortOn
-	CfgFlagOffsetIPv4TCPNatByIpOn
-	CfgFlagOffsetIPv4TCPNatAllOff
-	CfgFlagOffsetIPv4TCPNatOptOn
-	CfgFlagOffsetIPv4TCPNatOptWithLocalAddrOn
-	CfgFlagOffsetIPv4TCPNatOptWithLocalPortOn
-	CfgFlagOffsetIPv4UDPNatByIpPortOn
-	CfgFlagOffsetIPv4UDPNatByIpOn
-	CfgFlagOffsetIPv4UDPNatByPortOn
-	CfgFlagOffsetIPv4UDPNatAllOff
-	CfgFlagOffsetIPv4UDPNatOptOn
-	CfgFlagOffsetIPv4UDPNatOptWithLocalAddrOn
-	CfgFlagOffsetIPv4UDPNatOptWithLocalPortOn
-	CfgFlagOffsetIPv4AclCheckOn
-	CfgFlagOffsetIPv4TraceHdrOn
-	CfgFlagOffsetIPv4TraceNatOn
-	CfgFlagOffsetIPv4TraceOptOn
-	CfgFlagOffsetIPv4TraceAclOn
-	CfgFlagOffsetIPv4TraceFlowOn
-	CfgFlagOffsetIPv4TraceByIpOn
-	CfgFlagOffsetIPv4TraceByPortOn
+	CfgFlagOffsetDenyAll uint8 = iota
+	CfgFlagOffsetAllowAll
+	CfgFlagOffsetTCPProtoDenyAll
+	CfgFlagOffsetTCPProtoAllowAll
+	CfgFlagOffsetTCPProtoAllowNatEscape
+	CfgFlagOffsetUDPProtoDenyAll
+	CfgFlagOffsetUDPProtoAllowAll
+	CfgFlagOffsetUDPProtoAllowNatEscape
+	CfgFlagOffsetOTHProtoDenyAll
+	CfgFlagOffsetTCPNatByIpPortOn
+	CfgFlagOffsetTCPNatByIpOn
+	CfgFlagOffsetTCPNatAllOff
+	CfgFlagOffsetTCPNatOptOn
+	CfgFlagOffsetTCPNatOptWithLocalAddrOn
+	CfgFlagOffsetTCPNatOptWithLocalPortOn
+	CfgFlagOffsetUDPNatByIpPortOn
+	CfgFlagOffsetUDPNatByIpOn
+	CfgFlagOffsetUDPNatByPortOn
+	CfgFlagOffsetUDPNatAllOff
+	CfgFlagOffsetUDPNatOptOn
+	CfgFlagOffsetUDPNatOptWithLocalAddrOn
+	CfgFlagOffsetUDPNatOptWithLocalPortOn
+	CfgFlagOffsetAclCheckOn
+	CfgFlagOffsetTraceHdrOn
+	CfgFlagOffsetTraceNatOn
+	CfgFlagOffsetTraceOptOn
+	CfgFlagOffsetTraceAclOn
+	CfgFlagOffsetTraceFlowOn
+	CfgFlagOffsetTraceByIpOn
+	CfgFlagOffsetTraceByPortOn
 	CfgFlagMax
 )
 
+type FlagT struct {
+	Flags uint64
+}
+
 type CfgKey uint32
-type CfgVal struct{ Flags uint64 }
+type CfgVal struct {
+	Ipv4 FlagT
+	Ipv6 FlagT
+}

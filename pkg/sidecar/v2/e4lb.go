@@ -277,7 +277,7 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 
 func (s *Server) setupE4LBServiceNat(vip string, vport uint16, rip string, rport uint16) error {
 	natKey := new(maps.NatKey)
-	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
+	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(vip))
 	natKey.Dport = util.HostToNetShort(vport)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	natVal := new(maps.NatVal)
@@ -294,7 +294,7 @@ func (s *Server) setupE4LBServiceNat(vip string, vport uint16, rip string, rport
 
 func (s *Server) unsetE4LBServiceNat(vip string, vport uint16) error {
 	natKey := new(maps.NatKey)
-	natKey.Daddr[0], _ = util.IPv4ToInt(net.ParseIP(vip))
+	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(vip))
 	natKey.Dport = util.HostToNetShort(vport)
 	natKey.Proto = uint8(maps.IPPROTO_TCP)
 	for _, tcDir := range []maps.TcDir{maps.TC_DIR_IGR, maps.TC_DIR_EGR} {

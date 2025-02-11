@@ -33,22 +33,30 @@ func SetXNetCfg(sysId SysID, cfgVal *CfgVal) error {
 	}
 }
 
-func (t *CfgVal) Get(bit uint8) uint8 {
+func (t *CfgVal) IPv4() *FlagT {
+	return &t.Ipv4
+}
+
+func (t *CfgVal) IPv6() *FlagT {
+	return &t.Ipv6
+}
+
+func (t *FlagT) Get(bit uint8) uint8 {
 	bitMask := t.Flags >> bit
 	return uint8(bitMask & 0x1)
 }
 
-func (t *CfgVal) Set(bit uint8) {
+func (t *FlagT) Set(bit uint8) {
 	bitMask := uint64(1 << bit)
 	t.Flags |= bitMask
 }
 
-func (t *CfgVal) IsSet(bit uint8) bool {
+func (t *FlagT) IsSet(bit uint8) bool {
 	bitMask := t.Flags >> bit
 	return uint8(bitMask&0x1) == 1
 }
 
-func (t *CfgVal) Clear(bit uint8) {
+func (t *FlagT) Clear(bit uint8) {
 	bitMask := uint64(1 << bit)
 	t.Flags &= ^bitMask
 }
