@@ -56,6 +56,11 @@ spec:
               service:
                 description: Service defines the name of the service.
                 properties:
+                  hosts:
+                    description: Hosts defines aliases for the given service.
+                    items:
+                      type: string
+                    type: array
                   name:
                     description: Name defines the name of the source for the given
                       Kind.

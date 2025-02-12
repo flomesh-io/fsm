@@ -12,8 +12,8 @@ const (
 )
 
 const (
-	BPF_F_INGRESS = 0
-	BPF_F_EGRESS  = 1
+	BPF_F_EGRESS  = 0
+	BPF_F_INGRESS = 1
 )
 
 type SysID uint32
