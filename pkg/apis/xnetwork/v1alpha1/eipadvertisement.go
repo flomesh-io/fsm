@@ -43,6 +43,10 @@ type ElbServiceSpec struct {
 	// Namespace defines the namespace for the given source.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
+
+	// Hosts defines aliases for the given service.
+	// +optional
+	Hosts []string `json:"hosts,omitempty"`
 }
 
 // EIPAdvertisementList defines the list of EIPAdvertisement objects.

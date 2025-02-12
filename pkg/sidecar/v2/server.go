@@ -41,9 +41,14 @@ func NewXNetConfigServer(ctx context.Context,
 }
 
 func (s *Server) Start() error {
-	if err := s.loadNatEntries(); err != nil {
-		log.Error().Msg(err.Error())
+	for {
+		if err := s.loadNatEntries(); err != nil {
+			log.Warn().Msg(err.Error())
+		} else {
+			break
+		}
 	}
+
 	s.ready = true
 	return nil
 }

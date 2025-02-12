@@ -47,6 +47,7 @@ require (
 	github.com/jstemmer/go-junit-report v1.0.0
 	github.com/k3d-io/k3d/v5 v5.8.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/libp2p/go-netroute v0.2.2
 	github.com/matm/gocov-html v1.4.0
 	github.com/mdlayher/arp v0.0.0-20220512170110-6706a2966875
 	github.com/mdlayher/ethernet v0.0.0-20220221185849-529eae5b6118
@@ -62,6 +63,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus-community/pro-bing v0.6.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.62.0
 	github.com/rs/zerolog v1.33.0
@@ -323,6 +325,7 @@ require (
 	github.com/google/go-metrics-stackdriver v0.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/google/safetext v0.0.0-20220905092116-b49f7bc46da2 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
