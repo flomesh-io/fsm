@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/google/uuid"
-
 	"k8s.io/utils/ptr"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -191,14 +189,15 @@ func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerF
 	})
 
 	result := make([]fgwv2.ListenerFilter, 0)
-	for _, f := range filters {
+	for i, f := range filters {
 		filterType := f.Spec.Type
 
-		result = append(result, fgwv2.ListenerFilter{
+		f2 := fgwv2.ListenerFilter{
 			Type:            filterType,
 			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
-			Key:             uuid.NewString(),
-		})
+		}
+		f2.Key = filterKey(c.gateway, f2, i)
+		result = append(result, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeListener, f.Spec.DefinitionRef)
 		if definition == nil {

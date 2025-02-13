@@ -3,8 +3,6 @@ package v2
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -128,7 +126,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 
 func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []fgwv2.GRPCRouteFilter {
 	filters := make([]fgwv2.GRPCRouteFilter, 0)
-	for _, f := range routeFilters {
+	for i, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.GRPCRouteFilterRequestMirror:
@@ -137,13 +135,14 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 					continue
 				}
 
-				filters = append(filters, fgwv2.GRPCRouteFilter{
+				f2 := fgwv2.GRPCRouteFilter{
 					Type: gwv1.GRPCRouteFilterRequestMirror,
 					RequestMirror: &fgwv2.HTTPRequestMirrorFilter{
 						BackendRef: fgwv2.NewBackendRef(svcPort.String()),
 					},
-					Key: uuid.NewString(),
-				})
+				}
+				f2.Key = filterKey(grpcRoute, f2, i)
+				filters = append(filters, f2)
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
 			filter := gwutils.ExtensionRefToFilter(c.client, grpcRoute, f.ExtensionRef)
@@ -152,11 +151,12 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 			}
 
 			filterType := filter.Spec.Type
-			filters = append(filters, fgwv2.GRPCRouteFilter{
+			f2 := fgwv2.GRPCRouteFilter{
 				Type:            gwv1.GRPCRouteFilterType(filterType),
 				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
-				Key:             uuid.NewString(),
-			})
+			}
+			f2.Key = filterKey(grpcRoute, f2, i)
+			filters = append(filters, f2)
 
 			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
 			if definition == nil {
@@ -175,11 +175,12 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				c.filters[filterProtocol][filterType] = definition.Spec.Script
 			}
 		default:
-			f2 := fgwv2.GRPCRouteFilter{Key: uuid.NewString()}
+			f2 := fgwv2.GRPCRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
 				log.Error().Msgf("Failed to copy GRPCRouteFilter: %v", err)
 				continue
 			}
+			f2.Key = filterKey(grpcRoute, f2, i)
 			filters = append(filters, f2)
 		}
 	}

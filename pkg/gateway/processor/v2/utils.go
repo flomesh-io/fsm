@@ -1,7 +1,11 @@
 package v2
 
 import (
+	"fmt"
 	"net"
+
+	"github.com/flomesh-io/fsm/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
@@ -45,4 +49,9 @@ func toFGWBackendTargets(endpointSet map[endpointContext]struct{}) []fgwv2.Backe
 
 func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
 	return k8s.IsHeadlessService(service) && len(service.Spec.Selector) == 0
+}
+
+func filterKey(route client.Object, filter any, index int) string {
+	key := fmt.Sprintf("%s-%s-%d", client.ObjectKeyFromObject(route).String(), utils.SimpleHash(filter), index)
+	return utils.SimpleHash(key)
 }
