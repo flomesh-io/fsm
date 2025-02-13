@@ -3,8 +3,6 @@ package v2
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -122,7 +120,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 
 func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter) []fgwv2.HTTPRouteFilter {
 	filters := make([]fgwv2.HTTPRouteFilter, 0)
-	for _, f := range routeFilters {
+	for i, f := range routeFilters {
 		f := f
 		switch f.Type {
 		case gwv1.HTTPRouteFilterRequestMirror:
@@ -131,7 +129,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 					continue
 				}
 
-				f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
+				f2 := fgwv2.HTTPRouteFilter{}
 				if err := gwutils.DeepCopy(&f2, &f); err != nil {
 					log.Error().Msgf("Failed to copy RequestMirrorFilter: %v", err)
 					continue
@@ -140,6 +138,8 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				if f2.RequestMirror != nil {
 					f2.RequestMirror.BackendRef = fgwv2.NewBackendRef(svcPort.String())
 				}
+
+				f2.Key = filterKey(httpRoute, f2, i)
 
 				filters = append(filters, f2)
 			}
@@ -150,11 +150,12 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 			}
 
 			filterType := filter.Spec.Type
-			filters = append(filters, fgwv2.HTTPRouteFilter{
+			f2 := fgwv2.HTTPRouteFilter{
 				Type:            gwv1.HTTPRouteFilterType(filterType),
 				ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
-				Key:             uuid.NewString(),
-			})
+			}
+			f2.Key = filterKey(httpRoute, f2, i)
+			filters = append(filters, f2)
 
 			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
 			if definition == nil {
@@ -173,11 +174,12 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				c.filters[filterProtocol][filterType] = definition.Spec.Script
 			}
 		default:
-			f2 := fgwv2.HTTPRouteFilter{Key: uuid.NewString()}
+			f2 := fgwv2.HTTPRouteFilter{}
 			if err := gwutils.DeepCopy(&f2, &f); err != nil {
 				log.Error().Msgf("Failed to copy HTTPRouteFilter: %v", err)
 				continue
 			}
+			f2.Key = filterKey(httpRoute, f2, i)
 			filters = append(filters, f2)
 		}
 	}

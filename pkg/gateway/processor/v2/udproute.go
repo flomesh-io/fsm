@@ -5,8 +5,6 @@ import (
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
-	"github.com/google/uuid"
-
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
 	fgwv2 "github.com/flomesh-io/fsm/pkg/gateway/fgw"
@@ -123,19 +121,20 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
 	var filters []fgwv2.NonHTTPRouteFilter
 
-	for _, filterRef := range gwutils.SortFilterRefs(filterRefs) {
+	for i, filterRef := range gwutils.SortFilterRefs(filterRefs) {
 		filter := gwutils.FilterRefToFilter(c.client, udpRoute, filterRef)
 		if filter == nil {
 			continue
 		}
 
 		filterType := filter.Spec.Type
-		filters = append(filters, fgwv2.NonHTTPRouteFilter{
+		f2 := fgwv2.NonHTTPRouteFilter{
 			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
 			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
-			Key:             uuid.NewString(),
 			Priority:        ptr.Deref(filterRef.Priority, 100),
-		})
+		}
+		f2.Key = filterKey(udpRoute, f2, i)
+		filters = append(filters, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
 		if definition == nil {
