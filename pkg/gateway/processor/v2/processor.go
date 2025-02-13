@@ -47,6 +47,7 @@ type GatewayProcessor struct {
 	triggers          map[informers.ResourceType]processor.Trigger
 	mutex             *sync.RWMutex
 	useEndpointSlices bool
+	gatewayFilesHash  map[string]map[string]string
 }
 
 // NewGatewayProcessor creates a new gateway processor
@@ -100,6 +101,7 @@ func NewGatewayProcessor(ctx *cctx.ControllerContext) *GatewayProcessor {
 
 		mutex:             new(sync.RWMutex),
 		useEndpointSlices: useEndpointSlices,
+		gatewayFilesHash:  make(map[string]map[string]string),
 	}
 }
 

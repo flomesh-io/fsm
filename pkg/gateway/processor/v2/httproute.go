@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
@@ -60,9 +61,9 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 	}
 
 	h2.Spec.Rules = make([]fgwv2.HTTPRouteRule, 0)
-	for _, rule := range httpRoute.Spec.Rules {
+	for i, rule := range httpRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2HTTPRouteRule(httpRoute, &rule, holder); r2 != nil {
+		if r2 := c.toV2HTTPRouteRule(httpRoute, &rule, i, holder); r2 != nil {
 			h2.Spec.Rules = append(h2.Spec.Rules, *r2)
 		}
 	}
@@ -74,28 +75,28 @@ func (c *ConfigGenerator) toV2HTTPRoute(httpRoute *gwv1.HTTPRoute, holder status
 	return h2
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
+func (c *ConfigGenerator) toV2HTTPRouteRule(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.HTTPRouteRule {
 	r2 := &fgwv2.HTTPRouteRule{}
 	if err := gwutils.DeepCopy(r2, rule); err != nil {
 		log.Error().Msgf("Failed to copy HTTPRouteRule: %v", err)
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule, holder)
+	r2.BackendRefs = c.toV2HTTPBackendRefs(httpRoute, rule, ruleIndex, holder)
 	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
 	if len(rule.Filters) > 0 {
-		r2.Filters = c.toV2HTTPRouteFilters(httpRoute, rule.Filters)
+		r2.Filters = c.toV2HTTPRouteFilters(httpRoute, fmt.Sprintf("%d", ruleIndex), rule.Filters)
 	}
 
 	return r2
 }
 
-func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
+func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *gwv1.HTTPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) []fgwv2.HTTPBackendRef {
 	backendRefs := make([]fgwv2.HTTPBackendRef, 0)
-	for _, bk := range rule.BackendRefs {
+	for i, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(httpRoute, bk.BackendRef.BackendObjectReference); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
@@ -104,7 +105,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 			b2 := fgwv2.NewHTTPBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
-				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, bk.Filters)
+				b2.Filters = c.toV2HTTPRouteFilters(httpRoute, fmt.Sprintf("%d-%d", ruleIndex, i), bk.Filters)
 			}
 
 			backendRefs = append(backendRefs, b2)
@@ -118,7 +119,7 @@ func (c *ConfigGenerator) toV2HTTPBackendRefs(httpRoute *gwv1.HTTPRoute, rule *g
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeFilters []gwv1.HTTPRouteFilter) []fgwv2.HTTPRouteFilter {
+func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, index string, routeFilters []gwv1.HTTPRouteFilter) []fgwv2.HTTPRouteFilter {
 	filters := make([]fgwv2.HTTPRouteFilter, 0)
 	for i, f := range routeFilters {
 		f := f
@@ -139,7 +140,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 					f2.RequestMirror.BackendRef = fgwv2.NewBackendRef(svcPort.String())
 				}
 
-				f2.Key = filterKey(httpRoute, f2, i)
+				f2.Key = filterKey(httpRoute, f2, fmt.Sprintf("%s-%d", index, i))
 
 				filters = append(filters, f2)
 			}
@@ -154,7 +155,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				Type:            gwv1.HTTPRouteFilterType(filterType),
 				ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 			}
-			f2.Key = filterKey(httpRoute, f2, i)
+			f2.Key = filterKey(httpRoute, f2, fmt.Sprintf("%s-%d", index, i))
 			filters = append(filters, f2)
 
 			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
@@ -179,7 +180,7 @@ func (c *ConfigGenerator) toV2HTTPRouteFilters(httpRoute *gwv1.HTTPRoute, routeF
 				log.Error().Msgf("Failed to copy HTTPRouteFilter: %v", err)
 				continue
 			}
-			f2.Key = filterKey(httpRoute, f2, i)
+			f2.Key = filterKey(httpRoute, f2, fmt.Sprintf("%s-%d", index, i))
 			filters = append(filters, f2)
 		}
 	}

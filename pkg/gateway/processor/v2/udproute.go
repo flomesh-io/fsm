@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
@@ -64,9 +65,9 @@ func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder sta
 	}
 
 	u2.Spec.Rules = make([]fgwv2.UDPRouteRule, 0)
-	for _, rule := range udpRoute.Spec.Rules {
+	for i, rule := range udpRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2UDPRouteRule(udpRoute, rule, holder); r2 != nil {
+		if r2 := c.toV2UDPRouteRule(udpRoute, rule, i, holder); r2 != nil {
 			u2.Spec.Rules = append(u2.Spec.Rules, *r2)
 		}
 	}
@@ -78,7 +79,7 @@ func (c *ConfigGenerator) toV2UDPRoute(udpRoute *gwv1alpha2.UDPRoute, holder sta
 	return u2
 }
 
-func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, holder status.RouteParentStatusObject) *fgwv2.UDPRouteRule {
+func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule gwv1alpha2.UDPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.UDPRouteRule {
 	r2 := &fgwv2.UDPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy UDPRouteRule: %v", err)
@@ -96,7 +97,7 @@ func (c *ConfigGenerator) toV2UDPRouteRule(udpRoute *gwv1alpha2.UDPRoute, rule g
 	}
 
 	if len(filterRefs) > 0 {
-		r2.Filters = c.toV2UDPRouteFilters(udpRoute, filterRefs)
+		r2.Filters = c.toV2UDPRouteFilters(udpRoute, ruleIndex, filterRefs)
 	}
 
 	return r2
@@ -118,7 +119,7 @@ func (c *ConfigGenerator) toV2UDPBackendRefs(udpRoute *gwv1alpha2.UDPRoute, rule
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
+func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, ruleIndex int, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
 	var filters []fgwv2.NonHTTPRouteFilter
 
 	for i, filterRef := range gwutils.SortFilterRefs(filterRefs) {
@@ -133,7 +134,7 @@ func (c *ConfigGenerator) toV2UDPRouteFilters(udpRoute *gwv1alpha2.UDPRoute, fil
 			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 			Priority:        ptr.Deref(filterRef.Priority, 100),
 		}
-		f2.Key = filterKey(udpRoute, f2, i)
+		f2.Key = filterKey(udpRoute, f2, fmt.Sprintf("%d-%d", ruleIndex, i))
 		filters = append(filters, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)

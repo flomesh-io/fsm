@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
@@ -63,9 +64,9 @@ func (c *ConfigGenerator) toV2TCPRoute(tcpRoute *gwv1alpha2.TCPRoute, holder sta
 	}
 
 	t2.Spec.Rules = make([]fgwv2.TCPRouteRule, 0)
-	for _, rule := range tcpRoute.Spec.Rules {
+	for i, rule := range tcpRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2TCPRouteRule(tcpRoute, rule, holder); r2 != nil {
+		if r2 := c.toV2TCPRouteRule(tcpRoute, rule, i, holder); r2 != nil {
 			t2.Spec.Rules = append(t2.Spec.Rules, *r2)
 		}
 	}
@@ -77,7 +78,7 @@ func (c *ConfigGenerator) toV2TCPRoute(tcpRoute *gwv1alpha2.TCPRoute, holder sta
 	return t2
 }
 
-func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule gwv1alpha2.TCPRouteRule, holder status.RouteParentStatusObject) *fgwv2.TCPRouteRule {
+func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule gwv1alpha2.TCPRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.TCPRouteRule {
 	r2 := &fgwv2.TCPRouteRule{}
 	if err := gwutils.DeepCopy(r2, &rule); err != nil {
 		log.Error().Msgf("Failed to copy TCPRouteRule: %v", err)
@@ -95,7 +96,7 @@ func (c *ConfigGenerator) toV2TCPRouteRule(tcpRoute *gwv1alpha2.TCPRoute, rule g
 	}
 
 	if len(filterRefs) > 0 {
-		r2.Filters = c.toV2TCPRouteFilters(tcpRoute, filterRefs)
+		r2.Filters = c.toV2TCPRouteFilters(tcpRoute, ruleIndex, filterRefs)
 	}
 
 	return r2
@@ -121,7 +122,7 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2TCPRouteFilters(tcpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
+func (c *ConfigGenerator) toV2TCPRouteFilters(tcpRoute *gwv1alpha2.TCPRoute, ruleIndex int, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
 	var filters []fgwv2.NonHTTPRouteFilter
 
 	for i, filterRef := range gwutils.SortFilterRefs(filterRefs) {
@@ -136,7 +137,7 @@ func (c *ConfigGenerator) toV2TCPRouteFilters(tcpRoute *gwv1alpha2.TCPRoute, fil
 			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
 			Priority:        ptr.Deref(filterRef.Priority, 100),
 		}
-		f2.Key = filterKey(tcpRoute, f2, i)
+		f2.Key = filterKey(tcpRoute, f2, fmt.Sprintf("%d-%d", ruleIndex, i))
 		filters = append(filters, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
