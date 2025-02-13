@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/flomesh-io/fsm/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/flomesh-io/fsm/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
