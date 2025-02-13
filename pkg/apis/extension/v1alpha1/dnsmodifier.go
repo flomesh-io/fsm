@@ -7,10 +7,16 @@ import (
 
 // DNSModifierSpec defines the desired state of DNSModifier
 type DNSModifierSpec struct {
+	// +optional
 	// +listType=map
 	// +listMapKey=name
-	// Domains is the list of domains to apply the DNS modifier
-	Domains []DNSDomain `json:"domains"`
+	// Domains is the list of whitelist domains to be resolved by the DNS modifier
+	Domains []DNSDomain `json:"domains,omitempty"`
+
+	// +optional
+	// +listType=set
+	// BlacklistDomains is the list of blacklist domains to be blocked by the DNS modifier
+	BlacklistDomains []gwv1.Hostname `json:"blacklistDomains,omitempty"`
 }
 
 type DNSDomain struct {

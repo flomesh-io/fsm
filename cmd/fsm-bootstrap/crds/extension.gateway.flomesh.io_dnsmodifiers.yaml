@@ -48,8 +48,34 @@ spec:
           spec:
             description: DNSModifierSpec defines the desired state of DNSModifier
             properties:
+              blacklistDomains:
+                description: BlacklistDomains is the list of blacklist domains to
+                  be blocked by the DNS modifier
+                items:
+                  description: |-
+                    Hostname is the fully qualified domain name of a network host. This matches
+                    the RFC 1123 definition of a hostname with 2 notable exceptions:
+
+                     1. IPs are not allowed.
+                     2. A hostname may be prefixed with a wildcard label (`*.`). The wildcard
+                        label must appear by itself as the first label.
+
+                    Hostname can be "precise" which is a domain name without the terminating
+                    dot of a network host (e.g. "foo.example.com") or "wildcard", which is a
+                    domain name prefixed with a single wildcard label (e.g. `*.example.com`).
+
+                    Note that as per RFC1035 and RFC1123, a *label* must consist of lower case
+                    alphanumeric characters or '-', and must start and end with an alphanumeric
+                    character. No other punctuation is allowed.
+                  maxLength: 253
+                  minLength: 1
+                  pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
+                type: array
+                x-kubernetes-list-type: set
               domains:
-                description: Domains is the list of domains to apply the DNS modifier
+                description: Domains is the list of whitelist domains to be resolved
+                  by the DNS modifier
                 items:
                   properties:
                     answer:
@@ -82,8 +108,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
-            required:
-            - domains
             type: object
           status:
             description: DNSModifierStatus defines the observed state of DNSModifier
