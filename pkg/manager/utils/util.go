@@ -54,7 +54,7 @@ func updateMainJSON(basepath string, repoClient *repo.PipyRepoClient, newJSON st
 		},
 	}
 
-	if err := repoClient.Batch([]repo.Batch{batch}); err != nil {
+	if err := repoClient.BatchFullUpdate([]repo.Batch{batch}); err != nil {
 		log.Error().Msgf("Failed to update %q: %s", getPathOfMainJSON(basepath), err)
 		return err
 	}
