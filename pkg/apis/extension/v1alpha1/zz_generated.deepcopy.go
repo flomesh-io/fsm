@@ -399,6 +399,11 @@ func (in *DNSModifierSpec) DeepCopyInto(out *DNSModifierSpec) {
 		*out = make([]DNSDomain, len(*in))
 		copy(*out, *in)
 	}
+	if in.BlacklistDomains != nil {
+		in, out := &in.BlacklistDomains, &out.BlacklistDomains
+		*out = make([]v1.Hostname, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
