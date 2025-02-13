@@ -41,7 +41,7 @@ jobs:
 
   images:
     name: Docker Images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: version
     env:
       VERSION: ${{ needs.version.outputs.version }}
