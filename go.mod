@@ -97,7 +97,7 @@ require (
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.31.5
-	k8s.io/kubernetes v1.31.5
+	k8s.io/kubernetes v1.31.6
 	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6
 	sigs.k8s.io/controller-runtime v0.19.5
 	sigs.k8s.io/gateway-api v1.2.1
