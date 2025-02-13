@@ -256,7 +256,8 @@ func (p *PipyRepoClient) deleteFile(path string) (success bool, err error) {
 	return
 }
 
-// Commit the codebase, version is the current vesion of the codebase, it will be increased by 1 when committing
+// commit the codebase, version is the current version of the codebase, it will be increased by 1 when committing
+// it triggers a full update and client reloads the codebase
 func (p *PipyRepoClient) commit(path string, _ int64) error {
 	resp, err := p.httpClient.R().
 		SetHeader("Content-Type", "application/json").
@@ -278,9 +279,37 @@ func (p *PipyRepoClient) commit(path string, _ int64) error {
 	return err
 }
 
-// TODO: handle concurrent updating
+// incrementalCommit commits the codebase incrementally
+func (p *PipyRepoClient) incrementalCommit(path string) error {
+	resp, err := p.httpClient.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(Codebase{}).
+		SetResult(&Codebase{}).
+		Patch(fullRepoApiPath(path))
 
-func (p *PipyRepoClient) Batch(batches []Batch) error {
+	if err != nil {
+		return err
+	}
+
+	if resp.IsSuccess() {
+		return nil
+	}
+
+	err = fmt.Errorf("failed to commit codebase %q, reason: %s", path, resp.Status())
+	log.Err(err)
+
+	return err
+}
+
+func (p *PipyRepoClient) BatchFullUpdate(batches []Batch) error {
+	return p.batch(batches, false)
+}
+
+func (p *PipyRepoClient) BatchIncrementalUpdate(batches []Batch) error {
+	return p.batch(batches, true)
+}
+
+func (p *PipyRepoClient) batch(batches []Batch, incremental bool) error {
 	if len(batches) == 0 {
 		return nil
 	}
@@ -308,20 +337,20 @@ func (p *PipyRepoClient) Batch(batches []Batch) error {
 
 		// 2. upload each json to repo
 		for _, item := range batch.Items {
-			fullpath := fmt.Sprintf("%s%s", batch.Basepath, item.String())
-			log.Debug().Msgf("Creating/updating config %q", fullpath)
+			fullPath := fmt.Sprintf("%s%s", batch.Basepath, item.String())
+			log.Debug().Msgf("Creating/updating config %q", fullPath)
 			log.Debug().Msgf("Content: %v", item.Content)
-			err := p.upsertFile(fullpath, item.Content)
+			err := p.upsertFile(fullPath, item.Content)
 			if err != nil {
-				log.Error().Msgf("Upsert %q error, reason: %s", fullpath, err.Error())
+				log.Error().Msgf("Upsert %q error, reason: %s", fullPath, err.Error())
 				return err
 			}
 		}
 
 		for _, file := range batch.DelItems {
-			fullpath := fmt.Sprintf("%s%s", batch.Basepath, file)
-			log.Debug().Msgf("Deleting %q", fullpath)
-			if _, err := p.deleteFile(fullpath); err != nil {
+			fullPath := fmt.Sprintf("%s%s", batch.Basepath, file)
+			log.Debug().Msgf("Deleting %q", fullPath)
+			if _, err := p.deleteFile(fullPath); err != nil {
 				return err
 			}
 		}
@@ -334,9 +363,17 @@ func (p *PipyRepoClient) Batch(batches []Batch) error {
 			log.Err(err)
 			return err
 		}
-		if err := p.commit(batch.Basepath, version); err != nil {
-			log.Error().Msgf("Error happened while committing the codebase %q, error: %s", batch.Basepath, err.Error())
-			return err
+
+		if incremental {
+			if err := p.incrementalCommit(batch.Basepath); err != nil {
+				log.Error().Msgf("Error happened while committing the codebase %q, error: %s", batch.Basepath, err.Error())
+				return err
+			}
+		} else {
+			if err := p.commit(batch.Basepath, version); err != nil {
+				log.Error().Msgf("Error happened while committing the codebase %q, error: %s", batch.Basepath, err.Error())
+				return err
+			}
 		}
 	}
 

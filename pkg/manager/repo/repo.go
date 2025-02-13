@@ -86,7 +86,7 @@ func InitRepo(ctx context.Context) error {
 
 	mc := cctx.Configurator
 	// initialize the repo
-	if err := repoClient.Batch(getBatches(mc)); err != nil {
+	if err := repoClient.BatchFullUpdate(getBatches(mc)); err != nil {
 		return err
 	}
 
@@ -240,7 +240,7 @@ func (r *rebuilder) rebuildRepoJob() error {
 	//}
 
 	if len(batches) > 0 {
-		if err := r.repoClient.Batch(batches); err != nil {
+		if err := r.repoClient.BatchFullUpdate(batches); err != nil {
 			log.Error().Msgf("Failed to write config to repo: %s", err)
 			return err
 		}

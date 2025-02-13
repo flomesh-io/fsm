@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"fmt"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
 
@@ -66,9 +67,9 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 	}
 
 	g2.Spec.Rules = make([]fgwv2.GRPCRouteRule, 0)
-	for _, rule := range grpcRoute.Spec.Rules {
+	for i, rule := range grpcRoute.Spec.Rules {
 		rule := rule
-		if r2 := c.toV2GRPCRouteRule(grpcRoute, &rule, holder); r2 != nil {
+		if r2 := c.toV2GRPCRouteRule(grpcRoute, &rule, i, holder); r2 != nil {
 			g2.Spec.Rules = append(g2.Spec.Rules, *r2)
 		}
 	}
@@ -80,28 +81,28 @@ func (c *ConfigGenerator) toV2GRPCRoute(grpcRoute *gwv1.GRPCRoute, holder status
 	return g2
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
+func (c *ConfigGenerator) toV2GRPCRouteRule(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, ruleIndex int, holder status.RouteParentStatusObject) *fgwv2.GRPCRouteRule {
 	r2 := &fgwv2.GRPCRouteRule{}
 	if err := gwutils.DeepCopy(r2, rule); err != nil {
 		log.Error().Msgf("Failed to copy GRPCRouteRule: %v", err)
 		return nil
 	}
 
-	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule, holder)
+	r2.BackendRefs = c.toV2GRPCBackendRefs(grpcRoute, rule, ruleIndex, holder)
 	if c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends && len(r2.BackendRefs) == 0 {
 		return nil
 	}
 
 	if len(r2.Filters) > 0 {
-		r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, rule.Filters, holder)
+		r2.Filters = c.toV2GRPCRouteFilters(grpcRoute, fmt.Sprintf("%d", ruleIndex), rule.Filters, holder)
 	}
 
 	return r2
 }
 
-func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
+func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *gwv1.GRPCRouteRule, ruleIndex int, holder status.RouteParentStatusObject) []fgwv2.GRPCBackendRef {
 	backendRefs := make([]fgwv2.GRPCBackendRef, 0)
-	for _, bk := range rule.BackendRefs {
+	for i, bk := range rule.BackendRefs {
 		if svcPort := c.backendRefToServicePortName(grpcRoute, bk.BackendRef.BackendObjectReference, holder); svcPort != nil {
 			if c.toFGWBackend(svcPort) == nil && c.cfg.GetFeatureFlags().DropRouteRuleIfNoAvailableBackends {
 				continue
@@ -110,7 +111,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 			b2 := fgwv2.NewGRPCBackendRef(svcPort.String(), bk.BackendRef.Weight)
 
 			if len(bk.Filters) > 0 {
-				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, bk.Filters, holder)
+				b2.Filters = c.toV2GRPCRouteFilters(grpcRoute, fmt.Sprintf("%d-%d", ruleIndex, i), bk.Filters, holder)
 			}
 
 			backendRefs = append(backendRefs, b2)
@@ -124,7 +125,7 @@ func (c *ConfigGenerator) toV2GRPCBackendRefs(grpcRoute *gwv1.GRPCRoute, rule *g
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []fgwv2.GRPCRouteFilter {
+func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, index string, routeFilters []gwv1.GRPCRouteFilter, holder status.RouteParentStatusObject) []fgwv2.GRPCRouteFilter {
 	filters := make([]fgwv2.GRPCRouteFilter, 0)
 	for i, f := range routeFilters {
 		f := f
@@ -141,7 +142,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 						BackendRef: fgwv2.NewBackendRef(svcPort.String()),
 					},
 				}
-				f2.Key = filterKey(grpcRoute, f2, i)
+				f2.Key = filterKey(grpcRoute, f2, fmt.Sprintf("%s-%d", index, i))
 				filters = append(filters, f2)
 			}
 		case gwv1.GRPCRouteFilterExtensionRef:
@@ -155,7 +156,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				Type:            gwv1.GRPCRouteFilterType(filterType),
 				ExtensionConfig: c.resolveFilterConfig(filter.Spec.ConfigRef),
 			}
-			f2.Key = filterKey(grpcRoute, f2, i)
+			f2.Key = filterKey(grpcRoute, f2, fmt.Sprintf("%s-%d", index, i))
 			filters = append(filters, f2)
 
 			definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
@@ -180,7 +181,7 @@ func (c *ConfigGenerator) toV2GRPCRouteFilters(grpcRoute *gwv1.GRPCRoute, routeF
 				log.Error().Msgf("Failed to copy GRPCRouteFilter: %v", err)
 				continue
 			}
-			f2.Key = filterKey(grpcRoute, f2, i)
+			f2.Key = filterKey(grpcRoute, f2, fmt.Sprintf("%s-%d", index, i))
 			filters = append(filters, f2)
 		}
 	}

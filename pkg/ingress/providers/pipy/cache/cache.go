@@ -145,7 +145,7 @@ func (c *Cache) SyncRoutes() {
 		batches := serviceBatches(serviceRoutes, mc)
 		if batches != nil {
 			go func() {
-				if err := c.repoClient.Batch(batches); err != nil {
+				if err := c.repoClient.BatchFullUpdate(batches); err != nil {
 					log.Error().Msgf("Sync service routes to repo failed: %s", err)
 					return
 				}
@@ -170,7 +170,7 @@ func (c *Cache) SyncRoutes() {
 		batches := c.ingressBatches(ingressRoutes, mc)
 		if batches != nil {
 			go func() {
-				if err := c.repoClient.Batch(batches); err != nil {
+				if err := c.repoClient.BatchFullUpdate(batches); err != nil {
 					log.Error().Msgf("Sync ingress routes to repo failed: %s", err)
 					return
 				}

@@ -52,7 +52,7 @@ func isHeadlessServiceWithoutSelector(service *corev1.Service) bool {
 	return k8s.IsHeadlessService(service) && len(service.Spec.Selector) == 0
 }
 
-func filterKey(route client.Object, filter any, index int) string {
-	key := fmt.Sprintf("%s-%s-%d", client.ObjectKeyFromObject(route).String(), utils.SimpleHash(filter), index)
+func filterKey(parent client.Object, filter any, index string) string {
+	key := fmt.Sprintf("%s-%s-%s", client.ObjectKeyFromObject(parent).String(), utils.SimpleHash(filter), index)
 	return utils.SimpleHash(key)
 }

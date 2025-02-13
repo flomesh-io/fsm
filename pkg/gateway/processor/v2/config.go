@@ -46,7 +46,7 @@ func (c *GatewayProcessor) preCheck() bool {
 	}
 
 	if !c.repoClient.CodebaseExists(constants.DefaultGatewayBasePath) {
-		if err := c.repoClient.Batch([]repo.Batch{mrepo.GatewaysBatch()}); err != nil {
+		if err := c.repoClient.BatchFullUpdate([]repo.Batch{mrepo.GatewaysBatch()}); err != nil {
 			log.Error().Msgf("Failed to write gateway scripts to repo: %s", err)
 			return false
 		}
@@ -117,12 +117,23 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		return
 	}
 
-	batch := repo.Batch{
-		Basepath: gatewayPath,
-		Items: []repo.BatchItem{
-			{Path: "/config", Filename: "version.json", Content: fmt.Sprintf(`{"version": "%s"}`, config.GetVersion())},
-		},
+	// make a copy of the files hash of the gateway
+	filesHash, found := c.gatewayFilesHash[gatewayPath]
+	if !found {
+		filesHash = make(map[string]string)
 	}
+
+	batch := repo.Batch{Basepath: gatewayPath}
+	existFiles := make([]string, 0)
+
+	versionItem := repo.BatchItem{
+		Path:     "/config",
+		Filename: "version.json",
+		Content:  fmt.Sprintf(`{"version": "%s"}`, config.GetVersion()),
+	}
+	batch.Items = append(batch.Items, versionItem)
+	filesHash[versionItem.String()] = config.GetVersion()
+	existFiles = append(existFiles, versionItem.String())
 
 	resourceName := func(r fgw.Resource) string {
 		if len(r.GetNamespace()) == 0 {
@@ -132,49 +143,81 @@ func (c *GatewayProcessor) syncConfigDir(gateway *gwv1.Gateway, config fgw.Confi
 		return fmt.Sprintf("%s-%s-%s.yaml", r.GetKind(), r.GetNamespace(), r.GetName())
 	}
 
+	upsertItem := func(item repo.BatchItem) {
+		itemKey := item.String()
+		newHash := utils.SimpleHash(item.Content)
+
+		if hash, found := filesHash[itemKey]; !found || hash != newHash {
+			batch.Items = append(batch.Items, item)
+			filesHash[itemKey] = newHash
+		}
+
+		existFiles = append(existFiles, item.String())
+	}
+
 	for _, r := range config.GetResources() {
-		batch.Items = append(batch.Items,
-			repo.BatchItem{
-				Path:     "/config/resources",
-				Filename: strings.ToLower(resourceName(r)),
-				Content:  toYAML(r),
-			},
-		)
+		upsertItem(repo.BatchItem{
+			Path:     "/config/resources",
+			Filename: strings.ToLower(resourceName(r)),
+			Content:  toYAML(r),
+		})
 	}
 
 	for name, secret := range config.GetSecrets() {
-		batch.Items = append(batch.Items,
-			repo.BatchItem{
-				Path:     "/config/secrets",
-				Filename: name,
-				Content:  secret,
-			},
-		)
+		upsertItem(repo.BatchItem{
+			Path:     "/config/secrets",
+			Filename: name,
+			Content:  secret,
+		})
 	}
 
 	for protocol, filters := range config.GetFilters() {
 		for filterType, script := range filters {
-			batch.Items = append(batch.Items,
-				repo.BatchItem{
-					Path:     fmt.Sprintf("/config/filters/%s", strings.ToLower(string(protocol))),
-					Filename: fmt.Sprintf("%s.js", filterType),
-					Content:  script,
-				},
-			)
+			upsertItem(repo.BatchItem{
+				Path:     fmt.Sprintf("/config/filters/%s", strings.ToLower(string(protocol))),
+				Filename: fmt.Sprintf("%s.js", filterType),
+				Content:  script,
+			})
 		}
 	}
 
-	delItems, err := c.getDelItems(gatewayPath, batch)
+	delItems, err := c.getDelItems(gatewayPath, existFiles)
 	if err != nil {
 		log.Error().Msgf("Get del items error: %s", err)
 		return
 	}
 	batch.DelItems = delItems
 
-	if err := c.repoClient.Batch([]repo.Batch{batch}); err != nil {
-		log.Error().Msgf("Sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+	log.Debug().Msgf("[GWCFG] Items length: %d， Delete Items length: %d", len(batch.Items), len(batch.DelItems))
+
+	if len(batch.Items) == 0 && len(batch.DelItems) == 0 {
+		log.Info().Msgf("No config changes for Gateway %s/%s", gateway.Namespace, gateway.Name)
 		return
 	}
+
+	if jsonVersion == "" {
+		// Full update
+		if err := c.repoClient.BatchFullUpdate([]repo.Batch{batch}); err != nil {
+			log.Error().Msgf("Full sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+			return
+		}
+	} else {
+		// Incremental update
+		if err := c.repoClient.BatchIncrementalUpdate([]repo.Batch{batch}); err != nil {
+			log.Error().Msgf("Incremental sync config of Gateway %s/%s to repo failed: %s", gateway.Namespace, gateway.Name, err)
+			return
+		}
+	}
+
+	// cleanup the files hash of deleted items
+	for _, item := range delItems {
+		delete(filesHash, item)
+	}
+
+	// update the files hash of the gateway
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.gatewayFilesHash[gatewayPath] = filesHash
 }
 
 func (c *GatewayProcessor) checkGatewayCodebase(gateway *gwv1.Gateway) bool {
@@ -192,7 +235,7 @@ func (c *GatewayProcessor) checkGatewayCodebase(gateway *gwv1.Gateway) bool {
 	return true
 }
 
-func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]string, error) {
+func (c *GatewayProcessor) getDelItems(gatewayPath string, existFiles []string) ([]string, error) {
 	files, err := c.repoClient.ListFiles(gatewayPath)
 	if err != nil {
 		log.Error().Msgf("List files in %q error: %s", gatewayPath, err)
@@ -201,8 +244,8 @@ func (c *GatewayProcessor) getDelItems(gatewayPath string, batch repo.Batch) ([]
 
 	toDelete := sets.NewString(files...)
 
-	for _, item := range batch.Items {
-		toDelete.Delete(item.String())
+	for _, item := range existFiles {
+		toDelete.Delete(item)
 	}
 
 	return toDelete.UnsortedList(), nil

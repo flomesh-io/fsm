@@ -171,11 +171,11 @@ func (c *ConfigGenerator) processListenerFilters(l gwtypes.Listener, v2l *fgwv2.
 		}
 	}
 
-	v2l.Filters = c.resolveListenerFilters(filters)
-	v2l.RouteFilters = c.resolveListenerFilters(routeFilters)
+	v2l.Filters = c.resolveListenerFilters(filters, l)
+	v2l.RouteFilters = c.resolveListenerFilters(routeFilters, l)
 }
 
-func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerFilter) []fgwv2.ListenerFilter {
+func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerFilter, l gwtypes.Listener) []fgwv2.ListenerFilter {
 	sort.Slice(filters, func(i, j int) bool {
 		if filters[i].Spec.Priority == nil || filters[j].Spec.Priority == nil {
 			return filters[i].Spec.Type < filters[j].Spec.Type
@@ -196,7 +196,7 @@ func (c *ConfigGenerator) resolveListenerFilters(filters []extv1alpha1.ListenerF
 			Type:            filterType,
 			ExtensionConfig: c.resolveFilterConfig(f.Spec.ConfigRef),
 		}
-		f2.Key = filterKey(c.gateway, f2, i)
+		f2.Key = filterKey(c.gateway, f2, fmt.Sprintf("%d-%s-%d", l.Port, *f.Spec.Aspect, i))
 		result = append(result, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeListener, f.Spec.DefinitionRef)
