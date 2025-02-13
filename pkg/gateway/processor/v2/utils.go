@@ -1,8 +1,13 @@
 package v2
 
 import (
+	"fmt"
 	"net"
 	"strings"
+
+	"github.com/flomesh-io/fsm/pkg/utils"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/flomesh-io/fsm/pkg/constants"
 
@@ -82,4 +87,9 @@ func isFGWAppProtocolSupported(appProtocol string) bool {
 	default:
 		return false
 	}
+}
+
+func filterKey(route client.Object, filter any, index int) string {
+	key := fmt.Sprintf("%s-%s-%d", client.ObjectKeyFromObject(route).String(), utils.SimpleHash(filter), index)
+	return utils.SimpleHash(key)
 }

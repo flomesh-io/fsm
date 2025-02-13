@@ -3,8 +3,6 @@ package v2
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	gwpav1alpha2 "github.com/flomesh-io/fsm/pkg/apis/policyattachment/v1alpha2"
 
 	extv1alpha1 "github.com/flomesh-io/fsm/pkg/apis/extension/v1alpha1"
@@ -123,22 +121,23 @@ func (c *ConfigGenerator) toV2TCPBackendRefs(tcpRoute *gwv1alpha2.TCPRoute, rule
 	return backendRefs
 }
 
-func (c *ConfigGenerator) toV2TCPRouteFilters(udpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
+func (c *ConfigGenerator) toV2TCPRouteFilters(tcpRoute *gwv1alpha2.TCPRoute, filterRefs []gwpav1alpha2.LocalFilterReference) []fgwv2.NonHTTPRouteFilter {
 	var filters []fgwv2.NonHTTPRouteFilter
 
-	for _, filterRef := range gwutils.SortFilterRefs(filterRefs) {
-		filter := gwutils.FilterRefToFilter(c.client, udpRoute, filterRef)
+	for i, filterRef := range gwutils.SortFilterRefs(filterRefs) {
+		filter := gwutils.FilterRefToFilter(c.client, tcpRoute, filterRef)
 		if filter == nil {
 			continue
 		}
 
 		filterType := filter.Spec.Type
-		filters = append(filters, fgwv2.NonHTTPRouteFilter{
+		f2 := fgwv2.NonHTTPRouteFilter{
 			Type:            fgwv2.NonHTTPRouteFilterType(filterType),
 			ExtensionConfig: c.resolveFilterConfig(filter.Namespace, filter.Spec.ConfigRef),
-			Key:             uuid.NewString(),
 			Priority:        ptr.Deref(filterRef.Priority, 100),
-		})
+		}
+		f2.Key = filterKey(tcpRoute, f2, i)
+		filters = append(filters, f2)
 
 		definition := c.resolveFilterDefinition(filterType, extv1alpha1.FilterScopeRoute, filter.Spec.DefinitionRef)
 		if definition == nil {
