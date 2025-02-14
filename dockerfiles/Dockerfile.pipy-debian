@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:1.4
+# syntax = docker/dockerfile:1
 # Build the pipy binary
 FROM debian:12 AS builder
 
