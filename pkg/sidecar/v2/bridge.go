@@ -15,6 +15,10 @@ func (s *Server) getCniBridge4Info() *maps.IFaceVal {
 		return cniBridge4Val
 	}
 
+	if len(s.cniBridge4) == 0 {
+		return nil
+	}
+
 	brKey := new(maps.IFaceKey)
 	brKey.Len = uint8(len(s.cniBridge4))
 	copy(brKey.Name[0:brKey.Len], s.cniBridge4)
@@ -39,6 +43,10 @@ func (s *Server) getCniBridge4Info() *maps.IFaceVal {
 func (s *Server) getCniBridge6Info() *maps.IFaceVal {
 	if cniBridge6Val != nil {
 		return cniBridge6Val
+	}
+
+	if len(s.cniBridge6) == 0 {
+		return nil
 	}
 
 	brKey := new(maps.IFaceKey)
