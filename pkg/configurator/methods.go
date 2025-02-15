@@ -117,6 +117,16 @@ func (c *Client) GetLocalDNSProxySecondaryUpstream() string {
 	return c.getMeshConfig().Spec.Sidecar.LocalDNSProxy.SecondaryUpstreamDNSServerIPAddr
 }
 
+// IsXNetDNSProxyEnabled returns whether xnet dns proxy is enabled
+func (c *Client) IsXNetDNSProxyEnabled() bool {
+	return c.getMeshConfig().Spec.Sidecar.XNetDNSProxy.Enable
+}
+
+// GetXNetDNSProxyUpstreams returns the upstream DNS servers for xnet dns Proxy
+func (c *Client) GetXNetDNSProxyUpstreams() []configv1alpha3.DNSUpstream {
+	return c.getMeshConfig().Spec.Sidecar.XNetDNSProxy.Upstreams
+}
+
 // IsHoldApplicationUntilProxyStarts returns whether hold application until proxy starts
 func (c *Client) IsHoldApplicationUntilProxyStarts() bool {
 	return c.getMeshConfig().Spec.Sidecar.HoldApplicationUntilProxyStarts

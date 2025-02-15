@@ -54,6 +54,7 @@ type IFaceVal struct {
 	Ifi  uint32
 	Addr [4]uint32
 	Mac  [6]uint8
+	Xmac [6]uint8
 }
 
 const (

@@ -147,6 +147,29 @@ type LocalDNSProxy struct {
 	DB []ResolveDN `json:"db,omitempty"`
 }
 
+type DNSUpstream struct {
+	// +optional
+	Name string `json:"name,omitempty"`
+
+	// +optional
+	Namespace string `json:"namespace,omitempty"`
+
+	// +optional
+	IP string `json:"ip,omitempty"`
+
+	// +kubebuilder:default=53
+	Port int32 `json:"port"`
+}
+
+// XNetDNSProxy is the type to represent FSM's xNet DNS proxy configuration.
+type XNetDNSProxy struct {
+	// Enable defines a boolean indicating if the sidecars are enabled for xNet DNS Proxy.
+	Enable bool `json:"enable"`
+
+	// Upstreams defines dns proxy upstreams.
+	Upstreams []DNSUpstream `json:"upstreams,omitempty"`
+}
+
 // SidecarSpec is the type used to represent the specifications for the proxy sidecar.
 type SidecarSpec struct {
 	// EnablePrivilegedInitContainer defines a boolean indicating whether the init container for a meshed pod should run as privileged.
@@ -213,6 +236,9 @@ type SidecarSpec struct {
 
 	// LocalDNSProxy improves the performance of your computer by caching the responses coming from your DNS servers
 	LocalDNSProxy LocalDNSProxy `json:"localDNSProxy,omitempty"`
+
+	// XNetDNSProxy improves the performance of your computer by caching the responses coming from your DNS servers
+	XNetDNSProxy XNetDNSProxy `json:"xnetDNSProxy,omitempty"`
 }
 
 // TrafficWarmupSpec is the specification for a TrafficWarmup

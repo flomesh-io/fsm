@@ -41,6 +41,8 @@ spec:
           "--fsm-version", "{{ .Chart.AppVersion }}",
           "--fsm-namespace", "{{ include "fsm.namespace" . }}",
           "--trust-domain", "{{.Values.fsm.trustDomain}}",
+          "--cni-ipv4-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge4.name" . }}",
+          "--cni-ipv6-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge6.name" . }}",
         ]
         env:
         - name: NODE_NAME
@@ -91,6 +93,10 @@ spec:
           "--node-path-cni-netd", "{{ include "fsmXnetwork.xnet.node.cniNetd.path" . }}",
           "--node-path-sys-fs", "{{ include "fsmXnetwork.xnet.node.sysFs.path" . }}",
           "--node-path-sys-run", "{{ include "fsmXnetwork.xnet.node.sysRun.path" . }}",
+          "--cni-ipv4-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge4.name" . }}",
+          "--cni-ipv4-bridge-mac", "{{ include "fsmXnetwork.xnet.cni.bridge4.mac" . }}",
+          "--cni-ipv6-bridge-name", "{{ include "fsmXnetwork.xnet.cni.bridge6.name" . }}",
+          "--cni-ipv6-bridge-mac", "{{ include "fsmXnetwork.xnet.cni.bridge6.mac" . }}",
         ]
         resources:
           limits:
@@ -112,6 +118,9 @@ spec:
           - mountPath: /host/run
             name: host-run
             mountPropagation: Bidirectional
+          - mountPath: /host/proc
+            name: host-proc
+            mountPropagation: Bidirectional
       priorityClassName: system-node-critical
       restartPolicy: Always
       serviceAccountName: {{ .Release.Name }}
@@ -125,6 +134,9 @@ spec:
         - hostPath:
             path: {{ include "fsmXnetwork.xnet.node.sysFs.path" . }}
           name: host-sys-fs
+        - hostPath:
+            path: {{ include "fsmXnetwork.xnet.node.sysProc.path" . }}
+          name: host-proc
         - hostPath:
             path: {{ include "fsmXnetwork.xnet.node.sysRun.path" . }}
           name: host-run

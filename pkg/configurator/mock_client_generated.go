@@ -766,6 +766,20 @@ func (mr *MockConfiguratorMockRecorder) GetTrafficInterceptionMode() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrafficInterceptionMode", reflect.TypeOf((*MockConfigurator)(nil).GetTrafficInterceptionMode))
 }
 
+// GetXNetDNSProxyUpstreams mocks base method.
+func (m *MockConfigurator) GetXNetDNSProxyUpstreams() []v1alpha3.DNSUpstream {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetXNetDNSProxyUpstreams")
+	ret0, _ := ret[0].([]v1alpha3.DNSUpstream)
+	return ret0
+}
+
+// GetXNetDNSProxyUpstreams indicates an expected call of GetXNetDNSProxyUpstreams.
+func (mr *MockConfiguratorMockRecorder) GetXNetDNSProxyUpstreams() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetXNetDNSProxyUpstreams", reflect.TypeOf((*MockConfigurator)(nil).GetXNetDNSProxyUpstreams))
+}
+
 // IsEgressEnabled mocks base method.
 func (m *MockConfigurator) IsEgressEnabled() bool {
 	m.ctrl.T.Helper()
@@ -1058,6 +1072,20 @@ func (m *MockConfigurator) IsWildcardDNSProxyEnabled() bool {
 func (mr *MockConfiguratorMockRecorder) IsWildcardDNSProxyEnabled() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWildcardDNSProxyEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsWildcardDNSProxyEnabled))
+}
+
+// IsXNetDNSProxyEnabled mocks base method.
+func (m *MockConfigurator) IsXNetDNSProxyEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsXNetDNSProxyEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsXNetDNSProxyEnabled indicates an expected call of IsXNetDNSProxyEnabled.
+func (mr *MockConfiguratorMockRecorder) IsXNetDNSProxyEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsXNetDNSProxyEnabled", reflect.TypeOf((*MockConfigurator)(nil).IsXNetDNSProxyEnabled))
 }
 
 // ServiceLBImage mocks base method.

@@ -1200,6 +1200,24 @@ func meshConfigUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 	return nil
 }
 
+func xNetDNSProxyUpdated(msg events.PubSubMessage) *xnetworkUpdateEvent {
+	prevMeshConfig, okPrevCast := msg.OldObj.(*configv1alpha3.MeshConfig)
+	newMeshConfig, okNewCast := msg.NewObj.(*configv1alpha3.MeshConfig)
+	if !okPrevCast || !okNewCast {
+		log.Error().Msgf("Expected MeshConfig type, got previous=%T, new=%T", okPrevCast, okNewCast)
+		return nil
+	}
+	prevSpec := prevMeshConfig.Spec
+	newSpec := newMeshConfig.Spec
+	if !reflect.DeepEqual(prevSpec.Sidecar.XNetDNSProxy, newSpec.Sidecar.XNetDNSProxy) {
+		return &xnetworkUpdateEvent{
+			msg:   msg,
+			topic: announcements.XNetworkUpdate.String(),
+		}
+	}
+	return nil
+}
+
 func podUpdated(msg events.PubSubMessage) *proxyUpdateEvent {
 	// Only trigger a proxy update for proxies associated with this pod based on the proxy UUID
 	prePod, okPreCast := msg.OldObj.(*corev1.Pod)
@@ -1501,6 +1519,8 @@ func getXNetworkUpdateEvent(msg events.PubSubMessage) *xnetworkUpdateEvent {
 			msg:   msg,
 			topic: announcements.XNetworkUpdate.String(),
 		}
+	case announcements.MeshConfigUpdated:
+		return xNetDNSProxyUpdated(msg)
 	default:
 		return nil
 	}

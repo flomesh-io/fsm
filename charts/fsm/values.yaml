@@ -311,13 +311,36 @@ fsm:
           cniBin: "/opt/cni/bin"
           cniNetd: "/etc/cni/net.d"
           sysFs: "/opt"
+          sysProc: "/proc"
           sysRun: "/var/run"
         k3s:
           enable: true
           cniBin: "/bin"
           cniNetd: "/var/lib/rancher/k3s/agent/etc/cni/net.d"
           sysFs: "/opt"
+          sysProc: "/proc"
           sysRun: "/var/run"
+      cnis:
+        flannel:
+          enable: true
+          bridge4:
+            enable: true
+            name: cni0
+            mac: ""
+          bridge6:
+            enable: false
+            name: cni0
+            mac: ""
+        calicoVxlan:
+          enable: false
+          bridge4:
+            enable: false
+            name: vxlan.calico
+            mac: ee:ee:ee:ee:ee:ee
+          bridge6:
+            enable: false
+            name: vxlan-v6.calico
+            mac: ee:ee:ee:ee:ee:ee
     ## Affinity settings for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     affinity:
@@ -582,6 +605,13 @@ fsm:
       los: []
       ips:
         - ipv4: 127.0.0.2
+
+  # -- xNet DNS Proxy improves the performance of your computer by caching the responses coming from your DNS servers
+  xnetDNSProxy:
+    enable: false
+    upstreams:
+      - name: fsm-controller
+
   # -- Sets the max data plane connections allowed for an instance of fsm-controller, set to 0 to not enforce limits
   maxDataPlaneConnections: 0
 
