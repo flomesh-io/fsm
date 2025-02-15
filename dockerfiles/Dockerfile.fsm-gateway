@@ -3,7 +3,7 @@ ARG GO_VERSION
 ARG DISTROLESS_TAG
 
 # Build the fsm-gateway binary
-FROM --platform=$BUILDPLATFORM golang:$GO_VERSION AS builder
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION:-latest} AS builder
 ARG LDFLAGS
 ARG TARGETOS
 ARG TARGETARCH
