@@ -16,8 +16,6 @@ import (
 const (
 	aclId   = uint16('c'<<8 | 'l')
 	aclFlag = uint8('a')
-
-	bridgeDev = `cni0`
 )
 
 var (
@@ -35,5 +33,8 @@ type Server struct {
 	workQueues         *workerpool.WorkerPool
 	ready              bool
 
-	e4lbNatCache map[string]*E4LBNat
+	cniBridge4 string
+	cniBridge6 string
+
+	xnatCache map[string]*XNat
 }

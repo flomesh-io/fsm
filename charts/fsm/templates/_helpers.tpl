@@ -286,3 +286,90 @@ securityContext:
 {{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysRun -}}
 {{- end -}}
 {{- end -}}
+
+{{/* fsm-xnet node path of sys proc */}}
+{{- define "fsmXnetwork.xnet.node.sysProc.path" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k8s.sysProc -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysProc -}}
+{{- else -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.nodePaths.k3s.sysProc -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-xnet bridge4 name of cni */}}
+{{- define "fsmXnetwork.xnet.cni.bridge4.name" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.name -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.name -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-xnet bridge4 mac of cni */}}
+{{- define "fsmXnetwork.xnet.cni.bridge4.mac" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge4.mac -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-xnet bridge6 name of cni */}}
+{{- define "fsmXnetwork.xnet.cni.bridge6.name" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.name -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.name -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* fsm-xnet bridge6 mac of cni */}}
+{{- define "fsmXnetwork.xnet.cni.bridge6.mac" -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.calicoVxlan.bridge4.mac -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.enable -}}
+{{- if .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.enable -}}
+{{- printf "%s" .Values.fsm.fsmXnetwork.xnet.cnis.flannel.bridge6.mac -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- else -}}
+{{- printf "" -}}
+{{- end -}}
+{{- end -}}

@@ -2309,6 +2309,35 @@ spec:
                       version that the sidecar supports. Valid TLS protocol versions
                       are TLS_AUTO, TLSv1_0, TLSv1_1, TLSv1_2 and TLSv1_3.
                     type: string
+                  xnetDNSProxy:
+                    description: XNetDNSProxy improves the performance of your computer
+                      by caching the responses coming from your DNS servers
+                    properties:
+                      enable:
+                        description: Enable defines a boolean indicating if the sidecars
+                          are enabled for xNet DNS Proxy.
+                        type: boolean
+                      upstreams:
+                        description: Upstreams defines dns proxy upstreams.
+                        items:
+                          properties:
+                            ip:
+                              type: string
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            port:
+                              default: 53
+                              format: int32
+                              type: integer
+                          required:
+                          - port
+                          type: object
+                        type: array
+                    required:
+                    - enable
+                    type: object
                 required:
                 - enablePrivilegedInitContainer
                 - sidecarDisabledMTLS

@@ -24,7 +24,7 @@ func NewXNetConfigServer(ctx context.Context,
 	KubeClient kubernetes.Interface,
 	kubecontroller k8s.Controller,
 	msgBroker *messaging.Broker,
-	nodeName string) *Server {
+	nodeName, cniBridge4, cniBridge6 string) *Server {
 	server := Server{
 		nodeName:           nodeName,
 		ctx:                ctx,
@@ -34,7 +34,9 @@ func NewXNetConfigServer(ctx context.Context,
 		kubeController:     kubecontroller,
 		msgBroker:          msgBroker,
 		workQueues:         workerpool.NewWorkerPool(workerPoolSize),
-		e4lbNatCache:       make(map[string]*E4LBNat),
+		cniBridge4:         cniBridge4,
+		cniBridge6:         cniBridge6,
+		xnatCache:          make(map[string]*XNat),
 	}
 
 	return &server

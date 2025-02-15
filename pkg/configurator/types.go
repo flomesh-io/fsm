@@ -65,6 +65,12 @@ type Configurator interface {
 	// GetLocalDNSProxySecondaryUpstream returns the secondary upstream DNS server for local DNS Proxy
 	GetLocalDNSProxySecondaryUpstream() string
 
+	// IsXNetDNSProxyEnabled returns whether xnet xnet proxy is enabled
+	IsXNetDNSProxyEnabled() bool
+
+	// GetXNetDNSProxyUpstreams returns the upstream DNS servers for xnet dns Proxy
+	GetXNetDNSProxyUpstreams() []configv1alpha3.DNSUpstream
+
 	// IsHoldApplicationUntilProxyStarts returns whether delay application startup
 	// until the pod proxy is ready to accept traffic
 	IsHoldApplicationUntilProxyStarts() bool

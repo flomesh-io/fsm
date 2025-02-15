@@ -112,6 +112,16 @@ func (c *client) GetLocalDNSProxySecondaryUpstream() string {
 	panic("implement me")
 }
 
+func (c *client) IsXNetDNSProxyEnabled() bool {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) GetXNetDNSProxyUpstreams() []configv1alpha3.DNSUpstream {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *client) IsHoldApplicationUntilProxyStarts() bool {
 	//TODO implement me
 	panic("implement me")

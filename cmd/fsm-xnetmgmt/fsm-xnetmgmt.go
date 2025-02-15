@@ -44,6 +44,9 @@ var (
 	trustDomain       string
 	nodeName          string
 
+	cniIPv4BridgeName string
+	cniIPv6BridgeName string
+
 	scheme = runtime.NewScheme()
 
 	flags = pflag.NewFlagSet(`fsm-xnetmgmt`, pflag.ExitOnError)
@@ -59,6 +62,8 @@ func init() {
 	flags.StringVar(&fsmVersion, "fsm-version", "", "Version of FSM")
 	flags.StringVar(&trustDomain, "trust-domain", "cluster.local", "The trust domain to use as part of the common name when requesting new certificates")
 	flags.StringVar(&nodeName, "node-name", os.Getenv("NODE_NAME"), "name of this Kubernetes node (spec.nodeName)")
+	flags.StringVar(&cniIPv4BridgeName, "cni-ipv4-bridge-name", "", "cni ipv4 bridge name")
+	flags.StringVar(&cniIPv6BridgeName, "cni-ipv6-bridge-name", "", "cni ipv6 bridge name")
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = xnetworkscheme.AddToScheme(scheme)
 }
@@ -132,7 +137,7 @@ func main() {
 
 	xnetworkController := xnetwork.NewXNetworkController(informerCollection, kubeClient, kubeController, msgBroker)
 
-	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, msgBroker, nodeName)
+	server := sidecarv2.NewXNetConfigServer(ctx, cfg, xnetworkController, kubeClient, kubeController, msgBroker, nodeName, cniIPv4BridgeName, cniIPv6BridgeName)
 	server.Start()
 	go server.BroadcastListener(stop)
 

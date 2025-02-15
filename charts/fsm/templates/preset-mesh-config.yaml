@@ -31,7 +31,8 @@ data:
         "sidecarDisabledMTLS": {{.Values.fsm.sidecar.sidecarDisabledMTLS | mustToJson }},
         "sidecarTimeout": {{.Values.fsm.sidecar.sidecarTimeout | mustToJson}},
         "localProxyMode": {{.Values.fsm.localProxyMode | mustToJson}},
-        "localDNSProxy": {{.Values.fsm.localDNSProxy | mustToJson}}
+        "localDNSProxy": {{.Values.fsm.localDNSProxy | mustToJson}},
+        "xnetDNSProxy": {{.Values.fsm.xnetDNSProxy | mustToJson}}
       },
       "traffic": {
         "interceptionMode": {{.Values.fsm.trafficInterceptionMode | mustToJson}},

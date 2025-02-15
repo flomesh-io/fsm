@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"math"
 	"net"
 	"sort"
 	"strings"
-	"time"
 
-	"github.com/mitchellh/hashstructure/v2"
 	probing "github.com/prometheus-community/pro-bing"
 	"github.com/vishvananda/netlink"
 	corev1 "k8s.io/api/core/v1"
@@ -30,59 +27,6 @@ import (
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/route"
 	"github.com/flomesh-io/fsm/pkg/xnetwork/xnet/util"
 )
-
-var (
-	bridgeInfo *maps.IFaceVal
-)
-
-type E4LBNat struct {
-	key     maps.NatKey
-	val     maps.NatVal
-	keyHash uint64
-	valHash uint64
-}
-
-func (lb *E4LBNat) Key() string {
-	bytes, _ := json.Marshal(lb.key)
-	return string(bytes)
-}
-
-func (lb *E4LBNat) NatKeyHash() uint64 {
-	hash, _ := hashstructure.Hash(lb.key, hashstructure.FormatV2,
-		&hashstructure.HashOptions{
-			ZeroNil:         true,
-			IgnoreZeroValue: true,
-			SlicesAsSets:    true,
-		})
-	return hash
-}
-
-func (lb *E4LBNat) NatValHash() uint64 {
-	hash, _ := hashstructure.Hash(lb.val, hashstructure.FormatV2,
-		&hashstructure.HashOptions{
-			ZeroNil:         true,
-			IgnoreZeroValue: true,
-			SlicesAsSets:    true,
-		})
-	return hash
-}
-
-func (s *Server) loadNatEntries() error {
-	natEntries, err := maps.ListNatEntries()
-	if err == nil {
-		for natKey, natVal := range natEntries {
-			if natKey.Sys == uint32(maps.SysE4lb) && natKey.TcDir == uint8(maps.TC_DIR_IGR) {
-				for n := uint16(0); n < natVal.EpCnt; n++ {
-					if natVal.Eps[n].Active > 0 {
-						e4lbNat := s.newE4lbNat(&natKey, &natVal)
-						s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
-					}
-				}
-			}
-		}
-	}
-	return err
-}
 
 func (s *Server) doConfigE4LBs() {
 	readyNodes, existsE4lbNode := availableNetworkNodes(s.kubeClient)
@@ -210,9 +154,11 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 		return
 	}
 
-	obsoleteNats := make(map[string]*E4LBNat)
-	for natKey, natVal := range s.e4lbNatCache {
-		obsoleteNats[natKey] = natVal
+	obsoleteNats := make(map[string]*XNat)
+	for natKey, natVal := range s.xnatCache {
+		if natVal.key.Sys == uint32(maps.SysE4lb) && natVal.key.TcDir == uint8(maps.TC_DIR_IGR) {
+			obsoleteNats[natKey] = natVal
+		}
 	}
 
 	for uid, k8sSvc := range e4lbSvcs {
@@ -245,45 +191,24 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				vport = uint16(port.Port)
 			}
 
-			natKey := new(maps.NatKey)
-			natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(net.ParseIP(eip))
-			natKey.Dport = util.HostToNetShort(vport)
-			natKey.Proto = uint8(maps.IPPROTO_TCP)
-			natVal := new(maps.NatVal)
+			eipAddr := net.ParseIP(eip)
+			natKey := s.getE4lbNatKey(eipAddr, vport)
+			natVal := s.getE4lbNatVal(upstreams, natKey, port, vport)
 
-			for rip, microSvc := range upstreams {
-				if microSvc {
-					if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
-						rport := uint16(port.TargetPort.IntVal)
-						iface, hwAddr, err := s.matchRoute(rip)
-						if err != nil {
-							continue
-						}
-						natVal.AddEp(net.ParseIP(rip), rport, hwAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
-					} else {
-						continue
-					}
-				} else {
-					rport := vport
-					brVal := s.getBridgeInfo()
-					natVal.AddEp(net.ParseIP(rip), rport, brVal.Mac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
-				}
-			}
-
-			e4lbNat := s.newE4lbNat(natKey, natVal)
-			if existsNat, exists := s.e4lbNatCache[e4lbNat.Key()]; !exists {
+			e4lbNat := newXNat(maps.SysE4lb, natKey, natVal)
+			if existsNat, exists := s.xnatCache[e4lbNat.Key()]; !exists {
 				if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 					log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 					continue
 				}
-				s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
+				s.xnatCache[e4lbNat.Key()] = e4lbNat
 			} else {
 				if existsNat.valHash != e4lbNat.valHash {
 					if err := s.setupE4LBServiceNat(natKey, natVal); err != nil {
 						log.Error().Err(err).Msgf(`failed to setup e4lb nat, eip: %s`, eip)
 						continue
 					}
-					s.e4lbNatCache[e4lbNat.Key()] = e4lbNat
+					s.xnatCache[e4lbNat.Key()] = e4lbNat
 				}
 				delete(obsoleteNats, e4lbNat.Key())
 			}
@@ -300,19 +225,55 @@ func (s *Server) announceE4LBService(e4lbSvcs map[types.UID]*corev1.Service, e4l
 				log.Error().Err(err).Msgf(`failed to unset e4lb nat`)
 				continue
 			}
-			delete(s.e4lbNatCache, natKey)
+			delete(s.xnatCache, natKey)
 		}
 	}
 }
 
-func (s *Server) newE4lbNat(natKey *maps.NatKey, natVal *maps.NatVal) *E4LBNat {
-	e4lbNat := E4LBNat{
-		key: *natKey,
-		val: *natVal,
+func (s *Server) getE4lbNatKey(eipAddr net.IP, vport uint16) *maps.NatKey {
+	natKey := new(maps.NatKey)
+	natKey.Daddr[0], natKey.Daddr[1], natKey.Daddr[2], natKey.Daddr[3], natKey.V6, _ = util.IPToInt(eipAddr)
+	natKey.Dport = util.HostToNetShort(vport)
+	natKey.Proto = uint8(maps.IPPROTO_TCP)
+	if eipAddr.To16() != nil {
+		natKey.V6 = 1
 	}
-	e4lbNat.keyHash = e4lbNat.NatKeyHash()
-	e4lbNat.valHash = e4lbNat.NatValHash()
-	return &e4lbNat
+	return natKey
+}
+
+func (s *Server) getE4lbNatVal(upstreams map[string]bool, natKey *maps.NatKey, port corev1.ServicePort, vport uint16) *maps.NatVal {
+	natVal := new(maps.NatVal)
+	for rip, microSvc := range upstreams {
+		ripAddr := net.ParseIP(rip)
+		if natKey.V6 == 1 && ripAddr.To16() == nil {
+			continue
+		}
+		if microSvc {
+			if port.TargetPort.IntVal > 0 && port.TargetPort.IntVal <= math.MaxUint16 {
+				rport := uint16(port.TargetPort.IntVal)
+				iface, hwAddr, err := s.matchRoute(rip)
+				if err != nil {
+					continue
+				}
+				natVal.AddEp(ripAddr, rport, hwAddr[:], uint32(iface.Index), maps.BPF_F_EGRESS, nil, true)
+			} else {
+				continue
+			}
+		} else {
+			rport := vport
+			var brVal *maps.IFaceVal
+			if natKey.V6 == 1 {
+				brVal = s.getCniBridge6Info()
+			} else {
+				brVal = s.getCniBridge4Info()
+			}
+			if brVal == nil {
+				continue
+			}
+			natVal.AddEp(ripAddr, rport, brVal.Xmac[:], brVal.Ifi, maps.BPF_F_INGRESS, nil, true)
+		}
+	}
+	return natVal
 }
 
 func (s *Server) headlessService(k8sSvc *corev1.Service, upstreams map[string]bool) bool {
@@ -371,32 +332,6 @@ func (s *Server) unsetE4LBServiceNat(natKey *maps.NatKey) error {
 		}
 	}
 	return nil
-}
-
-func (s *Server) getBridgeInfo() *maps.IFaceVal {
-	if bridgeInfo != nil {
-		return bridgeInfo
-	}
-
-	brKey := new(maps.IFaceKey)
-	brKey.Len = uint8(len(bridgeDev))
-	copy(brKey.Name[0:brKey.Len], bridgeDev)
-	for {
-		var err error
-		bridgeInfo, err = maps.GetIFaceEntry(brKey)
-		if err != nil {
-			log.Error().Err(err).Msg(`failed to get node bridge info`)
-			time.Sleep(time.Second * 5)
-			continue
-		}
-		if bridgeInfo == nil {
-			log.Error().Msg(`failed to get node bridge info`)
-			time.Sleep(time.Second * 5)
-			continue
-		}
-		break
-	}
-	return bridgeInfo
 }
 
 // IsE4LBEnabled checks if the service is enabled for flb
