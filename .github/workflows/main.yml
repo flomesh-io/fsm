@@ -212,10 +212,13 @@ jobs:
           sudo docker --version
           
           # Uninstall all conflicting packages
-          for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+          for pkg in docker-engine docker docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
 
           # Install Docker from stable channel
           sudo snap install --stable docker
+          
+          #Check Docker version after upgrading
+          sudo docker --version
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Go
