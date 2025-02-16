@@ -605,6 +605,7 @@ jobs:
           DEPLOY_TRAFFIC_SPLIT: "true"
           CTR_TAG: ${{ github.sha }}
           USE_PRIVATE_REGISTRY: "false"
+          K3D_IMAGE: "rancher/k3s:v1.19.16-k3s1"
         run: |
           touch .env
           make k3d-up
