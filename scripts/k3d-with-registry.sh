@@ -73,6 +73,7 @@ k3d cluster create "$K3D_CLUSTER_NAME" \
   --port 5053:5053/udp@loadbalancer \
 	--k3s-arg '--disable=traefik@server:*' \
 	--network "$k3d_network" \
+	--trace \
 	--wait \
 	--timeout 60s
 #	--k3s-arg '--disable=servicelb@server:*' \
