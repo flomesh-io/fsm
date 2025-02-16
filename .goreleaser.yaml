@@ -40,7 +40,7 @@ builds:
 
 archives:
   - id: tar-gz
-    format: tar.gz
+    formats: tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- .Env.VERSION }}_
@@ -48,7 +48,7 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
   - id: zip
-    format: zip
+    formats: zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Env.VERSION }}_
