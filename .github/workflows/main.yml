@@ -207,6 +207,10 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
+      - name: Install Docker(macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install docker
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -318,6 +322,10 @@ jobs:
           large-packages: true
           docker-images: false
           swap-storage: true
+      - name: Install Docker(macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install docker
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
