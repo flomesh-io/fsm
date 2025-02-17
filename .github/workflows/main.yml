@@ -213,9 +213,11 @@ jobs:
           brew install docker docker-buildx
           mkdir -p ~/.docker
           tee -a ~/.docker/config.json << END
-          "cliPluginsExtraDirs": [
-              "/opt/homebrew/lib/docker/cli-plugins"
-          ]
+          {
+              "cliPluginsExtraDirs": [
+                  "/opt/homebrew/lib/docker/cli-plugins"
+              ]
+          }
           END
 #      - name: Upgrade Docker Engine
 #        run: |
@@ -334,9 +336,11 @@ jobs:
           brew install docker docker-buildx
           mkdir -p ~/.docker
           tee -a ~/.docker/config.json << END
-          "cliPluginsExtraDirs": [
-              "/opt/homebrew/lib/docker/cli-plugins"
-          ]
+          {
+              "cliPluginsExtraDirs": [
+                  "/opt/homebrew/lib/docker/cli-plugins"
+              ]
+          }
           END
 
 #      - name: Upgrade Docker Engine
