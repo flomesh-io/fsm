@@ -211,6 +211,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install docker docker-buildx
+          mkdir -p ~/.docker
           tee -a ~/.docker/config.json << END
           "cliPluginsExtraDirs": [
               "/opt/homebrew/lib/docker/cli-plugins"
@@ -331,7 +332,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install docker docker-buildx
-          
+          mkdir -p ~/.docker
           tee -a ~/.docker/config.json << END
           "cliPluginsExtraDirs": [
               "/opt/homebrew/lib/docker/cli-plugins"
