@@ -211,7 +211,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install docker docker-buildx
+          
           mkdir -p ~/.docker
+          
           tee -a ~/.docker/config.json << END
           {
               "cliPluginsExtraDirs": [
@@ -219,6 +221,8 @@ jobs:
               ]
           }
           END
+          
+          brew services start docker
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -334,7 +338,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install docker docker-buildx
+          
           mkdir -p ~/.docker
+          
           tee -a ~/.docker/config.json << END
           {
               "cliPluginsExtraDirs": [
@@ -342,6 +348,8 @@ jobs:
               ]
           }
           END
+          
+          brew services start docker
 
 #      - name: Upgrade Docker Engine
 #        run: |
