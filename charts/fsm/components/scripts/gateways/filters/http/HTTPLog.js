@@ -20,17 +20,17 @@ export default function (config) {
 
   var log = logger.log
 
-  var meshName = os.env.MESH_NAME || ''
+  var meshName = os.env.MESH_NAME || 'fsm'
 
   var node = {
-    ip: os.env.POD_IP || '127.0.0.1',
-    name: os.env.HOSTNAME || 'localhost',
+    ip: os.env.FSM_NODE_IP || '127.0.0.1',
+    name: os.env.FSM_NODE_NAME || 'localhost',
   }
 
   var pod = {
-    ns: os.env.POD_NAMESPACE || 'default',
-    ip: os.env.POD_IP || '127.0.0.1',
-    name: os.env.POD_NAME || os.env.HOSTNAME || 'localhost',
+    ns: os.env.FSM_POD_NAMESPACE || 'default',
+    ip: os.env.FSM_POD_IP || '127.0.0.1',
+    name: os.env.FSM_POD_NAME || os.env.HOSTNAME || 'localhost',
   }
 
   var $ctx
