@@ -19,10 +19,10 @@ jobs:
           - linux/arm64
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
             suffix: amd64
           - platform: linux/arm64
-            runner: [ self-hosted, ARM64 ]
+            runner: ubuntu-24.04-arm
             suffix: arm64
 
     runs-on: ${{ matrix.runner }}
@@ -48,7 +48,7 @@ jobs:
 
   debian-manifest:
     name: Create Docker manifest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [debian]
     steps:
       - name: Set up QEMU
@@ -69,7 +69,7 @@ jobs:
 
   pipy-nonroot:
     name: Build pipy nonroot image
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: debian-manifest
     strategy:
       matrix:
@@ -123,10 +123,10 @@ jobs:
           - linux/arm64
         include:
           - platform: linux/amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
             suffix: amd64
           - platform: linux/arm64
-            runner: [ self-hosted, ARM64 ]
+            runner: ubuntu-24.04-arm
             suffix: arm64
 
     runs-on: ${{ matrix.runner }}
@@ -152,7 +152,7 @@ jobs:
 
   euler-manifest:
     name: Create Docker manifest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [ euler ]
     steps:
       - name: Set up QEMU
