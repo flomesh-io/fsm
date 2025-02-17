@@ -99,14 +99,36 @@ spec:
         env:
         - name: FSM_NAMESPACE
           value: {{ .Values.fsm.fsmNamespace }}
-        - name: FSM_POD_NAME
+         - name: FSM_POD_NAME
+           valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: metadata.name
+         - name: FSM_POD_NAMESPACE
+           valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: metadata.namespace
+         - name: FSM_POD_IP
+           valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: status.podIP
+         - name: FSM_SERVICE_ACCOUNT
+           valueFrom:
+             fieldRef:
+               apiVersion: v1
+               fieldPath: spec.serviceAccountName
+        - name: FSM_NODE_NAME
           valueFrom:
             fieldRef:
-              fieldPath: metadata.name
-        - name: FSM_POD_NAMESPACE
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: FSM_NODE_IP
           valueFrom:
             fieldRef:
-              fieldPath: metadata.namespace
+              apiVersion: v1
+              fieldPath: status.hostIP
         {{- with .Values.fsm.gateway.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
