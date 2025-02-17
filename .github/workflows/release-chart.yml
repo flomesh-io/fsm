@@ -7,7 +7,7 @@ on:
 jobs:
   version:
     name: Set Version from git ref
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -15,7 +15,7 @@ jobs:
         run: echo "::set-output name=version::$(sed 's#^refs/tags/\(.*\)#\1#' <<< '${{ github.ref }}' | cut -c 2-)"
 
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: version
     env:
       VERSION: ${{ needs.version.outputs.version }}
