@@ -210,7 +210,7 @@ jobs:
       - name: Install Docker(macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install docker
+          brew install docker docker-buildx
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
@@ -325,7 +325,7 @@ jobs:
       - name: Install Docker(macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install docker
+          brew install docker docker-buildx
 #      - name: Upgrade Docker Engine
 #        run: |
 #          #Check installed Docker version
